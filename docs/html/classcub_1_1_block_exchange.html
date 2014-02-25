@@ -129,10 +129,10 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICI
 <dl class="section user"><dt>Overview</dt><dd><ul>
 <li>It is commonplace for blocks of threads to rearrange data items between threads. For example, the global memory subsystem prefers access patterns where data items are "striped" across threads (where consecutive threads access consecutive items), yet most block-wide operations prefer a "blocked" partitioning of items across threads (where consecutive items belong to a single thread).</li>
 <li><a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> supports the following types of data exchanges:<ul>
-<li>Transposing between <a href="index.html#sec4sec3"><em>blocked</em></a> and <a href="index.html#sec4sec3"><em>striped</em></a> arrangements</li>
-<li>Transposing between <a href="index.html#sec4sec3"><em>blocked</em></a> and <a href="index.html#sec4sec3"><em>warp-striped</em></a> arrangements</li>
-<li>Scattering ranked items to a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a></li>
-<li>Scattering ranked items to a <a href="index.html#sec4sec3"><em>striped arrangement</em></a></li>
+<li>Transposing between <a href="index.html#sec5sec3"><em>blocked</em></a> and <a href="index.html#sec5sec3"><em>striped</em></a> arrangements</li>
+<li>Transposing between <a href="index.html#sec5sec3"><em>blocked</em></a> and <a href="index.html#sec5sec3"><em>warp-striped</em></a> arrangements</li>
+<li>Scattering ranked items to a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a></li>
+<li>Scattering ranked items to a <a href="index.html#sec5sec3"><em>striped arrangement</em></a></li>
 </ul>
 </li>
 </ul>
@@ -200,16 +200,22 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memdesc:a74fc1a62cac21f54289bb7092250a868"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement.  <a href="#a74fc1a62cac21f54289bb7092250a868">More...</a><br/></td></tr>
 <tr class="separator:a74fc1a62cac21f54289bb7092250a868"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Scatter exchanges</div></td></tr>
-<tr class="memitem:ac8dd22c90a28e54a8c1d6b0637054661"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#ac8dd22c90a28e54a8c1d6b0637054661">ScatterToBlocked</a> (T items[ITEMS_PER_THREAD], int ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ac8dd22c90a28e54a8c1d6b0637054661"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>blocked</em> arrangement.  <a href="#ac8dd22c90a28e54a8c1d6b0637054661">More...</a><br/></td></tr>
-<tr class="separator:ac8dd22c90a28e54a8c1d6b0637054661"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a53516886ba6750060819581b1bb23d68"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a53516886ba6750060819581b1bb23d68">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], int ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a53516886ba6750060819581b1bb23d68"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement.  <a href="#a53516886ba6750060819581b1bb23d68">More...</a><br/></td></tr>
-<tr class="separator:a53516886ba6750060819581b1bb23d68"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a78d1cec5c0be3ab980bf1139196f67ce"><td class="memTemplParams" colspan="2">template&lt;typename ValidFlag &gt; </td></tr>
-<tr class="memitem:a78d1cec5c0be3ab980bf1139196f67ce"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a78d1cec5c0be3ab980bf1139196f67ce">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], int ranks[ITEMS_PER_THREAD], ValidFlag is_valid[ITEMS_PER_THREAD], int valid_items)</td></tr>
-<tr class="memdesc:a78d1cec5c0be3ab980bf1139196f67ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges valid data items annotated by rank into <em>striped</em> arrangement.  <a href="#a78d1cec5c0be3ab980bf1139196f67ce">More...</a><br/></td></tr>
-<tr class="separator:a78d1cec5c0be3ab980bf1139196f67ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a43edc6bcdf295446b03921abc213140e"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
+<tr class="memitem:a43edc6bcdf295446b03921abc213140e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a43edc6bcdf295446b03921abc213140e">ScatterToBlocked</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a43edc6bcdf295446b03921abc213140e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>blocked</em> arrangement.  <a href="#a43edc6bcdf295446b03921abc213140e">More...</a><br/></td></tr>
+<tr class="separator:a43edc6bcdf295446b03921abc213140e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8204b7235ce1a49b4ff2b309d53d386"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
+<tr class="memitem:ae8204b7235ce1a49b4ff2b309d53d386"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#ae8204b7235ce1a49b4ff2b309d53d386">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ae8204b7235ce1a49b4ff2b309d53d386"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement.  <a href="#ae8204b7235ce1a49b4ff2b309d53d386">More...</a><br/></td></tr>
+<tr class="separator:ae8204b7235ce1a49b4ff2b309d53d386"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2dfffd9eca4f97e0865c0516a500c014"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
+<tr class="memitem:a2dfffd9eca4f97e0865c0516a500c014"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a2dfffd9eca4f97e0865c0516a500c014">ScatterToStripedGuarded</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a2dfffd9eca4f97e0865c0516a500c014"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement. Items with rank -1 are not exchanged.  <a href="#a2dfffd9eca4f97e0865c0516a500c014">More...</a><br/></td></tr>
+<tr class="separator:a2dfffd9eca4f97e0865c0516a500c014"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a29bc72c298980c83ea5618e439486276"><td class="memTemplParams" colspan="2">template&lt;typename Offset , typename ValidFlag &gt; </td></tr>
+<tr class="memitem:a29bc72c298980c83ea5618e439486276"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a29bc72c298980c83ea5618e439486276">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD], ValidFlag is_valid[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a29bc72c298980c83ea5618e439486276"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges valid data items annotated by rank into <em>striped</em> arrangement.  <a href="#a29bc72c298980c83ea5618e439486276">More...</a><br/></td></tr>
+<tr class="separator:a29bc72c298980c83ea5618e439486276"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="aff7137dd257eeec8d7628b4f9f4e1457"></a>
@@ -244,7 +250,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00658">658</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00662">662</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
@@ -280,7 +286,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00672">672</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00676">676</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
@@ -327,7 +333,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00686">686</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00690">690</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
@@ -387,7 +393,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00740">740</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00744">744</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
@@ -449,7 +455,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00786">786</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00790">790</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
@@ -508,7 +514,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00831">831</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00835">835</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
@@ -570,15 +576,17 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00878">878</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00882">882</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ac8dd22c90a28e54a8c1d6b0637054661"></a>
+<a class="anchor" id="a43edc6bcdf295446b03921abc213140e"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+<div class="memtemplate">
+template&lt;typename Offset &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -592,7 +600,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int&#160;</td>
+          <td class="paramtype">Offset&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
@@ -610,9 +618,15 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 
 <p>Exchanges data items annotated by rank into <em>blocked</em> arrangement. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed. </li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Offset</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
+  </table>
+  </dd>
+</dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange </td></tr>
@@ -621,15 +635,17 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00898">898</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00905">905</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a53516886ba6750060819581b1bb23d68"></a>
+<a class="anchor" id="ae8204b7235ce1a49b4ff2b309d53d386"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+<div class="memtemplate">
+template&lt;typename Offset &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -643,7 +659,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int&#160;</td>
+          <td class="paramtype">Offset&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
@@ -661,9 +677,15 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 
 <p>Exchanges data items annotated by rank into <em>striped</em> arrangement. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed. </li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Offset</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
+  </table>
+  </dd>
+</dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange </td></tr>
@@ -672,17 +694,76 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00912">912</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00922">922</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a78d1cec5c0be3ab980bf1139196f67ce"></a>
+<a class="anchor" id="a2dfffd9eca4f97e0865c0516a500c014"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
 <div class="memtemplate">
-template&lt;typename ValidFlag &gt; </div>
+template&lt;typename Offset &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::ScatterToStripedGuarded </td>
+          <td>(</td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">Offset&#160;</td>
+          <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD]&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Exchanges data items annotated by rank into <em>striped</em> arrangement. Items with rank -1 are not exchanged. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">Offset</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">ranks</td><td>Corresponding scatter ranks </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00939">939</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a29bc72c298980c83ea5618e439486276"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+<div class="memtemplate">
+template&lt;typename Offset , typename ValidFlag &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -696,20 +777,14 @@ template&lt;typename ValidFlag &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">int&#160;</td>
+          <td class="paramtype">Offset&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD], </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">ValidFlag&#160;</td>
-          <td class="paramname"><em>is_valid</em>[ITEMS_PER_THREAD], </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>valid_items</em>&#160;</td>
+          <td class="paramname"><em>is_valid</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -731,6 +806,7 @@ template&lt;typename ValidFlag &gt; </div>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
+    <tr><td class="paramname">Offset</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
     <tr><td class="paramname">ValidFlag</td><td><b>[inferred]</b> Flag type denoting which items are valid </td></tr>
   </table>
   </dd>
@@ -740,12 +816,11 @@ template&lt;typename ValidFlag &gt; </div>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">ranks</td><td>Corresponding scatter ranks </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">is_valid</td><td>Corresponding flag denoting item validity </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">valid_items</td><td>Number of valid items held by all threads </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00929">929</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00973">973</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
@@ -756,7 +831,7 @@ template&lt;typename ValidFlag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

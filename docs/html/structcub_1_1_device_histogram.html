@@ -231,7 +231,7 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 8-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of a 8-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and histogram</span></div>
@@ -263,15 +263,15 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (Must have an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]) (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
@@ -358,7 +358,7 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 8-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of a 8-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and histogram</span></div>
@@ -390,15 +390,15 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (Must have an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]) (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
@@ -485,7 +485,7 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of a 8-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of a 8-bin histogram of single-channel <code>unsigned char</code> samples. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and histogram</span></div>
@@ -517,15 +517,15 @@ template&lt;int BINS, typename InputIterator , typename HistoCounter &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (Must have an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]) (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>Array of BINS counters of integral type <code>HistoCounter</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Number of samples to process </td></tr>
@@ -613,7 +613,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of three 256-bin histograms from an input sequence of quad-channel (interleaved) <code>unsigned char</code> samples. (E.g., RGB histograms from RGBA pixel samples.)</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 256-bin histograms from an input sequence of quad-channel (interleaved) <code>unsigned char</code> samples. (E.g., RGB histograms from RGBA pixel samples.)</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and histograms</span></div>
@@ -652,17 +652,17 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
     <tr><td class="paramname">CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
     <tr><td class="paramname">ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (Must have an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]) (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples). </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_histograms</td><td>Array of channel histogram counter arrays, each having BINS counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples). </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histograms</td><td>Array of active channel histogram pointers, each pointing to an output array having BINS counters of integral type <code>HistoCounter</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Total number of samples to process in all channels, including non-active channels </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
@@ -748,7 +748,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of three 256-bin histograms from an input sequence of quad-channel (interleaved) <code>unsigned char</code> samples. (E.g., RGB histograms from RGBA pixel samples.) </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 256-bin histograms from an input sequence of quad-channel (interleaved) <code>unsigned char</code> samples. (E.g., RGB histograms from RGBA pixel samples.) </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and histograms</span></div>
@@ -787,17 +787,17 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
     <tr><td class="paramname">CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
     <tr><td class="paramname">ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (Must have an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]) (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples). </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_histograms</td><td>Array of channel histogram counter arrays, each having BINS counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples). </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histograms</td><td>Array of active channel histogram pointers, each pointing to an output array having BINS counters of integral type <code>HistoCounter</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Total number of samples to process in all channels, including non-active channels </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
@@ -883,7 +883,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the computation of three 256-bin histograms from an input sequence of quad-channel (interleaved) <code>unsigned char</code> samples. (E.g., RGB histograms from RGBA pixel samples.)</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 256-bin histograms from an input sequence of quad-channel (interleaved) <code>unsigned char</code> samples. (E.g., RGB histograms from RGBA pixel samples.)</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and histograms</span></div>
@@ -922,17 +922,17 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
     <tr><td class="paramname">BINS</td><td>Number of histogram bins per channel </td></tr>
     <tr><td class="paramname">CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
     <tr><td class="paramname">ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1] </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (Must have an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]) (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">HistoCounter</td><td><b>[inferred]</b> Integer type for counting sample occurrences per histogram bin </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Input samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples). </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_histograms</td><td>Array of channel histogram counter arrays, each having BINS counters of integral type <code>HistoCounter</code>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>Pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples). </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histograms</td><td>Array of active channel histogram pointers, each pointing to an output array having BINS counters of integral type <code>HistoCounter</code>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>Total number of samples to process in all channels, including non-active channels </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
@@ -951,7 +951,7 @@ template&lt;int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

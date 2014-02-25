@@ -104,7 +104,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="device__radix__sort_8cuh.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;</div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">/******************************************************************************</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -366,13 +366,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        <span class="keyword">typedef</span> BlockScanRegionPolicy &lt;512, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE&gt; ScanPolicy;</div>
 <div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;</div>
 <div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        <span class="comment">// DownsweepPolicy</span></div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 18 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS&gt; DownsweepPolicyKeys;</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;128, CUB_MAX(1, 13 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS&gt; DownsweepPolicyPairs;</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 18 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f">BLOCK_SCAN_RAKING_MEMOIZE</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS&gt; DownsweepPolicyKeys;</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;128, CUB_MAX(1, 13 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f">BLOCK_SCAN_RAKING_MEMOIZE</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS&gt; DownsweepPolicyPairs;</div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> If&lt;KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs&gt;::Type DownsweepPolicy;</div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;        <span class="comment">// Alternate DownsweepPolicy for (RADIX_BITS-1)-bit passes</span></div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 18 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1&gt; AltDownsweepPolicyKeys;</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;128, CUB_MAX(1, 13 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1&gt; AltDownsweepPolicyPairs;</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 18 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f">BLOCK_SCAN_RAKING_MEMOIZE</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1&gt; AltDownsweepPolicyKeys;</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;128, CUB_MAX(1, 13 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f">BLOCK_SCAN_RAKING_MEMOIZE</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1&gt; AltDownsweepPolicyPairs;</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> If&lt;KEYS_ONLY, AltDownsweepPolicyKeys, AltDownsweepPolicyPairs&gt;::Type AltDownsweepPolicy;</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    };</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;</div>
@@ -386,8 +386,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        };</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        <span class="comment">// UpsweepPolicy</span></div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortUpsweepRegionPolicy &lt;128, CUB_MAX(1, 15 / SCALE_FACTOR), <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, RADIX_BITS&gt; UpsweepPolicyKeys;</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortUpsweepRegionPolicy &lt;128, CUB_MAX(1, 15 / SCALE_FACTOR), <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, RADIX_BITS&gt; UpsweepPolicyPairs;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortUpsweepRegionPolicy &lt;128, CUB_MAX(1, 19 / SCALE_FACTOR), <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, RADIX_BITS&gt; UpsweepPolicyKeys;</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortUpsweepRegionPolicy &lt;128, CUB_MAX(1, 19 / SCALE_FACTOR), <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, RADIX_BITS&gt; UpsweepPolicyPairs;</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> If&lt;KEYS_ONLY, UpsweepPolicyKeys, UpsweepPolicyPairs&gt;::Type UpsweepPolicy;</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="comment">// Alternate UpsweepPolicy for (RADIX_BITS-1)-bit passes</span></div>
@@ -396,16 +396,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> If&lt;KEYS_ONLY, AltUpsweepPolicyKeys, AltUpsweepPolicyPairs&gt;::Type AltUpsweepPolicy;</div>
 <div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        <span class="comment">// ScanPolicy</span></div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        <span class="keyword">typedef</span> BlockScanRegionPolicy &lt;256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_RAKING_MEMOIZE&gt; ScanPolicy;</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        <span class="keyword">typedef</span> BlockScanRegionPolicy &lt;256, 4, BLOCK_LOAD_VECTORIZE, false, LOAD_DEFAULT, BLOCK_STORE_VECTORIZE, false, BLOCK_SCAN_WARP_SCANS&gt; ScanPolicy;</div>
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;        <span class="comment">// DownsweepPolicy</span></div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 15 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">true</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS&gt; DownsweepPolicyKeys;</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 15 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">true</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS&gt; DownsweepPolicyPairs;</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 19 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS&gt; DownsweepPolicyKeys;</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 19 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS&gt; DownsweepPolicyPairs;</div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> If&lt;KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs&gt;::Type DownsweepPolicy;</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;        <span class="comment">// Alternate DownsweepPolicy for (RADIX_BITS-1)-bit passes</span></div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 15 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">true</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1&gt; AltDownsweepPolicyKeys;</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;64, CUB_MAX(1, 15 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">true</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1&gt; AltDownsweepPolicyPairs;</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;128, CUB_MAX(1, 15 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1&gt; AltDownsweepPolicyKeys;</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;        <span class="keyword">typedef</span> BlockRadixSortDownsweepRegionPolicy &lt;128, CUB_MAX(1, 15 / SCALE_FACTOR), <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f">BLOCK_LOAD_WARP_TRANSPOSE</a>, <a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9aee682a9988eceaefd9a53a7ef92fe6e2" title="Default (no modifier) ">LOAD_DEFAULT</a>, <span class="keyword">false</span>, <span class="keyword">false</span>, <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, RADIX_BITS - 1&gt; AltDownsweepPolicyPairs;</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> If&lt;KEYS_ONLY, AltDownsweepPolicyKeys, AltDownsweepPolicyPairs&gt;::Type AltDownsweepPolicy;</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    };</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;</div>
@@ -522,7 +522,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        DownsweepKernelPtr      downsweep_kernel,</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;        DownsweepKernelPtr      alt_downsweep_kernel)</div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;    {</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION > 0)</span></div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION &gt; 0)</span></div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;        <span class="comment">// We&#39;re on the device, so initialize the kernel dispatch configurations with the current PTX policy</span></div>
 <div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;        cudaError_t error;</div>
@@ -709,7 +709,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;        <span class="keywordflow">do</span></div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        {</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;            <span class="comment">// Get even-share work distribution descriptor</span></div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            GridEvenShare&lt;Offset&gt; even_share(num_items, downsweep_config.max_grid_size, downsweep_config.tile_size);</div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            GridEvenShare&lt;Offset&gt; even_share(num_items, downsweep_config.max_grid_size, CUB_MAX(downsweep_config.tile_size, upsweep_config.tile_size));</div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;<span class="preprocessor"></span>            <span class="comment">// Get current smem bank configuration</span></div>
@@ -991,142 +991,142 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;<span class="comment"> * DeviceRadixSort</span></div>
 <div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;<span class="comment"> *****************************************************************************/</span></div>
 <div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;</div>
-<div class="line"><a name="l00963"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html">  963</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">DeviceRadixSort</a></div>
-<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;{</div>
-<div class="line"><a name="l01014"></a><span class="lineno"> 1014</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l01015"></a><span class="lineno"> 1015</span>&#160;        <span class="keyword">typename</span>            Key,</div>
-<div class="line"><a name="l01016"></a><span class="lineno"> 1016</span>&#160;        <span class="keyword">typename</span>            Value&gt;</div>
-<div class="line"><a name="l01017"></a><span class="lineno"> 1017</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l01018"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a2d26085e7f610f5578b6010d963b3811"> 1018</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a2d26085e7f610f5578b6010d963b3811" title="Sorts key-value pairs into ascending order. ">SortPairs</a>(</div>
-<div class="line"><a name="l01019"></a><span class="lineno"> 1019</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l01020"></a><span class="lineno"> 1020</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
-<div class="line"><a name="l01021"></a><span class="lineno"> 1021</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
-<div class="line"><a name="l01022"></a><span class="lineno"> 1022</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a> &amp;d_values,                              </div>
-<div class="line"><a name="l01023"></a><span class="lineno"> 1023</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
-<div class="line"><a name="l01024"></a><span class="lineno"> 1024</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
-<div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
-<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
-<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;    {</div>
-<div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
-<div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;</div>
-<div class="line"><a name="l01032"></a><span class="lineno"> 1032</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;false, Key, Value, Offset&gt;::Dispatch(</div>
-<div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l01034"></a><span class="lineno"> 1034</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l01035"></a><span class="lineno"> 1035</span>&#160;            d_keys,</div>
-<div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160;            d_values,</div>
-<div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;            num_items,</div>
-<div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160;            begin_bit,</div>
-<div class="line"><a name="l01039"></a><span class="lineno"> 1039</span>&#160;            end_bit,</div>
-<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;            stream,</div>
-<div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;    }</div>
-<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;</div>
-<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;</div>
-<div class="line"><a name="l01094"></a><span class="lineno"> 1094</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l01095"></a><span class="lineno"> 1095</span>&#160;        <span class="keyword">typename</span>            Key,</div>
-<div class="line"><a name="l01096"></a><span class="lineno"> 1096</span>&#160;        <span class="keyword">typename</span>            Value&gt;</div>
-<div class="line"><a name="l01097"></a><span class="lineno"> 1097</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l01098"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a6f142b93acb14890c78b31f71409c381"> 1098</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a6f142b93acb14890c78b31f71409c381" title="Sorts key-value pairs into descending order. ">SortPairsDescending</a>(</div>
-<div class="line"><a name="l01099"></a><span class="lineno"> 1099</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l01100"></a><span class="lineno"> 1100</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
-<div class="line"><a name="l01101"></a><span class="lineno"> 1101</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
-<div class="line"><a name="l01102"></a><span class="lineno"> 1102</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a> &amp;d_values,                              </div>
-<div class="line"><a name="l01103"></a><span class="lineno"> 1103</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
-<div class="line"><a name="l01104"></a><span class="lineno"> 1104</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
-<div class="line"><a name="l01105"></a><span class="lineno"> 1105</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
-<div class="line"><a name="l01106"></a><span class="lineno"> 1106</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l01107"></a><span class="lineno"> 1107</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
-<div class="line"><a name="l01108"></a><span class="lineno"> 1108</span>&#160;    {</div>
-<div class="line"><a name="l01109"></a><span class="lineno"> 1109</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l01110"></a><span class="lineno"> 1110</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
-<div class="line"><a name="l01111"></a><span class="lineno"> 1111</span>&#160;</div>
-<div class="line"><a name="l01112"></a><span class="lineno"> 1112</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;true, Key, Value, Offset&gt;::Dispatch(</div>
-<div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l01114"></a><span class="lineno"> 1114</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l01115"></a><span class="lineno"> 1115</span>&#160;            d_keys,</div>
-<div class="line"><a name="l01116"></a><span class="lineno"> 1116</span>&#160;            d_values,</div>
-<div class="line"><a name="l01117"></a><span class="lineno"> 1117</span>&#160;            num_items,</div>
-<div class="line"><a name="l01118"></a><span class="lineno"> 1118</span>&#160;            begin_bit,</div>
-<div class="line"><a name="l01119"></a><span class="lineno"> 1119</span>&#160;            end_bit,</div>
-<div class="line"><a name="l01120"></a><span class="lineno"> 1120</span>&#160;            stream,</div>
-<div class="line"><a name="l01121"></a><span class="lineno"> 1121</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l01122"></a><span class="lineno"> 1122</span>&#160;    }</div>
-<div class="line"><a name="l01123"></a><span class="lineno"> 1123</span>&#160;</div>
-<div class="line"><a name="l01124"></a><span class="lineno"> 1124</span>&#160;</div>
-<div class="line"><a name="l01168"></a><span class="lineno"> 1168</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
-<div class="line"><a name="l01169"></a><span class="lineno"> 1169</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l01170"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07"> 1170</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07" title="Sorts keys into ascending order. ">SortKeys</a>(</div>
-<div class="line"><a name="l01171"></a><span class="lineno"> 1171</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l01172"></a><span class="lineno"> 1172</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
-<div class="line"><a name="l01173"></a><span class="lineno"> 1173</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
-<div class="line"><a name="l01174"></a><span class="lineno"> 1174</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
-<div class="line"><a name="l01175"></a><span class="lineno"> 1175</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
-<div class="line"><a name="l01176"></a><span class="lineno"> 1176</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
-<div class="line"><a name="l01177"></a><span class="lineno"> 1177</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
-<div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160;    {</div>
-<div class="line"><a name="l01180"></a><span class="lineno"> 1180</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l01181"></a><span class="lineno"> 1181</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
-<div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;</div>
-<div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;        <span class="comment">// Null value type</span></div>
-<div class="line"><a name="l01184"></a><span class="lineno"> 1184</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a> d_values;</div>
-<div class="line"><a name="l01185"></a><span class="lineno"> 1185</span>&#160;</div>
-<div class="line"><a name="l01186"></a><span class="lineno"> 1186</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;false, Key, NullType, Offset&gt;::Dispatch(</div>
-<div class="line"><a name="l01187"></a><span class="lineno"> 1187</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l01188"></a><span class="lineno"> 1188</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l01189"></a><span class="lineno"> 1189</span>&#160;            d_keys,</div>
-<div class="line"><a name="l01190"></a><span class="lineno"> 1190</span>&#160;            d_values,</div>
-<div class="line"><a name="l01191"></a><span class="lineno"> 1191</span>&#160;            num_items,</div>
-<div class="line"><a name="l01192"></a><span class="lineno"> 1192</span>&#160;            begin_bit,</div>
-<div class="line"><a name="l01193"></a><span class="lineno"> 1193</span>&#160;            end_bit,</div>
-<div class="line"><a name="l01194"></a><span class="lineno"> 1194</span>&#160;            stream,</div>
-<div class="line"><a name="l01195"></a><span class="lineno"> 1195</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l01196"></a><span class="lineno"> 1196</span>&#160;    }</div>
-<div class="line"><a name="l01197"></a><span class="lineno"> 1197</span>&#160;</div>
-<div class="line"><a name="l01198"></a><span class="lineno"> 1198</span>&#160;</div>
-<div class="line"><a name="l01242"></a><span class="lineno"> 1242</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
-<div class="line"><a name="l01243"></a><span class="lineno"> 1243</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l01244"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#abe6e85b55b679a8f648ef27d1e97f869"> 1244</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#abe6e85b55b679a8f648ef27d1e97f869" title="Sorts keys into ascending order. ">SortKeysDescending</a>(</div>
-<div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
-<div class="line"><a name="l01247"></a><span class="lineno"> 1247</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
-<div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
-<div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
-<div class="line"><a name="l01250"></a><span class="lineno"> 1250</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
-<div class="line"><a name="l01251"></a><span class="lineno"> 1251</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l01252"></a><span class="lineno"> 1252</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
-<div class="line"><a name="l01253"></a><span class="lineno"> 1253</span>&#160;    {</div>
-<div class="line"><a name="l01254"></a><span class="lineno"> 1254</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l01255"></a><span class="lineno"> 1255</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
-<div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160;</div>
-<div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;        <span class="comment">// Null value type</span></div>
-<div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a> d_values;</div>
-<div class="line"><a name="l01259"></a><span class="lineno"> 1259</span>&#160;</div>
-<div class="line"><a name="l01260"></a><span class="lineno"> 1260</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;true, Key, NullType, Offset&gt;::Dispatch(</div>
-<div class="line"><a name="l01261"></a><span class="lineno"> 1261</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160;            d_keys,</div>
-<div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;            d_values,</div>
-<div class="line"><a name="l01265"></a><span class="lineno"> 1265</span>&#160;            num_items,</div>
-<div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160;            begin_bit,</div>
-<div class="line"><a name="l01267"></a><span class="lineno"> 1267</span>&#160;            end_bit,</div>
-<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;            stream,</div>
-<div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;    }</div>
-<div class="line"><a name="l01271"></a><span class="lineno"> 1271</span>&#160;</div>
-<div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;};</div>
-<div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;</div>
-<div class="line"><a name="l01278"></a><span class="lineno"> 1278</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l01279"></a><span class="lineno"> 1279</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00966"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html">  966</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">DeviceRadixSort</a></div>
+<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;{</div>
+<div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;        <span class="keyword">typename</span>            Key,</div>
+<div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;        <span class="keyword">typename</span>            Value&gt;</div>
+<div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;    __host__ __device__</div>
+<div class="line"><a name="l01029"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a2d26085e7f610f5578b6010d963b3811"> 1029</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a2d26085e7f610f5578b6010d963b3811" title="Sorts key-value pairs into ascending order. ">SortPairs</a>(</div>
+<div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
+<div class="line"><a name="l01031"></a><span class="lineno"> 1031</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l01032"></a><span class="lineno"> 1032</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
+<div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a> &amp;d_values,                              </div>
+<div class="line"><a name="l01034"></a><span class="lineno"> 1034</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
+<div class="line"><a name="l01035"></a><span class="lineno"> 1035</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
+<div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
+<div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;        cudaStream_t        stream              = 0,                </div>
+<div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l01039"></a><span class="lineno"> 1039</span>&#160;    {</div>
+<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;</div>
+<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;false, Key, Value, Offset&gt;::Dispatch(</div>
+<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;            d_keys,</div>
+<div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;            d_values,</div>
+<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;            num_items,</div>
+<div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;            begin_bit,</div>
+<div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;            end_bit,</div>
+<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;            stream,</div>
+<div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;    }</div>
+<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;</div>
+<div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;</div>
+<div class="line"><a name="l01108"></a><span class="lineno"> 1108</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l01109"></a><span class="lineno"> 1109</span>&#160;        <span class="keyword">typename</span>            Key,</div>
+<div class="line"><a name="l01110"></a><span class="lineno"> 1110</span>&#160;        <span class="keyword">typename</span>            Value&gt;</div>
+<div class="line"><a name="l01111"></a><span class="lineno"> 1111</span>&#160;    __host__ __device__</div>
+<div class="line"><a name="l01112"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a6f142b93acb14890c78b31f71409c381"> 1112</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a6f142b93acb14890c78b31f71409c381" title="Sorts key-value pairs into descending order. ">SortPairsDescending</a>(</div>
+<div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
+<div class="line"><a name="l01114"></a><span class="lineno"> 1114</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l01115"></a><span class="lineno"> 1115</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
+<div class="line"><a name="l01116"></a><span class="lineno"> 1116</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a> &amp;d_values,                              </div>
+<div class="line"><a name="l01117"></a><span class="lineno"> 1117</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
+<div class="line"><a name="l01118"></a><span class="lineno"> 1118</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
+<div class="line"><a name="l01119"></a><span class="lineno"> 1119</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
+<div class="line"><a name="l01120"></a><span class="lineno"> 1120</span>&#160;        cudaStream_t        stream              = 0,                </div>
+<div class="line"><a name="l01121"></a><span class="lineno"> 1121</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l01122"></a><span class="lineno"> 1122</span>&#160;    {</div>
+<div class="line"><a name="l01123"></a><span class="lineno"> 1123</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l01124"></a><span class="lineno"> 1124</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l01125"></a><span class="lineno"> 1125</span>&#160;</div>
+<div class="line"><a name="l01126"></a><span class="lineno"> 1126</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;true, Key, Value, Offset&gt;::Dispatch(</div>
+<div class="line"><a name="l01127"></a><span class="lineno"> 1127</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l01128"></a><span class="lineno"> 1128</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l01129"></a><span class="lineno"> 1129</span>&#160;            d_keys,</div>
+<div class="line"><a name="l01130"></a><span class="lineno"> 1130</span>&#160;            d_values,</div>
+<div class="line"><a name="l01131"></a><span class="lineno"> 1131</span>&#160;            num_items,</div>
+<div class="line"><a name="l01132"></a><span class="lineno"> 1132</span>&#160;            begin_bit,</div>
+<div class="line"><a name="l01133"></a><span class="lineno"> 1133</span>&#160;            end_bit,</div>
+<div class="line"><a name="l01134"></a><span class="lineno"> 1134</span>&#160;            stream,</div>
+<div class="line"><a name="l01135"></a><span class="lineno"> 1135</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l01136"></a><span class="lineno"> 1136</span>&#160;    }</div>
+<div class="line"><a name="l01137"></a><span class="lineno"> 1137</span>&#160;</div>
+<div class="line"><a name="l01138"></a><span class="lineno"> 1138</span>&#160;</div>
+<div class="line"><a name="l01189"></a><span class="lineno"> 1189</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
+<div class="line"><a name="l01190"></a><span class="lineno"> 1190</span>&#160;    __host__ __device__</div>
+<div class="line"><a name="l01191"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07"> 1191</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07" title="Sorts keys into ascending order. ">SortKeys</a>(</div>
+<div class="line"><a name="l01192"></a><span class="lineno"> 1192</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
+<div class="line"><a name="l01193"></a><span class="lineno"> 1193</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l01194"></a><span class="lineno"> 1194</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
+<div class="line"><a name="l01195"></a><span class="lineno"> 1195</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
+<div class="line"><a name="l01196"></a><span class="lineno"> 1196</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
+<div class="line"><a name="l01197"></a><span class="lineno"> 1197</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
+<div class="line"><a name="l01198"></a><span class="lineno"> 1198</span>&#160;        cudaStream_t        stream              = 0,                </div>
+<div class="line"><a name="l01199"></a><span class="lineno"> 1199</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l01200"></a><span class="lineno"> 1200</span>&#160;    {</div>
+<div class="line"><a name="l01201"></a><span class="lineno"> 1201</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l01202"></a><span class="lineno"> 1202</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l01203"></a><span class="lineno"> 1203</span>&#160;</div>
+<div class="line"><a name="l01204"></a><span class="lineno"> 1204</span>&#160;        <span class="comment">// Null value type</span></div>
+<div class="line"><a name="l01205"></a><span class="lineno"> 1205</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a> d_values;</div>
+<div class="line"><a name="l01206"></a><span class="lineno"> 1206</span>&#160;</div>
+<div class="line"><a name="l01207"></a><span class="lineno"> 1207</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;false, Key, NullType, Offset&gt;::Dispatch(</div>
+<div class="line"><a name="l01208"></a><span class="lineno"> 1208</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l01209"></a><span class="lineno"> 1209</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l01210"></a><span class="lineno"> 1210</span>&#160;            d_keys,</div>
+<div class="line"><a name="l01211"></a><span class="lineno"> 1211</span>&#160;            d_values,</div>
+<div class="line"><a name="l01212"></a><span class="lineno"> 1212</span>&#160;            num_items,</div>
+<div class="line"><a name="l01213"></a><span class="lineno"> 1213</span>&#160;            begin_bit,</div>
+<div class="line"><a name="l01214"></a><span class="lineno"> 1214</span>&#160;            end_bit,</div>
+<div class="line"><a name="l01215"></a><span class="lineno"> 1215</span>&#160;            stream,</div>
+<div class="line"><a name="l01216"></a><span class="lineno"> 1216</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l01217"></a><span class="lineno"> 1217</span>&#160;    }</div>
+<div class="line"><a name="l01218"></a><span class="lineno"> 1218</span>&#160;</div>
+<div class="line"><a name="l01219"></a><span class="lineno"> 1219</span>&#160;</div>
+<div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
+<div class="line"><a name="l01267"></a><span class="lineno"> 1267</span>&#160;    __host__ __device__</div>
+<div class="line"><a name="l01268"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#abe6e85b55b679a8f648ef27d1e97f869"> 1268</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#abe6e85b55b679a8f648ef27d1e97f869" title="Sorts keys into ascending order. ">SortKeysDescending</a>(</div>
+<div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
+<div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l01271"></a><span class="lineno"> 1271</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
+<div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
+<div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
+<div class="line"><a name="l01274"></a><span class="lineno"> 1274</span>&#160;        <span class="keywordtype">int</span>                 end_bit             = <span class="keyword">sizeof</span>(Key) * 8,  </div>
+<div class="line"><a name="l01275"></a><span class="lineno"> 1275</span>&#160;        cudaStream_t        stream              = 0,                </div>
+<div class="line"><a name="l01276"></a><span class="lineno"> 1276</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l01277"></a><span class="lineno"> 1277</span>&#160;    {</div>
+<div class="line"><a name="l01278"></a><span class="lineno"> 1278</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l01279"></a><span class="lineno"> 1279</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
 <div class="line"><a name="l01280"></a><span class="lineno"> 1280</span>&#160;</div>
-<div class="line"><a name="l01281"></a><span class="lineno"> 1281</span>&#160;</div>
+<div class="line"><a name="l01281"></a><span class="lineno"> 1281</span>&#160;        <span class="comment">// Null value type</span></div>
+<div class="line"><a name="l01282"></a><span class="lineno"> 1282</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a> d_values;</div>
+<div class="line"><a name="l01283"></a><span class="lineno"> 1283</span>&#160;</div>
+<div class="line"><a name="l01284"></a><span class="lineno"> 1284</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;true, Key, NullType, Offset&gt;::Dispatch(</div>
+<div class="line"><a name="l01285"></a><span class="lineno"> 1285</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l01286"></a><span class="lineno"> 1286</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l01287"></a><span class="lineno"> 1287</span>&#160;            d_keys,</div>
+<div class="line"><a name="l01288"></a><span class="lineno"> 1288</span>&#160;            d_values,</div>
+<div class="line"><a name="l01289"></a><span class="lineno"> 1289</span>&#160;            num_items,</div>
+<div class="line"><a name="l01290"></a><span class="lineno"> 1290</span>&#160;            begin_bit,</div>
+<div class="line"><a name="l01291"></a><span class="lineno"> 1291</span>&#160;            end_bit,</div>
+<div class="line"><a name="l01292"></a><span class="lineno"> 1292</span>&#160;            stream,</div>
+<div class="line"><a name="l01293"></a><span class="lineno"> 1293</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l01294"></a><span class="lineno"> 1294</span>&#160;    }</div>
+<div class="line"><a name="l01295"></a><span class="lineno"> 1295</span>&#160;</div>
+<div class="line"><a name="l01296"></a><span class="lineno"> 1296</span>&#160;};</div>
+<div class="line"><a name="l01297"></a><span class="lineno"> 1297</span>&#160;</div>
+<div class="line"><a name="l01302"></a><span class="lineno"> 1302</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l01303"></a><span class="lineno"> 1303</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l01304"></a><span class="lineno"> 1304</span>&#160;</div>
+<div class="line"><a name="l01305"></a><span class="lineno"> 1305</span>&#160;</div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:19 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:24 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

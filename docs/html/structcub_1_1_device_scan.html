@@ -114,12 +114,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">DeviceScan</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd></dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>The work-complexity of prefix scan as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU.</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a> performance across different CUDA architectures for <code>int32</code> keys. Performance plots for other scenarios can be found in the detailed method descriptions below.</dd></dl>
 <div class="image">
-<img src="scan_perf.png" alt="scan_perf.png"/>
+<img src="scan_int32.png" alt="scan_int32.png"/>
 </div>
  
-<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00610">610</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00594">594</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
@@ -218,7 +219,14 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the exclusive prefix sum of an <code>int</code> device vector. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated exclusive sum performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively.</dd></dl>
+<div class="image">
+<img src="scan_int32.png" alt="scan_int32.png"/>
+</div>
+ <div class="image">
+<img src="scan_int64.png" alt="scan_int64.png"/>
+</div>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the exclusive prefix sum of an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
@@ -242,18 +250,18 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading scan input data (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for writing scan output data (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Iterator pointing to scan input </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Iterator pointing to scan output </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to scan </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of data items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., the length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
@@ -261,7 +269,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_scan_8cu-example.html#a2">example_device_scan.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00659">659</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00650">650</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -348,11 +356,12 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the exclusive prefix min-scan of an <code>int</code> device vector </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the exclusive prefix min-scan of an <code>int</code> device vector </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// MyMin functor</span></div>
-<div class="line"><span class="keyword">struct </span>MyMin</div>
+<div class="line"><span class="comment">// CustomMin functor</span></div>
+<div class="line"><span class="keyword">struct </span>CustomMin</div>
 <div class="line">{</div>
 <div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line">    __host__ __device__ __forceinline__</div>
@@ -362,10 +371,10 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
 <div class="line">};</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
-<div class="line"><span class="keywordtype">int</span>      num_items;      <span class="comment">// e.g., 7</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_out;         <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ]</span></div>
-<div class="line">MyMin    min_op</div>
+<div class="line"><span class="keywordtype">int</span>          num_items;      <span class="comment">// e.g., 7</span></div>
+<div class="line"><span class="keywordtype">int</span>          *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
+<div class="line"><span class="keywordtype">int</span>          *d_out;         <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ]</span></div>
+<div class="line">CustomMin    min_op</div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements for exclusive prefix scan</span></div>
@@ -383,29 +392,29 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
-    <tr><td class="paramname">Identity</td><td><b>[inferred]</b> Type of the <code>identity</code> value used Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading scan input data (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for writing scan output data (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">Identity</td><td><b>[inferred]</b> Type of the <code>identity</code> value used Binary scan functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Iterator pointing to scan input </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Iterator pointing to scan output </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of data items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity element </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to scan </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., the length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00744">744</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00738">738</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -480,7 +489,8 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the inclusive prefix sum of an <code>int</code> device vector. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the inclusive prefix sum of an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
@@ -504,25 +514,25 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading scan input data (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for writing scan output data (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Iterator pointing to scan input </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Iterator pointing to scan output </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to scan </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of data items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., the length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00820">820</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00817">817</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -603,11 +613,12 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the inclusive prefix min-scan of an <code>int</code> device vector. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the inclusive prefix min-scan of an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// MyMin functor</span></div>
-<div class="line"><span class="keyword">struct </span>MyMin</div>
+<div class="line"><span class="comment">// CustomMin functor</span></div>
+<div class="line"><span class="keyword">struct </span>CustomMin</div>
 <div class="line">{</div>
 <div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line">    __host__ __device__ __forceinline__</div>
@@ -617,10 +628,10 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
 <div class="line">};</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
-<div class="line"><span class="keywordtype">int</span>      num_items;      <span class="comment">// e.g., 7</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_out;         <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ]</span></div>
-<div class="line">MyMin    min_op;</div>
+<div class="line"><span class="keywordtype">int</span>          num_items;      <span class="comment">// e.g., 7</span></div>
+<div class="line"><span class="keywordtype">int</span>          *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
+<div class="line"><span class="keywordtype">int</span>          *d_out;         <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ]</span></div>
+<div class="line">CustomMin    min_op;</div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements for inclusive prefix scan</span></div>
@@ -638,20 +649,20 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access iterator type for input (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access iterator type for output (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading scan input data (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for writing scan output data (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Iterator pointing to scan input </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Iterator pointing to scan output </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to scan </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of data items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., the length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
@@ -669,7 +680,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

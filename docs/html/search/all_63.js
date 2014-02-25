@@ -8,8 +8,8 @@ var searchData=
   ['cachemodifiedoutputiterator',['CacheModifiedOutputIterator',['../classcub_1_1_cache_modified_output_iterator.html',1,'cub']]],
   ['cachemodifiedoutputiterator',['CacheModifiedOutputIterator',['../classcub_1_1_cache_modified_output_iterator.html#a37370c8781a5e3da592264e20b38782c',1,'cub::CacheModifiedOutputIterator']]],
   ['cachestoremodifier',['CacheStoreModifier',['../group___util_io.html#ga648d25a92a50ca41cf73e93a35f21f37',1,'cub']]],
+  ['cachingdeviceallocator',['CachingDeviceAllocator',['../structcub_1_1_caching_device_allocator.html#a8819cc293615f15d1f08f41140349b90',1,'cub::CachingDeviceAllocator::CachingDeviceAllocator(unsigned int bin_growth, unsigned int min_bin, unsigned int max_bin, size_t max_cached_bytes, bool skip_cleanup=false)'],['../structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff',1,'cub::CachingDeviceAllocator::CachingDeviceAllocator(bool skip_cleanup=false)']]],
   ['cachingdeviceallocator',['CachingDeviceAllocator',['../structcub_1_1_caching_device_allocator.html',1,'cub']]],
-  ['cachingdeviceallocator',['CachingDeviceAllocator',['../structcub_1_1_caching_device_allocator.html#a36b5c020ec501279b2b1275eae578918',1,'cub::CachingDeviceAllocator::CachingDeviceAllocator(unsigned int bin_growth, unsigned int min_bin, unsigned int max_bin, size_t max_cached_bytes)'],['../structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff',1,'cub::CachingDeviceAllocator::CachingDeviceAllocator(bool skip_cleanup=false)']]],
   ['cast',['Cast',['../structcub_1_1_cast.html',1,'cub']]],
   ['category',['CATEGORY',['../structcub_1_1_base_traits.html#a25ff6477c84dc3bd5f4b5e70cd600f09',1,'cub::BaseTraits::CATEGORY()'],['../group___util_module.html#ga4733b6d40e923244502e6f5b200766ef',1,'cub::Category()']]],
   ['composite',['Composite',['../classcub_1_1_block_histogram.html#a86aca800e8a8e886b5d328e7aa3c5582',1,'cub::BlockHistogram']]],
@@ -27,6 +27,7 @@ var searchData=
   ['cub_5fmax_5fsm_5fblocks',['CUB_MAX_SM_BLOCKS',['../group___util_mgmt.html#gaf2d79f9a39b860bf58ff161c175c7b06',1,'util_arch.cuh']]],
   ['cub_5fmax_5fsm_5fregisters',['CUB_MAX_SM_REGISTERS',['../group___util_mgmt.html#ga872d007d76c4078ba79ff71f8f2ac497',1,'util_arch.cuh']]],
   ['cub_5fmax_5fsm_5fthreads',['CUB_MAX_SM_THREADS',['../group___util_mgmt.html#gab2f2f31cddcdd898f6f9435b50cad875',1,'util_arch.cuh']]],
+  ['cub_5fprefer_5fconflict_5fover_5fpadding',['CUB_PREFER_CONFLICT_OVER_PADDING',['../group___util_mgmt.html#ga3f6a40fcc17788b6aa5c7eecf0626391',1,'util_arch.cuh']]],
   ['cub_5fptx_5fversion',['CUB_PTX_VERSION',['../group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742',1,'util_arch.cuh']]],
   ['cub_5freg_5falloc_5funit',['CUB_REG_ALLOC_UNIT',['../group___util_mgmt.html#ga9f27b77f4bd7aaf2582508f285e7eecc',1,'util_arch.cuh']]],
   ['cub_5fregs_5fby_5fblock',['CUB_REGS_BY_BLOCK',['../group___util_mgmt.html#gabcb256a9b251c898c831b107c43429c6',1,'util_arch.cuh']]],
@@ -39,5 +40,6 @@ var searchData=
   ['cubdebug',['CubDebug',['../group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236',1,'util_debug.cuh']]],
   ['cubdebugexit',['CubDebugExit',['../group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8',1,'util_debug.cuh']]],
   ['cublog',['CubLog',['../group___util_mgmt.html#ga6788287a780dc10c443aa1ab5ae9f0db',1,'util_debug.cuh']]],
+  ['cubvector',['CubVector',['../structcub_1_1_cub_vector.html',1,'cub']]],
   ['current',['Current',['../structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724',1,'cub::DoubleBuffer']]]
 ];

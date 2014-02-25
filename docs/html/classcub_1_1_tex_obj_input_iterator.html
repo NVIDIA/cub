@@ -118,6 +118,7 @@ class cub::TexObjInputIterator&lt; T, Offset &gt;</h3>
 <li>Can be used to load any data type from memory through texture cache.</li>
 <li>Can be manipulated and exchanged within and between host and device functions, can only be constructed within host functions, and can only be dereferenced within device functions.</li>
 <li>With regard to nested/dynamic parallelism, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">TexObjInputIterator</a> iterators may only be created by the host thread, but can be used by any descendant kernel.</li>
+<li>Compatible with Thrust API v1.7 or newer.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Example</dt><dd>The code snippet below illustrates the use of <code><a class="el" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">TexRefInputIterator</a></code> to dereference a device array of doubles through texture cache. </dd></dl>
@@ -148,7 +149,7 @@ class cub::TexObjInputIterator&lt; T, Offset &gt;</h3>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="tex__obj__input__iterator_8cuh_source.html#l00106">106</a> of file <a class="el" href="tex__obj__input__iterator_8cuh_source.html">tex_obj_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="tex__obj__input__iterator_8cuh_source.html#l00111">111</a> of file <a class="el" href="tex__obj__input__iterator_8cuh_source.html">tex_obj_input_iterator.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -172,14 +173,11 @@ typedef T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hre
 typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_obj_input_iterator.html#ad88897b6f2bef872179c6798260e424e">reference</a></td></tr>
 <tr class="memdesc:ad88897b6f2bef872179c6798260e424e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
 <tr class="separator:ad88897b6f2bef872179c6798260e424e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d0ce330f81eb996b6aea0a09958fd9d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5d0ce330f81eb996b6aea0a09958fd9d"></a>
+<tr class="memitem:ab1a87d519f5c57bf00783986d2ba0553"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab1a87d519f5c57bf00783986d2ba0553"></a>
 typedef <br class="typebreak"/>
-thrust::detail::iterator_facade_category<br class="typebreak"/>
-&lt; thrust::device_system_tag, <br class="typebreak"/>
-thrust::random_access_traversal_tag, <br class="typebreak"/>
-<a class="el" href="classcub_1_1_tex_obj_input_iterator.html#ad7daad59aaab9b38c1da340831bb9521">value_type</a>, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#ad88897b6f2bef872179c6798260e424e">reference</a> &gt;::type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_obj_input_iterator.html#a5d0ce330f81eb996b6aea0a09958fd9d">iterator_category</a></td></tr>
-<tr class="memdesc:a5d0ce330f81eb996b6aea0a09958fd9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
-<tr class="separator:a5d0ce330f81eb996b6aea0a09958fd9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_obj_input_iterator.html#ab1a87d519f5c57bf00783986d2ba0553">iterator_category</a></td></tr>
+<tr class="memdesc:ab1a87d519f5c57bf00783986d2ba0553"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
+<tr class="separator:ab1a87d519f5c57bf00783986d2ba0553"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -319,7 +317,7 @@ template&lt;typename T, typename Offset = ptrdiff_t&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="tex__obj__input__iterator_8cuh_source.html#l00154">154</a> of file <a class="el" href="tex__obj__input__iterator_8cuh_source.html">tex_obj_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="tex__obj__input__iterator_8cuh_source.html#l00161">161</a> of file <a class="el" href="tex__obj__input__iterator_8cuh_source.html">tex_obj_input_iterator.cuh</a>.</p>
 
 </div>
 </div>
@@ -330,7 +328,7 @@ template&lt;typename T, typename Offset = ptrdiff_t&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

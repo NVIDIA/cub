@@ -150,7 +150,7 @@ class cub::BlockScan&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> class by first specializing the <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -224,23 +224,23 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memitem:a2cd6dc7b523db630f4719b1b77df4db7"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a2cd6dc7b523db630f4719b1b77df4db7">ExclusiveScan</a> (T input, T &amp;output, T identity, ScanOp scan_op)</td></tr>
 <tr class="memdesc:a2cd6dc7b523db630f4719b1b77df4db7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element.  <a href="#a2cd6dc7b523db630f4719b1b77df4db7">More...</a><br/></td></tr>
 <tr class="separator:a2cd6dc7b523db630f4719b1b77df4db7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1e09b0882138e34c23559c4d9a89a0d8"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp &gt; </td></tr>
-<tr class="memitem:a1e09b0882138e34c23559c4d9a89a0d8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a1e09b0882138e34c23559c4d9a89a0d8">ExclusiveScan</a> (T input, T &amp;output, const T &amp;identity, ScanOp scan_op, T &amp;block_aggregate)</td></tr>
-<tr class="memdesc:a1e09b0882138e34c23559c4d9a89a0d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs.  <a href="#a1e09b0882138e34c23559c4d9a89a0d8">More...</a><br/></td></tr>
-<tr class="separator:a1e09b0882138e34c23559c4d9a89a0d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af278a06b1a8ede748cc4a74a46ff4d0f"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp &gt; </td></tr>
+<tr class="memitem:af278a06b1a8ede748cc4a74a46ff4d0f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#af278a06b1a8ede748cc4a74a46ff4d0f">ExclusiveScan</a> (T input, T &amp;output, T identity, ScanOp scan_op, T &amp;block_aggregate)</td></tr>
+<tr class="memdesc:af278a06b1a8ede748cc4a74a46ff4d0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs.  <a href="#af278a06b1a8ede748cc4a74a46ff4d0f">More...</a><br/></td></tr>
+<tr class="separator:af278a06b1a8ede748cc4a74a46ff4d0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a28273f0f1d18d765383dfdc35fe20d26"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </td></tr>
 <tr class="memitem:a28273f0f1d18d765383dfdc35fe20d26"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a28273f0f1d18d765383dfdc35fe20d26">ExclusiveScan</a> (T input, T &amp;output, T identity, ScanOp scan_op, T &amp;block_aggregate, BlockPrefixCallbackOp &amp;block_prefix_callback_op)</td></tr>
 <tr class="memdesc:a28273f0f1d18d765383dfdc35fe20d26"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes one input element. the call-back functor <code>block_prefix_callback_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs.  <a href="#a28273f0f1d18d765383dfdc35fe20d26">More...</a><br/></td></tr>
 <tr class="separator:a28273f0f1d18d765383dfdc35fe20d26"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Exclusive prefix scan operations (multiple data per thread)</div></td></tr>
-<tr class="memitem:a5b21dfebcaf900cb516a06746dcb48b1"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </td></tr>
-<tr class="memitem:a5b21dfebcaf900cb516a06746dcb48b1"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a5b21dfebcaf900cb516a06746dcb48b1">ExclusiveScan</a> (T(&amp;input)[ITEMS_PER_THREAD], T(&amp;output)[ITEMS_PER_THREAD], const T &amp;identity, ScanOp scan_op)</td></tr>
-<tr class="memdesc:a5b21dfebcaf900cb516a06746dcb48b1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements.  <a href="#a5b21dfebcaf900cb516a06746dcb48b1">More...</a><br/></td></tr>
-<tr class="separator:a5b21dfebcaf900cb516a06746dcb48b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1cda15ada4f880a7f428bd248c686710"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </td></tr>
-<tr class="memitem:a1cda15ada4f880a7f428bd248c686710"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a1cda15ada4f880a7f428bd248c686710">ExclusiveScan</a> (T(&amp;input)[ITEMS_PER_THREAD], T(&amp;output)[ITEMS_PER_THREAD], const T &amp;identity, ScanOp scan_op, T &amp;block_aggregate)</td></tr>
-<tr class="memdesc:a1cda15ada4f880a7f428bd248c686710"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs.  <a href="#a1cda15ada4f880a7f428bd248c686710">More...</a><br/></td></tr>
-<tr class="separator:a1cda15ada4f880a7f428bd248c686710"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af978259df5fdaac089e7198b42090699"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </td></tr>
+<tr class="memitem:af978259df5fdaac089e7198b42090699"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#af978259df5fdaac089e7198b42090699">ExclusiveScan</a> (T(&amp;input)[ITEMS_PER_THREAD], T(&amp;output)[ITEMS_PER_THREAD], T identity, ScanOp scan_op)</td></tr>
+<tr class="memdesc:af978259df5fdaac089e7198b42090699"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements.  <a href="#af978259df5fdaac089e7198b42090699">More...</a><br/></td></tr>
+<tr class="separator:af978259df5fdaac089e7198b42090699"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2ee30ebbc45551dd9ee776141ecc241"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </td></tr>
+<tr class="memitem:aa2ee30ebbc45551dd9ee776141ecc241"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#aa2ee30ebbc45551dd9ee776141ecc241">ExclusiveScan</a> (T(&amp;input)[ITEMS_PER_THREAD], T(&amp;output)[ITEMS_PER_THREAD], T identity, ScanOp scan_op, T &amp;block_aggregate)</td></tr>
+<tr class="memdesc:aa2ee30ebbc45551dd9ee776141ecc241"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs.  <a href="#aa2ee30ebbc45551dd9ee776141ecc241">More...</a><br/></td></tr>
+<tr class="separator:aa2ee30ebbc45551dd9ee776141ecc241"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0db8828d1bbf7ab8ee40ed2d4bcf971d"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallbackOp &gt; </td></tr>
 <tr class="memitem:a0db8828d1bbf7ab8ee40ed2d4bcf971d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_scan.html#a0db8828d1bbf7ab8ee40ed2d4bcf971d">ExclusiveScan</a> (T(&amp;input)[ITEMS_PER_THREAD], T(&amp;output)[ITEMS_PER_THREAD], T identity, ScanOp scan_op, T &amp;block_aggregate, BlockPrefixCallbackOp &amp;block_prefix_callback_op)</td></tr>
 <tr class="memdesc:a0db8828d1bbf7ab8ee40ed2d4bcf971d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive block-wide prefix scan using the specified binary <code>scan_op</code> functor. Each thread contributes an array of consecutive input elements. the call-back functor <code>block_prefix_callback_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs.  <a href="#a0db8828d1bbf7ab8ee40ed2d4bcf971d">More...</a><br/></td></tr>
@@ -736,7 +736,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -822,7 +822,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -917,7 +917,7 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixCallbackOp &gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a single thread block that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -1074,7 +1074,7 @@ template&lt;typename ScanOp &gt; </div>
 <dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>0, -1, 2, -3, ..., 126, -127</code>. The corresponding output <code>thread_data</code> in those threads will be <code>INT_MIN, 0, 0, 2, ..., 124, 126</code>.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -1083,7 +1083,7 @@ template&lt;typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
   </table>
   </dd>
 </dl>
@@ -1092,7 +1092,7 @@ template&lt;typename ScanOp &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a1e09b0882138e34c23559c4d9a89a0d8"></a>
+<a class="anchor" id="af278a06b1a8ede748cc4a74a46ff4d0f"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1118,7 +1118,7 @@ template&lt;typename ScanOp &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>identity</em>, </td>
         </tr>
         <tr>
@@ -1175,7 +1175,7 @@ template&lt;typename ScanOp &gt; </div>
 <dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>0, -1, 2, -3, ..., 126, -127</code>. The corresponding output <code>thread_data</code> in those threads will be <code>INT_MIN, 0, 0, 2, ..., 124, 126</code>. Furthermore the value <code>126</code> will be stored in <code>block_aggregate</code> for all threads.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -1184,7 +1184,7 @@ template&lt;typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -1315,7 +1315,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, -1, 2, -3, 4, -5, ...</code>. The corresponding output for the first segment will be <code>INT_MIN, 0, 0, 2, ..., 124, 126</code>. The output for the second segment will be <code>126, 128, 128, 130, ..., 252, 254</code>. Furthermore, <code>block_aggregate</code> will be assigned <code>126</code> in all threads after the first scan, assigned <code>254</code> after the second scan, etc.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
     <tr><td class="paramname">BlockPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
   </table>
   </dd>
@@ -1325,7 +1325,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items (exclusive of the <code>block_prefix_callback_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_callback_op</td><td><b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -1336,7 +1336,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a5b21dfebcaf900cb516a06746dcb48b1"></a>
+<a class="anchor" id="af978259df5fdaac089e7198b42090699"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1362,7 +1362,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>identity</em>, </td>
         </tr>
         <tr>
@@ -1392,7 +1392,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1414,7 +1414,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -1423,7 +1423,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
   </table>
   </dd>
 </dl>
@@ -1432,7 +1432,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a1cda15ada4f880a7f428bd248c686710"></a>
+<a class="anchor" id="aa2ee30ebbc45551dd9ee776141ecc241"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1458,7 +1458,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const T &amp;&#160;</td>
+          <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>identity</em>, </td>
         </tr>
         <tr>
@@ -1494,7 +1494,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an exclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1517,7 +1517,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -1526,7 +1526,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -1668,7 +1668,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
     <tr><td class="paramname">BlockPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
   </table>
   </dd>
@@ -1678,7 +1678,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity value </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items (exclusive of the <code>block_prefix_callback_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_callback_op</td><td><b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -2008,7 +2008,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2094,7 +2094,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix sum of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2117,7 +2117,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -2190,7 +2190,7 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixCallbackOp &gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates a single thread block that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -2341,7 +2341,7 @@ template&lt;typename ScanOp &gt; </div>
 <dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>0, -1, 2, -3, ..., 126, -127</code>. The corresponding output <code>thread_data</code> in those threads will be <code>0, 0, 2, 2, ..., 126, 126</code>.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -2349,7 +2349,7 @@ template&lt;typename ScanOp &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
   </table>
   </dd>
 </dl>
@@ -2435,7 +2435,7 @@ template&lt;typename ScanOp &gt; </div>
 <dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>0, -1, 2, -3, ..., 126, -127</code>. The corresponding output <code>thread_data</code> in those threads will be <code>0, 0, 2, 2, ..., 126, 126</code>. Furthermore the value <code>126</code> will be stored in <code>block_aggregate</code> for all threads.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -2443,7 +2443,7 @@ template&lt;typename ScanOp &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -2568,7 +2568,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, -1, 2, -3, 4, -5, ...</code>. The corresponding output for the first segment will be <code>0, 0, 2, 2, ..., 126, 126</code>. The output for the second segment will be <code>128, 128, 130, 130, ..., 254, 254</code>. Furthermore, <code>block_aggregate</code> will be assigned <code>126</code> in all threads after the first scan, assigned <code>254</code> after the second scan, etc.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
     <tr><td class="paramname">BlockPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
   </table>
   </dd>
@@ -2577,7 +2577,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input item </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output item (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items (exclusive of the <code>block_prefix_callback_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_callback_op</td><td><b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -2638,7 +2638,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2660,7 +2660,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -2668,7 +2668,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
   </table>
   </dd>
 </dl>
@@ -2733,7 +2733,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd>The code snippet below illustrates an inclusive prefix max scan of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_scan.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -2756,7 +2756,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -2764,7 +2764,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items </td></tr>
   </table>
   </dd>
@@ -2900,7 +2900,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan operator type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ScanOp</td><td><b>[inferred]</b> Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
     <tr><td class="paramname">BlockPrefixCallbackOp</td><td><b>[inferred]</b> Call-back functor type having member <code>T operator()(T block_aggregate)</code> </td></tr>
   </table>
   </dd>
@@ -2909,7 +2909,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">output</td><td>Calling thread's output items (may be aliased to <code>input</code>) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan operator </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">block_aggregate</td><td>block-wide aggregate reduction of input items (exclusive of the <code>block_prefix_callback_op</code> value) </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">block_prefix_callback_op</td><td><b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs. </td></tr>
   </table>
@@ -2927,7 +2927,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

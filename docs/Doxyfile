@@ -1585,6 +1585,7 @@ INCLUDE_FILE_PATTERNS  =
 # instead of the = operator.
 
 PREDEFINED             = DOXYGEN_SHOULD_SKIP_THIS
+PREDEFINED             += DOXYGEN_ACTIVE
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then
 # this tag can be used to specify a list of macro names that should be expanded.

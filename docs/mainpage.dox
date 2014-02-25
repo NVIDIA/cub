@@ -105,11 +105,11 @@ of the CUDA programming model:
   - [<b><em>PTX intrinsics</em></b>] (group___util_ptx.html)
   - [<b><em>Device, kernel, and storage management</em></b>] (group___util_mgmt.html)
 
-\section sec2 (2) Collective Primitives 
+\section sec2 (2) CUB's collective primitives 
 \par
-CUB provides collective primitives, which are essential for constructing high-performance, 
+Collective primitives are essential for constructing high-performance, 
 maintainable kernel code.  These collective primitives allow complex parallel code to be 
-re-used rather than re-implemented, and be re-compiled rather than hand-ported. <br><br>
+re-used rather than re-implemented, and to be re-compiled rather than hand-ported. <br><br>
  
 \par
 \image html cub_overview.png
@@ -133,7 +133,7 @@ or data type.  This flexibility makes them:
 \par
 Thus CUB is [<em>CUDA Unbound</em>](index.html).
 
-\section sec3 (3) An Example (block-wide sorting)
+\section sec3 (3) An example (block-wide sorting)
 
 \par
 The following code snippet presents a CUDA kernel in which each block of 128 threads 
@@ -490,14 +490,26 @@ for many of the algorithmic techniques used by CUB.
 02/25/2014<br>
 [<b>CUB v1.0.2</b>](https://github.com/NVlabs/cub/archive/1.0.2.zip)
 </td><td style="vertical-align:text-top;">
-- See the [change-log](CHANGE_LOG.TXT) for further details
+  - New features:
+      - Added device-wide reduce-by-key (cub::DeviceReduce::ReduceByKey, cub::DeviceReduce::RunLengthEncode) 
+  - Performance
+      - Improved cub::DeviceScan, cub::DeviceSelect, and cub::DevicePartition performance
+  - Documentation and testing:
+      - Compatible with CUDA 6.0
+      - Added performance-portabiltiy plots for many device-wide primitives to doc 
+      - Update doc and tests to reflect CUB "fancy" iterator (in)compatibilities with CUDA 5.0 (and older) and Thrust 1.6 (and older).
+  - Bug fixes 
+      - Revised the fence operation of temporary tile status bookkeeping for cub::DeviceScan (and similar) to be safe for current code run on future platforms  
+      - Fixed cub::DeviceScan bug where Win32 alignment disagreements between host and device regarding user-defined data types would corrupt tile status
+      - Fixed cub::BlockScan bug where certain exclusive scans on custom data types for the cub::BLOCK_SCAN_WARP_SCANS variant would return incorrect results for the first thread in the block
+      - Added workaround for cub::TexRefInputIterator to work with CUDA 6.0
+  - See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 12/11/2013<br>
 [<b>CUB v1.1.1</b>](https://github.com/NVlabs/cub/archive/1.1.1.zip)
 </td><td style="vertical-align:text-top;">
-- <b>New features</b>:
   - Added cub::TexObjInputIterator, cub::TexRefInputIterator, cub::CacheModifiedInputIterator, and cub::CacheModifiedOutputIterator types for loading & storing arbitrary data types through the cache hierarchy.  Compatible with Thrust API. 
   - Added descending sorting to cub::DeviceRadixSort and cub::BlockRadixSort
   - Added min, max, arg-min, and arg-max to cub::DeviceReduce
@@ -505,18 +517,7 @@ for many of the algorithmic techniques used by CUB.
   - Added cub::DevicePartition (partition-if, partition-flagged)
   - Added generic cub::ShuffleUp(), cub::ShuffleDown(), and cub::ShuffleBroadcast() for warp-wide communication of arbitrary data types (SM3x+)
   - Added cub::MaxSmOccupancy() for accurately determining SM occupancy for any given kernel function pointer
-- <b>Performance</b>:
-  - Improved cub::DeviceScan and cub::DeviceRadixSort performance for older architectures (SM10-SM30)
-- <b>Interface changes</b>:
-  - Refactored block-wide I/O collectives (including cub::BlockLoad and cub::BlockStore), removing cache-modifiers from their interfaces.  The cub::CacheModifiedInputIterator and cub::CacheModifiedOutputIterator pointer wrappers should now be used with cub::BlockLoad and cub::BlockStore to effect that behavior.
-  - Rename device-wide "stream_synchronous" param to "debug_synchronous" to avoid confusion about usage
-- <b>Documentation and testing</b>:
-  - Added simple examples of device-wide methods
-  - Improved doxygen documentation and example snippets
-  - Improved test coverage to include up to 21,000 kernel variants and 851,000 unit tests (per architecture, per platform)
-- <b>Bug fixes</b>: 
-  - CDP (device-callable) versions of device-wide methods now report the same temporary storage allocation size requirement as their host-callable counterparts
-  - Misc. bug fixes for cub::DeviceRadixSort, cub::DeviceScan, cub::DeviceReduce, cub::BlockScan, cub::BlockReduce, cub::BlockDiscontinuity, and cub::WarpReduce.  See the [change-log](CHANGE_LOG.TXT) for further details
+  - See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
@@ -524,7 +525,6 @@ for many of the algorithmic techniques used by CUB.
 [<b>CUB v1.0.2</b>](https://github.com/NVlabs/cub/archive/1.0.2.zip)
 </td><td style="vertical-align:text-top;">
 - Improvements for documentation and compilation speed
-- Misc. bug fixes
 - See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
@@ -534,7 +534,6 @@ for many of the algorithmic techniques used by CUB.
 </td><td style="vertical-align:text-top;">
 - New API for block-wide and warp-wide collective operations
 - New cub::DeviceRadixSort and cub::DeviceScan implementations
-- Performance improvements for block-wide and warp-wide collectives on SM3x (Kepler) architectures 
 - See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
@@ -542,7 +541,6 @@ for many of the algorithmic techniques used by CUB.
 05/07/2013<br>
 [<b>CUB v0.9.4</b>](https://github.com/NVlabs/cub/archive/0.9.4.zip)
 </td><td style="vertical-align:text-top;">
-- Misc. compilation fixes for SM1.x (Tesla) architectures.  
 - New cub::DeviceHistogram and cub::BlockHistogram implementations  
 - See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
