@@ -488,7 +488,7 @@ for many of the algorithmic techniques used by CUB.
  
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 02/25/2014<br>
-[<b>CUB v1.0.2</b>](https://github.com/NVlabs/cub/archive/1.0.2.zip)
+[<b>CUB v1.2.0</b>](https://github.com/NVlabs/cub/archive/1.2.0.zip)
 </td><td style="vertical-align:text-top;">
   - New features:
       - Added device-wide reduce-by-key (cub::DeviceReduce::ReduceByKey, cub::DeviceReduce::RunLengthEncode) 
