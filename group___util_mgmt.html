@@ -153,6 +153,9 @@ Macros</h2></td></tr>
 <tr class="memitem:ga19f6f7bdeb494c95cdb95f0f73955258"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga19f6f7bdeb494c95cdb95f0f73955258">CUB_SUBSCRIPTION_FACTOR</a>(arch)</td></tr>
 <tr class="memdesc:ga19f6f7bdeb494c95cdb95f0f73955258"><td class="mdescLeft">&#160;</td><td class="mdescRight">Oversubscription factor.  <a href="#ga19f6f7bdeb494c95cdb95f0f73955258">More...</a><br/></td></tr>
 <tr class="separator:ga19f6f7bdeb494c95cdb95f0f73955258"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3f6a40fcc17788b6aa5c7eecf0626391"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga3f6a40fcc17788b6aa5c7eecf0626391">CUB_PREFER_CONFLICT_OVER_PADDING</a>(arch)</td></tr>
+<tr class="memdesc:ga3f6a40fcc17788b6aa5c7eecf0626391"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prefer X-way conflict over padding.  <a href="#ga3f6a40fcc17788b6aa5c7eecf0626391">More...</a><br/></td></tr>
+<tr class="separator:ga3f6a40fcc17788b6aa5c7eecf0626391"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga84c3a4c178bf6593e0fad2b763606236"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga84c3a4c178bf6593e0fad2b763606236"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236">CubDebug</a>(e)&#160;&#160;&#160;<a class="el" href="group___util_mgmt.html#ga5a175d2a88f63f7f1ab30e8b4f2cfa95">cub::Debug</a>((e), __FILE__, __LINE__)</td></tr>
 <tr class="memdesc:ga84c3a4c178bf6593e0fad2b763606236"><td class="mdescLeft">&#160;</td><td class="mdescRight">Debug macro. <br/></td></tr>
@@ -447,11 +450,36 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><div class="memdoc">
 <b>Value:</b><div class="fragment"><div class="line">((arch &gt;= 300) ?                                    \</div>
 <div class="line">        (5) :                                           \</div>
-<div class="line">        (3))</div>
+<div class="line">        ((arch &gt;= 200) ?                                \</div>
+<div class="line">            (3) :                                       \</div>
+<div class="line">            (10)))</div>
 </div><!-- fragment -->
 <p>Oversubscription factor. </p>
 
 <p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00149">149</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ga3f6a40fcc17788b6aa5c7eecf0626391"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define CUB_PREFER_CONFLICT_OVER_PADDING</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">arch)</td><td></td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">((arch &gt;= 300) ?                                    \</div>
+<div class="line">        (0) :                                           \</div>
+<div class="line">        (4))</div>
+</div><!-- fragment -->
+<p>Prefer X-way conflict over padding. </p>
+
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00157">157</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -512,7 +540,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 <p>Type definition of the EmptyKernel kernel entry point</p>
 <p>Force EmptyKernel&lt;void&gt; to be generated if this class is used </p>
 
-<p>Definition at line <a class="el" href="util__device_8cuh_source.html#l00117">117</a> of file <a class="el" href="util__device_8cuh_source.html">util_device.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__device_8cuh_source.html#l00118">118</a> of file <a class="el" href="util__device_8cuh_source.html">util_device.cuh</a>.</p>
 
 </div>
 </div>
@@ -581,7 +609,7 @@ template&lt;typename KernelPtr &gt; </div>
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_block_radix_sort_8cu-example.html#a3">example_block_radix_sort.cu</a>, <a class="el" href="example_block_reduce_8cu-example.html#a2">example_block_reduce.cu</a>, and <a class="el" href="example_block_scan_8cu-example.html#a4">example_block_scan.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="util__device_8cuh_source.html#l00333">333</a> of file <a class="el" href="util__device_8cuh_source.html">util_device.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__device_8cuh_source.html#l00334">334</a> of file <a class="el" href="util__device_8cuh_source.html">util_device.cuh</a>.</p>
 
 </div>
 </div>
@@ -589,7 +617,7 @@ template&lt;typename KernelPtr &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:25 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -119,6 +119,7 @@ class cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</h3>
 <li><a class="el" href="classcub_1_1_cache_modified_output_iterator.html" title="A random-access output wrapper for storing array values using a PTX cache-modifier. ">CacheModifiedOutputIterator</a> is a random-access output iterator that wraps a native device pointer of type <code>ValueType*</code>. <code>ValueType</code> references are made by writing <code>ValueType</code> values through stores modified by <code>MODIFIER</code>.</li>
 <li>Can be used to store any data type to memory using PTX cache store modifiers (e.g., "STORE_WB", "STORE_CG", "STORE_CS", "STORE_WT", etc.).</li>
 <li>Can be constructed, manipulated, and exchanged within and between host and device functions, but can only be dereferenced within device functions.</li>
+<li>Compatible with Thrust API v1.7 or newer.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Example</dt><dd>The code snippet below illustrates the use of <code><a class="el" href="classcub_1_1_cache_modified_output_iterator.html" title="A random-access output wrapper for storing array values using a PTX cache-modifier. ">CacheModifiedOutputIterator</a></code> to dereference a device array of doubles using the "wt" PTX load modifier (i.e., write-through to system memory). </dd></dl>
@@ -148,7 +149,7 @@ class cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</h3>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="cache__modified__output__iterator_8cuh_source.html#l00104">104</a> of file <a class="el" href="cache__modified__output__iterator_8cuh_source.html">cache_modified_output_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="cache__modified__output__iterator_8cuh_source.html#l00109">109</a> of file <a class="el" href="cache__modified__output__iterator_8cuh_source.html">cache_modified_output_iterator.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -172,14 +173,11 @@ typedef ValueType *&#160;</td><td class="memItemRight" valign="bottom"><a class=
 typedef Reference&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a5f34a00faaead6e3a1d304d4b2350635">reference</a></td></tr>
 <tr class="memdesc:a5f34a00faaead6e3a1d304d4b2350635"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
 <tr class="separator:a5f34a00faaead6e3a1d304d4b2350635"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aceb9ad256320e44b6366c75aa5352cb6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aceb9ad256320e44b6366c75aa5352cb6"></a>
+<tr class="memitem:aed3f4a51c5b4305f08be05c214911d30"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aed3f4a51c5b4305f08be05c214911d30"></a>
 typedef <br class="typebreak"/>
-thrust::detail::iterator_facade_category<br class="typebreak"/>
-&lt; thrust::device_system_tag, <br class="typebreak"/>
-thrust::random_access_traversal_tag, <br class="typebreak"/>
-<a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a5137ea14538ce430886974945005cfef">value_type</a>, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a5f34a00faaead6e3a1d304d4b2350635">reference</a> &gt;::type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_output_iterator.html#aceb9ad256320e44b6366c75aa5352cb6">iterator_category</a></td></tr>
-<tr class="memdesc:aceb9ad256320e44b6366c75aa5352cb6"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
-<tr class="separator:aceb9ad256320e44b6366c75aa5352cb6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_output_iterator.html#aed3f4a51c5b4305f08be05c214911d30">iterator_category</a></td></tr>
+<tr class="memdesc:aed3f4a51c5b4305f08be05c214911d30"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
+<tr class="separator:aed3f4a51c5b4305f08be05c214911d30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -288,7 +286,7 @@ template&lt;CacheStoreModifier MODIFIER, typename ValueType, typename Offset = p
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="cache__modified__output__iterator_8cuh_source.html#l00150">150</a> of file <a class="el" href="cache__modified__output__iterator_8cuh_source.html">cache_modified_output_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="cache__modified__output__iterator_8cuh_source.html#l00157">157</a> of file <a class="el" href="cache__modified__output__iterator_8cuh_source.html">cache_modified_output_iterator.cuh</a>.</p>
 
 </div>
 </div>
@@ -299,7 +297,7 @@ template&lt;CacheStoreModifier MODIFIER, typename ValueType, typename Offset = p
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

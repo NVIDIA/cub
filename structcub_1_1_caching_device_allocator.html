@@ -129,9 +129,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a36b5c020ec501279b2b1275eae578918"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a36b5c020ec501279b2b1275eae578918">CachingDeviceAllocator</a> (unsigned int bin_growth, unsigned int min_bin, unsigned int max_bin, size_t max_cached_bytes)</td></tr>
-<tr class="memdesc:a36b5c020ec501279b2b1275eae578918"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a36b5c020ec501279b2b1275eae578918">More...</a><br/></td></tr>
-<tr class="separator:a36b5c020ec501279b2b1275eae578918"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8819cc293615f15d1f08f41140349b90"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a8819cc293615f15d1f08f41140349b90">CachingDeviceAllocator</a> (unsigned int bin_growth, unsigned int min_bin, unsigned int max_bin, size_t max_cached_bytes, bool skip_cleanup=false)</td></tr>
+<tr class="memdesc:a8819cc293615f15d1f08f41140349b90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a8819cc293615f15d1f08f41140349b90">More...</a><br/></td></tr>
+<tr class="separator:a8819cc293615f15d1f08f41140349b90"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab08a4c3d066ec2303d07363a25466bff"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff">CachingDeviceAllocator</a> (bool skip_cleanup=false)</td></tr>
 <tr class="memdesc:ab08a4c3d066ec2303d07363a25466bff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default constructor.  <a href="#ab08a4c3d066ec2303d07363a25466bff">More...</a><br/></td></tr>
 <tr class="separator:ab08a4c3d066ec2303d07363a25466bff"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -165,7 +165,7 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s
 <tr class="separator:a2a521f7464d3eee98486b4d321fc8cc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a36b5c020ec501279b2b1275eae578918"></a>
+<a class="anchor" id="a8819cc293615f15d1f08f41140349b90"></a>
 <div class="memitem">
 <div class="memproto">
 <table class="mlabels">
@@ -194,7 +194,13 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">size_t&#160;</td>
-          <td class="paramname"><em>max_cached_bytes</em>&#160;</td>
+          <td class="paramname"><em>max_cached_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>skip_cleanup</em> = <code>false</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -216,6 +222,7 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s
     <tr><td class="paramname">min_bin</td><td>Minimum bin </td></tr>
     <tr><td class="paramname">max_bin</td><td>Maximum bin </td></tr>
     <tr><td class="paramname">max_cached_bytes</td><td>Maximum aggregate cached bytes per device </td></tr>
+    <tr><td class="paramname">skip_cleanup</td><td>Whether or not to skip a call to <code><a class="el" href="structcub_1_1_caching_device_allocator.html#afbe43fd3a59ba6f4b974a4a66315c86e" title="Frees all cached device allocations on all devices. ">FreeAllCached()</a></code> when the destructor is called. (Useful for preventing warnings when the allocator is declared at file/static/global scope: by the time the destructor is called on program exit, the CUDA runtime may have already shut down and freed all allocations.) </td></tr>
   </table>
   </dd>
 </dl>
@@ -256,8 +263,14 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s
 </ul>
 </dd></dl>
 <p>which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and sets a maximum of 6,291,455 cached bytes per device </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">skip_cleanup</td><td>Whether or not to skip a call to <code><a class="el" href="structcub_1_1_caching_device_allocator.html#afbe43fd3a59ba6f4b974a4a66315c86e" title="Frees all cached device allocations on all devices. ">FreeAllCached()</a></code> when the destructor is called. (Useful for preventing warnings when the allocator is declared at file/static/global scope: by the time the destructor is called on program exit, the CUDA runtime may have already shut down and freed all allocations.) </td></tr>
+  </table>
+  </dd>
+</dl>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00286">286</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00287">287</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
 
 </div>
 </div>
@@ -268,7 +281,7 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:25 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <div class="fragment"><div class="line"><span class="comment">/******************************************************************************</span></div>
 <div class="line"><span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><span class="comment"> * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><span class="comment"> *</span></div>
 <div class="line"><span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -122,7 +122,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><span class="comment">/******************************************************************************</span></div>
 <div class="line"><span class="comment"> * Simple example of DeviceScan::ExclusiveSum().</span></div>
 <div class="line"><span class="comment"> *</span></div>
-<div class="line"><span class="comment"> * Computes an exclusive sum of float keys.</span></div>
+<div class="line"><span class="comment"> * Computes an exclusive sum of int keys.</span></div>
 <div class="line"><span class="comment"> *</span></div>
 <div class="line"><span class="comment"> * To compile using the command line:</span></div>
 <div class="line"><span class="comment"> *   nvcc -arch=sm_XX example_device_scan.cu -I../.. -lcudart -O3</span></div>
@@ -156,7 +156,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line"></div>
 <div class="line"><span class="keywordtype">void</span> Initialize(</div>
-<div class="line">    <span class="keywordtype">float</span>        *h_in,</div>
+<div class="line">    <span class="keywordtype">int</span>        *h_in,</div>
 <div class="line">    <span class="keywordtype">int</span>          num_items)</div>
 <div class="line">{</div>
 <div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; num_items; ++i)</div>
@@ -170,13 +170,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    }</div>
 <div class="line">}</div>
 <div class="line"></div>
-<div class="line"><span class="keywordtype">float</span> Solve(</div>
-<div class="line">    <span class="keywordtype">float</span>           *h_in,</div>
-<div class="line">    <span class="keywordtype">float</span>           *h_reference,</div>
+<div class="line"><span class="keywordtype">int</span> Solve(</div>
+<div class="line">    <span class="keywordtype">int</span>           *h_in,</div>
+<div class="line">    <span class="keywordtype">int</span>           *h_reference,</div>
 <div class="line">    <span class="keywordtype">int</span>             num_items)</div>
 <div class="line">{</div>
-<div class="line">    <span class="keywordtype">float</span> inclusive = 0.0;</div>
-<div class="line">    <span class="keywordtype">float</span> aggregate = 0.0;</div>
+<div class="line">    <span class="keywordtype">int</span> inclusive = 0.0;</div>
+<div class="line">    <span class="keywordtype">int</span> aggregate = 0.0;</div>
 <div class="line"></div>
 <div class="line">    <span class="keywordflow">for</span> (<span class="keywordtype">int</span> i = 0; i &lt; num_items; ++i)</div>
 <div class="line">    {</div>
@@ -218,27 +218,27 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    <a name="a1"></a><a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(args.DeviceInit());</div>
 <div class="line"></div>
 <div class="line">    printf(<span class="stringliteral">&quot;cub::DeviceScan::ExclusiveSum %d items (%d-byte elements)\n&quot;</span>,</div>
-<div class="line">        num_items, (<span class="keywordtype">int</span>) <span class="keyword">sizeof</span>(<span class="keywordtype">float</span>));</div>
+<div class="line">        num_items, (<span class="keywordtype">int</span>) <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>));</div>
 <div class="line">    fflush(stdout);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate host arrays</span></div>
-<div class="line">    <span class="keywordtype">float</span>*  h_in = <span class="keyword">new</span> <span class="keywordtype">float</span>[num_items];</div>
-<div class="line">    <span class="keywordtype">float</span>*  h_reference = <span class="keyword">new</span> <span class="keywordtype">float</span>[num_items];</div>
+<div class="line">    <span class="keywordtype">int</span>*  h_in = <span class="keyword">new</span> <span class="keywordtype">int</span>[num_items];</div>
+<div class="line">    <span class="keywordtype">int</span>*  h_reference = <span class="keyword">new</span> <span class="keywordtype">int</span>[num_items];</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize problem and solution</span></div>
 <div class="line">    Initialize(h_in, num_items);</div>
 <div class="line">    Solve(h_in, h_reference, num_items);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate problem device arrays</span></div>
-<div class="line">    <span class="keywordtype">float</span> *d_in = NULL;</div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate((<span class="keywordtype">void</span>**)&amp;d_in, <span class="keyword">sizeof</span>(<span class="keywordtype">float</span>) * num_items));</div>
+<div class="line">    <span class="keywordtype">int</span> *d_in = NULL;</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate((<span class="keywordtype">void</span>**)&amp;d_in, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>) * num_items));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize device input</span></div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(cudaMemcpy(d_in, h_in, <span class="keyword">sizeof</span>(<span class="keywordtype">float</span>) * num_items, cudaMemcpyHostToDevice));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(cudaMemcpy(d_in, h_in, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>) * num_items, cudaMemcpyHostToDevice));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate device output array</span></div>
-<div class="line">    <span class="keywordtype">float</span> *d_out = NULL;</div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate((<span class="keywordtype">void</span>**)&amp;d_out,         <span class="keyword">sizeof</span>(<span class="keywordtype">float</span>) * num_items));</div>
+<div class="line">    <span class="keywordtype">int</span> *d_out = NULL;</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate((<span class="keywordtype">void</span>**)&amp;d_out, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>) * num_items));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate temporary storage</span></div>
 <div class="line">    <span class="keywordtype">void</span>            *d_temp_storage = NULL;</div>
@@ -272,7 +272,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:19 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

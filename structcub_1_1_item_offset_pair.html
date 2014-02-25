@@ -114,7 +114,7 @@ struct cub::ItemOffsetPair&lt; _T, _Offset &gt;</h3>
 
 <p>An item value paired with a corresponding offset. </p>
 
-<p>Definition at line <a class="el" href="util__type_8cuh_source.html#l00283">283</a> of file <a class="el" href="util__type_8cuh_source.html">util_type.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__type_8cuh_source.html#l00506">506</a> of file <a class="el" href="util__type_8cuh_source.html">util_type.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -137,14 +137,20 @@ __forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Members</h2></td></tr>
+<tr class="memitem:ab4c13311891660699cb44882c60e1190"><td class="memItemLeft" ><a class="anchor" id="ab4c13311891660699cb44882c60e1190"></a>
+union {</td></tr>
+<tr class="memitem:a4cc5c063c2c34e5d2f052f8c5f6885e3"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#ac541377b1ef1b842825716a85acd5009">Offset</a>&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173">offset</a></td></tr>
+<tr class="memdesc:a4cc5c063c2c34e5d2f052f8c5f6885e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Offset. <br/></td></tr>
+<tr class="separator:a4cc5c063c2c34e5d2f052f8c5f6885e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9d607e6bf8ed900b2b7e48344c83cf72"><td class="memItemLeft" >&#160;&#160;&#160;UnitWord&lt; <a class="el" href="structcub_1_1_item_offset_pair.html#aa6e5dfd6b22478ead18c080694768528">T</a> &gt;::DeviceWord&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#af3f5a98f34e1d552345abf1b320eb387">align0</a></td></tr>
+<tr class="memdesc:a9d607e6bf8ed900b2b7e48344c83cf72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alignment/padding (for Win32 consistency between host/device) <br/></td></tr>
+<tr class="separator:a9d607e6bf8ed900b2b7e48344c83cf72"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab4c13311891660699cb44882c60e1190"><td class="memItemLeft" valign="top">};&#160;</td><td class="memItemRight" valign="bottom"></td></tr>
+<tr class="separator:ab4c13311891660699cb44882c60e1190"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7faea6eea84a2e5bb4250bd78e765685"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7faea6eea84a2e5bb4250bd78e765685"></a>
 <a class="el" href="structcub_1_1_item_offset_pair.html#aa6e5dfd6b22478ead18c080694768528">T</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#a7faea6eea84a2e5bb4250bd78e765685">value</a></td></tr>
 <tr class="memdesc:a7faea6eea84a2e5bb4250bd78e765685"><td class="mdescLeft">&#160;</td><td class="mdescRight">Item value. <br/></td></tr>
 <tr class="separator:a7faea6eea84a2e5bb4250bd78e765685"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afcfe08263d11c584940b28718bc10173"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afcfe08263d11c584940b28718bc10173"></a>
-<a class="el" href="structcub_1_1_item_offset_pair.html#ac541377b1ef1b842825716a85acd5009">Offset</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173">offset</a></td></tr>
-<tr class="memdesc:afcfe08263d11c584940b28718bc10173"><td class="mdescLeft">&#160;</td><td class="mdescRight">Offset. <br/></td></tr>
-<tr class="separator:afcfe08263d11c584940b28718bc10173"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li><a class="el" href="util__type_8cuh_source.html">util_type.cuh</a></li>
@@ -153,7 +159,7 @@ Public Members</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:25 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

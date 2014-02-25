@@ -116,12 +116,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">DeviceRadixSort</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd></dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>The work-complexity of radix sort as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU. The following chart illustrates <a class="el" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07" title="Sorts keys into ascending order. ">DeviceRadixSort::SortKeys</a> performance across different CUDA architectures for uniform-random <code>uint32</code> keys. Performance plots for other scenarios can be found in the detailed method descriptions below.</dd></dl>
 <div class="image">
-<img src="lsd_sort_perf.png" alt="lsd_sort_perf.png"/>
+<img src="lsb_radix_sort_int32_keys.png" alt="lsb_radix_sort_int32_keys.png"/>
 </div>
  
-<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l00963">963</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l00966">966</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
@@ -230,7 +230,14 @@ template&lt;typename Key , typename Value &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated sorting performance across different CUDA architectures for uniform-random <code>uint32,uint32</code> and <code>uint64,uint64</code> pairs, respectively.</dd></dl>
+<div class="image">
+<img src="lsb_radix_sort_int32_pairs.png" alt="lsb_radix_sort_int32_pairs.png"/>
+</div>
+ <div class="image">
+<img src="lsb_radix_sort_int64_pairs.png" alt="lsb_radix_sort_int64_pairs.png"/>
+</div>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for sorting data</span></div>
@@ -268,9 +275,9 @@ template&lt;typename Key , typename Value &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
@@ -282,7 +289,7 @@ template&lt;typename Key , typename Value &gt; </div>
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_radix_sort_8cu-example.html#a5">example_device_radix_sort.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01018">1018</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01029">1029</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -369,7 +376,8 @@ template&lt;typename Key , typename Value &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is similar to <a class="el" href="structcub_1_1_device_radix_sort.html#a2d26085e7f610f5578b6010d963b3811" title="Sorts key-value pairs into ascending order. ">DeviceRadixSort::SortPairs</a>.</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for sorting data</span></div>
@@ -407,9 +415,9 @@ template&lt;typename Key , typename Value &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
@@ -420,7 +428,7 @@ template&lt;typename Key , typename Value &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01098">1098</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01112">1112</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -501,7 +509,14 @@ template&lt;typename Key &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated sorting performance across different CUDA architectures for uniform-random <code>uint32</code> and <code>uint64</code> keys, respectively.</dd></dl>
+<div class="image">
+<img src="lsb_radix_sort_int32_keys.png" alt="lsb_radix_sort_int32_keys.png"/>
+</div>
+ <div class="image">
+<img src="lsb_radix_sort_int64_keys.png" alt="lsb_radix_sort_int64_keys.png"/>
+</div>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for sorting data</span></div>
@@ -534,9 +549,9 @@ template&lt;typename Key &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -546,7 +561,7 @@ template&lt;typename Key &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01170">1170</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01191">1191</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -627,7 +642,8 @@ template&lt;typename Key &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is similar to <a class="el" href="structcub_1_1_device_radix_sort.html#ac102ba33badbc0ed7d9eaeb2b9417d07" title="Sorts keys into ascending order. ">DeviceRadixSort::SortKeys</a>.</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the sorting of a device vector of <code>int</code> keys. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for sorting data</span></div>
@@ -660,9 +676,9 @@ template&lt;typename Key &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -672,7 +688,7 @@ template&lt;typename Key &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01244">1244</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__radix__sort_8cuh_source.html#l01268">1268</a> of file <a class="el" href="device__radix__sort_8cuh_source.html">device_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -683,7 +699,7 @@ template&lt;typename Key &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

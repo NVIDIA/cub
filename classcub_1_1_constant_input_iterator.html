@@ -117,6 +117,7 @@ class cub::ConstantInputIterator&lt; ValueType, Offset &gt;</h3>
 <li>Read references to a <a class="el" href="classcub_1_1_constant_input_iterator.html" title="A random-access input generator for dereferencing a sequence of homogeneous values. ">ConstantInputIterator</a> iterator always return the supplied constant of type <code>ValueType</code>.</li>
 <li>Can be used with any data type.</li>
 <li>Can be constructed, manipulated, dereferenced, and exchanged within and between host and device functions.</li>
+<li>Compatible with Thrust API v1.7 or newer.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Example</dt><dd>The code snippet below illustrates the use of <code><a class="el" href="classcub_1_1_constant_input_iterator.html" title="A random-access input generator for dereferencing a sequence of homogeneous values. ">ConstantInputIterator</a></code> to dereference a sequence of homogeneous doubles. </dd></dl>
@@ -137,7 +138,7 @@ class cub::ConstantInputIterator&lt; ValueType, Offset &gt;</h3>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="constant__input__iterator_8cuh_source.html#l00092">92</a> of file <a class="el" href="constant__input__iterator_8cuh_source.html">constant_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="constant__input__iterator_8cuh_source.html#l00096">96</a> of file <a class="el" href="constant__input__iterator_8cuh_source.html">constant_input_iterator.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -161,14 +162,11 @@ typedef ValueType *&#160;</td><td class="memItemRight" valign="bottom"><a class=
 typedef ValueType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_constant_input_iterator.html#aea49034b5c155ec3acc9692101d07af3">reference</a></td></tr>
 <tr class="memdesc:aea49034b5c155ec3acc9692101d07af3"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
 <tr class="separator:aea49034b5c155ec3acc9692101d07af3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac2bfe13c9b34a0034b12119166b7d097"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac2bfe13c9b34a0034b12119166b7d097"></a>
+<tr class="memitem:ac4b59fb64d929804721cc1b347fa9476"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac4b59fb64d929804721cc1b347fa9476"></a>
 typedef <br class="typebreak"/>
-thrust::detail::iterator_facade_category<br class="typebreak"/>
-&lt; thrust::any_system_tag, <br class="typebreak"/>
-thrust::random_access_traversal_tag, <br class="typebreak"/>
-<a class="el" href="classcub_1_1_constant_input_iterator.html#acde3cbd43e78ba2f8a8435cacee84990">value_type</a>, <a class="el" href="classcub_1_1_constant_input_iterator.html#aea49034b5c155ec3acc9692101d07af3">reference</a> &gt;::type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_constant_input_iterator.html#ac2bfe13c9b34a0034b12119166b7d097">iterator_category</a></td></tr>
-<tr class="memdesc:ac2bfe13c9b34a0034b12119166b7d097"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
-<tr class="separator:ac2bfe13c9b34a0034b12119166b7d097"><td class="memSeparator" colspan="2">&#160;</td></tr>
+std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_constant_input_iterator.html#ac4b59fb64d929804721cc1b347fa9476">iterator_category</a></td></tr>
+<tr class="memdesc:ac4b59fb64d929804721cc1b347fa9476"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
+<tr class="separator:ac4b59fb64d929804721cc1b347fa9476"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -293,7 +291,7 @@ template&lt;typename ValueType, typename Offset = ptrdiff_t&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="constant__input__iterator_8cuh_source.html#l00124">124</a> of file <a class="el" href="constant__input__iterator_8cuh_source.html">constant_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="constant__input__iterator_8cuh_source.html#l00130">130</a> of file <a class="el" href="constant__input__iterator_8cuh_source.html">constant_input_iterator.cuh</a>.</p>
 
 </div>
 </div>
@@ -304,7 +302,7 @@ template&lt;typename ValueType, typename Offset = ptrdiff_t&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
