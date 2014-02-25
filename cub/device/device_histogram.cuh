@@ -1,7 +1,7 @@
 
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -585,7 +585,7 @@ struct DeviceHistogram
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the computation of a 8-bin histogram of
      * single-channel <tt>unsigned char</tt> samples.
      * \par
@@ -673,7 +673,7 @@ struct DeviceHistogram
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the computation of a 8-bin histogram of
      * single-channel <tt>unsigned char</tt> samples.
      * \par
@@ -761,7 +761,7 @@ struct DeviceHistogram
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the computation of a 8-bin histogram of
      * single-channel <tt>unsigned char</tt> samples.
      * \par
@@ -857,7 +857,7 @@ struct DeviceHistogram
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the computation of three 256-bin histograms from
      * an input sequence of quad-channel (interleaved) <tt>unsigned char</tt> samples.
      * (E.g., RGB histograms from RGBA pixel samples.)
@@ -956,7 +956,7 @@ struct DeviceHistogram
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the computation of three 256-bin histograms from
      * an input sequence of quad-channel (interleaved) <tt>unsigned char</tt> samples.
      * (E.g., RGB histograms from RGBA pixel samples.)
@@ -1054,7 +1054,7 @@ struct DeviceHistogram
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the computation of three 256-bin histograms from
      * an input sequence of quad-channel (interleaved) <tt>unsigned char</tt> samples.
      * (E.g., RGB histograms from RGBA pixel samples.)

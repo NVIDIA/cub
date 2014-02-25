@@ -1,7 +1,7 @@
 <hr>
 <h3>About CUB</h3>
 
-Current release: v1.1.1 (December 11, 2013)
+Current release: v1.2.0 (February 25, 2014)
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) and the [cub-users discussion forum](http://groups.google.com/group/cub-users) for further information and examples.
 
@@ -84,6 +84,7 @@ See [CUB Project Website](http://nvlabs.github.com/cub) for more information.
  
 | Date | Version |
 | ---- | ------- |
+| 02/25/2014 | [CUB v1.2.0 Primary Release](https://github.com/NVlabs/cub/archive/1.2.0.zip) |
 | 12/10/2013 | [CUB v1.1.1 Primary Release](https://github.com/NVlabs/cub/archive/1.1.1.zip) |
 | 08/08/2013 | [CUB v1.0.1 Primary Release](https://github.com/NVlabs/cub/archive/1.0.1.zip) |
 | 05/07/2013 | [CUB v0.9.4 Update Release](https://github.com/NVlabs/cub/archive/0.9.4.zip) |
@@ -104,7 +105,7 @@ CUB is available under the "New BSD" open-source license:
 
 ```
 Copyright (c) 2010-2011, Duane Merrill.  All rights reserved.
-Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

@@ -1,5 +1,10 @@
 //-----------------------------------------------------------------------------
 
+1.2.0    02/25/2014
+    - New features:
+    
+//-----------------------------------------------------------------------------
+
 1.1.1    12/11/2013
     - New features:
         - Added TexObjInputIterator, TexRefInputIterator, CacheModifiedInputIterator, and CacheModifiedOutputIterator types for loading & storing arbitrary types through the cache hierarchy.  Compatible with Thrust API. 

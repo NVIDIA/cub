@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -63,7 +63,7 @@ namespace cub {
  *
  * \par Usage Considerations
  * - Keys must be in a form suitable for radix ranking (i.e., unsigned bits).
- * - Assumes a [<em>blocked arrangement</em>](index.html#sec4sec3) of elements across threads
+ * - Assumes a [<em>blocked arrangement</em>](index.html#sec5sec3) of elements across threads
  * - \smemreuse{BlockRadixRank::TempStorage}
  *
  * \par Performance Considerations
