@@ -1,7 +1,7 @@
 
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -63,6 +63,15 @@ namespace cub {
  * \cdp_class{DevicePartition}
  *
  * \par Performance
+ * \linear_performance{partition}
+ *
+ * \par
+ * The following chart illustrates DevicePartition::If
+ * performance across different CUDA architectures for \p int32 items,
+ * where 50% of the items are randomly selected for the first partition.
+ * \plots_below
+ *
+ * \image html partition_if_int32_50_percent.png
  *
  */
 struct DevicePartition
@@ -78,7 +87,7 @@ struct DevicePartition
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
@@ -159,19 +168,37 @@ struct DevicePartition
      * - \devicestorage
      * - \cdp
      *
+     * \par Performance
+     * The following charts illustrate saturated partition-if performance across different
+     * CUDA architectures for \p int32 and \p int64 items, respectively.  Items are
+     * selected for the first partition with 50% probability.
+     *
+     * \image html partition_if_int32_50_percent.png
+     * \image html partition_if_int64_50_percent.png
+     *
      * \par
+     * The following charts are similar, but 5% selection probability for the first partition:
+     *
+     * \image html partition_if_int32_5_percent.png
+     * \image html partition_if_int64_5_percent.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_partition.cuh>
      *
-     * // Functor for selecting values that are multiples of three
-     * struct IsTriple
+     * // Functor type for selecting values less than some criteria
+     * struct LessThan
      * {
-     *     template <typename T>
+     *     int compare;
+     *
      *     __host__ __device__ __forceinline__
-     *     bool operator()(const T &a) const {
-     *         return (a % 3 == 0);
+     *     LessThan(int compare) : compare(compare) {}
+     *
+     *     __host__ __device__ __forceinline__
+     *     bool operator()(const int &a) const {
+     *         return (a < compare);
      *     }
      * };
      *
@@ -180,7 +207,7 @@ struct DevicePartition
      * int      *d_in;              // e.g., [0, 2, 3, 9, 5, 2, 81, 8]
      * int      *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
      * int      *d_num_selected;    // e.g., [ ]
-     * IsTriple select_op;
+     * LessThan select_op(7);
      * ...
      *
      * // Determine temporary device storage requirements
@@ -194,8 +221,8 @@ struct DevicePartition
      * // Run selection
      * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);
      *
-     * // d_out             <-- [0, 3, 9, 81, 8, 2, 5, 2]
-     * // d_num_selected    <-- [4]
+     * // d_out             <-- [0, 2, 3, 5, 2, 8, 81, 9]
+     * // d_num_selected    <-- [5]
      *
      * \endcode
      *

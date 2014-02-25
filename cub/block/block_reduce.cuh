@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -140,7 +140,7 @@ enum BlockReduceAlgorithm
  * \blockcollective{BlockReduce}
  * \par
  * The code snippet below illustrates a sum reduction of 512 integer items that
- * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
+ * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
  * where each thread owns 4 consecutive items.
  * \par
  * \code
@@ -326,7 +326,7 @@ public:
      *
      * \par
      * The code snippet below illustrates a max reduction of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code
@@ -473,7 +473,7 @@ public:
      *
      * \par
      * The code snippet below illustrates a sum reduction of 512 integer items that
-     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec4sec3) across 128 threads
+     * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
      * \par
      * \code

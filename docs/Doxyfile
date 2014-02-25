@@ -212,6 +212,9 @@ ALIASES                += blocked="Assumes a [<em>blocked arrangement</em>](inde
 ALIASES                += striped="Assumes a [<em>striped arrangement</em>](index.html#sec4sec3) of elements across threads, where the items owned by each thread have a ranked distance of \p BLOCK_THREADS between them."
 ALIASES                += warpstriped="Assumes a <em>warp-striped arrangement</em> of elements across threads, where each warp owns a segment of (\p WARP_THREADS * \p ITEMS_PER_THREAD) consecutively ranked items, and the items owned by each thread have a ranked distance of \p WARP_THREADS between them."
 
+ALIASES                += linear_performance{1}="The work-complexity of \1 as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU."  
+ALIASES                += plots_below="Performance plots for other scenarios can be found in the detailed method descriptions below."
+
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding
 # "class=itcl::class" will allow you to use the command class in the
@@ -784,6 +787,7 @@ EXAMPLE_RECURSIVE      = NO
 # the \image command).
 
 IMAGE_PATH             = images
+IMAGE_PATH             += images\performance
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should
 # invoke to filter for each input file. Doxygen will invoke the filter program

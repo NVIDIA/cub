@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -60,10 +60,10 @@ namespace cub {
  *   yet most block-wide operations prefer a "blocked" partitioning of items across threads
  *   (where consecutive items belong to a single thread).
  * - BlockExchange supports the following types of data exchanges:
- *   - Transposing between [<em>blocked</em>](index.html#sec4sec3) and [<em>striped</em>](index.html#sec4sec3) arrangements
- *   - Transposing between [<em>blocked</em>](index.html#sec4sec3) and [<em>warp-striped</em>](index.html#sec4sec3) arrangements
- *   - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec4sec3)
- *   - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec4sec3)
+ *   - Transposing between [<em>blocked</em>](index.html#sec5sec3) and [<em>striped</em>](index.html#sec5sec3) arrangements
+ *   - Transposing between [<em>blocked</em>](index.html#sec5sec3) and [<em>warp-striped</em>](index.html#sec5sec3) arrangements
+ *   - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec5sec3)
+ *   - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec5sec3)
  *
  * \par A Simple Example
  * \blockcollective{BlockExchange}

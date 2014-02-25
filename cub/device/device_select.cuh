@@ -1,7 +1,7 @@
 
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -566,17 +566,35 @@ struct DeviceSelectDispatch
  *****************************************************************************/
 
 /**
- * \brief DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within global memory. ![](select_logo.png)
+ * \brief DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences of data items residing within global memory. ![](select_logo.png)
  * \ingroup DeviceModule
  *
  * \par Overview
  * These operations apply a selection criterion to selectively copy
- * items from a specified input sequence to a corresponding output sequence.
+ * items from a specified input sequence to a compact output sequence.
  *
  * \par Usage Considerations
  * \cdp_class{DeviceSelect}
  *
  * \par Performance
+ * \linear_performance{select-flagged, select-if, and select-unique}
+ *
+ * \par
+ * The following chart illustrates DeviceSelect::If
+ * performance across different CUDA architectures for \p int32 items,
+ * where 50% of the items are randomly selected.
+ *
+ * \image html select_if_int32_50_percent.png
+ *
+ * \par
+ * The following chart illustrates DeviceSelect::Unique
+ * performance across different CUDA architectures for \p int32 items
+ * where segments have lengths uniformly sampled from [1,1000].
+ *
+ * \image html select_unique_int32_len_500.png
+ *
+ * \par
+ * \plots_below
  *
  */
 struct DeviceSelect
@@ -590,7 +608,7 @@ struct DeviceSelect
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
@@ -669,19 +687,37 @@ struct DeviceSelect
      * - \devicestorage
      * - \cdp
      *
+     * \par Performance
+     * The following charts illustrate saturated select-if performance across different
+     * CUDA architectures for \p int32 and \p int64 items, respectively.  Items are
+     * selected with 50% probability.
+     *
+     * \image html select_if_int32_50_percent.png
+     * \image html select_if_int64_50_percent.png
+     *
      * \par
+     * The following charts are similar, but 5% selection probability:
+     *
+     * \image html select_if_int32_5_percent.png
+     * \image html select_if_int64_5_percent.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_select.cuh>
      *
-     * // Functor for selecting values that are multiples of three
-     * struct IsTriple
+     * // Functor type for selecting values less than some criteria
+     * struct LessThan
      * {
-     *     template <typename T>
+     *     int compare;
+     *
      *     __host__ __device__ __forceinline__
-     *     bool operator()(const T &a) const {
-     *         return (a % 3 == 0);
+     *     LessThan(int compare) : compare(compare) {}
+     *
+     *     __host__ __device__ __forceinline__
+     *     bool operator()(const int &a) const {
+     *         return (a < compare);
      *     }
      * };
      *
@@ -690,7 +726,7 @@ struct DeviceSelect
      * int      *d_in;              // e.g., [0, 2, 3, 9, 5, 2, 81, 8]
      * int      *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
      * int      *d_num_selected;    // e.g., [ ]
-     * IsTriple select_op;
+     * LessThan select_op(7);
      * ...
      *
      * // Determine temporary device storage requirements
@@ -704,8 +740,8 @@ struct DeviceSelect
      * // Run selection
      * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);
      *
-     * // d_out             <-- [0, 3, 9, 81]
-     * // d_num_selected    <-- [4]
+     * // d_out             <-- [0, 2, 3, 5, 2]
+     * // d_num_selected    <-- [5]
      *
      * \endcode
      *
@@ -759,7 +795,21 @@ struct DeviceSelect
      * - \devicestorage
      * - \cdp
      *
+     * \par Performance
+     * The following charts illustrate saturated select-unique performance across different
+     * CUDA architectures for \p int32 and \p int64 items, respectively.  Segments have
+     * lengths uniformly sampled from [1,1000].
+     *
+     * \image html select_unique_int32_len_500.png
+     * \image html select_unique_int64_len_500.png
+     *
      * \par
+     * The following charts are similar, but with segment lengths uniformly sampled from [1,10]:
+     *
+     * \image html select_unique_int32_len_5.png
+     * \image html select_unique_int64_len_5.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code

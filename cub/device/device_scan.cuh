@@ -1,7 +1,7 @@
 
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -581,8 +581,14 @@ struct DeviceScanDispatch
  * \cdp_class{DeviceScan}
  *
  * \par Performance
+ * \linear_performance{prefix scan}
  *
- * \image html scan_perf.png
+ * \par
+ * The following chart illustrates DeviceScan::ExclusiveSum
+ * performance across different CUDA architectures for \p int32 keys.
+ * \plots_below
+ *
+ * \image html scan_int32.png
  *
  */
 struct DeviceScan
@@ -600,7 +606,14 @@ struct DeviceScan
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * The following charts illustrate saturated exclusive sum performance across different
+     * CUDA architectures for \p int32 and \p int64 items, respectively.
+     *
+     * \image html scan_int32.png
+     * \image html scan_int64.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the exclusive prefix sum of an \p int device vector.
      * \par
      * \code
@@ -670,7 +683,10 @@ struct DeviceScan
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is typically similar to DeviceScan::ExclusiveSum.
+     *
+     * \par Snippet
      * The code snippet below illustrates the exclusive prefix min-scan of an \p int device vector
      * \par
      * \code
@@ -761,7 +777,10 @@ struct DeviceScan
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is typically similar to DeviceScan::ExclusiveSum.
+     *
+     * \par Snippet
      * The code snippet below illustrates the inclusive prefix sum of an \p int device vector.
      * \par
      * \code
@@ -828,7 +847,10 @@ struct DeviceScan
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is typically similar to DeviceScan::ExclusiveSum.
+     *
+     * \par Snippet
      * The code snippet below illustrates the inclusive prefix min-scan of an \p int device vector.
      * \par
      * \code
