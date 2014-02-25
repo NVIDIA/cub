@@ -492,13 +492,14 @@ for many of the algorithmic techniques used by CUB.
 </td><td style="vertical-align:text-top;">
   - New features:
       - Added device-wide reduce-by-key (cub::DeviceReduce::ReduceByKey, cub::DeviceReduce::RunLengthEncode) 
-  - Performance
+  - Performance:
       - Improved cub::DeviceScan, cub::DeviceSelect, and cub::DevicePartition performance
   - Documentation and testing:
       - Compatible with CUDA 6.0
       - Added performance-portabiltiy plots for many device-wide primitives to doc 
       - Update doc and tests to reflect CUB "fancy" iterator (in)compatibilities with CUDA 5.0 (and older) and Thrust 1.6 (and older).
-  - Bug fixes 
+  - Bug fixes: 
+      - Fixed bug where inclusion of Thrust headers in a certain order prevented CUB device-wide primitives from working properly
       - Revised the fence operation of temporary tile status bookkeeping for cub::DeviceScan (and similar) to be safe for current code run on future platforms  
       - Fixed cub::DeviceScan bug where Win32 alignment disagreements between host and device regarding user-defined data types would corrupt tile status
       - Fixed cub::BlockScan bug where certain exclusive scans on custom data types for the cub::BLOCK_SCAN_WARP_SCANS variant would return incorrect results for the first thread in the block
