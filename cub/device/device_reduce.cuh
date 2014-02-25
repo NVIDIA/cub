@@ -1,7 +1,7 @@
 
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -752,8 +752,31 @@ struct DeviceReduceDispatch
  * \cdp_class{DeviceReduce}
  *
  * \par Performance
+ * \linear_performance{reduction, reduce-by-key, and run-length encode}
  *
- * \image html reduction_perf.png
+ * \par
+ * The following chart illustrates DeviceReduce::Sum
+ * performance across different CUDA architectures for \p int32 keys.
+ *
+ * \image html reduce_int32.png
+ *
+ * \par
+ * The following chart illustrates DeviceReduce::ReduceByKey (summation)
+ * performance across different CUDA architectures for \p fp32
+ * values.  Segments are identified by \p int32 keys, and have lengths uniformly sampled from [1,1000].
+ *
+ * \image html reduce_by_key_fp32_len_500.png
+ *
+ * \par
+ * The following chart illustrates DeviceReduce::RunLengthEncode performance across
+ * different CUDA architectures for \p int32 items.
+ * Segments have lengths uniformly sampled from [1,1000].
+ *
+ * \image html rle_int32_len_500.png
+ *
+ * \par
+ * \plots_below
+ *
  *
  */
 struct DeviceReduce
@@ -766,7 +789,10 @@ struct DeviceReduce
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is typically similar to DeviceReduce::Sum.
+     *
+     * \par Snippet
      * The code snippet below illustrates a custom min reduction of a device vector of \p int items.
      * \par
      * \code
@@ -849,7 +875,14 @@ struct DeviceReduce
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * The following charts illustrate saturated reduction (sum) performance across different
+     * CUDA architectures for \p int32 and \p int64 items, respectively.
+     *
+     * \image html reduce_int32.png
+     * \image html reduce_int64.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the sum reduction of a device vector of \p int items.
      * \par
      * \code
@@ -918,7 +951,10 @@ struct DeviceReduce
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is typically similar to DeviceReduce::Sum.
+     *
+     * \par Snippet
      * The code snippet below illustrates the min-reduction of a device vector of \p int items.
      * \par
      * \code
@@ -992,7 +1028,10 @@ struct DeviceReduce
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is typically similar to DeviceReduce::Sum.
+     *
+     * \par Snippet
      * The code snippet below illustrates the argmin-reduction of a device vector of \p int items.
      * \par
      * \code
@@ -1065,7 +1104,10 @@ struct DeviceReduce
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is typically similar to DeviceReduce::Sum.
+     *
+     * \par Snippet
      * The code snippet below illustrates the max-reduction of a device vector of \p int items.
      * \par
      * \code
@@ -1139,7 +1181,10 @@ struct DeviceReduce
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is typically similar to DeviceReduce::Sum.
+     *
+     * \par Snippet
      * The code snippet below illustrates the argmax-reduction of a device vector of \p int items.
      * \par
      * \code
@@ -1220,7 +1265,21 @@ struct DeviceReduce
      * - \devicestorage
      * - \cdp
      *
+     * \par Performance
+     * The following chart illustrates reduction-by-key (sum) performance across
+     * different CUDA architectures for \p fp32 and \p fp64 values, respectively.  Segments
+     * are identified by \p int32 keys, and have lengths uniformly sampled from [1,1000].
+     *
+     * \image html reduce_by_key_fp32_len_500.png
+     * \image html reduce_by_key_fp64_len_500.png
+     *
      * \par
+     * The following charts are similar, but with segment lengths uniformly sampled from [1,10]:
+     *
+     * \image html reduce_by_key_fp32_len_5.png
+     * \image html reduce_by_key_fp64_len_5.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the segmented reduction of \p int values grouped
      * by runs of associated \p int keys.
      * \par
@@ -1329,7 +1388,21 @@ struct DeviceReduce
      * - \devicestorage
      * - \cdp
      *
+     * \par Performance
+     * The following charts illustrate saturated encode performance across different
+     * CUDA architectures for \p int32 and \p int64 items, respectively.  Segments have
+     * lengths uniformly sampled from [1,1000].
+     *
+     * \image html rle_int32_len_500.png
+     * \image html rle_int64_len_500.png
+     *
      * \par
+     * The following charts are similar, but with segment lengths uniformly sampled from [1,10]:
+     *
+     * \image html rle_int32_len_5.png
+     * \image html rle_int64_len_5.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the run-length encoding of a sequence of \p int values.
      * \par
      * \code

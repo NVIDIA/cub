@@ -1,7 +1,7 @@
 
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -956,8 +956,11 @@ struct DeviceRadixSortDispatch
  * \cdp_class{DeviceRadixSort}
  *
  * \par Performance
+ * \linear_performance{radix sort} The following chart illustrates DeviceRadixSort::SortKeys
+ * performance across different CUDA architectures for uniform-random \p uint32 keys.
+ * \plots_below
  *
- * \image html lsd_sort_perf.png
+ * \image html lsb_radix_sort_int32_keys.png
  *
  */
 struct DeviceRadixSort
@@ -973,7 +976,15 @@ struct DeviceRadixSort
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * The following charts illustrate saturated sorting performance across different
+     * CUDA architectures for uniform-random <tt>uint32,uint32</tt> and
+     * <tt>uint64,uint64</tt> pairs, respectively.
+     *
+     * \image html lsb_radix_sort_int32_pairs.png
+     * \image html lsb_radix_sort_int64_pairs.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the sorting of a device vector of \p int keys
      * with associated vector of \p int values.
      * \par
@@ -1053,7 +1064,10 @@ struct DeviceRadixSort
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is similar to DeviceRadixSort::SortPairs.
+     *
+     * \par Snippet
      * The code snippet below illustrates the sorting of a device vector of \p int keys
      * with associated vector of \p int values.
      * \par
@@ -1133,7 +1147,14 @@ struct DeviceRadixSort
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * The following charts illustrate saturated sorting performance across different
+     * CUDA architectures for uniform-random \p uint32 and \p uint64 keys, respectively.
+     *
+     * \image html lsb_radix_sort_int32_keys.png
+     * \image html lsb_radix_sort_int64_keys.png
+     *
+     * \par Snippet
      * The code snippet below illustrates the sorting of a device vector of \p int keys.
      * \par
      * \code
@@ -1207,7 +1228,10 @@ struct DeviceRadixSort
      * - \devicestorage
      * - \cdp
      *
-     * \par
+     * \par Performance
+     * Performance is similar to DeviceRadixSort::SortKeys.
+     *
+     * \par Snippet
      * The code snippet below illustrates the sorting of a device vector of \p int keys.
      * \par
      * \code

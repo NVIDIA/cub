@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -53,21 +53,35 @@
 \tableofcontents
 
 \htmlonly
+
+<table border="0px" cellpadding="0px" cellspacing="0px"><tr><td>
+
+<a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+&nbsp;&nbsp;
+<a href="download_cub.html"><em><b>Download CUB v1.2.0</b></em></a>
+
+</td><td>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="http://research.nvidia.com"><img src="nvresearch.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
 <a href="http://research.nvidia.com"><em>NVIDIA Research</em></a>
-<br>
+
+</td></tr><tr><td>
+
 <a href="https://github.com/NVlabs/cub"><img src="github-icon-747d8b799a48162434b2c0595ba1317e.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
 <a href="https://github.com/NVlabs/cub"><em>Browse or fork CUB at GitHub</em></a>
-<br>
+
+</td><td>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 <a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
 <a href="http://groups.google.com/group/cub-users"><em>The cub-users discussion forum</em></a>
-<br>
-<a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
-&nbsp;&nbsp;
-<a href="download_cub.html"><em>Download CUB v1.1.1 (Dec 11, 2013)</em></a>
+
+</td></tr></table>
+
 \endhtmlonly
 
 \section sec1 (1) What is CUB?
@@ -75,40 +89,43 @@
 \par
 CUB provides state-of-the-art, reusable software components for every layer 
 of the CUDA programming model:
-- <b><em>Primitives</em></b>
-  - [<b><em>Device-wide</em></b>] (group___device_module.html) 
+- <b><em>Parallel primitives</em></b>
+  - [<b><em>Device-wide primitives</em></b>] (group___device_module.html) 
     - Parallel sort, prefix scan, reduction, histogram, etc.  
     - Compatible with CUDA dynamic parallelism
-  - [<b><em>Block-wide "collective"</em></b>] (group___block_module.html)
-    - Cooperative I/O, sort, prefix scan, reduction, histogram, etc.  
+  - [<b><em>Block-wide "collective" primitives</em></b>] (group___block_module.html)
+    - Cooperative I/O, sort, scan, reduction, histogram, etc.  
     - Compatible with arbitrary thread block sizes and types 
-  - [<b><em>Warp-wide "collective"</em></b>] (group___warp_module.html)
+  - [<b><em>Warp-wide "collective" primitives</em></b>] (group___warp_module.html)
     - Cooperative warp-wide prefix scan, reduction, etc.
-    - Safe and architecture-specific
+    - Safely specialized for each underlying CUDA architecture
 - <b><em>Utilities</em></b>
   - [<b><em>Fancy iterators</em></b>] (group___util_iterator.html)
   - [<b><em>Thread and thread block I/O</em></b>] (group___util_io.html)
   - [<b><em>PTX intrinsics</em></b>] (group___util_ptx.html)
   - [<b><em>Device, kernel, and storage management</em></b>] (group___util_mgmt.html)
 
-\subsection sec1sec1 1.1 Collective Primitives 
+\section sec2 (2) Collective Primitives 
+\par
+CUB provides collective primitives, which are essential for constructing high-performance, 
+maintainable kernel code.  These collective primitives allow complex parallel code to be 
+re-used rather than re-implemented, and be re-compiled rather than hand-ported. <br><br>
+ 
+\par
+\image html cub_overview.png
+<div class="centercaption">Orientation of <em>collective</em> primitives within the CUDA software stack</div>
+
 \par
 As a SIMT programming model, CUDA engenders both <em><b>scalar</b></em> and 
 <em><b>collective</b></em> software interfaces. Traditional software 
 interfaces are <em>scalar</em> : a single thread invokes a library routine to perform some 
 operation (which may include spawning parallel subtasks).  Alternatively, a <em>collective</em> 
 interface is entered simultaneously by a group of parallel threads to perform 
-some cooperative operation.  Collective SIMT primitives are essential for constructing 
-performance-portable kernels for use in higher level software abstractions, libraries, 
-domain-specific languages, etc.  
-
-\par
-\image html cub_overview.png
-<div class="centercaption">Orientation of <em>collective</em> primitives within the CUDA software stack</div>
+some cooperative operation.   
 
 \par
 CUB's collective primitives are not bound to any particular width of parallelism 
-or to any particular data type.  This allows them to be:
+or data type.  This flexibility makes them:
 - <b><em>Adaptable</em></b> to fit the needs of the enclosing kernel computation
 - <b><em>Trivially tunable</em></b> to different grain sizes (threads per block, 
   items per thread, etc.)
@@ -116,20 +133,7 @@ or to any particular data type.  This allows them to be:
 \par
 Thus CUB is [<em>CUDA Unbound</em>](index.html).
 
-\subsection sec1sec2 1.2 Design Motivation 
-\par 
-CUB is inspired by the following goals:
-- <em><b>Absolute performance</b></em>.  CUB primitives are specialized and tuned to 
-  best match the features and capabilities of each CUDA architecture.
-- <em><b>Enhanced programmer productivity</b></em>.  CUB primitives allow developers to quickly 
-  compose sequences of complex parallel operations in both CUDA kernel code and CUDA host code.       
-- <em><b>Enhanced tunability</b></em>.  CUB primitives allow developers to quickly 
-  change grain sizes (threads per block, items per thread, etc.).       
-- <em><b>Reduced maintenance burden</b></em>.  CUB provides a SIMT software abstraction layer 
-  over the diversity of CUDA hardware.  With CUB, applications can enjoy 
-  performance-portability without intensive and costly rewriting or porting efforts.  
-
-\section sec2 (2) An Example (block-wide sorting)
+\section sec3 (3) An Example (block-wide sorting)
 
 \par
 The following code snippet presents a CUDA kernel in which each block of 128 threads 
@@ -173,8 +177,8 @@ __global__ void BlockSortKernel(int *d_in, int *d_out)
 \endcode
 
 \par
-Threads use cub::BlockLoad, cub::BlockRadixSort, and cub::BlockStore to collectively
-load, sort and store a "tile" of input items.  Because these operations are 
+In this example, threads use cub::BlockLoad, cub::BlockRadixSort, and cub::BlockStore to collectively
+load, sort and store the block's segment of input items.  Because these operations are 
 cooperative, each primitive requires an allocation of shared memory for threads to communicate 
 through.  The typical usage pattern for a CUB collective is:
 -# Statically specialize the primitive for the specific problem setting at hand, e.g.,
@@ -188,8 +192,8 @@ through.  The typical usage pattern for a CUB collective is:
 -# Invoke methods on the primitive instance.
 
 \par
-In this example, each thread block uses cub::BlockRadixSort to collectively sort 
-the data items partitioned across the thread block. To provide coalesced accesses 
+In particular, cub::BlockRadixSort is used to collectively sort the segment of data items 
+that have been partitioned across the thread block. To provide coalesced accesses 
 to device memory,  we configure the cub::BlockLoad and cub::BlockStore primitives 
 to access memory using a striped access pattern (where consecutive threads 
 simultaneously access consecutive items) and then <em>transpose</em> the keys into 
@@ -197,49 +201,66 @@ a [<em>blocked arrangement</em>](index.html#sec4sec3) of elements across threads
 To reuse shared memory across all three primitives, the thread block statically 
 allocates a union of their \p TempStorage types.
 
-\section sec3 (3) Why do you need CUB?
+\section sec4 (4) Why do you need CUB?
 
 \par
-Constructing, tuning, and maintaining kernel code is perhaps the most challenging, 
-time-consuming aspect of CUDA programming.  CUDA kernel software is where 
+Writing, tuning, and maintaining kernel code is perhaps the most challenging, 
+time-consuming aspect of CUDA programming.  Kernel software is where 
 the complexity of parallelism is expressed. Programmers must reason about 
 deadlock, livelock, synchronization, race conditions, shared memory layout, 
 plurality of state, granularity, throughput, latency, memory bottlenecks, etc. 
 
 \par
-However, with the exception of CUB, there are few (if any) software libraries of
-reusable kernel primitives. In the CUDA ecosystem, CUB is unique in this regard.
+With the exception of CUB, however, there are few (if any) software libraries of
+<em>reusable</em> kernel primitives. In the CUDA ecosystem, CUB is unique in this regard.
 As a [SIMT](http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#hardware-implementation)
 library and software abstraction layer, CUB provides:
--# <b><em>Simplicity of composition</em></b>. CUB primitives can be simply sequenced 
-   and nested in kernel code.  For example, cub::BlockRadixSort is constructed from 
-   cub::BlockExchange and cub::BlockRadixRank. The latter is composed of cub::BlockScan 
+
+-# <b><em>Simplicity of composition</em></b>. CUB enhances programmer productivity by 
+   allowing complex parallel operations to be easily sequenced and nested.  
+   For example, cub::BlockRadixSort is constructed from cub::BlockExchange and 
+   cub::BlockRadixRank. The latter is composed of cub::BlockScan 
    which incorporates cub::WarpScan. \image html nested_composition.png
--# <b><em>High performance</em></b>. CUB simplifies high-performance kernel 
-   development by taking care to implement the state-of-the-art in parallel algorithms.  
-   Expert code should be reused rather than reimplemented. 
--# <b><em>Performance portability</em></b>. CUB primitives are specialized to 
-   match the diversity of NVIDIA hardware, continuously evolving to accommodate new 
-   features and instructions.  For example, CUB reductions and prefix scans employ 
-   warp-shuffle on Kepler GPUs.  Code should be recompiled rather than hand-ported.
+   
+-# <b><em>High performance</em></b>. CUB simplifies high-performance program and kernel 
+   development by taking care to implement the state-of-the-art in parallel algorithms.<br><br>  
+    
+-# <b><em>Performance portability</em></b>. 
+   CUB primitives are specialized to match the diversity of NVIDIA hardware, continuously 
+   evolving to accommodate new architecture-specific features and instructions.  And 
+   because CUB's device-wide primitives are implemented using flexible block-wide and 
+   warp-wide collectives, we are able to performance-tune them to match the processor 
+   resources provided by each CUDA processor architecture. As a result, our CUB 
+   implementations demonstrate much better performance-portability when compared to more 
+   traditional, rigidly-coded parallel libraries such 
+   as [<b><em>Thrust</em></b>](http://thrust.github.com/): <br><br><img src="scan_int32.png"><br><br> 
+   
 -# <b><em>Simplicity of performance tuning</em></b>:
-  - <em>Variant tuning</em>.  Most CUB primitives support alternative algorithmic 
+  - <b><em>Resource utilization</em></b>.  CUB primitives allow developers to quickly 
+    change grain sizes (threads per block, items per thread, etc.) to best match
+    the processor resources of their target architecture
+  - <b><em>Variant tuning</em></b>.  Most CUB primitives support alternative algorithmic 
     strategies. For example, cub::BlockHistogram is parameterized to implement either 
     an atomic-based approach or a sorting-based approach.  (The latter provides uniform 
     performance regardless of input distribution.)
-  - <em>Kernel+library co-optimization</em>.  Most CUB primitives support arbitrary 
-    granularity (threads per block, items per thread, etc.).  When the enclosing kernel 
-    is similarly parameterizable, a configuration can be found that optimally 
-    accommodates their combined register and shared memory pressure. 
+  - <b><em>Co-optimization</em></b>.  When the enclosing kernel 
+    is similarly parameterizable, a tuning configuration can be found that optimally 
+    accommodates their combined register and shared memory pressure.<br><br>
+     
 -# <b><em>Robustness and durability</em></b>. CUB just works.  CUB primitives 
    are designed to function properly for arbitrary data types and widths of 
    parallelism (not just for the built-in C++ types or for powers-of-two threads 
-   per block).
+   per block).<br><br>
+   
+-# <em><b>Reduced maintenance burden</b></em>.  CUB provides a SIMT software abstraction layer 
+  over the diversity of CUDA hardware.  With CUB, applications can enjoy 
+  performance-portability without intensive and costly rewriting or porting efforts.  <br><br>
+
 -# <b><em>A path for language evolution</em></b>.  CUB primitives are designed 
    to easily accommodate new features in the CUDA programming model, e.g., thread 
-   subgroups and named barriers, dynamic shared memory allocators, etc. 
+   subgroups and named barriers, dynamic shared memory allocators, etc. <br><br>
 
-\section sec4 (4) How do CUB collectives work?
+\section sec5 (5) How do CUB collectives work?
  
 \par
 Four programming idioms are central to the design of CUB: 
@@ -259,7 +280,7 @@ Four programming idioms are central to the design of CUB:
    configuration can be determined that best accommodates the combined behavior and 
    resource consumption of all primitives within the kernel.
 
-\subsection sec4sec1 4.1 Generic programming
+\subsection sec5sec1 5.1 Generic programming
 \par
 We use template parameters to specialize CUB primitives for the particular 
 problem setting at hand.  Until compile time, CUB primitives are not bound 
@@ -270,7 +291,7 @@ to any particular:
 - Underlying processor (special instructions, warp size, rules for bank conflicts, etc.)
 - Tuning configuration (e.g., latency vs. throughput, algorithm selection, etc.)
 
-\subsection sec4sec2 4.2 Reflective class interfaces 
+\subsection sec5sec2 5.2 Reflective class interfaces 
 \par
 Unlike traditional function-oriented interfaces, CUB exposes its collective 
 primitives as templated C++ classes.  The resource requirements for a specific 
@@ -316,7 +337,7 @@ This allows CUB types to easily accommodate new
 programming model features (e.g., named barriers, memory allocators, etc.) 
 without incurring a combinatorial growth of interface methods.   
 
-\subsection sec4sec3 4.3 Flexible data arrangement across threads
+\subsection sec5sec3 5.3 Flexible data arrangement across threads
 \par
 CUDA kernels are often designed such that each thread block is assigned a 
 segment of data items for processing.
@@ -380,7 +401,7 @@ The benefits of processing multiple items per thread (a.k.a., <em>register block
 Finally, cub::BlockExchange provides operations for converting between blocked
 and striped arrangements.
 
-\subsection sec4sec4 4.4 Static tuning and co-tuning
+\subsection sec5sec4 5.4 Static tuning and co-tuning
 \par 
 This style of flexible interface simplifies performance tuning.  Most CUB
 primitives support alternative algorithmic strategies that can be
@@ -401,7 +422,7 @@ parameterized, the coupled CUB primitives adjust accordingly.  This enables
 autotuners to search for a single configuration that maximizes the performance 
 of the entire kernel for a given set of hardware resources.  
  
-\section sec5 (5) How do I get started using CUB?
+\section sec6 (6) How do I get started using CUB?
 
 \par 
 CUB is implemented as a C++ header library. There is no need to build CUB 
@@ -414,11 +435,14 @@ separately. To use CUB primitives in your code, simply:
    specifying a \p -I<path-to-CUB> include-path flag to reference 
    the location of the CUB header library.
 
-\section sec6 (6) How is CUB different than Thrust?
-
 \par
-CUB and [<b><em>Thrust</em></b>](http://thrust.github.com/) have some 
-similarities in that they  both provide device-wide primitives for CUDA.  
+We also have collection of simple [<b>CUB example programs</b>] (examples.html)
+
+\section sec7 (7) How is CUB different than Thrust and Modern GPU?
+
+\par CUB and Thrust
+CUB and [<b><em>Thrust</em></b>](http://thrust.github.com/) share some 
+similarities in that they both provide similar device-wide primitives for CUDA.  
 However, they target different abstraction layers for parallel computing.
 Thrust abstractions are agnostic of any particular parallel framework (e.g., 
 CUDA, TBB, OpenMP, sequential  CPU, etc.).  While Thrust has a "backend" 
@@ -437,11 +461,38 @@ project arose out of a maintenance need to achieve better performance-portabilit
 within Thrust by using reusable block-wide primitives to reduce maintenance and 
 tuning effort.  
 
-\section sec7 (7) Recent News
+\par CUB and Modern GPU
+CUB and [<b><em>Modern GPU</em></b>](http://nvlabs.github.io/moderngpu/) also
+share some similarities in that they both implement similar device-wide primitives for CUDA.
+However, they serve different purposes for the CUDA programming community.  MGPU
+is a pedagogical tool for high-performance GPU computing, providing clear and concise 
+exemplary code and accompanying commentary.  It serves as an excellent source of 
+educational, tutorial, CUDA-by-example material.  The MGPU source code is intended 
+to be read and studied, and often favors simplicity at the expense of portability and 
+flexibility.
+
+\par 
+CUB, on the other hand, is a production-quality library whose sources are complicated 
+by support for every version of CUDA architecture, and is validated by an extensive 
+suite of regression tests.  Although well-documented, the CUB source text is verbose 
+and relies heavily on C++ template metaprogramming for situational specialization.  
+
+\par 
+CUB and MGPU are complementary in that MGPU serves as an excellent descriptive source 
+for many of the algorithmic techniques used by CUB. 
+
+\section sec8 (8) Recent News
 
 \par
 <table>
  
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
+02/25/2014<br>
+[<b>CUB v1.0.2</b>](https://github.com/NVlabs/cub/archive/1.0.2.zip)
+</td><td style="vertical-align:text-top;">
+- See the [change-log](CHANGE_LOG.TXT) for further details
+</td></tr>
+
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 12/11/2013<br>
 [<b>CUB v1.1.1</b>](https://github.com/NVlabs/cub/archive/1.1.1.zip)
@@ -513,13 +564,13 @@ tuning effort.
 </td></tr>
 </table>
 
-\section sec8 (8) Contributors
+\section sec9 (9) Contributors
 
 \par
 CUB is developed as an open-source project by [NVIDIA Research](http://research.nvidia.com).
 The primary contributor is [Duane Merrill](http://github.com/dumerrill).
 
-\section sec9 (9) Open Source License
+\section sec10 (10) Open Source License
 
 \par
 CUB is available under the "New BSD" open-source license:
@@ -527,7 +578,7 @@ CUB is available under the "New BSD" open-source license:
 \par
 \code
 Copyright (c) 2011, Duane Merrill.  All rights reserved.
-Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.
+Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
