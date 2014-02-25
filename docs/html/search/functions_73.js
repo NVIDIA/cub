@@ -1,7 +1,8 @@
 var searchData=
 [
-  ['scattertoblocked',['ScatterToBlocked',['../classcub_1_1_block_exchange.html#ac8dd22c90a28e54a8c1d6b0637054661',1,'cub::BlockExchange']]],
-  ['scattertostriped',['ScatterToStriped',['../classcub_1_1_block_exchange.html#a53516886ba6750060819581b1bb23d68',1,'cub::BlockExchange::ScatterToStriped(T items[ITEMS_PER_THREAD], int ranks[ITEMS_PER_THREAD])'],['../classcub_1_1_block_exchange.html#a78d1cec5c0be3ab980bf1139196f67ce',1,'cub::BlockExchange::ScatterToStriped(T items[ITEMS_PER_THREAD], int ranks[ITEMS_PER_THREAD], ValidFlag is_valid[ITEMS_PER_THREAD], int valid_items)']]],
+  ['scattertoblocked',['ScatterToBlocked',['../classcub_1_1_block_exchange.html#a43edc6bcdf295446b03921abc213140e',1,'cub::BlockExchange']]],
+  ['scattertostriped',['ScatterToStriped',['../classcub_1_1_block_exchange.html#ae8204b7235ce1a49b4ff2b309d53d386',1,'cub::BlockExchange::ScatterToStriped(T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])'],['../classcub_1_1_block_exchange.html#a29bc72c298980c83ea5618e439486276',1,'cub::BlockExchange::ScatterToStriped(T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD], ValidFlag is_valid[ITEMS_PER_THREAD])']]],
+  ['scattertostripedguarded',['ScatterToStripedGuarded',['../classcub_1_1_block_exchange.html#a2dfffd9eca4f97e0865c0516a500c014',1,'cub::BlockExchange']]],
   ['setmaxcachedbytes',['SetMaxCachedBytes',['../structcub_1_1_caching_device_allocator.html#a2216ab13fdeb11ce61f04f69899fff33',1,'cub::CachingDeviceAllocator']]],
   ['shl_5fadd',['SHL_ADD',['../group___util_ptx.html#ga79b9963a4b033d545e42159e5f0b1621',1,'cub']]],
   ['shr_5fadd',['SHR_ADD',['../group___util_ptx.html#gaa88f90f5d4f92393fca48679795ce7e6',1,'cub']]],

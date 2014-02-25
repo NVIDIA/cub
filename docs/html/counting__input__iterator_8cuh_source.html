@@ -103,7 +103,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="counting__input__iterator_8cuh.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/******************************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011-2013, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * </span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -139,139 +139,145 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;../util_device.cuh&quot;</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &quot;../util_namespace.cuh&quot;</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#include &lt;thrust/iterator/iterator_facade.h&gt;</span></div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor">#include &lt;thrust/iterator/iterator_traits.h&gt;</span></div>
-<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;CUB_NS_PREFIX</div>
-<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
-<div class="line"><a name="l00051"></a><span class="lineno">   51</span>&#160;<span class="keyword">namespace </span>cub {</div>
-<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;</div>
-<div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;<span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;    <span class="keyword">typename</span> ValueType,</div>
-<div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keyword">typename</span> Offset = ptrdiff_t&gt;</div>
-<div class="line"><a name="l00089"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html">   89</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">CountingInputIterator</a></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;{</div>
-<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;</div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="comment">// Required iterator traits</span></div>
-<div class="line"><a name="l00094"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a1b848a7068f4ca61691192feccdb3c1c">   94</a></span>&#160;    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">CountingInputIterator</a>               <a class="code" href="classcub_1_1_counting_input_iterator.html#a1b848a7068f4ca61691192feccdb3c1c" title="My own type. ">self_type</a>;              </div>
-<div class="line"><a name="l00095"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#af12cc27b1b8fdfbdaacb64008f9671ca">   95</a></span>&#160;    <span class="keyword">typedef</span> Offset                              <a class="code" href="classcub_1_1_counting_input_iterator.html#af12cc27b1b8fdfbdaacb64008f9671ca" title="Type to express the result of subtracting one iterator from another. ">difference_type</a>;        </div>
-<div class="line"><a name="l00096"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#acbf0b49c06d27338f1b2e2ed5b1faece">   96</a></span>&#160;    <span class="keyword">typedef</span> ValueType                           <a class="code" href="classcub_1_1_counting_input_iterator.html#acbf0b49c06d27338f1b2e2ed5b1faece" title="The type of the element the iterator can point to. ">value_type</a>;             </div>
-<div class="line"><a name="l00097"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a373a7388f0bb32859151cb3631dd14fb">   97</a></span>&#160;    <span class="keyword">typedef</span> ValueType*                          <a class="code" href="classcub_1_1_counting_input_iterator.html#a373a7388f0bb32859151cb3631dd14fb" title="The type of a pointer to an element the iterator can point to. ">pointer</a>;                </div>
-<div class="line"><a name="l00098"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e">   98</a></span>&#160;    <span class="keyword">typedef</span> ValueType                           <a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e" title="The type of a reference to an element the iterator can point to. ">reference</a>;              </div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="comment">// Use Thrust&#39;s iterator categories so we can use these iterators in thrust methods</span></div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> thrust::detail::iterator_facade_category&lt;</div>
-<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;        thrust::any_system_tag,</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;        thrust::random_access_traversal_tag,</div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html#acbf0b49c06d27338f1b2e2ed5b1faece" title="The type of the element the iterator can point to. ">value_type</a>,</div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e" title="The type of a reference to an element the iterator can point to. ">reference</a></div>
-<div class="line"><a name="l00106"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#ae33580a6909bcd47c982ca1d54e3f5cd">  106</a></span>&#160;      &gt;::type <a class="code" href="classcub_1_1_counting_input_iterator.html#ae33580a6909bcd47c982ca1d54e3f5cd" title="The iterator category. ">iterator_category</a>;                                        </div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;</div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="comment">//    typedef std::random_access_iterator_tag     iterator_category;      ///&lt; The iterator category</span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;</div>
-<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    ValueType val;</div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;</div>
-<div class="line"><a name="l00117"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#ace2498bdc50c3ff214e483f2abe8f2bc">  117</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#ace2498bdc50c3ff214e483f2abe8f2bc" title="Constructor. ">CountingInputIterator</a>(</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;        <span class="keyword">const</span> ValueType &amp;val)          </div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    :</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        val(val)</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    {}</div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="preprocessor">#if (THRUST_VERSION &gt;= 100700)</span></div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;<span class="preprocessor"></span>    <span class="comment">// This iterator is compatible with Thrust API 1.7 and newer</span></div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;<span class="preprocessor">    #include &lt;thrust/iterator/iterator_facade.h&gt;</span></div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="preprocessor">    #include &lt;thrust/iterator/iterator_traits.h&gt;</span></div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="preprocessor">#endif // THRUST_VERSION</span></div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
+<div class="line"><a name="l00052"></a><span class="lineno">   52</span>&#160;CUB_NS_PREFIX</div>
+<div class="line"><a name="l00053"></a><span class="lineno">   53</span>&#160;</div>
+<div class="line"><a name="l00055"></a><span class="lineno">   55</span>&#160;<span class="keyword">namespace </span>cub {</div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;</div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keyword">typename</span> ValueType,</div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keyword">typename</span> Offset = ptrdiff_t&gt;</div>
+<div class="line"><a name="l00094"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html">   94</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">CountingInputIterator</a></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;{</div>
+<div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;</div>
+<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;    <span class="comment">// Required iterator traits</span></div>
+<div class="line"><a name="l00099"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a1b848a7068f4ca61691192feccdb3c1c">   99</a></span>&#160;    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">CountingInputIterator</a>               <a class="code" href="classcub_1_1_counting_input_iterator.html#a1b848a7068f4ca61691192feccdb3c1c" title="My own type. ">self_type</a>;              </div>
+<div class="line"><a name="l00100"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#af12cc27b1b8fdfbdaacb64008f9671ca">  100</a></span>&#160;    <span class="keyword">typedef</span> Offset                              <a class="code" href="classcub_1_1_counting_input_iterator.html#af12cc27b1b8fdfbdaacb64008f9671ca" title="Type to express the result of subtracting one iterator from another. ">difference_type</a>;        </div>
+<div class="line"><a name="l00101"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#acbf0b49c06d27338f1b2e2ed5b1faece">  101</a></span>&#160;    <span class="keyword">typedef</span> ValueType                           <a class="code" href="classcub_1_1_counting_input_iterator.html#acbf0b49c06d27338f1b2e2ed5b1faece" title="The type of the element the iterator can point to. ">value_type</a>;             </div>
+<div class="line"><a name="l00102"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a373a7388f0bb32859151cb3631dd14fb">  102</a></span>&#160;    <span class="keyword">typedef</span> ValueType*                          <a class="code" href="classcub_1_1_counting_input_iterator.html#a373a7388f0bb32859151cb3631dd14fb" title="The type of a pointer to an element the iterator can point to. ">pointer</a>;                </div>
+<div class="line"><a name="l00103"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e">  103</a></span>&#160;    <span class="keyword">typedef</span> ValueType                           <a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e" title="The type of a reference to an element the iterator can point to. ">reference</a>;              </div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;</div>
+<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="preprocessor">#if (THRUST_VERSION &gt;= 100700)</span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor"></span>    <span class="comment">// Use Thrust&#39;s iterator categories so we can use these iterators in Thrust 1.7 (or newer) methods</span></div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> thrust::detail::iterator_facade_category&lt;</div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;        thrust::any_system_tag,</div>
+<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;        thrust::random_access_traversal_tag,</div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html#acbf0b49c06d27338f1b2e2ed5b1faece" title="The type of the element the iterator can point to. ">value_type</a>,</div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e" title="The type of a reference to an element the iterator can point to. ">reference</a></div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;      &gt;::type <a class="code" href="classcub_1_1_counting_input_iterator.html#a63677acef2018a3d20792f617c611949" title="The iterator category. ">iterator_category</a>;                                        </div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a63677acef2018a3d20792f617c611949">  114</a></span>&#160;<span class="preprocessor"></span>    <span class="keyword">typedef</span> std::random_access_iterator_tag     <a class="code" href="classcub_1_1_counting_input_iterator.html#a63677acef2018a3d20792f617c611949" title="The iterator category. ">iterator_category</a>;      </div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;<span class="preprocessor">#endif  // THRUST_VERSION</span></div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    ValueType val;</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;</div>
-<div class="line"><a name="l00124"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a1d4a15bad953fc42c927946cee732ae7">  124</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a1d4a15bad953fc42c927946cee732ae7" title="Postfix increment. ">operator++</a>(<span class="keywordtype">int</span>)</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    {</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval = *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        val++;</div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="keywordflow">return</span> retval;</div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    }</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;</div>
-<div class="line"><a name="l00132"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#abf619a01ae054fab847e1161ec4af132">  132</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#abf619a01ae054fab847e1161ec4af132" title="Prefix increment. ">operator++</a>()</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    {</div>
+<div class="line"><a name="l00124"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#ace2498bdc50c3ff214e483f2abe8f2bc">  124</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#ace2498bdc50c3ff214e483f2abe8f2bc" title="Constructor. ">CountingInputIterator</a>(</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <span class="keyword">const</span> ValueType &amp;val)          </div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    :</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        val(val)</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    {}</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;</div>
+<div class="line"><a name="l00131"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a1d4a15bad953fc42c927946cee732ae7">  131</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a1d4a15bad953fc42c927946cee732ae7" title="Postfix increment. ">operator++</a>(<span class="keywordtype">int</span>)</div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    {</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval = *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        val++;</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    }</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;</div>
-<div class="line"><a name="l00139"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a3d1a79ea200a1179d5b0b244219411bf">  139</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a3d1a79ea200a1179d5b0b244219411bf" title="Indirection. ">operator*</a>()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        <span class="keywordflow">return</span> val;</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    }</div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00146"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a472f06efd2522c1b70ea07bbffba64a9">  146</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a472f06efd2522c1b70ea07bbffba64a9" title="Addition. ">operator+</a>(Distance n)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#abf619a01ae054fab847e1161ec4af132">  139</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#abf619a01ae054fab847e1161ec4af132" title="Prefix increment. ">operator++</a>()</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    {</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        val++;</div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    }</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;</div>
+<div class="line"><a name="l00146"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a3d1a79ea200a1179d5b0b244219411bf">  146</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a3d1a79ea200a1179d5b0b244219411bf" title="Indirection. ">operator*</a>()<span class="keyword"> const</span></div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval(val + n);</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <span class="keywordflow">return</span> retval;</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    }</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00154"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#ac7539b871961e3cbb8280f470309e7d8">  154</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; <a class="code" href="classcub_1_1_counting_input_iterator.html#ac7539b871961e3cbb8280f470309e7d8" title="Addition assignment. ">operator+=</a>(Distance n)</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    {</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        val += n;</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    }</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00162"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a3547991f38f41c6728fa0fde5f9683b6">  162</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a3547991f38f41c6728fa0fde5f9683b6" title="Subtraction. ">operator-</a>(Distance n)<span class="keyword"> const</span></div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval(val - n);</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordflow">return</span> retval;</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    }</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00170"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a5bdbf7079896771ed930a65dfcf35a2f">  170</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; <a class="code" href="classcub_1_1_counting_input_iterator.html#a5bdbf7079896771ed930a65dfcf35a2f" title="Subtraction assignment. ">operator-=</a>(Distance n)</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;    {</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        val -= n;</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    }</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;</div>
-<div class="line"><a name="l00177"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a3540c43f13cdb93615fb80c9c8833011">  177</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#af12cc27b1b8fdfbdaacb64008f9671ca" title="Type to express the result of subtracting one iterator from another. ">difference_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a3540c43f13cdb93615fb80c9c8833011" title="Distance. ">operator-</a>(<a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> other)<span class="keyword"> const</span></div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        <span class="keywordflow">return</span> val - other.val;</div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;    }</div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;</div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00184"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a5bc7a624fe342aa6221f0ee3f3857fd2">  184</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a5bc7a624fe342aa6221f0ee3f3857fd2" title="Array subscript. ">operator[]</a>(Distance n)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <span class="keywordflow">return</span> val;</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    }</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00153"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a472f06efd2522c1b70ea07bbffba64a9">  153</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a472f06efd2522c1b70ea07bbffba64a9" title="Addition. ">operator+</a>(Distance n)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval(val + n);</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="keywordflow">return</span> retval;</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    }</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00161"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#ac7539b871961e3cbb8280f470309e7d8">  161</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; <a class="code" href="classcub_1_1_counting_input_iterator.html#ac7539b871961e3cbb8280f470309e7d8" title="Addition assignment. ">operator+=</a>(Distance n)</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    {</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        val += n;</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    }</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00169"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a3547991f38f41c6728fa0fde5f9683b6">  169</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a3547991f38f41c6728fa0fde5f9683b6" title="Subtraction. ">operator-</a>(Distance n)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval(val - n);</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        <span class="keywordflow">return</span> retval;</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    }</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00177"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a5bdbf7079896771ed930a65dfcf35a2f">  177</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; <a class="code" href="classcub_1_1_counting_input_iterator.html#a5bdbf7079896771ed930a65dfcf35a2f" title="Subtraction assignment. ">operator-=</a>(Distance n)</div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;    {</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;        val -= n;</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;    }</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;</div>
+<div class="line"><a name="l00184"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a3540c43f13cdb93615fb80c9c8833011">  184</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#af12cc27b1b8fdfbdaacb64008f9671ca" title="Type to express the result of subtracting one iterator from another. ">difference_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a3540c43f13cdb93615fb80c9c8833011" title="Distance. ">operator-</a>(<a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> other)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        <span class="keywordflow">return</span> val + n;</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        <span class="keywordflow">return</span> val - other.val;</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    }</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;</div>
-<div class="line"><a name="l00190"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a291261b223bef166519eac45ebefaeea">  190</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#a373a7388f0bb32859151cb3631dd14fb" title="The type of a pointer to an element the iterator can point to. ">pointer</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a291261b223bef166519eac45ebefaeea" title="Structure dereference. ">operator-&gt;</a>()</div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    {</div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;        <span class="keywordflow">return</span> &amp;val;</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    }</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;</div>
-<div class="line"><a name="l00196"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a8425cc964432a2a6a56ab7d03cdc061e">  196</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_counting_input_iterator.html#a8425cc964432a2a6a56ab7d03cdc061e" title="Equal to. ">operator==</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; rhs)</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    {</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <span class="keywordflow">return</span> (val == rhs.val);</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;    }</div>
-<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;</div>
-<div class="line"><a name="l00202"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a2ea01c0e6966612a683913cb1360a904">  202</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_counting_input_iterator.html#a2ea01c0e6966612a683913cb1360a904" title="Not equal to. ">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; rhs)</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    {</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <span class="keywordflow">return</span> (val != rhs.val);</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    }</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;</div>
-<div class="line"><a name="l00208"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">  208</a></span>&#160;    <span class="keyword">friend</span> std::ostream&amp; <a class="code" href="classcub_1_1_counting_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80" title="ostream operator ">operator&lt;&lt;</a>(std::ostream&amp; os, <span class="keyword">const</span> <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; itr)</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;    {</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;        os &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> &lt;&lt; itr.val &lt;&lt; <span class="stringliteral">&quot;]&quot;</span>;</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        <span class="keywordflow">return</span> os;</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00191"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a5bc7a624fe342aa6221f0ee3f3857fd2">  191</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a5bc7a624fe342aa6221f0ee3f3857fd2" title="Array subscript. ">operator[]</a>(Distance n)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        <span class="keywordflow">return</span> val + n;</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    }</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;</div>
+<div class="line"><a name="l00197"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a291261b223bef166519eac45ebefaeea">  197</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#a373a7388f0bb32859151cb3631dd14fb" title="The type of a pointer to an element the iterator can point to. ">pointer</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a291261b223bef166519eac45ebefaeea" title="Structure dereference. ">operator-&gt;</a>()</div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    {</div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        <span class="keywordflow">return</span> &amp;val;</div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;    }</div>
+<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;</div>
+<div class="line"><a name="l00203"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a8425cc964432a2a6a56ab7d03cdc061e">  203</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_counting_input_iterator.html#a8425cc964432a2a6a56ab7d03cdc061e" title="Equal to. ">operator==</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; rhs)</div>
+<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;    {</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        <span class="keywordflow">return</span> (val == rhs.val);</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    }</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;</div>
+<div class="line"><a name="l00209"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a2ea01c0e6966612a683913cb1360a904">  209</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_counting_input_iterator.html#a2ea01c0e6966612a683913cb1360a904" title="Not equal to. ">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; rhs)</div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;    {</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;        <span class="keywordflow">return</span> (val != rhs.val);</div>
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    }</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;};</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;       <span class="comment">// end group UtilIterator</span></div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00215"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">  215</a></span>&#160;    <span class="keyword">friend</span> std::ostream&amp; <a class="code" href="classcub_1_1_counting_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80" title="ostream operator ">operator&lt;&lt;</a>(std::ostream&amp; os, <span class="keyword">const</span> <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; itr)</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    {</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;        os &lt;&lt; <span class="stringliteral">&quot;[&quot;</span> &lt;&lt; itr.val &lt;&lt; <span class="stringliteral">&quot;]&quot;</span>;</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;        <span class="keywordflow">return</span> os;</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    }</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;};</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;       <span class="comment">// end group UtilIterator</span></div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:19 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:24 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

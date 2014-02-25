@@ -116,6 +116,7 @@ class cub::CountingInputIterator&lt; ValueType, Offset &gt;</h3>
 <dl class="section user"><dt>Overview</dt><dd><ul>
 <li>After initializing a <a class="el" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">CountingInputIterator</a> to a certain integer <code>base</code>, read references at <code>offset</code> will return the value <code>base</code> + <code>offset</code>.</li>
 <li>Can be constructed, manipulated, dereferenced, and exchanged within and between host and device functions.</li>
+<li>Compatible with Thrust API v1.7 or newer.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Example</dt><dd>The code snippet below illustrates the use of <code><a class="el" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">CountingInputIterator</a></code> to dereference a sequence of incrementing integers. </dd></dl>
@@ -136,7 +137,7 @@ class cub::CountingInputIterator&lt; ValueType, Offset &gt;</h3>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="counting__input__iterator_8cuh_source.html#l00089">89</a> of file <a class="el" href="counting__input__iterator_8cuh_source.html">counting_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="counting__input__iterator_8cuh_source.html#l00094">94</a> of file <a class="el" href="counting__input__iterator_8cuh_source.html">counting_input_iterator.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -160,14 +161,11 @@ typedef ValueType *&#160;</td><td class="memItemRight" valign="bottom"><a class=
 typedef ValueType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e">reference</a></td></tr>
 <tr class="memdesc:a48ab3ff456cec014ed71562854515a7e"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
 <tr class="separator:a48ab3ff456cec014ed71562854515a7e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae33580a6909bcd47c982ca1d54e3f5cd"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae33580a6909bcd47c982ca1d54e3f5cd"></a>
+<tr class="memitem:a63677acef2018a3d20792f617c611949"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a63677acef2018a3d20792f617c611949"></a>
 typedef <br class="typebreak"/>
-thrust::detail::iterator_facade_category<br class="typebreak"/>
-&lt; thrust::any_system_tag, <br class="typebreak"/>
-thrust::random_access_traversal_tag, <br class="typebreak"/>
-<a class="el" href="classcub_1_1_counting_input_iterator.html#acbf0b49c06d27338f1b2e2ed5b1faece">value_type</a>, <a class="el" href="classcub_1_1_counting_input_iterator.html#a48ab3ff456cec014ed71562854515a7e">reference</a> &gt;::type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_counting_input_iterator.html#ae33580a6909bcd47c982ca1d54e3f5cd">iterator_category</a></td></tr>
-<tr class="memdesc:ae33580a6909bcd47c982ca1d54e3f5cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
-<tr class="separator:ae33580a6909bcd47c982ca1d54e3f5cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_counting_input_iterator.html#a63677acef2018a3d20792f617c611949">iterator_category</a></td></tr>
+<tr class="memdesc:a63677acef2018a3d20792f617c611949"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
+<tr class="separator:a63677acef2018a3d20792f617c611949"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -281,7 +279,7 @@ template&lt;typename ValueType, typename Offset = ptrdiff_t&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="counting__input__iterator_8cuh_source.html#l00117">117</a> of file <a class="el" href="counting__input__iterator_8cuh_source.html">counting_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="counting__input__iterator_8cuh_source.html#l00124">124</a> of file <a class="el" href="counting__input__iterator_8cuh_source.html">counting_input_iterator.cuh</a>.</p>
 
 </div>
 </div>
@@ -292,7 +290,7 @@ template&lt;typename ValueType, typename Offset = ptrdiff_t&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

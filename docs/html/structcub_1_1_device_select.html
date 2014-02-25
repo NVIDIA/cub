@@ -105,19 +105,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><p><a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data ite...">DeviceSelect</a> provides device-wide, parallel operations for selecting items from sequences of data items residing within global memory. </p>
+<div class="textblock"><p><a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">DeviceSelect</a> provides device-wide, parallel operations for compacting selected items from sequences of data items residing within global memory. </p>
 <div class="image">
 <img src="select_logo.png" alt="select_logo.png"/>
 <div class="caption">
 .</div></div>
- <dl class="section user"><dt>Overview</dt><dd>These operations apply a selection criterion to selectively copy items from a specified input sequence to a corresponding output sequence.</dd></dl>
+ <dl class="section user"><dt>Overview</dt><dd>These operations apply a selection criterion to selectively copy items from a specified input sequence to a compact output sequence.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data ite...">DeviceSelect</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">DeviceSelect</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd></dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>The work-complexity of select-flagged, select-if, and select-unique as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU.</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a> performance across different CUDA architectures for <code>int32</code> items, where 50% of the items are randomly selected.</dd></dl>
+<div class="image">
+<img src="select_if_int32_50_percent.png" alt="select_if_int32_50_percent.png"/>
+</div>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#ae635fc4f38a07a1c1dd90c177e993312" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">DeviceSelect::Unique</a> performance across different CUDA architectures for <code>int32</code> items where segments have lengths uniformly sampled from [1,1000].</dd></dl>
+<div class="image">
+<img src="select_unique_int32_len_500.png" alt="select_unique_int32_len_500.png"/>
+</div>
+<dl class="section user"><dt></dt><dd>Performance plots for other scenarios can be found in the detailed method descriptions below. </dd></dl>
 
-<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00591">591</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00600">600</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
@@ -242,7 +251,7 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_select.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input, flags, and output</span></div>
@@ -269,22 +278,22 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for selection items (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">FlagIterator</td><td><b>[inferred]</b> Random-access input iterator type for selection flags (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for selected items (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">NumSelectedIterator</td><td><b>[inferred]</b> Output iterator type for recording number of items selected (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">FlagIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading selection flags (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for writing selected items (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">NumSelectedIterator</td><td><b>[inferred]</b> Output iterator type for recording the number of items selected (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Input iterator pointing to data items </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_flags</td><td>Input iterator pointing to selection flags </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Output iterator pointing to selected items </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_num_selected</td><td>Output iterator pointing to total number selected </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to select from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_flags</td><td>Pointer to the input sequence of selection flags </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of selected data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
@@ -292,7 +301,7 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_select_flagged_8cu-example.html#a2">example_device_select_flagged.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00643">643</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00652">652</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
 
 </div>
 </div>
@@ -384,16 +393,34 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated select-if performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively. Items are selected with 50% probability.</dd></dl>
+<div class="image">
+<img src="select_if_int32_50_percent.png" alt="select_if_int32_50_percent.png"/>
+</div>
+ <div class="image">
+<img src="select_if_int64_50_percent.png" alt="select_if_int64_50_percent.png"/>
+</div>
+<dl class="section user"><dt></dt><dd>The following charts are similar, but 5% selection probability:</dd></dl>
+<div class="image">
+<img src="select_if_int32_5_percent.png" alt="select_if_int32_5_percent.png"/>
+</div>
+ <div class="image">
+<img src="select_if_int64_5_percent.png" alt="select_if_int64_5_percent.png"/>
+</div>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_select.cuh&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Functor for selecting values that are multiples of three</span></div>
-<div class="line"><span class="keyword">struct </span>IsTriple</div>
+<div class="line"><span class="comment">// Functor type for selecting values less than some criteria</span></div>
+<div class="line"><span class="keyword">struct </span>LessThan</div>
 <div class="line">{</div>
-<div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line">    <span class="keywordtype">int</span> compare;</div>
+<div class="line"></div>
 <div class="line">    __host__ __device__ __forceinline__</div>
-<div class="line">    <span class="keywordtype">bool</span> operator()(<span class="keyword">const</span> T &amp;a)<span class="keyword"> const </span>{</div>
-<div class="line">        <span class="keywordflow">return</span> (a % 3 == 0);</div>
+<div class="line">    LessThan(<span class="keywordtype">int</span> compare) : compare(compare) {}</div>
+<div class="line"></div>
+<div class="line">    __host__ __device__ __forceinline__</div>
+<div class="line">    <span class="keywordtype">bool</span> operator()(<span class="keyword">const</span> <span class="keywordtype">int</span> &amp;a)<span class="keyword"> const </span>{</div>
+<div class="line">        <span class="keywordflow">return</span> (a &lt; compare);</div>
 <div class="line">    }</div>
 <div class="line">};</div>
 <div class="line"></div>
@@ -402,7 +429,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <div class="line"><span class="keywordtype">int</span>      *d_in;              <span class="comment">// e.g., [0, 2, 3, 9, 5, 2, 81, 8]</span></div>
 <div class="line"><span class="keywordtype">int</span>      *d_out;             <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
 <div class="line"><span class="keywordtype">int</span>      *d_num_selected;    <span class="comment">// e.g., [ ]</span></div>
-<div class="line">IsTriple select_op;</div>
+<div class="line">LessThan select_op(7);</div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
@@ -416,26 +443,26 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <div class="line"><span class="comment">// Run selection</span></div>
 <div class="line"><a class="code" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out             &lt;-- [0, 3, 9, 81]</span></div>
-<div class="line"><span class="comment">// d_num_selected    &lt;-- [4]</span></div>
+<div class="line"><span class="comment">// d_out             &lt;-- [0, 2, 3, 5, 2]</span></div>
+<div class="line"><span class="comment">// d_num_selected    &lt;-- [5]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for selection items (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for selected items (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">NumSelectedIterator</td><td><b>[inferred]</b> Output iterator type for recording number of items selected (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for writing selected items (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">NumSelectedIterator</td><td><b>[inferred]</b> Output iterator type for recording the number of items selected (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">SelectOp</td><td><b>[inferred]</b> Selection operator type having member <code>bool operator()(const T &amp;a)</code> </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Input iterator pointing to data items </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Output iterator pointing to selected items </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_num_selected</td><td>Output iterator pointing to total number selected </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to select from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of selected data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">select_op</td><td>Unary selection operator </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
@@ -444,7 +471,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_select_if_8cu-example.html#a2">example_device_select_if.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00732">732</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00759">759</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
 
 </div>
 </div>
@@ -525,31 +552,34 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 .</div></div>
  </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The <code>==</code> equality operator is used to determine equal-valued keys</li>
+<li>The <code>==</code> equality operator is used to determine whether keys are equivalent</li>
 <li>Copies of the selected items are compacted into <code>d_out</code> and maintain their original relative ordering.</li>
 <li>This operation requires an allocation of temporary device storage. When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated select-unique performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively. Segments have lengths uniformly sampled from [1,1000].</dd></dl>
+<div class="image">
+<img src="select_unique_int32_len_500.png" alt="select_unique_int32_len_500.png"/>
+</div>
+ <div class="image">
+<img src="select_unique_int64_len_500.png" alt="select_unique_int64_len_500.png"/>
+</div>
+<dl class="section user"><dt></dt><dd>The following charts are similar, but with segment lengths uniformly sampled from [1,10]:</dd></dl>
+<div class="image">
+<img src="select_unique_int32_len_5.png" alt="select_unique_int32_len_5.png"/>
+</div>
+ <div class="image">
+<img src="select_unique_int64_len_5.png" alt="select_unique_int64_len_5.png"/>
+</div>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_select.cuh&gt;</span></div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Functor for selecting values that are multiples of three</span></div>
-<div class="line"><span class="keyword">struct </span>IsTriple</div>
-<div class="line">{</div>
-<div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line">    __host__ __device__ __forceinline__</div>
-<div class="line">    T operator()(<span class="keyword">const</span> T &amp;a)<span class="keyword"> const </span>{</div>
-<div class="line">        <span class="keywordflow">return</span> (a % 3 == 0);</div>
-<div class="line">    }</div>
-<div class="line">};</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>      num_items;          <span class="comment">// e.g., 8</span></div>
 <div class="line"><span class="keywordtype">int</span>      *d_in;              <span class="comment">// e.g., [0, 2, 2, 9, 5, 5, 5, 8]</span></div>
 <div class="line"><span class="keywordtype">int</span>      *d_out;             <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
 <div class="line"><span class="keywordtype">int</span>      *d_num_selected;    <span class="comment">// e.g., [ ]</span></div>
-<div class="line">IsTriple select_op;</div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
@@ -568,20 +598,20 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for selection items (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for selected items (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">NumSelectedIterator</td><td><b>[inferred]</b> Output iterator type for recording number of items selected (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">InputIterator</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for writing selected items (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">NumSelectedIterator</td><td><b>[inferred]</b> Output iterator type for recording the number of items selected (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is returned in <code>temp_storage_bytes</code> and no work is done. </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Input iterator pointing to data items </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_out</td><td>Output iterator pointing to selected items </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_num_selected</td><td>Output iterator pointing to total number selected </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of items to select from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of selected data items </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
@@ -589,7 +619,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_select_unique_8cu-example.html#a2">example_device_select_unique.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00820">820</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00850">850</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
 
 </div>
 </div>
@@ -600,7 +630,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

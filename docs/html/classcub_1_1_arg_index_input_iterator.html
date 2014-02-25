@@ -117,6 +117,7 @@ class cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</h3>
 <li><a class="el" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator</a> wraps a random access input iterator <code>itr</code> of type <code>InputIterator</code>. Dereferencing an <a class="el" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator</a> at offset <code>i</code> produces a <code><a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a></code> value whose <code>offset</code> field is <code>i</code> and whose <code>item</code> field is <code>itr[i]</code>.</li>
 <li>Can be used with any data type.</li>
 <li>Can be constructed, manipulated, and exchanged within and between host and device functions. Wrapped host memory can only be dereferenced on the host, and wrapped device memory can only be dereferenced on the device.</li>
+<li>Compatible with Thrust API v1.7 or newer.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Example</dt><dd>The code snippet below illustrates the use of <code><a class="el" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator</a></code> to dereference an array of doubles </dd></dl>
@@ -149,7 +150,7 @@ class cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</h3>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="arg__index__input__iterator_8cuh_source.html#l00105">105</a> of file <a class="el" href="arg__index__input__iterator_8cuh_source.html">arg_index_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="arg__index__input__iterator_8cuh_source.html#l00111">111</a> of file <a class="el" href="arg__index__input__iterator_8cuh_source.html">arg_index_input_iterator.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -174,14 +175,11 @@ typedef <a class="el" href="classcub_1_1_arg_index_input_iterator.html#ada4b2b51
 typedef <a class="el" href="classcub_1_1_arg_index_input_iterator.html#ada4b2b51d9e2957c4839590c7ac135c3">value_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#a2641504729933441133e02eb61941a34">reference</a></td></tr>
 <tr class="memdesc:a2641504729933441133e02eb61941a34"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
 <tr class="separator:a2641504729933441133e02eb61941a34"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30d0c8fbb5ddacf352455db48608bf81"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a30d0c8fbb5ddacf352455db48608bf81"></a>
+<tr class="memitem:aa6e7f084debf752aec852177b30f8daa"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa6e7f084debf752aec852177b30f8daa"></a>
 typedef <br class="typebreak"/>
-thrust::detail::iterator_facade_category<br class="typebreak"/>
-&lt; thrust::any_system_tag, <br class="typebreak"/>
-thrust::random_access_traversal_tag, <br class="typebreak"/>
-<a class="el" href="classcub_1_1_arg_index_input_iterator.html#ada4b2b51d9e2957c4839590c7ac135c3">value_type</a>, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a2641504729933441133e02eb61941a34">reference</a> &gt;::type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#a30d0c8fbb5ddacf352455db48608bf81">iterator_category</a></td></tr>
-<tr class="memdesc:a30d0c8fbb5ddacf352455db48608bf81"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
-<tr class="separator:a30d0c8fbb5ddacf352455db48608bf81"><td class="memSeparator" colspan="2">&#160;</td></tr>
+std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#aa6e7f084debf752aec852177b30f8daa">iterator_category</a></td></tr>
+<tr class="memdesc:aa6e7f084debf752aec852177b30f8daa"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
+<tr class="separator:aa6e7f084debf752aec852177b30f8daa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -306,7 +304,7 @@ template&lt;typename InputIterator, typename Offset = ptrdiff_t&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="arg__index__input__iterator_8cuh_source.html#l00140">140</a> of file <a class="el" href="arg__index__input__iterator_8cuh_source.html">arg_index_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="arg__index__input__iterator_8cuh_source.html#l00148">148</a> of file <a class="el" href="arg__index__input__iterator_8cuh_source.html">arg_index_input_iterator.cuh</a>.</p>
 
 </div>
 </div>
@@ -317,7 +315,7 @@ template&lt;typename InputIterator, typename Offset = ptrdiff_t&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:25 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

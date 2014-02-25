@@ -119,6 +119,7 @@ class cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Of
 <li><a class="el" href="classcub_1_1_transform_input_iterator.html" title="A random-access input wrapper for transforming dereferenced values. ">TransformInputIterator</a> wraps a unary conversion functor of type <code>ConversionOp</code> and a random-access input iterator of type <code>InputIterator</code>, using the former to produce references of type <code>ValueType</code> from the latter.</li>
 <li>Can be used with any data type.</li>
 <li>Can be constructed, manipulated, and exchanged within and between host and device functions. Wrapped host memory can only be dereferenced on the host, and wrapped device memory can only be dereferenced on the device.</li>
+<li>Compatible with Thrust API v1.7 or newer.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Example</dt><dd>The code snippet below illustrates the use of <code><a class="el" href="classcub_1_1_transform_input_iterator.html" title="A random-access input wrapper for transforming dereferenced values. ">TransformInputIterator</a></code> to dereference an array of integers, tripling the values and converting them to doubles. </dd></dl>
@@ -155,7 +156,7 @@ class cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Of
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="transform__input__iterator_8cuh_source.html#l00112">112</a> of file <a class="el" href="transform__input__iterator_8cuh_source.html">transform_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="transform__input__iterator_8cuh_source.html#l00117">117</a> of file <a class="el" href="transform__input__iterator_8cuh_source.html">transform_input_iterator.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
@@ -179,14 +180,11 @@ typedef ValueType *&#160;</td><td class="memItemRight" valign="bottom"><a class=
 typedef ValueType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_transform_input_iterator.html#ad87729067aa76757edab33669bd4ce71">reference</a></td></tr>
 <tr class="memdesc:ad87729067aa76757edab33669bd4ce71"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
 <tr class="separator:ad87729067aa76757edab33669bd4ce71"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad5b3dd39f6d50df29fdb41ef8a5adb79"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad5b3dd39f6d50df29fdb41ef8a5adb79"></a>
+<tr class="memitem:a9a78aa27322d150ead5fc26f39dbd8ec"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9a78aa27322d150ead5fc26f39dbd8ec"></a>
 typedef <br class="typebreak"/>
-thrust::detail::iterator_facade_category<br class="typebreak"/>
-&lt; thrust::any_system_tag, <br class="typebreak"/>
-thrust::random_access_traversal_tag, <br class="typebreak"/>
-<a class="el" href="classcub_1_1_transform_input_iterator.html#a71f31c0245f2a927e12d469e91287960">value_type</a>, <a class="el" href="classcub_1_1_transform_input_iterator.html#ad87729067aa76757edab33669bd4ce71">reference</a> &gt;::type&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_transform_input_iterator.html#ad5b3dd39f6d50df29fdb41ef8a5adb79">iterator_category</a></td></tr>
-<tr class="memdesc:ad5b3dd39f6d50df29fdb41ef8a5adb79"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
-<tr class="separator:ad5b3dd39f6d50df29fdb41ef8a5adb79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_transform_input_iterator.html#a9a78aa27322d150ead5fc26f39dbd8ec">iterator_category</a></td></tr>
+<tr class="memdesc:a9a78aa27322d150ead5fc26f39dbd8ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
+<tr class="separator:a9a78aa27322d150ead5fc26f39dbd8ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -311,7 +309,7 @@ template&lt;typename ValueType, typename ConversionOp, typename InputIterator, t
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="transform__input__iterator_8cuh_source.html#l00141">141</a> of file <a class="el" href="transform__input__iterator_8cuh_source.html">transform_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="transform__input__iterator_8cuh_source.html#l00148">148</a> of file <a class="el" href="transform__input__iterator_8cuh_source.html">transform_input_iterator.cuh</a>.</p>
 
 </div>
 </div>
@@ -322,7 +320,7 @@ template&lt;typename ValueType, typename ConversionOp, typename InputIterator, t
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Dec 11 2013 07:19:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:12:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
