@@ -383,7 +383,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Added device-wide reduce-by-key (<a class="el" href="structcub_1_1_device_reduce.html#a62400e8632002f3ba601d4392b997bc7" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>, <a class="el" href="structcub_1_1_device_reduce.html#ac563c98fb1d6cde7d4365bc34f6b698d" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">cub::DeviceReduce::RunLengthEncode</a>)</li>
 </ul>
 </li>
-<li>Performance<ul>
+<li>Performance:<ul>
 <li>Improved <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a>, <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">cub::DeviceSelect</a>, and <a class="el" href="structcub_1_1_device_partition.html" title="DevicePartition provides device-wide, parallel operations for partitioning sequences of data items re...">cub::DevicePartition</a> performance</li>
 </ul>
 </li>
@@ -393,7 +393,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Update doc and tests to reflect CUB "fancy" iterator (in)compatibilities with CUDA 5.0 (and older) and Thrust 1.6 (and older).</li>
 </ul>
 </li>
-<li>Bug fixes<ul>
+<li>Bug fixes:<ul>
+<li>Fixed bug where inclusion of Thrust headers in a certain order prevented CUB device-wide primitives from working properly</li>
 <li>Revised the fence operation of temporary tile status bookkeeping for <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> (and similar) to be safe for current code run on future platforms</li>
 <li>Fixed <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> bug where Win32 alignment disagreements between host and device regarding user-defined data types would corrupt tile status</li>
 <li>Fixed <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> bug where certain exclusive scans on custom data types for the <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">cub::BLOCK_SCAN_WARP_SCANS</a> variant would return incorrect results for the first thread in the block</li>
@@ -494,7 +495,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:29:39 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Feb 25 2014 10:37:24 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
