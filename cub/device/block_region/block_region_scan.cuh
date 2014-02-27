@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockScanRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a region of tiles.
+ * cub::BlockRegionScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a region of tiles.
  */
 
 #pragma once
@@ -55,7 +55,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockScanRegion
+ * Parameterizable tuning policy type for BlockRegionScan
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -66,7 +66,7 @@ template <
     BlockStoreAlgorithm         _STORE_ALGORITHM,               ///< The BlockStore algorithm to use
     bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockScanRegionPolicy
+struct BlockRegionScanPolicy
 {
     enum
     {
@@ -88,16 +88,16 @@ struct BlockScanRegionPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockScanRegion implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a region of tiles.
+ * \brief BlockRegionScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a region of tiles.
  */
 template <
-    typename BlockScanRegionPolicy,     ///< Parameterized BlockScanRegionPolicy tuning policy type
+    typename BlockRegionScanPolicy,     ///< Parameterized BlockRegionScanPolicy tuning policy type
     typename InputIterator,             ///< Random-access input iterator type
     typename OutputIterator,            ///< Random-access output iterator type
     typename ScanOp,                    ///< Scan functor type
     typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
     typename Offset>                    ///< Signed integer type for global offsets
-struct BlockScanRegion
+struct BlockRegionScan
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -111,7 +111,7 @@ struct BlockScanRegion
 
     // Input iterator wrapper type
     typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockScanRegionPolicy::LOAD_MODIFIER, T, Offset>,    // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<BlockRegionScanPolicy::LOAD_MODIFIER, T, Offset>,    // Wrap the native input pointer with CacheModifiedInputIterator
             InputIterator>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIterator;
 
@@ -119,34 +119,34 @@ struct BlockScanRegion
     enum
     {
         INCLUSIVE           = Equals<Identity, NullType>::VALUE,            // Inclusive scan if no identity type is provided
-        BLOCK_THREADS       = BlockScanRegionPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockScanRegionPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockRegionScanPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockRegionScanPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Parameterized BlockLoad type
     typedef BlockLoad<
             WrappedInputIterator,
-            BlockScanRegionPolicy::BLOCK_THREADS,
-            BlockScanRegionPolicy::ITEMS_PER_THREAD,
-            BlockScanRegionPolicy::LOAD_ALGORITHM,
-            BlockScanRegionPolicy::LOAD_WARP_TIME_SLICING>
+            BlockRegionScanPolicy::BLOCK_THREADS,
+            BlockRegionScanPolicy::ITEMS_PER_THREAD,
+            BlockRegionScanPolicy::LOAD_ALGORITHM,
+            BlockRegionScanPolicy::LOAD_WARP_TIME_SLICING>
         BlockLoadT;
 
     // Parameterized BlockStore type
     typedef BlockStore<
             OutputIterator,
-            BlockScanRegionPolicy::BLOCK_THREADS,
-            BlockScanRegionPolicy::ITEMS_PER_THREAD,
-            BlockScanRegionPolicy::STORE_ALGORITHM,
-            BlockScanRegionPolicy::STORE_WARP_TIME_SLICING>
+            BlockRegionScanPolicy::BLOCK_THREADS,
+            BlockRegionScanPolicy::ITEMS_PER_THREAD,
+            BlockRegionScanPolicy::STORE_ALGORITHM,
+            BlockRegionScanPolicy::STORE_WARP_TIME_SLICING>
         BlockStoreT;
 
     // Parameterized BlockScan type
     typedef BlockScan<
             T,
-            BlockScanRegionPolicy::BLOCK_THREADS,
-            BlockScanRegionPolicy::SCAN_ALGORITHM>
+            BlockRegionScanPolicy::BLOCK_THREADS,
+            BlockRegionScanPolicy::SCAN_ALGORITHM>
         BlockScanT;
 
     // Callback type for obtaining tile prefix during block scan
@@ -289,7 +289,7 @@ struct BlockScanRegion
 
     // Constructor
     __device__ __forceinline__
-    BlockScanRegion(
+    BlockRegionScan(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIterator               d_in,               ///< Input data
         OutputIterator              d_out,              ///< Output data

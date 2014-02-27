@@ -117,7 +117,7 @@ enum BlockReduceAlgorithm
  *
  * \tparam T                Data type being reduced
  * \tparam BLOCK_THREADS    The thread block size in threads
- * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_REDUCE_RAKING)
+ * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_REDUCE_WARP_REDUCTIONS)
  *
  * \par Overview
  * - A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
@@ -167,7 +167,7 @@ enum BlockReduceAlgorithm
 template <
     typename                T,
     int                     BLOCK_THREADS,
-    BlockReduceAlgorithm    ALGORITHM = BLOCK_REDUCE_RAKING>
+    BlockReduceAlgorithm    ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS>
 class BlockReduce
 {
 private:
