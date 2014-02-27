@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockHistogramRegionSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
+ * cub::BlockRegionHistogramSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
  */
 
 #pragma once
@@ -47,17 +47,17 @@ namespace cub {
 
 
 /**
- * BlockHistogramRegionSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
+ * BlockRegionHistogramSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
  */
 template <
-    typename    BlockHistogramRegionPolicy,          ///< Tuning policy
+    typename    BlockRegionHistogramPolicy,          ///< Tuning policy
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIterator,                ///< The input iterator type \iterator.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    Offset>                          ///< Signed integer type for global offsets
-struct BlockHistogramRegionSort
+struct BlockRegionHistogramSort
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -69,8 +69,8 @@ struct BlockHistogramRegionSort
     // Constants
     enum
     {
-        BLOCK_THREADS               = BlockHistogramRegionPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD            = BlockHistogramRegionPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS               = BlockRegionHistogramPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD            = BlockRegionHistogramPolicy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS                  = TILE_CHANNEL_ITEMS * CHANNELS,
 
@@ -159,7 +159,7 @@ struct BlockHistogramRegionSort
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockHistogramRegionSort(
+    __device__ __forceinline__ BlockRegionHistogramSort(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIterator     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
@@ -292,7 +292,7 @@ struct BlockHistogramRegionSort
          * Process one channel within a tile.
          */
         static __device__ __forceinline__ void ConsumeTileChannel(
-            BlockHistogramRegionSort *cta,
+            BlockRegionHistogramSort *cta,
             Offset               block_offset,
             int                 valid_items)
         {
@@ -311,7 +311,7 @@ struct BlockHistogramRegionSort
     template <bool FULL_TILE, int END>
     struct IterateChannels<FULL_TILE, END, END>
     {
-        static __device__ __forceinline__ void ConsumeTileChannel(BlockHistogramRegionSort *cta, Offset block_offset, int valid_items) {}
+        static __device__ __forceinline__ void ConsumeTileChannel(BlockRegionHistogramSort *cta, Offset block_offset, int valid_items) {}
     };
 
 

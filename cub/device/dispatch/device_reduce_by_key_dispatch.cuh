@@ -37,12 +37,12 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "device_scan.cuh"
-#include "region/block_reduce_by_key_region.cuh"
-#include "../thread/thread_operators.cuh"
-#include "../grid/grid_queue.cuh"
-#include "../util_device.cuh"
-#include "../util_namespace.cuh"
+#include "device_scan_dispatch.cuh"
+#include "../block_region/block_region_reduce_by_key.cuh"
+#include "../../thread/thread_operators.cuh"
+#include "../../grid/grid_queue.cuh"
+#include "../../util_device.cuh"
+#include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -50,19 +50,15 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
-
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
 
 /**
  * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename            BlockReduceByKeyRegionPolicy,   ///< Parameterized BlockReduceByKeyRegionPolicy tuning policy type
+    typename            BlockRegionReduceByKeyPolicy,   ///< Parameterized BlockRegionReduceByKeyPolicy tuning policy type
     typename            KeyInputIterator,               ///< Random-access input iterator type for keys
     typename            KeyOutputIterator,              ///< Random-access output iterator type for keys
     typename            ValueInputIterator,             ///< Random-access input iterator type for values
@@ -72,7 +68,7 @@ template <
     typename            EqualityOp,                     ///< Key equality operator type
     typename            ReductionOp,                    ///< Value reduction operator type
     typename            Offset>                         ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockReduceByKeyRegionPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockRegionReduceByKeyPolicy::BLOCK_THREADS))
 __global__ void ReduceByKeyRegionKernel(
     KeyInputIterator    d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
     KeyOutputIterator   d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
@@ -87,21 +83,21 @@ __global__ void ReduceByKeyRegionKernel(
     GridQueue<int>      queue)                          ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for reducing tiles of value segments
-    typedef BlockReduceByKeyRegion<
-        BlockReduceByKeyRegionPolicy,
+    typedef BlockRegionReduceByKey<
+        BlockRegionReduceByKeyPolicy,
         KeyInputIterator,
         KeyOutputIterator,
         ValueInputIterator,
         ValueOutputIterator,
         EqualityOp,
         ReductionOp,
-        Offset> BlockReduceByKeyRegionT;
+        Offset> BlockRegionReduceByKeyT;
 
-    // Shared memory for BlockReduceByKeyRegion
-    __shared__ typename BlockReduceByKeyRegionT::TempStorage temp_storage;
+    // Shared memory for BlockRegionReduceByKey
+    __shared__ typename BlockRegionReduceByKeyT::TempStorage temp_storage;
 
     // Process tiles
-    BlockReduceByKeyRegionT(temp_storage, d_keys_in, d_keys_out, d_values_in, d_values_out, equality_op, reduction_op, num_items).ConsumeRegion(
+    BlockRegionReduceByKeyT(temp_storage, d_keys_in, d_keys_out, d_values_in, d_values_out, equality_op, reduction_op, num_items).ConsumeRegion(
         num_tiles,
         queue,
         tile_status,
@@ -165,7 +161,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = (MAX_INPUT_BYTES <= 8) ? 8 : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockReduceByKeyRegionPolicy<
+        typedef BlockRegionReduceByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
@@ -183,7 +179,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockReduceByKeyRegionPolicy<
+        typedef BlockRegionReduceByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -201,7 +197,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockReduceByKeyRegionPolicy<
+        typedef BlockRegionReduceByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -219,7 +215,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockReduceByKeyRegionPolicy<
+        typedef BlockRegionReduceByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -237,7 +233,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockReduceByKeyRegionPolicy<
+        typedef BlockRegionReduceByKeyPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -320,7 +316,7 @@ struct DeviceReduceByKeyDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockReduceByKeyRegionPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRegionReduceByKeyPolicy.
      */
     struct KernelConfig
     {
@@ -331,15 +327,15 @@ struct DeviceReduceByKeyDispatch
         BlockScanAlgorithm      scan_algorithm;
         cudaSharedMemConfig     smem_config;
 
-        template <typename BlockReduceByKeyRegionPolicy>
+        template <typename BlockRegionReduceByKeyPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            block_threads               = BlockReduceByKeyRegionPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockReduceByKeyRegionPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockReduceByKeyRegionPolicy::LOAD_ALGORITHM;
-            two_phase_scatter           = BlockReduceByKeyRegionPolicy::TWO_PHASE_SCATTER;
-            scan_algorithm              = BlockReduceByKeyRegionPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockRegionReduceByKeyPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockRegionReduceByKeyPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockRegionReduceByKeyPolicy::LOAD_ALGORITHM;
+            two_phase_scatter           = BlockRegionReduceByKeyPolicy::TWO_PHASE_SCATTER;
+            scan_algorithm              = BlockRegionReduceByKeyPolicy::SCAN_ALGORITHM;
             smem_config                 = cudaSharedMemBankSizeEightByte;
         }
 
@@ -585,11 +581,6 @@ struct DeviceReduceByKeyDispatch
         return error;
     }
 };
-
-
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
