@@ -1,0 +1,15 @@
+/Debug
+/Release
+/CUDA55_example_block_radix_sort.sdf
+/CUDA55_example_block_radix_sort.vcxproj.user
+/CUDA55_example_block_reduce.sdf
+/CUDA55_example_block_reduce.vcxproj.user
+/CUDA55_example_block_scan.sdf
+/CUDA55_example_block_scan.vcxproj.user
+/CUDA60_example_block_radix_sort.vcxproj.user
+/CUDA60_example_block_reduce.vcxproj.user
+/CUDA60_example_block_scan.vcxproj.user
+/example_block_radix_sort.cu.deps
+/example_block_reduce.cu.deps
+/example_block_scan.cu.deps
+/vc100.pdb
