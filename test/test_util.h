@@ -125,7 +125,7 @@ public:
     {
         using namespace std;
 
-        for (int i = 0; i < keys.size(); ++i)
+        for (int i = 0; i < int(keys.size()); ++i)
         {
             if (keys[i] == string(arg_name))
                 return true;
@@ -142,7 +142,7 @@ public:
     {
         using namespace std;
 
-        for (int i = 0; i < keys.size(); ++i)
+        for (int i = 0; i < int(keys.size()); ++i)
         {
             if (keys[i] == string(arg_name))
             {
@@ -407,7 +407,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
         break;
     case INTEGER_SEED:
     default:
-         value = index;
+         value = (T) index;
         break;
     }
 }
@@ -1058,12 +1058,12 @@ int CompareDeviceResults(
     if (display_data)
     {
         printf("Reference:\n");
-        for (int i = 0; i < num_items; i++)
+        for (int i = 0; i < int(num_items); i++)
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
         printf("\n\nData:\n");
-        for (int i = 0; i < num_items; i++)
+        for (int i = 0; i < int(num_items); i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";
         }
@@ -1144,7 +1144,7 @@ void DisplayResults(
     size_t num_items)
 {
     // Display data
-    for (int i = 0; i < num_items; i++)
+    for (int i = 0; i < int(num_items); i++)
     {
         std::cout << CoutCast(h_data[i]) << ", ";
     }
@@ -1207,7 +1207,7 @@ struct CpuTimer
         double start = double(ll_start.QuadPart) / double(ll_freq.QuadPart);
         double stop  = double(ll_stop.QuadPart) / double(ll_freq.QuadPart);
 
-        return (stop - start) * 1000;
+        return float((stop - start) * 1000);
     }
 
 #else
