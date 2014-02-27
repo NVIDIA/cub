@@ -86,6 +86,10 @@ ifeq (130, $(findstring 130, $(SM_ARCH)))
     SM_TARGETS += -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
     SM_DEF += -DSM130
 endif
+ifeq (120, $(findstring 120, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_12,code=\"sm_12,compute_12\" 
+    SM_DEF += -DSM120
+endif
 ifeq (110, $(findstring 110, $(SM_ARCH)))
     SM_TARGETS += -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
     SM_DEF += -DSM110
@@ -172,7 +176,7 @@ SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CDP_SUFFIX)_
 # Includes
 #-------------------------------------------------------------------------------
 
-INC += -I. -I../.. 
+INC += -I. -I../.. -I../../test
 
 
 #-------------------------------------------------------------------------------

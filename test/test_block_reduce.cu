@@ -125,7 +125,8 @@ __global__ void FullTileReduceKernel(
     T                       *d_in,
     T                       *d_out,
     ReductionOp             reduction_op,
-    int                     tiles)
+    int                     tiles,
+    clock_t                 *d_elapsed)
 {
     const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
 
@@ -143,8 +144,20 @@ __global__ void FullTileReduceKernel(
     LoadDirectBlocked(threadIdx.x, d_in + block_offset, data);
     block_offset += TILE_SIZE;
 
+    // Start cycle timer
+    clock_t start = clock();
+
     // Cooperative reduce first tile
     T block_aggregate = DeviceTest<BlockReduce>(temp_storage, data, reduction_op);
+
+    // Stop cycle timer
+#if CUB_PTX_VERSION == 100
+    // Bug: recording stop clock causes mis-write of running prefix value
+    clock_t stop = 0;
+#else
+    clock_t stop = clock();
+#endif // CUB_PTX_VERSION == 100
+    clock_t elapsed = (start > stop) ? start - stop : stop - start;
 
     // Loop over input tiles
     while (block_offset < TILE_SIZE * tiles)
@@ -156,8 +169,20 @@ __global__ void FullTileReduceKernel(
         LoadDirectBlocked(threadIdx.x, d_in + block_offset, data);
         block_offset += TILE_SIZE;
 
+        // Start cycle timer
+        clock_t start = clock();
+
         // Cooperatively reduce the tile's aggregate
         T tile_aggregate = DeviceTest<BlockReduce>(temp_storage, data, reduction_op);
+
+        // Stop cycle timer
+    #if CUB_PTX_VERSION == 100
+        // Bug: recording stop clock causes mis-write of running prefix value
+        clock_t stop = 0;
+    #else
+        clock_t stop = clock();
+    #endif // CUB_PTX_VERSION == 100
+        elapsed += (start > stop) ? start - stop : stop - start;
 
         // Reduce threadblock aggregate
         block_aggregate = reduction_op(block_aggregate, tile_aggregate);
@@ -167,6 +192,7 @@ __global__ void FullTileReduceKernel(
     if (threadIdx.x == 0)
     {
         d_out[0] = block_aggregate;
+        *d_elapsed = elapsed;
     }
 }
 
@@ -185,7 +211,8 @@ __global__ void PartialTileReduceKernel(
     T                       *d_in,
     T                       *d_out,
     int                     num_items,
-    ReductionOp             reduction_op)
+    ReductionOp             reduction_op,
+    clock_t                 *d_elapsed)
 {
     // Cooperative threadblock reduction utility type (returns aggregate only in thread-0)
     typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
@@ -202,13 +229,26 @@ __global__ void PartialTileReduceKernel(
         partial = d_in[threadIdx.x];
     }
 
+    // Start cycle timer
+    clock_t start = clock();
+
     // Cooperatively reduce the tile's aggregate
     T tile_aggregate = DeviceTest<BlockReduce>(temp_storage, partial, reduction_op, num_items);
+
+    // Stop cycle timer
+#if CUB_PTX_VERSION == 100
+    // Bug: recording stop clock causes mis-write of running prefix value
+    clock_t stop = 0;
+#else
+    clock_t stop = clock();
+#endif // CUB_PTX_VERSION == 100
+    clock_t elapsed = (start > stop) ? start - stop : stop - start;
 
     // Store data
     if (threadIdx.x == 0)
     {
         d_out[0] = tile_aggregate;
+        *d_elapsed = elapsed;
     }
 }
 
@@ -273,15 +313,18 @@ void TestFullTile(
     Initialize(gen_mode, h_in, h_reference, reduction_op, num_items);
 
     // Initialize/clear device arrays
-    T *d_in = NULL;
-    T *d_out = NULL;
+    T       *d_in = NULL;
+    T       *d_out = NULL;
+    clock_t *d_elapsed = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(unsigned long long)));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
     // Test multi-tile (unguarded)
-    printf("TestFullTile, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
+    printf("TestFullTile %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
+        (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         gen_mode,
         num_items,
         BLOCK_THREADS,
@@ -295,7 +338,8 @@ void TestFullTile(
         d_in,
         d_out,
         reduction_op,
-        tiles);
+        tiles,
+        d_elapsed);
 
     CubDebugExit(cudaDeviceSynchronize());
 
@@ -305,10 +349,14 @@ void TestFullTile(
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
+    printf("\tElapsed clocks: ");
+    DisplayDeviceResults(d_elapsed, 1);
+
     // Cleanup
     if (h_in) delete[] h_in;
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
+    if (d_elapsed) CubDebugExit(g_allocator.DeviceFree(d_elapsed));
 }
 
 /**
@@ -378,14 +426,17 @@ void TestPartialTile(
     Initialize(gen_mode, h_in, h_reference, reduction_op, num_items);
 
     // Initialize/clear device arrays
-    T *d_in = NULL;
-    T *d_out = NULL;
+    T       *d_in = NULL;
+    T       *d_out = NULL;
+    clock_t *d_elapsed = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(unsigned long long)));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * TILE_SIZE));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * 1));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
-    printf("TestPartialTile, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), %s (%d bytes) elements:\n",
+    printf("TestPartialTile %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), %s (%d bytes) elements:\n",
+        (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         gen_mode,
         num_items,
         BLOCK_THREADS,
@@ -397,7 +448,8 @@ void TestPartialTile(
         d_in,
         d_out,
         num_items,
-        reduction_op);
+        reduction_op,
+        d_elapsed);
 
     CubDebugExit(cudaDeviceSynchronize());
 
@@ -407,10 +459,14 @@ void TestPartialTile(
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
+    printf("\tElapsed clocks: ");
+    DisplayDeviceResults(d_elapsed, 1);
+
     // Cleanup
     if (h_in) delete[] h_in;
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
+    if (d_elapsed) CubDebugExit(g_allocator.DeviceFree(d_elapsed));
 }
 
 
@@ -547,7 +603,11 @@ int main(int argc, char** argv)
 
     // Compile/run quick tests
     typedef int T;
-    TestFullTile<BLOCK_REDUCE_RAKING, 128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+    TestFullTile<BLOCK_REDUCE_RAKING,           128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,  128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+
+    TestFullTile<BLOCK_REDUCE_RAKING,           128, 1, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,  128, 1, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
 
 #else
 

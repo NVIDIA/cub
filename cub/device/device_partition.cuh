@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "device_select.cuh"
+#include "dispatch/device_select_dispatch.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -46,10 +46,6 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
-
-/******************************************************************************
- * DevicePartition
- *****************************************************************************/
 
 /**
  * \brief DevicePartition provides device-wide, parallel operations for partitioning sequences of data items residing within global memory. ![](partition_logo.png)
