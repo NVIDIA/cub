@@ -106,6 +106,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &quot;specializations/block_reduce_raking.cuh&quot;</code><br/>
+<code>#include &quot;specializations/block_reduce_raking_commutative_only.cuh&quot;</code><br/>
 <code>#include &quot;specializations/block_reduce_warp_reductions.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="util__type_8cuh_source.html">../util_type.cuh</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="thread__operators_8cuh_source.html">../thread/thread_operators.cuh</a>&quot;</code><br/>
@@ -135,7 +136,8 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
-<tr class="memitem:add0251c713859b8974806079e498d10a"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">cub::BlockReduceAlgorithm</a> { <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">cub::BLOCK_REDUCE_RAKING</a>, 
+<tr class="memitem:add0251c713859b8974806079e498d10a"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">cub::BlockReduceAlgorithm</a> { <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa508e99516231cd77f27295b233ca34b9">cub::BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY</a>, 
+<a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">cub::BLOCK_REDUCE_RAKING</a>, 
 <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5">cub::BLOCK_REDUCE_WARP_REDUCTIONS</a>
  }</td></tr>
 <tr class="separator:add0251c713859b8974806079e498d10a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -148,7 +150,7 @@ Enumerations</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

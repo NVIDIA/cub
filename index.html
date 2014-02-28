@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.2.0</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.2.1</b></em></a>
 
 </td><td>
 
@@ -171,7 +171,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </dd></dl>
 <h1><a class="anchor" id="sec2"></a>
 (2) CUB's collective primitives</h1>
-<dl class="section user"><dt></dt><dd>Collective primitives are essential for constructing high-performance, maintainable kernel code. These collective primitives allow complex parallel code to be re-used rather than re-implemented, and to be re-compiled rather than hand-ported. <br/>
+<dl class="section user"><dt></dt><dd>Collective software primitives are essential for constructing high-performance, maintainable CUDA kernel code. Collectives allow complex parallel code to be re-used rather than re-implemented, and to be re-compiled rather than hand-ported. <br/>
 <br/>
 </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="image">
@@ -187,40 +187,52 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>Thus CUB is <a href="index.html"><em>CUDA Unbound</em></a>.</dd></dl>
 <h1><a class="anchor" id="sec3"></a>
 (3) An example (block-wide sorting)</h1>
-<dl class="section user"><dt></dt><dd>The following code snippet presents a CUDA kernel in which each block of 128 threads will collectively load, sort, and store its own segment of 2048 integer keys:</dd></dl>
+<dl class="section user"><dt></dt><dd>The following code snippet presents a CUDA kernel in which each block of <code>BLOCK_THREADS</code> threads will collectively load, sort, and store its own segment of (<code>BLOCK_THREADS</code> * <code>ITEMS_PER_THREAD</code>) integer keys:</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Block-sorting CUDA kernel (128 threads owning 16 integer items each)</span></div>
+<div class="line"><span class="comment">//</span></div>
+<div class="line"><span class="comment">// Block-sorting CUDA kernel</span></div>
+<div class="line"><span class="comment">//</span></div>
+<div class="line"><span class="keyword">template</span> &lt;<span class="keywordtype">int</span> BLOCK_THREADS, <span class="keywordtype">int</span> ITEMS_PER_THREAD&gt;</div>
 <div class="line">__global__ <span class="keywordtype">void</span> BlockSortKernel(<span class="keywordtype">int</span> *d_in, <span class="keywordtype">int</span> *d_out)</div>
 <div class="line">{</div>
-<div class="line">    <span class="keyword">using namespace </span>cub;</div>
+<div class="line">    <span class="comment">// Specialize BlockLoad, BlockStore, and BlockRadixSort collective types</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a>&lt;</div>
+<div class="line">        <span class="keywordtype">int</span>*, BLOCK_THREADS, ITEMS_PER_THREAD, <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401acd94f285472e8f7c883a7407f6f4efc4">BLOCK_LOAD_TRANSPOSE</a>&gt; BlockLoadT;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore</a>&lt;</div>
+<div class="line">        <span class="keywordtype">int</span>*, BLOCK_THREADS, ITEMS_PER_THREAD, <a class="code" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700ab0bbe20613466c3cedfcfea33a97d69c">BLOCK_STORE_TRANSPOSE</a>&gt; BlockStoreT;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">cub::BlockRadixSort</a>&lt;</div>
+<div class="line">        int, BLOCK_THREADS, ITEMS_PER_THREAD&gt; BlockRadixSortT;</div>
 <div class="line"></div>
-<div class="line">    <span class="comment">// Specialize BlockRadixSort, BlockLoad, and BlockStore collective types</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort&lt;int, 128, 16&gt;</a>                     BlockRadixSort;</div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad&lt;int*, 128, 16, BLOCK_LOAD_TRANSPOSE&gt;</a>   BlockLoad;</div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore&lt;int*, 128, 16, BLOCK_STORE_TRANSPOSE&gt;</a> BlockStore;</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Allocate shared memory for collectives</span></div>
+<div class="line">    <span class="comment">// Allocate type-safe, repurposable shared memory for collectives</span></div>
 <div class="line">    __shared__ <span class="keyword">union </span>{</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">BlockRadixSort::TempStorage</a>  sort;</div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_load_1_1_temp_storage.html" title="The operations exposed by BlockLoad require a temporary memory allocation of this nested type for thr...">BlockLoad::TempStorage</a>       load; </div>
-<div class="line">        <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">BlockStore::TempStorage</a>      store; </div>
+<div class="line">        <span class="keyword">typename</span> BlockLoadT::TempStorage       load; </div>
+<div class="line">        <span class="keyword">typename</span> BlockStoreT::TempStorage      store; </div>
+<div class="line">        <span class="keyword">typename</span> BlockRadixSortT::TempStorage  sort;</div>
 <div class="line">    } temp_storage; </div>
 <div class="line"></div>
-<div class="line">    <span class="keywordtype">int</span> block_offset = blockIdx.x * (128 * 16);   <span class="comment">// Offset for this block&#39;s segment</span></div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// Obtain a segment of 2048 consecutive keys that are blocked across threads</span></div>
-<div class="line">    <span class="keywordtype">int</span> thread_keys[16];</div>
-<div class="line">    BlockLoad(temp_storage.load).Load(d_in + block_offset, thread_keys);</div>
-<div class="line">    __syncthreads();</div>
+<div class="line">    <span class="comment">// Obtain this block&#39;s segment of consecutive keys (blocked across threads)</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_keys[ITEMS_PER_THREAD];</div>
+<div class="line">    <span class="keywordtype">int</span> block_offset = blockIdx.x * (BLOCK_THREADS * ITEMS_PER_THREAD);   </div>
+<div class="line">    BlockLoadT(temp_storage.load).Load(d_in + block_offset, thread_keys);</div>
+<div class="line">    </div>
+<div class="line">    __syncthreads();    <span class="comment">// Barrier for smem reuse</span></div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Collectively sort the keys</span></div>
-<div class="line">    BlockRadixSort(temp_storage.sort).Sort(thread_keys);</div>
-<div class="line">    __syncthreads();</div>
+<div class="line">    BlockRadixSortT(temp_storage.sort).Sort(thread_keys);</div>
+<div class="line"></div>
+<div class="line">    __syncthreads();    <span class="comment">// Barrier for smem reuse</span></div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store the sorted segment </span></div>
-<div class="line">    BlockStore(temp_storage.store).Store(d_out + block_offset, thread_keys);</div>
+<div class="line">    BlockStoreT(temp_storage.store).Store(d_out + block_offset, thread_keys);</div>
 <div class="line">}</div>
+<div class="line"></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Launch sorting kernel to sort blocks of 2048 keys</span></div>
+<div class="line"><span class="keywordtype">int</span> *d_in = ...; </div>
+<div class="line"><span class="keywordtype">int</span> *d_out = ...;</div>
+<div class="line"><span class="keywordtype">int</span> num_blocks = ...;</div>
+<div class="line">BlockSortKernel&lt;128, 16&gt;&lt;&lt;&lt;num_blocks, 128&gt;&gt;&gt;(d_in, d_out); </div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>In this example, threads use <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a>, <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">cub::BlockRadixSort</a>, and <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore</a> to collectively load, sort and store the block's segment of input items. Because these operations are cooperative, each primitive requires an allocation of shared memory for threads to communicate through. The typical usage pattern for a CUB collective is:<ol type="1">
 <li>Statically specialize the primitive for the specific problem setting at hand, e.g., the data type being sorted, the number of threads per block, the number of keys per thread, optional algorithmic alternatives, etc. (CUB primitives are also implicitly specialized by the targeted compilation architecture.)</li>
@@ -292,19 +304,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>Unlike traditional function-oriented interfaces, CUB exposes its collective primitives as templated C++ classes. The resource requirements for a specific parameterization are reflectively advertised as members of the class. The resources can then be statically or dynamically allocated, aliased to global or shared memory, etc. The following illustrates a CUDA kernel fragment performing a collective prefix sum across the threads of a thread block:</dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Specialize BlockScan for 128 threads on integer types</span></div>
-<div class="line"><span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> BlockScan;</div>
+<div class="line">__global__ <span class="keywordtype">void</span> SomeKernelFoo(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockScan for 128 threads on integer types</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan&lt;int, 128&gt;</a> BlockScan;</div>
 <div class="line"> </div>
-<div class="line"><span class="comment">// Allocate shared memory for BlockScan</span></div>
-<div class="line">__shared__ <span class="keyword">typename</span> BlockScan::TempStorage scan_storage;</div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockScan</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockScan::TempStorage scan_storage;</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
-<div class="line"><span class="keywordtype">int</span> thread_data_in[4];</div>
-<div class="line"><span class="keywordtype">int</span> thread_data_out[4];</div>
-<div class="line">...</div>
+<div class="line">    ...</div>
+<div class="line">    </div>
+<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data_in[4];</div>
+<div class="line">    <span class="keywordtype">int</span> thread_data_out[4];</div>
+<div class="line">    ...</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Perform an exclusive block-wide prefix sum</span></div>
-<div class="line"><a class="code" href="classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockScan</a>(scan_storage).ExclusiveSum(thread_data_in, thread_data_out);</div>
+<div class="line">    <span class="comment">// Perform an exclusive block-wide prefix sum</span></div>
+<div class="line">    BlockScan(scan_storage).<a class="code" href="classcub_1_1_block_scan.html#acd75d5aad2d1385bcbe15517011800e8" title="Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. ">ExclusiveSum</a>(thread_data_in, thread_data_out);</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>Furthermore, the CUB interface is designed to separate parameter fields by concerns. CUB primitives have three distinct parameter fields:<ol type="1">
 <li><b><em>Static template parameters</em></b>. These are constants that will dictate the storage layout and the unrolling of algorithmic steps (e.g., the input data type and the number of block threads), and are used to specialize the class.</li>
@@ -377,14 +393,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 (8) Recent News</h1>
 <dl class="section user"><dt></dt><dd><table class="doxtable">
 <tr>
-<td style="white-space: nowrap; vertical-align:text-top;">02/25/2014<br/>
- <a href="https://github.com/NVlabs/cub/archive/1.2.0.zip"><b>CUB v1.2.0</b></a> </td><td style="vertical-align:text-top;"><ul>
+<td style="white-space: nowrap; vertical-align:text-top;">02/28/2014<br/>
+ <a href="https://github.com/NVlabs/cub/archive/1.2.1.zip"><b>CUB v1.2.1</b></a> </td><td style="vertical-align:text-top;"><ul>
 <li>New features:<ul>
 <li>Added device-wide reduce-by-key (<a class="el" href="structcub_1_1_device_reduce.html#a62400e8632002f3ba601d4392b997bc7" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>, <a class="el" href="structcub_1_1_device_reduce.html#ac563c98fb1d6cde7d4365bc34f6b698d" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">cub::DeviceReduce::RunLengthEncode</a>)</li>
+<li>Added MS VC++ project solutions for device-wide and block-wide examples</li>
 </ul>
 </li>
 <li>Performance:<ul>
 <li>Improved <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a>, <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">cub::DeviceSelect</a>, and <a class="el" href="structcub_1_1_device_partition.html" title="DevicePartition provides device-wide, parallel operations for partitioning sequences of data items re...">cub::DevicePartition</a> performance</li>
+<li>Added a third algorithmic variant of <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">cub::BlockReduce</a> for improved performance when using commutative operators (e.g., numeric addition)</li>
 </ul>
 </li>
 <li>Documentation and testing:<ul>
@@ -495,7 +513,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:24 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:09 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

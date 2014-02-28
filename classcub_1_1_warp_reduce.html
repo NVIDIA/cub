@@ -406,7 +406,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
 
 <p>Computes a warp-wide sum in each active warp. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp sum reductions within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp sum reductions within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -431,7 +431,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00309">309</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00310">310</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -472,7 +472,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
 <p>Computes a partially-full warp-wide sum in each active warp. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
 <p>All threads in each logical warp must agree on the same value for <code>valid_items</code>. Otherwise the result is undefined.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a sum reduction within a single, partially-full block of 32 threads (one warp). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a sum reduction within a single, partially-full block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> valid_items)</div>
@@ -501,7 +501,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00352">352</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00354">354</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -543,7 +543,7 @@ template&lt;typename Flag &gt; </div>
 
 <p>Computes a segmented sum in each active warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a head-segmented warp sum reduction within a block of 32 threads (one warp). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a head-segmented warp sum reduction within a block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -577,7 +577,7 @@ template&lt;typename Flag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00407">407</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00410">410</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -619,7 +619,7 @@ template&lt;typename Flag &gt; </div>
 
 <p>Computes a segmented sum in each active warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a tail-segmented warp sum reduction within a block of 32 threads (one warp). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a tail-segmented warp sum reduction within a block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -653,7 +653,7 @@ template&lt;typename Flag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00453">453</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00457">457</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -696,7 +696,7 @@ template&lt;typename ReductionOp &gt; </div>
 <p>Computes a warp-wide reduction in each active warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
 <p>Supports non-commutative reduction operators</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp max reductions within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp max reductions within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -729,7 +729,7 @@ template&lt;typename ReductionOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00505">505</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00510">510</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -779,7 +779,7 @@ template&lt;typename ReductionOp &gt; </div>
 <p>All threads in each logical warp must agree on the same value for <code>valid_items</code>. Otherwise the result is undefined.</p>
 <p>Supports non-commutative reduction operators</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a max reduction within a single, partially-full block of 32 threads (one warp). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a max reduction within a single, partially-full block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> valid_items)</div>
@@ -815,7 +815,7 @@ template&lt;typename ReductionOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00553">553</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00559">559</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -864,7 +864,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <p>Computes a segmented reduction in each active warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
 <p>Supports non-commutative reduction operators</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a head-segmented warp max reduction within a block of 32 threads (one warp). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a head-segmented warp max reduction within a block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -899,7 +899,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00611">611</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00618">618</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -948,7 +948,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <p>Computes a segmented reduction in each active warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
 <p>Supports non-commutative reduction operators</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a tail-segmented warp max reduction within a block of 32 threads (one warp). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a tail-segmented warp max reduction within a block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -983,7 +983,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00661">661</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00669">669</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -994,7 +994,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:09 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

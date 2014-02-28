@@ -108,7 +108,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><h3>template&lt;
     typename T, 
     int BLOCK_THREADS, 
-    BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt;<br/>
+    BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt;<br/>
 class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 
 <p>The <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a> class provides <a href="index.html#sec0"><em>collective</em></a> methods for computing a parallel reduction of items partitioned across a CUDA thread block. </p>
@@ -120,15 +120,16 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>Data type being reduced </td></tr>
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
-    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">cub::BlockReduceAlgorithm</a> enumerator specifying the underlying algorithm to use (default: <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">cub::BLOCK_REDUCE_RAKING</a>)</td></tr>
+    <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">cub::BlockReduceAlgorithm</a> enumerator specifying the underlying algorithm to use (default: <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5">cub::BLOCK_REDUCE_WARP_REDUCTIONS</a>)</td></tr>
   </table>
   </dd>
 </dl>
 <dl class="section user"><dt>Overview</dt><dd><ul>
 <li>A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>) uses a binary combining operator to compute a single aggregate from a list of input elements.</li>
 <li><a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a> can be optionally specialized by algorithm to accommodate different latency/throughput workload profiles:<ol type="1">
-<li><b><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">cub::BLOCK_REDUCE_RAKING</a></b>. An efficient "raking" reduction algorithm. <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">More...</a></li>
-<li><b><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5">cub::BLOCK_REDUCE_WARP_REDUCTIONS</a></b>. A quick "tiled warp-reductions" reduction algorithm. <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa508e99516231cd77f27295b233ca34b9">cub::BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY</a></b>. An efficient "raking" reduction algorithm that only supports commutative reduction operators. <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">cub::BLOCK_REDUCE_RAKING</a></b>. An efficient "raking" reduction algorithm that supports commutative and non-commutative reduction operators. <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">More...</a></li>
+<li><b><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5">cub::BLOCK_REDUCE_WARP_REDUCTIONS</a></b>. A quick "tiled warp-reductions" reduction algorithm that supports commutative and non-commutative reduction operators. <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">More...</a></li>
 </ol>
 </li>
 </ul>
@@ -167,7 +168,7 @@ class cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;</h3>
 </div><!-- fragment --> </dd></dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_block_reduce_8cu-example.html#_a0">example_block_reduce.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00171">171</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00213">213</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -221,7 +222,7 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -249,7 +250,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00235">235</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00279">279</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -257,7 +258,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -285,7 +286,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00246">246</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00290">290</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -293,7 +294,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -332,7 +333,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00257">257</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00301">301</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -341,7 +342,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ReductionOp &gt; </div>
 <table class="mlabels">
@@ -376,11 +377,10 @@ template&lt;typename ReductionOp &gt; </div>
 <p>Computes a block-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. Each thread contributes one input element. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The return value is undefined in threads other than thread<sub>0</sub>.</li>
-<li>Supports non-commutative reduction operators.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a max reduction of 128 integer items that are partitioned across 128 threads. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a max reduction of 128 integer items that are partitioned across 128 threads. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -412,7 +412,7 @@ template&lt;typename ReductionOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00309">309</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00352">352</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -420,7 +420,7 @@ template&lt;typename ReductionOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <div class="memtemplate">
 template&lt;int ITEMS_PER_THREAD, typename ReductionOp &gt; </div>
 <table class="mlabels">
@@ -455,13 +455,12 @@ template&lt;int ITEMS_PER_THREAD, typename ReductionOp &gt; </div>
 <p>Computes a block-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. Each thread contributes an array of consecutive input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The return value is undefined in threads other than thread<sub>0</sub>.</li>
-<li>Supports non-commutative reduction operators.</li>
 <li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a max reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a max reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -494,7 +493,7 @@ template&lt;int ITEMS_PER_THREAD, typename ReductionOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00358">358</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00400">400</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -502,7 +501,7 @@ template&lt;int ITEMS_PER_THREAD, typename ReductionOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <div class="memtemplate">
 template&lt;typename ReductionOp &gt; </div>
 <table class="mlabels">
@@ -543,12 +542,11 @@ template&lt;typename ReductionOp &gt; </div>
 <p>Computes a block-wide reduction for thread<sub>0</sub> using the specified binary reduction functor. The first <code>num_valid</code> threads each contribute one input element. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The return value is undefined in threads other than thread<sub>0</sub>.</li>
-<li>Supports non-commutative reduction operators.</li>
 <li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a max reduction of a partially-full tile of integer items that are partitioned across 128 threads. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a max reduction of a partially-full tile of integer items that are partitioned across 128 threads. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> num_valid, ...)</div>
@@ -581,7 +579,7 @@ template&lt;typename ReductionOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00404">404</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00445">445</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -589,7 +587,7 @@ template&lt;typename ReductionOp &gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -615,7 +613,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of 128 integer items that are partitioned across 128 threads. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a sum reduction of 128 integer items that are partitioned across 128 threads. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -640,7 +638,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00460">460</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00501">501</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -648,7 +646,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <div class="memtemplate">
 template&lt;int ITEMS_PER_THREAD&gt; </div>
 <table class="mlabels">
@@ -677,7 +675,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a sum reduction of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -708,7 +706,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00502">502</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00543">543</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -716,7 +714,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt; </div>
+template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -752,7 +750,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a sum reduction of a partially-full tile of integer items that are partitioned across 128 threads. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a sum reduction of a partially-full tile of integer items that are partitioned across 128 threads. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> num_valid, ...)</div>
@@ -779,7 +777,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00544">544</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00585">585</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -790,7 +788,7 @@ template&lt;typename T , int BLOCK_THREADS, BlockReduceAlgorithm ALGORITHM = BLO
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
