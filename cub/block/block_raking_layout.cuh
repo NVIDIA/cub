@@ -57,12 +57,10 @@ namespace cub {
  *
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_THREADS        The thread block size in threads.
- * \tparam BLOCK_STRIPS         When strip-mining, the number of threadblock-strips per tile
  */
 template <
     typename    T,
-    int         BLOCK_THREADS,
-    int         BLOCK_STRIPS = 1>
+    int         BLOCK_THREADS>
 struct BlockRakingLayout
 {
     //---------------------------------------------------------------------
@@ -72,7 +70,7 @@ struct BlockRakingLayout
     enum
     {
         /// The total number of elements that need to be cooperatively reduced
-        SHARED_ELEMENTS = BLOCK_THREADS * BLOCK_STRIPS,
+        SHARED_ELEMENTS = BLOCK_THREADS,
 
         /// Maximum number of warp-synchronous raking threads
         MAX_RAKING_THREADS = CUB_MIN(BLOCK_THREADS, CUB_PTX_WARP_THREADS),
@@ -98,7 +96,7 @@ struct BlockRakingLayout
         /// Total number of elements in the raking grid
         GRID_ELEMENTS = RAKING_THREADS * (SEGMENT_LENGTH + SEGMENT_PADDING),
 
-        /// Whether or not we need bounds checking during raking (the number of reduction elements is not a multiple of the warp size)
+        /// Whether or not we need bounds checking during raking (the number of reduction elements is not a multiple of the number of raking threads)
         UNGUARDED = (SHARED_ELEMENTS % RAKING_THREADS == 0),
     };
 
@@ -114,11 +112,10 @@ struct BlockRakingLayout
      */
     static __device__ __forceinline__ T* PlacementPtr(
         TempStorage &temp_storage,
-        int linear_tid,
-        int block_strip = 0)
+        int linear_tid)
     {
         // Offset for partial
-        unsigned int offset = (block_strip * BLOCK_THREADS) + linear_tid;
+        unsigned int offset = linear_tid;
 
         // Add in one padding element for every segment
         if (SEGMENT_PADDING > 0)
