@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockReduceRaking provides raking-based methods of parallel reduction across a CUDA threadblock
+ * cub::BlockReduceRaking provides raking-based methods of parallel reduction across a CUDA thread block.  Supports non-commutative reduction operators.
  */
 
 #pragma once
@@ -46,15 +46,25 @@ namespace cub {
 
 
 /**
- * \brief BlockReduceRaking provides raking-based methods of parallel reduction across a CUDA threadblock
+ * \brief BlockReduceRaking provides raking-based methods of parallel reduction across a CUDA thread block.  Supports non-commutative reduction operators.
+ *
+ * Supports non-commutative binary reduction operators.  Unlike commutative
+ * reduction operators (e.g., addition), the application of a non-commutative
+ * reduction operator (e.g, string concatenation) across a sequence of inputs must
+ * honor the relative ordering of items and partial reductions when applying the
+ * reduction operator.
+ *
+ * Compared to the implementation of BlockReduceRaking (which does not support
+ * non-commutative operators), this implementation requires a few extra
+ * rounds of inter-thread communication.
  */
 template <
     typename    T,              ///< Data type being reduced
     int         BLOCK_THREADS>  ///< The thread block size in threads
 struct BlockReduceRaking
 {
-    /// Layout type for padded threadblock raking grid
-    typedef BlockRakingLayout<T, BLOCK_THREADS, 1> BlockRakingLayout;
+    /// Layout type for padded thread block raking grid
+    typedef BlockRakingLayout<T, BLOCK_THREADS> BlockRakingLayout;
 
     ///  WarpReduce utility type
     typedef typename WarpReduce<T, 1, BlockRakingLayout::RAKING_THREADS>::InternalWarpReduce WarpReduce;
@@ -72,7 +82,7 @@ struct BlockReduceRaking
         WARP_SYNCHRONOUS = (RAKING_THREADS == BLOCK_THREADS),
 
         /// Whether or not warp-synchronous reduction should be unguarded (i.e., the warp-reduction elements is a power of two
-        WARP_SYNCHRONOUS_UNGUARDED = ((RAKING_THREADS & (RAKING_THREADS - 1)) == 0),
+        WARP_SYNCHRONOUS_UNGUARDED = PowerOfTwo<RAKING_THREADS>::VALUE,
 
         /// Whether or not accesses into smem are unguarded
         RAKING_UNGUARDED = BlockRakingLayout::UNGUARDED,

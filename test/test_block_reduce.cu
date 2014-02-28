@@ -324,7 +324,7 @@ void TestFullTile(
 
     // Test multi-tile (unguarded)
     printf("TestFullTile %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
-        (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : "BLOCK_REDUCE_WARP_REDUCTIONS",
+        (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : (ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY) ? "BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         gen_mode,
         num_items,
         BLOCK_THREADS,
@@ -436,7 +436,7 @@ void TestPartialTile(
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
     printf("TestPartialTile %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), %s (%d bytes) elements:\n",
-        (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : "BLOCK_REDUCE_WARP_REDUCTIONS",
+        (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : (ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY) ? "BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         gen_mode,
         num_items,
         BLOCK_THREADS,
@@ -537,6 +537,7 @@ void Test(
     char            *type_string)
 {
     Test<BLOCK_REDUCE_RAKING, BLOCK_THREADS, T>(reduction_op, type_string);
+    Test<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY, BLOCK_THREADS, T>(reduction_op, type_string);
     Test<BLOCK_REDUCE_WARP_REDUCTIONS, BLOCK_THREADS, T>(reduction_op, type_string);
 }
 
@@ -603,11 +604,22 @@ int main(int argc, char** argv)
 
     // Compile/run quick tests
     typedef int T;
-    TestFullTile<BLOCK_REDUCE_RAKING,           128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,  128, 4, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
 
-    TestFullTile<BLOCK_REDUCE_RAKING,           128, 1, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,  128, 1, T>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(T));
+    printf("\n full tile ------------------------\n\n");
+
+    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+
+    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+
+    printf("\n partial tile ------------------------\n\n");
+
+    TestPartialTile<BLOCK_REDUCE_RAKING,                   128, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
 
 #else
 

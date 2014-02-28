@@ -34,6 +34,7 @@
 #pragma once
 
 #include "specializations/block_reduce_raking.cuh"
+#include "specializations/block_reduce_raking_commutative_only.cuh"
 #include "specializations/block_reduce_warp_reductions.cuh"
 #include "../util_type.cuh"
 #include "../thread/thread_operators.cuh"
@@ -60,8 +61,41 @@ enum BlockReduceAlgorithm
 
     /**
      * \par Overview
-     * An efficient "raking" reduction algorithm.  Execution is comprised of
-     * three phases:
+     * An efficient "raking" reduction algorithm that only supports commutative
+     * reduction operators (e.g., addition).
+     *
+     * \par
+     * Execution is comprised of three phases:
+     * -# Upsweep sequential reduction in registers (if threads contribute more
+     *    than one input each).  Threads in warps other than the first warp place
+     *    their partial reductions into shared memory.
+     * -# Upsweep sequential reduction in shared memory.  Threads within the first
+     *    warp continue to accumulate by raking across segments of shared partial reductions
+     * -# A warp-synchronous Kogge-Stone style reduction within the raking warp.
+     *
+     * \par
+     * \image html block_reduce.png
+     * <div class="centercaption">\p BLOCK_REDUCE_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     *
+     * \par Performance Considerations
+     * - This variant performs less communication than BLOCK_REDUCE_RAKING_NON_COMMUTATIVE
+     *   and is preferable when the reduction operator is commutative.  This variant
+     *   applies fewer reduction operators  than BLOCK_REDUCE_WARP_REDUCTIONS, and can provide higher overall
+     *   throughput across the GPU when suitably occupied.  However, turn-around latency may be
+     *   higher than to BLOCK_REDUCE_WARP_REDUCTIONS and thus less-desirable
+     *   when the GPU is under-occupied.
+     */
+    BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,
+
+
+    /**
+     * \par Overview
+     * An efficient "raking" reduction algorithm that supports commutative
+     * (e.g., addition) and non-commutative (e.g., string concatenation) reduction
+     * operators.
+     *
+     * \par
+     * Execution is comprised of three phases:
      * -# Upsweep sequential reduction in registers (if threads contribute more
      *    than one input each).  Each thread then places the partial reduction
      *    of its item(s) into shared memory.
@@ -74,17 +108,24 @@ enum BlockReduceAlgorithm
      * <div class="centercaption">\p BLOCK_REDUCE_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
-     * - Although this variant may suffer longer turnaround latencies when the
-     *   GPU is under-occupied, it can often provide higher overall throughput
-     *   across the GPU when suitably occupied.
+     * - This variant performs more communication than BLOCK_REDUCE_RAKING
+     *   and is only preferable when the reduction operator is non-commutative.  This variant
+     *   applies fewer reduction operators than BLOCK_REDUCE_WARP_REDUCTIONS, and can provide higher overall
+     *   throughput across the GPU when suitably occupied.  However, turn-around latency may be
+     *   higher than to BLOCK_REDUCE_WARP_REDUCTIONS and thus less-desirable
+     *   when the GPU is under-occupied.
      */
     BLOCK_REDUCE_RAKING,
 
 
     /**
      * \par Overview
-     * A quick "tiled warp-reductions" reduction algorithm.  Execution is
-     * comprised of four phases:
+     * A quick "tiled warp-reductions" reduction algorithm that supports commutative
+     * (e.g., addition) and non-commutative (e.g., string concatenation) reduction
+     * operators.
+     *
+     * \par
+     * Execution is comprised of four phases:
      * -# Upsweep sequential reduction in registers (if threads contribute more
      *    than one input each).  Each thread then places the partial reduction
      *    of its item(s) into shared memory.
@@ -98,10 +139,10 @@ enum BlockReduceAlgorithm
      * <div class="centercaption">\p BLOCK_REDUCE_WARP_REDUCTIONS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
-     * - Although this variant may suffer lower overall throughput across the
-     *   GPU because due to a heavy reliance on inefficient warp-reductions, it
-     *   can often provide lower turnaround latencies when the GPU is
-     *   under-occupied.
+     * - This variant applies more reduction operators than BLOCK_REDUCE_RAKING
+     *   or BLOCK_REDUCE_RAKING_NON_COMMUTATIVE, which may result in lower overall
+     *   throughput across the GPU.  However turn-around latency may be lower and
+     *   thus useful when the GPU is under-occupied.
      */
     BLOCK_REDUCE_WARP_REDUCTIONS,
 };
@@ -123,8 +164,9 @@ enum BlockReduceAlgorithm
  * - A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
  *   uses a binary combining operator to compute a single aggregate from a list of input elements.
  * - BlockReduce can be optionally specialized by algorithm to accommodate different latency/throughput workload profiles:
- *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
- *   -# <b>cub::BLOCK_REDUCE_WARP_REDUCTIONS</b>.  A quick "tiled warp-reductions" reduction algorithm. [More...](\ref cub::BlockReduceAlgorithm)
+ *   -# <b>cub::BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY</b>.  An efficient "raking" reduction algorithm that only supports commutative reduction operators. [More...](\ref cub::BlockReduceAlgorithm)
+ *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm that supports commutative and non-commutative reduction operators. [More...](\ref cub::BlockReduceAlgorithm)
+ *   -# <b>cub::BLOCK_REDUCE_WARP_REDUCTIONS</b>.  A quick "tiled warp-reductions" reduction algorithm that supports commutative and non-commutative reduction operators. [More...](\ref cub::BlockReduceAlgorithm)
  *
  * \par Performance Considerations
  * - \granularity
@@ -176,10 +218,12 @@ private:
      * Constants and type definitions
      ******************************************************************************/
 
-    /// Internal specialization.
+    /// Internal specialization type
     typedef typename If<(ALGORITHM == BLOCK_REDUCE_WARP_REDUCTIONS),
-        BlockReduceWarpReductions<T, BLOCK_THREADS>,
-        BlockReduceRaking<T, BLOCK_THREADS> >::Type InternalBlockReduce;
+        BlockReduceWarpReductions<T, BLOCK_THREADS>,                                    // BlockReduceWarpReductions
+        typename If<(ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY),
+            BlockReduceRakingCommutativeOnly<T, BLOCK_THREADS>,                         // BlockReduceRakingCommutativeOnly
+            BlockReduceRaking<T, BLOCK_THREADS> >::Type>::Type InternalBlockReduce;     // BlockReduceRaking
 
     /// Shared memory storage layout type for BlockReduce
     typedef typename InternalBlockReduce::TempStorage _TempStorage;
@@ -276,7 +320,6 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
-     * - Supports non-commutative reduction operators.
      * - \smemreuse
      *
      * \par
@@ -319,7 +362,6 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
-     * - Supports non-commutative reduction operators.
      * - \blocked
      * - \granularity
      * - \smemreuse
@@ -370,7 +412,6 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
-     * - Supports non-commutative reduction operators.
      * - \blocked
      * - \smemreuse
      *
