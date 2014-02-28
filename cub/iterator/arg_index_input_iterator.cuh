@@ -74,7 +74,7 @@ namespace cub {
  *   device memory can only be dereferenced on the device.
  * - Compatible with Thrust API v1.7 or newer.
  *
- * \par Example
+ * \par Snippet
  * The code snippet below illustrates the use of \p ArgIndexInputIterator to
  * dereference an array of doubles
  * \par

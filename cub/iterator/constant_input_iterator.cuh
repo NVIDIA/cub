@@ -71,7 +71,7 @@ namespace cub {
  *   functions.
  * - Compatible with Thrust API v1.7 or newer.
  *
- * \par Example
+ * \par Snippet
  * The code snippet below illustrates the use of \p ConstantInputIterator to
  * dereference a sequence of homogeneous doubles.
  * \par

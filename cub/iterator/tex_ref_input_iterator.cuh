@@ -167,7 +167,7 @@ typename IteratorTexRef<T>::template TexId<UNIQUE_ID>::TexRef IteratorTexRef<T>:
  * - Compatible with Thrust API v1.7 or newer.
  * - Compatible with CUDA toolkit v5.5 or newer.
  *
- * \par Example
+ * \par Snippet
  * The code snippet below illustrates the use of \p TexRefInputIterator to
  * dereference a device array of doubles through texture cache.
  * \par

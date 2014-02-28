@@ -7,6 +7,7 @@ var searchData=
   ['block_5fload_5fvectorize',['BLOCK_LOAD_VECTORIZE',['../namespacecub.html#a9d7e37497fdd99864c57adecda710401a826be9d4df1c44c0e5c00a9c9c136965',1,'cub']]],
   ['block_5fload_5fwarp_5ftranspose',['BLOCK_LOAD_WARP_TRANSPOSE',['../namespacecub.html#a9d7e37497fdd99864c57adecda710401aba21066c09e6c6ebcf08c7e86216eb1f',1,'cub']]],
   ['block_5freduce_5fraking',['BLOCK_REDUCE_RAKING',['../namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2',1,'cub']]],
+  ['block_5freduce_5fraking_5fcommutative_5fonly',['BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY',['../namespacecub.html#add0251c713859b8974806079e498d10aa508e99516231cd77f27295b233ca34b9',1,'cub']]],
   ['block_5freduce_5fwarp_5freductions',['BLOCK_REDUCE_WARP_REDUCTIONS',['../namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5',1,'cub']]],
   ['block_5fscan_5fraking',['BLOCK_SCAN_RAKING',['../namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c',1,'cub']]],
   ['block_5fscan_5fraking_5fmemoize',['BLOCK_SCAN_RAKING_MEMOIZE',['../namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f',1,'cub']]],

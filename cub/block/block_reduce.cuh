@@ -322,7 +322,7 @@ public:
      * - The return value is undefined in threads other than thread<sub>0</sub>.
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a max reduction of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -366,7 +366,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a max reduction of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -415,7 +415,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a max reduction of a partially-full tile of integer items that
      * are partitioned across 128 threads.
      * \par
@@ -473,7 +473,7 @@ public:
      * - The return value is undefined in threads other than thread<sub>0</sub>.
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sum reduction of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -512,7 +512,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sum reduction of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -556,7 +556,7 @@ public:
      * - The return value is undefined in threads other than thread<sub>0</sub>.
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sum reduction of a partially-full tile of integer items that
      * are partitioned across 128 threads.
      * \par

@@ -272,7 +272,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the head-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -350,7 +350,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the head-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -443,7 +443,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the tail-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -522,7 +522,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the tail-flagging of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.

@@ -58,7 +58,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.2.0</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.2.1</b></em></a>
 
 </td><td>
 
@@ -107,9 +107,10 @@ of the CUDA programming model:
 
 \section sec2 (2) CUB's collective primitives 
 \par
-Collective primitives are essential for constructing high-performance, 
-maintainable kernel code.  These collective primitives allow complex parallel code to be 
-re-used rather than re-implemented, and to be re-compiled rather than hand-ported. <br><br>
+Collective software primitives are essential for constructing high-performance, 
+maintainable CUDA kernel code.  Collectives allow complex parallel code to be 
+re-used rather than re-implemented, and to be re-compiled rather than 
+hand-ported. <br><br>
  
 \par
 \image html cub_overview.png
@@ -136,44 +137,59 @@ Thus CUB is [<em>CUDA Unbound</em>](index.html).
 \section sec3 (3) An example (block-wide sorting)
 
 \par
-The following code snippet presents a CUDA kernel in which each block of 128 threads 
-will collectively load, sort, and store its own segment of 2048 integer keys:
+The following code snippet presents a CUDA kernel in which each block of \p BLOCK_THREADS threads 
+will collectively load, sort, and store its own segment of (\p BLOCK_THREADS * \p ITEMS_PER_THREAD) 
+integer keys:
 
 \par
 \code
 #include <cub/cub.cuh>
 
-// Block-sorting CUDA kernel (128 threads owning 16 integer items each)
+//
+// Block-sorting CUDA kernel
+//
+template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
 __global__ void BlockSortKernel(int *d_in, int *d_out)
 {
-    using namespace cub;
+    // Specialize BlockLoad, BlockStore, and BlockRadixSort collective types
+    typedef cub::BlockLoad<
+    	int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE> BlockLoadT;
+    typedef cub::BlockStore<
+    	int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_TRANSPOSE> BlockStoreT;
+    typedef cub::BlockRadixSort<
+    	int, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
 
-    // Specialize BlockRadixSort, BlockLoad, and BlockStore collective types
-    typedef BlockRadixSort<int, 128, 16>                     BlockRadixSort;
-    typedef BlockLoad<int*, 128, 16, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
-    typedef BlockStore<int*, 128, 16, BLOCK_STORE_TRANSPOSE> BlockStore;
-
-    // Allocate shared memory for collectives
+    // Allocate type-safe, repurposable shared memory for collectives
     __shared__ union {
-        typename BlockRadixSort::TempStorage  sort;
-        typename BlockLoad::TempStorage       load; 
-        typename BlockStore::TempStorage      store; 
+        typename BlockLoadT::TempStorage       load; 
+        typename BlockStoreT::TempStorage      store; 
+        typename BlockRadixSortT::TempStorage  sort;
     } temp_storage; 
 
-    int block_offset = blockIdx.x * (128 * 16);	  // Offset for this block's segment
-
-    // Obtain a segment of 2048 consecutive keys that are blocked across threads
-    int thread_keys[16];
-    BlockLoad(temp_storage.load).Load(d_in + block_offset, thread_keys);
-    __syncthreads();
+    // Obtain this block's segment of consecutive keys (blocked across threads)
+    int thread_keys[ITEMS_PER_THREAD];
+    int block_offset = blockIdx.x * (BLOCK_THREADS * ITEMS_PER_THREAD);	  
+    BlockLoadT(temp_storage.load).Load(d_in + block_offset, thread_keys);
+    
+    __syncthreads();	// Barrier for smem reuse
 
     // Collectively sort the keys
-    BlockRadixSort(temp_storage.sort).Sort(thread_keys);
-    __syncthreads();
+    BlockRadixSortT(temp_storage.sort).Sort(thread_keys);
+
+    __syncthreads();	// Barrier for smem reuse
 
     // Store the sorted segment 
-    BlockStore(temp_storage.store).Store(d_out + block_offset, thread_keys);
+    BlockStoreT(temp_storage.store).Store(d_out + block_offset, thread_keys);
 }
+
+
+// Launch sorting kernel to sort blocks of 2048 keys
+int *d_in = ...; 
+int *d_out = ...;
+int num_blocks = ...;
+BlockSortKernel<128, 16><<<num_blocks, 128>>>(d_in, d_out); 
+
+
 \endcode
 
 \par
@@ -304,19 +320,23 @@ fragment performing a collective prefix sum across the threads of a thread block
 \code
 #include <cub/cub.cuh>
 
-// Specialize BlockScan for 128 threads on integer types
-typedef cub::BlockScan<int, 128> BlockScan;
+__global__ void SomeKernelFoo(...)
+{
+    // Specialize BlockScan for 128 threads on integer types
+	typedef cub::BlockScan<int, 128> BlockScan;
  
-// Allocate shared memory for BlockScan
-__shared__ typename BlockScan::TempStorage scan_storage;
+	// Allocate shared memory for BlockScan
+	__shared__ typename BlockScan::TempStorage scan_storage;
 
-// Obtain a segment of consecutive items that are blocked across threads
-int thread_data_in[4];
-int thread_data_out[4];
-...
+	...
+	
+	// Obtain a segment of consecutive items that are blocked across threads
+	int thread_data_in[4];
+	int thread_data_out[4];
+	...
 
-// Perform an exclusive block-wide prefix sum
-BlockScan(scan_storage).ExclusiveSum(thread_data_in, thread_data_out);
+	// Perform an exclusive block-wide prefix sum
+	BlockScan(scan_storage).ExclusiveSum(thread_data_in, thread_data_out);
 
 \endcode
 
@@ -487,13 +507,16 @@ for many of the algorithmic techniques used by CUB.
 <table>
  
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-02/25/2014<br>
-[<b>CUB v1.2.0</b>](https://github.com/NVlabs/cub/archive/1.2.0.zip)
+02/28/2014<br>
+[<b>CUB v1.2.1</b>](https://github.com/NVlabs/cub/archive/1.2.1.zip)
 </td><td style="vertical-align:text-top;">
   - New features:
       - Added device-wide reduce-by-key (cub::DeviceReduce::ReduceByKey, cub::DeviceReduce::RunLengthEncode) 
+      - Added MS VC++ project solutions for device-wide and block-wide examples 
   - Performance:
       - Improved cub::DeviceScan, cub::DeviceSelect, and cub::DevicePartition performance
+      - Added a third algorithmic variant of cub::BlockReduce for improved performance
+        when using commutative operators (e.g., numeric addition)
   - Documentation and testing:
       - Compatible with CUDA 6.0
       - Added performance-portabiltiy plots for many device-wide primitives to doc 

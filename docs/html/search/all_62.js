@@ -19,6 +19,7 @@ var searchData=
   ['block_5fradix_5fsort_2ecuh',['block_radix_sort.cuh',['../block__radix__sort_8cuh.html',1,'']]],
   ['block_5freduce_2ecuh',['block_reduce.cuh',['../block__reduce_8cuh.html',1,'']]],
   ['block_5freduce_5fraking',['BLOCK_REDUCE_RAKING',['../namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2',1,'cub']]],
+  ['block_5freduce_5fraking_5fcommutative_5fonly',['BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY',['../namespacecub.html#add0251c713859b8974806079e498d10aa508e99516231cd77f27295b233ca34b9',1,'cub']]],
   ['block_5freduce_5fwarp_5freductions',['BLOCK_REDUCE_WARP_REDUCTIONS',['../namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5',1,'cub']]],
   ['block_5fscan_2ecuh',['block_scan.cuh',['../block__scan_8cuh.html',1,'']]],
   ['block_5fscan_5fraking',['BLOCK_SCAN_RAKING',['../namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c',1,'cub']]],
@@ -35,8 +36,8 @@ var searchData=
   ['blockedtowarpstriped',['BlockedToWarpStriped',['../classcub_1_1_block_exchange.html#a74fc1a62cac21f54289bb7092250a868',1,'cub::BlockExchange']]],
   ['blockexchange',['BlockExchange',['../classcub_1_1_block_exchange.html',1,'cub']]],
   ['blockexchange',['BlockExchange',['../classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e',1,'cub::BlockExchange::BlockExchange()'],['../classcub_1_1_block_exchange.html#aff7137dd257eeec8d7628b4f9f4e1457',1,'cub::BlockExchange::BlockExchange(TempStorage &amp;temp_storage)'],['../classcub_1_1_block_exchange.html#aa0689007bc51632404a1893e52a0e6e9',1,'cub::BlockExchange::BlockExchange(int linear_tid)'],['../classcub_1_1_block_exchange.html#a166150541730a842f1af039e34131ea9',1,'cub::BlockExchange::BlockExchange(TempStorage &amp;temp_storage, int linear_tid)']]],
-  ['blockhistogram',['BlockHistogram',['../classcub_1_1_block_histogram.html',1,'cub']]],
   ['blockhistogram',['BlockHistogram',['../classcub_1_1_block_histogram.html#a60061b56700655655b83a1c5921ae026',1,'cub::BlockHistogram::BlockHistogram()'],['../classcub_1_1_block_histogram.html#aceed4d42c6ed10e14a707ab9a35a10c6',1,'cub::BlockHistogram::BlockHistogram(TempStorage &amp;temp_storage)'],['../classcub_1_1_block_histogram.html#a7ba4e9f53945968ed47227376ea3caa1',1,'cub::BlockHistogram::BlockHistogram(int linear_tid)'],['../classcub_1_1_block_histogram.html#ae87c89f1175ce34f0c60f1cf9719d5f0',1,'cub::BlockHistogram::BlockHistogram(TempStorage &amp;temp_storage, int linear_tid)']]],
+  ['blockhistogram',['BlockHistogram',['../classcub_1_1_block_histogram.html',1,'cub']]],
   ['blockhistogramalgorithm',['BlockHistogramAlgorithm',['../namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2',1,'cub']]],
   ['blockload',['BlockLoad',['../classcub_1_1_block_load.html#a41188e0b500fa9ad83a21ef757fb1bbe',1,'cub::BlockLoad::BlockLoad()'],['../classcub_1_1_block_load.html#a2972fee4c2b86ece5ba83f06c0beff3b',1,'cub::BlockLoad::BlockLoad(TempStorage &amp;temp_storage)'],['../classcub_1_1_block_load.html#aded8095e893f12cf66e07ad895646146',1,'cub::BlockLoad::BlockLoad(int linear_tid)'],['../classcub_1_1_block_load.html#a1a12ec07a2933a89ee775bfcf35741d3',1,'cub::BlockLoad::BlockLoad(TempStorage &amp;temp_storage, int linear_tid)']]],
   ['blockload',['BlockLoad',['../classcub_1_1_block_load.html',1,'cub']]],
@@ -50,7 +51,7 @@ var searchData=
   ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html#a982e1407d00b704c3046cd72c48acabb',1,'cub::BlockScan::BlockScan()'],['../classcub_1_1_block_scan.html#ad0decc1ea510cd9c7df4cd380a26b1b1',1,'cub::BlockScan::BlockScan(TempStorage &amp;temp_storage)'],['../classcub_1_1_block_scan.html#ab364204badf83769f9140d799cc188a7',1,'cub::BlockScan::BlockScan(int linear_tid)'],['../classcub_1_1_block_scan.html#a6264c3383db3384184cb13f5f282f73d',1,'cub::BlockScan::BlockScan(TempStorage &amp;temp_storage, int linear_tid)']]],
   ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html',1,'cub']]],
   ['blockscanalgorithm',['BlockScanAlgorithm',['../namespacecub.html#abec44bba36037c547e7e84906d0d23ab',1,'cub']]],
-  ['blockstore',['BlockStore',['../classcub_1_1_block_store.html',1,'cub']]],
   ['blockstore',['BlockStore',['../classcub_1_1_block_store.html#a330c609c0b00a31f136c9ddaaf33dbc6',1,'cub::BlockStore::BlockStore()'],['../classcub_1_1_block_store.html#a0c376417d222d3fe43fa4be14490e02e',1,'cub::BlockStore::BlockStore(TempStorage &amp;temp_storage)'],['../classcub_1_1_block_store.html#af48100d45a6e1d6d1f72791b86daeaca',1,'cub::BlockStore::BlockStore(int linear_tid)'],['../classcub_1_1_block_store.html#aed784851d5187651cb9fe1707e9ca1c2',1,'cub::BlockStore::BlockStore(TempStorage &amp;temp_storage, int linear_tid)']]],
+  ['blockstore',['BlockStore',['../classcub_1_1_block_store.html',1,'cub']]],
   ['blockstorealgorithm',['BlockStoreAlgorithm',['../namespacecub.html#a839b145451e9eec3d44172e3c3619700',1,'cub']]]
 ];

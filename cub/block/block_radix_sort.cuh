@@ -439,7 +439,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sort of 512 integer keys that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive keys.
@@ -492,7 +492,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sort of 512 integer keys and values that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive pairs.
@@ -540,7 +540,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sort of 512 integer keys that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive keys.
@@ -593,7 +593,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sort of 512 integer keys and values that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive pairs.
@@ -649,7 +649,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sort of 512 integer keys that
      * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive keys.  The final partitioning is striped.
@@ -703,7 +703,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sort of 512 integer keys and values that
      * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive pairs.  The final partitioning is striped.
@@ -752,7 +752,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sort of 512 integer keys that
      * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive keys.  The final partitioning is striped.
@@ -806,7 +806,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a sort of 512 integer keys and values that
      * are initially partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive pairs.  The final partitioning is striped.
