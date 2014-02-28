@@ -445,7 +445,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
 
 <p>Computes an inclusive prefix sum in each logical warp. </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -471,7 +471,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00300">300</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00301">301</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -518,7 +518,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
 <p>Computes an inclusive prefix sum in each logical warp. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs. </p>
 <p>The <code>warp_aggregate</code> is undefined in threads other than <em>warp-lane</em><sub>0</sub>.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -546,7 +546,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00342">342</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00344">344</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -602,7 +602,7 @@ template&lt;typename WarpPrefixCallbackOp &gt; </div>
 <p>The <code>warp_aggregate</code> is undefined in threads other than <em>warp-lane</em><sub>0</sub>.</p>
 <p>The <code>warp_prefix_op</code> functor must implement a member function <code>T operator()(T warp_aggregate)</code>. The functor's input parameter <code>warp_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the entire warp of threads, however only the return value from <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix. Can be stateful.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an inclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -668,7 +668,7 @@ template&lt;typename WarpPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00426">426</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00429">429</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -709,7 +709,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
 <p>Computes an exclusive prefix sum in each logical warp. </p>
 <p>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value "zero" for addition.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -735,7 +735,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00547">547</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00551">551</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -782,7 +782,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
 <p>Computes an exclusive prefix sum in each logical warp. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs. </p>
 <p>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value "zero" for addition.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -810,7 +810,7 @@ template&lt;typename T , int LOGICAL_WARPS = 1, int LOGICAL_WARP_THREADS = CUB_P
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00592">592</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00597">597</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -866,7 +866,7 @@ template&lt;typename WarpPrefixCallbackOp &gt; </div>
 <p>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value "zero" for addition.</p>
 <p>The <code>warp_prefix_op</code> functor must implement a member function <code>T operator()(T warp_aggregate)</code>. The functor's input parameter <code>warp_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the entire warp of threads, however only the return value from <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix. Can be stateful.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an exclusive prefix sum over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -932,7 +932,7 @@ template&lt;typename WarpPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00679">679</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00685">685</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -981,7 +981,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an inclusive prefix sum using the specified binary scan functor in each logical warp. </p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1014,7 +1014,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00731">731</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00738">738</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1069,7 +1069,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an inclusive prefix sum using the specified binary scan functor in each logical warp. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs. </p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1105,7 +1105,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00780">780</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00788">788</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1167,7 +1167,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 <p>The <code>warp_prefix_op</code> functor must implement a member function <code>T operator()(T warp_aggregate)</code>. The functor's input parameter <code>warp_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the entire warp of threads, however only the return value from <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix. Can be stateful.</p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an inclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an inclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -1235,7 +1235,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00869">869</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00878">878</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1290,7 +1290,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an exclusive prefix scan using the specified binary scan functor in each logical warp. </p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1324,7 +1324,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00931">931</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00941">941</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1385,7 +1385,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an exclusive prefix scan using the specified binary scan functor in each logical warp. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs. </p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1420,7 +1420,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00979">979</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l00990">990</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1488,7 +1488,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 <p>The <code>warp_prefix_op</code> functor must implement a member function <code>T operator()(T warp_aggregate)</code>. The functor's input parameter <code>warp_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the entire warp of threads, however only the return value from <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix. Can be stateful.</p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an exclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an exclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -1557,7 +1557,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l01069">1069</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l01081">1081</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1606,7 +1606,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an exclusive prefix scan using the specified binary scan functor in each logical warp. Because no identity value is supplied, the <code>output</code> computed for <em>warp-lane</em><sub>0</sub> is undefined. </p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1639,7 +1639,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l01135">1135</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l01148">1148</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1694,7 +1694,7 @@ template&lt;typename ScanOp &gt; </div>
 <p>Computes an exclusive prefix scan using the specified binary scan functor in each logical warp. Because no identity value is supplied, the <code>output</code> computed for <em>warp-lane</em><sub>0</sub> is undefined. Also provides every thread with the warp-wide <code>warp_aggregate</code> of all inputs. </p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -1728,7 +1728,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l01182">1182</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l01196">1196</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1790,7 +1790,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 <p>The <code>warp_prefix_op</code> functor must implement a member function <code>T operator()(T warp_aggregate)}</code>. The functor's input parameter <code>warp_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the entire warp of threads, however only the return value from <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix. Can be stateful.</p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
-<p>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an exclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </p>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively computes an exclusive prefix max scan over multiple "tiles" of input using a prefix functor to maintain a running total between block-wide scans. Each tile consists of 32 integer items that are partitioned across the warp. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// A stateful callback functor that maintains a running prefix to be applied</span></div>
@@ -1858,7 +1858,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l01271">1271</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__scan_8cuh_source.html#l01286">1286</a> of file <a class="el" href="warp__scan_8cuh_source.html">warp_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1869,7 +1869,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:23 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:09 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

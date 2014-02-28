@@ -952,7 +952,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the loading of a linear
      * segment of 512 integers into a "blocked" arrangement across 128 threads where each
      * thread owns 4 consecutive items.  The load is specialized for \p BLOCK_LOAD_WARP_TRANSPOSE,
@@ -996,7 +996,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the guarded loading of a linear
      * segment of 512 integers into a "blocked" arrangement across 128 threads where each
      * thread owns 4 consecutive items.  The load is specialized for \p BLOCK_LOAD_WARP_TRANSPOSE,
@@ -1042,7 +1042,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the guarded loading of a linear
      * segment of 512 integers into a "blocked" arrangement across 128 threads where each
      * thread owns 4 consecutive items.  The load is specialized for \p BLOCK_LOAD_WARP_TRANSPOSE,

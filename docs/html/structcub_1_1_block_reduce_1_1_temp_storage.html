@@ -107,12 +107,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="textblock"><h3>template&lt;
     typename T, 
     int BLOCK_THREADS, 
-    BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_RAKING&gt;<br/>
+    BlockReduceAlgorithm ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS&gt;<br/>
 struct cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;::TempStorage</h3>
 
 <p>The operations exposed by <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">BlockReduce</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. </p>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00214">214</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00258">258</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 </div><div class="dynheader">
 Inheritance diagram for cub::BlockReduce&lt; T, BLOCK_THREADS, ALGORITHM &gt;::TempStorage:</div>
 <div class="dyncontent">
@@ -152,7 +152,7 @@ DeviceWord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:22 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

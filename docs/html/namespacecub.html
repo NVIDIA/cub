@@ -378,7 +378,8 @@ Enumerations</h2></td></tr>
  }</td></tr>
 <tr class="memdesc:a9d7e37497fdd99864c57adecda710401"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">cub::BlockLoadAlgorithm</a> enumerates alternative algorithms for <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> to read a linear segment of data from memory into a blocked arrangement across a CUDA thread block.  <a href="namespacecub.html#a9d7e37497fdd99864c57adecda710401">More...</a><br/></td></tr>
 <tr class="separator:a9d7e37497fdd99864c57adecda710401"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add0251c713859b8974806079e498d10a"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">BlockReduceAlgorithm</a> { <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">BLOCK_REDUCE_RAKING</a>, 
+<tr class="memitem:add0251c713859b8974806079e498d10a"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10a">BlockReduceAlgorithm</a> { <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa508e99516231cd77f27295b233ca34b9">BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY</a>, 
+<a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">BLOCK_REDUCE_RAKING</a>, 
 <a class="el" href="namespacecub.html#add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5">BLOCK_REDUCE_WARP_REDUCTIONS</a>
  }</td></tr>
 <tr class="separator:add0251c713859b8974806079e498d10a"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -705,8 +706,26 @@ std::iterator_traits<br class="typebreak"/>
 </div><div class="memdoc">
 <p>BlockReduceAlgorithm enumerates alternative algorithms for parallel reduction across a CUDA threadblock. </p>
 <table class="fieldtable">
-<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2"></a>BLOCK_REDUCE_RAKING</em>&nbsp;</td><td class="fielddoc">
-<dl class="section user"><dt>Overview</dt><dd>An efficient "raking" reduction algorithm. Execution is comprised of three phases:<ol type="1">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="add0251c713859b8974806079e498d10aa508e99516231cd77f27295b233ca34b9"></a>BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY</em>&nbsp;</td><td class="fielddoc">
+<dl class="section user"><dt>Overview</dt><dd>An efficient "raking" reduction algorithm that only supports commutative reduction operators (e.g., addition).</dd></dl>
+<dl class="section user"><dt></dt><dd>Execution is comprised of three phases:<ol type="1">
+<li>Upsweep sequential reduction in registers (if threads contribute more than one input each). Threads in warps other than the first warp place their partial reductions into shared memory.</li>
+<li>Upsweep sequential reduction in shared memory. Threads within the first warp continue to accumulate by raking across segments of shared partial reductions</li>
+<li>A warp-synchronous Kogge-Stone style reduction within the raking warp.</li>
+</ol>
+</dd></dl>
+<dl class="section user"><dt></dt><dd><div class="image">
+<img src="block_reduce.png" alt="block_reduce.png"/>
+</div>
+ <div class="centercaption"><code>BLOCK_REDUCE_RAKING</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
+<dl class="section user"><dt>Performance Considerations</dt><dd><ul>
+<li>This variant performs less communication than BLOCK_REDUCE_RAKING_NON_COMMUTATIVE and is preferable when the reduction operator is commutative. This variant applies fewer reduction operators than BLOCK_REDUCE_WARP_REDUCTIONS, and can provide higher overall throughput across the GPU when suitably occupied. However, turn-around latency may be higher than to BLOCK_REDUCE_WARP_REDUCTIONS and thus less-desirable when the GPU is under-occupied. </li>
+</ul>
+</dd></dl>
+</td></tr>
+<tr><td class="fieldname"><em><a class="anchor" id="add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2"></a>BLOCK_REDUCE_RAKING</em>&nbsp;</td><td class="fielddoc">
+<dl class="section user"><dt>Overview</dt><dd>An efficient "raking" reduction algorithm that supports commutative (e.g., addition) and non-commutative (e.g., string concatenation) reduction operators.</dd></dl>
+<dl class="section user"><dt></dt><dd>Execution is comprised of three phases:<ol type="1">
 <li>Upsweep sequential reduction in registers (if threads contribute more than one input each). Each thread then places the partial reduction of its item(s) into shared memory.</li>
 <li>Upsweep sequential reduction in shared memory. Threads within a single warp rake across segments of shared partial reductions.</li>
 <li>A warp-synchronous Kogge-Stone style reduction within the raking warp.</li>
@@ -717,12 +736,13 @@ std::iterator_traits<br class="typebreak"/>
 </div>
  <div class="centercaption"><code>BLOCK_REDUCE_RAKING</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
-<li>Although this variant may suffer longer turnaround latencies when the GPU is under-occupied, it can often provide higher overall throughput across the GPU when suitably occupied. </li>
+<li>This variant performs more communication than BLOCK_REDUCE_RAKING and is only preferable when the reduction operator is non-commutative. This variant applies fewer reduction operators than BLOCK_REDUCE_WARP_REDUCTIONS, and can provide higher overall throughput across the GPU when suitably occupied. However, turn-around latency may be higher than to BLOCK_REDUCE_WARP_REDUCTIONS and thus less-desirable when the GPU is under-occupied. </li>
 </ul>
 </dd></dl>
 </td></tr>
 <tr><td class="fieldname"><em><a class="anchor" id="add0251c713859b8974806079e498d10aa993903176f938273fa1ff5d4daa808e5"></a>BLOCK_REDUCE_WARP_REDUCTIONS</em>&nbsp;</td><td class="fielddoc">
-<dl class="section user"><dt>Overview</dt><dd>A quick "tiled warp-reductions" reduction algorithm. Execution is comprised of four phases:<ol type="1">
+<dl class="section user"><dt>Overview</dt><dd>A quick "tiled warp-reductions" reduction algorithm that supports commutative (e.g., addition) and non-commutative (e.g., string concatenation) reduction operators.</dd></dl>
+<dl class="section user"><dt></dt><dd>Execution is comprised of four phases:<ol type="1">
 <li>Upsweep sequential reduction in registers (if threads contribute more than one input each). Each thread then places the partial reduction of its item(s) into shared memory.</li>
 <li>Compute a shallow, but inefficient warp-synchronous Kogge-Stone style reduction within each warp.</li>
 <li>A propagation phase where the warp reduction outputs in each warp are updated with the aggregate from each preceding warp.</li>
@@ -733,13 +753,13 @@ std::iterator_traits<br class="typebreak"/>
 </div>
  <div class="centercaption"><code>BLOCK_REDUCE_WARP_REDUCTIONS</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
-<li>Although this variant may suffer lower overall throughput across the GPU because due to a heavy reliance on inefficient warp-reductions, it can often provide lower turnaround latencies when the GPU is under-occupied. </li>
+<li>This variant applies more reduction operators than BLOCK_REDUCE_RAKING or BLOCK_REDUCE_RAKING_NON_COMMUTATIVE, which may result in lower overall throughput across the GPU. However turn-around latency may be lower and thus useful when the GPU is under-occupied. </li>
 </ul>
 </dd></dl>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00058">58</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00059">59</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -861,7 +881,7 @@ std::iterator_traits<br class="typebreak"/>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:06 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

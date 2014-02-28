@@ -279,6 +279,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp sum reductions within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -319,6 +320,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a sum reduction within a single, partially-full
      * block of 32 threads (one warp).
      * \par
@@ -370,6 +372,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a head-segmented warp sum
      * reduction within a block of 32 threads (one warp).
      * \par
@@ -417,6 +420,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a tail-segmented warp sum
      * reduction within a block of 32 threads (one warp).
      * \par
@@ -472,6 +476,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp max reductions within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -518,6 +523,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a max reduction within a single, partially-full
      * block of 32 threads (one warp).
      * \par
@@ -574,6 +580,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a head-segmented warp max
      * reduction within a block of 32 threads (one warp).
      * \par
@@ -624,6 +631,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a tail-segmented warp max
      * reduction within a block of 32 threads (one warp).
      * \par

@@ -1,10 +1,13 @@
 //-----------------------------------------------------------------------------
 
-1.2.0    02/25/2014
+1.2.1    02/25/2014
     - New features:
-        - Added device-wide reduce-by-key (DeviceReduce::ReduceByKey, DeviceReduce::RunLengthEncode) 
+        - Added device-wide reduce-by-key (DeviceReduce::ReduceByKey, DeviceReduce::RunLengthEncode)
+        - Added MS VC++ project solutions for device-wide and block-wide examples 
     - Performance:
         - Improved DeviceScan, DeviceSelect, DevicePartition performance
+        - Added a third algorithmic variant of cub::BlockReduce for improved performance
+          when using commutative operators (e.g., numeric addition)
     - Documentation and testing:
         - Compatible with CUDA 6.0
         - Added performance-portabiltiy plots for many device-wide primitives to doc 

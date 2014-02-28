@@ -263,7 +263,7 @@ public:
     /**
      * \brief Initialize the shared histogram counters to zero.
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a the initialization and update of a
      * histogram of 512 integer samples that are partitioned across 128 threads
      * where each thread owns 4 samples.
@@ -322,7 +322,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a 256-bin histogram of 512 integer samples that
      * are partitioned across 128 threads where each thread owns 4 samples.
      * \par
@@ -375,7 +375,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a the initialization and update of a
      * histogram of 512 integer samples that are partitioned across 128 threads
      * where each thread owns 4 samples.

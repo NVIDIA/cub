@@ -73,7 +73,7 @@ namespace cub {
  *   device memory can only be dereferenced on the device.
  * - Compatible with Thrust API v1.7 or newer.
  *
- * \par Example
+ * \par Snippet
  * The code snippet below illustrates the use of \p TransformInputIterator to
  * dereference an array of integers, tripling the values and converting them to doubles.
  * \par

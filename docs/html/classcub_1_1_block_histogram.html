@@ -355,7 +355,7 @@ template&lt;typename HistoCounter &gt; </div>
 </div><div class="memdoc">
 
 <p>Initialize the shared histogram counters to zero. </p>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -432,7 +432,7 @@ template&lt;typename HistoCounter &gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a 256-bin histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a 256-bin histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -513,7 +513,7 @@ template&lt;typename HistoCounter &gt; </div>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a the initialization and update of a histogram of 512 integer samples that are partitioned across 128 threads where each thread owns 4 samples. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_histogram.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
@@ -562,7 +562,7 @@ template&lt;typename HistoCounter &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

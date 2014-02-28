@@ -377,7 +377,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an exclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -421,7 +421,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an exclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -471,7 +471,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -561,7 +561,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -616,7 +616,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an exclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -678,7 +678,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -790,7 +790,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an exclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -839,7 +839,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an exclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -894,7 +894,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -991,7 +991,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an exclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -1053,7 +1053,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an exclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -1120,7 +1120,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a single thread block that progressively
      * computes an exclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -1428,7 +1428,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an inclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -1472,7 +1472,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an inclusive prefix sum of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -1523,7 +1523,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -1613,7 +1613,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an inclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -1675,7 +1675,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an inclusive prefix sum of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -1747,7 +1747,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -1865,7 +1865,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an inclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -1913,7 +1913,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an inclusive prefix max scan of 128 integer items that
      * are partitioned across 128 threads.
      * \par
@@ -1967,7 +1967,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -2063,7 +2063,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an inclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -2129,7 +2129,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates an inclusive prefix max scan of 512 integer items that
      * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
      * where each thread owns 4 consecutive items.
@@ -2204,7 +2204,7 @@ public:
      * - \granularity
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates a single thread block that progressively
      * computes an inclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists

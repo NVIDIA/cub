@@ -76,7 +76,7 @@ namespace cub {
  *   created by the host thread, but can be used by any descendant kernel.
  * - Compatible with Thrust API v1.7 or newer.
  *
- * \par Example
+ * \par Snippet
  * The code snippet below illustrates the use of \p TexRefInputIterator to
  * dereference a device array of doubles through texture cache.
  * \par

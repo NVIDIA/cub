@@ -213,7 +213,7 @@ __device__ __forceinline__ unsigned int IADD3(unsigned int x, unsigned int y, un
  * {b3, b2, b1, b0} selected in the return value, a 4-bit selector is defined within
  * the four lower "nibbles" of \p index: {\p index } = {n7, n6, n5, n4, n3, n2, n1, n0}
  *
- * \par
+ * \par Snippet
  * The code snippet below illustrates byte-permute.
  * \par
  * \code
@@ -352,7 +352,7 @@ __device__ __forceinline__ unsigned int LaneMaskGe()
  * \par
  * - Available only for SM3.0 or newer
  *
- * \par
+ * \par Snippet
  * The code snippet below illustrates each thread obtaining a \p double value from the
  * predecessor of its predecessor.
  * \par
@@ -411,7 +411,7 @@ __device__ __forceinline__ T ShuffleUp(
  * \par
  * - Available only for SM3.0 or newer
  *
- * \par
+ * \par Snippet
  * The code snippet below illustrates each thread obtaining a \p double value from the
  * successor of its successor.
  * \par
@@ -506,10 +506,8 @@ __device__ __forceinline__ T ShuffleBroadcast(
  * \par
  * - Available only for SM3.0 or newer
  *
- * \par
+ * \par Snippet
  * The code snippet below illustrates each thread obtaining a \p double value from <em>warp-lane</em><sub>0</sub>.
- *
- * Blah
  *
  * \par
  * \code

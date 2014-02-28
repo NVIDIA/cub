@@ -74,7 +74,7 @@ namespace cub {
  *   functions, but can only be dereferenced within device functions.
  * - Compatible with Thrust API v1.7 or newer.
  *
- * \par Example
+ * \par Snippet
  * The code snippet below illustrates the use of \p CacheModifiedOutputIterator to
  * dereference a device array of doubles using the "wt" PTX load modifier
  * (i.e., write-through to system memory).

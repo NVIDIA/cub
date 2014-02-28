@@ -354,7 +354,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_load.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
@@ -428,7 +428,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_load.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> valid_items, ...)</div>
@@ -509,7 +509,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt></dt><dd>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the guarded loading of a linear segment of 512 integers into a "blocked" arrangement across 128 threads where each thread owns 4 consecutive items. The load is specialized for <code>BLOCK_LOAD_WARP_TRANSPOSE</code>, meaning memory references are efficiently coalesced using a warp-striped access pattern (after which items are locally reordered among threads). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_load.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> valid_items, ...)</div>
@@ -546,7 +546,7 @@ template&lt;typename InputIterator , int BLOCK_THREADS, int ITEMS_PER_THREAD, Bl
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Feb 25 2014 10:37:21 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Feb 28 2014 15:34:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
