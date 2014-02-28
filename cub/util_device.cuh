@@ -301,7 +301,7 @@ cudaError_t MaxSmOccupancy(
 /**
  * \brief Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer \p kernel_ptr on the current device with \p block_threads per thread block.
  *
- * \par
+ * \par Snippet
  * The code snippet below illustrates the use of the MaxSmOccupancy function.
  * \par
  * \code

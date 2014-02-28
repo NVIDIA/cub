@@ -271,6 +271,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -312,6 +313,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide inclusive prefix sums within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -360,6 +362,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
      * computes an inclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -517,6 +520,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -562,6 +566,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix sums within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -613,6 +618,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
      * computes an exclusive prefix sum over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -699,6 +705,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -744,6 +751,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide inclusive prefix max scans within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -799,6 +807,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
      * computes an inclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -899,6 +908,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -945,6 +955,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -999,6 +1010,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
      * computes an exclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists
@@ -1102,6 +1114,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -1148,6 +1161,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates four concurrent warp-wide exclusive prefix max scans within a block of
      * 128 threads (one per each of the 32-thread warps).
      * \par
@@ -1201,6 +1215,7 @@ public:
      *
      * \smemreuse
      *
+     * \par Snippet
      * The code snippet below illustrates a single thread block of 32 threads (one warp) that progressively
      * computes an exclusive prefix max scan over multiple "tiles" of input using a
      * prefix functor to maintain a running total between block-wide scans.  Each tile consists

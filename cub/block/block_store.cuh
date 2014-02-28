@@ -804,7 +804,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the storing of a "blocked" arrangement
      * of 512 integers across 128 threads (where each thread owns 4 consecutive items)
      * into a linear segment of memory.  The store is specialized for \p BLOCK_STORE_WARP_TRANSPOSE,
@@ -851,7 +851,7 @@ public:
      * - \blocked
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the guarded storing of a "blocked" arrangement
      * of 512 integers across 128 threads (where each thread owns 4 consecutive items)
      * into a linear segment of memory.  The store is specialized for \p BLOCK_STORE_WARP_TRANSPOSE,

@@ -711,7 +711,7 @@ public:
      * \par
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the conversion from a "striped" to a "blocked" arrangement
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
@@ -753,7 +753,7 @@ public:
      * \par
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the conversion from a "blocked" to a "striped" arrangement
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
@@ -800,7 +800,7 @@ public:
      * \par
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the conversion from a "warp-striped" to a "blocked" arrangement
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par
@@ -844,7 +844,7 @@ public:
      * \par
      * - \smemreuse
      *
-     * \par
+     * \par Snippet
      * The code snippet below illustrates the conversion from a "blocked" to a "warp-striped" arrangement
      * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
      * \par

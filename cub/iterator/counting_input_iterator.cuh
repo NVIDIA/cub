@@ -69,7 +69,7 @@ namespace cub {
  *   functions.
  * - Compatible with Thrust API v1.7 or newer.
  *
- * \par Example
+ * \par Snippet
  * The code snippet below illustrates the use of \p CountingInputIterator to
  * dereference a sequence of incrementing integers.
  * \par
