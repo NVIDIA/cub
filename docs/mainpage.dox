@@ -58,7 +58,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.2.1</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.2.2</b></em></a>
 
 </td><td>
 
@@ -507,8 +507,8 @@ for many of the algorithmic techniques used by CUB.
 <table>
  
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-02/28/2014<br>
-[<b>CUB v1.2.1</b>](https://github.com/NVlabs/cub/archive/1.2.1.zip)
+03/03/2014<br>
+[<b>CUB v1.2.2</b>](https://github.com/NVlabs/cub/archive/1.2.2.zip)
 </td><td style="vertical-align:text-top;">
   - New features:
       - Added device-wide reduce-by-key (cub::DeviceReduce::ReduceByKey, cub::DeviceReduce::RunLengthEncode) 
