@@ -1,6 +1,6 @@
 //-----------------------------------------------------------------------------
 
-1.2.1    02/25/2014
+1.2.2    03/03/2014
     - New features:
         - Added device-wide reduce-by-key (DeviceReduce::ReduceByKey, DeviceReduce::RunLengthEncode)
         - Added MS VC++ project solutions for device-wide and block-wide examples 

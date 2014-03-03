@@ -73,7 +73,7 @@ struct BlockReduceRakingCommutativeOnly
     };
 
     ///  WarpReduce utility type
-    typedef typename WarpReduce<T, 1, RAKING_THREADS> WarpReduce;
+    typedef WarpReduce<T, 1, RAKING_THREADS> WarpReduce;
 
     /// Layout type for padded thread block raking grid
     typedef BlockRakingLayout<T, SHARING_THREADS> BlockRakingLayout;
