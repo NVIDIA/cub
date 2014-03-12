@@ -28,7 +28,7 @@
 
 /**
  * \file
- * BlockRegionRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a region of tiles.
+ * BlockRangeRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a range of tiles.
  */
 
 #pragma once
@@ -51,14 +51,14 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRegionRadixSortUpsweep
+ * Parameterizable tuning policy type for BlockRangeRadixSortUpsweep
  */
 template <
     int                 _BLOCK_THREADS,     ///< Threads per thread block
     int                 _ITEMS_PER_THREAD,  ///< Items per thread (per tile of input)
     CacheLoadModifier   _LOAD_MODIFIER,     ///< Cache load modifier for reading keys
     int                 _RADIX_BITS>        ///< The number of radix bits, i.e., log2(bins)
-struct BlockRegionRadixSortUpsweepPolicy
+struct BlockRangeRadixSortUpsweepPolicy
 {
     enum
     {
@@ -76,13 +76,13 @@ struct BlockRegionRadixSortUpsweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRegionRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a region of tiles.
+ * \brief BlockRangeRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a range of tiles.
  */
 template <
-    typename BlockRegionRadixSortUpsweepPolicy,     ///< Parameterized BlockRegionRadixSortUpsweepPolicy tuning policy type
+    typename BlockRangeRadixSortUpsweepPolicy,      ///< Parameterized BlockRangeRadixSortUpsweepPolicy tuning policy type
     typename Key,                                   ///< Key type
     typename Offset>                                ///< Signed integer type for global offsets
-struct BlockRegionRadixSortUpsweep
+struct BlockRangeRadixSortUpsweep
 {
 
     //---------------------------------------------------------------------
@@ -97,13 +97,13 @@ struct BlockRegionRadixSortUpsweep
     // Integer type for packing DigitCounters into columns of shared memory banks
     typedef unsigned int PackedCounter;
 
-    static const CacheLoadModifier LOAD_MODIFIER = BlockRegionRadixSortUpsweepPolicy::LOAD_MODIFIER;
+    static const CacheLoadModifier LOAD_MODIFIER = BlockRangeRadixSortUpsweepPolicy::LOAD_MODIFIER;
 
     enum
     {
-        RADIX_BITS              = BlockRegionRadixSortUpsweepPolicy::RADIX_BITS,
-        BLOCK_THREADS           = BlockRegionRadixSortUpsweepPolicy::BLOCK_THREADS,
-        KEYS_PER_THREAD         = BlockRegionRadixSortUpsweepPolicy::ITEMS_PER_THREAD,
+        RADIX_BITS              = BlockRangeRadixSortUpsweepPolicy::RADIX_BITS,
+        BLOCK_THREADS           = BlockRangeRadixSortUpsweepPolicy::BLOCK_THREADS,
+        KEYS_PER_THREAD         = BlockRangeRadixSortUpsweepPolicy::ITEMS_PER_THREAD,
 
         RADIX_DIGITS            = 1 << RADIX_BITS,
 
@@ -183,7 +183,7 @@ struct BlockRegionRadixSortUpsweep
     {
         // BucketKeys
         static __device__ __forceinline__ void BucketKeys(
-            BlockRegionRadixSortUpsweep     &cta,
+            BlockRangeRadixSortUpsweep     &cta,
             UnsignedBits                    keys[KEYS_PER_THREAD])
         {
             cta.Bucket(keys[COUNT]);
@@ -198,7 +198,7 @@ struct BlockRegionRadixSortUpsweep
     struct Iterate<MAX, MAX>
     {
         // BucketKeys
-        static __device__ __forceinline__ void BucketKeys(BlockRegionRadixSortUpsweep &cta, UnsignedBits keys[KEYS_PER_THREAD]) {}
+        static __device__ __forceinline__ void BucketKeys(BlockRangeRadixSortUpsweep &cta, UnsignedBits keys[KEYS_PER_THREAD]) {}
     };
 
 
@@ -369,7 +369,7 @@ struct BlockRegionRadixSortUpsweep
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockRegionRadixSortUpsweep(
+    __device__ __forceinline__ BlockRangeRadixSortUpsweep(
         TempStorage &temp_storage,
         Key         *d_keys_in,
         int         current_bit)

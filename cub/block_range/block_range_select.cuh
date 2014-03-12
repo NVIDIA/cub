@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockRegionSelect implements a stateful abstraction of CUDA thread blocks for participating in device-wide select.
+ * cub::BlockRangeSelect implements a stateful abstraction of CUDA thread blocks for participating in device-wide select.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "device_scan_types.cuh"
+#include "block_scan_prefix_operators.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
@@ -57,7 +57,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRegionSelect
+ * Parameterizable tuning policy type for BlockRangeSelect
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -66,7 +66,7 @@ template <
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                        _TWO_PHASE_SCATTER,             ///< Whether or not to coalesce output values in shared memory before scattering them to global
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockRegionSelectPolicy
+struct BlockRangeSelectPolicy
 {
     enum
     {
@@ -88,14 +88,14 @@ struct BlockRegionSelectPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRegionSelect implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a region of tiles
+ * \brief BlockRangeSelect implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles
  *
  * Performs functor-based selection if SelectOp functor type != NullType
  * Otherwise performs flag-based selection if FlagIterator's value type != NullType
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename    BlockRegionSelectPolicy,        ///< Parameterized BlockRegionSelectPolicy tuning policy type
+    typename    BlockRangeSelectPolicy,         ///< Parameterized BlockRangeSelectPolicy tuning policy type
     typename    InputIterator,                  ///< Random-access input iterator type for selection items
     typename    FlagIterator,                   ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
     typename    OutputIterator,                 ///< Random-access input iterator type for selected items
@@ -103,7 +103,7 @@ template <
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
     typename    Offset,                         ///< Signed integer type for global offsets
     bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
-struct BlockRegionSelect
+struct BlockRangeSelect
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -116,7 +116,7 @@ struct BlockRegionSelect
     typedef typename std::iterator_traits<FlagIterator>::value_type Flag;
 
     // Tile status descriptor interface type
-    typedef TileLookbackStatus<Offset> TileLookbackStatus;
+    typedef ScanTileState<Offset> ScanTileState;
 
     // Constants
     enum
@@ -125,13 +125,13 @@ struct BlockRegionSelect
         USE_SELECT_FLAGS,
         USE_DISCONTINUITY,
 
-        BLOCK_THREADS       = BlockRegionSelectPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockRegionSelectPolicy::ITEMS_PER_THREAD,
-        TWO_PHASE_SCATTER   = (BlockRegionSelectPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
+        BLOCK_THREADS       = BlockRangeSelectPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockRangeSelectPolicy::ITEMS_PER_THREAD,
+        TWO_PHASE_SCATTER   = (BlockRangeSelectPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Whether or not to sync after loading data
-        SYNC_AFTER_LOAD     = (BlockRegionSelectPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        SYNC_AFTER_LOAD     = (BlockRangeSelectPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
         SELECT_METHOD       = (!Equals<SelectOp, NullType>::VALUE) ?
                                 USE_SELECT_OP :
@@ -142,30 +142,30 @@ struct BlockRegionSelect
 
     // Input iterator wrapper type
     typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRegionSelectPolicy::LOAD_MODIFIER, T, Offset>,      // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<BlockRangeSelectPolicy::LOAD_MODIFIER, T, Offset>,      // Wrap the native input pointer with CacheModifiedInputIterator
             InputIterator>::Type                                                                // Directly use the supplied input iterator type
         WrappedInputIterator;
 
     // Flag iterator wrapper type
     typedef typename If<IsPointer<FlagIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRegionSelectPolicy::LOAD_MODIFIER, Flag, Offset>,   // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<BlockRangeSelectPolicy::LOAD_MODIFIER, Flag, Offset>,   // Wrap the native input pointer with CacheModifiedInputIterator
             FlagIterator>::Type                                                                 // Directly use the supplied input iterator type
         WrappedFlagIterator;
 
     // Parameterized BlockLoad type for input items
     typedef BlockLoad<
             WrappedInputIterator,
-            BlockRegionSelectPolicy::BLOCK_THREADS,
-            BlockRegionSelectPolicy::ITEMS_PER_THREAD,
-            BlockRegionSelectPolicy::LOAD_ALGORITHM>
+            BlockRangeSelectPolicy::BLOCK_THREADS,
+            BlockRangeSelectPolicy::ITEMS_PER_THREAD,
+            BlockRangeSelectPolicy::LOAD_ALGORITHM>
         BlockLoadT;
 
     // Parameterized BlockLoad type for flags
     typedef BlockLoad<
             WrappedFlagIterator,
-            BlockRegionSelectPolicy::BLOCK_THREADS,
-            BlockRegionSelectPolicy::ITEMS_PER_THREAD,
-            BlockRegionSelectPolicy::LOAD_ALGORITHM>
+            BlockRangeSelectPolicy::BLOCK_THREADS,
+            BlockRangeSelectPolicy::ITEMS_PER_THREAD,
+            BlockRangeSelectPolicy::LOAD_ALGORITHM>
         BlockLoadFlags;
 
     // Parameterized BlockExchange type for input items
@@ -181,15 +181,15 @@ struct BlockRegionSelect
     // Parameterized BlockScan type
     typedef BlockScan<
             Offset,
-            BlockRegionSelectPolicy::BLOCK_THREADS,
-            BlockRegionSelectPolicy::SCAN_ALGORITHM>
+            BlockRangeSelectPolicy::BLOCK_THREADS,
+            BlockRangeSelectPolicy::SCAN_ALGORITHM>
         BlockScanAllocations;
 
     // Callback type for obtaining tile prefix during block scan
-    typedef LookbackBlockPrefixCallbackOp<
+    typedef BlockScanLookbackPrefixOp<
             Offset,
             Sum,
-            TileLookbackStatus>
+            ScanTileState>
         LookbackPrefixCallbackOp;
 
     // Shared memory type for this threadblock
@@ -241,7 +241,7 @@ struct BlockRegionSelect
 
     // Constructor
     __device__ __forceinline__
-    BlockRegionSelect(
+    BlockRangeSelect(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIterator               d_in,               ///< Input data
         FlagIterator                d_flags,            ///< Input flags
@@ -577,7 +577,7 @@ struct BlockRegionSelect
         Offset              num_remaining,      ///< Total number of items remaining to be processed (including this tile)
         int                 tile_idx,           ///< Tile index
         Offset              block_offset,       ///< Tile offset
-        TileLookbackStatus  &tile_status)       ///< Global list of tile status
+        ScanTileState  &tile_status)       ///< Global list of tile status
     {
         T items[ITEMS_PER_THREAD];
         Offset selected[ITEMS_PER_THREAD];              // Selection flags
@@ -654,10 +654,10 @@ struct BlockRegionSelect
      * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
     template <typename NumSelectedIterator>         ///< Output iterator type for recording number of items selected
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        TileLookbackStatus      &tile_status,       ///< Global list of tile status
+        ScanTileState      &tile_status,       ///< Global list of tile status
         NumSelectedIterator     d_num_selected)     ///< Output total number selected
     {
 #if (CUB_PTX_VERSION <= 130)

@@ -1188,7 +1188,7 @@ __global__ void SegReduceRegionKernel(
 {
     typedef KeyValuePair<Offset, Value> KeyValuePair;
 
-    // Specialize threadblock abstraction type for reducing a region of segmented values
+    // Specialize threadblock abstraction type for reducing a range of segmented values
     typedef BlockSegReduceRegion<
             BlockSegReduceRegionPolicy,
             SegmentOffsetIterator,
@@ -1265,7 +1265,7 @@ __global__ void SegReduceRegionByKeyKernel(
     Value                   identity,                   ///< [in] Identity value (for zero-length segments)
     ReductionOp             reduction_op)               ///< [in] Reduction operator
 {
-    // Specialize threadblock abstraction type for reducing a region of values by key
+    // Specialize threadblock abstraction type for reducing a range of values by key
     typedef BlockSegReduceRegionByKey<
             BlockSegReduceRegionByKeyPolicy,
             InputIterator,
