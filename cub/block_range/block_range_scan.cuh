@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockRegionScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a region of tiles.
+ * cub::BlockRangeScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "device_scan_types.cuh"
+#include "block_scan_prefix_operators.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
@@ -55,7 +55,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRegionScan
+ * Parameterizable tuning policy type for BlockRangeScan
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -66,7 +66,7 @@ template <
     BlockStoreAlgorithm         _STORE_ALGORITHM,               ///< The BlockStore algorithm to use
     bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockRegionScanPolicy
+struct BlockRangeScanPolicy
 {
     enum
     {
@@ -83,21 +83,23 @@ struct BlockRegionScanPolicy
 };
 
 
+
+
 /******************************************************************************
  * Thread block abstractions
  ******************************************************************************/
 
 /**
- * \brief BlockRegionScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a region of tiles.
+ * \brief BlockRangeScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
  */
 template <
-    typename BlockRegionScanPolicy,     ///< Parameterized BlockRegionScanPolicy tuning policy type
+    typename BlockRangeScanPolicy,      ///< Parameterized BlockRangeScanPolicy tuning policy type
     typename InputIterator,             ///< Random-access input iterator type
     typename OutputIterator,            ///< Random-access output iterator type
     typename ScanOp,                    ///< Scan functor type
     typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
     typename Offset>                    ///< Signed integer type for global offsets
-struct BlockRegionScan
+struct BlockRangeScan
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -107,11 +109,11 @@ struct BlockRegionScan
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Tile status descriptor interface type
-    typedef TileLookbackStatus<T> TileLookbackStatus;
+    typedef ScanTileState<T> ScanTileState;
 
     // Input iterator wrapper type
     typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRegionScanPolicy::LOAD_MODIFIER, T, Offset>,    // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<BlockRangeScanPolicy::LOAD_MODIFIER, T, Offset>,    // Wrap the native input pointer with CacheModifiedInputIterator
             InputIterator>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIterator;
 
@@ -119,45 +121,45 @@ struct BlockRegionScan
     enum
     {
         INCLUSIVE           = Equals<Identity, NullType>::VALUE,            // Inclusive scan if no identity type is provided
-        BLOCK_THREADS       = BlockRegionScanPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockRegionScanPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockRangeScanPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockRangeScanPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Parameterized BlockLoad type
     typedef BlockLoad<
             WrappedInputIterator,
-            BlockRegionScanPolicy::BLOCK_THREADS,
-            BlockRegionScanPolicy::ITEMS_PER_THREAD,
-            BlockRegionScanPolicy::LOAD_ALGORITHM,
-            BlockRegionScanPolicy::LOAD_WARP_TIME_SLICING>
+            BlockRangeScanPolicy::BLOCK_THREADS,
+            BlockRangeScanPolicy::ITEMS_PER_THREAD,
+            BlockRangeScanPolicy::LOAD_ALGORITHM,
+            BlockRangeScanPolicy::LOAD_WARP_TIME_SLICING>
         BlockLoadT;
 
     // Parameterized BlockStore type
     typedef BlockStore<
             OutputIterator,
-            BlockRegionScanPolicy::BLOCK_THREADS,
-            BlockRegionScanPolicy::ITEMS_PER_THREAD,
-            BlockRegionScanPolicy::STORE_ALGORITHM,
-            BlockRegionScanPolicy::STORE_WARP_TIME_SLICING>
+            BlockRangeScanPolicy::BLOCK_THREADS,
+            BlockRangeScanPolicy::ITEMS_PER_THREAD,
+            BlockRangeScanPolicy::STORE_ALGORITHM,
+            BlockRangeScanPolicy::STORE_WARP_TIME_SLICING>
         BlockStoreT;
 
     // Parameterized BlockScan type
     typedef BlockScan<
             T,
-            BlockRegionScanPolicy::BLOCK_THREADS,
-            BlockRegionScanPolicy::SCAN_ALGORITHM>
+            BlockRangeScanPolicy::BLOCK_THREADS,
+            BlockRangeScanPolicy::SCAN_ALGORITHM>
         BlockScanT;
 
     // Callback type for obtaining tile prefix during block scan
-    typedef LookbackBlockPrefixCallbackOp<
+    typedef BlockScanLookbackPrefixOp<
             T,
             ScanOp,
-            TileLookbackStatus>
+            ScanTileState>
         LookbackPrefixCallbackOp;
 
     // Stateful BlockScan prefix callback type for managing a running total while scanning consecutive tiles
-    typedef RunningBlockPrefixCallbackOp<
+    typedef BlockScanRunningPrefixOp<
             T,
             ScanOp>
         RunningPrefixCallbackOp;
@@ -289,7 +291,7 @@ struct BlockRegionScan
 
     // Constructor
     __device__ __forceinline__
-    BlockRegionScan(
+    BlockRangeScan(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIterator               d_in,               ///< Input data
         OutputIterator              d_out,              ///< Output data
@@ -317,7 +319,7 @@ struct BlockRegionScan
         Offset                      num_remaining,      ///< Total number of items remaining to be processed (including this tile)
         int                         tile_idx,           ///< Tile index
         Offset                      block_offset,       ///< Tile offset
-        TileLookbackStatus          &tile_status)       ///< Global list of tile status
+        ScanTileState          &tile_status)       ///< Global list of tile status
     {
         // Load items
         T items[ITEMS_PER_THREAD];
@@ -361,10 +363,10 @@ struct BlockRegionScan
     /**
      * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         int                     num_items,          ///< Total number of input items
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        TileLookbackStatus      &tile_status)       ///< Global list of tile status
+        ScanTileState      &tile_status)       ///< Global list of tile status
     {
 #if (CUB_PTX_VERSION <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
@@ -468,11 +470,11 @@ struct BlockRegionScan
     /**
      * Scan a consecutive share of input tiles
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         Offset   block_offset,      ///< [in] Threadblock begin offset (inclusive)
         Offset   block_end)         ///< [in] Threadblock end offset (exclusive)
     {
-        RunningBlockPrefixCallbackOp<T, ScanOp> prefix_op(scan_op);
+        BlockScanRunningPrefixOp<T, ScanOp> prefix_op(scan_op);
 
         if (block_offset + TILE_ITEMS <= block_end)
         {
@@ -506,12 +508,12 @@ struct BlockRegionScan
     /**
      * Scan a consecutive share of input tiles, seeded with the specified prefix value
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         Offset  block_offset,                       ///< [in] Threadblock begin offset (inclusive)
         Offset  block_end,                          ///< [in] Threadblock end offset (exclusive)
         T       prefix)                             ///< [in] The prefix to apply to the scan segment
     {
-        RunningBlockPrefixCallbackOp<T, ScanOp> prefix_op(prefix, scan_op);
+        BlockScanRunningPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
 
         // Consume full tiles of input
         while (block_offset + TILE_ITEMS <= block_end)

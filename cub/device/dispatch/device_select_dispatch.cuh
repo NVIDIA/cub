@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "device_scan_dispatch.cuh"
-#include "../block_region/block_region_select.cuh"
+#include "../../block_range/block_range_select.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_device.cuh"
@@ -62,23 +62,23 @@ namespace cub {
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename            BlockRegionSelectPolicy,    ///< Parameterized BlockRegionSelectPolicy tuning policy type
+    typename            BlockRangeSelectPolicy,     ///< Parameterized BlockRangeSelectPolicy tuning policy type
     typename            InputIterator,              ///< Random-access input iterator type for reading input items
     typename            FlagIterator,               ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
     typename            OutputIterator,             ///< Random-access output iterator type for writing selected items
     typename            NumSelectedIterator,        ///< Output iterator type for recording the number of items selected
-    typename            TileLookbackStatus,         ///< Tile status interface type
+    typename            ScanTileState,         ///< Tile status interface type
     typename            SelectOp,                   ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename            EqualityOp,                 ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename            Offset,                     ///< Signed integer type for global offsets
     bool                KEEP_REJECTS>               ///< Whether or not we push rejected items to the back of the output
-__launch_bounds__ (int(BlockRegionSelectPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockRangeSelectPolicy::BLOCK_THREADS))
 __global__ void SelectRegionKernel(
     InputIterator       d_in,                       ///< [in] Pointer to input sequence of data items
     FlagIterator        d_flags,                    ///< [in] Pointer to the input sequence of selection flags
     OutputIterator      d_out,                      ///< [in] Pointer to output sequence of selected data items
     NumSelectedIterator d_num_selected,             ///< [in] Pointer to total number of items selected (i.e., length of \p d_out)
-    TileLookbackStatus  tile_status,                ///< [in] Tile status interface
+    ScanTileState  tile_status,                ///< [in] Tile status interface
     SelectOp            select_op,                  ///< [in] Selection operator
     EqualityOp          equality_op,                ///< [in] Equality operator
     Offset              num_items,                  ///< [in] Total number of input items (i.e., length of \p d_in)
@@ -86,21 +86,21 @@ __global__ void SelectRegionKernel(
     GridQueue<int>      queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for selecting data from input tiles
-    typedef BlockRegionSelect<
-        BlockRegionSelectPolicy,
+    typedef BlockRangeSelect<
+        BlockRangeSelectPolicy,
         InputIterator,
         FlagIterator,
         OutputIterator,
         SelectOp,
         EqualityOp,
         Offset,
-        KEEP_REJECTS> BlockRegionSelectT;
+        KEEP_REJECTS> BlockRangeSelectT;
 
-    // Shared memory for BlockRegionSelect
-    __shared__ typename BlockRegionSelectT::TempStorage temp_storage;
+    // Shared memory for BlockRangeSelect
+    __shared__ typename BlockRangeSelectT::TempStorage temp_storage;
 
     // Process tiles
-    BlockRegionSelectT(temp_storage, d_in, d_flags, d_out, select_op, equality_op, num_items).ConsumeRegion(
+    BlockRangeSelectT(temp_storage, d_in, d_flags, d_out, select_op, equality_op, num_items).ConsumeRange(
         num_tiles,
         queue,
         tile_status,
@@ -144,7 +144,7 @@ struct DeviceSelectDispatch
     };
 
     // Tile status descriptor interface type
-    typedef TileLookbackStatus<Offset> TileLookbackStatus;
+    typedef ScanTileState<Offset> ScanTileState;
 
 
     /******************************************************************************
@@ -159,7 +159,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRegionSelectPolicy<
+        typedef BlockRangeSelectPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
@@ -177,7 +177,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRegionSelectPolicy<
+        typedef BlockRangeSelectPolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -195,7 +195,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRegionSelectPolicy<
+        typedef BlockRangeSelectPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -213,7 +213,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRegionSelectPolicy<
+        typedef BlockRangeSelectPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -231,7 +231,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRegionSelectPolicy<
+        typedef BlockRangeSelectPolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -278,35 +278,35 @@ struct DeviceSelectDispatch
     __host__ __device__ __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &select_region_config)
+        KernelConfig    &select_range_config)
     {
     #if (CUB_PTX_VERSION > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        select_region_config.template Init<PtxSelectRegionPolicy>();
+        select_range_config.template Init<PtxSelectRegionPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            select_region_config.template Init<typename Policy350::SelectRegionPolicy>();
+            select_range_config.template Init<typename Policy350::SelectRegionPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            select_region_config.template Init<typename Policy300::SelectRegionPolicy>();
+            select_range_config.template Init<typename Policy300::SelectRegionPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            select_region_config.template Init<typename Policy200::SelectRegionPolicy>();
+            select_range_config.template Init<typename Policy200::SelectRegionPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            select_region_config.template Init<typename Policy130::SelectRegionPolicy>();
+            select_range_config.template Init<typename Policy130::SelectRegionPolicy>();
         }
         else
         {
-            select_region_config.template Init<typename Policy100::SelectRegionPolicy>();
+            select_range_config.template Init<typename Policy100::SelectRegionPolicy>();
         }
 
     #endif
@@ -314,7 +314,7 @@ struct DeviceSelectDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRegionSelectPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRangeSelectPolicy.
      */
     struct KernelConfig
     {
@@ -324,15 +324,15 @@ struct DeviceSelectDispatch
         bool                    two_phase_scatter;
         BlockScanAlgorithm      scan_algorithm;
 
-        template <typename BlockRegionSelectPolicy>
+        template <typename BlockRangeSelectPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            block_threads               = BlockRegionSelectPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockRegionSelectPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockRegionSelectPolicy::LOAD_ALGORITHM;
-            two_phase_scatter           = BlockRegionSelectPolicy::TWO_PHASE_SCATTER;
-            scan_algorithm              = BlockRegionSelectPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockRangeSelectPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockRangeSelectPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockRangeSelectPolicy::LOAD_ALGORITHM;
+            two_phase_scatter           = BlockRangeSelectPolicy::TWO_PHASE_SCATTER;
+            scan_algorithm              = BlockRangeSelectPolicy::SCAN_ALGORITHM;
         }
 
         __host__ __device__ __forceinline__
@@ -374,8 +374,8 @@ struct DeviceSelectDispatch
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        SelectRegionKernelPtr       select_region_kernel,           ///< [in] Kernel function pointer to parameterization of cub::SelectRegionKernel
-        KernelConfig                select_region_config)           ///< [in] Dispatch parameters that match the policy that \p select_region_kernel was compiled for
+        SelectRegionKernelPtr       select_range_kernel,           ///< [in] Kernel function pointer to parameterization of cub::SelectRegionKernel
+        KernelConfig                select_range_config)           ///< [in] Dispatch parameters that match the policy that \p select_range_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -401,12 +401,12 @@ struct DeviceSelectDispatch
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int tile_size = select_region_config.block_threads * select_region_config.items_per_thread;
+            int tile_size = select_range_config.block_threads * select_range_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
             size_t  allocation_sizes[2];
-            if (CubDebug(error = TileLookbackStatus::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
+            if (CubDebug(error = ScanTileState::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
             allocation_sizes[1] = GridQueue<int>::AllocationSize();                                             // bytes needed for grid queue descriptor
 
             // Compute allocation pointers into the single storage blob (or set the necessary size of the blob)
@@ -419,7 +419,7 @@ struct DeviceSelectDispatch
             }
 
             // Construct the tile status interface
-            TileLookbackStatus tile_status;
+            ScanTileState tile_status;
             if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
             // Construct the grid queue descriptor
@@ -438,13 +438,13 @@ struct DeviceSelectDispatch
             // Sync the stream if specified
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            // Get SM occupancy for select_region_kernel
-            int select_region_sm_occupancy;
+            // Get SM occupancy for select_range_kernel
+            int select_range_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                select_region_sm_occupancy,            // out
+                select_range_sm_occupancy,            // out
                 sm_version,
-                select_region_kernel,
-                select_region_config.block_threads))) break;
+                select_range_kernel,
+                select_range_config.block_threads))) break;
 
             // Get grid size for scanning tiles
             dim3 select_grid_size;
@@ -459,20 +459,20 @@ struct DeviceSelectDispatch
             else
             {
                 // Blocks may not be launched in order, so use atomics
-                int select_region_occupancy = select_region_sm_occupancy * sm_count;        // Whole-device occupancy for select_region_kernel
+                int select_range_occupancy = select_range_sm_occupancy * sm_count;        // Whole-device occupancy for select_range_kernel
                 select_grid_size.z = 1;
                 select_grid_size.y = 1;
-                select_grid_size.x = (num_tiles < select_region_occupancy) ?
+                select_grid_size.x = (num_tiles < select_range_occupancy) ?
                     num_tiles :                     // Not enough to fill the device with threadblocks
-                    select_region_occupancy;        // Fill the device with threadblocks
+                    select_range_occupancy;        // Fill the device with threadblocks
             }
 
-            // Log select_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking select_region_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                select_grid_size.x, select_grid_size.y, select_grid_size.z, select_region_config.block_threads, (long long) stream, select_region_config.items_per_thread, select_region_sm_occupancy);
+            // Log select_range_kernel configuration
+            if (debug_synchronous) CubLog("Invoking select_range_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                select_grid_size.x, select_grid_size.y, select_grid_size.z, select_range_config.block_threads, (long long) stream, select_range_config.items_per_thread, select_range_sm_occupancy);
 
-            // Invoke select_region_kernel
-            select_region_kernel<<<select_grid_size, select_region_config.block_threads, 0, stream>>>(
+            // Invoke select_range_kernel
+            select_range_kernel<<<select_grid_size, select_range_config.block_threads, 0, stream>>>(
                 d_in,
                 d_flags,
                 d_out,
@@ -524,8 +524,8 @@ struct DeviceSelectDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig select_region_config;
-            InitConfigs(ptx_version, select_region_config);
+            KernelConfig select_range_config;
+            InitConfigs(ptx_version, select_range_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -541,9 +541,9 @@ struct DeviceSelectDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ScanInitKernel<Offset, TileLookbackStatus>,
-                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, TileLookbackStatus, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
-                select_region_config))) break;
+                ScanInitKernel<Offset, ScanTileState>,
+                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, ScanTileState, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
+                select_range_config))) break;
         }
         while (0);
 

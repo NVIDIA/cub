@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockRegionReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a region of tiles.
+ * cub::BlockRangeReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a range of tiles.
  */
 
 #pragma once
@@ -57,7 +57,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRegionReduce
+ * Parameterizable tuning policy type for BlockRangeReduce
  */
 template <
     int                     _BLOCK_THREADS,         ///< Threads per thread block
@@ -66,7 +66,7 @@ template <
     BlockReduceAlgorithm    _BLOCK_ALGORITHM,       ///< Cooperative block-wide reduction algorithm to use
     CacheLoadModifier       _LOAD_MODIFIER,         ///< Cache load modifier for reading input elements
     GridMappingStrategy     _GRID_MAPPING>          ///< How to map tiles of input onto thread blocks
-struct BlockRegionReducePolicy
+struct BlockRangeReducePolicy
 {
     enum
     {
@@ -87,18 +87,18 @@ struct BlockRegionReducePolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRegionReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a region of tiles.
+ * \brief BlockRangeReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a range of tiles.
  *
  * Each thread reduces only the values it loads. If \p FIRST_TILE, this
  * partial reduction is stored into \p thread_aggregate.  Otherwise it is
  * accumulated into \p thread_aggregate.
  */
 template <
-    typename BlockRegionReducePolicy,       ///< Parameterized BlockRegionReducePolicy tuning policy type
+    typename BlockRangeReducePolicy,        ///< Parameterized BlockRangeReducePolicy tuning policy type
     typename InputIterator,                 ///< Random-access iterator type for input
     typename Offset,                        ///< Signed integer type for global offsets
     typename ReductionOp>                   ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-struct BlockRegionReduce
+struct BlockRangeReduce
 {
 
     //---------------------------------------------------------------------
@@ -109,20 +109,20 @@ struct BlockRegionReduce
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Vector type of T for data movement
-    typedef typename CubVector<T, BlockRegionReducePolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
+    typedef typename CubVector<T, BlockRangeReducePolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
 
     // Input iterator wrapper type
     typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRegionReducePolicy::LOAD_MODIFIER, T, Offset>,  // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<BlockRangeReducePolicy::LOAD_MODIFIER, T, Offset>,  // Wrap the native input pointer with CacheModifiedInputIterator
             InputIterator>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIterator;
 
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockRegionReducePolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockRegionReducePolicy::ITEMS_PER_THREAD,
-        VECTOR_LOAD_LENGTH  = CUB_MIN(ITEMS_PER_THREAD, BlockRegionReducePolicy::VECTOR_LOAD_LENGTH),
+        BLOCK_THREADS       = BlockRangeReducePolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockRangeReducePolicy::ITEMS_PER_THREAD,
+        VECTOR_LOAD_LENGTH  = CUB_MIN(ITEMS_PER_THREAD, BlockRangeReducePolicy::VECTOR_LOAD_LENGTH),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
@@ -132,11 +132,11 @@ struct BlockRegionReduce
 
     };
 
-    static const CacheLoadModifier    LOAD_MODIFIER   = BlockRegionReducePolicy::LOAD_MODIFIER;
-    static const BlockReduceAlgorithm BLOCK_ALGORITHM = BlockRegionReducePolicy::BLOCK_ALGORITHM;
+    static const CacheLoadModifier    LOAD_MODIFIER   = BlockRangeReducePolicy::LOAD_MODIFIER;
+    static const BlockReduceAlgorithm BLOCK_ALGORITHM = BlockRangeReducePolicy::BLOCK_ALGORITHM;
 
     // Parameterized BlockReduce primitive
-    typedef BlockReduce<T, BLOCK_THREADS, BlockRegionReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
+    typedef BlockReduce<T, BLOCK_THREADS, BlockRangeReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     /// Shared memory type required by this thread block
     typedef typename BlockReduceT::TempStorage _TempStorage;
@@ -185,7 +185,7 @@ struct BlockRegionReduce
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockRegionReduce(
+    __device__ __forceinline__ BlockRangeReduce(
         TempStorage&            temp_storage,       ///< Reference to temp_storage
         InputIterator           d_in,               ///< Input data to reduce
         ReductionOp             reduction_op)       ///< Binary reduction operator
@@ -240,7 +240,7 @@ struct BlockRegionReduce
             VectorT *vec_items = reinterpret_cast<VectorT*>(items);
 
             // Vector input iterator wrapper type
-            CacheModifiedInputIterator<BlockRegionReducePolicy::LOAD_MODIFIER, VectorT, Offset> d_vec_in(
+            CacheModifiedInputIterator<BlockRangeReducePolicy::LOAD_MODIFIER, VectorT, Offset> d_vec_in(
                 reinterpret_cast<VectorT*>(d_in + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH)));
 
             #pragma unroll
@@ -306,7 +306,7 @@ struct BlockRegionReduce
     /**
      * \brief Reduce a contiguous segment of input tiles
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         Offset  block_offset,                       ///< [in] Threadblock begin offset (inclusive)
         Offset  block_end,                          ///< [in] Threadblock end offset (exclusive)
         T       &block_aggregate)                   ///< [out] Running total
@@ -335,7 +335,7 @@ struct BlockRegionReduce
     /**
      * Reduce a contiguous segment of input tiles
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         Offset                              num_items,          ///< [in] Total number of global input items
         GridEvenShare<Offset>               &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<Offset>                   &queue,             ///< [in,out] GridQueue descriptor
@@ -346,7 +346,7 @@ struct BlockRegionReduce
         even_share.BlockInit();
 
         // Consume input tiles
-        ConsumeRegion(even_share.block_offset, even_share.block_end, block_aggregate);
+        ConsumeRange(even_share.block_offset, even_share.block_end, block_aggregate);
     }
 
 
@@ -357,7 +357,7 @@ struct BlockRegionReduce
     /**
      * Dequeue and reduce tiles of items as part of a inter-block scan
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
         GridQueue<Offset>   queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         T                   &block_aggregate)   ///< [out] Running total
@@ -412,14 +412,14 @@ struct BlockRegionReduce
     /**
      * Dequeue and reduce tiles of items as part of a inter-block scan
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         Offset                          num_items,          ///< [in] Total number of global input items
         GridEvenShare<Offset>           &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<Offset>               &queue,             ///< [in,out] GridQueue descriptor
         T                               &block_aggregate,   ///< [out] Running total
         Int2Type<GRID_MAPPING_DYNAMIC>  is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
     {
-        ConsumeRegion(num_items, queue, block_aggregate);
+        ConsumeRange(num_items, queue, block_aggregate);
     }
 
 };
