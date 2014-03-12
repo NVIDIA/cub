@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockRegionHistogramGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
+ * cub::BlockRangeHistogramGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram.
  */
 
 #pragma once
@@ -47,17 +47,17 @@ namespace cub {
 
 
 /**
- * BlockRegionHistogramGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
+ * BlockRangeHistogramGlobalAtomic implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using global atomics
  */
 template <
-    typename    BlockRegionHistogramPolicy,      ///< Tuning policy
+    typename    BlockRangeHistogramPolicy,      ///< Tuning policy
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIterator,                ///< The input iterator type \iterator.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    Offset>                          ///< Signed integer type for global offsets
-struct BlockRegionHistogramGlobalAtomic
+struct BlockRangeHistogramGlobalAtomic
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -69,8 +69,8 @@ struct BlockRegionHistogramGlobalAtomic
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockRegionHistogramPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockRegionHistogramPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockRangeHistogramPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockRangeHistogramPolicy::ITEMS_PER_THREAD,
         TILE_CHANNEL_ITEMS  = BLOCK_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
     };
@@ -97,7 +97,7 @@ struct BlockRegionHistogramGlobalAtomic
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockRegionHistogramGlobalAtomic(
+    __device__ __forceinline__ BlockRangeHistogramGlobalAtomic(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIterator     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms

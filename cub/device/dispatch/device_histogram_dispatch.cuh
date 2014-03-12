@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "../block_region/block_region_histo.cuh"
+#include "../../block_range/block_range_histo.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_debug.cuh"
@@ -77,14 +77,14 @@ __global__ void HistoInitKernel(
  * Histogram tiles kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                        BlockRegionHistogramPolicy, ///< Parameterized BlockRegionHistogramPolicy tuning policy type
+    typename                                        BlockRangeHistogramPolicy,  ///< Parameterized BlockRangeHistogramPolicy tuning policy type
     int                                             BINS,                       ///< Number of histogram bins per channel
     int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                                        InputIterator,              ///< The input iterator type \iterator.  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
     typename                                        Offset>                     ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRegionHistogramPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockRangeHistogramPolicy::BLOCK_THREADS))
 __global__ void HistoRegionKernel(
     InputIterator                                   d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
@@ -95,23 +95,23 @@ __global__ void HistoRegionKernel(
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockRegionHistogramPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockRegionHistogramPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockRangeHistogramPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockRangeHistogramPolicy::ITEMS_PER_THREAD,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Thread block type for compositing input tiles
-    typedef BlockRegionHistogram<BlockRegionHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset> BlockRegionHistogramT;
+    typedef BlockRangeHistogram<BlockRangeHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset> BlockRangeHistogramT;
 
-    // Shared memory for BlockRegionHistogram
-    __shared__ typename BlockRegionHistogramT::TempStorage temp_storage;
+    // Shared memory for BlockRangeHistogram
+    __shared__ typename BlockRangeHistogramT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockRegionHistogramT(temp_storage, d_samples, d_out_histograms.array).ConsumeRegion(
+    BlockRangeHistogramT(temp_storage, d_samples, d_out_histograms.array).ConsumeRange(
         num_samples,
         even_share,
         queue,
-        Int2Type<BlockRegionHistogramPolicy::GRID_MAPPING>());
+        Int2Type<BlockRangeHistogramPolicy::GRID_MAPPING>());
 }
 
 
@@ -176,7 +176,7 @@ struct DeviceHistogramDispatch
     struct Policy350
     {
         // HistoRegionPolicy
-        typedef BlockRegionHistogramPolicy<
+        typedef BlockRangeHistogramPolicy<
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 128 : 256,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
@@ -188,7 +188,7 @@ struct DeviceHistogramDispatch
     struct Policy300
     {
         // HistoRegionPolicy
-        typedef BlockRegionHistogramPolicy<
+        typedef BlockRangeHistogramPolicy<
                 128,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
@@ -200,7 +200,7 @@ struct DeviceHistogramDispatch
     struct Policy200
     {
         // HistoRegionPolicy
-        typedef BlockRegionHistogramPolicy<
+        typedef BlockRangeHistogramPolicy<
                 128,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
@@ -212,7 +212,7 @@ struct DeviceHistogramDispatch
     struct Policy100
     {
         // HistoRegionPolicy
-        typedef BlockRegionHistogramPolicy<
+        typedef BlockRangeHistogramPolicy<
                 128,
                 7,
                 DEVICE_HISTO_SORT,        // (use sort regardless because g-atomics are unsupported and s-atomics are perf-useless)
@@ -254,31 +254,31 @@ struct DeviceHistogramDispatch
     __host__ __device__ __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &histo_region_config)
+        KernelConfig    &histo_range_config)
     {
     #if (CUB_PTX_VERSION > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        histo_region_config.template Init<PtxHistoRegionPolicy>();
+        histo_range_config.template Init<PtxHistoRegionPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            histo_region_config.template Init<typename Policy350::HistoRegionPolicy>();
+            histo_range_config.template Init<typename Policy350::HistoRegionPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            histo_region_config.template Init<typename Policy300::HistoRegionPolicy>();
+            histo_range_config.template Init<typename Policy300::HistoRegionPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            histo_region_config.template Init<typename Policy200::HistoRegionPolicy>();
+            histo_range_config.template Init<typename Policy200::HistoRegionPolicy>();
         }
         else
         {
-            histo_region_config.template Init<typename Policy100::HistoRegionPolicy>();
+            histo_range_config.template Init<typename Policy100::HistoRegionPolicy>();
         }
 
     #endif
@@ -336,9 +336,9 @@ struct DeviceHistogramDispatch
         cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::HistoInitKernel
-        HistoRegionKernelPtr        histo_region_kernel,                ///< [in] Kernel function pointer to parameterization of cub::HistoRegionKernel
+        HistoRegionKernelPtr        histo_range_kernel,                ///< [in] Kernel function pointer to parameterization of cub::HistoRegionKernel
         AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::HistoAggregateKernel
-        KernelConfig                histo_region_config)                ///< [in] Dispatch parameters that match the policy that \p histo_region_kernel was compiled for
+        KernelConfig                histo_range_config)                ///< [in] Dispatch parameters that match the policy that \p histo_range_kernel was compiled for
     {
     #ifndef CUB_RUNTIME_ENABLED
 
@@ -362,45 +362,45 @@ struct DeviceHistogramDispatch
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-            // Get SM occupancy for histo_region_kernel
-            int histo_region_sm_occupancy;
+            // Get SM occupancy for histo_range_kernel
+            int histo_range_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                histo_region_sm_occupancy,
+                histo_range_sm_occupancy,
                 sm_version,
-                histo_region_kernel,
-                histo_region_config.block_threads))) break;
+                histo_range_kernel,
+                histo_range_config.block_threads))) break;
 
-            // Get device occupancy for histo_region_kernel
-            int histo_region_occupancy = histo_region_sm_occupancy * sm_count;
+            // Get device occupancy for histo_range_kernel
+            int histo_range_occupancy = histo_range_sm_occupancy * sm_count;
 
-            // Get tile size for histo_region_kernel
-            int channel_tile_size = histo_region_config.block_threads * histo_region_config.items_per_thread;
+            // Get tile size for histo_range_kernel
+            int channel_tile_size = histo_range_config.block_threads * histo_range_config.items_per_thread;
             int tile_size = channel_tile_size * CHANNELS;
 
             // Even-share work distribution
-            int subscription_factor = histo_region_sm_occupancy;     // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
+            int subscription_factor = histo_range_sm_occupancy;     // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
             GridEvenShare<Offset> even_share(
                 num_samples,
-                histo_region_occupancy * subscription_factor,
+                histo_range_occupancy * subscription_factor,
                 tile_size);
 
-            // Get grid size for histo_region_kernel
-            int histo_region_grid_size;
-            switch (histo_region_config.grid_mapping)
+            // Get grid size for histo_range_kernel
+            int histo_range_grid_size;
+            switch (histo_range_config.grid_mapping)
             {
             case GRID_MAPPING_EVEN_SHARE:
 
                 // Work is distributed evenly
-                histo_region_grid_size = even_share.grid_size;
+                histo_range_grid_size = even_share.grid_size;
                 break;
 
             case GRID_MAPPING_DYNAMIC:
 
                 // Work is distributed dynamically
                 int num_tiles               = (num_samples + tile_size - 1) / tile_size;
-                histo_region_grid_size   = (num_tiles < histo_region_occupancy) ?
+                histo_range_grid_size   = (num_tiles < histo_range_occupancy) ?
                     num_tiles :                     // Not enough to fill the device with threadblocks
-                    histo_region_occupancy;      // Fill the device with threadblocks
+                    histo_range_occupancy;      // Fill the device with threadblocks
                 break;
             };
 
@@ -408,7 +408,7 @@ struct DeviceHistogramDispatch
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                ACTIVE_CHANNELS * histo_region_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
+                ACTIVE_CHANNELS * histo_range_grid_size * sizeof(HistoCounter) * BINS,      // bytes needed for privatized histograms
                 GridQueue<int>::AllocationSize()                                                // bytes needed for grid queue descriptor
             };
 
@@ -434,7 +434,7 @@ struct DeviceHistogramDispatch
             // Setup array wrapper for temporary histogram channel output (because we can't pass static arrays as kernel parameters)
             ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_temp_histo_wrapper;
             for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
-                d_temp_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histo_region_grid_size * BINS);
+                d_temp_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histo_range_grid_size * BINS);
 
             // Log init_kernel configuration
             if (debug_synchronous) CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", ACTIVE_CHANNELS, BINS, (long long) stream);
@@ -446,14 +446,14 @@ struct DeviceHistogramDispatch
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
-            bool privatized_temporaries = (histo_region_grid_size > 1) && (histo_region_config.block_algorithm != DEVICE_HISTO_GLOBAL_ATOMIC);
+            bool privatized_temporaries = (histo_range_grid_size > 1) && (histo_range_config.block_algorithm != DEVICE_HISTO_GLOBAL_ATOMIC);
 
-            // Log histo_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking histo_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                histo_region_grid_size, histo_region_config.block_threads, (long long) stream, histo_region_config.items_per_thread, histo_region_sm_occupancy);
+            // Log histo_range_kernel configuration
+            if (debug_synchronous) CubLog("Invoking histo_range_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                histo_range_grid_size, histo_range_config.block_threads, (long long) stream, histo_range_config.items_per_thread, histo_range_sm_occupancy);
 
-            // Invoke histo_region_kernel
-            histo_region_kernel<<<histo_region_grid_size, histo_region_config.block_threads, 0, stream>>>(
+            // Invoke histo_range_kernel
+            histo_range_kernel<<<histo_range_grid_size, histo_range_config.block_threads, 0, stream>>>(
                 d_samples,
                 (privatized_temporaries) ?
                     d_temp_histo_wrapper :
@@ -476,7 +476,7 @@ struct DeviceHistogramDispatch
                 aggregate_kernel<<<ACTIVE_CHANNELS, BINS, 0, stream>>>(
                     d_block_histograms,
                     d_histo_wrapper,
-                    histo_region_grid_size);
+                    histo_range_grid_size);
 
                 // Sync the stream if specified
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
@@ -515,8 +515,8 @@ struct DeviceHistogramDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig histo_region_config;
-            InitConfigs(ptx_version, histo_region_config);
+            KernelConfig histo_range_config;
+            InitConfigs(ptx_version, histo_range_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -530,7 +530,7 @@ struct DeviceHistogramDispatch
                 HistoInitKernel<BINS, ACTIVE_CHANNELS, Offset, HistoCounter>,
                 HistoRegionKernel<PtxHistoRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
                 HistoAggregateKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
-                histo_region_config))) break;
+                histo_range_config))) break;
         }
         while (0);
 

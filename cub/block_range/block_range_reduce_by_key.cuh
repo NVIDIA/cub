@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockRegionReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
+ * cub::BlockRangeReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "device_scan_types.cuh"
+#include "block_scan_prefix_operators.cuh"
 #include "../../block/block_load.cuh"
 #include "../../block/block_store.cuh"
 #include "../../block/block_scan.cuh"
@@ -58,7 +58,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRegionReduceByKey
+ * Parameterizable tuning policy type for BlockRangeReduceByKey
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -67,7 +67,7 @@ template <
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                        _TWO_PHASE_SCATTER,             ///< Whether or not to coalesce output values in shared memory before scattering them to global
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockRegionReduceByKeyPolicy
+struct BlockRangeReduceByKeyPolicy
 {
     enum
     {
@@ -94,7 +94,7 @@ template <
     typename    Value,
     typename    Offset,
     bool        SINGLE_WORD = (Traits<Value>::PRIMITIVE) && (sizeof(Value) + sizeof(Offset) < 16)>
-struct ReduceByKeyTileLookbackStatus;
+struct ReduceByKeyScanTileState;
 
 
 /**
@@ -104,14 +104,14 @@ struct ReduceByKeyTileLookbackStatus;
 template <
     typename    Value,
     typename    Offset>
-struct ReduceByKeyTileLookbackStatus<Value, Offset, false> :
-    TileLookbackStatus<ItemOffsetPair<Value, Offset> >
+struct ReduceByKeyScanTileState<Value, Offset, false> :
+    ScanTileState<ItemOffsetPair<Value, Offset> >
 {
-    typedef TileLookbackStatus<ItemOffsetPair<Value, Offset> > SuperClass;
+    typedef ScanTileState<ItemOffsetPair<Value, Offset> > SuperClass;
 
     /// Constructor
     __host__ __device__ __forceinline__
-    ReduceByKeyTileLookbackStatus() : SuperClass() {}
+    ReduceByKeyScanTileState() : SuperClass() {}
 };
 
 
@@ -122,7 +122,7 @@ struct ReduceByKeyTileLookbackStatus<Value, Offset, false> :
 template <
     typename Value,
     typename Offset>
-struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
+struct ReduceByKeyScanTileState<Value, Offset, true>
 {
     typedef ItemOffsetPair<Value, Offset> ItemOffsetPair;
 
@@ -182,7 +182,7 @@ struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
 
     /// Constructor
     __host__ __device__ __forceinline__
-    ReduceByKeyTileLookbackStatus()
+    ReduceByKeyScanTileState()
     :
         d_tile_status(NULL)
     {}
@@ -222,13 +222,13 @@ struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
         if (tile_idx < num_tiles)
         {
             // Not-yet-set
-            d_tile_status[TILE_STATUS_PADDING + tile_idx].status = StatusWord(LOOKBACK_TILE_INVALID);
+            d_tile_status[TILE_STATUS_PADDING + tile_idx].status = StatusWord(SCAN_TILE_INVALID);
         }
 
         if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
         {
             // Padding
-            d_tile_status[threadIdx.x].status = StatusWord(LOOKBACK_TILE_OOB);
+            d_tile_status[threadIdx.x].status = StatusWord(SCAN_TILE_OOB);
         }
     }
 
@@ -239,7 +239,7 @@ struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
     __device__ __forceinline__ void SetInclusive(int tile_idx, ItemOffsetPair tile_inclusive)
     {
         TileDescriptor tile_descriptor;
-        tile_descriptor.status = LOOKBACK_TILE_INCLUSIVE;
+        tile_descriptor.status = SCAN_TILE_INCLUSIVE;
         tile_descriptor.value = tile_inclusive.value;
         tile_descriptor.offset = tile_inclusive.offset;
 
@@ -255,7 +255,7 @@ struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
     __device__ __forceinline__ void SetPartial(int tile_idx, ItemOffsetPair tile_partial)
     {
         TileDescriptor tile_descriptor;
-        tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
+        tile_descriptor.status = SCAN_TILE_PARTIAL;
         tile_descriptor.value = tile_partial.value;
         tile_descriptor.offset = tile_partial.offset;
 
@@ -276,7 +276,7 @@ struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
         TileDescriptor tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-        while ((tile_descriptor.status == LOOKBACK_TILE_INVALID))
+        while ((tile_descriptor.status == SCAN_TILE_INVALID))
         {
             alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
@@ -295,10 +295,10 @@ struct ReduceByKeyTileLookbackStatus<Value, Offset, true>
  ******************************************************************************/
 
 /**
- * \brief BlockRegionReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key across a region of tiles
+ * \brief BlockRangeReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key across a range of tiles
  */
 template <
-    typename    BlockRegionReduceByKeyPolicy,   ///< Parameterized BlockRegionReduceByKeyPolicy tuning policy type
+    typename    BlockRangeReduceByKeyPolicy,    ///< Parameterized BlockRangeReduceByKeyPolicy tuning policy type
     typename    KeyInputIterator,               ///< Random-access input iterator type for keys
     typename    KeyOutputIterator,              ///< Random-access output iterator type for keys
     typename    ValueInputIterator,             ///< Random-access input iterator type for values
@@ -306,7 +306,7 @@ template <
     typename    EqualityOp,                     ///< Key equality operator type
     typename    ReductionOp,                    ///< Value reduction operator type
     typename    Offset>                         ///< Signed integer type for global offsets
-struct BlockRegionReduceByKey
+struct BlockRangeReduceByKey
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -319,22 +319,22 @@ struct BlockRegionReduceByKey
     typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyTileLookbackStatus<Value, Offset> TileLookbackStatus;
+    typedef ReduceByKeyScanTileState<Value, Offset> ScanTileState;
 
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockRegionReduceByKeyPolicy::BLOCK_THREADS,
+        BLOCK_THREADS       = BlockRangeReduceByKeyPolicy::BLOCK_THREADS,
         WARPS               = BLOCK_THREADS / CUB_PTX_WARP_THREADS,
-        ITEMS_PER_THREAD    = BlockRegionReduceByKeyPolicy::ITEMS_PER_THREAD,
-        TWO_PHASE_SCATTER   = (BlockRegionReduceByKeyPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
+        ITEMS_PER_THREAD    = BlockRangeReduceByKeyPolicy::ITEMS_PER_THREAD,
+        TWO_PHASE_SCATTER   = (BlockRangeReduceByKeyPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
         HAS_IDENTITY_ZERO        = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<Value>::PRIMITIVE),
 
         // Whether or not to sync after loading data
-        SYNC_AFTER_LOAD     = (BlockRegionReduceByKeyPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        SYNC_AFTER_LOAD     = (BlockRangeReduceByKeyPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
         // Whether or not this is run-length-encoding with a constant iterator as values
         IS_RUN_LENGTH_ENCODE    = (Equals<ValueInputIterator, ConstantInputIterator<Value, size_t> >::VALUE) || (Equals<ValueInputIterator, ConstantInputIterator<Value, int> >::VALUE) || (Equals<ValueInputIterator, ConstantInputIterator<Value, unsigned int> >::VALUE),
@@ -343,13 +343,13 @@ struct BlockRegionReduceByKey
 
     // Cache-modified input iterator wrapper type for keys
     typedef typename If<IsPointer<KeyInputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRegionReduceByKeyPolicy::LOAD_MODIFIER, Key, Offset>,   // Wrap the native input pointer with CacheModifiedValueInputIterator
+            CacheModifiedInputIterator<BlockRangeReduceByKeyPolicy::LOAD_MODIFIER, Key, Offset>,   // Wrap the native input pointer with CacheModifiedValueInputIterator
             KeyInputIterator>::Type                                                                 // Directly use the supplied input iterator type
         WrappedKeyInputIterator;
 
     // Cache-modified input iterator wrapper type for values
     typedef typename If<IsPointer<ValueInputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRegionReduceByKeyPolicy::LOAD_MODIFIER, Value, Offset>,  // Wrap the native input pointer with CacheModifiedValueInputIterator
+            CacheModifiedInputIterator<BlockRangeReduceByKeyPolicy::LOAD_MODIFIER, Value, Offset>,  // Wrap the native input pointer with CacheModifiedValueInputIterator
             ValueInputIterator>::Type                                                                // Directly use the supplied input iterator type
         WrappedValueInputIterator;
 
@@ -419,19 +419,19 @@ struct BlockRegionReduceByKey
     // Parameterized BlockLoad type for keys
     typedef BlockLoad<
             WrappedKeyInputIterator,
-            BlockRegionReduceByKeyPolicy::BLOCK_THREADS,
-            BlockRegionReduceByKeyPolicy::ITEMS_PER_THREAD,
-            BlockRegionReduceByKeyPolicy::LOAD_ALGORITHM>
+            BlockRangeReduceByKeyPolicy::BLOCK_THREADS,
+            BlockRangeReduceByKeyPolicy::ITEMS_PER_THREAD,
+            BlockRangeReduceByKeyPolicy::LOAD_ALGORITHM>
         BlockLoadKeys;
 
     // Parameterized BlockLoad type for values
     typedef BlockLoad<
             WrappedValueInputIterator,
-            BlockRegionReduceByKeyPolicy::BLOCK_THREADS,
-            BlockRegionReduceByKeyPolicy::ITEMS_PER_THREAD,
+            BlockRangeReduceByKeyPolicy::BLOCK_THREADS,
+            BlockRangeReduceByKeyPolicy::ITEMS_PER_THREAD,
             (IS_RUN_LENGTH_ENCODE) ?
                 BLOCK_LOAD_DIRECT :
-                (BlockLoadAlgorithm) BlockRegionReduceByKeyPolicy::LOAD_ALGORITHM>
+                (BlockLoadAlgorithm) BlockRangeReduceByKeyPolicy::LOAD_ALGORITHM>
         BlockLoadValues;
 
     // Parameterized BlockExchange type for locally compacting items as part of a two-phase scatter
@@ -454,15 +454,15 @@ struct BlockRegionReduceByKey
     // Parameterized BlockScan type
     typedef BlockScan<
             ValueOffsetPair,
-            BlockRegionReduceByKeyPolicy::BLOCK_THREADS,
-            BlockRegionReduceByKeyPolicy::SCAN_ALGORITHM>
+            BlockRangeReduceByKeyPolicy::BLOCK_THREADS,
+            BlockRangeReduceByKeyPolicy::SCAN_ALGORITHM>
         BlockScanAllocations;
 
     // Callback type for obtaining tile prefix during block scan
-    typedef LookbackBlockPrefixCallbackOp<
+    typedef BlockScanLookbackPrefixOp<
             ValueOffsetPair,
             ReduceByKeyOp,
-            TileLookbackStatus>
+            ScanTileState>
         LookbackPrefixCallbackOp;
 
     // Shared memory type for this threadblock
@@ -521,7 +521,7 @@ struct BlockRegionReduceByKey
 
     // Constructor
     __device__ __forceinline__
-    BlockRegionReduceByKey(
+    BlockRangeReduceByKey(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         KeyInputIterator            d_keys_in,          ///< Input keys
         KeyOutputIterator           d_keys_out,         ///< Output keys
@@ -823,7 +823,7 @@ struct BlockRegionReduceByKey
         Offset              num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
         Offset              block_offset,       ///< Tile offset
-        TileLookbackStatus  &tile_status)       ///< Global list of tile status
+        ScanTileState  &tile_status)       ///< Global list of tile status
     {
         Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
         Value               values[ITEMS_PER_THREAD];                       // Tile values
@@ -915,10 +915,10 @@ struct BlockRegionReduceByKey
      * Dequeue and scan tiles of items as part of a dynamic domino scan
      */
     template <typename NumSegmentsIterator>         ///< Output iterator type for recording number of items selected
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        TileLookbackStatus      &tile_status,       ///< Global list of tile status
+        ScanTileState      &tile_status,       ///< Global list of tile status
         NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
     {
 #if (CUB_PTX_VERSION <= 130)

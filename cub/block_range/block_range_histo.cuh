@@ -28,16 +28,16 @@
 
 /**
  * \file
- * cub::BlockRegionHistogram implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a region of tiles.
+ * cub::BlockRangeHistogram implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "specializations/block_region_histo_gatomic.cuh"
-#include "specializations/block_region_histo_satomic.cuh"
-#include "specializations/block_region_histo_sort.cuh"
+#include "specializations/block_range_histo_gatomic.cuh"
+#include "specializations/block_range_histo_satomic.cuh"
+#include "specializations/block_range_histo_sort.cuh"
 #include "../../util_type.cuh"
 #include "../../grid/grid_mapping.cuh"
 #include "../../grid/grid_even_share.cuh"
@@ -57,7 +57,7 @@ namespace cub {
 
 
 /**
- * \brief DeviceHistogramAlgorithm enumerates alternative algorithms for BlockRegionHistogram.
+ * \brief DeviceHistogramAlgorithm enumerates alternative algorithms for BlockRangeHistogram.
  */
 enum DeviceHistogramAlgorithm
 {
@@ -124,14 +124,14 @@ enum DeviceHistogramAlgorithm
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRegionHistogram
+ * Parameterizable tuning policy type for BlockRangeHistogram
  */
 template <
     int                             _BLOCK_THREADS,         ///< Threads per thread block
     int                             _ITEMS_PER_THREAD,      ///< Items per thread (per tile of input)
     DeviceHistogramAlgorithm        _HISTO_ALGORITHM,       ///< Cooperative histogram algorithm to use
     GridMappingStrategy             _GRID_MAPPING>          ///< How to map tiles of input onto thread blocks
-struct BlockRegionHistogramPolicy
+struct BlockRangeHistogramPolicy
 {
     enum
     {
@@ -150,36 +150,36 @@ struct BlockRegionHistogramPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRegionHistogram implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a region of tiles.
+ * \brief BlockRangeHistogram implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles.
  */
 template <
-    typename    BlockRegionHistogramPolicy,     ///< Parameterized BlockRegionHistogramPolicy tuning policy type
+    typename    BlockRangeHistogramPolicy,      ///< Parameterized BlockRangeHistogramPolicy tuning policy type
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIterator,                  ///< Random-access input iterator type for reading samples.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    Offset>                         ///< Signed integer type for global offsets
-struct BlockRegionHistogram
+struct BlockRangeHistogram
 {
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
     // Histogram grid algorithm
-    static const DeviceHistogramAlgorithm HISTO_ALGORITHM = BlockRegionHistogramPolicy::HISTO_ALGORITHM;
+    static const DeviceHistogramAlgorithm HISTO_ALGORITHM = BlockRangeHistogramPolicy::HISTO_ALGORITHM;
 
     // Alternative internal implementation types
-    typedef BlockRegionHistogramSort<            BlockRegionHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRegionHistogramSortT;
-    typedef BlockRegionHistogramSharedAtomic<    BlockRegionHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRegionHistogramSharedAtomicT;
-    typedef BlockRegionHistogramGlobalAtomic<    BlockRegionHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRegionHistogramGlobalAtomicT;
+    typedef BlockRangeHistogramSort<            BlockRangeHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRangeHistogramSortT;
+    typedef BlockRangeHistogramSharedAtomic<    BlockRangeHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRangeHistogramSharedAtomicT;
+    typedef BlockRangeHistogramGlobalAtomic<    BlockRangeHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRangeHistogramGlobalAtomicT;
 
     // Internal block sweep histogram type
     typedef typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SORT),
-        BlockRegionHistogramSortT,
+        BlockRangeHistogramSortT,
         typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SHARED_ATOMIC),
-            BlockRegionHistogramSharedAtomicT,
-            BlockRegionHistogramGlobalAtomicT>::Type>::Type InternalBlockDelegate;
+            BlockRangeHistogramSharedAtomicT,
+            BlockRangeHistogramGlobalAtomicT>::Type>::Type InternalBlockDelegate;
 
     enum
     {
@@ -205,7 +205,7 @@ struct BlockRegionHistogram
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockRegionHistogram(
+    __device__ __forceinline__ BlockRangeHistogram(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIterator     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
@@ -217,7 +217,7 @@ struct BlockRegionHistogram
     /**
      * \brief Reduce a consecutive segment of input tiles
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         Offset   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
         Offset   block_end)                          ///< [in] Threadblock end offset (exclusive)
     {
@@ -243,21 +243,21 @@ struct BlockRegionHistogram
     /**
      * Reduce a consecutive segment of input tiles
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         Offset                              num_items,          ///< [in] Total number of global input items
         GridEvenShare<Offset>               &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<Offset>                   &queue,             ///< [in,out] GridQueue descriptor
         Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
     {
         even_share.BlockInit();
-        ConsumeRegion(even_share.block_offset, even_share.block_end);
+        ConsumeRange(even_share.block_offset, even_share.block_end);
     }
 
 
     /**
      * Dequeue and reduce tiles of items as part of a inter-block scan
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
         GridQueue<Offset>   queue)              ///< Queue descriptor for assigning tiles of work to thread blocks
     {
@@ -299,13 +299,13 @@ struct BlockRegionHistogram
     /**
      * Dequeue and reduce tiles of items as part of a inter-block scan
      */
-    __device__ __forceinline__ void ConsumeRegion(
+    __device__ __forceinline__ void ConsumeRange(
         Offset                          num_items,          ///< [in] Total number of global input items
         GridEvenShare<Offset>           &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<Offset>               &queue,             ///< [in,out] GridQueue descriptor
         Int2Type<GRID_MAPPING_DYNAMIC>  is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
     {
-        ConsumeRegion(num_items, queue);
+        ConsumeRange(num_items, queue);
     }
 
 

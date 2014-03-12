@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "device_scan_dispatch.cuh"
-#include "../block_region/block_region_reduce_by_key.cuh"
+#include "../../block_range/block_range_reduce_by_key.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_device.cuh"
@@ -58,24 +58,24 @@ namespace cub {
  * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename            BlockRegionReduceByKeyPolicy,   ///< Parameterized BlockRegionReduceByKeyPolicy tuning policy type
+    typename            BlockRangeReduceByKeyPolicy,    ///< Parameterized BlockRangeReduceByKeyPolicy tuning policy type
     typename            KeyInputIterator,               ///< Random-access input iterator type for keys
     typename            KeyOutputIterator,              ///< Random-access output iterator type for keys
     typename            ValueInputIterator,             ///< Random-access input iterator type for values
     typename            ValueOutputIterator,            ///< Random-access output iterator type for values
     typename            NumSegmentsIterator,            ///< Output iterator type for recording number of segments encountered
-    typename            TileLookbackStatus,             ///< Tile status interface type
+    typename            ScanTileState,             ///< Tile status interface type
     typename            EqualityOp,                     ///< Key equality operator type
     typename            ReductionOp,                    ///< Value reduction operator type
     typename            Offset>                         ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRegionReduceByKeyPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockRangeReduceByKeyPolicy::BLOCK_THREADS))
 __global__ void ReduceByKeyRegionKernel(
     KeyInputIterator    d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
     KeyOutputIterator   d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
     ValueInputIterator  d_values_in,                    ///< [in] Pointer to consecutive runs of input values
     ValueOutputIterator d_values_out,                   ///< [in] Pointer to output value aggregates (one aggregate per run)
     NumSegmentsIterator d_num_segments,                 ///< [in] Pointer to total number of runs
-    TileLookbackStatus  tile_status,                    ///< [in] Tile status interface
+    ScanTileState  tile_status,                    ///< [in] Tile status interface
     EqualityOp          equality_op,                    ///< [in] Key equality operator
     ReductionOp         reduction_op,                   ///< [in] Value reduction operator
     Offset              num_items,                      ///< [in] Total number of items to select from
@@ -83,21 +83,21 @@ __global__ void ReduceByKeyRegionKernel(
     GridQueue<int>      queue)                          ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for reducing tiles of value segments
-    typedef BlockRegionReduceByKey<
-        BlockRegionReduceByKeyPolicy,
+    typedef BlockRangeReduceByKey<
+        BlockRangeReduceByKeyPolicy,
         KeyInputIterator,
         KeyOutputIterator,
         ValueInputIterator,
         ValueOutputIterator,
         EqualityOp,
         ReductionOp,
-        Offset> BlockRegionReduceByKeyT;
+        Offset> BlockRangeReduceByKeyT;
 
-    // Shared memory for BlockRegionReduceByKey
-    __shared__ typename BlockRegionReduceByKeyT::TempStorage temp_storage;
+    // Shared memory for BlockRangeReduceByKey
+    __shared__ typename BlockRangeReduceByKeyT::TempStorage temp_storage;
 
     // Process tiles
-    BlockRegionReduceByKeyT(temp_storage, d_keys_in, d_keys_out, d_values_in, d_values_out, equality_op, reduction_op, num_items).ConsumeRegion(
+    BlockRangeReduceByKeyT(temp_storage, d_keys_in, d_keys_out, d_values_in, d_values_out, equality_op, reduction_op, num_items).ConsumeRange(
         num_tiles,
         queue,
         tile_status,
@@ -146,7 +146,7 @@ struct DeviceReduceByKeyDispatch
     typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyTileLookbackStatus<Value, Offset> TileLookbackStatus;
+    typedef ReduceByKeyScanTileState<Value, Offset> ScanTileState;
 
 
     /******************************************************************************
@@ -161,7 +161,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = (MAX_INPUT_BYTES <= 8) ? 8 : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRegionReduceByKeyPolicy<
+        typedef BlockRangeReduceByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
@@ -179,7 +179,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRegionReduceByKeyPolicy<
+        typedef BlockRangeReduceByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -197,7 +197,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRegionReduceByKeyPolicy<
+        typedef BlockRangeReduceByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -215,7 +215,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRegionReduceByKeyPolicy<
+        typedef BlockRangeReduceByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -233,7 +233,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRegionReduceByKeyPolicy<
+        typedef BlockRangeReduceByKeyPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -280,35 +280,35 @@ struct DeviceReduceByKeyDispatch
     __host__ __device__ __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &reduce_by_key_region_config)
+        KernelConfig    &reduce_by_key_range_config)
     {
     #if (CUB_PTX_VERSION > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        reduce_by_key_region_config.template Init<PtxReduceByKeyPolicy>();
+        reduce_by_key_range_config.template Init<PtxReduceByKeyPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            reduce_by_key_region_config.template Init<typename Policy350::ReduceByKeyPolicy>();
+            reduce_by_key_range_config.template Init<typename Policy350::ReduceByKeyPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            reduce_by_key_region_config.template Init<typename Policy300::ReduceByKeyPolicy>();
+            reduce_by_key_range_config.template Init<typename Policy300::ReduceByKeyPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            reduce_by_key_region_config.template Init<typename Policy200::ReduceByKeyPolicy>();
+            reduce_by_key_range_config.template Init<typename Policy200::ReduceByKeyPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            reduce_by_key_region_config.template Init<typename Policy130::ReduceByKeyPolicy>();
+            reduce_by_key_range_config.template Init<typename Policy130::ReduceByKeyPolicy>();
         }
         else
         {
-            reduce_by_key_region_config.template Init<typename Policy100::ReduceByKeyPolicy>();
+            reduce_by_key_range_config.template Init<typename Policy100::ReduceByKeyPolicy>();
         }
 
     #endif
@@ -316,7 +316,7 @@ struct DeviceReduceByKeyDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRegionReduceByKeyPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRangeReduceByKeyPolicy.
      */
     struct KernelConfig
     {
@@ -327,15 +327,15 @@ struct DeviceReduceByKeyDispatch
         BlockScanAlgorithm      scan_algorithm;
         cudaSharedMemConfig     smem_config;
 
-        template <typename BlockRegionReduceByKeyPolicy>
+        template <typename BlockRangeReduceByKeyPolicy>
         __host__ __device__ __forceinline__
         void Init()
         {
-            block_threads               = BlockRegionReduceByKeyPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockRegionReduceByKeyPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockRegionReduceByKeyPolicy::LOAD_ALGORITHM;
-            two_phase_scatter           = BlockRegionReduceByKeyPolicy::TWO_PHASE_SCATTER;
-            scan_algorithm              = BlockRegionReduceByKeyPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockRangeReduceByKeyPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockRangeReduceByKeyPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockRangeReduceByKeyPolicy::LOAD_ALGORITHM;
+            two_phase_scatter           = BlockRangeReduceByKeyPolicy::TWO_PHASE_SCATTER;
+            scan_algorithm              = BlockRangeReduceByKeyPolicy::SCAN_ALGORITHM;
             smem_config                 = cudaSharedMemBankSizeEightByte;
         }
 
@@ -379,8 +379,8 @@ struct DeviceReduceByKeyDispatch
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        ReduceByKeyRegionKernelPtr  reduce_by_key_region_kernel,    ///< [in] Kernel function pointer to parameterization of cub::ReduceByKeyRegionKernel
-        KernelConfig                reduce_by_key_region_config)    ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_region_kernel was compiled for
+        ReduceByKeyRegionKernelPtr  reduce_by_key_range_kernel,    ///< [in] Kernel function pointer to parameterization of cub::ReduceByKeyRegionKernel
+        KernelConfig                reduce_by_key_range_config)    ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_range_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -406,12 +406,12 @@ struct DeviceReduceByKeyDispatch
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int tile_size = reduce_by_key_region_config.block_threads * reduce_by_key_region_config.items_per_thread;
+            int tile_size = reduce_by_key_range_config.block_threads * reduce_by_key_range_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
             size_t  allocation_sizes[2];
-            if (CubDebug(error = TileLookbackStatus::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
+            if (CubDebug(error = ScanTileState::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
             allocation_sizes[1] = GridQueue<int>::AllocationSize();                                             // bytes needed for grid queue descriptor
 
             // Compute allocation pointers into the single storage blob (or set the necessary size of the blob)
@@ -424,7 +424,7 @@ struct DeviceReduceByKeyDispatch
             }
 
             // Construct the tile status interface
-            TileLookbackStatus tile_status;
+            ScanTileState tile_status;
             if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
             // Construct the grid queue descriptor
@@ -443,13 +443,13 @@ struct DeviceReduceByKeyDispatch
             // Sync the stream if specified
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            // Get SM occupancy for reduce_by_key_region_kernel
-            int reduce_by_key_region_sm_occupancy;
+            // Get SM occupancy for reduce_by_key_range_kernel
+            int reduce_by_key_range_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                reduce_by_key_region_sm_occupancy,            // out
+                reduce_by_key_range_sm_occupancy,            // out
                 sm_version,
-                reduce_by_key_region_kernel,
-                reduce_by_key_region_config.block_threads))) break;
+                reduce_by_key_range_kernel,
+                reduce_by_key_range_config.block_threads))) break;
 
             // Get grid size for scanning tiles
             dim3 reduce_by_key_grid_size;
@@ -464,12 +464,12 @@ struct DeviceReduceByKeyDispatch
             else
             {
                 // Blocks may not be launched in order, so use atomics
-                int reduce_by_key_region_occupancy = reduce_by_key_region_sm_occupancy * sm_count;      // Whole-device occupancy for reduce_by_key_region_kernel
+                int reduce_by_key_range_occupancy = reduce_by_key_range_sm_occupancy * sm_count;      // Whole-device occupancy for reduce_by_key_range_kernel
                 reduce_by_key_grid_size.z = 1;
                 reduce_by_key_grid_size.y = 1;
-                reduce_by_key_grid_size.x = (num_tiles < reduce_by_key_region_occupancy) ?
+                reduce_by_key_grid_size.x = (num_tiles < reduce_by_key_range_occupancy) ?
                     num_tiles :                             // Not enough to fill the device with threadblocks
-                    reduce_by_key_region_occupancy;         // Fill the device with threadblocks
+                    reduce_by_key_range_occupancy;         // Fill the device with threadblocks
             }
 
 #if (CUB_PTX_VERSION == 0)
@@ -479,19 +479,19 @@ struct DeviceReduceByKeyDispatch
             cudaSharedMemConfig current_smem_config = original_smem_config;
 
             // Update smem config if necessary
-            if (current_smem_config != reduce_by_key_region_config.smem_config)
+            if (current_smem_config != reduce_by_key_range_config.smem_config)
             {
-                if (CubDebug(error = cudaDeviceSetSharedMemConfig(reduce_by_key_region_config.smem_config))) break;
-                current_smem_config = reduce_by_key_region_config.smem_config;
+                if (CubDebug(error = cudaDeviceSetSharedMemConfig(reduce_by_key_range_config.smem_config))) break;
+                current_smem_config = reduce_by_key_range_config.smem_config;
             }
 #endif
 
-            // Log reduce_by_key_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking reduce_by_key_region_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                reduce_by_key_grid_size.x, reduce_by_key_grid_size.y, reduce_by_key_grid_size.z, reduce_by_key_region_config.block_threads, (long long) stream, reduce_by_key_region_config.items_per_thread, reduce_by_key_region_sm_occupancy);
+            // Log reduce_by_key_range_kernel configuration
+            if (debug_synchronous) CubLog("Invoking reduce_by_key_range_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                reduce_by_key_grid_size.x, reduce_by_key_grid_size.y, reduce_by_key_grid_size.z, reduce_by_key_range_config.block_threads, (long long) stream, reduce_by_key_range_config.items_per_thread, reduce_by_key_range_sm_occupancy);
 
-            // Invoke reduce_by_key_region_kernel
-            reduce_by_key_region_kernel<<<reduce_by_key_grid_size, reduce_by_key_region_config.block_threads, 0, stream>>>(
+            // Invoke reduce_by_key_range_kernel
+            reduce_by_key_range_kernel<<<reduce_by_key_grid_size, reduce_by_key_range_config.block_threads, 0, stream>>>(
                 d_keys_in,
                 d_keys_out,
                 d_values_in,
@@ -554,8 +554,8 @@ struct DeviceReduceByKeyDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig reduce_by_key_region_config;
-            InitConfigs(ptx_version, reduce_by_key_region_config);
+            KernelConfig reduce_by_key_range_config;
+            InitConfigs(ptx_version, reduce_by_key_range_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -572,9 +572,9 @@ struct DeviceReduceByKeyDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ScanInitKernel<Offset, TileLookbackStatus>,
-                ReduceByKeyRegionKernel<PtxReduceByKeyPolicy, KeyInputIterator, KeyOutputIterator, ValueInputIterator, ValueOutputIterator, NumSegmentsIterator, TileLookbackStatus, EqualityOp, ReductionOp, Offset>,
-                reduce_by_key_region_config))) break;
+                ScanInitKernel<Offset, ScanTileState>,
+                ReduceByKeyRegionKernel<PtxReduceByKeyPolicy, KeyInputIterator, KeyOutputIterator, ValueInputIterator, ValueOutputIterator, NumSegmentsIterator, ScanTileState, EqualityOp, ReductionOp, Offset>,
+                reduce_by_key_range_config))) break;
         }
         while (0);
 

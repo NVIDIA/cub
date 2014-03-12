@@ -28,7 +28,7 @@
 
 /**
  * \file
- * Utility types for device-wide scan and similar primitives
+ * Callback operator types for supplying BlockScan prefixes
  */
 
 #pragma once
@@ -50,7 +50,7 @@ namespace cub {
 
 
 /******************************************************************************
- * Callback operator types for supplying BlockScan prefixes
+ * Prefix functor type for maintaining a running prefix while scanning a region
  ******************************************************************************/
 
 /**
@@ -61,19 +61,19 @@ namespace cub {
 template <
     typename T,                 ///< BlockScan value type
     typename ScanOp>            ///< Wrapped scan operator type
-struct RunningBlockPrefixCallbackOp
+struct BlockScanRunningPrefixOp
 {
     ScanOp  op;                 ///< Wrapped scan operator
     T       running_total;      ///< Running block-wide prefix
 
     /// Constructor
-    __device__ __forceinline__ RunningBlockPrefixCallbackOp(ScanOp op)
+    __device__ __forceinline__ BlockScanRunningPrefixOp(ScanOp op)
     :
         op(op)
     {}
 
     /// Constructor
-    __device__ __forceinline__ RunningBlockPrefixCallbackOp(
+    __device__ __forceinline__ BlockScanRunningPrefixOp(
         T starting_prefix,
         ScanOp op)
     :
@@ -95,18 +95,19 @@ struct RunningBlockPrefixCallbackOp
 
 
 /******************************************************************************
- * Bookkeeping types for single-pass device-wide scan with dynamic lookback
+ * Bookkeeping and prefix functor types for single-pass device-wide scan with dynamic lookback
  ******************************************************************************/
+
 
 /**
  * Enumerations of tile status
  */
-enum LookbackTileStatus
+enum ScanTileStatus
 {
-    LOOKBACK_TILE_OOB,          // Out-of-bounds (e.g., padding)
-    LOOKBACK_TILE_INVALID,      // Not yet processed
-    LOOKBACK_TILE_PARTIAL,      // Tile aggregate is available
-    LOOKBACK_TILE_INCLUSIVE,       // Inclusive tile prefix is available
+    SCAN_TILE_OOB,          // Out-of-bounds (e.g., padding)
+    SCAN_TILE_INVALID,      // Not yet processed
+    SCAN_TILE_PARTIAL,      // Tile aggregate is available
+    SCAN_TILE_INCLUSIVE,    // Inclusive tile prefix is available
 };
 
 
@@ -116,7 +117,7 @@ enum LookbackTileStatus
 template <
     typename    T,
     bool        SINGLE_WORD = Traits<T>::PRIMITIVE>
-struct TileLookbackStatus;
+struct ScanTileState;
 
 
 /**
@@ -125,7 +126,7 @@ struct TileLookbackStatus;
  * read/written coherently in a single access.
  */
 template <typename T>
-struct TileLookbackStatus<T, true>
+struct ScanTileState<T, true>
 {
     // Status word type
     typedef typename If<(sizeof(T) == 8),
@@ -168,7 +169,7 @@ struct TileLookbackStatus<T, true>
 
     /// Constructor
     __host__ __device__ __forceinline__
-    TileLookbackStatus()
+    ScanTileState()
     :
         d_tile_status(NULL)
     {}
@@ -208,13 +209,13 @@ struct TileLookbackStatus<T, true>
         if (tile_idx < num_tiles)
         {
             // Not-yet-set
-            d_tile_status[TILE_STATUS_PADDING + tile_idx].status = StatusWord(LOOKBACK_TILE_INVALID);
+            d_tile_status[TILE_STATUS_PADDING + tile_idx].status = StatusWord(SCAN_TILE_INVALID);
         }
 
         if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
         {
             // Padding
-            d_tile_status[threadIdx.x].status = StatusWord(LOOKBACK_TILE_OOB);
+            d_tile_status[threadIdx.x].status = StatusWord(SCAN_TILE_OOB);
         }
     }
 
@@ -225,7 +226,7 @@ struct TileLookbackStatus<T, true>
     __device__ __forceinline__ void SetInclusive(int tile_idx, T tile_inclusive)
     {
         TileDescriptor tile_descriptor;
-        tile_descriptor.status = LOOKBACK_TILE_INCLUSIVE;
+        tile_descriptor.status = SCAN_TILE_INCLUSIVE;
         tile_descriptor.value = tile_inclusive;
 
         TxnWord alias;
@@ -240,7 +241,7 @@ struct TileLookbackStatus<T, true>
     __device__ __forceinline__ void SetPartial(int tile_idx, T tile_partial)
     {
         TileDescriptor tile_descriptor;
-        tile_descriptor.status = LOOKBACK_TILE_PARTIAL;
+        tile_descriptor.status = SCAN_TILE_PARTIAL;
         tile_descriptor.value = tile_partial;
 
         TxnWord alias;
@@ -260,7 +261,7 @@ struct TileLookbackStatus<T, true>
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
         TileDescriptor tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-        while ((tile_descriptor.status == LOOKBACK_TILE_INVALID))
+        while ((tile_descriptor.status == SCAN_TILE_INVALID))
         {
             alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
@@ -279,7 +280,7 @@ struct TileLookbackStatus<T, true>
  * cannot be combined into one machine word.
  */
 template <typename T>
-struct TileLookbackStatus<T, false>
+struct ScanTileState<T, false>
 {
     // Status word type
     typedef char StatusWord;
@@ -297,7 +298,7 @@ struct TileLookbackStatus<T, false>
 
     /// Constructor
     __host__ __device__ __forceinline__
-    TileLookbackStatus()
+    ScanTileState()
     :
         d_tile_status(NULL),
         d_tile_partial(NULL),
@@ -365,13 +366,13 @@ struct TileLookbackStatus<T, false>
         if (tile_idx < num_tiles)
         {
             // Not-yet-set
-            d_tile_status[TILE_STATUS_PADDING + tile_idx] = StatusWord(LOOKBACK_TILE_INVALID);
+            d_tile_status[TILE_STATUS_PADDING + tile_idx] = StatusWord(SCAN_TILE_INVALID);
         }
 
         if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
         {
             // Padding
-            d_tile_status[threadIdx.x] = StatusWord(LOOKBACK_TILE_OOB);
+            d_tile_status[threadIdx.x] = StatusWord(SCAN_TILE_OOB);
         }
     }
 
@@ -388,7 +389,7 @@ struct TileLookbackStatus<T, false>
         __threadfence();
 
         // Update tile status
-        ThreadStore<STORE_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx, StatusWord(LOOKBACK_TILE_INCLUSIVE));
+        ThreadStore<STORE_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx, StatusWord(SCAN_TILE_INCLUSIVE));
     }
 
 
@@ -404,7 +405,7 @@ struct TileLookbackStatus<T, false>
         __threadfence();
 
         // Update tile status
-        ThreadStore<STORE_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx, StatusWord(LOOKBACK_TILE_PARTIAL));
+        ThreadStore<STORE_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx, StatusWord(SCAN_TILE_PARTIAL));
     }
 
     /**
@@ -416,7 +417,7 @@ struct TileLookbackStatus<T, false>
         T               &value)
     {
         status = ThreadLoad<LOAD_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx);
-        while (status == LOOKBACK_TILE_INVALID)
+        while (status == SCAN_TILE_INVALID)
         {
             status = ThreadLoad<LOAD_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx);
         }
@@ -424,7 +425,7 @@ struct TileLookbackStatus<T, false>
         T partial = ThreadLoad<LOAD_CG>(d_tile_partial + tile_idx);
         T inclusive = ThreadLoad<LOAD_CG>(d_tile_inclusive + tile_idx);
 
-        value = (status == StatusWord(LOOKBACK_TILE_PARTIAL)) ?
+        value = (status == StatusWord(SCAN_TILE_PARTIAL)) ?
             partial :
             inclusive;
 
@@ -441,8 +442,8 @@ struct TileLookbackStatus<T, false>
 template <
     typename T,
     typename ScanOp,
-    typename TileLookbackStatus>
-struct LookbackBlockPrefixCallbackOp
+    typename ScanTileState>
+struct BlockScanLookbackPrefixOp
 {
     // Parameterized warp reduce
     typedef WarpReduce<T> WarpReduceT;
@@ -454,7 +455,7 @@ struct LookbackBlockPrefixCallbackOp
     struct TempStorage : Uninitialized<_TempStorage> {};
 
     // Type of status word
-    typedef typename TileLookbackStatus::StatusWord StatusWord;
+    typedef typename ScanTileState::StatusWord StatusWord;
 
     // Scan operator for switching the scan arguments
     struct SwizzleScanOp
@@ -474,7 +475,7 @@ struct LookbackBlockPrefixCallbackOp
     };
 
     // Fields
-    TileLookbackStatus          &tile_status;       ///< Interface to tile status
+    ScanTileState          &tile_status;       ///< Interface to tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
@@ -483,8 +484,8 @@ struct LookbackBlockPrefixCallbackOp
 
     // Constructor
     __device__ __forceinline__
-    LookbackBlockPrefixCallbackOp(
-        TileLookbackStatus      &tile_status,
+    BlockScanLookbackPrefixOp(
+        ScanTileState      &tile_status,
         TempStorage             &temp_storage,
         ScanOp                  scan_op,
         int                     tile_idx)
@@ -508,7 +509,7 @@ struct LookbackBlockPrefixCallbackOp
         // Perform a segmented reduction to get the prefix for the current window.
         // Use the swizzled scan operator because we are now scanning *down* towards thread0.
 
-        int tail_flag = (predecessor_status == StatusWord(LOOKBACK_TILE_INCLUSIVE));
+        int tail_flag = (predecessor_status == StatusWord(SCAN_TILE_INCLUSIVE));
         window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(value, tail_flag, SwizzleScanOp(scan_op));
     }
 
@@ -534,7 +535,7 @@ struct LookbackBlockPrefixCallbackOp
         exclusive_prefix = window_aggregate;
 
         // Keep sliding the window back until we come across a tile whose inclusive prefix is known
-        while (WarpAll(predecessor_status != StatusWord(LOOKBACK_TILE_INCLUSIVE)))
+        while (WarpAll(predecessor_status != StatusWord(SCAN_TILE_INCLUSIVE)))
         {
             predecessor_idx -= CUB_PTX_WARP_THREADS;
 
