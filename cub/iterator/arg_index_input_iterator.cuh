@@ -85,7 +85,7 @@ namespace cub {
  * double *d_in;         // e.g., [8.0, 6.0, 7.0, 5.0, 3.0, 0.0, 9.0]
  *
  * // Create an iterator wrapper
- * cub::ArgIndexInputIterator<double> itr(d_in);
+ * cub::ArgIndexInputIterator<double*> itr(d_in);
  *
  * // Within device code:
  * typedef typename cub::ArgIndexInputIterator<double>::value_type Tuple;
