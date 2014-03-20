@@ -130,7 +130,7 @@ class cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</h3>
 <div class="line"><a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">cub::ArgIndexInputIterator&lt;double*&gt;</a> itr(d_in);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Within device code:</span></div>
-<div class="line"><span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ArgIndexInputIterator&lt;double&gt;::value_type</a> Tuple;</div>
+<div class="line"><span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ArgIndexInputIterator&lt;double*&gt;::value_type</a> Tuple;</div>
 <div class="line">Tuple item_offset_pair.<a class="code" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173" title="Offset. ">offset</a> = *itr;</div>
 <div class="line">printf(<span class="stringliteral">&quot;%f @ %d\n&quot;</span>,</div>
 <div class="line"> item_offset_pair.value,</div>
