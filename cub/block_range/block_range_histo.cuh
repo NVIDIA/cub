@@ -38,11 +38,11 @@
 #include "specializations/block_range_histo_gatomic.cuh"
 #include "specializations/block_range_histo_satomic.cuh"
 #include "specializations/block_range_histo_sort.cuh"
-#include "../../util_type.cuh"
-#include "../../grid/grid_mapping.cuh"
-#include "../../grid/grid_even_share.cuh"
-#include "../../grid/grid_queue.cuh"
-#include "../../util_namespace.cuh"
+#include "../util_type.cuh"
+#include "../grid/grid_mapping.cuh"
+#include "../grid/grid_even_share.cuh"
+#include "../grid/grid_queue.cuh"
+#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
