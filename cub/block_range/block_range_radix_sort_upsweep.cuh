@@ -33,12 +33,12 @@
 
 #pragma once
 
-#include "../../thread/thread_reduce.cuh"
-#include "../../thread/thread_load.cuh"
-#include "../../block/block_load.cuh"
-#include "../../util_type.cuh"
-#include "../../iterator/cache_modified_input_iterator.cuh"
-#include "../../util_namespace.cuh"
+#include "../thread/thread_reduce.cuh"
+#include "../thread/thread_load.cuh"
+#include "../block/block_load.cuh"
+#include "../util_type.cuh"
+#include "../iterator/cache_modified_input_iterator.cuh"
+#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
