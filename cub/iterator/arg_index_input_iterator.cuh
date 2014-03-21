@@ -88,7 +88,7 @@ namespace cub {
  * cub::ArgIndexInputIterator<double*> itr(d_in);
  *
  * // Within device code:
- * typedef typename cub::ArgIndexInputIterator<double>::value_type Tuple;
+ * typedef typename cub::ArgIndexInputIterator<double*>::value_type Tuple;
  * Tuple item_offset_pair.offset = *itr;
  * printf("%f @ %d\n",
  *  item_offset_pair.value,
