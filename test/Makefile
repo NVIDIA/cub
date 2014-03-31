@@ -78,6 +78,10 @@ ifeq (300, $(findstring 300, $(SM_ARCH)))
     SM_TARGETS += -gencode=arch=compute_30,code=\"sm_30,compute_30\"
     SM_DEF += -DSM300
 endif
+ifeq (210, $(findstring 210, $(SM_ARCH)))
+    SM_TARGETS += -gencode=arch=compute_20,code=\"sm_21,compute_20\"
+    SM_DEF += -DSM210
+endif
 ifeq (200, $(findstring 200, $(SM_ARCH)))
     SM_TARGETS += -gencode=arch=compute_20,code=\"sm_20,compute_20\"
     SM_DEF += -DSM200
@@ -473,6 +477,21 @@ test_device_reduce_by_key: bin/test_device_reduce_by_key_$(SUFFIX)
 bin/test_device_reduce_by_key_$(SUFFIX) : test_device_reduce_by_key.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_reduce_by_key_$(SUFFIX) test_device_reduce_by_key.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+
+#-------------------------------------------------------------------------------
+# make fail
+#-------------------------------------------------------------------------------
+
+fail: bin/fail_$(SUFFIX)
+
+bin/fail_$(SUFFIX) : fail.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/fail_$(SUFFIX) fail.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+
+
+
 
 
 

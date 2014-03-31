@@ -319,9 +319,9 @@ struct ScanTileState<T, false>
             void*   allocations[3];
             size_t  allocation_sizes[3];
 
-            allocation_sizes[0] = (num_tiles + TILE_STATUS_PADDING) * sizeof(StatusWord);       // bytes needed for tile status descriptors
-            allocation_sizes[1] = num_tiles * sizeof(Uninitialized<T>);                   // bytes needed for partials
-            allocation_sizes[2] = num_tiles * sizeof(Uninitialized<T>);                   // bytes needed for inclusives
+            allocation_sizes[0] = (num_tiles + TILE_STATUS_PADDING) * sizeof(StatusWord);           // bytes needed for tile status descriptors
+            allocation_sizes[1] = (num_tiles + TILE_STATUS_PADDING) * sizeof(Uninitialized<T>);     // bytes needed for partials
+            allocation_sizes[2] = (num_tiles + TILE_STATUS_PADDING) * sizeof(Uninitialized<T>);     // bytes needed for inclusives
 
             // Compute allocation pointers into the single storage blob
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
@@ -348,8 +348,8 @@ struct ScanTileState<T, false>
         // Specify storage allocation requirements
         size_t  allocation_sizes[3];
         allocation_sizes[0] = (num_tiles + TILE_STATUS_PADDING) * sizeof(StatusWord);         // bytes needed for tile status descriptors
-        allocation_sizes[1] = num_tiles * sizeof(Uninitialized<T>);                     // bytes needed for partials
-        allocation_sizes[2] = num_tiles * sizeof(Uninitialized<T>);                     // bytes needed for inclusives
+        allocation_sizes[1] = (num_tiles + TILE_STATUS_PADDING) * sizeof(Uninitialized<T>);   // bytes needed for partials
+        allocation_sizes[2] = (num_tiles + TILE_STATUS_PADDING) * sizeof(Uninitialized<T>);   // bytes needed for inclusives
 
         // Set the necessary size of the blob
         void* allocations[3];
@@ -383,7 +383,7 @@ struct ScanTileState<T, false>
     __device__ __forceinline__ void SetInclusive(int tile_idx, T tile_inclusive)
     {
         // Update tile inclusive value
-        ThreadStore<STORE_CG>(d_tile_inclusive + tile_idx, tile_inclusive);
+        ThreadStore<STORE_CG>(d_tile_inclusive + TILE_STATUS_PADDING + tile_idx, tile_inclusive);
 
         // Fence
         __threadfence();
@@ -399,7 +399,7 @@ struct ScanTileState<T, false>
     __device__ __forceinline__ void SetPartial(int tile_idx, T tile_partial)
     {
         // Update tile partial value
-        ThreadStore<STORE_CG>(d_tile_partial + tile_idx, tile_partial);
+        ThreadStore<STORE_CG>(d_tile_partial + TILE_STATUS_PADDING + tile_idx, tile_partial);
 
         // Fence
         __threadfence();
@@ -422,8 +422,8 @@ struct ScanTileState<T, false>
             status = ThreadLoad<LOAD_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx);
         }
 
-        T partial = ThreadLoad<LOAD_CG>(d_tile_partial + tile_idx);
-        T inclusive = ThreadLoad<LOAD_CG>(d_tile_inclusive + tile_idx);
+        T partial = ThreadLoad<LOAD_CG>(d_tile_partial + TILE_STATUS_PADDING + tile_idx);
+        T inclusive = ThreadLoad<LOAD_CG>(d_tile_inclusive + TILE_STATUS_PADDING + tile_idx);
 
         value = (status == StatusWord(SCAN_TILE_PARTIAL)) ?
             partial :
@@ -475,7 +475,7 @@ struct BlockScanLookbackPrefixOp
     };
 
     // Fields
-    ScanTileState          &tile_status;       ///< Interface to tile status
+    ScanTileState               &tile_status;       ///< Interface to tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
     ScanOp                      scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
