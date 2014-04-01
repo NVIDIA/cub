@@ -508,7 +508,7 @@ for many of the algorithmic techniques used by CUB.
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 04/01/2014<br>
-[<b>CUB v1.2.3</b>](https://github.com/NVlabs/cub/archive/1.2.3.zip)
+[<b>CUB v1.2.3</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
   - Bug fixes: 
       - Fixed access violation bug in DeviceReduce::ReduceByKey for non-primitive value types
