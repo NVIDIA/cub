@@ -971,6 +971,7 @@ HTML_EXTRA_STYLESHEET  = extra_stylesheet.css
 # the files will be copied as-is; there are no commands or markers available.
 
 HTML_EXTRA_FILES       = download_cub.html 
+HTML_EXTRA_FILES       += .nojekyll 
 HTML_EXTRA_FILES       += images/nvresearch.png 
 HTML_EXTRA_FILES       += images/download-icon.png 
 HTML_EXTRA_FILES       += images/groups-icon.png 
