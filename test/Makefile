@@ -261,7 +261,7 @@ all : $(ALL)
 #-------------------------------------------------------------------------------
 
 run : 
-	for i in $(ALL); do ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
+	for i in $(ALL); do cuda-memcheck ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
 #-------------------------------------------------------------------------------
 # make link
