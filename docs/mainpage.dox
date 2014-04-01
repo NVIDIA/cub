@@ -575,7 +575,7 @@ for many of the algorithmic techniques used by CUB.
 04/04/2013<br> 
 <b>CUB v0.9.2</b>
 </td><td style="vertical-align:text-top;">
-- Minor cosmetic, feature, and compilation updates.  
+- Minor cosmetic, feature, and compilation updates  
 - See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
@@ -584,7 +584,7 @@ for many of the algorithmic techniques used by CUB.
 <b>CUB v0.9</b>
 </td><td style="vertical-align:text-top;">
 - CUB is the first durable, high-performance library of cooperative threadblock, warp, and 
-  thread primitives for CUDA kernel programming.
+  thread primitives for CUDA kernel programming
 </td></tr>
 </table>
 
