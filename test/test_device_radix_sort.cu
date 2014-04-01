@@ -713,7 +713,7 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    if (num_items < 0) num_items = 32000000;
+    if (num_items < 0) num_items = 20000000;
 
     // Compare CUB and thrust on 32b keys-only
     Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, g_bits, CUB_TYPE_STRING(unsigned int));
