@@ -58,7 +58,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.2.2</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.2.3</b></em></a>
 
 </td><td>
 
@@ -505,10 +505,20 @@ for many of the algorithmic techniques used by CUB.
 
 \par
 <table>
+
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
+04/01/2014<br>
+[<b>CUB v1.2.3</b>](https://github.com/NVlabs/cub/archive/1.2.3.zip)
+</td><td style="vertical-align:text-top;">
+  - Bug fixes: 
+      - Fixed access violation bug in DeviceReduce::ReduceByKey for non-primitive value types
+      - Fixed code-snippet bug in ArgIndexInputIterator documentation 
+  - See the [change-log](CHANGE_LOG.TXT) for further details
+</td></tr>
  
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 03/03/2014<br>
-[<b>CUB v1.2.2</b>](https://github.com/NVlabs/cub/archive/1.2.2.zip)
+<b>CUB v1.2.2</b>
 </td><td style="vertical-align:text-top;">
   - New features:
       - Added device-wide reduce-by-key (cub::DeviceReduce::ReduceByKey, cub::DeviceReduce::RunLengthEncode) 
@@ -532,7 +542,7 @@ for many of the algorithmic techniques used by CUB.
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 12/11/2013<br>
-[<b>CUB v1.1.1</b>](https://github.com/NVlabs/cub/archive/1.1.1.zip)
+<b>CUB v1.1.1</b>
 </td><td style="vertical-align:text-top;">
   - Added cub::TexObjInputIterator, cub::TexRefInputIterator, cub::CacheModifiedInputIterator, and cub::CacheModifiedOutputIterator types for loading & storing arbitrary data types through the cache hierarchy.  Compatible with Thrust API. 
   - Added descending sorting to cub::DeviceRadixSort and cub::BlockRadixSort
@@ -545,16 +555,8 @@ for many of the algorithmic techniques used by CUB.
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-08/23/2013<br>
-[<b>CUB v1.0.2</b>](https://github.com/NVlabs/cub/archive/1.0.2.zip)
-</td><td style="vertical-align:text-top;">
-- Improvements for documentation and compilation speed
-- See the [change-log](CHANGE_LOG.TXT) for further details
-</td></tr>
-
-<tr><td style="white-space: nowrap; vertical-align:text-top;">
 08/08/2013<br>
-[<b>CUB v1.0.1</b>](https://github.com/NVlabs/cub/archive/1.0.1.zip)
+<b>CUB v1.0.1</b>
 </td><td style="vertical-align:text-top;">
 - New API for block-wide and warp-wide collective operations
 - New cub::DeviceRadixSort and cub::DeviceScan implementations
@@ -563,7 +565,7 @@ for many of the algorithmic techniques used by CUB.
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 05/07/2013<br>
-[<b>CUB v0.9.4</b>](https://github.com/NVlabs/cub/archive/0.9.4.zip)
+<b>CUB v0.9.4</b>
 </td><td style="vertical-align:text-top;">
 - New cub::DeviceHistogram and cub::BlockHistogram implementations  
 - See the [change-log](CHANGE_LOG.TXT) for further details
@@ -571,7 +573,7 @@ for many of the algorithmic techniques used by CUB.
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 04/04/2013<br> 
-[<b>CUB v0.9.2</b>](https://github.com/NVlabs/cub/archive/0.9.2.zip)
+<b>CUB v0.9.2</b>
 </td><td style="vertical-align:text-top;">
 - Minor cosmetic, feature, and compilation updates.  
 - See the [change-log](CHANGE_LOG.TXT) for further details
@@ -579,7 +581,7 @@ for many of the algorithmic techniques used by CUB.
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 03/07/2013<br> 
-[<b>CUB v0.9</b>](https://github.com/NVlabs/cub/archive/0.9.zip)
+<b>CUB v0.9</b>
 </td><td style="vertical-align:text-top;">
 - CUB is the first durable, high-performance library of cooperative threadblock, warp, and 
   thread primitives for CUDA kernel programming.
