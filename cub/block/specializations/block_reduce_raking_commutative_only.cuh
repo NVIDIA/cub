@@ -73,7 +73,7 @@ struct BlockReduceRakingCommutativeOnly
     };
 
     ///  WarpReduce utility type
-    typedef WarpReduce<T, 1, RAKING_THREADS> WarpReduce;
+    typedef WarpReduce<T, RAKING_THREADS> WarpReduce;
 
     /// Layout type for padded thread block raking grid
     typedef BlockRakingLayout<T, SHARING_THREADS> BlockRakingLayout;
@@ -138,7 +138,7 @@ struct BlockReduceRakingCommutativeOnly
                 partial = ThreadReduce<SEGMENT_LENGTH>(raking_segment, cub::Sum(), partial);
 
                 // Warpscan
-                partial = WarpReduce(temp_storage.warp_storage, 0, linear_tid).Sum(partial);
+                partial = WarpReduce(temp_storage.warp_storage, linear_tid).Sum(partial);
             }
         }
 
@@ -175,7 +175,7 @@ struct BlockReduceRakingCommutativeOnly
                 partial = ThreadReduce<SEGMENT_LENGTH>(raking_segment, reduction_op, partial);
 
                 // Warpscan
-                partial = WarpReduce(temp_storage.warp_storage, 0, linear_tid).Reduce(partial, reduction_op);
+                partial = WarpReduce(temp_storage.warp_storage, linear_tid).Reduce(partial, reduction_op);
             }
         }
 

@@ -277,7 +277,7 @@ struct DeviceReduceByKeyDispatch
      * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
      */
     template <typename KernelConfig>
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
         KernelConfig    &reduce_by_key_range_config)
@@ -328,7 +328,7 @@ struct DeviceReduceByKeyDispatch
         cudaSharedMemConfig     smem_config;
 
         template <typename BlockRangeReduceByKeyPolicy>
-        __host__ __device__ __forceinline__
+        CUB_RUNTIME_FUNCTION __forceinline__
         void Init()
         {
             block_threads               = BlockRangeReduceByKeyPolicy::BLOCK_THREADS;
@@ -339,7 +339,7 @@ struct DeviceReduceByKeyDispatch
             smem_config                 = cudaSharedMemBankSizeEightByte;
         }
 
-        __host__ __device__ __forceinline__
+        CUB_RUNTIME_FUNCTION __forceinline__
         void Print()
         {
             printf("%d, %d, %d, %d, %d",
@@ -363,7 +363,7 @@ struct DeviceReduceByKeyDispatch
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
         typename                    ReduceByKeyRegionKernelPtr>     ///< Function type of cub::ReduceByKeyRegionKernelPtr
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -527,7 +527,7 @@ struct DeviceReduceByKeyDispatch
     /**
      * Internal dispatch routine
      */
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation

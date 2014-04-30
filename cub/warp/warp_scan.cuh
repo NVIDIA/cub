@@ -153,6 +153,7 @@ private:
     enum
     {
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
+        IS_INTEGER = ((Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER))
     };
 
     /// Internal specialization.  Use SHFL-based reduction if (architecture is >= SM30) and ((only one logical warp) or (LOGICAL_WARP_THREADS is a power-of-two))
@@ -449,7 +450,7 @@ public:
 private:
 
     /// Computes an exclusive prefix sum in each logical warp.
-    __device__ __forceinline__ void ExclusiveSum(T input, T &output, Int2Type<true> is_primitive)
+    __device__ __forceinline__ void ExclusiveSum(T input, T &output, Int2Type<true> is_integer)
     {
         // Compute exclusive warp scan from inclusive warp scan
         T inclusive;
@@ -457,16 +458,16 @@ private:
         output = inclusive - input;
     }
 
-    /// Computes an exclusive prefix sum in each logical warp.  Specialized for non-primitive types.
-    __device__ __forceinline__ void ExclusiveSum(T input, T &output, Int2Type<false> is_primitive)
+    /// Computes an exclusive prefix sum in each logical warp.  Specialized for non-integer types.
+    __device__ __forceinline__ void ExclusiveSum(T input, T &output, Int2Type<false> is_integer)
     {
-        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
+        // Delegate to regular scan for non-integer types (because we won't be able to use subtraction)
         T identity = ZeroInitialize<T>();
         ExclusiveScan(input, output, identity, Sum());
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
-    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, Int2Type<true> is_primitive)
+    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, Int2Type<true> is_integer)
     {
         // Compute exclusive warp scan from inclusive warp scan
         T inclusive;
@@ -474,17 +475,17 @@ private:
         output = inclusive - input;
     }
 
-    /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
-    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, Int2Type<false> is_primitive)
+    /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-integer types.
+    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, Int2Type<false> is_integer)
     {
-        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
+        // Delegate to regular scan for non-integer types (because we won't be able to use subtraction)
         T identity = ZeroInitialize<T>();
         ExclusiveScan(input, output, identity, Sum(), warp_aggregate);
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
     template <typename WarpPrefixCallbackOp>
-    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixCallbackOp &warp_prefix_op, Int2Type<true> is_primitive)
+    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixCallbackOp &warp_prefix_op, Int2Type<true> is_integer)
     {
         // Compute exclusive warp scan from inclusive warp scan
         T inclusive;
@@ -492,11 +493,11 @@ private:
         output = inclusive - input;
     }
 
-    /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-primitive types.
+    /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.  Specialized for non-integer types.
     template <typename WarpPrefixCallbackOp>
-    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixCallbackOp &warp_prefix_op, Int2Type<false> is_primitive)
+    __device__ __forceinline__ void ExclusiveSum(T input, T &output, T &warp_aggregate, WarpPrefixCallbackOp &warp_prefix_op, Int2Type<false> is_integer)
     {
-        // Delegate to regular scan for non-primitive types (because we won't be able to use subtraction)
+        // Delegate to regular scan for non-integer types (because we won't be able to use subtraction)
         T identity = ZeroInitialize<T>();
         ExclusiveScan(input, output, identity, Sum(), warp_aggregate, warp_prefix_op);
     }
@@ -552,7 +553,7 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
-        ExclusiveSum(input, output, Int2Type<Traits<T>::PRIMITIVE>());
+        ExclusiveSum(input, output, Int2Type<IS_INTEGER>());
     }
 
 
@@ -599,7 +600,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        ExclusiveSum(input, output, warp_aggregate, Int2Type<Traits<T>::PRIMITIVE>());
+        ExclusiveSum(input, output, warp_aggregate, Int2Type<IS_INTEGER>());
     }
 
 
@@ -688,7 +689,7 @@ public:
         T                       &warp_aggregate,    ///< [out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items (exclusive of the \p warp_prefix_op value).
         WarpPrefixCallbackOp    &warp_prefix_op)    ///< [in-out] <b>[<em>warp-lane</em><sub>0</sub> only]</b> Call-back functor for specifying a warp-wide prefix to be applied to all inputs.
     {
-        ExclusiveSum(input, output, warp_aggregate, warp_prefix_op, Int2Type<Traits<T>::PRIMITIVE>());
+        ExclusiveSum(input, output, warp_aggregate, warp_prefix_op, Int2Type<IS_INTEGER>());
     }
 
 

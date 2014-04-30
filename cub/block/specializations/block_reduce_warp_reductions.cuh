@@ -67,13 +67,13 @@ struct BlockReduceWarpReductions
 
 
     ///  WarpReduce utility type
-    typedef typename WarpReduce<T, WARPS, LOGICAL_WARP_SIZE>::InternalWarpReduce WarpReduce;
+    typedef typename WarpReduce<T, LOGICAL_WARP_SIZE>::InternalWarpReduce WarpReduce;
 
 
     /// Shared memory storage layout type
     struct _TempStorage
     {
-        typename WarpReduce::TempStorage    warp_reduce;                ///< Buffer for warp-synchronous scan
+        typename WarpReduce::TempStorage    warp_reduce[WARPS];                ///< Buffer for warp-synchronous scan
         T                                   warp_aggregates[WARPS];     ///< Shared totals from each warp-synchronous scan
         T                                   block_prefix;               ///< Shared prefix for the entire threadblock
     };
@@ -173,7 +173,7 @@ struct BlockReduceWarpReductions
                                 0;
 
         // Warp reduction in every warp
-        T warp_aggregate = WarpReduce(temp_storage.warp_reduce, warp_id, lane_id).template Sum<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
+        T warp_aggregate = WarpReduce(temp_storage.warp_reduce[warp_id], lane_id).template Sum<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
             input,
             warp_num_valid);
 
@@ -200,7 +200,7 @@ struct BlockReduceWarpReductions
                                 0;
 
         // Warp reduction in every warp
-        T warp_aggregate = WarpReduce(temp_storage.warp_reduce, warp_id, lane_id).template Reduce<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
+        T warp_aggregate = WarpReduce(temp_storage.warp_reduce[warp_id], lane_id).template Reduce<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
             input,
             warp_num_valid,
             reduction_op);

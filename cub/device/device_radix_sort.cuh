@@ -140,7 +140,7 @@ struct DeviceRadixSort
     template <
         typename            Key,
         typename            Value>
-    __host__ __device__
+    CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairs(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -223,7 +223,7 @@ struct DeviceRadixSort
     template <
         typename            Key,
         typename            Value>
-    __host__ __device__
+    CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairsDescending(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -302,7 +302,7 @@ struct DeviceRadixSort
      * \tparam Key      <b>[inferred]</b> Key type
      */
     template <typename Key>
-    __host__ __device__
+    CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeys(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -379,7 +379,7 @@ struct DeviceRadixSort
      * \tparam Key      <b>[inferred]</b> Key type
      */
     template <typename Key>
-    __host__ __device__
+    CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeysDescending(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
