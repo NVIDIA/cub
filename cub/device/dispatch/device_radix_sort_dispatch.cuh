@@ -391,7 +391,7 @@ struct DeviceRadixSortDispatch
         typename UpsweepKernelPtr,          ///< Function type of cub::RadixSortUpsweepKernel
         typename ScanKernelPtr,            ///< Function type of cub::SpineScanKernel
         typename DownsweepKernelPtr>        ///< Function type of cub::RadixSortUpsweepKernel
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t InitConfigs(
         int                     sm_version,
         int                     sm_count,
@@ -428,7 +428,7 @@ struct DeviceRadixSortDispatch
         typename UpsweepKernelPtr,          ///< Function type of cub::RadixSortUpsweepKernel
         typename ScanKernelPtr,            ///< Function type of cub::SpineScanKernel
         typename DownsweepKernelPtr>        ///< Function type of cub::RadixSortUpsweepKernel
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t InitConfigs(
         int                     ptx_version,
         int                     sm_version,
@@ -507,7 +507,7 @@ struct DeviceRadixSortDispatch
         int                     subscription_factor;
 
         template <typename UpsweepPolicy, typename UpsweepKernelPtr>
-        __host__ __device__ __forceinline__ cudaError_t InitUpsweepPolicy(
+        CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t InitUpsweepPolicy(
             int sm_version, int sm_count, UpsweepKernelPtr upsweep_kernel)
         {
             block_threads               = UpsweepPolicy::BLOCK_THREADS;
@@ -523,7 +523,7 @@ struct DeviceRadixSortDispatch
         }
 
         template <typename ScanPolicy, typename ScanKernelPtr>
-        __host__ __device__ __forceinline__ cudaError_t InitScanPolicy(
+        CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t InitScanPolicy(
             int sm_version, int sm_count, ScanKernelPtr scan_kernel)
         {
             block_threads               = ScanPolicy::BLOCK_THREADS;
@@ -539,7 +539,7 @@ struct DeviceRadixSortDispatch
         }
 
         template <typename DownsweepPolicy, typename DownsweepKernelPtr>
-        __host__ __device__ __forceinline__ cudaError_t InitDownsweepPolicy(
+        CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t InitDownsweepPolicy(
             int sm_version, int sm_count, DownsweepKernelPtr downsweep_kernel)
         {
             block_threads               = DownsweepPolicy::BLOCK_THREADS;
@@ -560,7 +560,7 @@ struct DeviceRadixSortDispatch
      * Allocation of device temporaries
      ******************************************************************************/
 
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t AllocateTemporaries(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -609,7 +609,7 @@ struct DeviceRadixSortDispatch
         typename                UpsweepKernelPtr,               ///< Function type of cub::RadixSortUpsweepKernel
         typename                ScanKernelPtr,                  ///< Function type of cub::SpineScanKernel
         typename                DownsweepKernelPtr>             ///< Function type of cub::RadixSortUpsweepKernel
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         DoubleBuffer<Key>       &d_keys,                        ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<Value>     &d_values,                      ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
@@ -749,7 +749,7 @@ struct DeviceRadixSortDispatch
         typename UpsweepKernelPtr,          ///< Function type of cub::RadixSortUpsweepKernel
         typename ScanKernelPtr,             ///< Function type of cub::SpineScanKernel
         typename DownsweepKernelPtr>        ///< Function type of cub::RadixSortUpsweepKernel
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -887,7 +887,7 @@ struct DeviceRadixSortDispatch
      * Internal dispatch routine
      */
 
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation

@@ -129,7 +129,7 @@ struct DeviceScan
     template <
         typename        InputIterator,
         typename        OutputIterator>
-    __host__ __device__
+    CUB_RUNTIME_FUNCTION
     static cudaError_t ExclusiveSum(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -179,7 +179,7 @@ struct DeviceScan
      * struct CustomMin
      * {
      *     template <typename T>
-     *     __host__ __device__ __forceinline__
+     *     CUB_RUNTIME_FUNCTION __forceinline__
      *     T operator()(const T &a, const T &b) const {
      *         return (b < a) ? b : a;
      *     }
@@ -217,7 +217,7 @@ struct DeviceScan
         typename        OutputIterator,
         typename        ScanOp,
         typename        Identity>
-    __host__ __device__
+    CUB_RUNTIME_FUNCTION
     static cudaError_t ExclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -296,7 +296,7 @@ struct DeviceScan
     template <
         typename            InputIterator,
         typename            OutputIterator>
-    __host__ __device__
+    CUB_RUNTIME_FUNCTION
     static cudaError_t InclusiveSum(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -343,7 +343,7 @@ struct DeviceScan
      * struct CustomMin
      * {
      *     template <typename T>
-     *     __host__ __device__ __forceinline__
+     *     CUB_RUNTIME_FUNCTION __forceinline__
      *     T operator()(const T &a, const T &b) const {
      *         return (b < a) ? b : a;
      *     }
@@ -379,7 +379,7 @@ struct DeviceScan
         typename        InputIterator,
         typename        OutputIterator,
         typename        ScanOp>
-    __host__ __device__
+    CUB_RUNTIME_FUNCTION
     static cudaError_t InclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation

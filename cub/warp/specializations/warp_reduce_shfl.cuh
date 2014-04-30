@@ -51,7 +51,6 @@ namespace cub {
  */
 template <
     typename    T,                      ///< Data type being reduced
-    int         LOGICAL_WARPS,          ///< Number of logical warps entrant
     int         LOGICAL_WARP_THREADS>   ///< Number of threads per logical warp
 struct WarpReduceShfl
 {
@@ -61,6 +60,9 @@ struct WarpReduceShfl
 
     enum
     {
+        // Whether the logical warp size and the PTX warp size coincide
+        FULL_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+
         /// The number of warp reduction steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
 
@@ -83,7 +85,6 @@ struct WarpReduceShfl
      * Thread fields
      ******************************************************************************/
 
-    int     warp_id;
     int     lane_id;
 
 
@@ -93,12 +94,11 @@ struct WarpReduceShfl
 
     /// Constructor
     __device__ __forceinline__ WarpReduceShfl(
-        TempStorage &temp_storage,
-        int warp_id,
-        int lane_id)
+        TempStorage &temp_storage)
     :
-        warp_id(warp_id),
-        lane_id(lane_id)
+        lane_id(FULL_WARP ?
+            LaneId() :
+            LaneId() % LOGICAL_WARP_THREADS)
     {}
 
 
@@ -294,8 +294,10 @@ struct WarpReduceShfl
         warp_flags &= LaneMaskGt();
 
         // Accommodate packing of multiple logical warps in a single physical warp
-        if ((LOGICAL_WARPS > 1) && (LOGICAL_WARP_THREADS < 32))
-            warp_flags >>= (warp_id * LOGICAL_WARP_THREADS);
+        if (!FULL_WARP)
+        {
+            warp_flags >>= (LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS;
+        }
 
         // Find next flag
         int next_flag = __clz(__brev(warp_flags));

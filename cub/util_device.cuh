@@ -64,7 +64,7 @@ __global__ void EmptyKernel(void) { }
  * Alias temporaries to externally-allocated device storage (or simply return the amount of storage needed).
  */
 template <int ALLOCATIONS>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t AliasTemporaries(
     void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t  &temp_storage_bytes,                ///< [in,out] Size in bytes of \t d_temp_storage allocation
@@ -115,7 +115,7 @@ cudaError_t AliasTemporaries(
 /**
  * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10)
  */
-__host__ __device__ __forceinline__ cudaError_t PtxVersion(int &ptx_version)
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int &ptx_version)
 {
     struct Dummy
     {
@@ -123,7 +123,7 @@ __host__ __device__ __forceinline__ cudaError_t PtxVersion(int &ptx_version)
         typedef void (*EmptyKernelPtr)();
 
         /// Force EmptyKernel<void> to be generated if this class is used
-        __host__ __device__ __forceinline__
+        CUB_RUNTIME_FUNCTION __forceinline__
         EmptyKernelPtr Empty()
         {
             return EmptyKernel<void>;
@@ -161,7 +161,7 @@ __host__ __device__ __forceinline__ cudaError_t PtxVersion(int &ptx_version)
 /**
  * \brief Retrieves the SM version (major * 100 + minor * 10)
  */
-__host__ __device__ __forceinline__ cudaError_t SmVersion(int &sm_version, int device_ordinal)
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int &sm_version, int device_ordinal)
 {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -192,7 +192,7 @@ __host__ __device__ __forceinline__ cudaError_t SmVersion(int &sm_version, int d
 /**
  * Synchronize the stream if specified
  */
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 static cudaError_t SyncStream(cudaStream_t stream)
 {
 #if (CUB_PTX_VERSION == 0)
@@ -208,7 +208,7 @@ static cudaError_t SyncStream(cudaStream_t stream)
  * \brief Computes maximum SM occupancy in thread blocks for the given kernel function pointer \p kernel_ptr.
  */
 template <typename KernelPtr>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t MaxSmOccupancy(
     int                 &max_sm_occupancy,          ///< [out] maximum number of thread blocks that can reside on a single SM
     int                 sm_version,                 ///< [in] The SM architecture to run on
@@ -330,7 +330,7 @@ cudaError_t MaxSmOccupancy(
  *
  */
 template <typename KernelPtr>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t MaxSmOccupancy(
     int                 &max_sm_occupancy,          ///< [out] maximum number of thread blocks that can reside on a single SM
     KernelPtr           kernel_ptr,                 ///< [in] Kernel pointer for which to compute SM occupancy
