@@ -50,7 +50,6 @@ namespace cub {
  */
 template <
     typename    T,                      ///< Data type being reduced
-    int         LOGICAL_WARPS,          ///< Number of logical warps entrant
     int         LOGICAL_WARP_THREADS>   ///< Number of threads per logical warp
 struct WarpReduceSmem
 {
@@ -60,6 +59,9 @@ struct WarpReduceSmem
 
     enum
     {
+        // Whether the logical warp size and the PTX warp size coincide
+        FULL_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+
         /// Whether the logical warp size is a power-of-two
         POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
 
@@ -77,7 +79,7 @@ struct WarpReduceSmem
     typedef unsigned char SmemFlag;
 
     /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
-    typedef T _TempStorage[LOGICAL_WARPS][WARP_SMEM_ELEMENTS];
+    typedef T _TempStorage[WARP_SMEM_ELEMENTS];
 
     // Alias wrapper allowing storage to be unioned
     struct TempStorage : Uninitialized<_TempStorage> {};
@@ -88,7 +90,6 @@ struct WarpReduceSmem
      ******************************************************************************/
 
     _TempStorage     &temp_storage;
-    int             warp_id;
     int             lane_id;
 
 
@@ -98,13 +99,12 @@ struct WarpReduceSmem
 
     /// Constructor
     __device__ __forceinline__ WarpReduceSmem(
-        TempStorage     &temp_storage,
-        int             warp_id,
-        int             lane_id)
+        TempStorage     &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
-        warp_id(warp_id),
-        lane_id(lane_id)
+        lane_id(FULL_WARP ?
+            LaneId() :
+            LaneId() % LOGICAL_WARP_THREADS)
     {}
 
 
@@ -129,12 +129,12 @@ struct WarpReduceSmem
             const int OFFSET = 1 << STEP;
 
             // Share input through buffer
-            ThreadStore<STORE_VOLATILE>(&temp_storage[warp_id][lane_id], input);
+            ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], input);
 
             // Update input if peer_addend is in range
             if ((FULL_WARPS && POW_OF_TWO) || ((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE < folded_items_per_warp))
             {
-                T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][lane_id + OFFSET]);
+                T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[lane_id + OFFSET]);
                 input = reduction_op(input, peer_addend);
             }
         }
@@ -169,8 +169,10 @@ struct WarpReduceSmem
         warp_flags &= LaneMaskGt();
 
         // Accommodate packing of multiple logical warps in a single physical warp
-        if ((LOGICAL_WARPS > 1) && (LOGICAL_WARP_THREADS < 32))
-            warp_flags >>= (warp_id * LOGICAL_WARP_THREADS);
+        if (!FULL_WARP)
+        {
+            warp_flags >>= (LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS;
+        }
 
         // Find next flag
         int next_flag = __clz(__brev(warp_flags));
@@ -184,12 +186,12 @@ struct WarpReduceSmem
             const int OFFSET = 1 << STEP;
 
             // Share input into buffer
-            ThreadStore<STORE_VOLATILE>(&temp_storage[warp_id][lane_id], input);
+            ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], input);
 
             // Update input if peer_addend is in range
             if (OFFSET < next_flag - lane_id)
             {
-                T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][lane_id + OFFSET]);
+                T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[lane_id + OFFSET]);
                 input = reduction_op(input, peer_addend);
             }
         }
@@ -208,7 +210,7 @@ struct WarpReduceSmem
         };
 
         // Alias flags onto shared data storage
-        volatile SmemFlag *flag_storage = reinterpret_cast<SmemFlag*>(temp_storage[warp_id]);
+        volatile SmemFlag *flag_storage = reinterpret_cast<SmemFlag*>(temp_storage);
 
         SmemFlag flag_status = (flag) ? SET : UNSET;
 
@@ -217,10 +219,10 @@ struct WarpReduceSmem
             const int OFFSET = 1 << STEP;
 
             // Share input through buffer
-            ThreadStore<STORE_VOLATILE>(&temp_storage[warp_id][lane_id], input);
+            ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], input);
 
             // Get peer from buffer
-            T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[warp_id][lane_id + OFFSET]);
+            T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[lane_id + OFFSET]);
 
             // Share flag through buffer
             flag_storage[lane_id] = flag_status;

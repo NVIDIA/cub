@@ -58,7 +58,10 @@ namespace cub {
 
 /// Whether or not the source targeted by the active compiler pass is allowed to  invoke device kernels or methods from the CUDA runtime API.
 #if (CUB_PTX_VERSION == 0) || defined(CUB_CDP)
-#define CUB_RUNTIME_ENABLED
+    #define CUB_RUNTIME_ENABLED
+    #define CUB_RUNTIME_FUNCTION __host__ __device__
+#else
+    #define CUB_RUNTIME_FUNCTION __host__
 #endif
 
 

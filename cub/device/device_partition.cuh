@@ -123,7 +123,7 @@ struct DevicePartition
         typename                    FlagIterator,
         typename                    OutputIterator,
         typename                    NumSelectedIterator>
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Flagged(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
@@ -189,10 +189,10 @@ struct DevicePartition
      * {
      *     int compare;
      *
-     *     __host__ __device__ __forceinline__
+     *     CUB_RUNTIME_FUNCTION __forceinline__
      *     LessThan(int compare) : compare(compare) {}
      *
-     *     __host__ __device__ __forceinline__
+     *     CUB_RUNTIME_FUNCTION __forceinline__
      *     bool operator()(const int &a) const {
      *         return (a < compare);
      *     }
@@ -232,7 +232,7 @@ struct DevicePartition
         typename                    OutputIterator,
         typename                    NumSelectedIterator,
         typename                    SelectOp>
-    __host__ __device__ __forceinline__
+    CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t If(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation

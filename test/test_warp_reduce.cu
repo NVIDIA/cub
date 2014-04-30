@@ -169,10 +169,10 @@ __global__ void FullWarpReduceKernel(
     clock_t         *d_elapsed)
 {
     // Cooperative warp-reduce utility type (1 warp)
-    typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
+    typedef WarpReduce<T, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Allocate temp storage in shared memory
-    __shared__ typename WarpReduce::TempStorage temp_storage;
+    __shared__ typename WarpReduce::TempStorage temp_storage[WARPS];
 
     // Per-thread tile data
     T input = d_in[threadIdx.x];
@@ -181,8 +181,10 @@ __global__ void FullWarpReduceKernel(
     clock_t start = clock();
 
     // Test warp reduce
+    int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
+
     T output = DeviceTest<T, ReductionOp, WarpReduce>::Reduce(
-        temp_storage, input, reduction_op);
+        temp_storage[warp_id], input, reduction_op);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
@@ -208,11 +210,11 @@ __global__ void PartialWarpReduceKernel(
     clock_t     *d_elapsed,
     int         valid_warp_threads)
 {
-    // Cooperative warp-reduce utility type (1 warp)
-    typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
+    // Cooperative warp-reduce utility type
+    typedef WarpReduce<T, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Allocate temp storage in shared memory
-    __shared__ typename WarpReduce::TempStorage temp_storage;
+    __shared__ typename WarpReduce::TempStorage temp_storage[WARPS];
 
     // Per-thread tile data
     T input = d_in[threadIdx.x];
@@ -221,8 +223,9 @@ __global__ void PartialWarpReduceKernel(
     clock_t start = clock();
 
     // Test partial-warp reduce
+    int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
     T output = DeviceTest<T, ReductionOp, WarpReduce>::Reduce(
-        temp_storage, input, reduction_op, valid_warp_threads);
+        temp_storage[warp_id], input, reduction_op, valid_warp_threads);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
@@ -250,11 +253,11 @@ __global__ void WarpHeadSegmentedReduceKernel(
     ReductionOp reduction_op,
     clock_t     *d_elapsed)
 {
-    // Cooperative warp-reduce utility type (1 warp)
-    typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
+    // Cooperative warp-reduce utility type
+    typedef WarpReduce<T, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Allocate temp storage in shared memory
-    __shared__ typename WarpReduce::TempStorage temp_storage;
+    __shared__ typename WarpReduce::TempStorage temp_storage[WARPS];
 
     // Per-thread tile data
     T       input       = d_in[threadIdx.x];
@@ -266,8 +269,9 @@ __global__ void WarpHeadSegmentedReduceKernel(
     clock_t start = clock();
 
     // Test segmented warp reduce
+    int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
     T output = DeviceTest<T, ReductionOp, WarpReduce>::HeadSegmentedReduce(
-        temp_storage, input, head_flag, reduction_op);
+        temp_storage[warp_id], input, head_flag, reduction_op);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
@@ -295,11 +299,11 @@ __global__ void WarpTailSegmentedReduceKernel(
     ReductionOp reduction_op,
     clock_t     *d_elapsed)
 {
-    // Cooperative warp-reduce utility type (1 warp)
-    typedef WarpReduce<T, WARPS, LOGICAL_WARP_THREADS> WarpReduce;
+    // Cooperative warp-reduce utility type
+    typedef WarpReduce<T, LOGICAL_WARP_THREADS> WarpReduce;
 
     // Allocate temp storage in shared memory
-    __shared__ typename WarpReduce::TempStorage temp_storage;
+    __shared__ typename WarpReduce::TempStorage temp_storage[WARPS];
 
     // Per-thread tile data
     T       input       = d_in[threadIdx.x];
@@ -314,8 +318,9 @@ __global__ void WarpTailSegmentedReduceKernel(
     clock_t start = clock();
 
     // Test segmented warp reduce
+    int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
     T output = DeviceTest<T, ReductionOp, WarpReduce>::TailSegmentedReduce(
-        temp_storage, input, tail_flag, reduction_op);
+        temp_storage[warp_id], input, tail_flag, reduction_op);
 
     // Record elapsed clocks
     *d_elapsed = clock() - start;
@@ -726,7 +731,7 @@ int main(int argc, char** argv)
 
     // Compile/run quick tests
     TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
-    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+//    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
 
 #else
 

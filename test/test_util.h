@@ -48,11 +48,11 @@
 #include <iostream>
 #include <limits>
 
-#include <mersenne.h>
+#include "mersenne.h"
 
-#include <cub/util_debug.cuh>
-#include <cub/util_device.cuh>
-#include <cub/util_type.cuh>
+#include "cub/util_debug.cuh"
+#include "cub/util_device.cuh"
+#include "cub/util_type.cuh"
 
 /******************************************************************************
  * Assertion macros
