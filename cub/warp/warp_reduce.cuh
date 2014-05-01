@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::WarpReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel reduction of items partitioned across CUDA warp threads.
+ * The cub::WarpReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel reduction of items partitioned across a CUDA thread warp.
  */
 
 #pragma once
@@ -53,7 +53,7 @@ namespace cub {
  */
 
 /**
- * \brief The WarpReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel reduction of items partitioned across CUDA warp threads. ![](warp_reduce_logo.png)
+ * \brief The WarpReduce class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel reduction of items partitioned across a CUDA thread warp. ![](warp_reduce_logo.png)
  *
  * \tparam T                        The reduction input/output element type
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size of the targeted CUDA compute-capability (e.g., 32 threads for SM20).
@@ -146,11 +146,11 @@ private:
 
     enum
     {
-        // Whether the logical warp size and the PTX warp size coincide
-        FULL_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+        /// Whether the logical warp size and the PTX warp size coincide
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
 
-        // Whether the logical warp size is a power-of-two
-        POW_OF_TWO = PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE,
+        /// Whether the logical warp size is a power-of-two
+        IS_POW_OF_TWO = PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE,
     };
 
 public:
@@ -158,7 +158,7 @@ public:
     #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     /// Internal specialization.  Use SHFL-based reduction if (architecture is >= SM30) and (LOGICAL_WARP_THREADS is a power-of-two)
-    typedef typename If<(CUB_PTX_VERSION >= 300) && (POW_OF_TWO),
+    typedef typename If<(CUB_PTX_VERSION >= 300) && (IS_POW_OF_TWO),
         WarpReduceShfl<T, LOGICAL_WARP_THREADS>,
         WarpReduceSmem<T, LOGICAL_WARP_THREADS> >::Type InternalWarpReduce;
 
@@ -182,14 +182,6 @@ private:
     /******************************************************************************
      * Utility methods
      ******************************************************************************/
-
-    /// Internal storage allocator
-    __device__ __forceinline__ _TempStorage& PrivateStorage()
-    {
-        __shared__ TempStorage private_storage;
-        return private_storage;
-    }
-
 
 public:
 

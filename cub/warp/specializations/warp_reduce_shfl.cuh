@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::WarpReduceShfl provides SHFL-based variants of parallel reduction across CUDA warps.
+ * cub::WarpReduceShfl provides SHFL-based variants of parallel reduction of items partitioned across a CUDA thread warp.
  */
 
 #pragma once
@@ -47,7 +47,7 @@ namespace cub {
 
 
 /**
- * \brief WarpReduceShfl provides SHFL-based variants of parallel reduction across CUDA warps.
+ * \brief WarpReduceShfl provides SHFL-based variants of parallel reduction of items partitioned across a CUDA thread warp.
  */
 template <
     typename    T,                      ///< Data type being reduced
@@ -60,8 +60,8 @@ struct WarpReduceShfl
 
     enum
     {
-        // Whether the logical warp size and the PTX warp size coincide
-        FULL_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+        /// Whether the logical warp size and the PTX warp size coincide
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
 
         /// The number of warp reduction steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
@@ -85,7 +85,7 @@ struct WarpReduceShfl
      * Thread fields
      ******************************************************************************/
 
-    int     lane_id;
+    int lane_id;
 
 
     /******************************************************************************
@@ -96,7 +96,7 @@ struct WarpReduceShfl
     __device__ __forceinline__ WarpReduceShfl(
         TempStorage &temp_storage)
     :
-        lane_id(FULL_WARP ?
+        lane_id(IS_ARCH_WARP ?
             LaneId() :
             LaneId() % LOGICAL_WARP_THREADS)
     {}
@@ -108,7 +108,7 @@ struct WarpReduceShfl
 
     /// Summation (single-SHFL)
     template <
-        bool                FULL_WARPS,             ///< Whether all lanes in each warp are contributing a valid fold of items
+        bool                ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
         int                 FOLDED_ITEMS_PER_LANE>  ///< Number of items folded into each lane
     __device__ __forceinline__ T Sum(
         T                   input,                  ///< [in] Calling thread's input
@@ -123,7 +123,7 @@ struct WarpReduceShfl
         {
             const int OFFSET = 1 << STEP;
 
-            if (FULL_WARPS)
+            if (ALL_LANES_VALID)
             {
                 // Use predicate set from SHFL to guard against invalid peers
                 asm(
@@ -158,25 +158,25 @@ struct WarpReduceShfl
 
     /// Summation (multi-SHFL)
     template <
-        bool                FULL_WARPS,             ///< Whether all lanes in each warp are contributing a valid fold of items
+        bool                ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
         int                 FOLDED_ITEMS_PER_LANE>  ///< Number of items folded into each lane
     __device__ __forceinline__ T Sum(
-        T                   input,              ///< [in] Calling thread's input
-        int                 folded_items_per_warp,        ///< [in] Total number of valid items folded into each logical warp
-        Int2Type<false>     single_shfl)        ///< [in] Marker type indicating whether only one SHFL instruction is required
+        T                   input,                  ///< [in] Calling thread's input
+        int                 folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
+        Int2Type<false>     single_shfl)            ///< [in] Marker type indicating whether only one SHFL instruction is required
     {
         // Delegate to generic reduce
-        return Reduce<FULL_WARPS, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, cub::Sum());
+        return Reduce<ALL_LANES_VALID, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, cub::Sum());
     }
 
 
     /// Summation (float)
     template <
-        bool                FULL_WARPS,             ///< Whether all lanes in each warp are contributing a valid fold of items
+        bool                ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
         int                 FOLDED_ITEMS_PER_LANE>  ///< Number of items folded into each lane
     __device__ __forceinline__ float Sum(
-        float               input,              ///< [in] Calling thread's input
-        int                 folded_items_per_warp)        ///< [in] Total number of valid items folded into each logical warp
+        float               input,                  ///< [in] Calling thread's input
+        int                 folded_items_per_warp)  ///< [in] Total number of valid items folded into each logical warp
     {
         T output = input;
 
@@ -186,7 +186,7 @@ struct WarpReduceShfl
         {
             const int OFFSET = 1 << STEP;
 
-            if (FULL_WARPS)
+            if (ALL_LANES_VALID)
             {
                 // Use predicate set from SHFL to guard against invalid peers
                 asm(
@@ -220,7 +220,7 @@ struct WarpReduceShfl
 
     /// Summation (generic)
     template <
-        bool                FULL_WARPS,             ///< Whether all lanes in each warp are contributing a valid fold of items
+        bool                ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
         int                 FOLDED_ITEMS_PER_LANE,  ///< Number of items folded into each lane
         typename            _T>
     __device__ __forceinline__ _T Sum(
@@ -230,13 +230,13 @@ struct WarpReduceShfl
         // Whether sharing can be done with a single SHFL instruction (vs multiple SFHL instructions)
         Int2Type<(Traits<_T>::PRIMITIVE) && (sizeof(_T) <= sizeof(unsigned int))> single_shfl;
 
-        return Sum<FULL_WARPS, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, single_shfl);
+        return Sum<ALL_LANES_VALID, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, single_shfl);
     }
 
 
     /// Reduction
     template <
-        bool            FULL_WARPS,             ///< Whether all lanes in each warp are contributing a valid fold of items
+        bool            ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
         int             FOLDED_ITEMS_PER_LANE,  ///< Number of items folded into each lane
         typename        ReductionOp>
     __device__ __forceinline__ T Reduce(
@@ -256,7 +256,7 @@ struct WarpReduceShfl
             T temp = ShuffleDown(output, OFFSET);
 
             // Perform reduction op if from a valid peer
-            if (FULL_WARPS)
+            if (ALL_LANES_VALID)
             {
                 if (lane_id < LOGICAL_WARP_THREADS - OFFSET)
                     output = reduction_op(output, temp);
@@ -294,7 +294,7 @@ struct WarpReduceShfl
         warp_flags &= LaneMaskGt();
 
         // Accommodate packing of multiple logical warps in a single physical warp
-        if (!FULL_WARP)
+        if (!IS_ARCH_WARP)
         {
             warp_flags >>= (LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS;
         }
