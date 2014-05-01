@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::WarpReduceSmem provides smem-based variants of parallel reduction across CUDA warps.
+ * cub::WarpReduceSmem provides smem-based variants of parallel reduction of items partitioned across a CUDA thread warp.
  */
 
 #pragma once
@@ -46,7 +46,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief WarpReduceSmem provides smem-based variants of parallel reduction across CUDA warps.
+ * \brief WarpReduceSmem provides smem-based variants of parallel reduction of items partitioned across a CUDA thread warp.
  */
 template <
     typename    T,                      ///< Data type being reduced
@@ -59,11 +59,11 @@ struct WarpReduceSmem
 
     enum
     {
-        // Whether the logical warp size and the PTX warp size coincide
-        FULL_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+        /// Whether the logical warp size and the PTX warp size coincide
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
 
         /// Whether the logical warp size is a power-of-two
-        POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
+        IS_POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
 
         /// The number of warp scan steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
@@ -102,7 +102,7 @@ struct WarpReduceSmem
         TempStorage     &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
-        lane_id(FULL_WARP ?
+        lane_id(IS_ARCH_WARP ?
             LaneId() :
             LaneId() % LOGICAL_WARP_THREADS)
     {}
@@ -116,7 +116,7 @@ struct WarpReduceSmem
      * Reduction
      */
     template <
-        bool                FULL_WARPS,             ///< Whether all lanes in each warp are contributing a valid fold of items
+        bool                ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
         int                 FOLDED_ITEMS_PER_LANE,  ///< Number of items folded into each lane
         typename            ReductionOp>
     __device__ __forceinline__ T Reduce(
@@ -132,7 +132,7 @@ struct WarpReduceSmem
             ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], input);
 
             // Update input if peer_addend is in range
-            if ((FULL_WARPS && POW_OF_TWO) || ((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE < folded_items_per_warp))
+            if ((ALL_LANES_VALID && IS_POW_OF_TWO) || ((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE < folded_items_per_warp))
             {
                 T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[lane_id + OFFSET]);
                 input = reduction_op(input, peer_addend);
@@ -169,7 +169,7 @@ struct WarpReduceSmem
         warp_flags &= LaneMaskGt();
 
         // Accommodate packing of multiple logical warps in a single physical warp
-        if (!FULL_WARP)
+        if (!IS_ARCH_WARP)
         {
             warp_flags >>= (LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS;
         }
@@ -277,13 +277,13 @@ struct WarpReduceSmem
      * Summation
      */
     template <
-        bool            FULL_WARPS,             ///< Whether all lanes in each warp are contributing a valid fold of items
+        bool            ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
         int             FOLDED_ITEMS_PER_LANE>  ///< Number of items folded into each lane
     __device__ __forceinline__ T Sum(
         T               input,                  ///< [in] Calling thread's input
         int             folded_items_per_warp)  ///< [in] Total number of valid items folded into each logical warp
     {
-        return Reduce<FULL_WARPS, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, cub::Sum());
+        return Reduce<ALL_LANES_VALID, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, cub::Sum());
     }
 
 };

@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::WarpScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix scan of items partitioned across CUDA warp threads.
+ * The cub::WarpScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix scan of items partitioned across a CUDA thread warp.
  */
 
 #pragma once
@@ -52,10 +52,9 @@ namespace cub {
  */
 
 /**
- * \brief The WarpScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix scan of items partitioned across CUDA warp threads.  ![](warp_scan_logo.png)
+ * \brief The WarpScan class provides [<em>collective</em>](index.html#sec0) methods for computing a parallel prefix scan of items partitioned across a CUDA thread warp.  ![](warp_scan_logo.png)
  *
  * \tparam T                        The scan input/output element type
- * \tparam LOGICAL_WARPS            <b>[optional]</b> The number of "logical" warps performing concurrent warp scans. Default is 1.
  * \tparam LOGICAL_WARP_THREADS     <b>[optional]</b> The number of threads per "logical" warp (may be less than the number of hardware warp threads).  Default is the warp size associated with the CUDA Compute Capability targeted by the compiler (e.g., 32 threads for SM20).
  *
  * \par Overview
@@ -70,7 +69,6 @@ namespace cub {
  * - The number of entrant threads must be an multiple of \p LOGICAL_WARP_THREADS
  *
  * \par Performance Considerations
- * - Warp scans are concurrent if more than one warp is participating
  * - Uses special instructions when applicable (e.g., warp \p SHFL)
  * - Uses synchronization-free communication between warp lanes when applicable
  * - Incurs zero bank conflicts for most types
@@ -89,17 +87,18 @@ namespace cub {
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Specialize WarpScan for 4 warps on type int
- *     typedef cub::WarpScan<int, 4> WarpScan;
+ *     // Specialize WarpScan for type int
+ *     typedef cub::WarpScan<int> WarpScan;
  *
- *     // Allocate shared memory for WarpScan
- *     __shared__ typename WarpScan::TempStorage temp_storage;
+ *     // Allocate WarpScan shared memory for 4 warps
+ *     __shared__ typename WarpScan::TempStorage temp_storage[4];
  *
  *     // Obtain one input item per thread
  *     int thread_data = ...
  *
  *     // Compute warp-wide prefix sums
- *     WarpScan(temp_storage).ExclusiveSum(thread_data, thread_data);
+ *     int warp_id = threadIdx.x / 32;
+ *     WarpScan(temp_storage[warp_id]).ExclusiveSum(thread_data, thread_data);
  *
  * \endcode
  * \par
@@ -116,10 +115,10 @@ namespace cub {
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Specialize WarpScan for one warp on type int
- *     typedef cub::WarpScan<int, 1> WarpScan;
+ *     // Specialize WarpScan for type int
+ *     typedef cub::WarpScan<int> WarpScan;
  *
- *     // Allocate shared memory for WarpScan
+ *     // Allocate WarpScan shared memory for one warp
  *     __shared__ typename WarpScan::TempStorage temp_storage;
  *     ...
  *
@@ -140,7 +139,6 @@ namespace cub {
  */
 template <
     typename    T,
-    int         LOGICAL_WARPS           = 1,
     int         LOGICAL_WARP_THREADS    = CUB_PTX_WARP_THREADS>
 class WarpScan
 {
@@ -152,14 +150,20 @@ private:
 
     enum
     {
-        POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
+        /// Whether the logical warp size and the PTX warp size coincide
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+
+        /// Whether the logical warp size is a power-of-two
+        IS_POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
+
+        /// Whether the data type is an integer (which has fully-associative addition)
         IS_INTEGER = ((Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER))
     };
 
-    /// Internal specialization.  Use SHFL-based reduction if (architecture is >= SM30) and ((only one logical warp) or (LOGICAL_WARP_THREADS is a power-of-two))
-    typedef typename If<(CUB_PTX_VERSION >= 300) && ((LOGICAL_WARPS == 1) || POW_OF_TWO),
-        WarpScanShfl<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS>,
-        WarpScanSmem<T, LOGICAL_WARPS, LOGICAL_WARP_THREADS> >::Type InternalWarpScan;
+    /// Internal specialization.  Use SHFL-based scan if (architecture is >= SM30) and (LOGICAL_WARP_THREADS is a power-of-two)
+    typedef typename If<(CUB_PTX_VERSION >= 300) && (IS_POW_OF_TWO),
+        WarpScanShfl<T, LOGICAL_WARP_THREADS>,
+        WarpScanSmem<T, LOGICAL_WARP_THREADS> >::Type InternalWarpScan;
 
     /// Shared memory storage layout type for WarpScan
     typedef typename InternalWarpScan::TempStorage _TempStorage;
@@ -170,26 +174,13 @@ private:
      ******************************************************************************/
 
     /// Shared storage reference
-    _TempStorage &temp_storage;
-
-    /// Warp ID
-    int warp_id;
-
-    /// Lane ID
-    int lane_id;
+    _TempStorage    &temp_storage;
+    int             lane_id;
 
 
     /******************************************************************************
      * Utility methods
      ******************************************************************************/
-
-    /// Internal storage allocator
-    __device__ __forceinline__ _TempStorage& PrivateStorage()
-    {
-        __shared__ TempStorage private_storage;
-        return private_storage;
-    }
-
 
 public:
 
@@ -203,60 +194,15 @@ public:
     //@{
 
     /**
-     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Logical warp and lane identifiers are constructed from <tt>threadIdx.x</tt>.
-     */
-    __device__ __forceinline__ WarpScan()
-    :
-        temp_storage(PrivateStorage()),
-        warp_id((LOGICAL_WARPS == 1) ?
-            0 :
-            threadIdx.x / LOGICAL_WARP_THREADS),
-        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS)) ?
-            LaneId() :
-            threadIdx.x % LOGICAL_WARP_THREADS)
-    {}
-
-
-    /**
      * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Logical warp and lane identifiers are constructed from <tt>threadIdx.x</tt>.
      */
     __device__ __forceinline__ WarpScan(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
-        warp_id((LOGICAL_WARPS == 1) ?
-            0 :
-            threadIdx.x / LOGICAL_WARP_THREADS),
-        lane_id(((LOGICAL_WARPS == 1) || (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS)) ?
+        lane_id(IS_ARCH_WARP ?
             LaneId() :
-            threadIdx.x % LOGICAL_WARP_THREADS)
-    {}
-
-
-    /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Threads are identified using the given warp and lane identifiers.
-     */
-    __device__ __forceinline__ WarpScan(
-        int warp_id,                           ///< [in] A suitable warp membership identifier
-        int lane_id)                           ///< [in] A lane identifier within the warp
-    :
-        temp_storage(PrivateStorage()),
-        warp_id(warp_id),
-        lane_id(lane_id)
-    {}
-
-
-    /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Threads are identified using the given warp and lane identifiers.
-     */
-    __device__ __forceinline__ WarpScan(
-        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
-        int warp_id,                           ///< [in] A suitable warp membership identifier
-        int lane_id)                           ///< [in] A lane identifier within the warp
-    :
-        temp_storage(temp_storage.Alias()),
-        warp_id(warp_id),
-        lane_id(lane_id)
+            LaneId() % LOGICAL_WARP_THREADS)
     {}
 
 
@@ -281,17 +227,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute inclusive warp-wide prefix sums
-     *     WarpScan(temp_storage).InclusiveSum(thread_data, thread_data);
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).InclusiveSum(thread_data, thread_data);
      *
      * \endcode
      * \par
@@ -303,7 +250,7 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
-        InternalWarpScan(temp_storage, warp_id, lane_id).InclusiveSum(input, output);
+        InternalWarpScan(temp_storage).InclusiveSum(input, output);
     }
 
 
@@ -323,18 +270,19 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute inclusive warp-wide prefix sums
      *     int warp_aggregate;
-     *     WarpScan(temp_storage).InclusiveSum(thread_data, thread_data, warp_aggregate);
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).InclusiveSum(thread_data, thread_data, warp_aggregate);
      *
      * \endcode
      * \par
@@ -347,7 +295,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage, warp_id, lane_id).InclusiveSum(input, output, warp_aggregate);
+        InternalWarpScan(temp_storage).InclusiveSum(input, output, warp_aggregate);
     }
 
 
@@ -394,10 +342,10 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize WarpScan for one warp
-     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *     // Specialize WarpScan for int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
+     *     // Allocate WarpScan shared memory for one warp
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
@@ -439,7 +387,7 @@ public:
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
         T prefix;
         prefix = warp_prefix_op(warp_aggregate);
-        prefix = InternalWarpScan(temp_storage, warp_id, lane_id).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
 
         // Update output
         output = prefix + output;
@@ -530,17 +478,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute exclusive warp-wide prefix sums
-     *     WarpScan(temp_storage).ExclusiveSum(thread_data, thread_data);
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).ExclusiveSum(thread_data, thread_data);
      *
      * \endcode
      * \par
@@ -576,18 +525,19 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute exclusive warp-wide prefix sums
      *     int warp_aggregate;
-     *     WarpScan(temp_storage).ExclusiveSum(thread_data, thread_data, warp_aggregate);
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).ExclusiveSum(thread_data, thread_data, warp_aggregate);
      *
      * \endcode
      * \par
@@ -650,10 +600,10 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize WarpScan for one warp
-     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *     // Specialize WarpScan for int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
+     *     // Allocate WarpScan shared memory for one warp
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
@@ -715,17 +665,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute inclusive warp-wide prefix max scans
-     *     WarpScan(temp_storage).InclusiveScan(thread_data, thread_data, cub::Max());
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).InclusiveScan(thread_data, thread_data, cub::Max());
      *
      * \endcode
      * \par
@@ -741,7 +692,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage, warp_id, lane_id).InclusiveScan(input, output, scan_op);
+        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op);
     }
 
 
@@ -761,18 +712,19 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute inclusive warp-wide prefix max scans
      *     int warp_aggregate;
-     *     WarpScan(temp_storage).InclusiveScan(
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).InclusiveScan(
      *         thread_data, thread_data, cub::Max(), warp_aggregate);
      *
      * \endcode
@@ -792,7 +744,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage, warp_id, lane_id).InclusiveScan(input, output, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op, warp_aggregate);
     }
 
 
@@ -839,10 +791,10 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize WarpScan for one warp
-     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *     // Specialize WarpScan for int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
+     *     // Allocate WarpScan shared memory for one warp
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
@@ -889,7 +841,7 @@ public:
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
         T prefix;
         prefix = warp_prefix_op(warp_aggregate);
-        prefix = InternalWarpScan(temp_storage, warp_id, lane_id).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
 
         // Update output
         output = scan_op(prefix, output);
@@ -918,17 +870,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute exclusive warp-wide prefix max scans
-     *     WarpScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
      *
      * \endcode
      * \par
@@ -945,7 +898,7 @@ public:
         T               identity,           ///< [in] Identity value
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage, warp_id, lane_id).ExclusiveScan(input, output, identity, scan_op);
+        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op);
     }
 
 
@@ -965,17 +918,19 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute exclusive warp-wide prefix max scans
-     *     WarpScan(temp_storage).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max());
+     *     int warp_aggregate;
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).ExclusiveScan(thread_data, thread_data, INT_MIN, cub::Max(), warp_aggregate);
      *
      * \endcode
      * \par
@@ -995,7 +950,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage, warp_id, lane_id).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
     }
 
 
@@ -1042,10 +997,10 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize WarpScan for one warp
-     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *     // Specialize WarpScan for int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
+     *     // Allocate WarpScan shared memory for one warp
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
@@ -1092,7 +1047,7 @@ public:
 
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
         T prefix = warp_prefix_op(warp_aggregate);
-        prefix = InternalWarpScan(temp_storage, warp_id, lane_id).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
 
         // Update output
         output = (lane_id == 0) ?
@@ -1124,17 +1079,18 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute exclusive warp-wide prefix max scans
-     *     WarpScan(temp_storage).ExclusiveScan(thread_data, thread_data, cub::Max());
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).ExclusiveScan(thread_data, thread_data, cub::Max());
      *
      * \endcode
      * \par
@@ -1151,7 +1107,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage, warp_id, lane_id).ExclusiveScan(input, output, scan_op);
+        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op);
     }
 
 
@@ -1171,17 +1127,19 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize WarpScan for 4 warps on type int
-     *     typedef cub::WarpScan<int, 4> WarpScan;
+     *     // Specialize WarpScan for type int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
-     *     __shared__ typename WarpScan::TempStorage temp_storage;
+     *     // Allocate WarpScan shared memory for 4 warps
+     *     __shared__ typename WarpScan::TempStorage temp_storage[4];
      *
      *     // Obtain one input item per thread
      *     int thread_data = ...
      *
      *     // Compute exclusive warp-wide prefix max scans
-     *     WarpScan(temp_storage).ExclusiveScan(thread_data, thread_data, cub::Max());
+     *     int warp_aggregate;
+     *     int warp_id = threadIdx.x / 32;
+     *     WarpScan(temp_storage[warp_id]).ExclusiveScan(thread_data, thread_data, cub::Max(), warp_aggregate);
      *
      * \endcode
      * \par
@@ -1200,7 +1158,7 @@ public:
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage, warp_id, lane_id).ExclusiveScan(input, output, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op, warp_aggregate);
     }
 
 
@@ -1247,10 +1205,10 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int num_items, ...)
      * {
-     *     // Specialize WarpScan for one warp
-     *     typedef cub::WarpScan<int, 1> WarpScan;
+     *     // Specialize WarpScan for int
+     *     typedef cub::WarpScan<int> WarpScan;
      *
-     *     // Allocate shared memory for WarpScan
+     *     // Allocate WarpScan shared memory for one warp
      *     __shared__ typename WarpScan::TempStorage temp_storage;
      *
      *     // Initialize running total
@@ -1296,7 +1254,7 @@ public:
 
         // Compute warp-wide prefix from aggregate, then broadcast to other lanes
         T prefix = warp_prefix_op(warp_aggregate);
-        prefix = InternalWarpScan(temp_storage, warp_id, lane_id).Broadcast(prefix, 0);
+        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);
 
         // Update output with prefix
         output = (lane_id == 0) ?
