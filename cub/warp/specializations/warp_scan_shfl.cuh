@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::WarpScanShfl provides SHFL-based variants of parallel prefix scan across CUDA warps.
+ * cub::WarpScanShfl provides SHFL-based variants of parallel prefix scan of items partitioned across a CUDA thread warp.
  */
 
 #pragma once
@@ -45,11 +45,10 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief WarpScanShfl provides SHFL-based variants of parallel prefix scan across CUDA warps.
+ * \brief WarpScanShfl provides SHFL-based variants of parallel prefix scan of items partitioned across a CUDA thread warp.
  */
 template <
     typename    T,                      ///< Data type being scanned
-    int         LOGICAL_WARPS,          ///< Number of logical warps entrant
     int         LOGICAL_WARP_THREADS>   ///< Number of threads per logical warp
 struct WarpScanShfl
 {
@@ -60,6 +59,9 @@ struct WarpScanShfl
 
     enum
     {
+        /// Whether the logical warp size and the PTX warp size coincide
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+
         /// The number of warp scan steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
 
@@ -75,8 +77,7 @@ struct WarpScanShfl
      * Thread fields
      ******************************************************************************/
 
-    int             warp_id;
-    int             lane_id;
+    int lane_id;
 
     /******************************************************************************
      * Construction
@@ -84,12 +85,11 @@ struct WarpScanShfl
 
     /// Constructor
     __device__ __forceinline__ WarpScanShfl(
-        TempStorage &temp_storage,
-        int warp_id,
-        int lane_id)
+        TempStorage &temp_storage)
     :
-        warp_id(warp_id),
-        lane_id(lane_id)
+        lane_id(IS_ARCH_WARP ?
+            LaneId() :
+            LaneId() % LOGICAL_WARP_THREADS)
     {}
 
 
@@ -110,12 +110,12 @@ struct WarpScanShfl
     // Inclusive operations
     //---------------------------------------------------------------------
 
-    /// Inclusive prefix sum with aggregate (single-SHFL)
+    /// Inclusive prefix sum with aggregate (needing only a single 32b SHFL)
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate,    ///< [out] Warp-wide aggregate reduction of input items.
-        Int2Type<true>  single_shfl)
+        Int2Type<true>  single_shfl)        ///< [in] Marker type indicating whether only one SHFL instruction is required
     {
         unsigned int temp = reinterpret_cast<unsigned int &>(input);
 
@@ -142,7 +142,7 @@ struct WarpScanShfl
     }
 
 
-    /// Inclusive prefix sum with aggregate (multi-SHFL)
+    /// Inclusive prefix sum with aggregate (needing multiple 32b SHFLs)
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
