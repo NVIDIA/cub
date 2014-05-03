@@ -35,6 +35,7 @@
 
 #include "../../block/block_radix_sort.cuh"
 #include "../../block/block_discontinuity.cuh"
+#include "../../util_ptx.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
