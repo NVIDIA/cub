@@ -46,13 +46,16 @@ namespace cub {
  * \brief The BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within an ordered set of items partitioned across a CUDA thread block. ![](discont_logo.png)
  * \ingroup BlockModule
  *
- * \tparam T                    The data type to be flagged.
- * \tparam BLOCK_THREADS        The thread block size in threads.
+ * \tparam T                The data type to be flagged.
+ * \tparam BLOCK_DIM_X      The thread block length in threads along the X dimension
+ * \tparam BLOCK_DIM_Y      <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
+ * \tparam BLOCK_DIM_Z      <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  *
  * \par Overview
  * - A set of "head flags" (or "tail flags") is often used to indicate corresponding items
  *   that differ from their predecessors (or successors).  For example, head flags are convenient
  *   for demarcating disjoint data segments as part of a segmented scan or reduction.
+ * - \blocked
  *
  * \par Performance Considerations
  * - \granularity
@@ -95,15 +98,25 @@ namespace cub {
  *
  */
 template <
-    typename    T,
-    int         BLOCK_THREADS>
+    typename            T,
+    int                 BLOCK_DIM_X,
+    int                 BLOCK_DIM_Y     = 1,
+    int                 BLOCK_DIM_Z     = 1>
 class BlockDiscontinuity
 {
 private:
 
     /******************************************************************************
-     * Type definitions
+     * Constants and type definitions
      ******************************************************************************/
+
+    /// Constants
+    enum
+    {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+    };
+
 
     /// Shared memory storage layout type (last element from each thread's input)
     typedef T _TempStorage[BLOCK_THREADS];
@@ -212,7 +225,7 @@ public:
     __device__ __forceinline__ BlockDiscontinuity()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 
@@ -223,32 +236,8 @@ public:
         TempStorage &temp_storage)  ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
-
-
-    /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
-     */
-    __device__ __forceinline__ BlockDiscontinuity(
-        int linear_tid)             ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(PrivateStorage()),
-        linear_tid(linear_tid)
-    {}
-
-
-    /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
-     */
-    __device__ __forceinline__ BlockDiscontinuity(
-        TempStorage &temp_storage,  ///< [in] Reference to memory allocation having layout type TempStorage
-        int linear_tid)             ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
-    {}
-
 
 
     //@}  end member group

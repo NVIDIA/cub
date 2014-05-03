@@ -442,7 +442,10 @@ struct DeviceScanDispatch
                 tile_status,
                 num_tiles);
 
-            // Sync the stream if specified
+            // Check for failure to launch
+            if (CubDebug(error = cudaPeekAtLastError())) break;
+
+            // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Get SM occupancy for scan_range_kernel
@@ -488,7 +491,10 @@ struct DeviceScanDispatch
                 num_items,
                 queue);
 
-            // Sync the stream if specified
+            // Check for failure to launch
+            if (CubDebug(error = cudaPeekAtLastError())) break;
+
+            // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
         }
         while (0);

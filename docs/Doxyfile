@@ -209,6 +209,7 @@ ALIASES                += devicestorage="This operation requires an allocation o
 ALIASES                += cdp_class{1}=" - <em>Dynamic parallelism</em>.  \1 methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported.  When calling these methods from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += cdp="When calling this method from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += iterator="(may be a simple pointer type)"
+
 ALIASES                += rowmajor="For multi-dimensional blocks, threads are linearly ranked in row-major order."
 ALIASES                += blocked="Assumes a [<em>blocked arrangement</em>](index.html#sec4sec3) of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items.  For multi-dimensional thread blocks, a row-major thread ordering is assumed."
 ALIASES                += striped="Assumes a [<em>striped arrangement</em>](index.html#sec4sec3) of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns items (<em>i</em>), (<em>i</em> + <em>block-threads</em>), ..., (<em>i</em> + (<em>block-threads</em>*(<em>items-per-thread</em>-1))).  For multi-dimensional thread blocks, a row-major thread ordering is assumed."

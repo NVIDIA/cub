@@ -483,6 +483,7 @@ void Test(
     printf("%s", compare ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
     fflush(stdout);
     fflush(stderr);

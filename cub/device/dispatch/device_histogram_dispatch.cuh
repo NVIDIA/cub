@@ -442,7 +442,10 @@ struct DeviceHistogramDispatch
             // Invoke init_kernel to initialize counters and queue descriptor
             init_kernel<<<ACTIVE_CHANNELS, BINS, 0, stream>>>(queue, d_histo_wrapper, num_samples);
 
-            // Sync the stream if specified
+            // Check for failure to launch
+            if (CubDebug(error = cudaPeekAtLastError())) break;
+
+            // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
@@ -462,7 +465,10 @@ struct DeviceHistogramDispatch
                 even_share,
                 queue);
 
-            // Sync the stream if specified
+            // Check for failure to launch
+            if (CubDebug(error = cudaPeekAtLastError())) break;
+
+            // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Aggregate privatized block histograms if necessary
@@ -478,7 +484,10 @@ struct DeviceHistogramDispatch
                     d_histo_wrapper,
                     histo_range_grid_size);
 
-                // Sync the stream if specified
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
+
+                // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
         }

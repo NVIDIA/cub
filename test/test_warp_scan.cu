@@ -440,6 +440,7 @@ void Test(
     printf("\tElapsed clocks: ");
     DisplayDeviceResults(d_elapsed, 1);
 
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results

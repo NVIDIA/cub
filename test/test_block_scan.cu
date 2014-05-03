@@ -327,6 +327,7 @@ template <
     typename            T,
     typename            ScanOp,
     typename            IdentityT>
+__launch_bounds__ (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)
 __global__ void BlockScanKernel(
     T                   *d_in,
     T                   *d_out,
@@ -546,11 +547,8 @@ void Test(
         prefix,
         d_elapsed);
 
-    printf("Error %d\n", cudaGetLastError());
-
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
-
-    printf("Error2 %d\n", cudaGetLastError());
 
     // Copy out and display results
     printf("\tScan results: ");
@@ -631,9 +629,15 @@ void Test(
     T           prefix,
     const char  *type_string)
 {
+#ifdef TEST_RAKING
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, identity, prefix, type_string);
+#endif
+#ifdef TEST_RAKING_MEMOIZE
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING_MEMOIZE>(gen_mode, scan_op, identity, prefix, type_string);
+#endif
+#ifdef TEST_WARP_SCANS
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, identity, prefix, type_string);
+#endif
 }
 
 
@@ -665,57 +669,68 @@ void Test(
 
 
 /**
+ * Run tests for different problem-generation options
+ */
+template <
+    int         BLOCK_THREADS,
+    int         ITEMS_PER_THREAD,
+    typename    ScanOp,
+    typename    T>
+void Test(
+    ScanOp      scan_op,
+    T           identity,
+    T           prefix,
+    const char  *type_string)
+{
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED, scan_op, identity, prefix, type_string);
+
+    // Don't test randomly-generated floats b/c of stability
+    if (Traits<T>::CATEGORY != FLOATING_POINT)
+        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM, scan_op, identity, prefix, type_string);
+}
+
+
+/**
  * Run tests for different data types and scan ops
  */
 template <
     int BLOCK_THREADS,
     int ITEMS_PER_THREAD>
-void Test(GenMode gen_mode)
-{
-    // primitive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM, Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
-
-    // primitive (alternative scan op)
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Max<unsigned char>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Max<unsigned short>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Max<unsigned int>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Max<unsigned long long>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED, Max(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
-
-    // vec-1
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
-
-    // vec-2
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uchar2(0, 0), make_uchar2(17, 21), CUB_TYPE_STRING(Sum<uchar2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ushort2(0, 0), make_ushort2(17, 21), CUB_TYPE_STRING(Sum<ushort2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uint2(0, 0), make_uint2(17, 21), CUB_TYPE_STRING(Sum<uint2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
-
-    // vec-4
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uchar4(0, 0, 0, 0), make_uchar4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uchar4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
-
-    // complex
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), TestBar(0, 0), TestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
-}
-
-
-/**
- * Run tests for different problem generation options
- */
-template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
 void Test()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM);
+    // primitive
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
+
+    // primitive (alternative scan op)
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Max<unsigned char>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Max<unsigned short>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Max<unsigned int>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Max<unsigned long long>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
+
+    // vec-1
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
+
+    // vec-2
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar2(0, 0), make_uchar2(17, 21), CUB_TYPE_STRING(Sum<uchar2>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ushort2(0, 0), make_ushort2(17, 21), CUB_TYPE_STRING(Sum<ushort2>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uint2(0, 0), make_uint2(17, 21), CUB_TYPE_STRING(Sum<uint2>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
+
+    // vec-4
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar4(0, 0, 0, 0), make_uchar4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uchar4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
+
+    // complex
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestBar(0, 0), TestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
 }
 
 
@@ -726,13 +741,7 @@ template <int BLOCK_THREADS>
 void Test()
 {
     Test<BLOCK_THREADS, 1>();
-
-#if defined(SM100) || defined(SM110) || defined(SM130)
-    // Open64 compiler can't handle the number of test cases
-#else
     Test<BLOCK_THREADS, 2>();
-#endif
-
     Test<BLOCK_THREADS, 9>();
 }
 
@@ -763,17 +772,12 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
 #ifdef QUICK_TEST
-/*
+
     // Compile/run quick tests
     Test<128, 1, 1, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
     Test<128, 1, 1, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
 
-    TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
-    Test<128, 1, 1, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
-*/
-
-    Test<128, 2, 2, 1, BASIC, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
-
+    Test<128, 1, 1, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), NullType(), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
 
 #else
 

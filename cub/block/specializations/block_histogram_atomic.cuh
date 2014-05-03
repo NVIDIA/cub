@@ -45,11 +45,6 @@ namespace cub {
 /**
  * \brief The BlockHistogramAtomic class provides atomic-based methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
  */
-template <
-    typename                T,
-    int                     BLOCK_THREADS,
-    int                     ITEMS_PER_THREAD,
-    int                     BINS>
 struct BlockHistogramAtomic
 {
     /// Shared memory storage layout type
@@ -58,17 +53,19 @@ struct BlockHistogramAtomic
 
     /// Constructor
     __device__ __forceinline__ BlockHistogramAtomic(
-        TempStorage     &temp_storage,
-        int             linear_tid)
+        TempStorage &temp_storage)
     {}
 
 
     /// Composite data onto an existing histogram
     template <
-        typename            HistoCounter>
+        typename            T,
+        typename            HistoCounter,
+        int                 ITEMS_PER_THREAD,
+        int                 BINS>
     __device__ __forceinline__ void Composite(
         T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-        HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
+        HistoCounter        (&histogram)[BINS])                 ///< [out] Reference to shared/global memory histogram
     {
         // Update histogram
         #pragma unroll
