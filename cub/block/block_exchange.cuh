@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include "../util_ptx.cuh"
 #include "../util_arch.cuh"
 #include "../util_macro.cuh"
 #include "../util_type.cuh"

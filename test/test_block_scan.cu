@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <iostream>
 
+#include <cub/util_ptx.cuh>
 #include <cub/util_allocator.cuh>
 #include <cub/block/block_load.cuh>
 #include <cub/block/block_store.cuh>
