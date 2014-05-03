@@ -49,12 +49,17 @@ namespace cub {
  */
 template <
     typename    T,              ///< Data type being reduced
-    int         BLOCK_THREADS>  ///< The thread block size in threads
+    int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
+    int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
+    int         BLOCK_DIM_Z>    ///< The thread block length in threads along the Z dimension
 struct BlockReduceWarpReductions
 {
     /// Constants
     enum
     {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+
         /// Number of active warps
         WARPS = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
 
@@ -91,17 +96,12 @@ struct BlockReduceWarpReductions
 
     /// Constructor
     __device__ __forceinline__ BlockReduceWarpReductions(
-        TempStorage &temp_storage,
-        int linear_tid)
+        TempStorage &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid),
-        warp_id((BLOCK_THREADS <= CUB_PTX_WARP_THREADS) ?
-            0 :
-            linear_tid / CUB_PTX_WARP_THREADS),
-        lane_id((BLOCK_THREADS <= CUB_PTX_WARP_THREADS) ?
-            linear_tid :
-            linear_tid % CUB_PTX_WARP_THREADS)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z)),
+        warp_id((WARPS == 1) ? 0 : linear_tid / CUB_PTX_WARP_THREADS),
+        lane_id(LaneId())
     {}
 
 

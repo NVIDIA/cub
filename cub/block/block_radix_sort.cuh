@@ -89,7 +89,7 @@ namespace cub {
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Specialize BlockRadixSort for 128 threads owning 4 integer items each
+ *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer items each
  *     typedef cub::BlockRadixSort<int, 128, 4> BlockRadixSort;
  *
  *     // Allocate shared memory for BlockRadixSort
@@ -382,7 +382,7 @@ public:
     //@{
 
     /**
-     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.
      */
     __device__ __forceinline__ BlockRadixSort()
     :
@@ -392,7 +392,7 @@ public:
 
 
     /**
-     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.
      */
     __device__ __forceinline__ BlockRadixSort(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
@@ -449,7 +449,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys each
+     *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys each
      *     typedef cub::BlockRadixSort<int, 128, 4> BlockRadixSort;
      *
      *     // Allocate shared memory for BlockRadixSort
@@ -502,7 +502,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys and values each
+     *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys and values each
      *     typedef cub::BlockRadixSort<int, 128, 4, int> BlockRadixSort;
      *
      *     // Allocate shared memory for BlockRadixSort
@@ -550,7 +550,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys each
+     *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys each
      *     typedef cub::BlockRadixSort<int, 128, 4> BlockRadixSort;
      *
      *     // Allocate shared memory for BlockRadixSort
@@ -603,7 +603,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys and values each
+     *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys and values each
      *     typedef cub::BlockRadixSort<int, 128, 4, int> BlockRadixSort;
      *
      *     // Allocate shared memory for BlockRadixSort
@@ -659,7 +659,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys each
+     *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys each
      *     typedef cub::BlockRadixSort<int, 128, 4> BlockRadixSort;
      *
      *     // Allocate shared memory for BlockRadixSort
@@ -713,7 +713,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys and values each
+     *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys and values each
      *     typedef cub::BlockRadixSort<int, 128, 4, int> BlockRadixSort;
      *
      *     // Allocate shared memory for BlockRadixSort
@@ -762,7 +762,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys each
+     *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys each
      *     typedef cub::BlockRadixSort<int, 128, 4> BlockRadixSort;
      *
      *     // Allocate shared memory for BlockRadixSort
@@ -816,7 +816,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockRadixSort for 128 threads owning 4 integer keys and values each
+     *     // Specialize BlockRadixSort for a 1D block of 128 threads owning 4 integer keys and values each
      *     typedef cub::BlockRadixSort<int, 128, 4, int> BlockRadixSort;
      *
      *     // Allocate shared memory for BlockRadixSort

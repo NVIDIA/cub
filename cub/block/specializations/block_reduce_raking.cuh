@@ -60,9 +60,18 @@ namespace cub {
  */
 template <
     typename    T,              ///< Data type being reduced
-    int         BLOCK_THREADS>  ///< The thread block size in threads
+    int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
+    int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
+    int         BLOCK_DIM_Z>    ///< The thread block length in threads along the Z dimension
 struct BlockReduceRaking
 {
+    /// Constants
+    enum
+    {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+    };
+
     /// Layout type for padded thread block raking grid
     typedef BlockRakingLayout<T, BLOCK_THREADS> BlockRakingLayout;
 
@@ -109,11 +118,10 @@ struct BlockReduceRaking
 
     /// Constructor
     __device__ __forceinline__ BlockReduceRaking(
-        TempStorage &temp_storage,
-        int linear_tid)
+        TempStorage &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 

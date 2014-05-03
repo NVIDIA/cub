@@ -62,7 +62,7 @@ enum BlockReduceAlgorithm
     /**
      * \par Overview
      * An efficient "raking" reduction algorithm that only supports commutative
-     * reduction operators (e.g., addition).
+     * reduction operators (true for most operations, e.g., addition).
      *
      * \par
      * Execution is comprised of three phases:
@@ -92,7 +92,7 @@ enum BlockReduceAlgorithm
      * \par Overview
      * An efficient "raking" reduction algorithm that supports commutative
      * (e.g., addition) and non-commutative (e.g., string concatenation) reduction
-     * operators.
+     * operators. \blocked.
      *
      * \par
      * Execution is comprised of three phases:
@@ -157,12 +157,15 @@ enum BlockReduceAlgorithm
  * \ingroup BlockModule
  *
  * \tparam T                Data type being reduced
- * \tparam BLOCK_THREADS    The thread block size in threads
+ * \tparam BLOCK_DIM_X      The thread block length in threads along the X dimension
  * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_REDUCE_WARP_REDUCTIONS)
+ * \tparam BLOCK_DIM_Y      <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
+ * \tparam BLOCK_DIM_Z      <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  *
  * \par Overview
  * - A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
  *   uses a binary combining operator to compute a single aggregate from a list of input elements.
+ * - \rowmajor
  * - BlockReduce can be optionally specialized by algorithm to accommodate different latency/throughput workload profiles:
  *   -# <b>cub::BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY</b>.  An efficient "raking" reduction algorithm that only supports commutative reduction operators. [More...](\ref cub::BlockReduceAlgorithm)
  *   -# <b>cub::BLOCK_REDUCE_RAKING</b>.  An efficient "raking" reduction algorithm that supports commutative and non-commutative reduction operators. [More...](\ref cub::BlockReduceAlgorithm)
@@ -190,7 +193,7 @@ enum BlockReduceAlgorithm
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Specialize BlockReduce for 128 threads on type int
+ *     // Specialize BlockReduce for a 1D block of 128 threads on type int
  *     typedef cub::BlockReduce<int, 128> BlockReduce;
  *
  *     // Allocate shared memory for BlockReduce
@@ -208,8 +211,10 @@ enum BlockReduceAlgorithm
  */
 template <
     typename                T,
-    int                     BLOCK_THREADS,
-    BlockReduceAlgorithm    ALGORITHM = BLOCK_REDUCE_WARP_REDUCTIONS>
+    int                     BLOCK_DIM_X,
+    BlockReduceAlgorithm    ALGORITHM       = BLOCK_REDUCE_WARP_REDUCTIONS,
+    int                     BLOCK_DIM_Y     = 1,
+    int                     BLOCK_DIM_Z     = 1>
 class BlockReduce
 {
 private:
@@ -218,12 +223,19 @@ private:
      * Constants and type definitions
      ******************************************************************************/
 
+    /// Constants
+    enum
+    {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+    };
+
     /// Internal specialization type
     typedef typename If<(ALGORITHM == BLOCK_REDUCE_WARP_REDUCTIONS),
-        BlockReduceWarpReductions<T, BLOCK_THREADS>,                                    // BlockReduceWarpReductions
+        BlockReduceWarpReductions<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z>,                                    // BlockReduceWarpReductions
         typename If<(ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY),
-            BlockReduceRakingCommutativeOnly<T, BLOCK_THREADS>,                         // BlockReduceRakingCommutativeOnly
-            BlockReduceRaking<T, BLOCK_THREADS> >::Type>::Type InternalBlockReduce;     // BlockReduceRaking
+            BlockReduceRakingCommutativeOnly<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z>,                         // BlockReduceRakingCommutativeOnly
+            BlockReduceRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z> >::Type>::Type InternalBlockReduce;     // BlockReduceRaking
 
     /// Shared memory storage layout type for BlockReduce
     typedef typename InternalBlockReduce::TempStorage _TempStorage;
@@ -264,48 +276,24 @@ public:
     //@{
 
     /**
-     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.
      */
     __device__ __forceinline__ BlockReduce()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 
     /**
-     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.
      */
     __device__ __forceinline__ BlockReduce(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
-
-
-    /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
-     */
-    __device__ __forceinline__ BlockReduce(
-        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(PrivateStorage()),
-        linear_tid(linear_tid)
-    {}
-
-
-    /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
-     */
-    __device__ __forceinline__ BlockReduce(
-        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
-        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
-    {}
-
 
 
     //@}  end member group
@@ -320,6 +308,7 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - \rowmajor
      * - \smemreuse
      *
      * \par Snippet
@@ -331,7 +320,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockReduce for 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -353,7 +342,7 @@ public:
         T               input,                      ///< [in] Calling thread's input
         ReductionOp     reduction_op)               ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
-        return InternalBlockReduce(temp_storage, linear_tid).template Reduce<true>(input, BLOCK_THREADS, reduction_op);
+        return InternalBlockReduce(temp_storage).template Reduce<true>(input, BLOCK_THREADS, reduction_op);
     }
 
 
@@ -362,7 +351,6 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
-     * - \blocked
      * - \granularity
      * - \smemreuse
      *
@@ -376,7 +364,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockReduce for 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -412,7 +400,7 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
-     * - \blocked
+     * - \rowmajor
      * - \smemreuse
      *
      * \par Snippet
@@ -424,7 +412,7 @@ public:
      *
      * __global__ void ExampleKernel(int num_valid, ...)
      * {
-     *     // Specialize BlockReduce for 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -450,11 +438,11 @@ public:
         // Determine if we scan skip bounds checking
         if (num_valid >= BLOCK_THREADS)
         {
-            return InternalBlockReduce(temp_storage, linear_tid).template Reduce<true>(input, num_valid, reduction_op);
+            return InternalBlockReduce(temp_storage).template Reduce<true>(input, num_valid, reduction_op);
         }
         else
         {
-            return InternalBlockReduce(temp_storage, linear_tid).template Reduce<false>(input, num_valid, reduction_op);
+            return InternalBlockReduce(temp_storage).template Reduce<false>(input, num_valid, reduction_op);
         }
     }
 
@@ -471,6 +459,7 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - \rowmajor
      * - \smemreuse
      *
      * \par Snippet
@@ -482,7 +471,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockReduce for 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -501,7 +490,7 @@ public:
     __device__ __forceinline__ T Sum(
         T   input)                      ///< [in] Calling thread's input
     {
-        return InternalBlockReduce(temp_storage, linear_tid).template Sum<true>(input, BLOCK_THREADS);
+        return InternalBlockReduce(temp_storage).template Sum<true>(input, BLOCK_THREADS);
     }
 
     /**
@@ -522,7 +511,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockReduce for 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -554,6 +543,7 @@ public:
      *
      * \par
      * - The return value is undefined in threads other than thread<sub>0</sub>.
+     * - \rowmajor
      * - \smemreuse
      *
      * \par Snippet
@@ -565,7 +555,7 @@ public:
      *
      * __global__ void ExampleKernel(int num_valid, ...)
      * {
-     *     // Specialize BlockReduce for 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -589,11 +579,11 @@ public:
         // Determine if we scan skip bounds checking
         if (num_valid >= BLOCK_THREADS)
         {
-            return InternalBlockReduce(temp_storage, linear_tid).template Sum<true>(input, num_valid);
+            return InternalBlockReduce(temp_storage).template Sum<true>(input, num_valid);
         }
         else
         {
-            return InternalBlockReduce(temp_storage, linear_tid).template Sum<false>(input, num_valid);
+            return InternalBlockReduce(temp_storage).template Sum<false>(input, num_valid);
         }
     }
 

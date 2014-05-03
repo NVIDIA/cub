@@ -52,20 +52,26 @@ namespace cub {
  * \brief BlockScanRaking provides variants of raking-based parallel prefix scan across a CUDA threadblock.
  */
 template <
-    typename            T,              ///< Data type being scanned
-    int                 BLOCK_THREADS,  ///< The thread block size in threads
-    bool                MEMOIZE>        ///< Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure
+    typename    T,              ///< Data type being scanned
+    int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
+    int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
+    int         BLOCK_DIM_Z,    ///< The thread block length in threads along the Z dimension
+    bool        MEMOIZE>        ///< Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure
 struct BlockScanRaking
 {
+    /// Constants
+    enum
+    {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+    };
+
     /// Layout type for padded threadblock raking grid
     typedef BlockRakingLayout<T, BLOCK_THREADS> BlockRakingLayout;
 
     /// Constants
     enum
     {
-        /// Number of active warps
-        WARPS = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
-
         /// Number of raking threads
         RAKING_THREADS = BlockRakingLayout::RAKING_THREADS,
 
@@ -77,7 +83,7 @@ struct BlockScanRaking
     };
 
     ///  WarpScan utility type
-    typedef WarpScan<T, 1, RAKING_THREADS> WarpScan;
+    typedef WarpScan<T, RAKING_THREADS> WarpScan;
 
     /// Shared memory storage layout type
     struct _TempStorage
@@ -100,12 +106,12 @@ struct BlockScanRaking
 
     /// Constructor
     __device__ __forceinline__ BlockScanRaking(
-        TempStorage &temp_storage,
-        int linear_tid)
+        TempStorage &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
+
 
     /// Templated reduction
     template <int ITERATION, typename ScanOp>
@@ -230,7 +236,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(
                 input,
                 output,
                 identity,
@@ -252,7 +258,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(
                     raking_partial,
                     raking_partial,
                     identity,
@@ -289,7 +295,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(
                 input,
                 output,
                 identity,
@@ -312,7 +318,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(
                     raking_partial,
                     raking_partial,
                     identity,
@@ -346,7 +352,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(
                 input,
                 output,
                 scan_op,
@@ -367,7 +373,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(
                     raking_partial,
                     raking_partial,
                     scan_op,
@@ -402,7 +408,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(
                 input,
                 output,
                 scan_op,
@@ -424,7 +430,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(
                     raking_partial,
                     raking_partial,
                     scan_op,
@@ -455,7 +461,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
+            WarpScan(temp_storage.warp_scan).ExclusiveSum(
                 input,
                 output,
                 block_aggregate);
@@ -478,7 +484,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
+                WarpScan(temp_storage.warp_scan).ExclusiveSum(
                     raking_partial,
                     raking_partial,
                     temp_storage.block_aggregate);
@@ -509,7 +515,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
+            WarpScan(temp_storage.warp_scan).ExclusiveSum(
                 input,
                 output,
                 block_aggregate,
@@ -533,7 +539,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
+                WarpScan(temp_storage.warp_scan).ExclusiveSum(
                     raking_partial,
                     raking_partial,
                     temp_storage.block_aggregate,
@@ -565,7 +571,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).InclusiveScan(
+            WarpScan(temp_storage.warp_scan).InclusiveScan(
                 input,
                 output,
                 scan_op,
@@ -586,7 +592,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(
                     raking_partial,
                     raking_partial,
                     scan_op,
@@ -621,7 +627,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).InclusiveScan(
+            WarpScan(temp_storage.warp_scan).InclusiveScan(
                 input,
                 output,
                 scan_op,
@@ -643,7 +649,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveScan(
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(
                     raking_partial,
                     raking_partial,
                     scan_op,
@@ -674,7 +680,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).InclusiveSum(
+            WarpScan(temp_storage.warp_scan).InclusiveSum(
                 input,
                 output,
                 block_aggregate);
@@ -697,7 +703,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
+                WarpScan(temp_storage.warp_scan).ExclusiveSum(
                     raking_partial,
                     raking_partial,
                     temp_storage.block_aggregate);
@@ -728,7 +734,7 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan, 0, linear_tid).InclusiveSum(
+            WarpScan(temp_storage.warp_scan).InclusiveSum(
                 input,
                 output,
                 block_aggregate,
@@ -752,7 +758,7 @@ struct BlockScanRaking
                 T raking_partial = Upsweep(scan_op);
 
                 // Warp synchronous scan
-                WarpScan(temp_storage.warp_scan, 0, linear_tid).ExclusiveSum(
+                WarpScan(temp_storage.warp_scan).ExclusiveSum(
                     raking_partial,
                     raking_partial,
                     temp_storage.block_aggregate,
