@@ -35,6 +35,7 @@
 
 #include "specializations/block_histogram_sort.cuh"
 #include "specializations/block_histogram_atomic.cuh"
+#include "../util_ptx.cuh"
 #include "../util_arch.cuh"
 #include "../util_namespace.cuh"
 
