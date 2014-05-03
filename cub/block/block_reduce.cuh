@@ -36,6 +36,7 @@
 #include "specializations/block_reduce_raking.cuh"
 #include "specializations/block_reduce_raking_commutative_only.cuh"
 #include "specializations/block_reduce_warp_reductions.cuh"
+#include "../util_ptx.cuh"
 #include "../util_type.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../util_namespace.cuh"

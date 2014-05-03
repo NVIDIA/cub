@@ -482,6 +482,7 @@ void TestReduce(
             valid_warp_threads);
     }
 
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results
@@ -563,6 +564,7 @@ void TestSegmentedReduce(
         reduction_op,
         d_elapsed);
 
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results
@@ -581,6 +583,7 @@ void TestSegmentedReduce(
         reduction_op,
         d_elapsed);
 
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results

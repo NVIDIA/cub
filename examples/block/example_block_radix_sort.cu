@@ -214,6 +214,7 @@ void Test()
         d_elapsed);
 
     // Check for kernel errors and STDIO from the kernel, if any
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check results

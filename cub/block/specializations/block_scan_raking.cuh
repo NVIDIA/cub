@@ -34,6 +34,7 @@
 
 #pragma once
 
+#include "../../util_ptx.cuh"
 #include "../../util_arch.cuh"
 #include "../../block/block_raking_layout.cuh"
 #include "../../thread/thread_reduce.cuh"

@@ -51,13 +51,15 @@ namespace cub {
  * \ingroup BlockModule
  *
  * \tparam Key                  Key type
- * \tparam BLOCK_THREADS        The thread block size in threads
+ * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam Value                <b>[optional]</b> Value type (default: cub::NullType, which indicates a keys-only sort)
  * \tparam RADIX_BITS           <b>[optional]</b> The number of radix bits per digit place (default: 4 bits)
  * \tparam MEMOIZE_OUTER_SCAN   <b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise).
  * \tparam INNER_SCAN_ALGORITHM <b>[optional]</b> The cub::BlockScanAlgorithm algorithm to use (default: cub::BLOCK_SCAN_WARP_SCANS)
- * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
+ * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeEightByte for architectures SM35 and newer, \p cudaSharedMemBankSizeFourByte otherwise)
+ * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
+ * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  *
  * \par Overview
  * - The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
@@ -73,6 +75,7 @@ namespace cub {
  *   method can only be applied to unsigned integral types, BlockRadixSort
  *   is able to sort signed and floating-point types via simple bit-wise transformations
  *   that ensure lexicographic key ordering.
+ * - \rowmajor
  *
  * \par Performance Considerations
  * - \granularity
@@ -113,13 +116,15 @@ namespace cub {
  */
 template <
     typename                Key,
-    int                     BLOCK_THREADS,
+    int                     BLOCK_DIM_X,
     int                     ITEMS_PER_THREAD,
     typename                Value                   = NullType,
     int                     RADIX_BITS              = 4,
     bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_VERSION >= 350) ? true : false,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
-    cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte>
+    cudaSharedMemConfig     SMEM_CONFIG             = (CUB_PTX_VERSION >= 350) ? cudaSharedMemBankSizeEightByte : cudaSharedMemBankSizeFourByte,
+    int                     BLOCK_DIM_Y             = 1,
+    int                     BLOCK_DIM_Z             = 1>
 class BlockRadixSort
 {
 private:
@@ -130,7 +135,11 @@ private:
 
     enum
     {
-        KEYS_ONLY = Equals<Value, NullType>::VALUE,
+        // The thread block size in threads
+        BLOCK_THREADS               = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+
+        // Whether or not there are values to be trucked along with keys
+        KEYS_ONLY                   = Equals<Value, NullType>::VALUE,
     };
 
     // Key traits and unsigned bits type
@@ -139,29 +148,33 @@ private:
 
     /// Ascending BlockRadixRank utility type
     typedef BlockRadixRank<
-            BLOCK_THREADS,
+            BLOCK_DIM_X,
             RADIX_BITS,
             false,
             MEMOIZE_OUTER_SCAN,
             INNER_SCAN_ALGORITHM,
-            SMEM_CONFIG>
+            SMEM_CONFIG,
+            BLOCK_DIM_Y,
+            BLOCK_DIM_Z>
         AscendingBlockRadixRank;
 
     /// Descending BlockRadixRank utility type
     typedef BlockRadixRank<
-            BLOCK_THREADS,
+            BLOCK_DIM_X,
             RADIX_BITS,
             true,
             MEMOIZE_OUTER_SCAN,
             INNER_SCAN_ALGORITHM,
-            SMEM_CONFIG>
+            SMEM_CONFIG,
+            BLOCK_DIM_Y,
+            BLOCK_DIM_Z>
         DescendingBlockRadixRank;
 
     /// BlockExchange utility type for keys
-    typedef BlockExchange<Key, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchangeKeys;
+    typedef BlockExchange<Key, BLOCK_DIM_X, ITEMS_PER_THREAD, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchangeKeys;
 
     /// BlockExchange utility type for values
-    typedef BlockExchange<Value, BLOCK_THREADS, ITEMS_PER_THREAD> BlockExchangeValues;
+    typedef BlockExchange<Value, BLOCK_DIM_X, ITEMS_PER_THREAD, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchangeValues;
 
     /// Shared memory storage layout type
     struct _TempStorage
@@ -204,7 +217,7 @@ private:
         int             begin_bit,
         Int2Type<false> is_descending)
     {
-        AscendingBlockRadixRank(temp_storage.asending_ranking_storage, linear_tid).RankKeys(
+        AscendingBlockRadixRank(temp_storage.asending_ranking_storage).RankKeys(
             unsigned_keys,
             ranks,
             begin_bit);
@@ -217,7 +230,7 @@ private:
         int             begin_bit,
         Int2Type<true>  is_descending)
     {
-        DescendingBlockRadixRank(temp_storage.descending_ranking_storage, linear_tid).RankKeys(
+        DescendingBlockRadixRank(temp_storage.descending_ranking_storage).RankKeys(
             unsigned_keys,
             ranks,
             begin_bit);
@@ -233,7 +246,7 @@ private:
         __syncthreads();
 
         // Exchange values through shared memory in blocked arrangement
-        BlockExchangeValues(temp_storage.exchange_values, linear_tid).ScatterToBlocked(values, ranks);
+        BlockExchangeValues(temp_storage.exchange_values).ScatterToBlocked(values, ranks);
     }
 
     /// ExchangeValues (specialized for key-value sort, to-striped arrangement)
@@ -246,7 +259,7 @@ private:
         __syncthreads();
 
         // Exchange values through shared memory in blocked arrangement
-        BlockExchangeValues(temp_storage.exchange_values, linear_tid).ScatterToStriped(values, ranks);
+        BlockExchangeValues(temp_storage.exchange_values).ScatterToStriped(values, ranks);
     }
 
     /// ExchangeValues (specialized for keys-only sort)
@@ -289,7 +302,7 @@ private:
             __syncthreads();
 
             // Exchange keys through shared memory in blocked arrangement
-            BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToBlocked(keys, ranks);
+            BlockExchangeKeys(temp_storage.exchange_keys).ScatterToBlocked(keys, ranks);
 
             // Exchange values through shared memory in blocked arrangement
             ExchangeValues(values, ranks, is_keys_only, Int2Type<true>());
@@ -342,7 +355,7 @@ private:
             if (begin_bit >= end_bit)
             {
                 // Last pass exchanges keys through shared memory in striped arrangement
-                BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToStriped(keys, ranks);
+                BlockExchangeKeys(temp_storage.exchange_keys).ScatterToStriped(keys, ranks);
 
                 // Last pass exchanges through shared memory in striped arrangement
                 ExchangeValues(values, ranks, is_keys_only, Int2Type<false>());
@@ -352,7 +365,7 @@ private:
             }
 
             // Exchange keys through shared memory in blocked arrangement
-            BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToBlocked(keys, ranks);
+            BlockExchangeKeys(temp_storage.exchange_keys).ScatterToBlocked(keys, ranks);
 
             // Exchange values through shared memory in blocked arrangement
             ExchangeValues(values, ranks, is_keys_only, Int2Type<true>());
@@ -387,7 +400,7 @@ public:
     __device__ __forceinline__ BlockRadixSort()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 
@@ -398,32 +411,8 @@ public:
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
-
-
-    /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
-     */
-    __device__ __forceinline__ BlockRadixSort(
-        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(PrivateStorage()),
-        linear_tid(linear_tid)
-    {}
-
-
-    /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
-     */
-    __device__ __forceinline__ BlockRadixSort(
-        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
-        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
-    {}
-
 
 
     //@}  end member group
@@ -699,7 +688,7 @@ public:
      *   more than one tile of values, simply perform a key-value sort of the keys paired
      *   with a temporary value array that enumerates the key indices.  The reordered indices
      *   can then be used as a gather-vector for exchanging other associated tile data through
-     *  shared memory.
+     *   shared memory.
      * - \granularity
      * - \smemreuse
      *

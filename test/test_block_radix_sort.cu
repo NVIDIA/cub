@@ -396,6 +396,7 @@ void TestDriver(
         d_keys, d_values, begin_bit, end_bit, d_elapsed);
 
     // Flush kernel output / errors
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check keys results

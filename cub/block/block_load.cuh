@@ -522,11 +522,13 @@ enum BlockLoadAlgorithm
  * \ingroup BlockModule
  * \ingroup UtilIo
  *
- * \tparam InputIterator      The input iterator type \iterator.
- * \tparam BLOCK_THREADS        The thread block size in threads.
+ * \tparam InputIterator        The input iterator type \iterator.
+ * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockLoadAlgorithm tuning policy.  default: cub::BLOCK_LOAD_DIRECT.
  * \tparam WARP_TIME_SLICING    <b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)
+ * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
+ * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  *
  * \par Overview
  * - The BlockLoad class provides a single data movement abstraction that can be specialized
@@ -544,6 +546,7 @@ enum BlockLoadAlgorithm
  *   -# <b>cub::BLOCK_LOAD_WARP_TRANSPOSE</b>.  A [<em>warp-striped arrangement</em>](index.html#sec5sec3)
  *      of data is read directly from memory and is then locally transposed into a
  *      [<em>blocked arrangement</em>](index.html#sec5sec3).  [More...](\ref cub::BlockLoadAlgorithm)
+ * - \rowmajor
  *
  * \par A Simple Example
  * \blockcollective{BlockLoad}
@@ -578,10 +581,12 @@ enum BlockLoadAlgorithm
  */
 template <
     typename            InputIterator,
-    int                 BLOCK_THREADS,
+    int                 BLOCK_DIM_X,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  ALGORITHM           = BLOCK_LOAD_DIRECT,
-    bool                WARP_TIME_SLICING   = false>
+    bool                WARP_TIME_SLICING   = false,
+    int                 BLOCK_DIM_Y         = 1,
+    int                 BLOCK_DIM_Z         = 1>
 class BlockLoad
 {
 private:
@@ -589,6 +594,13 @@ private:
     /******************************************************************************
      * Constants and typed definitions
      ******************************************************************************/
+
+    /// Constants
+    enum
+    {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+    };
 
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
@@ -721,7 +733,7 @@ private:
     struct LoadInternal<BLOCK_LOAD_TRANSPOSE, DUMMY>
     {
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage _TempStorage;
@@ -750,7 +762,7 @@ private:
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items);
-            BlockExchange(temp_storage, linear_tid).StripedToBlocked(items);
+            BlockExchange(temp_storage).StripedToBlocked(items);
         }
 
         /// Load a linear segment of items from memory, guarded by range
@@ -760,7 +772,7 @@ private:
             int             valid_items)                    ///< [in] Number of valid items to load
         {
             LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
-            BlockExchange(temp_storage, linear_tid).StripedToBlocked(items);
+            BlockExchange(temp_storage).StripedToBlocked(items);
         }
 
         /// Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements
@@ -771,7 +783,7 @@ private:
             T               oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
             LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items, oob_default);
-            BlockExchange(temp_storage, linear_tid).StripedToBlocked(items);
+            BlockExchange(temp_storage).StripedToBlocked(items);
         }
 
     };
@@ -792,7 +804,7 @@ private:
         CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), "BLOCK_THREADS must be a multiple of WARP_THREADS");
 
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage _TempStorage;
@@ -821,7 +833,7 @@ private:
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
             LoadDirectWarpStriped(linear_tid, block_itr, items);
-            BlockExchange(temp_storage, linear_tid).WarpStripedToBlocked(items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items);
         }
 
         /// Load a linear segment of items from memory, guarded by range
@@ -831,7 +843,7 @@ private:
             int             valid_items)                    ///< [in] Number of valid items to load
         {
             LoadDirectWarpStriped(linear_tid, block_itr, items, valid_items);
-            BlockExchange(temp_storage, linear_tid).WarpStripedToBlocked(items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items);
         }
 
 
@@ -843,7 +855,7 @@ private:
             T               oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
             LoadDirectWarpStriped(linear_tid, block_itr, items, valid_items, oob_default);
-            BlockExchange(temp_storage, linear_tid).WarpStripedToBlocked(items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items);
         }
     };
 
@@ -899,7 +911,7 @@ public:
     __device__ __forceinline__ BlockLoad()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 
@@ -910,31 +922,9 @@ public:
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
-
-    /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
-     */
-    __device__ __forceinline__ BlockLoad(
-        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(PrivateStorage()),
-        linear_tid(linear_tid)
-    {}
-
-
-    /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
-     */
-    __device__ __forceinline__ BlockLoad(
-        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
-        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
-    {}
 
 
 

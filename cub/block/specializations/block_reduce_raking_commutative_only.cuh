@@ -36,6 +36,7 @@
 #include "block_reduce_raking.cuh"
 #include "../../warp/warp_reduce.cuh"
 #include "../../thread/thread_reduce.cuh"
+#include "../../util_ptx.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -128,7 +129,7 @@ struct BlockReduceRakingCommutativeOnly
     {
         if (USE_FALLBACK || !FULL_TILE)
         {
-            return FallBack(temp_storage.fallback_storage, linear_tid).template Sum<FULL_TILE>(partial, num_valid);
+            return FallBack(temp_storage.fallback_storage).template Sum<FULL_TILE>(partial, num_valid);
         }
         else
         {
@@ -146,7 +147,7 @@ struct BlockReduceRakingCommutativeOnly
                 partial = ThreadReduce<SEGMENT_LENGTH>(raking_segment, cub::Sum(), partial);
 
                 // Warpscan
-                partial = WarpReduce(temp_storage.warp_storage, linear_tid).Sum(partial);
+                partial = WarpReduce(temp_storage.warp_storage).Sum(partial);
             }
         }
 
@@ -165,7 +166,7 @@ struct BlockReduceRakingCommutativeOnly
     {
         if (USE_FALLBACK || !FULL_TILE)
         {
-            return FallBack(temp_storage.fallback_storage, linear_tid).template Reduce<FULL_TILE>(partial, num_valid, reduction_op);
+            return FallBack(temp_storage.fallback_storage).template Reduce<FULL_TILE>(partial, num_valid, reduction_op);
         }
         else
         {
@@ -183,7 +184,7 @@ struct BlockReduceRakingCommutativeOnly
                 partial = ThreadReduce<SEGMENT_LENGTH>(raking_segment, reduction_op, partial);
 
                 // Warpscan
-                partial = WarpReduce(temp_storage.warp_storage, linear_tid).Reduce(partial, reduction_op);
+                partial = WarpReduce(temp_storage.warp_storage).Reduce(partial, reduction_op);
             }
         }
 

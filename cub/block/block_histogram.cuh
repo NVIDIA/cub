@@ -92,10 +92,12 @@ enum BlockHistogramAlgorithm
  * \ingroup BlockModule
  *
  * \tparam T                    The sample type being histogrammed (must be castable to an integer bin identifier)
- * \tparam BLOCK_THREADS        The thread block size in threads
+ * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam ITEMS_PER_THREAD     The number of items per thread
  * \tparam BINS                 The number bins within the histogram
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistogramAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_HISTO_SORT)
+ * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
+ * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  *
  * \par Overview
  * - A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
@@ -143,10 +145,12 @@ enum BlockHistogramAlgorithm
  */
 template <
     typename                T,
-    int                     BLOCK_THREADS,
+    int                     BLOCK_DIM_X,
     int                     ITEMS_PER_THREAD,
     int                     BINS,
-    BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT>
+    BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT,
+    int                     BLOCK_DIM_Y     = 1,
+    int                     BLOCK_DIM_Z     = 1>
 class BlockHistogram
 {
 private:
@@ -154,6 +158,13 @@ private:
     /******************************************************************************
      * Constants and type definitions
      ******************************************************************************/
+
+    /// Constants
+    enum
+    {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+    };
 
     /**
      * Ensure the template parameterization meets the requirements of the
@@ -168,8 +179,8 @@ private:
 
     /// Internal specialization.
     typedef typename If<(SAFE_ALGORITHM == BLOCK_HISTO_SORT),
-        BlockHistogramSort<T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS>,
-        BlockHistogramAtomic<T, BLOCK_THREADS, ITEMS_PER_THREAD, BINS> >::Type InternalBlockHistogram;
+        BlockHistogramSort<T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, BLOCK_DIM_Y, BLOCK_DIM_Z>,
+        BlockHistogramAtomic>::Type InternalBlockHistogram;
 
     /// Shared memory storage layout type for BlockHistogram
     typedef typename InternalBlockHistogram::TempStorage _TempStorage;
@@ -215,7 +226,7 @@ public:
     __device__ __forceinline__ BlockHistogram()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 
@@ -226,30 +237,7 @@ public:
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(threadIdx.x)
-    {}
-
-
-    /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
-     */
-    __device__ __forceinline__ BlockHistogram(
-        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(PrivateStorage()),
-        linear_tid(linear_tid)
-    {}
-
-
-    /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
-     */
-    __device__ __forceinline__ BlockHistogram(
-        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
-        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 
@@ -363,7 +351,7 @@ public:
         __syncthreads();
 
         // Composite the histogram
-        InternalBlockHistogram(temp_storage, linear_tid).Composite(items, histogram);
+        InternalBlockHistogram(temp_storage).Composite(items, histogram);
     }
 
 
@@ -414,7 +402,7 @@ public:
         T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
         HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
     {
-        InternalBlockHistogram(temp_storage, linear_tid).Composite(items, histogram);
+        InternalBlockHistogram(temp_storage).Composite(items, histogram);
     }
 
 };

@@ -148,6 +148,8 @@ void Test(
 
     // Run unguarded kernel
     Kernel<<<1, 1>>>(d_in, d_out, d_itrs);
+
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check results

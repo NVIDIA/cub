@@ -172,6 +172,7 @@ void TestKernel(
             d_out_guarded_itr,
             guarded_elements);
 
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Check results
