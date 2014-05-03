@@ -221,9 +221,9 @@ struct DeviceTest<T, Sum, NullType>
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         NullType                        &identity,
-        Sum                          &scan_op,
+        Sum                             &scan_op,
         T                               &aggregate,
-        PrefixCallbackOp                        &prefix_op)
+        PrefixCallbackOp                &prefix_op)
     {
         if (TEST_MODE == BASIC)
         {
@@ -264,7 +264,7 @@ __global__ void WarpScanKernel(
     clock_t     *d_elapsed)
 {
     // Cooperative warp-scan utility type (1 warp)
-    typedef WarpScan<T, 1, LOGICAL_WARP_THREADS> WarpScan;
+    typedef WarpScan<T, LOGICAL_WARP_THREADS> WarpScan;
 
     // Allocate temp storage in shared memory
     __shared__ typename WarpScan::TempStorage temp_storage;

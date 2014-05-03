@@ -127,7 +127,7 @@ public:
     //@{
 
     /**
-     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.
      */
     __device__ __forceinline__ BlockShift()
     :
@@ -139,7 +139,7 @@ public:
 
 
     /**
-     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.
      */
     __device__ __forceinline__ BlockShift(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage

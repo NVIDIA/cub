@@ -731,7 +731,7 @@ int main(int argc, char** argv)
 
     // Compile/run quick tests
     TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
-//    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
 
 #else
 

@@ -94,8 +94,7 @@ struct WarpScanSmem
 
     /// Constructor
     __device__ __forceinline__ WarpScanSmem(
-        TempStorage     &temp_storage,
-        int             warp_id)
+        TempStorage     &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
         lane_id(IS_ARCH_WARP ?

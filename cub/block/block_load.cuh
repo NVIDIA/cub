@@ -559,7 +559,7 @@ enum BlockLoadAlgorithm
  *
  * __global__ void ExampleKernel(int *d_data, ...)
  * {
- *     // Specialize BlockLoad for 128 threads owning 4 integer items each
+ *     // Specialize BlockLoad for a 1D block of 128 threads owning 4 integer items each
  *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoad;
  *
  *     // Allocate shared memory for BlockLoad
@@ -894,7 +894,7 @@ public:
     //@{
 
     /**
-     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.
      */
     __device__ __forceinline__ BlockLoad()
     :
@@ -904,7 +904,7 @@ public:
 
 
     /**
-     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.
      */
     __device__ __forceinline__ BlockLoad(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
@@ -964,7 +964,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockLoad for 128 threads owning 4 integer items each
+     *     // Specialize BlockLoad for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoad;
      *
      *     // Allocate shared memory for BlockLoad
@@ -1008,7 +1008,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int valid_items, ...)
      * {
-     *     // Specialize BlockLoad for 128 threads owning 4 integer items each
+     *     // Specialize BlockLoad for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoad;
      *
      *     // Allocate shared memory for BlockLoad
@@ -1054,7 +1054,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int valid_items, ...)
      * {
-     *     // Specialize BlockLoad for 128 threads owning 4 integer items each
+     *     // Specialize BlockLoad for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoad;
      *
      *     // Allocate shared memory for BlockLoad

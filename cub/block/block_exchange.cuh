@@ -76,7 +76,7 @@ namespace cub {
  *
  * __global__ void ExampleKernel(int *d_data, ...)
  * {
- *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+ *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
  *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
  *
  *     // Allocate shared memory for BlockExchange
@@ -644,7 +644,7 @@ public:
     //@{
 
     /**
-     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.
      */
     __device__ __forceinline__ BlockExchange()
     :
@@ -657,7 +657,7 @@ public:
 
 
     /**
-     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.
      */
     __device__ __forceinline__ BlockExchange(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
@@ -720,7 +720,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+     *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
      *
      *     // Allocate shared memory for BlockExchange
@@ -762,7 +762,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+     *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
      *
      *     // Allocate shared memory for BlockExchange
@@ -809,7 +809,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+     *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
      *
      *     // Allocate shared memory for BlockExchange
@@ -853,7 +853,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockExchange for 128 threads owning 4 integer items each
+     *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
      *
      *     // Allocate shared memory for BlockExchange

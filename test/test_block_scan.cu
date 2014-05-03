@@ -60,9 +60,9 @@ CachingDeviceAllocator  g_allocator(true);
  */
 enum TestMode
 {
-    BASIC,           //!< BASIC
-    AGGREGATE,       //!< AGGREGATE
-    PREFIX_AGGREGATE,//!< PREFIX_AGGREGATE
+    BASIC,
+    AGGREGATE,
+    PREFIX_AGGREGATE,
 };
 
 
@@ -75,17 +75,22 @@ template <
     typename ScanOp>
 struct BlockPrefixCallbackOp
 {
+    int     linear_tid;
     T       prefix;
     ScanOp  scan_op;
 
     __device__ __forceinline__
-    BlockPrefixCallbackOp(T prefix, ScanOp scan_op) : prefix(prefix), scan_op(scan_op) {}
+    BlockPrefixCallbackOp(int linear_tid, T prefix, ScanOp scan_op) :
+        linear_tid(linear_tid),
+        prefix(prefix),
+        scan_op(scan_op)
+    {}
 
     __device__ __forceinline__
     T operator()(T block_aggregate)
     {
         // For testing purposes
-        T retval = (threadIdx.x == 0) ? prefix  : T();
+        T retval = (linear_tid == 0) ? prefix  : T();
         prefix = scan_op(prefix, block_aggregate);
         return retval;
     }
@@ -313,7 +318,9 @@ __device__ __forceinline__ void DeviceTest(
  * BlockScan test kernel.
  */
 template <
-    int                 BLOCK_THREADS,
+    int                 BLOCK_DIM_X,
+    int                 BLOCK_DIM_Y,
+    int                 BLOCK_DIM_Z,
     int                 ITEMS_PER_THREAD,
     TestMode            TEST_MODE,
     BlockScanAlgorithm  ALGORITHM,
@@ -329,24 +336,27 @@ __global__ void BlockScanKernel(
     T                   prefix,
     clock_t             *d_elapsed)
 {
-    const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
+    const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
+    const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Parameterize BlockScan type for our thread block
-    typedef BlockScan<T, BLOCK_THREADS, ALGORITHM> BlockScan;
+    typedef BlockScan<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockScan;
 
     // Allocate temp storage in shared memory
     __shared__ typename BlockScan::TempStorage temp_storage;
 
+    int linear_tid = RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
+
     // Per-thread tile data
     T data[ITEMS_PER_THREAD];
-    LoadDirectBlocked(threadIdx.x, d_in, data);
+    LoadDirectBlocked(linear_tid, d_in, data);
 
     // Start cycle timer
     clock_t start = clock();
 
     // Test scan
     T aggregate;
-    BlockPrefixCallbackOp<T, ScanOp> prefix_op(prefix, scan_op);
+    BlockPrefixCallbackOp<T, ScanOp> prefix_op(linear_tid, prefix, scan_op);
     DeviceTest<BlockScan>(temp_storage, data, identity, scan_op, aggregate, prefix_op, Int2Type<TEST_MODE>());
 
     // Stop cycle timer
@@ -358,13 +368,13 @@ __global__ void BlockScanKernel(
 #endif // CUB_PTX_VERSION == 100
 
     // Store output
-    StoreDirectBlocked(threadIdx.x, d_out, data);
+    StoreDirectBlocked(linear_tid, d_out, data);
 
     // Store aggregate
-    d_aggregate[threadIdx.x] = aggregate;
+    d_aggregate[linear_tid] = aggregate;
 
     // Store prefix and time
-    if (threadIdx.x == 0)
+    if (linear_tid == 0)
     {
         d_out[TILE_SIZE] = prefix_op.prefix;
         *d_elapsed = (start > stop) ? start - stop : stop - start;
@@ -451,7 +461,9 @@ T Initialize(
  * Test threadblock scan
  */
 template <
-    int                 BLOCK_THREADS,
+    int                 BLOCK_DIM_X,
+    int                 BLOCK_DIM_Y,
+    int                 BLOCK_DIM_Z,
     int                 ITEMS_PER_THREAD,
     TestMode            TEST_MODE,
     BlockScanAlgorithm  ALGORITHM,
@@ -465,7 +477,8 @@ void Test(
     T               prefix,
     const char      *type_string)
 {
-    const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
+    const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
+    const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Allocate host arrays
     T *h_in = new T[TILE_SIZE];
@@ -490,16 +503,12 @@ void Test(
     }
 
     // Run kernel
-    printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
-        TEST_MODE,
-        gen_mode,
-        ALGORITHM,
+    printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d (%d,%d,%d) threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
+        TEST_MODE, gen_mode, ALGORITHM,
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
-        BLOCK_THREADS,
-        ITEMS_PER_THREAD,
-        TILE_SIZE,
-        type_string,
-        (int) sizeof(T));
+        BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
+        ITEMS_PER_THREAD,  TILE_SIZE,
+        type_string, (int) sizeof(T));
     fflush(stdout);
 
     // Initialize/clear device arrays
@@ -527,7 +536,8 @@ void Test(
     }
 
     // Run aggregate/prefix kernel
-    BlockScanKernel<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM><<<1, BLOCK_THREADS>>>(
+    dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
+    BlockScanKernel<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM><<<1, block_dims>>>(
         d_in,
         d_out,
         d_aggregate,
@@ -536,7 +546,11 @@ void Test(
         prefix,
         d_elapsed);
 
+    printf("Error %d\n", cudaGetLastError());
+
     CubDebugExit(cudaDeviceSynchronize());
+
+    printf("Error2 %d\n", cudaGetLastError());
 
     // Copy out and display results
     printf("\tScan results: ");
@@ -574,6 +588,29 @@ void Test(
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_aggregate) CubDebugExit(g_allocator.DeviceFree(d_aggregate));
     if (d_elapsed) CubDebugExit(g_allocator.DeviceFree(d_elapsed));
+}
+
+
+/**
+ * Run test for different threadblock dimensions
+ */
+template <
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    TestMode            TEST_MODE,
+    BlockScanAlgorithm  ALGORITHM,
+    typename            ScanOp,
+    typename            IdentityT,
+    typename            T>
+void Test(
+    GenMode     gen_mode,
+    ScanOp      scan_op,
+    IdentityT   identity,
+    T           prefix,
+    const char  *type_string)
+{
+    Test<BLOCK_THREADS, 1, 1, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, 2, 2, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, type_string);
 }
 
 
@@ -635,18 +672,19 @@ template <
     int ITEMS_PER_THREAD>
 void Test(GenMode gen_mode)
 {
-/*
     // primitive
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM, Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
 
     // primitive (alternative scan op)
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Max<unsigned char>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Max<unsigned short>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Max<unsigned int>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Max(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Max<unsigned long long>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED, Max(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
 
     // vec-1
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
@@ -662,7 +700,7 @@ void Test(GenMode gen_mode)
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
-*/
+
     // complex
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(gen_mode, Sum(), TestBar(0, 0), TestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
@@ -725,13 +763,17 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
 #ifdef QUICK_TEST
-
+/*
     // Compile/run quick tests
-    Test<128, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
-    Test<128, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+    Test<128, 1, 1, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
+    Test<128, 1, 1, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
 
     TestFoo prefix = TestFoo::MakeTestFoo(17, 21, 32, 85);
-    Test<128, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
+    Test<128, 1, 1, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), NullType(), prefix, CUB_TYPE_STRING(Sum<TestFoo>));
+*/
+
+    Test<128, 2, 2, 1, BASIC, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
+
 
 #else
 

@@ -116,11 +116,12 @@ __device__ __forceinline__ T DeviceTest(
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,
-    int                     BLOCK_THREADS,
+    int                     BLOCK_DIM_X,
+    int                     BLOCK_DIM_Y,
+    int                     BLOCK_DIM_Z,
     int                     ITEMS_PER_THREAD,
     typename                T,
     typename                ReductionOp>
-__launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void FullTileReduceKernel(
     T                       *d_in,
     T                       *d_out,
@@ -128,20 +129,23 @@ __global__ void FullTileReduceKernel(
     int                     tiles,
     clock_t                 *d_elapsed)
 {
-    const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
+    const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
+    const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Cooperative threadblock reduction utility type (returns aggregate in thread 0)
-    typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
+    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduce;
 
     // Allocate temp storage in shared memory
     __shared__ typename BlockReduce::TempStorage temp_storage;
+
+    int linear_tid = RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
 
     // Per-thread tile data
     T data[ITEMS_PER_THREAD];
 
     // Load first tile of data
     int block_offset = 0;
-    LoadDirectBlocked(threadIdx.x, d_in + block_offset, data);
+    LoadDirectBlocked(linear_tid, d_in + block_offset, data);
     block_offset += TILE_SIZE;
 
     // Start cycle timer
@@ -166,7 +170,7 @@ __global__ void FullTileReduceKernel(
         __syncthreads();
 
         // Load tile of data
-        LoadDirectBlocked(threadIdx.x, d_in + block_offset, data);
+        LoadDirectBlocked(linear_tid, d_in + block_offset, data);
         block_offset += TILE_SIZE;
 
         // Start cycle timer
@@ -189,7 +193,7 @@ __global__ void FullTileReduceKernel(
     }
 
     // Store data
-    if (threadIdx.x == 0)
+    if (linear_tid == 0)
     {
         d_out[0] = block_aggregate;
         *d_elapsed = elapsed;
@@ -203,10 +207,11 @@ __global__ void FullTileReduceKernel(
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,
-    int                     BLOCK_THREADS,
+    int                     BLOCK_DIM_X,
+    int                     BLOCK_DIM_Y,
+    int                     BLOCK_DIM_Z,
     typename                T,
     typename                ReductionOp>
-__launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void PartialTileReduceKernel(
     T                       *d_in,
     T                       *d_out,
@@ -214,19 +219,23 @@ __global__ void PartialTileReduceKernel(
     ReductionOp             reduction_op,
     clock_t                 *d_elapsed)
 {
+    const int BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
+
     // Cooperative threadblock reduction utility type (returns aggregate only in thread-0)
     typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
 
     // Allocate temp storage in shared memory
     __shared__ typename BlockReduce::TempStorage temp_storage;
 
+    int linear_tid = RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
+
     // Per-thread tile data
     T partial;
 
     // Load partial tile data
-    if (threadIdx.x < num_items)
+    if (linear_tid < num_items)
     {
-        partial = d_in[threadIdx.x];
+        partial = d_in[linear_tid];
     }
 
     // Start cycle timer
@@ -242,10 +251,11 @@ __global__ void PartialTileReduceKernel(
 #else
     clock_t stop = clock();
 #endif // CUB_PTX_VERSION == 100
+
     clock_t elapsed = (start > stop) ? start - stop : stop - start;
 
     // Store data
-    if (threadIdx.x == 0)
+    if (linear_tid == 0)
     {
         d_out[0] = tile_aggregate;
         *d_elapsed = elapsed;
@@ -291,7 +301,9 @@ void Initialize(
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,
-    int                     BLOCK_THREADS,
+    int                     BLOCK_DIM_X,
+    int                     BLOCK_DIM_Y,
+    int                     BLOCK_DIM_Z,
     int                     ITEMS_PER_THREAD,
     typename                T,
     typename                ReductionOp>
@@ -301,7 +313,8 @@ void TestFullTile(
     ReductionOp             reduction_op,
     char                    *type_string)
 {
-    const int TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD;
+    const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
+    const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     int num_items = TILE_SIZE * tiles;
 
@@ -334,7 +347,8 @@ void TestFullTile(
         (int) sizeof(T));
     fflush(stdout);
 
-    FullTileReduceKernel<ALGORITHM, BLOCK_THREADS, ITEMS_PER_THREAD><<<1, BLOCK_THREADS>>>(
+    dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
+    FullTileReduceKernel<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD><<<1, block_dims>>>(
         d_in,
         d_out,
         reduction_op,
@@ -357,6 +371,25 @@ void TestFullTile(
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_elapsed) CubDebugExit(g_allocator.DeviceFree(d_elapsed));
+}
+
+/**
+ * Run battery of tests for different threadblock dimensions
+ */
+template <
+    BlockReduceAlgorithm    ALGORITHM,
+    int                     BLOCK_THREADS,
+    int                     ITEMS_PER_THREAD,
+    typename                T,
+    typename                ReductionOp>
+void TestFullTile(
+    GenMode                 gen_mode,
+    int                     tiles,
+    ReductionOp             reduction_op,
+    char                    *type_string)
+{
+    TestFullTile<ALGORITHM, BLOCK_THREADS, 1, 1, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, type_string);
+    TestFullTile<ALGORITHM, BLOCK_THREADS, 2, 2, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, type_string);
 }
 
 /**
@@ -407,7 +440,9 @@ void TestFullTile(
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,
-    int                     BLOCK_THREADS,
+    int                     BLOCK_DIM_X,
+    int                     BLOCK_DIM_Y,
+    int                     BLOCK_DIM_Z,
     typename                T,
     typename                ReductionOp>
 void TestPartialTile(
@@ -416,7 +451,8 @@ void TestPartialTile(
     ReductionOp             reduction_op,
     char                    *type_string)
 {
-    const int TILE_SIZE = BLOCK_THREADS;
+    const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
+    const int TILE_SIZE         = BLOCK_THREADS;
 
     // Allocate host arrays
     T *h_in = new T[num_items];
@@ -444,7 +480,8 @@ void TestPartialTile(
         (int) sizeof(T));
     fflush(stdout);
 
-    PartialTileReduceKernel<ALGORITHM, BLOCK_THREADS><<<1, BLOCK_THREADS>>>(
+    dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
+    PartialTileReduceKernel<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z><<<1, block_dims>>>(
         d_in,
         d_out,
         num_items,
@@ -471,7 +508,7 @@ void TestPartialTile(
 
 
 /**
- *  Run battery of partial-tile tests for different numbers of effective threads
+ *  Run battery of partial-tile tests for different numbers of effective threads and thread dimensions
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,
@@ -488,7 +525,8 @@ void TestPartialTile(
         num_items < BLOCK_THREADS;
         num_items += CUB_MAX(1, BLOCK_THREADS / 5))
     {
-        TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(gen_mode, num_items, reduction_op, type_string);
+        TestPartialTile<ALGORITHM, BLOCK_THREADS, 1, 1, T>(gen_mode, num_items, reduction_op, type_string);
+        TestPartialTile<ALGORITHM, BLOCK_THREADS, 2, 2, T>(gen_mode, num_items, reduction_op, type_string);
     }
 }
 
