@@ -122,6 +122,7 @@ template <
     int                     ITEMS_PER_THREAD,
     typename                T,
     typename                ReductionOp>
+__launch_bounds__ (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)
 __global__ void FullTileReduceKernel(
     T                       *d_in,
     T                       *d_out,
@@ -212,6 +213,7 @@ template <
     int                     BLOCK_DIM_Z,
     typename                T,
     typename                ReductionOp>
+__launch_bounds__ (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)
 __global__ void PartialTileReduceKernel(
     T                       *d_in,
     T                       *d_out,
@@ -219,10 +221,8 @@ __global__ void PartialTileReduceKernel(
     ReductionOp             reduction_op,
     clock_t                 *d_elapsed)
 {
-    const int BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
-
     // Cooperative threadblock reduction utility type (returns aggregate only in thread-0)
-    typedef BlockReduce<T, BLOCK_THREADS, ALGORITHM> BlockReduce;
+    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduce;
 
     // Allocate temp storage in shared memory
     __shared__ typename BlockReduce::TempStorage temp_storage;
@@ -336,11 +336,11 @@ void TestFullTile(
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
     // Test multi-tile (unguarded)
-    printf("TestFullTile %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
+    printf("TestFullTile %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d) (%d,%d,%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
         (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : (ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY) ? "BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         gen_mode,
         num_items,
-        BLOCK_THREADS,
+        BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
         ITEMS_PER_THREAD,
         tiles,
         type_string,
@@ -355,6 +355,7 @@ void TestFullTile(
         tiles,
         d_elapsed);
 
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results
@@ -471,11 +472,11 @@ void TestPartialTile(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * 1));
 
-    printf("TestPartialTile %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d), %s (%d bytes) elements:\n",
+    printf("TestPartialTile %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d) (%d,%d,%d), %s (%d bytes) elements:\n",
         (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : (ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY) ? "BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         gen_mode,
         num_items,
-        BLOCK_THREADS,
+        BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
         type_string,
         (int) sizeof(T));
     fflush(stdout);
@@ -488,6 +489,7 @@ void TestPartialTile(
         reduction_op,
         d_elapsed);
 
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Copy out and display results
@@ -641,23 +643,22 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    typedef int T;
 
     printf("\n full tile ------------------------\n\n");
 
-    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
 
-    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
 
     printf("\n partial tile ------------------------\n\n");
 
-    TestPartialTile<BLOCK_REDUCE_RAKING,                   128, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestPartialTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestPartialTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, int>(UNIFORM, 7, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, int>(UNIFORM, 7, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, int>(UNIFORM, 7, Sum(), CUB_TYPE_STRING(int));
 
 #else
 

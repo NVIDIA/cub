@@ -549,7 +549,10 @@ struct DeviceReduceDispatch
                     num_items,
                     reduction_op);
 
-                // Sync the stream if specified
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
+
+                // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             }
@@ -628,7 +631,10 @@ struct DeviceReduceDispatch
                     // Invoke prepare_drain_kernel
                     prepare_drain_kernel<<<1, 1, 0, stream>>>(queue, num_items);
 
-                    // Sync the stream if specified
+                    // Check for failure to launch
+                    if (CubDebug(error = cudaPeekAtLastError())) break;
+
+                    // Sync the stream if specified to flush runtime errors
                     if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
                 }
 
@@ -645,7 +651,10 @@ struct DeviceReduceDispatch
                     queue,
                     reduction_op);
 
-                // Sync the stream if specified
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
+
+                // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
                 // Log single_kernel configuration
@@ -659,7 +668,10 @@ struct DeviceReduceDispatch
                     reduce_range_grid_size,
                     reduction_op);
 
-                // Sync the stream if specified
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
+
+                // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
         }

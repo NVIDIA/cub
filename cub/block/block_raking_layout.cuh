@@ -45,7 +45,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief BlockRakingLayout provides a conflict-free shared memory layout abstraction for raking across thread block data.    ![](raking.png)
+ * \brief BlockRakingLayout provides a conflict-free shared memory layout abstraction for 1D raking across thread block data.    ![](raking.png)
  * \ingroup BlockModule
  *
  * \par Overview

@@ -213,6 +213,7 @@ void Test()
     }
 
     // Check for kernel errors and STDIO from the kernel, if any
+    CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
 
     // Display timing results

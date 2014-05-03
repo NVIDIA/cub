@@ -420,11 +420,13 @@ enum BlockStoreAlgorithm
  * \ingroup BlockModule
  * \ingroup UtilIo
  *
- * \tparam OutputIterator     The input iterator type \iterator.
- * \tparam BLOCK_THREADS        The thread block size in threads.
+ * \tparam OutputIterator       The input iterator type \iterator.
+ * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStoreAlgorithm tuning policy enumeration.  default: cub::BLOCK_STORE_DIRECT.
  * \tparam WARP_TIME_SLICING    <b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)
+ * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
+ * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  *
  * \par Overview
  * - The BlockStore class provides a single data movement abstraction that can be specialized
@@ -442,6 +444,7 @@ enum BlockStoreAlgorithm
  *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3)
  *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec5sec3) which is
  *      then written to memory.  [More...](\ref cub::BlockStoreAlgorithm)
+ * - \rowmajor
  *
  * \par A Simple Example
  * \blockcollective{BlockStore}
@@ -480,16 +483,25 @@ enum BlockStoreAlgorithm
  */
 template <
     typename                OutputIterator,
-    int                     BLOCK_THREADS,
+    int                     BLOCK_DIM_X,
     int                     ITEMS_PER_THREAD,
     BlockStoreAlgorithm     ALGORITHM           = BLOCK_STORE_DIRECT,
-    bool                    WARP_TIME_SLICING   = false>
+    bool                    WARP_TIME_SLICING   = false,
+    int                     BLOCK_DIM_Y         = 1,
+    int                     BLOCK_DIM_Z         = 1>
 class BlockStore
 {
 private:
     /******************************************************************************
      * Constants and typed definitions
      ******************************************************************************/
+
+    /// Constants
+    enum
+    {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+    };
 
     // Data type of input iterator
     typedef typename std::iterator_traits<OutputIterator>::value_type T;
@@ -526,7 +538,7 @@ private:
 
         /// Store items into a linear segment of memory
         __device__ __forceinline__ void Store(
-            OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             StoreDirectBlocked(linear_tid, block_itr, items);
@@ -534,7 +546,7 @@ private:
 
         /// Store items into a linear segment of memory, guarded by range
         __device__ __forceinline__ void Store(
-            OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
             int                 valid_items)                ///< [in] Number of valid items to write
         {
@@ -574,7 +586,7 @@ private:
         /// Store items into a linear segment of memory, specialized for opaque input iterators (skips vectorization)
         template <typename _OutputIterator>
         __device__ __forceinline__ void Store(
-            _OutputIterator   block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            _OutputIterator     block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             StoreDirectBlocked(linear_tid, block_itr, items);
@@ -582,7 +594,7 @@ private:
 
         /// Store items into a linear segment of memory, guarded by range
         __device__ __forceinline__ void Store(
-            OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
             int                 valid_items)                ///< [in] Number of valid items to write
         {
@@ -598,7 +610,7 @@ private:
     struct StoreInternal<BLOCK_STORE_TRANSPOSE, DUMMY>
     {
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage _TempStorage;
@@ -623,7 +635,7 @@ private:
 
         /// Store items into a linear segment of memory
         __device__ __forceinline__ void Store(
-            OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockExchange(temp_storage).BlockedToStriped(items);
@@ -657,7 +669,7 @@ private:
         CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), "BLOCK_THREADS must be a multiple of WARP_THREADS");
 
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING> BlockExchange;
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage _TempStorage;
@@ -752,7 +764,7 @@ public:
     __device__ __forceinline__ BlockStore()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 
@@ -763,30 +775,7 @@ public:
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(threadIdx.x)
-    {}
-
-
-    /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
-     */
-    __device__ __forceinline__ BlockStore(
-        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(PrivateStorage()),
-        linear_tid(linear_tid)
-    {}
-
-
-    /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
-     */
-    __device__ __forceinline__ BlockStore(
-        TempStorage &temp_storage,             ///< [in] Reference to memory allocation having layout type TempStorage
-        int linear_tid)                        ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 

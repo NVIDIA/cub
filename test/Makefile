@@ -215,7 +215,9 @@ ALL = 	link \
 	 	test_block_reduce \
 	 	test_warp_scan \
 	 	test_warp_reduce \
-	 	test_block_scan \
+	 	test_block_scan_raking \
+	 	test_block_scan_raking_memoize \
+	 	test_block_scan_warp_scans \
 	 	test_block_load_store \
 	 	test_block_radix_sort \
 	 	test_block_radix_sort_pairs \
@@ -341,15 +343,34 @@ bin/test_warp_reduce_$(SUFFIX) : test_warp_reduce.cu $(DEPS)
 
 
 #-------------------------------------------------------------------------------
-# make test_block_scan 
+# make test_block_scan_raking
 #-------------------------------------------------------------------------------
 
-test_block_scan: bin/test_block_scan_$(SUFFIX)
+test_block_scan_raking: bin/test_block_scan_raking_$(SUFFIX)
 
-bin/test_block_scan_$(SUFFIX) : test_block_scan.cu $(DEPS)
+bin/test_block_scan_raking_$(SUFFIX) : test_block_scan.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_scan_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+	$(NVCC) $(DEFINES) -DTEST_RAKING $(SM_TARGETS) -o bin/test_block_scan_raking_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
 
+#-------------------------------------------------------------------------------
+# make test_block_scan_raking_memoize
+#-------------------------------------------------------------------------------
+
+test_block_scan_raking_memoize: bin/test_block_scan_raking_memoize_$(SUFFIX)
+
+bin/test_block_scan_raking_memoize_$(SUFFIX) : test_block_scan.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) -DTEST_RAKING $(SM_TARGETS) -o bin/test_block_scan_raking_memoize_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+
+#-------------------------------------------------------------------------------
+# make test_block_scan_warp_scans
+#-------------------------------------------------------------------------------
+
+test_block_scan_warp_scans: bin/test_block_scan_warp_scans_$(SUFFIX)
+
+bin/test_block_scan_warp_scans_$(SUFFIX) : test_block_scan.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) -DTEST_RAKING $(SM_TARGETS) -o bin/test_block_scan_warp_scans_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
 
 #-------------------------------------------------------------------------------
 # make test_block_load_store 

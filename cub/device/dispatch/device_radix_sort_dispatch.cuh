@@ -63,7 +63,7 @@ template <
     bool                    DESCENDING,                         ///< Whether or not the sorted-order is high-to-low
     typename                Key,                                ///< Key type
     typename                Offset>                             ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRangeRadixSortUpsweepPolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(BlockRangeRadixSortUpsweepPolicy::BLOCK_THREADS))
 __global__ void RadixSortUpsweepKernel(
     Key                     *d_keys,                            ///< [in] Input keys buffer
     Offset                  *d_spine,                           ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
@@ -103,7 +103,7 @@ __global__ void RadixSortUpsweepKernel(
  * Spine scan kernel entry point (single-block).  Computes an exclusive prefix sum over the privatized digit histograms
  */
 template <
-    typename    BlockRangeScanPolicy,      ///< Parameterizable tuning policy type for cub::BlockRangeScan abstraction
+    typename    BlockRangeScanPolicy,       ///< Parameterizable tuning policy type for cub::BlockRangeScan abstraction
     typename    Offset>                     ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockRangeScanPolicy::BLOCK_THREADS), 1)
 __global__ void RadixSortScanKernel(
@@ -137,22 +137,22 @@ __global__ void RadixSortScanKernel(
  */
 template <
     typename BlockRangeRadixSortDownsweepPolicy,    ///< Parameterizable tuning policy type for cub::BlockRangeRadixSortUpsweep abstraction
-    bool     DESCENDING,                             ///< Whether or not the sorted-order is high-to-low
-    typename Key,                                    ///< Key type
-    typename Value,                                  ///< Value type
-    typename Offset>                                 ///< Signed integer type for global offsets
+    bool     DESCENDING,                            ///< Whether or not the sorted-order is high-to-low
+    typename Key,                                   ///< Key type
+    typename Value,                                 ///< Value type
+    typename Offset>                                ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockRangeRadixSortDownsweepPolicy::BLOCK_THREADS))
 __global__ void RadixSortDownsweepKernel(
-    Key                     *d_keys_in,                     ///< [in] Input keys ping buffer
-    Key                     *d_keys_out,                    ///< [in] Output keys pong buffer
-    Value                   *d_values_in,                   ///< [in] Input values ping buffer
-    Value                   *d_values_out,                  ///< [in] Output values pong buffer
-    Offset                  *d_spine,                       ///< [in] Scan of privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
-    Offset                  num_items,                      ///< [in] Total number of input data items
-    int                     current_bit,                    ///< [in] Bit position of current radix digit
-    bool                    first_pass,                     ///< [in] Whether this is the first digit pass
-    bool                    last_pass,                      ///< [in] Whether this is the last digit pass
-    GridEvenShare<Offset>   even_share)                     ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
+    Key                     *d_keys_in,             ///< [in] Input keys ping buffer
+    Key                     *d_keys_out,            ///< [in] Output keys pong buffer
+    Value                   *d_values_in,           ///< [in] Input values ping buffer
+    Value                   *d_values_out,          ///< [in] Output values pong buffer
+    Offset                  *d_spine,               ///< [in] Scan of privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
+    Offset                  num_items,              ///< [in] Total number of input data items
+    int                     current_bit,            ///< [in] Bit position of current radix digit
+    bool                    first_pass,             ///< [in] Whether this is the first digit pass
+    bool                    last_pass,              ///< [in] Whether this is the last digit pass
+    GridEvenShare<Offset>   even_share)             ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
 {
     // Parameterize BlockRangeRadixSortDownsweep type for the current configuration
     typedef BlockRangeRadixSortDownsweep<BlockRangeRadixSortDownsweepPolicy, DESCENDING, Key, Value, Offset> BlockRangeRadixSortDownsweepT;
@@ -673,7 +673,10 @@ struct DeviceRadixSortDispatch
                     (current_bit == begin_bit),
                     even_share);
 
-                // Sync the stream if specified
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
+
+                // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
                 // Log scan_kernel configuration
@@ -685,7 +688,10 @@ struct DeviceRadixSortDispatch
                     d_spine,
                     spine_size);
 
-                // Sync the stream if specified
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
+
+                // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
 
@@ -714,7 +720,10 @@ struct DeviceRadixSortDispatch
                     (current_bit + downsweep_config.radix_bits >= end_bit),
                     even_share);
 
-                // Sync the stream if specified
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
+
+                // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
                 // Invert selectors

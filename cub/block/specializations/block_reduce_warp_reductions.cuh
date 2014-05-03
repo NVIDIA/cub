@@ -34,6 +34,7 @@
 #pragma once
 
 #include "../../warp/warp_reduce.cuh"
+#include "../../util_ptx.cuh"
 #include "../../util_arch.cuh"
 #include "../../util_namespace.cuh"
 
@@ -173,7 +174,7 @@ struct BlockReduceWarpReductions
                                 0;
 
         // Warp reduction in every warp
-        T warp_aggregate = WarpReduce(temp_storage.warp_reduce[warp_id], lane_id).template Sum<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
+        T warp_aggregate = WarpReduce(temp_storage.warp_reduce[warp_id]).template Sum<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
             input,
             warp_num_valid);
 
@@ -200,7 +201,7 @@ struct BlockReduceWarpReductions
                                 0;
 
         // Warp reduction in every warp
-        T warp_aggregate = WarpReduce(temp_storage.warp_reduce[warp_id], lane_id).template Reduce<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
+        T warp_aggregate = WarpReduce(temp_storage.warp_reduce[warp_id]).template Reduce<(FULL_TILE && EVEN_WARP_MULTIPLE), 1>(
             input,
             warp_num_valid,
             reduction_op);

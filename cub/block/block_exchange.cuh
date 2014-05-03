@@ -49,9 +49,11 @@ namespace cub {
  * \ingroup BlockModule
  *
  * \tparam T                    The data type to be exchanged.
- * \tparam BLOCK_THREADS        The thread block size in threads.
+ * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam ITEMS_PER_THREAD     The number of items partitioned onto each thread.
  * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds.  Yields a smaller memory footprint at the expense of decreased parallelism.  (Default: false)
+ * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
+ * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  *
  * \par Overview
  * - It is commonplace for blocks of threads to rearrange data items between
@@ -64,6 +66,7 @@ namespace cub {
  *   - Transposing between [<em>blocked</em>](index.html#sec5sec3) and [<em>warp-striped</em>](index.html#sec5sec3) arrangements
  *   - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec5sec3)
  *   - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec5sec3)
+ * - \blocked
  *
  * \par A Simple Example
  * \blockcollective{BlockExchange}
@@ -101,10 +104,12 @@ namespace cub {
  *
  */
 template <
-    typename        T,
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    bool            WARP_TIME_SLICING = false>
+    typename            T,
+    int                 BLOCK_DIM_X,
+    int                 ITEMS_PER_THREAD,
+    bool                WARP_TIME_SLICING   = false,
+    int                 BLOCK_DIM_Y         = 1,
+    int                 BLOCK_DIM_Z         = 1>
 class BlockExchange
 {
 private:
@@ -113,8 +118,12 @@ private:
      * Constants
      ******************************************************************************/
 
+    /// Constants
     enum
     {
+        /// The thread block size in threads
+        BLOCK_THREADS               = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+
         LOG_WARP_THREADS            = CUB_PTX_LOG_WARP_THREADS,
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
         WARPS                       = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
@@ -133,7 +142,7 @@ private:
         WARP_TIME_SLICED_ITEMS      = WARP_TIME_SLICED_THREADS * ITEMS_PER_THREAD,
 
         // Insert padding if the number of items per thread is a power of two
-        INSERT_PADDING              = 0, //PowerOfTwo<ITEMS_PER_THREAD>::VALUE,
+        INSERT_PADDING              = 0, // Mooch PowerOfTwo<ITEMS_PER_THREAD>::VALUE,
         PADDING_ITEMS               = (INSERT_PADDING) ? (TIME_SLICED_ITEMS >> LOG_SMEM_BANKS) : 0,
     };
 
@@ -161,7 +170,7 @@ private:
 
     /// Linear thread-id
     int linear_tid;
-    int warp_lane;
+    int lane_id;
     int warp_id;
     int warp_offset;
 
@@ -227,7 +236,7 @@ private:
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
-                    int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
+                    int item_offset = (lane_id * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     temp_storage[item_offset] = items[ITEM];
                 }
@@ -273,7 +282,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = warp_offset + ITEM + (warp_lane * ITEMS_PER_THREAD);
+            int item_offset = warp_offset + ITEM + (lane_id * ITEMS_PER_THREAD);
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             temp_storage[item_offset] = items[ITEM];
         }
@@ -281,7 +290,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
+            int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             items[ITEM] = temp_storage[item_offset];
         }
@@ -304,7 +313,7 @@ private:
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
-                    int item_offset = ITEM + (warp_lane * ITEMS_PER_THREAD);
+                    int item_offset = ITEM + (lane_id * ITEMS_PER_THREAD);
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     temp_storage[item_offset] = items[ITEM];
                 }
@@ -312,7 +321,7 @@ private:
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
-                    int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
+                    int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     items[ITEM] = temp_storage[item_offset];
                 }
@@ -392,7 +401,7 @@ private:
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
-                    int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
+                    int item_offset = (lane_id * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     temp_items[ITEM] = temp_storage[item_offset];
                 }
@@ -418,7 +427,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
+            int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             temp_storage[item_offset] = items[ITEM];
         }
@@ -426,7 +435,7 @@ private:
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            int item_offset = warp_offset + ITEM + (warp_lane * ITEMS_PER_THREAD);
+            int item_offset = warp_offset + ITEM + (lane_id * ITEMS_PER_THREAD);
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
             items[ITEM] = temp_storage[item_offset];
         }
@@ -450,7 +459,7 @@ private:
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
-                    int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + warp_lane;
+                    int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     temp_storage[item_offset] = items[ITEM];
                 }
@@ -458,7 +467,7 @@ private:
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
-                    int item_offset = ITEM + (warp_lane * ITEMS_PER_THREAD);
+                    int item_offset = ITEM + (lane_id * ITEMS_PER_THREAD);
                     if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
                     items[ITEM] = temp_storage[item_offset];
                 }
@@ -531,7 +540,7 @@ private:
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
-                    int item_offset = (warp_lane * ITEMS_PER_THREAD) + ITEM;
+                    int item_offset = (lane_id * ITEMS_PER_THREAD) + ITEM;
                     if (INSERT_PADDING) item_offset = SHR_ADD(item_offset, LOG_SMEM_BANKS, item_offset);
                     temp_items[ITEM] = temp_storage[item_offset];
                 }
@@ -649,9 +658,9 @@ public:
     __device__ __forceinline__ BlockExchange()
     :
         temp_storage(PrivateStorage()),
-        linear_tid(threadIdx.x),
-        warp_lane(linear_tid & (WARP_THREADS - 1)),
-        warp_id(linear_tid >> LOG_WARP_THREADS),
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z)),
+        warp_id((WARPS == 1) ? 0 : linear_tid / CUB_PTX_WARP_THREADS),
+        lane_id(LaneId()),
         warp_offset(warp_id * WARP_TIME_SLICED_ITEMS)
     {}
 
@@ -663,38 +672,9 @@ public:
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(threadIdx.x),
-        warp_lane(linear_tid & (WARP_THREADS - 1)),
-        warp_id(linear_tid >> LOG_WARP_THREADS),
-        warp_offset(warp_id * WARP_TIME_SLICED_ITEMS)
-    {}
-
-
-    /**
-     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.  Each thread is identified using the supplied linear thread identifier
-     */
-    __device__ __forceinline__ BlockExchange(
-        int linear_tid)                        ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(PrivateStorage()),
-        linear_tid(linear_tid),
-        warp_lane(linear_tid & (WARP_THREADS - 1)),
-        warp_id(linear_tid >> LOG_WARP_THREADS),
-        warp_offset(warp_id * WARP_TIME_SLICED_ITEMS)
-    {}
-
-
-    /**
-     * \brief Collective constructor using the specified memory allocation as temporary storage.  Each thread is identified using the supplied linear thread identifier.
-     */
-    __device__ __forceinline__ BlockExchange(
-        TempStorage &temp_storage,              ///< [in] Reference to memory allocation having layout type TempStorage
-        int         linear_tid)                 ///< [in] <b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    :
-        temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid),
-        warp_lane(linear_tid & (WARP_THREADS - 1)),
-        warp_id(linear_tid >> LOG_WARP_THREADS),
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z)),
+        warp_id((WARPS == 1) ? 0 : linear_tid / CUB_PTX_WARP_THREADS),
+        lane_id(LaneId()),
         warp_offset(warp_id * WARP_TIME_SLICED_ITEMS)
     {}
 
