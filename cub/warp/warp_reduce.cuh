@@ -196,7 +196,7 @@ public:
 
 
     /**
-     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Logical warp and lane identifiers are constructed from <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.  Logical warp and lane identifiers are constructed from <tt>threadIdx.x</tt>.
      */
     __device__ __forceinline__ WarpReduce(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage

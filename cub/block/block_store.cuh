@@ -457,7 +457,7 @@ enum BlockStoreAlgorithm
  *
  * __global__ void ExampleKernel(int *d_data, ...)
  * {
- *     // Specialize BlockStore for 128 threads owning 4 integer items each
+ *     // Specialize BlockStore for a 1D block of 128 threads owning 4 integer items each
  *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE> BlockStore;
  *
  *     // Allocate shared memory for BlockStore
@@ -747,7 +747,7 @@ public:
     //@{
 
     /**
-     * \brief Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using a private static allocation of shared memory as temporary storage.
      */
     __device__ __forceinline__ BlockStore()
     :
@@ -757,7 +757,7 @@ public:
 
 
     /**
-     * \brief Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage.  Threads are identified using <tt>threadIdx.x</tt>.
+     * \brief Collective constructor using the specified memory allocation as temporary storage.
      */
     __device__ __forceinline__ BlockStore(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
@@ -816,7 +816,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockStore for 128 threads owning 4 integer items each
+     *     // Specialize BlockStore for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE> BlockStore;
      *
      *     // Allocate shared memory for BlockStore
@@ -863,7 +863,7 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, int valid_items, ...)
      * {
-     *     // Specialize BlockStore for 128 threads owning 4 integer items each
+     *     // Specialize BlockStore for a 1D block of 128 threads owning 4 integer items each
      *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE> BlockStore;
      *
      *     // Allocate shared memory for BlockStore

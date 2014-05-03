@@ -280,6 +280,17 @@ __device__ __forceinline__ void ThreadExit() {
 
 
 /**
+ * \brief Returns the row-major linear thread identifier for a multidimensional threadblock
+ */
+__device__ __forceinline__ int RowMajorTid(int block_dim_x, int block_dim_y, int block_dim_z)
+{
+    return ((block_dim_z == 1) ? 0 : (threadIdx.z * block_dim_x * block_dim_y)) +
+            ((block_dim_y == 1) ? 0 : (threadIdx.y * block_dim_x)) +
+            threadIdx.x;
+}
+
+
+/**
  * \brief Returns the warp lane ID of the calling thread
  */
 __device__ __forceinline__ unsigned int LaneId()

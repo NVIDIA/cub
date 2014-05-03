@@ -50,11 +50,20 @@ namespace cub {
  */
 template <
     typename    T,              ///< Data type being reduced
-    int         BLOCK_THREADS>  ///< The thread block size in threads
+    int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
+    int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
+    int         BLOCK_DIM_Z>    ///< The thread block length in threads along the Z dimension
 struct BlockReduceRakingCommutativeOnly
 {
+    /// Constants
+    enum
+    {
+        /// The thread block size in threads
+        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
+    };
+
     // The fall-back implementation to use when BLOCK_THREADS is not a multiple of the warp size or not all threads have valid values
-    typedef BlockReduceRaking<T, BLOCK_THREADS> FallBack;
+    typedef BlockReduceRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z> FallBack;
 
     /// Constants
     enum
@@ -104,11 +113,10 @@ struct BlockReduceRakingCommutativeOnly
 
     /// Constructor
     __device__ __forceinline__ BlockReduceRakingCommutativeOnly(
-        TempStorage &temp_storage,
-        int linear_tid)
+        TempStorage &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
-        linear_tid(linear_tid)
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
     {}
 
 
