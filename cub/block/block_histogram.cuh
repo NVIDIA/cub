@@ -181,7 +181,7 @@ private:
     /// Internal specialization.
     typedef typename If<(SAFE_ALGORITHM == BLOCK_HISTO_SORT),
         BlockHistogramSort<T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, BLOCK_DIM_Y, BLOCK_DIM_Z>,
-        BlockHistogramAtomic>::Type InternalBlockHistogram;
+        BlockHistogramAtomic<BINS> >::Type InternalBlockHistogram;
 
     /// Shared memory storage layout type for BlockHistogram
     typedef typename InternalBlockHistogram::TempStorage _TempStorage;
