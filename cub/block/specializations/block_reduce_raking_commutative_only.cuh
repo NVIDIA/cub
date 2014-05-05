@@ -65,7 +65,7 @@ struct BlockReduceRakingCommutativeOnly
     };
 
     // The fall-back implementation to use when BLOCK_THREADS is not a multiple of the warp size or not all threads have valid values
-    typedef BlockReduceRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z> FallBack;
+    typedef BlockReduceRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> FallBack;
 
     /// Constants
     enum
