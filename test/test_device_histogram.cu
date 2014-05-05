@@ -134,7 +134,7 @@ cudaError_t Dispatch(
  * Dispatch to shared sorting entrypoint
  */
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIterator, typename HistoCounter>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<DEVICE_HISTO_SORT> algorithm,
     Int2Type<false>     use_cdp,
@@ -166,7 +166,7 @@ cudaError_t Dispatch(
  * Dispatch to shared atomic entrypoint
  */
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIterator, typename HistoCounter>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<DEVICE_HISTO_SHARED_ATOMIC> algorithm,
     Int2Type<false>     use_cdp,
@@ -196,7 +196,7 @@ cudaError_t Dispatch(
  * Dispatch to global atomic entrypoint
  */
 template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIterator, typename HistoCounter>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC> algorithm,
     Int2Type<false>     use_cdp,

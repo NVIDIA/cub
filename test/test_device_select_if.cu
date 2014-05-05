@@ -83,7 +83,7 @@ struct LessThan
  * Dispatch to select if entrypoint
  */
 template <typename InputIterator, typename SelectOp, typename OutputIterator, typename NumSelectedIterator, typename Offset>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
     Int2Type<false>             partition,
@@ -114,7 +114,7 @@ cudaError_t Dispatch(
  * Dispatch to partition if entrypoint
  */
 template <typename InputIterator, typename SelectOp, typename OutputIterator, typename NumSelectedIterator, typename Offset>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
     Int2Type<true>              partition,

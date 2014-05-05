@@ -77,7 +77,7 @@ struct CustomMax
  * Dispatch to reduce entrypoint
  */
 template <typename InputIterator, typename OutputIterator, typename ReductionOp>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
     int                 timing_timing_iterations,
@@ -106,7 +106,7 @@ cudaError_t Dispatch(
  * Dispatch to sum entrypoint
  */
 template <typename InputIterator, typename OutputIterator>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
     int                 timing_timing_iterations,
@@ -135,7 +135,7 @@ cudaError_t Dispatch(
  * Dispatch to min entrypoint
  */
 template <typename InputIterator, typename OutputIterator>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
     int                 timing_timing_iterations,
@@ -164,7 +164,7 @@ cudaError_t Dispatch(
  * Dispatch to max entrypoint
  */
 template <typename InputIterator, typename OutputIterator>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
     int                 timing_timing_iterations,
@@ -193,7 +193,7 @@ cudaError_t Dispatch(
  * Dispatch to argmin entrypoint
  */
 template <typename InputIterator, typename OutputIterator>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
     int                 timing_timing_iterations,
@@ -222,7 +222,7 @@ cudaError_t Dispatch(
  * Dispatch to argmax entrypoint
  */
 template <typename InputIterator, typename OutputIterator>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
     int                 timing_timing_iterations,
@@ -376,7 +376,7 @@ __global__ void CnpDispatchKernel(
  * Dispatch to CDP kernel
  */
 template <typename InputIterator, typename OutputIterator, typename ReductionOp>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CDP>       dispatch_to,
     int                 timing_timing_iterations,

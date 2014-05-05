@@ -77,7 +77,7 @@ template <
     typename                    EqualityOp,
     typename                    ReductionOp,
     typename                    Offset>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
     int                         timing_timing_iterations,
@@ -126,7 +126,7 @@ template <
     typename                    ValueOutputIterator,
     typename                    NumSegmentsIterator,
     typename                    Offset>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
     int                         timing_timing_iterations,
@@ -361,7 +361,7 @@ template <
     typename                    EqualityOp,
     typename                    ReductionOp,
     typename                    Offset>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
     int                         timing_timing_iterations,
