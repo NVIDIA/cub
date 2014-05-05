@@ -368,7 +368,7 @@ struct BlockRangeScan
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         ScanTileState      &tile_status)       ///< Global list of tile status
     {
-#if (CUB_PTX_VERSION <= 130)
+#if (CUB_PTX_ARCH <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
         int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index

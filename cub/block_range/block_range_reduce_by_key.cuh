@@ -921,7 +921,7 @@ struct BlockRangeReduceByKey
         ScanTileState      &tile_status,       ///< Global list of tile status
         NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
     {
-#if (CUB_PTX_VERSION <= 130)
+#if (CUB_PTX_ARCH <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
         int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index

@@ -50,12 +50,13 @@ namespace cub {
  * \brief The BlockHistogramSort class provides sorting-based methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
  */
 template <
-    typename    T,
+    typename    T,                  ///< Sample type
     int         BLOCK_DIM_X,        ///< The thread block length in threads along the X dimension
-    int         ITEMS_PER_THREAD,
-    int         BINS,
+    int         ITEMS_PER_THREAD,   ///< The number of samples per thread
+    int         BINS,               ///< The number of bins into which histogram samples may fall
     int         BLOCK_DIM_Y,        ///< The thread block length in threads along the Y dimension
-    int         BLOCK_DIM_Z>        ///< The thread block length in threads along the Z dimension
+    int         BLOCK_DIM_Z,        ///< The thread block length in threads along the Z dimension
+    int         PTX_ARCH>           ///< The PTX compute capability for which to to specialize this collective
 struct BlockHistogramSort
 {
     /// Constants
@@ -72,15 +73,22 @@ struct BlockHistogramSort
             ITEMS_PER_THREAD,
             NullType,
             4,
-            (CUB_PTX_VERSION >= 350) ? true : false,
+            (PTX_ARCH >= 350) ? true : false,
             BLOCK_SCAN_WARP_SCANS,
-            (CUB_PTX_VERSION >= 350) ? cudaSharedMemBankSizeEightByte : cudaSharedMemBankSizeFourByte,
+            (PTX_ARCH >= 350) ? cudaSharedMemBankSizeEightByte : cudaSharedMemBankSizeFourByte,
             BLOCK_DIM_Y,
-            BLOCK_DIM_Z>
+            BLOCK_DIM_Z,
+            PTX_ARCH>
         BlockRadixSortT;
 
     // Parameterize BlockDiscontinuity type for our thread block
-    typedef BlockDiscontinuity<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockDiscontinuityT;
+    typedef BlockDiscontinuity<
+            T,
+            BLOCK_DIM_X,
+            BLOCK_DIM_Y,
+            BLOCK_DIM_Z,
+            PTX_ARCH>
+        BlockDiscontinuityT;
 
     /// Shared memory
     union _TempStorage

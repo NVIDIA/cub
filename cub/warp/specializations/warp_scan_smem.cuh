@@ -50,7 +50,8 @@ namespace cub {
  */
 template <
     typename    T,                      ///< Data type being scanned
-    int         LOGICAL_WARP_THREADS>   ///< Number of threads per logical warp
+    int         LOGICAL_WARP_THREADS,   ///< Number of threads per logical warp
+    int         PTX_ARCH>               ///< The PTX compute capability for which to to specialize this collective
 struct WarpScanSmem
 {
     /******************************************************************************
@@ -60,7 +61,7 @@ struct WarpScanSmem
     enum
     {
         /// Whether the logical warp size and the PTX warp size coincide
-        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
 
         /// The number of warp scan steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,

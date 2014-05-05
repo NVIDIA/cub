@@ -50,7 +50,8 @@ namespace cub {
  */
 template <
     typename    T,                      ///< Data type being reduced
-    int         LOGICAL_WARP_THREADS>   ///< Number of threads per logical warp
+    int         LOGICAL_WARP_THREADS,   ///< Number of threads per logical warp
+    int         PTX_ARCH>               ///< The PTX compute capability for which to to specialize this collective
 struct WarpReduceSmem
 {
     /******************************************************************************
@@ -60,7 +61,7 @@ struct WarpReduceSmem
     enum
     {
         /// Whether the logical warp size and the PTX warp size coincide
-        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_PTX_WARP_THREADS),
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
 
         /// Whether the logical warp size is a power-of-two
         IS_POW_OF_TWO = ((LOGICAL_WARP_THREADS & (LOGICAL_WARP_THREADS - 1)) == 0),
@@ -142,9 +143,8 @@ struct WarpReduceSmem
         return input;
     }
 
-
     /**
-     * Segmented reduction
+     * Ballot-based segmented reduce
      */
     template <
         bool            HEAD_SEGMENTED,     ///< Whether flags indicate a segment-head or a segment-tail
@@ -153,12 +153,9 @@ struct WarpReduceSmem
     __device__ __forceinline__ T SegmentedReduce(
         T               input,              ///< [in] Calling thread's input
         Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
-        ReductionOp     reduction_op)       ///< [in] Reduction operator
+        ReductionOp     reduction_op,       ///< [in] Reduction operator
+        Int2Type<true>  has_ballot)         ///< [in] Marker type for whether the target arch has ballot functionality
     {
-    #if CUB_PTX_VERSION >= 200
-
-        // Ballot-based segmented reduce
-
         // Get the start flags for each thread in the warp.
         int warp_flags = __ballot(flag);
 
@@ -197,11 +194,22 @@ struct WarpReduceSmem
         }
 
         return input;
+    }
 
-    #else
 
-        // Smem-based segmented reduce
-
+    /**
+     * Smem-based segmented reduce
+     */
+    template <
+        bool            HEAD_SEGMENTED,     ///< Whether flags indicate a segment-head or a segment-tail
+        typename        Flag,
+        typename        ReductionOp>
+    __device__ __forceinline__ T SegmentedReduce(
+        T               input,              ///< [in] Calling thread's input
+        Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
+        ReductionOp     reduction_op,       ///< [in] Reduction operator
+        Int2Type<false> has_ballot)         ///< [in] Marker type for whether the target arch has ballot functionality
+    {
         enum
         {
             UNSET   = 0x0,  // Is initially unset
@@ -268,8 +276,22 @@ struct WarpReduceSmem
         }
 
         return input;
+    }
 
-    #endif
+
+    /**
+     * Segmented reduction
+     */
+    template <
+        bool            HEAD_SEGMENTED,     ///< Whether flags indicate a segment-head or a segment-tail
+        typename        Flag,
+        typename        ReductionOp>
+    __device__ __forceinline__ T SegmentedReduce(
+        T               input,              ///< [in] Calling thread's input
+        Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
+        ReductionOp     reduction_op)       ///< [in] Reduction operator
+    {
+        return SegmentedReduce(input, flag, reduction_op, Int2Type<(PTX_ARCH >= 200)>());
     }
 
 

@@ -660,7 +660,7 @@ struct BlockRangeSelect
         ScanTileState      &tile_status,       ///< Global list of tile status
         NumSelectedIterator     d_num_selected)     ///< Output total number selected
     {
-#if (CUB_PTX_VERSION <= 130)
+#if (CUB_PTX_ARCH <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
         int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index

@@ -194,6 +194,7 @@ enum BlockScanAlgorithm
  * \tparam ALGORITHM        <b>[optional]</b> cub::BlockScanAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_SCAN_RAKING)
  * \tparam BLOCK_DIM_Y      <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z      <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
+ * \tparam PTX_ARCH         <b>[optional]</b> \ptxversion
  *
  * \par Overview
  * - Given a list of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)
@@ -259,7 +260,8 @@ template <
     int                 BLOCK_DIM_X,
     BlockScanAlgorithm  ALGORITHM       = BLOCK_SCAN_RAKING,
     int                 BLOCK_DIM_Y     = 1,
-    int                 BLOCK_DIM_Z     = 1>
+    int                 BLOCK_DIM_Z     = 1,
+    int                 PTX_ARCH        = CUB_PTX_ARCH>
 class BlockScan
 {
 private:
@@ -282,14 +284,17 @@ private:
      * architectural warp size.
      */
     static const BlockScanAlgorithm SAFE_ALGORITHM =
-        ((ALGORITHM == BLOCK_SCAN_WARP_SCANS) && (BLOCK_THREADS % CUB_PTX_WARP_THREADS != 0)) ?
+        ((ALGORITHM == BLOCK_SCAN_WARP_SCANS) && (BLOCK_THREADS % CUB_WARP_THREADS(PTX_ARCH) != 0)) ?
             BLOCK_SCAN_RAKING :
             ALGORITHM;
 
+    typedef BlockScanWarpScans<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> WarpScans;
+    typedef BlockScanRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, (SAFE_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE), PTX_ARCH> Raking;
+
     /// Define the delegate type for the desired algorithm
     typedef typename If<(SAFE_ALGORITHM == BLOCK_SCAN_WARP_SCANS),
-        BlockScanWarpScans<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z>,
-        BlockScanRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, (SAFE_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE)> >::Type InternalBlockScan;
+        WarpScans,
+        Raking>::Type InternalBlockScan;
 
     /// Shared memory storage layout type for BlockScan
     typedef typename InternalBlockScan::TempStorage _TempStorage;

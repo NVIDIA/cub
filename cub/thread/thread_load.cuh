@@ -275,7 +275,7 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define powers-of-two ThreadLoad specializations for the various Cache load modifiers
  */
-#if CUB_PTX_VERSION >= 200
+#if CUB_PTX_ARCH >= 200
     CUB_LOAD_ALL(LOAD_CA, ca)
     CUB_LOAD_ALL(LOAD_CG, cg)
     CUB_LOAD_ALL(LOAD_CS, cs)
@@ -288,7 +288,7 @@ struct IterateThreadLoad<MAX, MAX>
     CUB_LOAD_ALL(LOAD_CV, volatile.global)
 #endif
 
-#if CUB_PTX_VERSION >= 350
+#if CUB_PTX_ARCH >= 350
     CUB_LOAD_ALL(LOAD_LDG, global.nc)
 #else
     CUB_LOAD_ALL(LOAD_LDG, global)
@@ -331,7 +331,7 @@ __device__ __forceinline__ T ThreadLoadVolatilePointer(
 {
     T retval = *reinterpret_cast<volatile T*>(ptr);
 
-#if (CUB_PTX_VERSION <= 130)
+#if (CUB_PTX_ARCH <= 130)
     if (sizeof(T) == 1) __threadfence_block();
 #endif
 
@@ -348,7 +348,7 @@ __device__ __forceinline__ T ThreadLoadVolatilePointer(
     Int2Type<false>          is_primitive)
 {
 
-#if CUB_PTX_VERSION <= 130
+#if CUB_PTX_ARCH <= 130
 
     T retval = *ptr;
     __threadfence_block();
@@ -368,7 +368,7 @@ __device__ __forceinline__ T ThreadLoadVolatilePointer(
 
     return *reinterpret_cast<T*>(words);
 
-#endif  // CUB_PTX_VERSION <= 130
+#endif  // CUB_PTX_ARCH <= 130
 }
 
 

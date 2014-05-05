@@ -123,7 +123,7 @@ public:
         Offset fill_size,
         cudaStream_t stream = 0)
     {
-#if (CUB_PTX_VERSION > 0)
+#if (CUB_PTX_ARCH > 0)
         d_counters[FILL] = fill_size;
         d_counters[DRAIN] = 0;
         return cudaSuccess;
@@ -139,7 +139,7 @@ public:
     /// This operation resets the drain so that it may advance to meet the existing fill-size.  To be called by the host or by a kernel prior to that which will be draining.
     __host__ __device__ __forceinline__ cudaError_t ResetDrain(cudaStream_t stream = 0)
     {
-#if (CUB_PTX_VERSION > 0)
+#if (CUB_PTX_ARCH > 0)
         d_counters[DRAIN] = 0;
         return cudaSuccess;
 #else
@@ -151,7 +151,7 @@ public:
     /// This operation resets the fill counter.  To be called by the host or by a kernel prior to that which will be filling.
     __host__ __device__ __forceinline__ cudaError_t ResetFill()
     {
-#if (CUB_PTX_VERSION > 0)
+#if (CUB_PTX_ARCH > 0)
         d_counters[FILL] = 0;
         return cudaSuccess;
 #else
@@ -165,7 +165,7 @@ public:
         Offset &fill_size,
         cudaStream_t stream = 0)
     {
-#if (CUB_PTX_VERSION > 0)
+#if (CUB_PTX_ARCH > 0)
         fill_size = d_counters[FILL];
         return cudaSuccess;
 #else

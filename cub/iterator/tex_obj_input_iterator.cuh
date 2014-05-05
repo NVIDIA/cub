@@ -203,7 +203,7 @@ public:
     /// Indirection
     __host__ __device__ __forceinline__ reference operator*() const
     {
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
         // Simply dereference the pointer on the host
         return ptr[tex_offset];
 #else

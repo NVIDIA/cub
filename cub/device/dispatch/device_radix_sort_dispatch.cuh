@@ -353,16 +353,16 @@ struct DeviceRadixSortDispatch
      * Tuning policies of current PTX compiler pass
      ******************************************************************************/
 
-#if (CUB_PTX_VERSION >= 350)
+#if (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
 
-#elif (CUB_PTX_VERSION >= 300)
+#elif (CUB_PTX_ARCH >= 300)
     typedef Policy300 PtxPolicy;
 
-#elif (CUB_PTX_VERSION >= 200)
+#elif (CUB_PTX_ARCH >= 200)
     typedef Policy200 PtxPolicy;
 
-#elif (CUB_PTX_VERSION >= 130)
+#elif (CUB_PTX_ARCH >= 130)
     typedef Policy130 PtxPolicy;
 
 #else
@@ -444,7 +444,7 @@ struct DeviceRadixSortDispatch
         DownsweepKernelPtr      downsweep_kernel,
         DownsweepKernelPtr      alt_downsweep_kernel)
     {
-    #if (CUB_PTX_VERSION > 0)
+    #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         cudaError_t error;
@@ -640,7 +640,7 @@ struct DeviceRadixSortDispatch
             // Get even-share work distribution descriptor
             GridEvenShare<Offset> even_share(num_items, downsweep_config.max_grid_size, CUB_MAX(downsweep_config.tile_size, upsweep_config.tile_size));
 
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
             // Get current smem bank configuration
             cudaSharedMemConfig original_smem_config;
             if (CubDebug(error = cudaDeviceGetSharedMemConfig(&original_smem_config))) break;
@@ -650,7 +650,7 @@ struct DeviceRadixSortDispatch
             int current_bit = begin_bit;
             while (current_bit < end_bit)
             {
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
                 // Update smem config if necessary
                 if (current_smem_config != upsweep_config.smem_config)
                 {
@@ -695,7 +695,7 @@ struct DeviceRadixSortDispatch
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
 
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
                 // Update smem config if necessary
                 if (current_smem_config != downsweep_config.smem_config)
                 {
@@ -734,7 +734,7 @@ struct DeviceRadixSortDispatch
                 current_bit += downsweep_config.radix_bits;
             }
 
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
             // Reset smem config if necessary
             if (current_smem_config != original_smem_config)
             {
@@ -788,10 +788,10 @@ struct DeviceRadixSortDispatch
         {
             // Get PTX version
             int ptx_version;
-    #if (CUB_PTX_VERSION == 0)
+    #if (CUB_PTX_ARCH == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
-            ptx_version = CUB_PTX_VERSION;
+            ptx_version = CUB_PTX_ARCH;
     #endif
 
             // Get device ordinal
