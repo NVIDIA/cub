@@ -99,6 +99,7 @@ enum BlockHistogramAlgorithm
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistogramAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_HISTO_SORT)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
+ * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
  *
  * \par Overview
  * - A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
@@ -149,9 +150,10 @@ template <
     int                     BLOCK_DIM_X,
     int                     ITEMS_PER_THREAD,
     int                     BINS,
-    BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT,
-    int                     BLOCK_DIM_Y     = 1,
-    int                     BLOCK_DIM_Z     = 1>
+    BlockHistogramAlgorithm ALGORITHM           = BLOCK_HISTO_SORT,
+    int                     BLOCK_DIM_Y         = 1,
+    int                     BLOCK_DIM_Z         = 1,
+    int                     PTX_ARCH            = CUB_PTX_ARCH>
 class BlockHistogram
 {
 private:
@@ -174,13 +176,13 @@ private:
      * regardless.
      */
     static const BlockHistogramAlgorithm SAFE_ALGORITHM =
-        ((ALGORITHM == BLOCK_HISTO_ATOMIC) && (CUB_PTX_VERSION < 120)) ?
+        ((ALGORITHM == BLOCK_HISTO_ATOMIC) && (PTX_ARCH < 120)) ?
             BLOCK_HISTO_SORT :
             ALGORITHM;
 
     /// Internal specialization.
     typedef typename If<(SAFE_ALGORITHM == BLOCK_HISTO_SORT),
-        BlockHistogramSort<T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, BLOCK_DIM_Y, BLOCK_DIM_Z>,
+        BlockHistogramSort<T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH>,
         BlockHistogramAtomic<BINS> >::Type InternalBlockHistogram;
 
     /// Shared memory storage layout type for BlockHistogram

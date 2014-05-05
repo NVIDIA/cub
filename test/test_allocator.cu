@@ -62,7 +62,7 @@ int main(int argc, char** argv)
         exit(0);
     }
 
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());

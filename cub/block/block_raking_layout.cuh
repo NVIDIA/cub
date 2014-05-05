@@ -55,12 +55,14 @@ namespace cub {
  * sequences of shared items.  Padding is inserted to eliminate bank conflicts
  * (for most data types).
  *
- * \tparam T                    The data type to be exchanged.
- * \tparam BLOCK_THREADS        The thread block size in threads.
+ * \tparam T                        The data type to be exchanged.
+ * \tparam BLOCK_THREADS            The thread block size in threads.
+ * \tparam PTX_ARCH                 <b>[optional]</b> \ptxversion
  */
 template <
     typename    T,
-    int         BLOCK_THREADS>
+    int         BLOCK_THREADS,
+    int         PTX_ARCH = CUB_PTX_ARCH>
 struct BlockRakingLayout
 {
     //---------------------------------------------------------------------
@@ -73,7 +75,7 @@ struct BlockRakingLayout
         SHARED_ELEMENTS = BLOCK_THREADS,
 
         /// Maximum number of warp-synchronous raking threads
-        MAX_RAKING_THREADS = CUB_MIN(BLOCK_THREADS, CUB_PTX_WARP_THREADS),
+        MAX_RAKING_THREADS = CUB_MIN(BLOCK_THREADS, CUB_WARP_THREADS(PTX_ARCH)),
 
         /// Number of raking elements per warp-synchronous raking thread (rounded up)
         SEGMENT_LENGTH = (SHARED_ELEMENTS + MAX_RAKING_THREADS - 1) / MAX_RAKING_THREADS,
@@ -82,15 +84,15 @@ struct BlockRakingLayout
         RAKING_THREADS = (SHARED_ELEMENTS + SEGMENT_LENGTH - 1) / SEGMENT_LENGTH,
 
         /// Whether we will have bank conflicts
-        HAS_CONFLICTS = (CUB_PTX_SMEM_BANKS % SEGMENT_LENGTH == 0),
+        HAS_CONFLICTS = (CUB_SMEM_BANKS(PTX_ARCH) % SEGMENT_LENGTH == 0),
 
         /// Degree of bank conflicts (e.g., 4-way)
         CONFLICT_DEGREE = (HAS_CONFLICTS) ?
-            (MAX_RAKING_THREADS / (CUB_PTX_SMEM_BANKS / SEGMENT_LENGTH)) :
+            (MAX_RAKING_THREADS / (CUB_SMEM_BANKS(PTX_ARCH) / SEGMENT_LENGTH)) :
             0,
 
         /// Pad each segment length with one element if degree of bank conflicts is greater than 4-way (heuristic)
-        SEGMENT_PADDING = (CONFLICT_DEGREE <= CUB_PTX_PREFER_CONFLICT_OVER_PADDING) ? 0 : 1,
+        SEGMENT_PADDING = (CONFLICT_DEGREE <= CUB_PREFER_CONFLICT_OVER_PADDING(PTX_ARCH)) ? 0 : 1,
 //        SEGMENT_PADDING = (HAS_CONFLICTS) ? 1 : 0,
 
         /// Total number of elements in the raking grid

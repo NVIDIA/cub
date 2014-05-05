@@ -533,7 +533,7 @@ struct BlockRangeRadixSortDownsweep
             if (DESCENDING)
             {
                 // Get the prefix from the next thread (higher bins come first)
-#if CUB_PTX_VERSION >= 300
+#if CUB_PTX_ARCH >= 300
                 exclusive_digit_prefix = ShuffleDown(inclusive_digit_prefix, 1);
                 if (threadIdx.x == RADIX_DIGITS - 1)
                     exclusive_digit_prefix = 0;
@@ -547,7 +547,7 @@ struct BlockRangeRadixSortDownsweep
             else
             {
                 // Get the prefix from the previous thread (lower bins come first)
-#if CUB_PTX_VERSION >= 300
+#if CUB_PTX_ARCH >= 300
                 exclusive_digit_prefix = ShuffleUp(inclusive_digit_prefix, 1);
                 if (threadIdx.x == 0)
                     exclusive_digit_prefix = 0;

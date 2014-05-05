@@ -428,6 +428,7 @@ enum BlockStoreAlgorithm
  * \tparam WARP_TIME_SLICING    <b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
+ * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
  *
  * \par Overview
  * - The BlockStore class provides a single data movement abstraction that can be specialized
@@ -489,7 +490,8 @@ template <
     BlockStoreAlgorithm     ALGORITHM           = BLOCK_STORE_DIRECT,
     bool                    WARP_TIME_SLICING   = false,
     int                     BLOCK_DIM_Y         = 1,
-    int                     BLOCK_DIM_Z         = 1>
+    int                     BLOCK_DIM_Z         = 1,
+    int                     PTX_ARCH            = CUB_PTX_ARCH>
 class BlockStore
 {
 private:
@@ -611,7 +613,7 @@ private:
     struct StoreInternal<BLOCK_STORE_TRANSPOSE, DUMMY>
     {
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchange;
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage _TempStorage;
@@ -663,14 +665,14 @@ private:
     {
         enum
         {
-            WARP_THREADS = CUB_PTX_WARP_THREADS
+            WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH)
         };
 
         // Assert BLOCK_THREADS must be a multiple of WARP_THREADS
         CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), "BLOCK_THREADS must be a multiple of WARP_THREADS");
 
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchange;
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage _TempStorage;

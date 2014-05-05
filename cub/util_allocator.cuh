@@ -33,7 +33,7 @@
 
 #pragma once
 
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
     #include <set>              // NVCC (EDG, really) takes FOREVER to compile std::map
     #include <map>
 #endif
@@ -202,7 +202,7 @@ struct CachingDeviceAllocator
     /// BlockDescriptor comparator function interface
     typedef bool (*Compare)(const BlockDescriptor &, const BlockDescriptor &);
 
-#if (CUB_PTX_VERSION == 0)   // Only define STL container members in host code
+#if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code
 
     /// Set type for cached blocks (ordered by size)
     typedef std::multiset<BlockDescriptor, Compare> CachedBlocks;
@@ -213,7 +213,7 @@ struct CachingDeviceAllocator
     /// Map type of device ordinals to the number of cached bytes cached by each device
     typedef std::map<int, size_t> GpuCachedBytes;
 
-#endif // CUB_PTX_VERSION
+#endif // CUB_PTX_ARCH
 
     //---------------------------------------------------------------------
     // Fields
@@ -232,13 +232,13 @@ struct CachingDeviceAllocator
     bool            debug;              /// Whether or not to print (de)allocation events to stdout
     bool            skip_cleanup;       /// Whether or not to skip a call to FreeAllCached() when destructor is called.  (The CUDA runtime may have already shut down for statically declared allocators)
 
-#if (CUB_PTX_VERSION == 0)   // Only define STL container members in host code
+#if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code
 
     GpuCachedBytes  cached_bytes;       /// Map of device ordinal to aggregate cached bytes on that device
     CachedBlocks    cached_blocks;      /// Set of cached device allocations available for reuse
     BusyBlocks      live_blocks;        /// Set of live device allocations currently in use
 
-#endif // CUB_PTX_VERSION
+#endif // CUB_PTX_ARCH
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -256,7 +256,7 @@ struct CachingDeviceAllocator
         size_t max_cached_bytes,    ///< Maximum aggregate cached bytes per device
         bool skip_cleanup = false)  ///< Whether or not to skip a call to \p FreeAllCached() when the destructor is called.  (Useful for preventing warnings when the allocator is declared at file/static/global scope: by the time the destructor is called on program exit, the CUDA runtime may have already shut down and freed all allocations.)
     :
-    #if (CUB_PTX_VERSION == 0)   // Only define STL container members in host code
+    #if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code
             cached_blocks(BlockDescriptor::SizeCompare),
             live_blocks(BlockDescriptor::PtrCompare),
     #endif
@@ -287,7 +287,7 @@ struct CachingDeviceAllocator
     CachingDeviceAllocator(
         bool skip_cleanup = false)  ///< Whether or not to skip a call to \p FreeAllCached() when the destructor is called.  (Useful for preventing warnings when the allocator is declared at file/static/global scope: by the time the destructor is called on program exit, the CUDA runtime may have already shut down and freed all allocations.)
     :
-    #if (CUB_PTX_VERSION == 0)   // Only define STL container members in host code
+    #if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code
         cached_blocks(BlockDescriptor::SizeCompare),
         live_blocks(BlockDescriptor::PtrCompare),
     #endif
@@ -309,7 +309,7 @@ struct CachingDeviceAllocator
     cudaError_t SetMaxCachedBytes(
         size_t max_cached_bytes)
     {
-    #if (CUB_PTX_VERSION > 0)
+    #if (CUB_PTX_ARCH > 0)
         // Caching functionality only defined on host
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
@@ -326,7 +326,7 @@ struct CachingDeviceAllocator
 
         return cudaSuccess;
 
-    #endif // CUB_PTX_VERSION
+    #endif // CUB_PTX_ARCH
     }
 
 
@@ -338,7 +338,7 @@ struct CachingDeviceAllocator
         size_t bytes,
         int device)
     {
-    #if (CUB_PTX_VERSION > 0)
+    #if (CUB_PTX_ARCH > 0)
         // Caching functionality only defined on host
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
@@ -436,7 +436,7 @@ struct CachingDeviceAllocator
 
         return error;
 
-    #endif // CUB_PTX_VERSION
+    #endif // CUB_PTX_ARCH
     }
 
 
@@ -447,7 +447,7 @@ struct CachingDeviceAllocator
         void** d_ptr,
         size_t bytes)
     {
-    #if (CUB_PTX_VERSION > 0)
+    #if (CUB_PTX_ARCH > 0)
         // Caching functionality only defined on host
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
@@ -460,7 +460,7 @@ struct CachingDeviceAllocator
 
         return error;
 
-    #endif // CUB_PTX_VERSION
+    #endif // CUB_PTX_ARCH
     }
 
 
@@ -471,7 +471,7 @@ struct CachingDeviceAllocator
         void* d_ptr,
         int device)
     {
-    #if (CUB_PTX_VERSION > 0)
+    #if (CUB_PTX_ARCH > 0)
         // Caching functionality only defined on host
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
@@ -547,7 +547,7 @@ struct CachingDeviceAllocator
 
         return error;
 
-    #endif // CUB_PTX_VERSION
+    #endif // CUB_PTX_ARCH
     }
 
 
@@ -557,7 +557,7 @@ struct CachingDeviceAllocator
     cudaError_t DeviceFree(
         void* d_ptr)
     {
-    #if (CUB_PTX_VERSION > 0)
+    #if (CUB_PTX_ARCH > 0)
         // Caching functionality only defined on host
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
@@ -572,7 +572,7 @@ struct CachingDeviceAllocator
 
         return error;
 
-    #endif // CUB_PTX_VERSION
+    #endif // CUB_PTX_ARCH
     }
 
 
@@ -581,7 +581,7 @@ struct CachingDeviceAllocator
      */
     cudaError_t FreeAllCached()
     {
-    #if (CUB_PTX_VERSION > 0)
+    #if (CUB_PTX_ARCH > 0)
         // Caching functionality only defined on host
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
@@ -640,7 +640,7 @@ struct CachingDeviceAllocator
 
         return error;
 
-    #endif // CUB_PTX_VERSION
+    #endif // CUB_PTX_ARCH
     }
 
 

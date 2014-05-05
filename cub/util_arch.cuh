@@ -48,16 +48,16 @@ namespace cub {
  */
 
 
-/// CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the host pass).
+/// CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host pass).
 #ifndef __CUDA_ARCH__
-    #define CUB_PTX_VERSION 0
+    #define CUB_PTX_ARCH 0
 #else
-    #define CUB_PTX_VERSION __CUDA_ARCH__
+    #define CUB_PTX_ARCH __CUDA_ARCH__
 #endif
 
 
 /// Whether or not the source targeted by the active compiler pass is allowed to  invoke device kernels or methods from the CUDA runtime API.
-#if (CUB_PTX_VERSION == 0) || defined(CUB_CDP)
+#if (CUB_PTX_ARCH == 0) || defined(CUB_CDP)
     #define CUB_RUNTIME_ENABLED
     #define CUB_RUNTIME_FUNCTION __host__ __device__
 #else
@@ -66,15 +66,23 @@ namespace cub {
 
 
 
-/// Number of threads per warp
+/// Number of threads per warp (log)
 #define CUB_LOG_WARP_THREADS(arch)                      \
 	(5)
 
-/// Number of smem banks
+/// Number of threads per warp
+#define CUB_WARP_THREADS(arch)                          \
+    (1 << CUB_LOG_WARP_THREADS(arch))
+
+/// Number of smem banks (log)
 #define CUB_LOG_SMEM_BANKS(arch)                        \
     ((arch >= 200) ?                                    \
         (5) :                                           \
         (4))
+
+/// Number of smem banks
+#define CUB_SMEM_BANKS(arch)                            \
+    (1 << CUB_LOG_SMEM_BANKS(arch))
 
 /// Number of bytes per smem bank
 #define CUB_SMEM_BANK_BYTES(arch)                       \
@@ -164,21 +172,21 @@ namespace cub {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-#define CUB_PTX_LOG_WARP_THREADS                CUB_LOG_WARP_THREADS(CUB_PTX_VERSION)
-#define CUB_PTX_WARP_THREADS                    (1 << CUB_PTX_LOG_WARP_THREADS)
-#define CUB_PTX_LOG_SMEM_BANKS                  CUB_LOG_SMEM_BANKS(CUB_PTX_VERSION)
-#define CUB_PTX_SMEM_BANKS                      (1 << CUB_PTX_LOG_SMEM_BANKS)
-#define CUB_PTX_SMEM_BANK_BYTES                 CUB_SMEM_BANK_BYTES(CUB_PTX_VERSION)
-#define CUB_PTX_SMEM_BYTES                      CUB_SMEM_BYTES(CUB_PTX_VERSION)
-#define CUB_PTX_SMEM_ALLOC_UNIT                 CUB_SMEM_ALLOC_UNIT(CUB_PTX_VERSION)
-#define CUB_PTX_REGS_BY_BLOCK                   CUB_REGS_BY_BLOCK(CUB_PTX_VERSION)
-#define CUB_PTX_REG_ALLOC_UNIT                  CUB_REG_ALLOC_UNIT(CUB_PTX_VERSION)
-#define CUB_PTX_WARP_ALLOC_UNIT                 CUB_WARP_ALLOC_UNIT(CUB_PTX_VERSION)
-#define CUB_PTX_MAX_SM_THREADS                  CUB_MAX_SM_THREADS(CUB_PTX_VERSION)
-#define CUB_PTX_MAX_SM_BLOCKS                   CUB_MAX_SM_BLOCKS(CUB_PTX_VERSION)
-#define CUB_PTX_MAX_BLOCK_THREADS               CUB_MAX_BLOCK_THREADS(CUB_PTX_VERSION)
-#define CUB_PTX_MAX_SM_REGISTERS                CUB_MAX_SM_REGISTERS(CUB_PTX_VERSION)
-#define CUB_PTX_PREFER_CONFLICT_OVER_PADDING    CUB_PREFER_CONFLICT_OVER_PADDING(CUB_PTX_VERSION)
+#define CUB_PTX_LOG_WARP_THREADS                CUB_LOG_WARP_THREADS(CUB_PTX_ARCH)
+#define CUB_PTX_WARP_THREADS                    CUB_WARP_THREADS(CUB_PTX_ARCH)
+#define CUB_PTX_LOG_SMEM_BANKS                  CUB_LOG_SMEM_BANKS(CUB_PTX_ARCH)
+#define CUB_PTX_SMEM_BANKS                      CUB_SMEM_BANKS(CUB_PTX_ARCH)
+#define CUB_PTX_SMEM_BANK_BYTES                 CUB_SMEM_BANK_BYTES(CUB_PTX_ARCH)
+#define CUB_PTX_SMEM_BYTES                      CUB_SMEM_BYTES(CUB_PTX_ARCH)
+#define CUB_PTX_SMEM_ALLOC_UNIT                 CUB_SMEM_ALLOC_UNIT(CUB_PTX_ARCH)
+#define CUB_PTX_REGS_BY_BLOCK                   CUB_REGS_BY_BLOCK(CUB_PTX_ARCH)
+#define CUB_PTX_REG_ALLOC_UNIT                  CUB_REG_ALLOC_UNIT(CUB_PTX_ARCH)
+#define CUB_PTX_WARP_ALLOC_UNIT                 CUB_WARP_ALLOC_UNIT(CUB_PTX_ARCH)
+#define CUB_PTX_MAX_SM_THREADS                  CUB_MAX_SM_THREADS(CUB_PTX_ARCH)
+#define CUB_PTX_MAX_SM_BLOCKS                   CUB_MAX_SM_BLOCKS(CUB_PTX_ARCH)
+#define CUB_PTX_MAX_BLOCK_THREADS               CUB_MAX_BLOCK_THREADS(CUB_PTX_ARCH)
+#define CUB_PTX_MAX_SM_REGISTERS                CUB_MAX_SM_REGISTERS(CUB_PTX_ARCH)
+#define CUB_PTX_PREFER_CONFLICT_OVER_PADDING    CUB_PREFER_CONFLICT_OVER_PADDING(CUB_PTX_ARCH)
 
 #endif  // Do not document
 

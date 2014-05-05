@@ -61,6 +61,7 @@ namespace cub {
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeEightByte for architectures SM35 and newer, \p cudaSharedMemBankSizeFourByte otherwise)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
+ * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
  *
  * \par Overview
  * - The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
@@ -121,11 +122,12 @@ template <
     int                     ITEMS_PER_THREAD,
     typename                Value                   = NullType,
     int                     RADIX_BITS              = 4,
-    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_VERSION >= 350) ? true : false,
+    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
-    cudaSharedMemConfig     SMEM_CONFIG             = (CUB_PTX_VERSION >= 350) ? cudaSharedMemBankSizeEightByte : cudaSharedMemBankSizeFourByte,
+    cudaSharedMemConfig     SMEM_CONFIG             = (CUB_PTX_ARCH >= 350) ? cudaSharedMemBankSizeEightByte : cudaSharedMemBankSizeFourByte,
     int                     BLOCK_DIM_Y             = 1,
-    int                     BLOCK_DIM_Z             = 1>
+    int                     BLOCK_DIM_Z             = 1,
+    int                     PTX_ARCH                = CUB_PTX_ARCH>
 class BlockRadixSort
 {
 private:
@@ -156,7 +158,8 @@ private:
             INNER_SCAN_ALGORITHM,
             SMEM_CONFIG,
             BLOCK_DIM_Y,
-            BLOCK_DIM_Z>
+            BLOCK_DIM_Z,
+            PTX_ARCH>
         AscendingBlockRadixRank;
 
     /// Descending BlockRadixRank utility type
@@ -168,14 +171,15 @@ private:
             INNER_SCAN_ALGORITHM,
             SMEM_CONFIG,
             BLOCK_DIM_Y,
-            BLOCK_DIM_Z>
+            BLOCK_DIM_Z,
+            PTX_ARCH>
         DescendingBlockRadixRank;
 
     /// BlockExchange utility type for keys
-    typedef BlockExchange<Key, BLOCK_DIM_X, ITEMS_PER_THREAD, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchangeKeys;
+    typedef BlockExchange<Key, BLOCK_DIM_X, ITEMS_PER_THREAD, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchangeKeys;
 
     /// BlockExchange utility type for values
-    typedef BlockExchange<Value, BLOCK_DIM_X, ITEMS_PER_THREAD, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchangeValues;
+    typedef BlockExchange<Value, BLOCK_DIM_X, ITEMS_PER_THREAD, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchangeValues;
 
     /// Shared memory storage layout type
     struct _TempStorage

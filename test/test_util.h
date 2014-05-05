@@ -397,7 +397,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 {
     switch (gen_mode)
     {
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
     case RANDOM:
          RandomBits(value);
          break;

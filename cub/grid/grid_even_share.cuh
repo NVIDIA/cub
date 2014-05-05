@@ -154,7 +154,7 @@ struct GridEvenShare
     __host__ __device__ __forceinline__ void Print()
     {
         printf(
-#if (CUB_PTX_VERSION > 0)
+#if (CUB_PTX_ARCH > 0)
             "\tthreadblock(%d) "
             "block_offset(%lu) "
             "block_end(%lu) "
@@ -164,7 +164,7 @@ struct GridEvenShare
             "big_blocks(%lu)  "
             "big_share(%lu)  "
             "normal_share(%lu)\n",
-#if (CUB_PTX_VERSION > 0)
+#if (CUB_PTX_ARCH > 0)
                 blockIdx.x,
                 (unsigned long) block_offset,
                 (unsigned long) block_end,
