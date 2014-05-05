@@ -246,7 +246,7 @@ template <>
 struct UnitWord <float2>
 {
     typedef int         ShuffleWord;
-#if (CUB_PTX_VERSION > 0) && (CUB_PTX_VERSION <= 130)
+#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
     typedef float       VolatileWord;
     typedef uint2       DeviceWord;
 #else
@@ -261,7 +261,7 @@ template <>
 struct UnitWord <float4>
 {
     typedef int         ShuffleWord;
-#if (CUB_PTX_VERSION > 0) && (CUB_PTX_VERSION <= 130)
+#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
     typedef float               VolatileWord;
     typedef uint4               DeviceWord;
 #else
@@ -277,7 +277,7 @@ template <>
 struct UnitWord <char2>
 {
     typedef unsigned short      ShuffleWord;
-#if (CUB_PTX_VERSION > 0) && (CUB_PTX_VERSION <= 130)
+#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
     typedef unsigned short      VolatileWord;
     typedef short               DeviceWord;
 #else
@@ -508,7 +508,7 @@ struct ItemOffsetPair
     typedef _T        T;                ///< Item data type
     typedef _Offset   Offset;           ///< Integer offset data type
 
-#if (CUB_PTX_VERSION == 0)
+#if (CUB_PTX_ARCH == 0)
     union
     {
         Offset                              offset;     ///< Offset
@@ -557,7 +557,7 @@ struct KeyValuePair
 template <typename T>
 __host__ __device__ __forceinline__ T ZeroInitialize()
 {
-#if (CUB_PTX_VERSION > 0) && (CUB_PTX_VERSION <= 130)
+#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
 
     typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
     const int MULTIPLE = sizeof(T) / sizeof(ShuffleWord);

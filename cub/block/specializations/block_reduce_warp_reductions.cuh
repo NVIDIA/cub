@@ -52,7 +52,8 @@ template <
     typename    T,              ///< Data type being reduced
     int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
     int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
-    int         BLOCK_DIM_Z>    ///< The thread block length in threads along the Z dimension
+    int         BLOCK_DIM_Z,    ///< The thread block length in threads along the Z dimension
+    int         PTX_ARCH>       ///< The PTX compute capability for which to to specialize this collective
 struct BlockReduceWarpReductions
 {
     /// Constants
@@ -61,11 +62,14 @@ struct BlockReduceWarpReductions
         /// The thread block size in threads
         BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
 
+        /// Number of warp threads
+        WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH),
+
         /// Number of active warps
-        WARPS = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
+        WARPS = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
         /// The logical warp size for warp reductions
-        LOGICAL_WARP_SIZE = CUB_MIN(BLOCK_THREADS, CUB_PTX_WARP_THREADS),
+        LOGICAL_WARP_SIZE = CUB_MIN(BLOCK_THREADS, WARP_THREADS),
 
         /// Whether or not the logical warp size evenly divides the threadblock size
         EVEN_WARP_MULTIPLE = (BLOCK_THREADS % LOGICAL_WARP_SIZE == 0)
@@ -73,7 +77,7 @@ struct BlockReduceWarpReductions
 
 
     ///  WarpReduce utility type
-    typedef typename WarpReduce<T, LOGICAL_WARP_SIZE>::InternalWarpReduce WarpReduce;
+    typedef typename WarpReduce<T, LOGICAL_WARP_SIZE, PTX_ARCH>::InternalWarpReduce WarpReduce;
 
 
     /// Shared memory storage layout type
@@ -101,7 +105,7 @@ struct BlockReduceWarpReductions
     :
         temp_storage(temp_storage.Alias()),
         linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z)),
-        warp_id((WARPS == 1) ? 0 : linear_tid / CUB_PTX_WARP_THREADS),
+        warp_id((WARPS == 1) ? 0 : linear_tid / WARP_THREADS),
         lane_id(LaneId())
     {}
 

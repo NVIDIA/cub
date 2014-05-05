@@ -53,6 +53,7 @@ namespace cub {
  * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
+ * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
  *
  * \par Overview
  * It is commonplace for blocks of threads to rearrange data items between
@@ -64,7 +65,8 @@ template <
     typename            T,
     int                 BLOCK_DIM_X,
     int                 BLOCK_DIM_Y         = 1,
-    int                 BLOCK_DIM_Z         = 1>
+    int                 BLOCK_DIM_Z         = 1,
+    int                 PTX_ARCH            = CUB_PTX_ARCH>
 class BlockShift
 {
 private:
@@ -77,9 +79,9 @@ private:
     {
         BLOCK_THREADS               = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
 
-        LOG_WARP_THREADS            = CUB_PTX_LOG_WARP_THREADS,
+        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(PTX_ARCH),
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
-        WARPS                       = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
+        WARPS                       = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
     };
 
     /******************************************************************************
@@ -87,11 +89,9 @@ private:
      ******************************************************************************/
 
     /// Shared memory storage layout type
-#if CUB_PTX_VERSION >= 300
-    typedef T _TempStorage[WARPS];              // Kepler+ only needs smem to share between warps
-#else
-    typedef T _TempStorage[BLOCK_THREADS];
-#endif
+    typedef typename If<(PTX_ARCH >= 300),
+        T[WARPS],                                   // Kepler+ only needs smem to share between warps
+        T[BLOCK_THREADS] >::Type _TempStorage;
 
 public:
 
@@ -140,7 +140,7 @@ public:
     :
         temp_storage(PrivateStorage()),
         linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z)),
-        warp_id((WARPS == 1) ? 0 : linear_tid / CUB_PTX_WARP_THREADS),
+        warp_id((WARPS == 1) ? 0 : linear_tid / WARP_THREADS),
         lane_id(LaneId())
     {}
 
@@ -153,7 +153,7 @@ public:
     :
         temp_storage(temp_storage.Alias()),
         linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z)),
-        warp_id((WARPS == 1) ? 0 : linear_tid / CUB_PTX_WARP_THREADS),
+        warp_id((WARPS == 1) ? 0 : linear_tid / WARP_THREADS),
         lane_id(LaneId())
     {}
 
@@ -176,7 +176,7 @@ public:
         T &output,          ///< [out] Output item
         T block_prefix)     ///< [in] Prefix item to be provided to <em>thread</em><sub>0</sub>
     {
-#if CUB_PTX_VERSION >= 300
+#if CUB_PTX_ARCH >= 300
         if (lane_id == WARP_THREADS - 1)
             temp_storage[warp_id] = input;
 
@@ -213,7 +213,7 @@ public:
         T block_prefix,     ///< [in] Prefix item to be provided to <em>thread</em><sub>0</sub>
         T &block_suffix)    ///< [out] Suffix item shifted out by the <em>thread</em><sub><tt>BLOCK_THREADS-1</tt></sub> to be provided to all threads
     {
-#if CUB_PTX_VERSION >= 300
+#if CUB_PTX_ARCH >= 300
         if (lane_id == WARP_THREADS - 1)
             temp_storage[warp_id] = input;
 
@@ -252,7 +252,7 @@ public:
         T &output,          ///< [out] Output item
         T block_suffix)     ///< [in] Suffix item to be provided to <em>thread</em><sub><tt>BLOCK_THREADS-1</tt></sub>
     {
-#if CUB_PTX_VERSION >= 300
+#if CUB_PTX_ARCH >= 300
         if (lane_id == 0)
             temp_storage[warp_id] = input;
 
@@ -289,7 +289,7 @@ public:
         T block_suffix,     ///< [in] Suffix item to be provided to <em>thread</em><sub><tt>BLOCK_THREADS-1</tt></sub>
         T &block_prefix)    ///< [out] Prefix item shifted out by the <em>thread</em><sub>0</sub> to be provided to all threads
     {
-#if CUB_PTX_VERSION >= 300
+#if CUB_PTX_ARCH >= 300
         if (lane_id == 0)
             temp_storage[warp_id] = input;
 

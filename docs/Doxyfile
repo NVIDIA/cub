@@ -201,6 +201,7 @@ ALIASES                += smemstorage{1}="The operations exposed by \1 require a
 
 ALIASES                += granularity="Efficiency is increased with increased granularity <tt>ITEMS_PER_THREAD</tt>.  Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low.  Consider variants of cub::BlockLoad for efficiently gathering a [<em>blocked arrangement</em>](index.html#sec4sec3) of elements across threads."    
 ALIASES                += blocksize="The number of threads in the block is a multiple of the architecture's warp size"
+ALIASES                += ptxversion="The PTX compute capability for which to to specialize this collective, formatted as per the \p __CUDA_ARCH__ macro (e.g., 350 for sm_35).  Useful for determining the collective's storage requirements for a given device from the host.  (Default: the value of \p __CUDA_ARCH__ during the current compiler pass)"
 
 ALIASES                += blockcollective{1}="Every thread in the block uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking one or more collective member functions."
 ALIASES                += warpcollective{1}="Every thread in the warp uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking or more collective member functions."

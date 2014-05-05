@@ -362,12 +362,12 @@ __global__ void BlockScanKernel(
     DeviceTest<BlockScan>(temp_storage, data, identity, scan_op, aggregate, prefix_op, Int2Type<TEST_MODE>());
 
     // Stop cycle timer
-#if CUB_PTX_VERSION == 100
+#if CUB_PTX_ARCH == 100
     // Bug: recording stop clock causes mis-write of running prefix value
     clock_t stop = 0;
 #else
     clock_t stop = clock();
-#endif // CUB_PTX_VERSION == 100
+#endif // CUB_PTX_ARCH == 100
 
     // Store output
     StoreDirectBlocked(linear_tid, d_out, data);

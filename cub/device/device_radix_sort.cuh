@@ -121,13 +121,13 @@ struct DeviceRadixSort
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run sorting operation
-     * cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items);
      *
      * // d_keys.Current()      <-- [0, 3, 5, 6, 7, 8, 9]
      * // d_values.Current()    <-- [5, 4, 3, 1, 2, 0, 6]
@@ -204,13 +204,13 @@ struct DeviceRadixSort
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run sorting operation
-     * cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes, d_keys, num_items);
+     * cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items);
      *
      * // d_keys.Current()      <-- [9, 8, 7, 6, 5, 3, 0]
      * // d_values.Current()    <-- [6, 0, 2, 1, 3, 4, 5]

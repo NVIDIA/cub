@@ -53,7 +53,8 @@ template <
     typename    T,              ///< Data type being reduced
     int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
     int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
-    int         BLOCK_DIM_Z>    ///< The thread block length in threads along the Z dimension
+    int         BLOCK_DIM_Z,    ///< The thread block length in threads along the Z dimension
+    int         PTX_ARCH>       ///< The PTX compute capability for which to to specialize this collective
 struct BlockReduceRakingCommutativeOnly
 {
     /// Constants
@@ -69,24 +70,27 @@ struct BlockReduceRakingCommutativeOnly
     /// Constants
     enum
     {
+        /// Number of warp threads
+        WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH),
+
         /// Whether or not to use fall-back
-        USE_FALLBACK = ((BLOCK_THREADS % CUB_PTX_WARP_THREADS != 0) || (BLOCK_THREADS <= CUB_PTX_WARP_THREADS)),
+        USE_FALLBACK = ((BLOCK_THREADS % WARP_THREADS != 0) || (BLOCK_THREADS <= WARP_THREADS)),
 
         /// Number of raking threads
-        RAKING_THREADS = CUB_PTX_WARP_THREADS,
+        RAKING_THREADS = WARP_THREADS,
 
         /// Number of threads actually sharing items with the raking threads
         SHARING_THREADS = CUB_MAX(1, BLOCK_THREADS - RAKING_THREADS),
 
         /// Number of raking elements per warp synchronous raking thread
-        SEGMENT_LENGTH = SHARING_THREADS / CUB_PTX_WARP_THREADS,
+        SEGMENT_LENGTH = SHARING_THREADS / WARP_THREADS,
     };
 
     ///  WarpReduce utility type
-    typedef WarpReduce<T, RAKING_THREADS> WarpReduce;
+    typedef WarpReduce<T, RAKING_THREADS, PTX_ARCH> WarpReduce;
 
     /// Layout type for padded thread block raking grid
-    typedef BlockRakingLayout<T, SHARING_THREADS> BlockRakingLayout;
+    typedef BlockRakingLayout<T, SHARING_THREADS, PTX_ARCH> BlockRakingLayout;
 
     /// Shared memory storage layout type
     struct _TempStorage

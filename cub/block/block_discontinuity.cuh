@@ -51,6 +51,7 @@ namespace cub {
  * \tparam BLOCK_DIM_X      The thread block length in threads along the X dimension
  * \tparam BLOCK_DIM_Y      <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z      <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
+ * \tparam PTX_ARCH         <b>[optional]</b> \ptxversion
  *
  * \par Overview
  * - A set of "head flags" (or "tail flags") is often used to indicate corresponding items
@@ -99,10 +100,11 @@ namespace cub {
  *
  */
 template <
-    typename            T,
-    int                 BLOCK_DIM_X,
-    int                 BLOCK_DIM_Y     = 1,
-    int                 BLOCK_DIM_Z     = 1>
+    typename    T,
+    int         BLOCK_DIM_X,
+    int         BLOCK_DIM_Y     = 1,
+    int         BLOCK_DIM_Z     = 1,
+    int         PTX_ARCH        = CUB_PTX_ARCH>
 class BlockDiscontinuity
 {
 private:

@@ -51,21 +51,25 @@ template <
     typename    T,
     int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
     int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
-    int         BLOCK_DIM_Z>    ///< The thread block length in threads along the Z dimension
+    int         BLOCK_DIM_Z,    ///< The thread block length in threads along the Z dimension
+    int         PTX_ARCH>       ///< The PTX compute capability for which to to specialize this collective
 struct BlockScanWarpScans
 {
     /// Constants
     enum
     {
+        /// Number of warp threads
+        WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH),
+
         /// The thread block size in threads
         BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
 
         /// Number of active warps
-        WARPS = (BLOCK_THREADS + CUB_PTX_WARP_THREADS - 1) / CUB_PTX_WARP_THREADS,
+        WARPS = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
     };
 
     ///  WarpScan utility type
-    typedef WarpScan<T, CUB_PTX_WARP_THREADS> WarpScan;
+    typedef WarpScan<T, WARP_THREADS, PTX_ARCH> WarpScan;
 
     /// Shared memory storage layout type
     struct _TempStorage
@@ -93,7 +97,7 @@ struct BlockScanWarpScans
     :
         temp_storage(temp_storage.Alias()),
         linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z)),
-        warp_id((WARPS == 1) ? 0 : linear_tid / CUB_PTX_WARP_THREADS),
+        warp_id((WARPS == 1) ? 0 : linear_tid / WARP_THREADS),
         lane_id(LaneId())
     {}
 

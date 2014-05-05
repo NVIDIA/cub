@@ -263,7 +263,7 @@ struct IterateThreadStore<MAX, MAX>
 /**
  * Define ThreadStore specializations for the various Cache load modifiers
  */
-#if CUB_PTX_VERSION >= 200
+#if CUB_PTX_ARCH >= 200
     CUB_STORE_ALL(STORE_WB, ca)
     CUB_STORE_ALL(STORE_CG, cg)
     CUB_STORE_ALL(STORE_CS, cs)
@@ -326,7 +326,7 @@ __device__ __forceinline__ void ThreadStoreVolatilePtr(
     T                           val,
     Int2Type<false>             is_primitive)
 {
-#if CUB_PTX_VERSION <= 130
+#if CUB_PTX_ARCH <= 130
 
     *ptr = val;
     __threadfence_block();
@@ -344,7 +344,7 @@ __device__ __forceinline__ void ThreadStoreVolatilePtr(
         reinterpret_cast<volatile VolatileWord*>(ptr),
         words);
 
-#endif  // CUB_PTX_VERSION <= 130
+#endif  // CUB_PTX_ARCH <= 130
 
 }
 

@@ -246,16 +246,16 @@ struct DeviceSelectDispatch
      * Tuning policies of current PTX compiler pass
      ******************************************************************************/
 
-#if (CUB_PTX_VERSION >= 350)
+#if (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
 
-#elif (CUB_PTX_VERSION >= 300)
+#elif (CUB_PTX_ARCH >= 300)
     typedef Policy300 PtxPolicy;
 
-#elif (CUB_PTX_VERSION >= 200)
+#elif (CUB_PTX_ARCH >= 200)
     typedef Policy200 PtxPolicy;
 
-#elif (CUB_PTX_VERSION >= 130)
+#elif (CUB_PTX_ARCH >= 130)
     typedef Policy130 PtxPolicy;
 
 #else
@@ -280,7 +280,7 @@ struct DeviceSelectDispatch
         int             ptx_version,
         KernelConfig    &select_range_config)
     {
-    #if (CUB_PTX_VERSION > 0)
+    #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         select_range_config.template Init<PtxSelectRegionPolicy>();
@@ -523,10 +523,10 @@ struct DeviceSelectDispatch
         {
             // Get PTX version
             int ptx_version;
-    #if (CUB_PTX_VERSION == 0)
+    #if (CUB_PTX_ARCH == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
-            ptx_version = CUB_PTX_VERSION;
+            ptx_version = CUB_PTX_ARCH;
     #endif
 
             // Get kernel kernel dispatch configurations

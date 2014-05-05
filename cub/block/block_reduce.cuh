@@ -162,6 +162,7 @@ enum BlockReduceAlgorithm
  * \tparam ALGORITHM        <b>[optional]</b> cub::BlockReduceAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_REDUCE_WARP_REDUCTIONS)
  * \tparam BLOCK_DIM_Y      <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z      <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
+ * \tparam PTX_ARCH         <b>[optional]</b> \ptxversion
  *
  * \par Overview
  * - A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)
@@ -215,7 +216,8 @@ template <
     int                     BLOCK_DIM_X,
     BlockReduceAlgorithm    ALGORITHM       = BLOCK_REDUCE_WARP_REDUCTIONS,
     int                     BLOCK_DIM_Y     = 1,
-    int                     BLOCK_DIM_Z     = 1>
+    int                     BLOCK_DIM_Z     = 1,
+    int                     PTX_ARCH        = CUB_PTX_ARCH>
 class BlockReduce
 {
 private:
@@ -231,12 +233,16 @@ private:
         BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
     };
 
+    typedef BlockReduceWarpReductions<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH>           WarpReductions;
+    typedef BlockReduceRakingCommutativeOnly<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH>    RakingCommutativeOnly;
+    typedef BlockReduceRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH>                   Raking;
+
     /// Internal specialization type
     typedef typename If<(ALGORITHM == BLOCK_REDUCE_WARP_REDUCTIONS),
-        BlockReduceWarpReductions<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z>,                                    // BlockReduceWarpReductions
+        WarpReductions,
         typename If<(ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY),
-            BlockReduceRakingCommutativeOnly<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z>,                         // BlockReduceRakingCommutativeOnly
-            BlockReduceRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z> >::Type>::Type InternalBlockReduce;     // BlockReduceRaking
+            RakingCommutativeOnly,
+            Raking>::Type>::Type InternalBlockReduce;     // BlockReduceRaking
 
     /// Shared memory storage layout type for BlockReduce
     typedef typename InternalBlockReduce::TempStorage _TempStorage;
