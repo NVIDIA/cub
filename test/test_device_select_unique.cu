@@ -67,7 +67,7 @@ CachingDeviceAllocator  g_allocator(true);
  * Dispatch to unique entrypoint
  */
 template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
     int                         timing_timing_iterations,

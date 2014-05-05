@@ -66,7 +66,7 @@ CachingDeviceAllocator  g_allocator(true);
  * Dispatch to CUB sorting entrypoint (specialized for ascending)
  */
 template <typename Key, typename Value>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<false>     is_descending,
     Int2Type<CUB>       dispatch_to,
@@ -92,7 +92,7 @@ cudaError_t Dispatch(
  * Dispatch to CUB sorting entrypoint (specialized for descending)
  */
 template <typename Key, typename Value>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<true>      is_descending,
     Int2Type<CUB>       dispatch_to,

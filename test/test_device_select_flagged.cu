@@ -71,7 +71,7 @@ CachingDeviceAllocator  g_allocator(true);
  * Dispatch to select flagged entrypoint
  */
 template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
     Int2Type<false>             partition,
@@ -102,7 +102,7 @@ cudaError_t Dispatch(
  * Dispatch to partition flagged entrypoint
  */
 template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
-__host__ __device__ __forceinline__
+CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
     Int2Type<true>              partition,
