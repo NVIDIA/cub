@@ -85,7 +85,7 @@ struct BlockScanRaking
     };
 
     ///  WarpScan utility type
-    typedef WarpScan<T, RAKING_THREADS> WarpScan;
+    typedef WarpScan<T, RAKING_THREADS, PTX_ARCH> WarpScan;
 
     /// Shared memory storage layout type
     struct _TempStorage
