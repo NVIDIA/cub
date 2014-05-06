@@ -291,7 +291,7 @@ struct WarpReduceSmem
         Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
         ReductionOp     reduction_op)       ///< [in] Reduction operator
     {
-        return SegmentedReduce(input, flag, reduction_op, Int2Type<(PTX_ARCH >= 200)>());
+        return SegmentedReduce<HEAD_SEGMENTED>(input, flag, reduction_op, Int2Type<(PTX_ARCH >= 200)>());
     }
 
 
