@@ -890,30 +890,6 @@ struct TestBar
 
 };
 
-/* todo: uncomment once Fermi codegen bug is fixed
-
-/// Load (simply defer to loading individual items)
-template <cub::CacheLoadModifier MODIFIER>
-__device__ __forceinline__ TestBar ThreadLoad(TestBar *ptr)
-{
-    TestBar retval;
-    retval.x = cub::ThreadLoad<MODIFIER>(&(ptr->x));
-    retval.y = cub::ThreadLoad<MODIFIER>(&(ptr->y));
-    return retval;
-}
-
- /// Store (simply defer to storing individual items)
-template <cub::CacheLoadModifier MODIFIER>
-__device__ __forceinline__ void ThreadStore(
-    TestBar *ptr,
-    TestBar val)
-{
-    // Always write partial first
-    cub::ThreadStore<MODIFIER>(&(ptr->x), val.x);
-    cub::ThreadStore<MODIFIER>(&(ptr->y), val.y);
-}
-
-*/
 
 /**
  * TestBar ostream operator

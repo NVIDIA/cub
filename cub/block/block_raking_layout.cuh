@@ -83,16 +83,16 @@ struct BlockRakingLayout
         /// Never use a raking thread that will have no valid data (e.g., when BLOCK_THREADS is 62 and SEGMENT_LENGTH is 2, we should only use 31 raking threads)
         RAKING_THREADS = (SHARED_ELEMENTS + SEGMENT_LENGTH - 1) / SEGMENT_LENGTH,
 
-        /// Whether we will have bank conflicts
+        /// Whether we will have bank conflicts (technically we should find out if the GCD is > 1)
         HAS_CONFLICTS = (CUB_SMEM_BANKS(PTX_ARCH) % SEGMENT_LENGTH == 0),
 
         /// Degree of bank conflicts (e.g., 4-way)
         CONFLICT_DEGREE = (HAS_CONFLICTS) ?
-            (MAX_RAKING_THREADS / (CUB_SMEM_BANKS(PTX_ARCH) / SEGMENT_LENGTH)) :
-            0,
+            (MAX_RAKING_THREADS * SEGMENT_LENGTH) / CUB_SMEM_BANKS(PTX_ARCH) :
+            1,
 
         /// Pad each segment length with one element if degree of bank conflicts is greater than 4-way (heuristic)
-        SEGMENT_PADDING = (CONFLICT_DEGREE <= CUB_PREFER_CONFLICT_OVER_PADDING(PTX_ARCH)) ? 0 : 1,
+        SEGMENT_PADDING = (CONFLICT_DEGREE > CUB_PREFER_CONFLICT_OVER_PADDING(PTX_ARCH)) ? 1 : 0,
 //        SEGMENT_PADDING = (HAS_CONFLICTS) ? 1 : 0,
 
         /// Total number of elements in the raking grid

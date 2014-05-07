@@ -164,10 +164,10 @@ namespace cub {
             (3) :                                       \
             (10)))
 
-/// Prefer X-way conflict over padding
+/// Prefer padding overhead vs X-way conflicts greater than this threshold
 #define CUB_PREFER_CONFLICT_OVER_PADDING(arch)          \
     ((arch >= 300) ?                                    \
-        (0) :                                           \
+        (1) :                                           \
         (4))
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
