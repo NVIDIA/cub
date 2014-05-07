@@ -246,7 +246,7 @@ ALL = 				link \
 	 				test_allocator \
 	 				test_warp_scan \
 	 				test_warp_reduce \
-	 				$(BLOCK_REDUCE \
+	 				$(BLOCK_REDUCE) \
 	 				$(BLOCK_SCAN) \
 	 				$(BLOCK_RADIX_SORT) \
 	 				test_block_load_store \
