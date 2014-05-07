@@ -298,7 +298,7 @@ void Initialize(
 
 
 /**
- * Test full-tile reduction
+ * Test full-tile reduction.  (Specialized for sufficient resources)
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,
@@ -312,7 +312,8 @@ void TestFullTile(
     GenMode                 gen_mode,
     int                     tiles,
     ReductionOp             reduction_op,
-    char                    *type_string)
+    char                    *type_string,
+    Int2Type<true>          sufficient_resources)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
     const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
@@ -374,6 +375,54 @@ void TestFullTile(
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_elapsed) CubDebugExit(g_allocator.DeviceFree(d_elapsed));
 }
+
+
+/**
+ * Test full-tile reduction.  (Specialized for insufficient resources)
+ */
+template <
+    BlockReduceAlgorithm    ALGORITHM,
+    int                     BLOCK_DIM_X,
+    int                     BLOCK_DIM_Y,
+    int                     BLOCK_DIM_Z,
+    int                     ITEMS_PER_THREAD,
+    typename                T,
+    typename                ReductionOp>
+void TestFullTile(
+    GenMode                 gen_mode,
+    int                     tiles,
+    ReductionOp             reduction_op,
+    char                    *type_string,
+    Int2Type<false>         sufficient_resources)
+{}
+
+
+/**
+ * Test full-tile reduction.
+ */
+template <
+    BlockReduceAlgorithm    ALGORITHM,
+    int                     BLOCK_DIM_X,
+    int                     BLOCK_DIM_Y,
+    int                     BLOCK_DIM_Z,
+    int                     ITEMS_PER_THREAD,
+    typename                T,
+    typename                ReductionOp>
+void TestFullTile(
+    GenMode                 gen_mode,
+    int                     tiles,
+    ReductionOp             reduction_op,
+    char                    *type_string)
+{
+    // Check size of smem storage for the target arch to make sure it will fit
+    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, TEST_ARCH> BlockReduceT;
+
+    static const bool sufficient_smem       = sizeof(typename BlockReduceT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
+    static const bool sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
+
+    TestFullTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, type_string, Int2Type<sufficient_smem && sufficient_threads>());
+}
+
 
 /**
  * Run battery of tests for different threadblock dimensions
@@ -438,7 +487,7 @@ void TestFullTile(
 //---------------------------------------------------------------------
 
 /**
- * Test partial-tile reduction
+ * Test partial-tile reduction.  (Specialized for sufficient resources)
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,
@@ -451,7 +500,8 @@ void TestPartialTile(
     GenMode                 gen_mode,
     int                     num_items,
     ReductionOp             reduction_op,
-    char                    *type_string)
+    char                    *type_string,
+    Int2Type<true>          sufficient_resources)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
     const int TILE_SIZE         = BLOCK_THREADS;
@@ -508,6 +558,53 @@ void TestPartialTile(
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_elapsed) CubDebugExit(g_allocator.DeviceFree(d_elapsed));
 }
+
+
+
+/**
+ * Test partial-tile reduction (specialized for insufficient resources)
+ */
+template <
+    BlockReduceAlgorithm    ALGORITHM,
+    int                     BLOCK_DIM_X,
+    int                     BLOCK_DIM_Y,
+    int                     BLOCK_DIM_Z,
+    typename                T,
+    typename                ReductionOp>
+void TestPartialTile(
+    GenMode                 gen_mode,
+    int                     num_items,
+    ReductionOp             reduction_op,
+    char                    *type_string,
+    Int2Type<false>         sufficient_resources)
+{}
+
+
+/**
+ *  Run battery of partial-tile tests for different numbers of effective threads and thread dimensions
+ */
+template <
+    BlockReduceAlgorithm    ALGORITHM,
+    int                     BLOCK_DIM_X,
+    int                     BLOCK_DIM_Y,
+    int                     BLOCK_DIM_Z,
+    typename                T,
+    typename                ReductionOp>
+void TestPartialTile(
+    GenMode                 gen_mode,
+    int                     num_items,
+    ReductionOp             reduction_op,
+    char                    *type_string)
+{
+    // Check size of smem storage for the target arch to make sure it will fit
+    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, TEST_ARCH> BlockReduceT;
+
+    static const bool sufficient_smem       = sizeof(typename BlockReduceT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
+    static const bool sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
+
+    TestPartialTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, T>(gen_mode, num_items, reduction_op, type_string, Int2Type<sufficient_smem && sufficient_threads>());
+}
+
 
 
 /**
@@ -577,9 +674,13 @@ void Test(
     ReductionOp     reduction_op,
     char            *type_string)
 {
+#if TEST_RAKING
     Test<BLOCK_REDUCE_RAKING, BLOCK_THREADS, T>(reduction_op, type_string);
     Test<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY, BLOCK_THREADS, T>(reduction_op, type_string);
+#endif
+#if TEST_WARP_REDUCTIONS
     Test<BLOCK_REDUCE_WARP_REDUCTIONS, BLOCK_THREADS, T>(reduction_op, type_string);
+#endif
 }
 
 
@@ -593,10 +694,10 @@ void Test(
     ReductionOp     reduction_op,
     char            *type_string)
 {
-    Test<7, T>(reduction_op, type_string);
-    Test<32, T>(reduction_op, type_string);
-    Test<63, T>(reduction_op, type_string);
-    Test<97, T>(reduction_op, type_string);
+    Test<7,   T>(reduction_op, type_string);
+    Test<32,  T>(reduction_op, type_string);
+    Test<63,  T>(reduction_op, type_string);
+    Test<97,  T>(reduction_op, type_string);
     Test<128, T>(reduction_op, type_string);
     Test<238, T>(reduction_op, type_string);
 }
@@ -666,6 +767,7 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
+
         // primitives
         Test<char>(CUB_TYPE_STRING(char));
         Test<short>(CUB_TYPE_STRING(short));
