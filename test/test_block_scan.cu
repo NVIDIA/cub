@@ -460,7 +460,7 @@ T Initialize(
 
 
 /**
- * Test threadblock scan
+ * Test threadblock scan.  (Specialized for sufficient resources)
  */
 template <
     int                 BLOCK_DIM_X,
@@ -473,11 +473,12 @@ template <
     typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
     typename            T>
 void Test(
-    GenMode         gen_mode,
-    ScanOp          scan_op,
-    IdentityT       identity,
-    T               prefix,
-    const char      *type_string)
+    GenMode             gen_mode,
+    ScanOp              scan_op,
+    IdentityT           identity,
+    T                   prefix,
+    const char          *type_string,
+    Int2Type<true>      sufficient_resources)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
     const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
@@ -588,6 +589,68 @@ void Test(
     if (d_aggregate) CubDebugExit(g_allocator.DeviceFree(d_aggregate));
     if (d_elapsed) CubDebugExit(g_allocator.DeviceFree(d_elapsed));
 }
+
+
+/**
+ * Test threadblock scan.  (Specialized for insufficient resources)
+ */
+template <
+    int                 BLOCK_DIM_X,
+    int                 BLOCK_DIM_Y,
+    int                 BLOCK_DIM_Z,
+    int                 ITEMS_PER_THREAD,
+    TestMode            TEST_MODE,
+    BlockScanAlgorithm  ALGORITHM,
+    typename            ScanOp,
+    typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
+    typename            T>
+void Test(
+    GenMode             gen_mode,
+    ScanOp              scan_op,
+    IdentityT           identity,
+    T                   prefix,
+    const char          *type_string,
+    Int2Type<false>     sufficient_resources)
+{}
+
+
+/**
+ * Test threadblock scan.
+ */
+template <
+    int                 BLOCK_DIM_X,
+    int                 BLOCK_DIM_Y,
+    int                 BLOCK_DIM_Z,
+    int                 ITEMS_PER_THREAD,
+    TestMode            TEST_MODE,
+    BlockScanAlgorithm  ALGORITHM,
+    typename            ScanOp,
+    typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
+    typename            T>
+void Test(
+    GenMode             gen_mode,
+    ScanOp              scan_op,
+    IdentityT           identity,
+    T                   prefix,
+    const char          *type_string)
+{
+    // Check size of smem storage for the target arch to make sure it will fit
+    typedef BlockScan<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockScanT;
+
+    static const bool sufficient_smem       = sizeof(typename BlockScanT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
+    static const bool sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
+
+    // Accommodate ptxas crash bug (access violation) on Windows
+    static const bool skip =
+        (TEST_ARCH <= 130) &&
+        (Equals<T, TestBar>::VALUE) &&
+        (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z >= 512) &&
+        (ITEMS_PER_THREAD > 4);
+
+    Test<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, type_string,
+        Int2Type<sufficient_smem && sufficient_threads && !skip>());
+}
+
 
 
 /**
@@ -732,6 +795,7 @@ void Test()
     // complex
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestBar(0, 0), TestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
+
 }
 
 

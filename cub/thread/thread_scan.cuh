@@ -66,7 +66,7 @@ __device__ __forceinline__ T ThreadScanExclusive(
 {
     T addend = *input;
     inclusive = scan_op(exclusive, addend);
-    output[0] = exclusive;
+    *output = exclusive;
     exclusive = inclusive;
 
     return ThreadScanExclusive(inclusive, exclusive, input + 1, output + 1, scan_op, Int2Type<LENGTH - 1>());
