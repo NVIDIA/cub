@@ -510,7 +510,11 @@ struct BlockScanLookbackPrefixOp
         // Use the swizzled scan operator because we are now scanning *down* towards thread0.
 
         int tail_flag = (predecessor_status == StatusWord(SCAN_TILE_INCLUSIVE));
-        window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(value, tail_flag, SwizzleScanOp(scan_op));
+
+        window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(
+            value,
+            tail_flag,
+            SwizzleScanOp(scan_op));
     }
 
 
