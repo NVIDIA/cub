@@ -331,10 +331,10 @@ struct BlockRangeReduceByKey
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
-        HAS_IDENTITY_ZERO        = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<Value>::PRIMITIVE),
+        HAS_IDENTITY_ZERO       = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<Value>::PRIMITIVE),
 
         // Whether or not to sync after loading data
-        SYNC_AFTER_LOAD     = (BlockRangeReduceByKeyPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        SYNC_AFTER_LOAD         = (BlockRangeReduceByKeyPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
         // Whether or not this is run-length-encoding with a constant iterator as values
         IS_RUN_LENGTH_ENCODE    = (Equals<ValueInputIterator, ConstantInputIterator<Value, size_t> >::VALUE) || (Equals<ValueInputIterator, ConstantInputIterator<Value, int> >::VALUE) || (Equals<ValueInputIterator, ConstantInputIterator<Value, unsigned int> >::VALUE),
@@ -384,6 +384,8 @@ struct BlockRangeReduceByKey
             const ValueOffsetPair   &second,            ///< Second partial reduction
             Int2Type<false>         has_identity_zero)  ///< Whether the operation has a zero-valued identity
         {
+#if (__CUDA_ARCH__ > 130)
+            // This expression uses less registers and is faster when compiled with nvvm
             ValueOffsetPair retval;
             retval.offset = first.offset + second.offset;
             if (second.offset)
@@ -396,15 +398,15 @@ struct BlockRangeReduceByKey
                 retval.value = op(first.value, second.value);
                 return retval;
             }
-/*
-            // Alternate expression below uses more registers, slower
+#else
+            // This expression uses less registers and is faster when compiled with Open64
             ValueOffsetPair retval;
             retval.offset = first.offset + second.offset;
             retval.value = (second.offset) ?
                     second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
                     op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
             return retval;
-*/
+#endif
         }
 
         /// Scan operator
@@ -825,38 +827,37 @@ struct BlockRangeReduceByKey
         Offset              block_offset,       ///< Tile offset
         ScanTileState  &tile_status)       ///< Global list of tile status
     {
-        Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
-        Value               values[ITEMS_PER_THREAD];                       // Tile values
-        Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
-        ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
-
-        ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
-
-        // Load keys and values
-        if (LAST_TILE)
-        {
-            BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining);
-        }
-        else
-        {
-            BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
-        }
-
-        if (SYNC_AFTER_LOAD)
-            __syncthreads();
-
-        // Load values
-        if (LAST_TILE)
-            BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, num_remaining);
-        else
-            BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
-
-        if (SYNC_AFTER_LOAD)
-            __syncthreads();
-
         if (tile_idx == 0)
         {
             // First tile
+            Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
+            Value               values[ITEMS_PER_THREAD];                       // Tile values
+            Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
+            ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
+
+            ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
+
+            // Load keys and values
+            if (LAST_TILE)
+            {
+                BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining);
+            }
+            else
+            {
+                BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
+            }
+
+            if (SYNC_AFTER_LOAD)
+                __syncthreads();
+
+            // Load values
+            if (LAST_TILE)
+                BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, num_remaining);
+            else
+                BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
+
+            if (SYNC_AFTER_LOAD)
+                __syncthreads();
 
             // Set head flags.  First tile sets the first flag for the first item
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(flags, keys, inequality_op);
@@ -880,10 +881,40 @@ struct BlockRangeReduceByKey
 
             // Scatter flagged items
             Scatter<LAST_TILE, true>(num_remaining, keys, values_and_segments, flags, block_aggregate.offset, 0);
+
+            return running_total;
         }
         else
         {
             // Not first tile
+            Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
+            Value               values[ITEMS_PER_THREAD];                       // Tile values
+            Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
+            ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
+
+            ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
+
+            // Load keys and values
+            if (LAST_TILE)
+            {
+                BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining);
+            }
+            else
+            {
+                BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
+            }
+
+            if (SYNC_AFTER_LOAD)
+                __syncthreads();
+
+            // Load values
+            if (LAST_TILE)
+                BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, num_remaining);
+            else
+                BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
+
+            if (SYNC_AFTER_LOAD)
+                __syncthreads();
 
             // Obtain the last key in the previous tile to compare with
             Key tile_predecessor_key = (threadIdx.x == 0) ?
@@ -899,15 +930,15 @@ struct BlockRangeReduceByKey
             // Exclusive scan of values and flags
             ValueOffsetPair block_aggregate;
             LookbackPrefixCallbackOp prefix_op(tile_status, temp_storage.prefix, scan_op, tile_idx);
-            ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
 
+            ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
             running_total = prefix_op.inclusive_prefix;
 
             // Scatter flagged items
             Scatter<LAST_TILE, false>(num_remaining, keys, values_and_segments, flags, block_aggregate.offset, prefix_op.exclusive_prefix.offset);
-        }
 
-        return running_total;
+            return running_total;
+        }
     }
 
 
