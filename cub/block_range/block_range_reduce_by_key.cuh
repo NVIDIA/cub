@@ -827,15 +827,16 @@ struct BlockRangeReduceByKey
         Offset              block_offset,       ///< Tile offset
         ScanTileState  &tile_status)       ///< Global list of tile status
     {
-        if (tile_idx == 0)
-        {
-            // First tile
             Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
             Value               values[ITEMS_PER_THREAD];                       // Tile values
             Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
             ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
 
-            ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
+        ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
+
+        if (tile_idx == 0)
+        {
+            // First tile
 
             // Load keys and values
             if (LAST_TILE)
@@ -881,18 +882,10 @@ struct BlockRangeReduceByKey
 
             // Scatter flagged items
             Scatter<LAST_TILE, true>(num_remaining, keys, values_and_segments, flags, block_aggregate.offset, 0);
-
-            return running_total;
         }
         else
         {
             // Not first tile
-            Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
-            Value               values[ITEMS_PER_THREAD];                       // Tile values
-            Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
-            ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
-
-            ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
 
             // Load keys and values
             if (LAST_TILE)
@@ -936,9 +929,9 @@ struct BlockRangeReduceByKey
 
             // Scatter flagged items
             Scatter<LAST_TILE, false>(num_remaining, keys, values_and_segments, flags, block_aggregate.offset, prefix_op.exclusive_prefix.offset);
-
-            return running_total;
         }
+
+        return running_total;
     }
 
 
