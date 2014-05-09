@@ -163,7 +163,11 @@ endif
 #-------------------------------------------------------------------------------
 
 NVCC = "$(shell which nvcc)"
-NVCC_VERSION = $(strip $(shell nvcc --version | grep release | sed 's/.*release //' |  sed 's/,.*//'))
+ifdef nvccver
+    NVCC_VERSION = $(nvccver)
+else
+    NVCC_VERSION = $(strip $(shell nvcc --version | grep release | sed 's/.*release //' |  sed 's/,.*//'))
+endif
 
 # detect OS
 OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
