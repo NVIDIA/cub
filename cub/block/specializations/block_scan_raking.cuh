@@ -145,6 +145,26 @@ struct BlockScanRaking
     }
 
 
+    /// Templated copy
+    template <int ITERATION>
+    __device__ __forceinline__ void CopySegment(
+        T*                  out,            ///< [out] Out array
+        T*                  in,             ///< [in] Input array
+        Int2Type<ITERATION> iteration)
+    {
+        out[ITERATION] = in[ITERATION];
+        CopySegment(out, in, Int2Type<ITERATION + 1>());
+    }
+
+ 
+    /// Templated copy (base case)
+    __device__ __forceinline__ void CopySegment(
+        T*                  out,            ///< [out] Out array
+        T*                  in,             ///< [in] Input array
+        Int2Type<SEGMENT_LENGTH> iteration)
+    {}
+
+
     /// Performs upsweep raking reduction, returning the aggregate
     template <typename ScanOp>
     __device__ __forceinline__ T Upsweep(
@@ -153,12 +173,14 @@ struct BlockScanRaking
         T *smem_raking_ptr = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
 
         // Read data into registers
+        CopySegment(cached_segment, smem_raking_ptr, Int2Type<0>());
+/*
         #pragma unroll
         for (int i = 0; i < SEGMENT_LENGTH; i++)
         {
             cached_segment[i] = smem_raking_ptr[i];
         }
-
+*/
         T raking_partial = cached_segment[0];
 
         return GuardedReduce(cached_segment, scan_op, raking_partial, Int2Type<1>());
@@ -187,11 +209,14 @@ struct BlockScanRaking
         ThreadScanExclusive(cached_segment, cached_segment, scan_op, raking_partial, apply_prefix);
 
         // Write data back to smem
+        CopySegment(smem_raking_ptr, cached_segment, Int2Type<0>());
+/*
         #pragma unroll
         for (int i = 0; i < SEGMENT_LENGTH; i++)
         {
             smem_raking_ptr[i] = cached_segment[i];
         }
+*/
     }
 
 
@@ -217,11 +242,14 @@ struct BlockScanRaking
         ThreadScanInclusive(cached_segment, cached_segment, scan_op, raking_partial, apply_prefix);
 
         // Write data back to smem
+        CopySegment(smem_raking_ptr, cached_segment, Int2Type<0>());
+/*
         #pragma unroll
         for (int i = 0; i < SEGMENT_LENGTH; i++)
         {
             smem_raking_ptr[i] = cached_segment[i];
         }
+*/
     }
 
 
