@@ -181,14 +181,17 @@ __global__ void BlockSortKernel(int *d_in, int *d_out)
     // Store the sorted segment 
     BlockStoreT(temp_storage.store).Store(d_out + block_offset, thread_keys);
 }
+\endcode
 
+\par 
+\code
 
-// Launch sorting kernel to sort blocks of 2048 keys
+// Elsewhere in the host program: parameterize and launch a block-sorting 
+// kernel in which blocks of 128 threads each sort segments of 2048 keys
 int *d_in = ...; 
 int *d_out = ...;
 int num_blocks = ...;
 BlockSortKernel<128, 16><<<num_blocks, 128>>>(d_in, d_out); 
-
 
 \endcode
 
@@ -510,36 +513,36 @@ for many of the algorithmic techniques used by CUB.
 05/12/2014<br>
 [<b>CUB v1.3.0</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
-    - New features:
-    	- CUB's collective (block-wide, warp-wide) primitives underwent a minor 
-    	  interface refactoring:
-    	    - To provide the appropriate support for multidimensional thread blocks,
-    	      The interfaces for collective classes are now template-parameterized 
-    	      by X, Y, and Z block dimensions (with \p BLOCK_DIM_Y and \p BLOCK_DIM_Z being 
-    	      optional, and \p BLOCK_DIM_X replacing \p BLOCK_THREADS).  Furthermore, the 
-    	      constructors that accept remapped linear thread-identifiers have been 
-    	      removed: all primitives now assume a row-major thread-ranking for 
-    	      multidimensional thread blocks.  
-    	    - To allow the host program (compiled by the host-pass) to 
-    	      accurately determine the device-specific storage requirements for 
-    	      a given collective (compiled for each device-pass), the interfaces 
-    	      for collective classes are now (optionally) template-parameterized 
-    	      by the desired PTX compute capability. This is useful when 
-    	      aliasing collective storage to shared memory that has been 
-    	      allocated dynamically by the host at the kernel call site.   
-    	    - Most CUB programs having typical 1D usage should not require any 
-    	      changes to accomodate these updates.
-    - Bug fixes: 
-        - Fixed bug in cub::WarpScan (which affected cub::BlockScan and 
-          cub::DeviceScan) where incorrect results (e.g., NAN) would often be 
-          returned when parameterized for floating-point types (fp32, fp64).
-        - Workaround-fix for ptxas error when compiling with with -G flag on Linux 
-          (for debug instrumentation) 
-        - Misc. workaround-fixes for certain scan scenarios (using custom 
-          scan operators) where code compiled for SM1x is run on newer 
-          GPUs of higher compute-capability: the compiler could not tell
-          which memory space was being used collective operations and was 
-          mistakenly using global ops instead of shared ops. 
+  - New features:
+  	- CUB's collective (block-wide, warp-wide) primitives underwent a minor 
+  	  interface refactoring:
+   	    - To provide the appropriate support for multidimensional thread blocks,
+   	      The interfaces for collective classes are now template-parameterized 
+   	      by X, Y, and Z block dimensions (with \p BLOCK_DIM_Y and \p BLOCK_DIM_Z being 
+   	      optional, and \p BLOCK_DIM_X replacing \p BLOCK_THREADS).  Furthermore, the 
+   	      constructors that accept remapped linear thread-identifiers have been 
+   	      removed: all primitives now assume a row-major thread-ranking for 
+   	      multidimensional thread blocks.  
+   	    - To allow the host program (compiled by the host-pass) to 
+   	      accurately determine the device-specific storage requirements for 
+   	      a given collective (compiled for each device-pass), the interfaces 
+   	      for collective classes are now (optionally) template-parameterized 
+   	      by the desired PTX compute capability. This is useful when 
+   	      aliasing collective storage to shared memory that has been 
+   	      allocated dynamically by the host at the kernel call site.   
+   	    - Most CUB programs having typical 1D usage should not require any 
+   	      changes to accomodate these updates.
+  - Bug fixes: 
+    - Fixed bug in cub::WarpScan (which affected cub::BlockScan and 
+      cub::DeviceScan) where incorrect results (e.g., NAN) would often be 
+      returned when parameterized for floating-point types (fp32, fp64).
+    - Workaround-fix for ptxas error when compiling with with -G flag on Linux 
+      (for debug instrumentation) 
+    - Misc. workaround-fixes for certain scan scenarios (using custom 
+      scan operators) where code compiled for SM1x is run on newer 
+      GPUs of higher compute-capability: the compiler could not tell
+      which memory space was being used collective operations and was 
+      mistakenly using global ops instead of shared ops. 
   - See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
@@ -547,34 +550,9 @@ for many of the algorithmic techniques used by CUB.
 04/01/2014<br>
 <b>CUB v1.2.3</b>
 </td><td style="vertical-align:text-top;">
-  - Bug fixes: 
-      - Fixed access violation bug in DeviceReduce::ReduceByKey for non-primitive value types
-      - Fixed code-snippet bug in ArgIndexInputIterator documentation 
-  - See the [change-log](CHANGE_LOG.TXT) for further details
-</td></tr>
- 
-<tr><td style="white-space: nowrap; vertical-align:text-top;">
-03/03/2014<br>
-<b>CUB v1.2.2</b>
-</td><td style="vertical-align:text-top;">
-  - New features:
-      - Added device-wide reduce-by-key (cub::DeviceReduce::ReduceByKey, cub::DeviceReduce::RunLengthEncode) 
-      - Added MS VC++ project solutions for device-wide and block-wide examples 
-  - Performance:
-      - Improved cub::DeviceScan, cub::DeviceSelect, and cub::DevicePartition performance
-      - Added a third algorithmic variant of cub::BlockReduce for improved performance
-        when using commutative operators (e.g., numeric addition)
-  - Documentation and testing:
-      - Compatible with CUDA 6.0
-      - Added performance-portabiltiy plots for many device-wide primitives to doc 
-      - Update doc and tests to reflect CUB "fancy" iterator (in)compatibilities with CUDA 5.0 (and older) and Thrust 1.6 (and older).
-  - Bug fixes: 
-      - Fixed bug where inclusion of Thrust headers in a certain order prevented CUB device-wide primitives from working properly
-      - Revised the fence operation of temporary tile status bookkeeping for cub::DeviceScan (and similar) to be safe for current code run on future platforms  
-      - Fixed cub::DeviceScan bug where Win32 alignment disagreements between host and device regarding user-defined data types would corrupt tile status
-      - Fixed cub::BlockScan bug where certain exclusive scans on custom data types for the cub::BLOCK_SCAN_WARP_SCANS variant would return incorrect results for the first thread in the block
-      - Added workaround for cub::TexRefInputIterator to work with CUDA 6.0
-  - See the [change-log](CHANGE_LOG.TXT) for further details
+  - Added device-wide reduce-by-key (cub::DeviceReduce::ReduceByKey, cub::DeviceReduce::RunLengthEncode) 
+  - Added MS VC++ project solutions for device-wide and block-wide examples 
+  - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
@@ -588,32 +566,24 @@ for many of the algorithmic techniques used by CUB.
   - Added cub::DevicePartition (partition-if, partition-flagged)
   - Added generic cub::ShuffleUp(), cub::ShuffleDown(), and cub::ShuffleBroadcast() for warp-wide communication of arbitrary data types (SM3x+)
   - Added cub::MaxSmOccupancy() for accurately determining SM occupancy for any given kernel function pointer
-  - See the [change-log](CHANGE_LOG.TXT) for further details
+  - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 08/08/2013<br>
 <b>CUB v1.0.1</b>
 </td><td style="vertical-align:text-top;">
-- New API for block-wide and warp-wide collective operations
-- New cub::DeviceRadixSort and cub::DeviceScan implementations
-- See the [change-log](CHANGE_LOG.TXT) for further details
+  - New API for block-wide and warp-wide collective operations
+  - New cub::DeviceRadixSort and cub::DeviceScan implementations
+  - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 05/07/2013<br>
 <b>CUB v0.9.4</b>
 </td><td style="vertical-align:text-top;">
-- New cub::DeviceHistogram and cub::BlockHistogram implementations  
-- See the [change-log](CHANGE_LOG.TXT) for further details
-</td></tr>
-
-<tr><td style="white-space: nowrap; vertical-align:text-top;">
-04/04/2013<br> 
-<b>CUB v0.9.2</b>
-</td><td style="vertical-align:text-top;">
-- Minor cosmetic, feature, and compilation updates  
-- See the [change-log](CHANGE_LOG.TXT) for further details
+  - New cub::DeviceHistogram and cub::BlockHistogram implementations  
+  - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">

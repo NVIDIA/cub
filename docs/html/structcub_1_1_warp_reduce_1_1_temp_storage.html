@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::TempStorage Struct Reference</title>
+<title>CUB: cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;::TempStorage Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -100,26 +100,26 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div class="summary">
 <a href="structcub_1_1_warp_reduce_1_1_temp_storage-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::TempStorage Struct Reference</div>  </div>
+<div class="title">cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;::TempStorage Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
     typename T, 
-    int LOGICAL_WARPS = 1, 
-    int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS&gt;<br/>
-struct cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::TempStorage</h3>
+    int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS, 
+    int PTX_ARCH = CUB_PTX_ARCH&gt;<br/>
+struct cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;::TempStorage</h3>
 
 <p>The operations exposed by <a class="el" href="classcub_1_1_warp_reduce.html" title="The WarpReduce class provides collective methods for computing a parallel reduction of items partitio...">WarpReduce</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. </p>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00201">201</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00191">191</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 </div><div class="dynheader">
-Inheritance diagram for cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::TempStorage:</div>
+Inheritance diagram for cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;::TempStorage:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="structcub_1_1_warp_reduce_1_1_temp_storage.png" usemap="#cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::TempStorage_map" alt=""/>
-  <map id="cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::TempStorage_map" name="cub::WarpReduce&lt; T, LOGICAL_WARPS, LOGICAL_WARP_THREADS &gt;::TempStorage_map">
-<area href="structcub_1_1_uninitialized.html" alt="cub::Uninitialized&lt; _TempStorage &gt;" shape="rect" coords="0,0,508,24"/>
+  <img src="structcub_1_1_warp_reduce_1_1_temp_storage.png" usemap="#cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;::TempStorage_map" alt=""/>
+  <map id="cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;::TempStorage_map" name="cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;::TempStorage_map">
+<area href="structcub_1_1_uninitialized.html" alt="cub::Uninitialized&lt; _TempStorage &gt;" shape="rect" coords="0,0,469,24"/>
 </map>
  </div></div>
 <table class="memberdecls">
@@ -152,7 +152,7 @@ DeviceWord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:14:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:57 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

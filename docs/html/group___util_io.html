@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
@@ -105,7 +105,7 @@ Classes</h2></td></tr>
 .</div></div>
   <a href="classcub_1_1_block_load.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html">cub::BlockStore&lt; OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html">cub::BlockStore&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for writing a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> of items partitioned across a CUDA thread block to a linear segment of memory. </p>
 <div class="image">
 <img src="block_store_logo.png" alt="block_store_logo.png"/>
@@ -449,7 +449,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a blocked arrangement across the thread block. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
@@ -467,7 +467,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00074">74</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00075">75</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -510,7 +510,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a blocked arrangement across the thread block, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
@@ -529,7 +529,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00101">101</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00102">102</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -578,7 +578,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a blocked arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements.. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to load. </td></tr>
@@ -598,7 +598,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00133">133</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00134">134</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -635,7 +635,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a blocked arrangement across the thread block. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <p>The input offset (<code>block_ptr</code> + <code>block_offset</code>) must be quad-item aligned</p>
 <p>The following conditions will prevent vectorization and loading will fall back to <a class="el" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">cub::BLOCK_LOAD_DIRECT</a>:</p>
 <ul>
@@ -658,7 +658,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00167">167</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00168">168</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -695,7 +695,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a striped arrangement across the thread block. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns items (<em>i</em>), (<em>i</em> + <em>block-threads</em>), ..., (<em>i</em> + (<em>block-threads</em>*(<em>items-per-thread</em>-1))). For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
@@ -714,7 +714,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00233">233</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00234">234</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -757,7 +757,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a striped arrangement across the thread block, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns items (<em>i</em>), (<em>i</em> + <em>block-threads</em>), ..., (<em>i</em> + (<em>block-threads</em>*(<em>items-per-thread</em>-1))). For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
@@ -777,7 +777,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00261">261</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00262">262</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -826,7 +826,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a striped arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns items (<em>i</em>), (<em>i</em> + <em>block-threads</em>), ..., (<em>i</em> + (<em>block-threads</em>*(<em>items-per-thread</em>-1))). For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
@@ -847,7 +847,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00295">295</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00296">296</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -884,7 +884,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a warp-striped arrangement across the thread block. </p>
-<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where each warp owns a segment of (<code>WARP_THREADS</code> * <code>ITEMS_PER_THREAD</code>) consecutively ranked items, and the items owned by each thread have a ranked distance of <code>WARP_THREADS</code> between them.</p>
+<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where warp<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of (<em>warp-threads</em>*<em>items-per-thread</em>) contiguous items, and each thread owns items (<em>i</em>), (<em>i</em> + <em>warp-threads</em>), ..., (<em>i</em> + (<em>warp-threads</em>*(<em>items-per-thread</em>-1))).</p>
 <dl class="section user"><dt>Usage Considerations</dt><dd>The number of threads in the thread block must be a multiple of the architecture's warp size.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -903,7 +903,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00336">336</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00337">337</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -946,7 +946,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a warp-striped arrangement across the thread block, guarded by range. </p>
-<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where each warp owns a segment of (<code>WARP_THREADS</code> * <code>ITEMS_PER_THREAD</code>) consecutively ranked items, and the items owned by each thread have a ranked distance of <code>WARP_THREADS</code> between them.</p>
+<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where warp<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of (<em>warp-threads</em>*<em>items-per-thread</em>) contiguous items, and each thread owns items (<em>i</em>), (<em>i</em> + <em>warp-threads</em>), ..., (<em>i</em> + (<em>warp-threads</em>*(<em>items-per-thread</em>-1))).</p>
 <dl class="section user"><dt>Usage Considerations</dt><dd>The number of threads in the thread block must be a multiple of the architecture's warp size.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -966,7 +966,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00370">370</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00371">371</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -1015,7 +1015,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
 </div><div class="memdoc">
 
 <p>Load a linear segment of items into a warp-striped arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements. </p>
-<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where each warp owns a segment of (<code>WARP_THREADS</code> * <code>ITEMS_PER_THREAD</code>) consecutively ranked items, and the items owned by each thread have a ranked distance of <code>WARP_THREADS</code> between them.</p>
+<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where warp<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of (<em>warp-threads</em>*<em>items-per-thread</em>) contiguous items, and each thread owns items (<em>i</em>), (<em>i</em> + <em>warp-threads</em>), ..., (<em>i</em> + (<em>warp-threads</em>*(<em>items-per-thread</em>-1))).</p>
 <dl class="section user"><dt>Usage Considerations</dt><dd>The number of threads in the thread block must be a multiple of the architecture's warp size.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -1036,7 +1036,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIterator &gt; </div
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00409">409</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00410">410</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -1073,7 +1073,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
 </div><div class="memdoc">
 
 <p>Store a blocked arrangement of items across a thread block into a linear segment of items. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to store. </td></tr>
@@ -1091,7 +1091,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00073">73</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00074">74</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1134,7 +1134,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
 </div><div class="memdoc">
 
 <p>Store a blocked arrangement of items across a thread block into a linear segment of items, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td><b>[inferred]</b> The data type to store. </td></tr>
@@ -1153,7 +1153,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00100">100</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00101">101</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1190,7 +1190,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
 </div><div class="memdoc">
 
 <p>Store a blocked arrangement of items across a thread block into a linear segment of items. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> segment of consecutively ranked items.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <p>The output offset (<code>block_ptr</code> + <code>block_offset</code>) must be quad-item aligned, which is the default starting offset returned by <code>cudaMalloc()</code> </p>
 <dl class="section user"><dt></dt><dd>The following conditions will prevent vectorization and storing will fall back to <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a>:<ul>
 <li><code>ITEMS_PER_THREAD</code> is odd</li>
@@ -1213,7 +1213,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00138">138</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00139">139</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1250,7 +1250,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Outpu
 </div><div class="memdoc">
 
 <p>Store a striped arrangement of data across the thread block into a linear segment of items. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns items (<em>i</em>), (<em>i</em> + <em>block-threads</em>), ..., (<em>i</em> + (<em>block-threads</em>*(<em>items-per-thread</em>-1))). For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
@@ -1269,7 +1269,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Outpu
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00201">201</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00202">202</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1312,7 +1312,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Outpu
 </div><div class="memdoc">
 
 <p>Store a striped arrangement of data across the thread block into a linear segment of items, guarded by range. </p>
-<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of elements across threads, where the items owned by each thread have a ranked distance of <code>BLOCK_THREADS</code> between them.</p>
+<p>Assumes a <a href="index.html#sec4sec3"><em>striped arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns items (<em>i</em>), (<em>i</em> + <em>block-threads</em>), ..., (<em>i</em> + (<em>block-threads</em>*(<em>items-per-thread</em>-1))). For multi-dimensional thread blocks, a row-major thread ordering is assumed.</p>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads </td></tr>
@@ -1332,7 +1332,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Outpu
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00230">230</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00231">231</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1369,7 +1369,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
 </div><div class="memdoc">
 
 <p>Store a warp-striped arrangement of data across the thread block into a linear segment of items. </p>
-<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where each warp owns a segment of (<code>WARP_THREADS</code> * <code>ITEMS_PER_THREAD</code>) consecutively ranked items, and the items owned by each thread have a ranked distance of <code>WARP_THREADS</code> between them.</p>
+<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where warp<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of (<em>warp-threads</em>*<em>items-per-thread</em>) contiguous items, and each thread owns items (<em>i</em>), (<em>i</em> + <em>warp-threads</em>), ..., (<em>i</em> + (<em>warp-threads</em>*(<em>items-per-thread</em>-1))).</p>
 <dl class="section user"><dt>Usage Considerations</dt><dd>The number of threads in the thread block must be a multiple of the architecture's warp size.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -1388,7 +1388,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00272">272</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00273">273</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1431,7 +1431,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
 </div><div class="memdoc">
 
 <p>Store a warp-striped arrangement of data across the thread block into a linear segment of items, guarded by range. </p>
-<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where each warp owns a segment of (<code>WARP_THREADS</code> * <code>ITEMS_PER_THREAD</code>) consecutively ranked items, and the items owned by each thread have a ranked distance of <code>WARP_THREADS</code> between them.</p>
+<p>Assumes a <em>warp-striped arrangement</em> of elements across threads, where warp<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of (<em>warp-threads</em>*<em>items-per-thread</em>) contiguous items, and each thread owns items (<em>i</em>), (<em>i</em> + <em>warp-threads</em>), ..., (<em>i</em> + (<em>warp-threads</em>*(<em>items-per-thread</em>-1))).</p>
 <dl class="section user"><dt>Usage Considerations</dt><dd>The number of threads in the thread block must be a multiple of the architecture's warp size.</dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -1451,7 +1451,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00306">306</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00307">307</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1459,7 +1459,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIterator &gt; </di
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:53 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

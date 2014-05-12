@@ -116,15 +116,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The work-complexity of reduction, reduce-by-key, and run-length encode as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU.</dd></dl>
-<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a> performance across different CUDA architectures for <code>int32</code> keys.</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a> performance across different CUDA architectures for <code>int32</code> keys.</dd></dl>
 <div class="image">
 <img src="reduce_int32.png" alt="reduce_int32.png"/>
 </div>
-<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_reduce.html#a62400e8632002f3ba601d4392b997bc7" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">DeviceReduce::ReduceByKey</a> (summation) performance across different CUDA architectures for <code>fp32</code> values. Segments are identified by <code>int32</code> keys, and have lengths uniformly sampled from [1,1000].</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">DeviceReduce::ReduceByKey</a> (summation) performance across different CUDA architectures for <code>fp32</code> values. Segments are identified by <code>int32</code> keys, and have lengths uniformly sampled from [1,1000].</dd></dl>
 <div class="image">
 <img src="reduce_by_key_fp32_len_500.png" alt="reduce_by_key_fp32_len_500.png"/>
 </div>
-<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_reduce.html#ac563c98fb1d6cde7d4365bc34f6b698d" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">DeviceReduce::RunLengthEncode</a> performance across different CUDA architectures for <code>int32</code> items. Segments have lengths uniformly sampled from [1,1000].</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">DeviceReduce::RunLengthEncode</a> performance across different CUDA architectures for <code>int32</code> items. Segments have lengths uniformly sampled from [1,1000].</dd></dl>
 <div class="image">
 <img src="rle_int32_len_500.png" alt="rle_int32_len_500.png"/>
 </div>
@@ -134,49 +134,49 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:a2e7bb79308e1135b77be4cf15ea993ee"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ReductionOp &gt; </td></tr>
-<tr class="memitem:a2e7bb79308e1135b77be4cf15ea993ee"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#a2e7bb79308e1135b77be4cf15ea993ee">Reduce</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, ReductionOp reduction_op, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a2e7bb79308e1135b77be4cf15ea993ee"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide reduction using the specified binary <code>reduction_op</code> functor.  <a href="#a2e7bb79308e1135b77be4cf15ea993ee">More...</a><br/></td></tr>
-<tr class="separator:a2e7bb79308e1135b77be4cf15ea993ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae38bbfec0b058564ee966c9451fabbcc"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
-<tr class="memitem:ae38bbfec0b058564ee966c9451fabbcc"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc">Sum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:ae38bbfec0b058564ee966c9451fabbcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide sum using the addition ('+') operator.  <a href="#ae38bbfec0b058564ee966c9451fabbcc">More...</a><br/></td></tr>
-<tr class="separator:ae38bbfec0b058564ee966c9451fabbcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adada0367d1c362e753ebf1af1045e854"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
-<tr class="memitem:adada0367d1c362e753ebf1af1045e854"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#adada0367d1c362e753ebf1af1045e854">Min</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:adada0367d1c362e753ebf1af1045e854"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide minimum using the less-than ('&lt;') operator.  <a href="#adada0367d1c362e753ebf1af1045e854">More...</a><br/></td></tr>
-<tr class="separator:adada0367d1c362e753ebf1af1045e854"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af3dc1b284c8828d1e51da587a090a140"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
-<tr class="memitem:af3dc1b284c8828d1e51da587a090a140"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#af3dc1b284c8828d1e51da587a090a140">ArgMin</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:af3dc1b284c8828d1e51da587a090a140"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the first device-wide minimum using the less-than ('&lt;') operator, also returning the index of that item.  <a href="#af3dc1b284c8828d1e51da587a090a140">More...</a><br/></td></tr>
-<tr class="separator:af3dc1b284c8828d1e51da587a090a140"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a335a77d51f436c8840b50f53cab137a5"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
-<tr class="memitem:a335a77d51f436c8840b50f53cab137a5"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#a335a77d51f436c8840b50f53cab137a5">Max</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a335a77d51f436c8840b50f53cab137a5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide maximum using the greater-than ('&gt;') operator.  <a href="#a335a77d51f436c8840b50f53cab137a5">More...</a><br/></td></tr>
-<tr class="separator:a335a77d51f436c8840b50f53cab137a5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7524b86cae1cb19d7a8899141d8c9908"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
-<tr class="memitem:a7524b86cae1cb19d7a8899141d8c9908"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#a7524b86cae1cb19d7a8899141d8c9908">ArgMax</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a7524b86cae1cb19d7a8899141d8c9908"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the first device-wide maximum using the greater-than ('&gt;') operator, also returning the index of that item.  <a href="#a7524b86cae1cb19d7a8899141d8c9908">More...</a><br/></td></tr>
-<tr class="separator:a7524b86cae1cb19d7a8899141d8c9908"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a62400e8632002f3ba601d4392b997bc7"><td class="memTemplParams" colspan="2">template&lt;typename KeyInputIterator , typename KeyOutputIterator , typename ValueInputIterator , typename ValueOutputIterator , typename NumSegmentsIterator , typename ReductionOp &gt; </td></tr>
-<tr class="memitem:a62400e8632002f3ba601d4392b997bc7"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#a62400e8632002f3ba601d4392b997bc7">ReduceByKey</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, KeyInputIterator d_keys_in, KeyOutputIterator d_keys_out, ValueInputIterator d_values_in, ValueOutputIterator d_values_out, NumSegmentsIterator d_num_segments, ReductionOp reduction_op, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a62400e8632002f3ba601d4392b997bc7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reduces segments of values, where segments are demarcated by corresponding runs of identical keys.  <a href="#a62400e8632002f3ba601d4392b997bc7">More...</a><br/></td></tr>
-<tr class="separator:a62400e8632002f3ba601d4392b997bc7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac563c98fb1d6cde7d4365bc34f6b698d"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename CountsOutputIterator , typename NumSegmentsIterator &gt; </td></tr>
-<tr class="memitem:ac563c98fb1d6cde7d4365bc34f6b698d"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#ac563c98fb1d6cde7d4365bc34f6b698d">RunLengthEncode</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_compacted_out, CountsOutputIterator d_counts_out, NumSegmentsIterator d_num_segments, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:ac563c98fb1d6cde7d4365bc34f6b698d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Counts the segment lengths in the sequence <code>d_in</code>, where segments are demarcated by runs of identical values.  <a href="#ac563c98fb1d6cde7d4365bc34f6b698d">More...</a><br/></td></tr>
-<tr class="separator:ac563c98fb1d6cde7d4365bc34f6b698d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a834eccddb91e7b5f03e219ab5e7d2c0f"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ReductionOp &gt; </td></tr>
+<tr class="memitem:a834eccddb91e7b5f03e219ab5e7d2c0f"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f">Reduce</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, ReductionOp reduction_op, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a834eccddb91e7b5f03e219ab5e7d2c0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide reduction using the specified binary <code>reduction_op</code> functor.  <a href="#a834eccddb91e7b5f03e219ab5e7d2c0f">More...</a><br/></td></tr>
+<tr class="separator:a834eccddb91e7b5f03e219ab5e7d2c0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aaf68d747ee676df2b5b5ff016ee6c371"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
+<tr class="memitem:aaf68d747ee676df2b5b5ff016ee6c371"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371">Sum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:aaf68d747ee676df2b5b5ff016ee6c371"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide sum using the addition ('+') operator.  <a href="#aaf68d747ee676df2b5b5ff016ee6c371">More...</a><br/></td></tr>
+<tr class="separator:aaf68d747ee676df2b5b5ff016ee6c371"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a61340d7798e1baca171d08393d21426a"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
+<tr class="memitem:a61340d7798e1baca171d08393d21426a"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a">Min</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a61340d7798e1baca171d08393d21426a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide minimum using the less-than ('&lt;') operator.  <a href="#a61340d7798e1baca171d08393d21426a">More...</a><br/></td></tr>
+<tr class="separator:a61340d7798e1baca171d08393d21426a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acaede84f69de9ed6ffdce604ba64f572"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
+<tr class="memitem:acaede84f69de9ed6ffdce604ba64f572"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572">ArgMin</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:acaede84f69de9ed6ffdce604ba64f572"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the first device-wide minimum using the less-than ('&lt;') operator, also returning the index of that item.  <a href="#acaede84f69de9ed6ffdce604ba64f572">More...</a><br/></td></tr>
+<tr class="separator:acaede84f69de9ed6ffdce604ba64f572"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa800cb70d7115a3a581f024ea103fd66"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
+<tr class="memitem:aa800cb70d7115a3a581f024ea103fd66"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66">Max</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:aa800cb70d7115a3a581f024ea103fd66"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide maximum using the greater-than ('&gt;') operator.  <a href="#aa800cb70d7115a3a581f024ea103fd66">More...</a><br/></td></tr>
+<tr class="separator:aa800cb70d7115a3a581f024ea103fd66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a173261355e9172c3f51d6f6ea7a598af"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
+<tr class="memitem:a173261355e9172c3f51d6f6ea7a598af"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af">ArgMax</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a173261355e9172c3f51d6f6ea7a598af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the first device-wide maximum using the greater-than ('&gt;') operator, also returning the index of that item.  <a href="#a173261355e9172c3f51d6f6ea7a598af">More...</a><br/></td></tr>
+<tr class="separator:a173261355e9172c3f51d6f6ea7a598af"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4822e04d8701b10ac3f2d28effb454d3"><td class="memTemplParams" colspan="2">template&lt;typename KeyInputIterator , typename KeyOutputIterator , typename ValueInputIterator , typename ValueOutputIterator , typename NumSegmentsIterator , typename ReductionOp &gt; </td></tr>
+<tr class="memitem:a4822e04d8701b10ac3f2d28effb454d3"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3">ReduceByKey</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, KeyInputIterator d_keys_in, KeyOutputIterator d_keys_out, ValueInputIterator d_values_in, ValueOutputIterator d_values_out, NumSegmentsIterator d_num_segments, ReductionOp reduction_op, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a4822e04d8701b10ac3f2d28effb454d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reduces segments of values, where segments are demarcated by corresponding runs of identical keys.  <a href="#a4822e04d8701b10ac3f2d28effb454d3">More...</a><br/></td></tr>
+<tr class="separator:a4822e04d8701b10ac3f2d28effb454d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abd3971072f62f2874bf7ea956ec9817f"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename CountsOutputIterator , typename NumSegmentsIterator &gt; </td></tr>
+<tr class="memitem:abd3971072f62f2874bf7ea956ec9817f"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f">RunLengthEncode</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_compacted_out, CountsOutputIterator d_counts_out, NumSegmentsIterator d_num_segments, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:abd3971072f62f2874bf7ea956ec9817f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Counts the segment lengths in the sequence <code>d_in</code>, where segments are demarcated by runs of identical values.  <a href="#abd3971072f62f2874bf7ea956ec9817f">More...</a><br/></td></tr>
+<tr class="separator:abd3971072f62f2874bf7ea956ec9817f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a2e7bb79308e1135b77be4cf15ea993ee"></a>
+<a class="anchor" id="a834eccddb91e7b5f03e219ab5e7d2c0f"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -186,7 +186,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename Reductio
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceReduce::Reduce </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceReduce::Reduce </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -253,7 +253,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename Reductio
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a custom min reduction of a device vector of <code>int</code> items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
@@ -261,7 +261,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename Reductio
 <div class="line"><span class="keyword">struct </span>CustomMin</div>
 <div class="line">{</div>
 <div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line">    __host__ __device__ __forceinline__</div>
+<div class="line">    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line">    T operator()(<span class="keyword">const</span> T &amp;a, <span class="keyword">const</span> T &amp;b)<span class="keyword"> const </span>{</div>
 <div class="line">        <span class="keywordflow">return</span> (b &lt; a) ? b : a;</div>
 <div class="line">    }</div>
@@ -277,13 +277,13 @@ template&lt;typename InputIterator , typename OutputIterator , typename Reductio
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a2e7bb79308e1135b77be4cf15ea993ee" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">cub::DeviceReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, min_op);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">cub::DeviceReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, min_op);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a2e7bb79308e1135b77be4cf15ea993ee" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">cub::DeviceReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, min_op);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">cub::DeviceReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, min_op);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [0]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -313,7 +313,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename Reductio
 
 </div>
 </div>
-<a class="anchor" id="ae38bbfec0b058564ee966c9451fabbcc"></a>
+<a class="anchor" id="aaf68d747ee676df2b5b5ff016ee6c371"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -323,7 +323,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceReduce::Sum </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceReduce::Sum </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -403,13 +403,13 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">cub::DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_sum, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">cub::DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_sum, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sum-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">cub::DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_sum, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">cub::DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_sum, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [38]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -438,7 +438,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="adada0367d1c362e753ebf1af1045e854"></a>
+<a class="anchor" id="a61340d7798e1baca171d08393d21426a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -448,7 +448,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceReduce::Min </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceReduce::Min </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -509,7 +509,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the min-reduction of a device vector of <code>int</code> items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
@@ -522,13 +522,13 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#adada0367d1c362e753ebf1af1045e854" title="Computes a device-wide minimum using the less-than (&#39;&lt;&#39;) operator. ">cub::DeviceReduce::Min</a>(d_temp_storage, temp_storage_bytes, d_in, d_min, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a" title="Computes a device-wide minimum using the less-than (&#39;&lt;&#39;) operator. ">cub::DeviceReduce::Min</a>(d_temp_storage, temp_storage_bytes, d_in, d_min, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run min-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#adada0367d1c362e753ebf1af1045e854" title="Computes a device-wide minimum using the less-than (&#39;&lt;&#39;) operator. ">cub::DeviceReduce::Min</a>(d_temp_storage, temp_storage_bytes, d_in, d_min, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a" title="Computes a device-wide minimum using the less-than (&#39;&lt;&#39;) operator. ">cub::DeviceReduce::Min</a>(d_temp_storage, temp_storage_bytes, d_in, d_min, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [0]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -556,7 +556,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="af3dc1b284c8828d1e51da587a090a140"></a>
+<a class="anchor" id="acaede84f69de9ed6ffdce604ba64f572"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -566,7 +566,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceReduce::ArgMin </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceReduce::ArgMin </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -628,7 +628,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the argmin-reduction of a device vector of <code>int</code> items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
@@ -641,13 +641,13 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#af3dc1b284c8828d1e51da587a090a140" title="Finds the first device-wide minimum using the less-than (&#39;&lt;&#39;) operator, also returning the index o...">cub::DeviceReduce::ArgMin</a>(d_temp_storage, temp_storage_bytes, d_in, d_argmin, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572" title="Finds the first device-wide minimum using the less-than (&#39;&lt;&#39;) operator, also returning the index o...">cub::DeviceReduce::ArgMin</a>(d_temp_storage, temp_storage_bytes, d_in, d_argmin, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run argmin-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#af3dc1b284c8828d1e51da587a090a140" title="Finds the first device-wide minimum using the less-than (&#39;&lt;&#39;) operator, also returning the index o...">cub::DeviceReduce::ArgMin</a>(d_temp_storage, temp_storage_bytes, d_in, d_argmin, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572" title="Finds the first device-wide minimum using the less-than (&#39;&lt;&#39;) operator, also returning the index o...">cub::DeviceReduce::ArgMin</a>(d_temp_storage, temp_storage_bytes, d_in, d_argmin, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [{0, 5}]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -675,7 +675,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a335a77d51f436c8840b50f53cab137a5"></a>
+<a class="anchor" id="aa800cb70d7115a3a581f024ea103fd66"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -685,7 +685,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceReduce::Max </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceReduce::Max </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -746,7 +746,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the max-reduction of a device vector of <code>int</code> items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
@@ -759,13 +759,13 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a335a77d51f436c8840b50f53cab137a5" title="Computes a device-wide maximum using the greater-than (&#39;&gt;&#39;) operator. ">cub::DeviceReduce::Max</a>(d_temp_storage, temp_storage_bytes, d_in, d_max, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66" title="Computes a device-wide maximum using the greater-than (&#39;&gt;&#39;) operator. ">cub::DeviceReduce::Max</a>(d_temp_storage, temp_storage_bytes, d_in, d_max, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run max-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a335a77d51f436c8840b50f53cab137a5" title="Computes a device-wide maximum using the greater-than (&#39;&gt;&#39;) operator. ">cub::DeviceReduce::Max</a>(d_temp_storage, temp_storage_bytes, d_in, d_max, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66" title="Computes a device-wide maximum using the greater-than (&#39;&gt;&#39;) operator. ">cub::DeviceReduce::Max</a>(d_temp_storage, temp_storage_bytes, d_in, d_max, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [9]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -793,7 +793,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a7524b86cae1cb19d7a8899141d8c9908"></a>
+<a class="anchor" id="a173261355e9172c3f51d6f6ea7a598af"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -803,7 +803,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceReduce::ArgMax </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceReduce::ArgMax </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -865,7 +865,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the argmax-reduction of a device vector of <code>int</code> items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_reduce.cuh&gt;</span></div>
 <div class="line"></div>
@@ -878,13 +878,13 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a7524b86cae1cb19d7a8899141d8c9908" title="Finds the first device-wide maximum using the greater-than (&#39;&gt;&#39;) operator, also returning the inde...">cub::DeviceReduce::ArgMax</a>(d_temp_storage, temp_storage_bytes, d_in, d_argmax, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af" title="Finds the first device-wide maximum using the greater-than (&#39;&gt;&#39;) operator, also returning the inde...">cub::DeviceReduce::ArgMax</a>(d_temp_storage, temp_storage_bytes, d_in, d_argmax, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run argmax-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a7524b86cae1cb19d7a8899141d8c9908" title="Finds the first device-wide maximum using the greater-than (&#39;&gt;&#39;) operator, also returning the inde...">cub::DeviceReduce::ArgMax</a>(d_temp_storage, temp_storage_bytes, d_in, d_argmax, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af" title="Finds the first device-wide maximum using the greater-than (&#39;&gt;&#39;) operator, also returning the inde...">cub::DeviceReduce::ArgMax</a>(d_temp_storage, temp_storage_bytes, d_in, d_argmax, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [{9, 6}]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -912,7 +912,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a62400e8632002f3ba601d4392b997bc7"></a>
+<a class="anchor" id="a4822e04d8701b10ac3f2d28effb454d3"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -922,7 +922,7 @@ template&lt;typename KeyInputIterator , typename KeyOutputIterator , typename Va
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceReduce::ReduceByKey </td>
+          <td class="memname">CUB_RUNTIME_FUNCTION static __forceinline__ cudaError_t cub::DeviceReduce::ReduceByKey </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -1029,7 +1029,7 @@ template&lt;typename KeyInputIterator , typename KeyOutputIterator , typename Va
 <div class="line"><span class="keyword">struct </span>CustomMin</div>
 <div class="line">{</div>
 <div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line">    __host__ __device__ __forceinline__</div>
+<div class="line">    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line">    T operator()(<span class="keyword">const</span> T &amp;a, <span class="keyword">const</span> T &amp;b)<span class="keyword"> const </span>{</div>
 <div class="line">        <span class="keywordflow">return</span> (b &lt; a) ? b : a;</div>
 <div class="line">    }</div>
@@ -1048,13 +1048,13 @@ template&lt;typename KeyInputIterator , typename KeyOutputIterator , typename Va
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line">cub::DeviceSelect::ReduceByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, reduction_op, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, reduction_op, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run reduce-by-key</span></div>
-<div class="line">cub::DeviceSelect::ReduceByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, reduction_op, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, reduction_op, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys_out        &lt;-- [0, 2, 9, 5, 8]</span></div>
 <div class="line"><span class="comment">// d_values_out      &lt;-- [0, 1, 6, 2, 4]</span></div>
@@ -1092,7 +1092,7 @@ template&lt;typename KeyInputIterator , typename KeyOutputIterator , typename Va
 
 </div>
 </div>
-<a class="anchor" id="ac563c98fb1d6cde7d4365bc34f6b698d"></a>
+<a class="anchor" id="abd3971072f62f2874bf7ea956ec9817f"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -1102,7 +1102,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename CountsOu
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceReduce::RunLengthEncode </td>
+          <td class="memname">CUB_RUNTIME_FUNCTION static __forceinline__ cudaError_t cub::DeviceReduce::RunLengthEncode </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -1204,13 +1204,13 @@ template&lt;typename InputIterator , typename OutputIterator , typename CountsOu
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line">cub::DeviceSelect::RunLengthEncode(d_temp_storage, temp_storage_bytes, d_in, d_compacted_out, d_counts_out, d_num_segments, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">cub::DeviceReduce::RunLengthEncode</a>(d_temp_storage, temp_storage_bytes, d_in, d_compacted_out, d_counts_out, d_num_segments, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run encoding</span></div>
-<div class="line">cub::DeviceSelect::RunLengthEncode(d_temp_storage, temp_storage_bytes, d_in, d_compacted_out, d_counts_out, d_num_segments, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">cub::DeviceReduce::RunLengthEncode</a>(d_temp_storage, temp_storage_bytes, d_in, d_compacted_out, d_counts_out, d_num_segments, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys_out        &lt;-- [0, 2, 9, 5, 8]</span></div>
 <div class="line"><span class="comment">// d_values_out      &lt;-- [1, 2, 1, 3, 1]</span></div>
@@ -1251,7 +1251,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename CountsOu
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:14:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:56 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
