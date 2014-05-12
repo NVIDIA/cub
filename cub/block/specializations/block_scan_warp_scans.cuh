@@ -101,6 +101,39 @@ struct BlockScanWarpScans
         lane_id(LaneId())
     {}
 
+    template <typename ScanOp, int WARP>
+    __device__ __forceinline__ void ApplyWarpAggregates(
+        T               &partial,           ///< [out] The calling thread's partial reduction
+        ScanOp          scan_op,            ///< [in] Binary scan operator
+        T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        T               &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
+        bool            lane_valid,         ///< [in] Whether or not the partial belonging to the current thread is valid
+        Int2Type<WARP>  addend_warp)
+    {
+            T inclusive = scan_op(block_aggregate, partial);
+            if (warp_id == WARP)
+            {
+                partial = (lane_valid) ?
+                    inclusive :
+                    block_aggregate;
+            }
+
+            T addend = temp_storage.warp_aggregates[WARP];
+            block_aggregate = scan_op(block_aggregate, addend);
+
+            ApplyWarpAggregates(partial, scan_op, warp_aggregate, block_aggregate, lane_valid, Int2Type<WARP + 1>());
+    }
+
+    template <typename ScanOp>
+    __device__ __forceinline__ void ApplyWarpAggregates(
+        T               &partial,           ///< [out] The calling thread's partial reduction
+        ScanOp          scan_op,            ///< [in] Binary scan operator
+        T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        T               &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
+        bool            lane_valid,         ///< [in] Whether or not the partial belonging to the current thread is valid
+        Int2Type<WARPS> addend_warp)
+    {}
+
 
     /// Update the calling thread's partial reduction with the warp-wide aggregates from preceding warps.  Also returns block-wide aggregate in <em>thread</em><sub>0</sub>.
     template <typename ScanOp>
@@ -118,6 +151,14 @@ struct BlockScanWarpScans
 
         block_aggregate = temp_storage.warp_aggregates[0];
 
+#if __CUDA_ARCH__ <= 130
+
+        // Use template unrolling for SM1x (since the PTX backend can't handle it)
+        ApplyWarpAggregates(partial, scan_op, warp_aggregate, block_aggregate, lane_valid, Int2Type<1>());
+
+#else
+
+        // Use the pragma unrolling (since it uses less registers)
         #pragma unroll
         for (int WARP = 1; WARP < WARPS; WARP++)
         {
@@ -132,6 +173,8 @@ struct BlockScanWarpScans
             T addend = temp_storage.warp_aggregates[WARP];
             block_aggregate = scan_op(block_aggregate, addend);
         }
+
+#endif
     }
 
 
@@ -228,9 +271,10 @@ struct BlockScanWarpScans
         __syncthreads();
 
         // Incorporate threadblock prefix into outputs
+        T block_prefix = temp_storage.block_prefix;
         output = (linear_tid == 0) ?
-            temp_storage.block_prefix :
-            scan_op(temp_storage.block_prefix, output);
+            block_prefix :
+            scan_op(block_prefix, output);
     }
 
 
@@ -273,7 +317,8 @@ struct BlockScanWarpScans
 
         // Incorporate threadblock prefix into outputs
         Sum scan_op;
-        output = scan_op(temp_storage.block_prefix, output);
+        T block_prefix = temp_storage.block_prefix;
+        output = scan_op(block_prefix, output);
     }
 
 
@@ -321,7 +366,8 @@ struct BlockScanWarpScans
         __syncthreads();
 
         // Incorporate threadblock prefix into outputs
-        output = scan_op(temp_storage.block_prefix, output);
+        T block_prefix = temp_storage.block_prefix;
+        output = scan_op(block_prefix, output);
     }
 
 
@@ -364,7 +410,8 @@ struct BlockScanWarpScans
 
         // Incorporate threadblock prefix into outputs
         Sum scan_op;
-        output = scan_op(temp_storage.block_prefix, output);
+        T block_prefix = temp_storage.block_prefix;
+        output = scan_op(block_prefix, output);
     }
 
 };
