@@ -642,7 +642,7 @@ void Test(
 
 #if defined(_WIN32) || defined(_WIN64)
     // Accommodate ptxas crash bug (access violation) on Windows
-    static const bool special_skip = (TEST_ARCH <= 130) && (Equals<T, TestBar>::VALUE) && (ITEMS_PER_THREAD > 1);
+    static const bool special_skip = (TEST_ARCH <= 130) && (Equals<T, TestBar>::VALUE) && (BLOCK_DIM_Z > 1);
 #else
     static const bool special_skip = false;
 #endif
@@ -795,7 +795,6 @@ void Test()
     // complex
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestBar(0, 0), TestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
-
 }
 
 
