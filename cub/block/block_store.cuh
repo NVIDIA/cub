@@ -515,7 +515,7 @@ private:
      ******************************************************************************/
 
     /// Store helper
-    template <BlockStoreAlgorithm _POLICY, int DUMMY = 0>
+    template <BlockStoreAlgorithm _POLICY, int DUMMY>
     struct StoreInternal;
 
 
@@ -720,7 +720,7 @@ private:
      ******************************************************************************/
 
     /// Internal load implementation to use
-    typedef StoreInternal<ALGORITHM> InternalStore;
+    typedef StoreInternal<ALGORITHM, 0> InternalStore;
 
 
     /// Shared memory storage layout type

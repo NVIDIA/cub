@@ -188,7 +188,7 @@ void TestKernel(
 
 
 /**
- * Test native pointer
+ * Test native pointer.  Specialized for sufficient resources
  */
 template <
     typename            T,
@@ -199,7 +199,8 @@ template <
     int                 WARP_TIME_SLICING>
 void TestNative(
     int                 grid_size,
-    float               fraction_valid)
+    float               fraction_valid,
+    Int2Type<true>      sufficient_resources)
 {
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
     int guarded_elements = int(fraction_valid * float(unguarded_elements));
@@ -255,7 +256,24 @@ void TestNative(
 
 
 /**
- * Test iterator
+ * Test native pointer.  Specialized for insufficient resources
+ */
+template <
+    typename            T,
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    BlockLoadAlgorithm  LOAD_ALGORITHM,
+    BlockStoreAlgorithm STORE_ALGORITHM,
+    int                 WARP_TIME_SLICING>
+void TestNative(
+    int                 grid_size,
+    float               fraction_valid,
+    Int2Type<false>      sufficient_resources)
+{}
+
+
+/**
+ * Test iterator.  Specialized for sufficient resources.
  */
 template <
     typename            T,
@@ -268,7 +286,8 @@ template <
     int                 WARP_TIME_SLICING>
 void TestIterator(
     int                 grid_size,
-    float               fraction_valid)
+    float               fraction_valid,
+    Int2Type<true>      sufficient_resources)
 {
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
     int guarded_elements = int(fraction_valid * float(unguarded_elements));
@@ -324,6 +343,24 @@ void TestIterator(
     if (d_out_guarded) CubDebugExit(g_allocator.DeviceFree(d_out_guarded));
 }
 
+/**
+ * Test iterator.  Specialized for insufficient resources.
+ */
+template <
+    typename            T,
+    int                 BLOCK_THREADS,
+    int                 ITEMS_PER_THREAD,
+    BlockLoadAlgorithm  LOAD_ALGORITHM,
+    BlockStoreAlgorithm STORE_ALGORITHM,
+    CacheLoadModifier   LOAD_MODIFIER,
+    CacheStoreModifier  STORE_MODIFIER,
+    int                 WARP_TIME_SLICING>
+void TestIterator(
+    int                 grid_size,
+    float               fraction_valid,
+    Int2Type<false>     sufficient_resources)
+{}
+
 
 /**
  * Evaluate different pointer access types
@@ -335,12 +372,21 @@ template <
     BlockLoadAlgorithm      LOAD_ALGORITHM,
     BlockStoreAlgorithm     STORE_ALGORITHM,
     bool                    WARP_TIME_SLICING>
-void TestPointerAccess(
+void TestPointerType(
     int             grid_size,
     float           fraction_valid)
 {
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(grid_size, fraction_valid);
-    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid);
+    // Threadblock load/store abstraction types
+    typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, WARP_TIME_SLICING> BlockLoad;
+    typedef BlockStore<T*, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, WARP_TIME_SLICING> BlockStore;
+
+    static const bool sufficient_load_smem  = sizeof(typename BlockLoad::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
+    static const bool sufficient_store_smem = sizeof(typename BlockStore::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
+    static const bool sufficient_threads    = BLOCK_THREADS <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
+    static const bool sufficient_resources  = sufficient_load_smem && sufficient_store_smem && sufficient_threads;
+
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<sufficient_resources>());
+    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<sufficient_resources>());
 }
 
 
@@ -357,8 +403,8 @@ void TestSlicedStrategy(
     int             grid_size,
     float           fraction_valid)
 {
-    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, true>(grid_size, fraction_valid);
-    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, false>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, true>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, false>(grid_size, fraction_valid);
 }
 
 
@@ -373,11 +419,10 @@ template <
 void TestStrategy(
     int             grid_size,
     float           fraction_valid,
-    Int2Type<false> is_warp_multiple,
-    Int2Type<true>  fits_smem_capacity)
+    Int2Type<false> is_warp_multiple)
 {
-    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT, false>(grid_size, fraction_valid);
-    TestPointerAccess<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, BLOCK_STORE_VECTORIZE, false>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT, false>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, BLOCK_STORE_VECTORIZE, false>(grid_size, fraction_valid);
     TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE>(grid_size, fraction_valid);
 }
 
@@ -392,50 +437,10 @@ template <
 void TestStrategy(
     int             grid_size,
     float           fraction_valid,
-    Int2Type<true>  is_warp_multiple,
-    Int2Type<true>  fits_smem_capacity)
+    Int2Type<true>  is_warp_multiple)
 {
-    TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, Int2Type<false>(), fits_smem_capacity);
+    TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, Int2Type<false>());
     TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(grid_size, fraction_valid);
-}
-
-
-/**
- * Evaluate different load/store strategies (specialized for block sizes that will not fit the SM)
- */
-template <
-    typename        T,
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    int             IS_WARP_MULTIPLE>
-void TestStrategy(
-    int                         grid_size,
-    float                       fraction_valid,
-    Int2Type<IS_WARP_MULTIPLE>  is_warp_multiple,
-    Int2Type<false>             fits_smem_capacity)
-{}
-
-
-/**
- * Evaluate different load/store strategies (specialized for block sizes that are a multiple of 32)
- */
-template <
-    typename        T,
-    int             BLOCK_THREADS,
-    int             ITEMS_PER_THREAD,
-    int             IS_WARP_MULTIPLE>
-void TestIfFits(
-    int                         grid_size,
-    float                       fraction_valid,
-    Int2Type<IS_WARP_MULTIPLE>  is_warp_multiple)
-{
-#if defined(SM100) || defined(SM110) || defined(SM130)
-    Int2Type<(sizeof(T) * BLOCK_THREADS * ITEMS_PER_THREAD <= CUB_SMEM_BYTES(100))> fits_smem_capacity;
-#else
-    Int2Type<true> fits_smem_capacity;
-#endif
-
-    TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, is_warp_multiple, fits_smem_capacity);
 }
 
 
@@ -451,10 +456,10 @@ void TestItemsPerThread(
 {
     Int2Type<BLOCK_THREADS % 32 == 0> is_warp_multiple;
 
-    TestIfFits<T, BLOCK_THREADS, 1>(grid_size, fraction_valid, is_warp_multiple);
-    TestIfFits<T, BLOCK_THREADS, 3>(grid_size, fraction_valid, is_warp_multiple);
-    TestIfFits<T, BLOCK_THREADS, 4>(grid_size, fraction_valid, is_warp_multiple);
-    TestIfFits<T, BLOCK_THREADS, 17>(grid_size, fraction_valid, is_warp_multiple);
+    TestStrategy<T, BLOCK_THREADS, 1>(grid_size, fraction_valid, is_warp_multiple);
+    TestStrategy<T, BLOCK_THREADS, 3>(grid_size, fraction_valid, is_warp_multiple);
+    TestStrategy<T, BLOCK_THREADS, 4>(grid_size, fraction_valid, is_warp_multiple);
+    TestStrategy<T, BLOCK_THREADS, 11>(grid_size, fraction_valid, is_warp_multiple);
 }
 
 
@@ -513,6 +518,7 @@ int main(int argc, char** argv)
     TestThreads<int>(2, 0.8);
     TestThreads<long>(2, 0.8);
     TestThreads<long2>(2, 0.8);
+
     if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
         TestThreads<double2>(2, 0.8);
     TestThreads<TestFoo>(2, 0.8);
