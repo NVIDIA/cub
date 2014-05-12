@@ -149,7 +149,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;</div>
 <div class="line"><a name="l00062"></a><span class="lineno">   62</span>&#160;</div>
 <div class="line"><a name="l00066"></a><span class="lineno">   66</span>&#160;<span class="keyword">template</span> &lt;<span class="keywordtype">int</span> ALLOCATIONS&gt;</div>
-<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;__host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;cudaError_t AliasTemporaries(</div>
 <div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">void</span>    *d_temp_storage,                    </div>
 <div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordtype">size_t</span>  &amp;temp_storage_bytes,                </div>
@@ -197,13 +197,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;</div>
 <div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;</div>
-<div class="line"><a name="l00118"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#gac3d86a53650d110862fe8a84fce61c2e">  118</a></span>&#160;__host__ __device__ __forceinline__ cudaError_t <a class="code" href="group___util_mgmt.html#gac3d86a53650d110862fe8a84fce61c2e" title="Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10) ...">PtxVersion</a>(<span class="keywordtype">int</span> &amp;ptx_version)</div>
+<div class="line"><a name="l00118"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga274acbdeef0a8f56373501323ef51d05">  118</a></span>&#160;CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t <a class="code" href="group___util_mgmt.html#ga274acbdeef0a8f56373501323ef51d05" title="Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10) ...">PtxVersion</a>(<span class="keywordtype">int</span> &amp;ptx_version)</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;{</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keyword">struct </span>Dummy</div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    {</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        <span class="keyword">typedef</span> void (*EmptyKernelPtr)();</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        __host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        EmptyKernelPtr Empty()</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        {</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;            <span class="keywordflow">return</span> EmptyKernel&lt;void&gt;;</div>
@@ -216,9 +216,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <span class="comment">// CUDA API calls not supported from this device</span></div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keywordflow">return</span> cudaErrorInvalidConfiguration;</div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;<span class="preprocessor">#elif (CUB_PTX_VERSION &gt; 0)</span></div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;<span class="preprocessor">#elif (CUB_PTX_ARCH &gt; 0)</span></div>
 <div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    ptx_version = <a class="code" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742" title="CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the hos...">CUB_PTX_VERSION</a>;</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    ptx_version = <a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a>;</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;    <span class="keywordflow">return</span> cudaSuccess;</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;</div>
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;<span class="preprocessor">#else</span></div>
@@ -238,7 +238,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="preprocessor"></span>}</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;</div>
-<div class="line"><a name="l00164"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga1ec5fed5face2bf098cee3ce7096364a">  164</a></span>&#160;__host__ __device__ __forceinline__ cudaError_t <a class="code" href="group___util_mgmt.html#ga1ec5fed5face2bf098cee3ce7096364a" title="Retrieves the SM version (major * 100 + minor * 10) ">SmVersion</a>(<span class="keywordtype">int</span> &amp;sm_version, <span class="keywordtype">int</span> device_ordinal)</div>
+<div class="line"><a name="l00164"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga791244a362e168e8404403b5f4148de4">  164</a></span>&#160;CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t <a class="code" href="group___util_mgmt.html#ga791244a362e168e8404403b5f4148de4" title="Retrieves the SM version (major * 100 + minor * 10) ">SmVersion</a>(<span class="keywordtype">int</span> &amp;sm_version, <span class="keywordtype">int</span> device_ordinal)</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;{</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="preprocessor">#ifndef CUB_RUNTIME_ENABLED</span></div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="preprocessor"></span></div>
@@ -266,10 +266,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="preprocessor">#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document</span></div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;__host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;<span class="keyword">static</span> cudaError_t SyncStream(cudaStream_t stream)</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;{</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;<span class="preprocessor"></span>    <span class="keywordflow">return</span> cudaStreamSynchronize(stream);</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;<span class="preprocessor"></span>    <span class="comment">// Device can&#39;t yet sync on a specific stream</span></div>
@@ -279,8 +279,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;</div>
 <div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> KernelPtr&gt;</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;__host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;cudaError_t <a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;cudaError_t <a class="code" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(</div>
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    <span class="keywordtype">int</span>                 &amp;max_sm_occupancy,          </div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    <span class="keywordtype">int</span>                 sm_version,                 </div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    KernelPtr           kernel_ptr,                 </div>
@@ -296,7 +296,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    cudaError_t error = cudaSuccess;</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    <span class="keywordflow">do</span></div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    {</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="keywordtype">int</span> warp_threads        = 1 &lt;&lt; <a class="code" href="group___util_mgmt.html#ga07eedb9de4a50680067c2d51eb438f69" title="Number of threads per warp. ">CUB_LOG_WARP_THREADS</a>(sm_version);</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="keywordtype">int</span> warp_threads        = 1 &lt;&lt; <a class="code" href="group___util_mgmt.html#ga07eedb9de4a50680067c2d51eb438f69" title="Number of threads per warp (log) ">CUB_LOG_WARP_THREADS</a>(sm_version);</div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <span class="keywordtype">int</span> max_sm_blocks       = <a class="code" href="group___util_mgmt.html#gaf2d79f9a39b860bf58ff161c175c7b06" title="Maximum number of thread blocks per SM. ">CUB_MAX_SM_BLOCKS</a>(sm_version);</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        <span class="keywordtype">int</span> max_sm_warps        = <a class="code" href="group___util_mgmt.html#gab2f2f31cddcdd898f6f9435b50cad875" title="Maximum number of threads per SM. ">CUB_MAX_SM_THREADS</a>(sm_version) / warp_threads;</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        <span class="keywordtype">int</span> regs_by_block       = <a class="code" href="group___util_mgmt.html#gabcb256a9b251c898c831b107c43429c6" title="Whether or not the architecture allocates registers by block (or by warp) ">CUB_REGS_BY_BLOCK</a>(sm_version);</div>
@@ -370,8 +370,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> KernelPtr&gt;</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;__host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00334"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b">  334</a></span>&#160;cudaError_t <a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(</div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00334"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334">  334</a></span>&#160;cudaError_t <a class="code" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    <span class="keywordtype">int</span>                 &amp;max_sm_occupancy,          </div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    KernelPtr           kernel_ptr,                 </div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;    <span class="keywordtype">int</span>                 block_threads)              </div>
@@ -392,10 +392,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;</div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;        <span class="comment">// Get device SM version</span></div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        <span class="keywordtype">int</span> sm_version;</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_mgmt.html#ga1ec5fed5face2bf098cee3ce7096364a" title="Retrieves the SM version (major * 100 + minor * 10) ">SmVersion</a>(sm_version, device_ordinal))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_mgmt.html#ga791244a362e168e8404403b5f4148de4" title="Retrieves the SM version (major * 100 + minor * 10) ">SmVersion</a>(sm_version, device_ordinal))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        <span class="comment">// Get SM occupancy</span></div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(max_sm_occupancy, sm_version, kernel_ptr, block_threads))) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;        <span class="keywordflow">if</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(error = <a class="code" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(max_sm_occupancy, sm_version, kernel_ptr, block_threads))) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    } <span class="keywordflow">while</span> (0);</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;</div>
@@ -413,7 +413,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

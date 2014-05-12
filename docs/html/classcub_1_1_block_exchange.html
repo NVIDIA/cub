@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt; Class Template Reference</title>
+<title>CUB: cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -101,16 +101,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_exchange-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a></div></div>  </div>
+<div class="title">cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
     typename T, 
-    int BLOCK_THREADS, 
+    int BLOCK_DIM_X, 
     int ITEMS_PER_THREAD, 
-    bool WARP_TIME_SLICING = false&gt;<br/>
-class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</h3>
+    bool WARP_TIME_SLICING = false, 
+    int BLOCK_DIM_Y = 1, 
+    int BLOCK_DIM_Z = 1, 
+    int PTX_ARCH = CUB_PTX_ARCH&gt;<br/>
+class cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</h3>
 
 <p>The <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> class provides <a href="index.html#sec0"><em>collective</em></a> methods for rearranging data partitioned across a CUDA thread block. </p>
 <div class="image">
@@ -120,9 +123,12 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICI
  <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The data type to be exchanged. </td></tr>
-    <tr><td class="paramname">BLOCK_THREADS</td><td>The thread block size in threads. </td></tr>
+    <tr><td class="paramname">BLOCK_DIM_X</td><td>The thread block length in threads along the X dimension </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">WARP_TIME_SLICING</td><td><b>[optional]</b> When <code>true</code>, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds. Yields a smaller memory footprint at the expense of decreased parallelism. (Default: false)</td></tr>
+    <tr><td class="paramname">WARP_TIME_SLICING</td><td><b>[optional]</b> When <code>true</code>, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds. Yields a smaller memory footprint at the expense of decreased parallelism. (Default: false) </td></tr>
+    <tr><td class="paramname">BLOCK_DIM_Y</td><td><b>[optional]</b> The thread block length in threads along the Y dimension (default: 1) </td></tr>
+    <tr><td class="paramname">BLOCK_DIM_Z</td><td><b>[optional]</b> The thread block length in threads along the Z dimension (default: 1) </td></tr>
+    <tr><td class="paramname">PTX_ARCH</td><td><b>[optional]</b> The PTX compute capability for which to to specialize this collective, formatted as per the <code><b>CUDA_ARCH</b></code> macro (e.g., 350 for sm_35). Useful for determining the collective's storage requirements for a given device from the host. (Default: the value of <code><b>CUDA_ARCH</b></code> during the current compiler pass)</td></tr>
   </table>
   </dd>
 </dl>
@@ -135,16 +141,17 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICI
 <li>Scattering ranked items to a <a href="index.html#sec5sec3"><em>striped arrangement</em></a></li>
 </ul>
 </li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> class by first specializing the <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> type, then instantiating an instance with parameters for communication, and finally invoking collective member functions. </dd></dl>
+<dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> class by first specializing the <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> type, then instantiating an instance with parameters for communication, and finally invoking one or more collective member functions. </dd></dl>
 <dl class="section user"><dt></dt><dd>The code snippet below illustrates the conversion from a "blocked" to a "striped" arrangement of 512 integer items partitioned across 128 threads where each thread owns 4 items. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_exchange.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockExchange for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
+<div class="line">    <span class="comment">// Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
@@ -154,7 +161,7 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICI
 <div class="line">    cub::LoadDirectStriped&lt;128&gt;(threadIdx.x, d_data, thread_data);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Collectively exchange data into a blocked arrangement across threads</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>(temp_storage).StripedToBlocked(thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>(temp_storage).StripedToBlocked(thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of striped input <code>thread_data</code> across the block of threads is <code>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>.</dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
@@ -162,7 +169,7 @@ class cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICI
 </ul>
 </dd></dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00108">108</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00116">116</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -173,62 +180,56 @@ Classes</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Collective constructors</div></td></tr>
-<tr class="memitem:a31f5a889713220dfe21669a4865f3f4e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a31f5a889713220dfe21669a4865f3f4e"></a>
-__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e">BlockExchange</a> ()</td></tr>
-<tr class="memdesc:a31f5a889713220dfe21669a4865f3f4e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using a private static allocation of shared memory as temporary storage. Threads are identified using <code>threadIdx.x</code>. <br/></td></tr>
-<tr class="separator:a31f5a889713220dfe21669a4865f3f4e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aff7137dd257eeec8d7628b4f9f4e1457"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#aff7137dd257eeec8d7628b4f9f4e1457">BlockExchange</a> (<a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
-<tr class="memdesc:aff7137dd257eeec8d7628b4f9f4e1457"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>.  <a href="#aff7137dd257eeec8d7628b4f9f4e1457">More...</a><br/></td></tr>
-<tr class="separator:aff7137dd257eeec8d7628b4f9f4e1457"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa0689007bc51632404a1893e52a0e6e9"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#aa0689007bc51632404a1893e52a0e6e9">BlockExchange</a> (int linear_tid)</td></tr>
-<tr class="memdesc:aa0689007bc51632404a1893e52a0e6e9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#aa0689007bc51632404a1893e52a0e6e9">More...</a><br/></td></tr>
-<tr class="separator:aa0689007bc51632404a1893e52a0e6e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a166150541730a842f1af039e34131ea9"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a166150541730a842f1af039e34131ea9">BlockExchange</a> (<a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage, int linear_tid)</td></tr>
-<tr class="memdesc:a166150541730a842f1af039e34131ea9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier.  <a href="#a166150541730a842f1af039e34131ea9">More...</a><br/></td></tr>
-<tr class="separator:a166150541730a842f1af039e34131ea9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4157ecd7ca5c2fedfb06a8c4cfd6ead8"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4157ecd7ca5c2fedfb06a8c4cfd6ead8"></a>
+__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8">BlockExchange</a> ()</td></tr>
+<tr class="memdesc:a4157ecd7ca5c2fedfb06a8c4cfd6ead8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. <br/></td></tr>
+<tr class="separator:a4157ecd7ca5c2fedfb06a8c4cfd6ead8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b0988bd9c987b3923af302e9e56b521"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a8b0988bd9c987b3923af302e9e56b521">BlockExchange</a> (<a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memdesc:a8b0988bd9c987b3923af302e9e56b521"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage.  <a href="#a8b0988bd9c987b3923af302e9e56b521">More...</a><br/></td></tr>
+<tr class="separator:a8b0988bd9c987b3923af302e9e56b521"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Structured exchanges</div></td></tr>
-<tr class="memitem:a063505380e68bb5744d12fa7e1f16145"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a063505380e68bb5744d12fa7e1f16145">StripedToBlocked</a> (T items[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a063505380e68bb5744d12fa7e1f16145"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.  <a href="#a063505380e68bb5744d12fa7e1f16145">More...</a><br/></td></tr>
-<tr class="separator:a063505380e68bb5744d12fa7e1f16145"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5e487b2f594fa0ae466bf1c7b6b9c06d"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a5e487b2f594fa0ae466bf1c7b6b9c06d">BlockedToStriped</a> (T items[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a5e487b2f594fa0ae466bf1c7b6b9c06d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.  <a href="#a5e487b2f594fa0ae466bf1c7b6b9c06d">More...</a><br/></td></tr>
-<tr class="separator:a5e487b2f594fa0ae466bf1c7b6b9c06d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a09969c12793c1876a2e6328c97c0330a"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a09969c12793c1876a2e6328c97c0330a">WarpStripedToBlocked</a> (T items[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a09969c12793c1876a2e6328c97c0330a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.  <a href="#a09969c12793c1876a2e6328c97c0330a">More...</a><br/></td></tr>
-<tr class="separator:a09969c12793c1876a2e6328c97c0330a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74fc1a62cac21f54289bb7092250a868"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a74fc1a62cac21f54289bb7092250a868">BlockedToWarpStriped</a> (T items[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a74fc1a62cac21f54289bb7092250a868"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement.  <a href="#a74fc1a62cac21f54289bb7092250a868">More...</a><br/></td></tr>
-<tr class="separator:a74fc1a62cac21f54289bb7092250a868"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2855471bbbcc4d66ac6a29d35a040e0c"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a2855471bbbcc4d66ac6a29d35a040e0c">StripedToBlocked</a> (T items[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a2855471bbbcc4d66ac6a29d35a040e0c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>striped</em> arrangement to <em>blocked</em> arrangement.  <a href="#a2855471bbbcc4d66ac6a29d35a040e0c">More...</a><br/></td></tr>
+<tr class="separator:a2855471bbbcc4d66ac6a29d35a040e0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad7553f28b40fc875a80400edc8ac7b33"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#ad7553f28b40fc875a80400edc8ac7b33">BlockedToStriped</a> (T items[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ad7553f28b40fc875a80400edc8ac7b33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>striped</em> arrangement.  <a href="#ad7553f28b40fc875a80400edc8ac7b33">More...</a><br/></td></tr>
+<tr class="separator:ad7553f28b40fc875a80400edc8ac7b33"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a122bf51ee7258410c9eb507f2abbd81a"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a122bf51ee7258410c9eb507f2abbd81a">WarpStripedToBlocked</a> (T items[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a122bf51ee7258410c9eb507f2abbd81a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>warp-striped</em> arrangement to <em>blocked</em> arrangement.  <a href="#a122bf51ee7258410c9eb507f2abbd81a">More...</a><br/></td></tr>
+<tr class="separator:a122bf51ee7258410c9eb507f2abbd81a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a852508850f7cc778c6f2036dcfb74ce5"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a852508850f7cc778c6f2036dcfb74ce5">BlockedToWarpStriped</a> (T items[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a852508850f7cc778c6f2036dcfb74ce5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement.  <a href="#a852508850f7cc778c6f2036dcfb74ce5">More...</a><br/></td></tr>
+<tr class="separator:a852508850f7cc778c6f2036dcfb74ce5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Scatter exchanges</div></td></tr>
-<tr class="memitem:a43edc6bcdf295446b03921abc213140e"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
-<tr class="memitem:a43edc6bcdf295446b03921abc213140e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a43edc6bcdf295446b03921abc213140e">ScatterToBlocked</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a43edc6bcdf295446b03921abc213140e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>blocked</em> arrangement.  <a href="#a43edc6bcdf295446b03921abc213140e">More...</a><br/></td></tr>
-<tr class="separator:a43edc6bcdf295446b03921abc213140e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae8204b7235ce1a49b4ff2b309d53d386"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
-<tr class="memitem:ae8204b7235ce1a49b4ff2b309d53d386"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#ae8204b7235ce1a49b4ff2b309d53d386">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ae8204b7235ce1a49b4ff2b309d53d386"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement.  <a href="#ae8204b7235ce1a49b4ff2b309d53d386">More...</a><br/></td></tr>
-<tr class="separator:ae8204b7235ce1a49b4ff2b309d53d386"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2dfffd9eca4f97e0865c0516a500c014"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
-<tr class="memitem:a2dfffd9eca4f97e0865c0516a500c014"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a2dfffd9eca4f97e0865c0516a500c014">ScatterToStripedGuarded</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a2dfffd9eca4f97e0865c0516a500c014"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement. Items with rank -1 are not exchanged.  <a href="#a2dfffd9eca4f97e0865c0516a500c014">More...</a><br/></td></tr>
-<tr class="separator:a2dfffd9eca4f97e0865c0516a500c014"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a29bc72c298980c83ea5618e439486276"><td class="memTemplParams" colspan="2">template&lt;typename Offset , typename ValidFlag &gt; </td></tr>
-<tr class="memitem:a29bc72c298980c83ea5618e439486276"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a29bc72c298980c83ea5618e439486276">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD], ValidFlag is_valid[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a29bc72c298980c83ea5618e439486276"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges valid data items annotated by rank into <em>striped</em> arrangement.  <a href="#a29bc72c298980c83ea5618e439486276">More...</a><br/></td></tr>
-<tr class="separator:a29bc72c298980c83ea5618e439486276"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a756e7903c5369261fcf6139e5db52824"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
+<tr class="memitem:a756e7903c5369261fcf6139e5db52824"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a756e7903c5369261fcf6139e5db52824">ScatterToBlocked</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a756e7903c5369261fcf6139e5db52824"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>blocked</em> arrangement.  <a href="#a756e7903c5369261fcf6139e5db52824">More...</a><br/></td></tr>
+<tr class="separator:a756e7903c5369261fcf6139e5db52824"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2ba02edda6bfed9327cd4ee1748aa678"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
+<tr class="memitem:a2ba02edda6bfed9327cd4ee1748aa678"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a2ba02edda6bfed9327cd4ee1748aa678">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a2ba02edda6bfed9327cd4ee1748aa678"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement.  <a href="#a2ba02edda6bfed9327cd4ee1748aa678">More...</a><br/></td></tr>
+<tr class="separator:a2ba02edda6bfed9327cd4ee1748aa678"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0232bb6ad4bdfe1f1578e1ba8d175beb"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
+<tr class="memitem:a0232bb6ad4bdfe1f1578e1ba8d175beb"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a0232bb6ad4bdfe1f1578e1ba8d175beb">ScatterToStripedGuarded</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a0232bb6ad4bdfe1f1578e1ba8d175beb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement. Items with rank -1 are not exchanged.  <a href="#a0232bb6ad4bdfe1f1578e1ba8d175beb">More...</a><br/></td></tr>
+<tr class="separator:a0232bb6ad4bdfe1f1578e1ba8d175beb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a171c90da1f2d5572b22acf059e0b06ea"><td class="memTemplParams" colspan="2">template&lt;typename Offset , typename ValidFlag &gt; </td></tr>
+<tr class="memitem:a171c90da1f2d5572b22acf059e0b06ea"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a171c90da1f2d5572b22acf059e0b06ea">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD], ValidFlag is_valid[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a171c90da1f2d5572b22acf059e0b06ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges valid data items annotated by rank into <em>striped</em> arrangement.  <a href="#a171c90da1f2d5572b22acf059e0b06ea">More...</a><br/></td></tr>
+<tr class="separator:a171c90da1f2d5572b22acf059e0b06ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="aff7137dd257eeec8d7628b4f9f4e1457"></a>
+<a class="anchor" id="a8b0988bd9c987b3923af302e9e56b521"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_exchange.html">BlockExchange</a> </td>
+          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::<a class="el" href="classcub_1_1_block_exchange.html">BlockExchange</a> </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
@@ -242,7 +243,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 </table>
 </div><div class="memdoc">
 
-<p>Collective constructor for 1D thread blocks using the specified memory allocation as temporary storage. Threads are identified using <code>threadIdx.x</code>. </p>
+<p>Collective constructor using the specified memory allocation as temporary storage. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">TempStorage</a> </td></tr>
@@ -250,105 +251,22 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00662">662</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="aa0689007bc51632404a1893e52a0e6e9"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_exchange.html">BlockExchange</a> </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>linear_tid</em>)</td><td></td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Collective constructor using a private static allocation of shared memory as temporary storage. Each thread is identified using the supplied linear thread identifier. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">linear_tid</td><td>A suitable 1D thread-identifier for the calling thread (e.g., <code>(threadIdx.y * blockDim.x) + linear_tid</code> for 2D thread blocks) </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00676">676</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
-
-</div>
-</div>
-<a class="anchor" id="a166150541730a842f1af039e34131ea9"></a>
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::<a class="el" href="classcub_1_1_block_exchange.html">BlockExchange</a> </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
-          <td class="paramname"><em>temp_storage</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>linear_tid</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">temp_storage</td><td>Reference to memory allocation having layout type <a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">TempStorage</a> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">linear_tid</td><td><b>[optional]</b> A suitable 1D thread-identifier for the calling thread (e.g., <code>(threadIdx.y * blockDim.x) + linear_tid</code> for 2D thread blocks) </td></tr>
-  </table>
-  </dd>
-</dl>
-
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00690">690</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00674">674</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a063505380e68bb5744d12fa7e1f16145"></a>
+<a class="anchor" id="a2855471bbbcc4d66ac6a29d35a040e0c"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::StripedToBlocked </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::StripedToBlocked </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD])</td><td></td>
@@ -372,8 +290,8 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockExchange for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
+<div class="line">    <span class="comment">// Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
@@ -383,7 +301,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line">    cub::LoadDirectStriped&lt;128&gt;(threadIdx.x, d_data, thread_data);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Collectively exchange data into a blocked arrangement across threads</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>(temp_storage).StripedToBlocked(thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>(temp_storage).StripedToBlocked(thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of striped input <code>thread_data</code> across the block of threads is <code>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</code> after loading from global memory. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -393,21 +311,21 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00744">744</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00727">727</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a5e487b2f594fa0ae466bf1c7b6b9c06d"></a>
+<a class="anchor" id="ad7553f28b40fc875a80400edc8ac7b33"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::BlockedToStriped </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::BlockedToStriped </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD])</td><td></td>
@@ -431,8 +349,8 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockExchange for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
+<div class="line">    <span class="comment">// Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
@@ -442,7 +360,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Collectively exchange data into a striped arrangement across threads</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>(temp_storage).BlockedToStriped(thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>(temp_storage).BlockedToStriped(thread_data);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store data striped across block threads into an ordered tile</span></div>
 <div class="line">    cub::StoreDirectStriped&lt;STORE_DEFAULT, 128&gt;(threadIdx.x, d_data, thread_data);</div>
@@ -455,21 +373,21 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00790">790</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00773">773</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a09969c12793c1876a2e6328c97c0330a"></a>
+<a class="anchor" id="a122bf51ee7258410c9eb507f2abbd81a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::WarpStripedToBlocked </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::WarpStripedToBlocked </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD])</td><td></td>
@@ -493,8 +411,8 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockExchange for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
+<div class="line">    <span class="comment">// Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
@@ -504,7 +422,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line">    cub::LoadSWarptriped&lt;LOAD_DEFAULT&gt;(threadIdx.x, d_data, thread_data);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Collectively exchange data into a blocked arrangement across threads</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>(temp_storage).WarpStripedToBlocked(thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>(temp_storage).WarpStripedToBlocked(thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of warp-striped input <code>thread_data</code> across the block of threads is <code>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</code> after loading from global memory. (The first 128 items are striped across the first warp of 32 threads, the second 128 items are striped across the second warp, etc.) The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -514,21 +432,21 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00835">835</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00818">818</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a74fc1a62cac21f54289bb7092250a868"></a>
+<a class="anchor" id="a852508850f7cc778c6f2036dcfb74ce5"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::BlockedToWarpStriped </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::BlockedToWarpStriped </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD])</td><td></td>
@@ -552,8 +470,8 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line"></div>
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
-<div class="line">    <span class="comment">// Specialize BlockExchange for 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>;</div>
+<div class="line">    <span class="comment">// Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">cub::BlockExchange&lt;int, 128, 4&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockExchange</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockExchange::TempStorage temp_storage;</div>
@@ -563,7 +481,7 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Collectively exchange data into a warp-striped arrangement across threads</span></div>
-<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a31f5a889713220dfe21669a4865f3f4e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(thread_data);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store data striped across warp threads into an ordered tile</span></div>
 <div class="line">    cub::StoreDirectStriped&lt;STORE_DEFAULT, 128&gt;(threadIdx.x, d_data, thread_data);</div>
@@ -576,15 +494,15 @@ template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00882">882</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00865">865</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a43edc6bcdf295446b03921abc213140e"></a>
+<a class="anchor" id="a756e7903c5369261fcf6139e5db52824"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
 template&lt;typename Offset &gt; </div>
 <table class="mlabels">
@@ -592,7 +510,7 @@ template&lt;typename Offset &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::ScatterToBlocked </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::ScatterToBlocked </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
@@ -635,15 +553,15 @@ template&lt;typename Offset &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00905">905</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00888">888</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ae8204b7235ce1a49b4ff2b309d53d386"></a>
+<a class="anchor" id="a2ba02edda6bfed9327cd4ee1748aa678"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
 template&lt;typename Offset &gt; </div>
 <table class="mlabels">
@@ -651,7 +569,7 @@ template&lt;typename Offset &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::ScatterToStriped </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::ScatterToStriped </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
@@ -694,15 +612,15 @@ template&lt;typename Offset &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00922">922</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00905">905</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a2dfffd9eca4f97e0865c0516a500c014"></a>
+<a class="anchor" id="a0232bb6ad4bdfe1f1578e1ba8d175beb"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
 template&lt;typename Offset &gt; </div>
 <table class="mlabels">
@@ -710,7 +628,7 @@ template&lt;typename Offset &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::ScatterToStripedGuarded </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::ScatterToStripedGuarded </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
@@ -753,15 +671,15 @@ template&lt;typename Offset &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00939">939</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00922">922</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a29bc72c298980c83ea5618e439486276"></a>
+<a class="anchor" id="a171c90da1f2d5572b22acf059e0b06ea"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T , int BLOCK_THREADS, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false&gt; </div>
+template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
 template&lt;typename Offset , typename ValidFlag &gt; </div>
 <table class="mlabels">
@@ -769,7 +687,7 @@ template&lt;typename Offset , typename ValidFlag &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::ScatterToStriped </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::ScatterToStriped </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
@@ -820,7 +738,7 @@ template&lt;typename Offset , typename ValidFlag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00973">973</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00956">956</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 
 </div>
 </div>
@@ -831,7 +749,7 @@ template&lt;typename Offset , typename ValidFlag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:14:00 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -149,8 +149,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l00149"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a2e7bb79308e1135b77be4cf15ea993ee">  149</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a2e7bb79308e1135b77be4cf15ea993ee" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">Reduce</a>(</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00149"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f">  149</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">Reduce</a>(</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        InputIterator               d_in,                               </div>
@@ -181,8 +181,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l00226"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc">  226</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#ae38bbfec0b058564ee966c9451fabbcc" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">Sum</a>(</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00226"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371">  226</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">Sum</a>(</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
 <div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        InputIterator               d_in,                               </div>
@@ -212,8 +212,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l00298"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#adada0367d1c362e753ebf1af1045e854">  298</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#adada0367d1c362e753ebf1af1045e854" title="Computes a device-wide minimum using the less-than (&#39;&lt;&#39;) operator. ">Min</a>(</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00298"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a">  298</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a" title="Computes a device-wide minimum using the less-than (&#39;&lt;&#39;) operator. ">Min</a>(</div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        InputIterator               d_in,                               </div>
@@ -243,8 +243,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l00375"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#af3dc1b284c8828d1e51da587a090a140">  375</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#af3dc1b284c8828d1e51da587a090a140" title="Finds the first device-wide minimum using the less-than (&#39;&lt;&#39;) operator, also returning the index o...">ArgMin</a>(</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00375"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572">  375</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572" title="Finds the first device-wide minimum using the less-than (&#39;&lt;&#39;) operator, also returning the index o...">ArgMin</a>(</div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;        InputIterator               d_in,                               </div>
@@ -278,8 +278,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l00451"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a335a77d51f436c8840b50f53cab137a5">  451</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a335a77d51f436c8840b50f53cab137a5" title="Computes a device-wide maximum using the greater-than (&#39;&gt;&#39;) operator. ">Max</a>(</div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00451"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66">  451</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66" title="Computes a device-wide maximum using the greater-than (&#39;&gt;&#39;) operator. ">Max</a>(</div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;        InputIterator               d_in,                               </div>
@@ -309,8 +309,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;    __host__ __device__</div>
-<div class="line"><a name="l00528"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a7524b86cae1cb19d7a8899141d8c9908">  528</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a7524b86cae1cb19d7a8899141d8c9908" title="Finds the first device-wide maximum using the greater-than (&#39;&gt;&#39;) operator, also returning the inde...">ArgMax</a>(</div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00528"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af">  528</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af" title="Finds the first device-wide maximum using the greater-than (&#39;&gt;&#39;) operator, also returning the inde...">ArgMax</a>(</div>
 <div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
 <div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
 <div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;        InputIterator               d_in,                               </div>
@@ -348,8 +348,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        <span class="keyword">typename</span>                    ValueOutputIterator,</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;        <span class="keyword">typename</span>                    NumSegmentsIterator,</div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;</div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00648"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a62400e8632002f3ba601d4392b997bc7">  648</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a62400e8632002f3ba601d4392b997bc7" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">ReduceByKey</a>(</div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00648"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3">  648</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">ReduceByKey</a>(</div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;        KeyInputIterator            d_keys_in,                      </div>
@@ -388,8 +388,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;        <span class="keyword">typename</span>                    CountsOutputIterator,</div>
 <div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;        <span class="keyword">typename</span>                    NumSegmentsIterator&gt;</div>
-<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00754"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#ac563c98fb1d6cde7d4365bc34f6b698d">  754</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#ac563c98fb1d6cde7d4365bc34f6b698d" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">RunLengthEncode</a>(</div>
+<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00754"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f">  754</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">RunLengthEncode</a>(</div>
 <div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;        InputIterator               d_in,                           </div>
@@ -440,7 +440,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -315,7 +315,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;<span class="keyword">struct </span>UnitWord &lt;float2&gt;</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;{</div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    <span class="keyword">typedef</span> <span class="keywordtype">int</span>         ShuffleWord;</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION &gt; 0) &amp;&amp; (CUB_PTX_VERSION &lt;= 130)</span></div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH &gt; 0) &amp;&amp; (CUB_PTX_ARCH &lt;= 130)</span></div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="preprocessor"></span>    <span class="keyword">typedef</span> <span class="keywordtype">float</span>       VolatileWord;</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;    <span class="keyword">typedef</span> uint2       DeviceWord;</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;<span class="preprocessor">#else</span></div>
@@ -330,7 +330,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="keyword">struct </span>UnitWord &lt;float4&gt;</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;{</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="keyword">typedef</span> <span class="keywordtype">int</span>         ShuffleWord;</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION &gt; 0) &amp;&amp; (CUB_PTX_VERSION &lt;= 130)</span></div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH &gt; 0) &amp;&amp; (CUB_PTX_ARCH &lt;= 130)</span></div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;<span class="preprocessor"></span>    <span class="keyword">typedef</span> <span class="keywordtype">float</span>               VolatileWord;</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keyword">typedef</span> uint4               DeviceWord;</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="preprocessor">#else</span></div>
@@ -346,7 +346,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;<span class="keyword">struct </span>UnitWord &lt;char2&gt;</div>
 <div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;{</div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;    <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span>      ShuffleWord;</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION &gt; 0) &amp;&amp; (CUB_PTX_VERSION &lt;= 130)</span></div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH &gt; 0) &amp;&amp; (CUB_PTX_ARCH &lt;= 130)</span></div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="preprocessor"></span>    <span class="keyword">typedef</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">short</span>      VolatileWord;</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    <span class="keyword">typedef</span> <span class="keywordtype">short</span>               DeviceWord;</div>
 <div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;<span class="preprocessor">#else</span></div>
@@ -549,7 +549,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00508"></a><span class="lineno"><a class="code" href="structcub_1_1_item_offset_pair.html#aa6e5dfd6b22478ead18c080694768528">  508</a></span>&#160;    <span class="keyword">typedef</span> _T        <a class="code" href="structcub_1_1_item_offset_pair.html#aa6e5dfd6b22478ead18c080694768528" title="Item data type. ">T</a>;                </div>
 <div class="line"><a name="l00509"></a><span class="lineno"><a class="code" href="structcub_1_1_item_offset_pair.html#ac541377b1ef1b842825716a85acd5009">  509</a></span>&#160;    <span class="keyword">typedef</span> _Offset   <a class="code" href="structcub_1_1_item_offset_pair.html#ac541377b1ef1b842825716a85acd5009" title="Integer offset data type. ">Offset</a>;           </div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;</div>
-<div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
+<div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;<span class="preprocessor"></span>    <span class="keyword">union</span></div>
 <div class="line"><a name="l00513"></a><span class="lineno">  513</span>&#160;    {</div>
 <div class="line"><a name="l00514"></a><span class="lineno"><a class="code" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173">  514</a></span>&#160;        <a class="code" href="structcub_1_1_item_offset_pair.html#ac541377b1ef1b842825716a85acd5009" title="Integer offset data type. ">Offset</a>                              <a class="code" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173" title="Offset. ">offset</a>;     </div>
@@ -590,7 +590,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;__host__ __device__ __forceinline__ T ZeroInitialize()</div>
 <div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;{</div>
-<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION &gt; 0) &amp;&amp; (CUB_PTX_VERSION &lt;= 130)</span></div>
+<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH &gt; 0) &amp;&amp; (CUB_PTX_ARCH &lt;= 130)</span></div>
 <div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> UnitWord&lt;T&gt;::ShuffleWord ShuffleWord;</div>
 <div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">int</span> MULTIPLE = <span class="keyword">sizeof</span>(T) / <span class="keyword">sizeof</span>(ShuffleWord);</div>
@@ -987,7 +987,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

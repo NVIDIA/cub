@@ -150,8 +150,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        <span class="keyword">typename</span>                    FlagIterator,</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIterator&gt;</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00127"></a><span class="lineno"><a class="code" href="structcub_1_1_device_partition.html#a3b37007222270b166390d9fd9667ee8c">  127</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_partition.html#a3b37007222270b166390d9fd9667ee8c" title="Uses the d_flags sequence to split the corresponding items from d_in into a partitioned sequence d_ou...">Flagged</a>(</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00127"></a><span class="lineno"><a class="code" href="structcub_1_1_device_partition.html#a84ca1ba3be36800927d8220a05a75e08">  127</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_partition.html#a84ca1ba3be36800927d8220a05a75e08" title="Uses the d_flags sequence to split the corresponding items from d_in into a partitioned sequence d_ou...">Flagged</a>(</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        InputIterator               d_in,                           </div>
@@ -186,8 +186,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIterator,</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keyword">typename</span>                    SelectOp&gt;</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00236"></a><span class="lineno"><a class="code" href="structcub_1_1_device_partition.html#ae7943e3b007a6edd517d82675af832c0">  236</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_partition.html#ae7943e3b007a6edd517d82675af832c0" title="Uses the select_op functor to split the corresponding items from d_in into a partitioned sequence d_o...">If</a>(</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00236"></a><span class="lineno"><a class="code" href="structcub_1_1_device_partition.html#aed5978367be0eabd6b74dc0e2eb69927">  236</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_partition.html#aed5978367be0eabd6b74dc0e2eb69927" title="Uses the select_op functor to split the corresponding items from d_in into a partitioned sequence d_o...">If</a>(</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        InputIterator               d_in,                           </div>
@@ -226,7 +226,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -116,11 +116,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The work-complexity of select-flagged, select-if, and select-unique as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU.</dd></dl>
-<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a> performance across different CUDA architectures for <code>int32</code> items, where 50% of the items are randomly selected.</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a> performance across different CUDA architectures for <code>int32</code> items, where 50% of the items are randomly selected.</dd></dl>
 <div class="image">
 <img src="select_if_int32_50_percent.png" alt="select_if_int32_50_percent.png"/>
 </div>
-<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#ae635fc4f38a07a1c1dd90c177e993312" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">DeviceSelect::Unique</a> performance across different CUDA architectures for <code>int32</code> items where segments have lengths uniformly sampled from [1,1000].</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">DeviceSelect::Unique</a> performance across different CUDA architectures for <code>int32</code> items where segments have lengths uniformly sampled from [1,1000].</dd></dl>
 <div class="image">
 <img src="select_unique_int32_len_500.png" alt="select_unique_int32_len_500.png"/>
 </div>
@@ -130,39 +130,39 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:ae2a77d395ccd2c0c839956469f04bb7d"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename FlagIterator , typename OutputIterator , typename NumSelectedIterator &gt; </td></tr>
-<tr class="memitem:ae2a77d395ccd2c0c839956469f04bb7d"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#ae2a77d395ccd2c0c839956469f04bb7d">Flagged</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, FlagIterator d_flags, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:ae2a77d395ccd2c0c839956469f04bb7d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses the <code>d_flags</code> sequence to selectively copy the corresponding items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+<tr class="memitem:a4bdafa080cce999f8694c820fd567c83"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename FlagIterator , typename OutputIterator , typename NumSelectedIterator &gt; </td></tr>
+<tr class="memitem:a4bdafa080cce999f8694c820fd567c83"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#a4bdafa080cce999f8694c820fd567c83">Flagged</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, FlagIterator d_flags, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a4bdafa080cce999f8694c820fd567c83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses the <code>d_flags</code> sequence to selectively copy the corresponding items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
 <div class="image">
 <img src="select_flags_logo.png" alt="select_flags_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#ae2a77d395ccd2c0c839956469f04bb7d">More...</a><br/></td></tr>
-<tr class="separator:ae2a77d395ccd2c0c839956469f04bb7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1fc0a6991fdf34a417856349a146de29"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename NumSelectedIterator , typename SelectOp &gt; </td></tr>
-<tr class="memitem:a1fc0a6991fdf34a417856349a146de29"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29">If</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, SelectOp select_op, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a1fc0a6991fdf34a417856349a146de29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses the <code>select_op</code> functor to selectively copy items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+  <a href="#a4bdafa080cce999f8694c820fd567c83">More...</a><br/></td></tr>
+<tr class="separator:a4bdafa080cce999f8694c820fd567c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ffe7f660d8188b05b79a00f7bfb9e0a"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename NumSelectedIterator , typename SelectOp &gt; </td></tr>
+<tr class="memitem:a0ffe7f660d8188b05b79a00f7bfb9e0a"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a">If</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, SelectOp select_op, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a0ffe7f660d8188b05b79a00f7bfb9e0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses the <code>select_op</code> functor to selectively copy items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
 <div class="image">
 <img src="select_logo.png" alt="select_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#a1fc0a6991fdf34a417856349a146de29">More...</a><br/></td></tr>
-<tr class="separator:a1fc0a6991fdf34a417856349a146de29"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae635fc4f38a07a1c1dd90c177e993312"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename NumSelectedIterator &gt; </td></tr>
-<tr class="memitem:ae635fc4f38a07a1c1dd90c177e993312"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#ae635fc4f38a07a1c1dd90c177e993312">Unique</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:ae635fc4f38a07a1c1dd90c177e993312"><td class="mdescLeft">&#160;</td><td class="mdescRight">Given an input sequence <code>d_in</code> having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+  <a href="#a0ffe7f660d8188b05b79a00f7bfb9e0a">More...</a><br/></td></tr>
+<tr class="separator:a0ffe7f660d8188b05b79a00f7bfb9e0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5f491589b45e16197438d884dcda3a1"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename NumSelectedIterator &gt; </td></tr>
+<tr class="memitem:ae5f491589b45e16197438d884dcda3a1"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1">Unique</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:ae5f491589b45e16197438d884dcda3a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Given an input sequence <code>d_in</code> having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
 <div class="image">
 <img src="unique_logo.png" alt="unique_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#ae635fc4f38a07a1c1dd90c177e993312">More...</a><br/></td></tr>
-<tr class="separator:ae635fc4f38a07a1c1dd90c177e993312"><td class="memSeparator" colspan="2">&#160;</td></tr>
+  <a href="#ae5f491589b45e16197438d884dcda3a1">More...</a><br/></td></tr>
+<tr class="separator:ae5f491589b45e16197438d884dcda3a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="ae2a77d395ccd2c0c839956469f04bb7d"></a>
+<a class="anchor" id="a4bdafa080cce999f8694c820fd567c83"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -172,7 +172,7 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceSelect::Flagged </td>
+          <td class="memname">CUB_RUNTIME_FUNCTION static __forceinline__ cudaError_t cub::DeviceSelect::Flagged </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -265,13 +265,13 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#ae2a77d395ccd2c0c839956469f04bb7d" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">cub::DeviceSelect::Flagged</a>(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#a4bdafa080cce999f8694c820fd567c83" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">cub::DeviceSelect::Flagged</a>(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run selection</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#ae2a77d395ccd2c0c839956469f04bb7d" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">cub::DeviceSelect::Flagged</a>(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#a4bdafa080cce999f8694c820fd567c83" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">cub::DeviceSelect::Flagged</a>(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out             &lt;-- [1, 4, 6, 7]</span></div>
 <div class="line"><span class="comment">// d_num_selected    &lt;-- [4]</span></div>
@@ -305,7 +305,7 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
 
 </div>
 </div>
-<a class="anchor" id="a1fc0a6991fdf34a417856349a146de29"></a>
+<a class="anchor" id="a0ffe7f660d8188b05b79a00f7bfb9e0a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -315,7 +315,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceSelect::If </td>
+          <td class="memname">CUB_RUNTIME_FUNCTION static __forceinline__ cudaError_t cub::DeviceSelect::If </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -415,10 +415,10 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <div class="line">{</div>
 <div class="line">    <span class="keywordtype">int</span> compare;</div>
 <div class="line"></div>
-<div class="line">    __host__ __device__ __forceinline__</div>
+<div class="line">    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line">    LessThan(<span class="keywordtype">int</span> compare) : compare(compare) {}</div>
 <div class="line"></div>
-<div class="line">    __host__ __device__ __forceinline__</div>
+<div class="line">    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line">    <span class="keywordtype">bool</span> operator()(<span class="keyword">const</span> <span class="keywordtype">int</span> &amp;a)<span class="keyword"> const </span>{</div>
 <div class="line">        <span class="keywordflow">return</span> (a &lt; compare);</div>
 <div class="line">    }</div>
@@ -435,13 +435,13 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run selection</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out             &lt;-- [0, 2, 3, 5, 2]</span></div>
 <div class="line"><span class="comment">// d_num_selected    &lt;-- [5]</span></div>
@@ -475,7 +475,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 
 </div>
 </div>
-<a class="anchor" id="ae635fc4f38a07a1c1dd90c177e993312"></a>
+<a class="anchor" id="ae5f491589b45e16197438d884dcda3a1"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -485,7 +485,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ static __forceinline__ cudaError_t cub::DeviceSelect::Unique </td>
+          <td class="memname">CUB_RUNTIME_FUNCTION static __forceinline__ cudaError_t cub::DeviceSelect::Unique </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -585,13 +585,13 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#ae635fc4f38a07a1c1dd90c177e993312" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">cub::DeviceSelect::Unique</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">cub::DeviceSelect::Unique</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run selection</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#ae635fc4f38a07a1c1dd90c177e993312" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">cub::DeviceSelect::Unique</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">cub::DeviceSelect::Unique</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out             &lt;-- [0, 2, 9, 5, 8]</span></div>
 <div class="line"><span class="comment">// d_num_selected    &lt;-- [5]</span></div>
@@ -630,7 +630,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:14:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:56 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

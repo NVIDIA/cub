@@ -136,7 +136,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;</div>
 <div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #include &lt;set&gt;</span>              <span class="comment">// NVCC (EDG, really) takes FOREVER to compile std::map</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">    #include &lt;map&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#endif</span></div>
@@ -252,7 +252,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;    <span class="keyword">typedef</span> bool (*Compare)(<span class="keyword">const</span> BlockDescriptor &amp;, <span class="keyword">const</span> BlockDescriptor &amp;);</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)   // Only define STL container members in host code</span></div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code</span></div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;    <span class="keyword">typedef</span> std::multiset&lt;BlockDescriptor, Compare&gt; CachedBlocks;</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;</div>
@@ -260,7 +260,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;</div>
 <div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    <span class="keyword">typedef</span> std::map&lt;int, size_t&gt; GpuCachedBytes;</div>
 <div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;<span class="preprocessor">#endif // CUB_PTX_VERSION</span></div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;<span class="preprocessor">#endif // CUB_PTX_ARCH</span></div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    <span class="comment">//---------------------------------------------------------------------</span></div>
 <div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    <span class="comment">// Fields</span></div>
@@ -279,13 +279,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordtype">bool</span>            debug;              </div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="keywordtype">bool</span>            skip_cleanup;       </div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)   // Only define STL container members in host code</span></div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)   // Only define STL container members in host code</span></div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    GpuCachedBytes  cached_bytes;       </div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;    CachedBlocks    cached_blocks;      </div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    BusyBlocks      live_blocks;        </div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;<span class="preprocessor">#endif // CUB_PTX_VERSION</span></div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;<span class="preprocessor">#endif // CUB_PTX_ARCH</span></div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="preprocessor">#endif // DOXYGEN_SHOULD_SKIP_THIS</span></div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;<span class="preprocessor"></span></div>
@@ -300,7 +300,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="keywordtype">size_t</span> max_cached_bytes,    </div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="keywordtype">bool</span> skip_cleanup = <span class="keyword">false</span>)  </div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    :</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    #if (<a class="code" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742" title="CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the hos...">CUB_PTX_VERSION</a> == 0)   <span class="comment">// Only define STL container members in host code</span></div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    #if (<a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a> == 0)   <span class="comment">// Only define STL container members in host code</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;            cached_blocks(BlockDescriptor::SizeCompare),</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;            live_blocks(BlockDescriptor::PtrCompare),</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    #endif</div>
@@ -318,7 +318,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00287"></a><span class="lineno"><a class="code" href="structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff">  287</a></span>&#160;    <a class="code" href="structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff" title="Default constructor. ">CachingDeviceAllocator</a>(</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keywordtype">bool</span> skip_cleanup = <span class="keyword">false</span>)  </div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    :</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    #if (<a class="code" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742" title="CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the hos...">CUB_PTX_VERSION</a> == 0)   <span class="comment">// Only define STL container members in host code</span></div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    #if (<a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a> == 0)   <span class="comment">// Only define STL container members in host code</span></div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;        cached_blocks(BlockDescriptor::SizeCompare),</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;        live_blocks(BlockDescriptor::PtrCompare),</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    #endif</div>
@@ -337,7 +337,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00309"></a><span class="lineno"><a class="code" href="structcub_1_1_caching_device_allocator.html#a2216ab13fdeb11ce61f04f69899fff33">  309</a></span>&#160;    cudaError_t <a class="code" href="structcub_1_1_caching_device_allocator.html#a2216ab13fdeb11ce61f04f69899fff33" title="Sets the limit on the number bytes this allocator is allowed to cache per device. ...">SetMaxCachedBytes</a>(</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="keywordtype">size_t</span> max_cached_bytes)</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;    {</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION &gt; 0)</span></div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="preprocessor">    #if (CUB_PTX_ARCH &gt; 0)</span></div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Caching functionality only defined on host</span></div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;<span class="preprocessor">    #else</span></div>
@@ -354,7 +354,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;        <span class="keywordflow">return</span> cudaSuccess;</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_VERSION</span></div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_ARCH</span></div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;</div>
@@ -363,7 +363,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;        <span class="keywordtype">size_t</span> bytes,</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="keywordtype">int</span> device)</div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    {</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION &gt; 0)</span></div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;<span class="preprocessor">    #if (CUB_PTX_ARCH &gt; 0)</span></div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Caching functionality only defined on host</span></div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;<span class="preprocessor">    #else</span></div>
@@ -461,7 +461,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;        <span class="keywordflow">return</span> error;</div>
 <div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;</div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_VERSION</span></div>
+<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_ARCH</span></div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;</div>
 <div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;</div>
@@ -469,7 +469,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        <span class="keywordtype">void</span>** d_ptr,</div>
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;        <span class="keywordtype">size_t</span> bytes)</div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    {</div>
-<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION &gt; 0)</span></div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;<span class="preprocessor">    #if (CUB_PTX_ARCH &gt; 0)</span></div>
 <div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Caching functionality only defined on host</span></div>
 <div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
 <div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;<span class="preprocessor">    #else</span></div>
@@ -482,7 +482,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;        <span class="keywordflow">return</span> error;</div>
 <div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;</div>
-<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_VERSION</span></div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_ARCH</span></div>
 <div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;</div>
 <div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;</div>
@@ -490,7 +490,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;        <span class="keywordtype">void</span>* d_ptr,</div>
 <div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;        <span class="keywordtype">int</span> device)</div>
 <div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;    {</div>
-<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION &gt; 0)</span></div>
+<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;<span class="preprocessor">    #if (CUB_PTX_ARCH &gt; 0)</span></div>
 <div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Caching functionality only defined on host</span></div>
 <div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
 <div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;<span class="preprocessor">    #else</span></div>
@@ -566,14 +566,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;</div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;        <span class="keywordflow">return</span> error;</div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;</div>
-<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_VERSION</span></div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_ARCH</span></div>
 <div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;</div>
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;</div>
 <div class="line"><a name="l00557"></a><span class="lineno"><a class="code" href="structcub_1_1_caching_device_allocator.html#adbf65c59172b140420636e150325deeb">  557</a></span>&#160;    cudaError_t <a class="code" href="structcub_1_1_caching_device_allocator.html#adbf65c59172b140420636e150325deeb" title="Frees a live allocation of device memory on the current device, returning it to the allocator...">DeviceFree</a>(</div>
 <div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;        <span class="keywordtype">void</span>* d_ptr)</div>
 <div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;    {</div>
-<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION &gt; 0)</span></div>
+<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;<span class="preprocessor">    #if (CUB_PTX_ARCH &gt; 0)</span></div>
 <div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Caching functionality only defined on host</span></div>
 <div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
 <div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;<span class="preprocessor">    #else</span></div>
@@ -588,13 +588,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;</div>
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;        <span class="keywordflow">return</span> error;</div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;</div>
-<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_VERSION</span></div>
+<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_ARCH</span></div>
 <div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;</div>
 <div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;</div>
 <div class="line"><a name="l00582"></a><span class="lineno"><a class="code" href="structcub_1_1_caching_device_allocator.html#afbe43fd3a59ba6f4b974a4a66315c86e">  582</a></span>&#160;    cudaError_t <a class="code" href="structcub_1_1_caching_device_allocator.html#afbe43fd3a59ba6f4b974a4a66315c86e" title="Frees all cached device allocations on all devices. ">FreeAllCached</a>()</div>
 <div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;    {</div>
-<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;<span class="preprocessor">    #if (CUB_PTX_VERSION &gt; 0)</span></div>
+<div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;<span class="preprocessor">    #if (CUB_PTX_ARCH &gt; 0)</span></div>
 <div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Caching functionality only defined on host</span></div>
 <div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaErrorInvalidConfiguration);</div>
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;<span class="preprocessor">    #else</span></div>
@@ -653,7 +653,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;</div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;        <span class="keywordflow">return</span> error;</div>
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;</div>
-<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_VERSION</span></div>
+<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;<span class="preprocessor">    #endif // CUB_PTX_ARCH</span></div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;</div>
 <div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;</div>
@@ -675,7 +675,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

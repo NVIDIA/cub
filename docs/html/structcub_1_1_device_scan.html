@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The work-complexity of prefix scan as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU.</dd></dl>
-<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a> performance across different CUDA architectures for <code>int32</code> keys. Performance plots for other scenarios can be found in the detailed method descriptions below.</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_scan.html#a7bcc25e4d9c14a23f71431cf1a6b2bd5" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a> performance across different CUDA architectures for <code>int32</code> keys. Performance plots for other scenarios can be found in the detailed method descriptions below.</dd></dl>
 <div class="image">
 <img src="scan_int32.png" alt="scan_int32.png"/>
 </div>
@@ -125,30 +125,30 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Exclusive scans</div></td></tr>
-<tr class="memitem:aef33f56d8a26ccd2d7502031474ff894"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
-<tr class="memitem:aef33f56d8a26ccd2d7502031474ff894"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894">ExclusiveSum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:aef33f56d8a26ccd2d7502031474ff894"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide exclusive prefix sum.  <a href="#aef33f56d8a26ccd2d7502031474ff894">More...</a><br/></td></tr>
-<tr class="separator:aef33f56d8a26ccd2d7502031474ff894"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a749eb35d2d7b9d4ed718e7fd7e82b00f"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ScanOp , typename Identity &gt; </td></tr>
-<tr class="memitem:a749eb35d2d7b9d4ed718e7fd7e82b00f"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a749eb35d2d7b9d4ed718e7fd7e82b00f">ExclusiveScan</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, ScanOp scan_op, Identity identity, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a749eb35d2d7b9d4ed718e7fd7e82b00f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide exclusive prefix scan using the specified binary <code>scan_op</code> functor.  <a href="#a749eb35d2d7b9d4ed718e7fd7e82b00f">More...</a><br/></td></tr>
-<tr class="separator:a749eb35d2d7b9d4ed718e7fd7e82b00f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7bcc25e4d9c14a23f71431cf1a6b2bd5"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
+<tr class="memitem:a7bcc25e4d9c14a23f71431cf1a6b2bd5"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a7bcc25e4d9c14a23f71431cf1a6b2bd5">ExclusiveSum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a7bcc25e4d9c14a23f71431cf1a6b2bd5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide exclusive prefix sum.  <a href="#a7bcc25e4d9c14a23f71431cf1a6b2bd5">More...</a><br/></td></tr>
+<tr class="separator:a7bcc25e4d9c14a23f71431cf1a6b2bd5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82850e933194aa1ac93b585f3af4e67a"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ScanOp , typename Identity &gt; </td></tr>
+<tr class="memitem:a82850e933194aa1ac93b585f3af4e67a"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a82850e933194aa1ac93b585f3af4e67a">ExclusiveScan</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, ScanOp scan_op, Identity identity, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a82850e933194aa1ac93b585f3af4e67a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide exclusive prefix scan using the specified binary <code>scan_op</code> functor.  <a href="#a82850e933194aa1ac93b585f3af4e67a">More...</a><br/></td></tr>
+<tr class="separator:a82850e933194aa1ac93b585f3af4e67a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Inclusive scans</div></td></tr>
-<tr class="memitem:aca0d91db140b65d6693dc9eaed6478de"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
-<tr class="memitem:aca0d91db140b65d6693dc9eaed6478de"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#aca0d91db140b65d6693dc9eaed6478de">InclusiveSum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:aca0d91db140b65d6693dc9eaed6478de"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide inclusive prefix sum.  <a href="#aca0d91db140b65d6693dc9eaed6478de">More...</a><br/></td></tr>
-<tr class="separator:aca0d91db140b65d6693dc9eaed6478de"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1d4862639493a13bdfd419c7fffd4a08"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &gt; </td></tr>
-<tr class="memitem:a1d4862639493a13bdfd419c7fffd4a08"><td class="memTemplItemLeft" align="right" valign="top">__host__ static __device__ <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a1d4862639493a13bdfd419c7fffd4a08">InclusiveScan</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, ScanOp scan_op, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a1d4862639493a13bdfd419c7fffd4a08"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide inclusive prefix scan using the specified binary <code>scan_op</code> functor.  <a href="#a1d4862639493a13bdfd419c7fffd4a08">More...</a><br/></td></tr>
-<tr class="separator:a1d4862639493a13bdfd419c7fffd4a08"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7243d0401a8361d546d3b5f3781d5188"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator &gt; </td></tr>
+<tr class="memitem:a7243d0401a8361d546d3b5f3781d5188"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#a7243d0401a8361d546d3b5f3781d5188">InclusiveSum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a7243d0401a8361d546d3b5f3781d5188"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide inclusive prefix sum.  <a href="#a7243d0401a8361d546d3b5f3781d5188">More...</a><br/></td></tr>
+<tr class="separator:a7243d0401a8361d546d3b5f3781d5188"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac3a410cfbef9f349fcb815885ca3bcc0"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &gt; </td></tr>
+<tr class="memitem:ac3a410cfbef9f349fcb815885ca3bcc0"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_scan.html#ac3a410cfbef9f349fcb815885ca3bcc0">InclusiveScan</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, ScanOp scan_op, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:ac3a410cfbef9f349fcb815885ca3bcc0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide inclusive prefix scan using the specified binary <code>scan_op</code> functor.  <a href="#ac3a410cfbef9f349fcb815885ca3bcc0">More...</a><br/></td></tr>
+<tr class="separator:ac3a410cfbef9f349fcb815885ca3bcc0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="aef33f56d8a26ccd2d7502031474ff894"></a>
+<a class="anchor" id="a7bcc25e4d9c14a23f71431cf1a6b2bd5"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -158,7 +158,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceScan::ExclusiveSum </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceScan::ExclusiveSum </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -238,13 +238,13 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">cub::DeviceScan::ExclusiveSum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a7bcc25e4d9c14a23f71431cf1a6b2bd5" title="Computes a device-wide exclusive prefix sum. ">cub::DeviceScan::ExclusiveSum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run exclusive prefix sum</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">cub::DeviceScan::ExclusiveSum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a7bcc25e4d9c14a23f71431cf1a6b2bd5" title="Computes a device-wide exclusive prefix sum. ">cub::DeviceScan::ExclusiveSum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out s&lt;-- [0, 8, 14, 21, 26, 29, 29]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -273,7 +273,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a749eb35d2d7b9d4ed718e7fd7e82b00f"></a>
+<a class="anchor" id="a82850e933194aa1ac93b585f3af4e67a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -283,7 +283,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceScan::ExclusiveScan </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceScan::ExclusiveScan </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -356,7 +356,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a7bcc25e4d9c14a23f71431cf1a6b2bd5" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the exclusive prefix min-scan of an <code>int</code> device vector </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
@@ -364,7 +364,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
 <div class="line"><span class="keyword">struct </span>CustomMin</div>
 <div class="line">{</div>
 <div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line">    __host__ __device__ __forceinline__</div>
+<div class="line">    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line">    T operator()(<span class="keyword">const</span> T &amp;a, <span class="keyword">const</span> T &amp;b)<span class="keyword"> const </span>{</div>
 <div class="line">        <span class="keywordflow">return</span> (b &lt; a) ? b : a;</div>
 <div class="line">    }</div>
@@ -380,13 +380,13 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
 <div class="line"><span class="comment">// Determine temporary device storage requirements for exclusive prefix scan</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a749eb35d2d7b9d4ed718e7fd7e82b00f" title="Computes a device-wide exclusive prefix scan using the specified binary scan_op functor. ">cub::DeviceScan::ExclusiveScan</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, (<span class="keywordtype">int</span>) MAX_INT, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a82850e933194aa1ac93b585f3af4e67a" title="Computes a device-wide exclusive prefix scan using the specified binary scan_op functor. ">cub::DeviceScan::ExclusiveScan</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, (<span class="keywordtype">int</span>) MAX_INT, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage for exclusive prefix scan</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run exclusive prefix min-scan</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a749eb35d2d7b9d4ed718e7fd7e82b00f" title="Computes a device-wide exclusive prefix scan using the specified binary scan_op functor. ">cub::DeviceScan::ExclusiveScan</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, (<span class="keywordtype">int</span>) MAX_INT, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a82850e933194aa1ac93b585f3af4e67a" title="Computes a device-wide exclusive prefix scan using the specified binary scan_op functor. ">cub::DeviceScan::ExclusiveScan</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, (<span class="keywordtype">int</span>) MAX_INT, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [2147483647, 8, 6, 6, 5, 3, 0]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -418,7 +418,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp ,
 
 </div>
 </div>
-<a class="anchor" id="aca0d91db140b65d6693dc9eaed6478de"></a>
+<a class="anchor" id="a7243d0401a8361d546d3b5f3781d5188"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -428,7 +428,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceScan::InclusiveSum </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceScan::InclusiveSum </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -489,7 +489,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a7bcc25e4d9c14a23f71431cf1a6b2bd5" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the inclusive prefix sum of an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
@@ -502,13 +502,13 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements for inclusive prefix sum</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_scan.html#aca0d91db140b65d6693dc9eaed6478de" title="Computes a device-wide inclusive prefix sum. ">cub::DeviceScan::InclusiveSum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a7243d0401a8361d546d3b5f3781d5188" title="Computes a device-wide inclusive prefix sum. ">cub::DeviceScan::InclusiveSum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage for inclusive prefix sum</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run inclusive prefix sum</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_scan.html#aca0d91db140b65d6693dc9eaed6478de" title="Computes a device-wide inclusive prefix sum. ">cub::DeviceScan::InclusiveSum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a7243d0401a8361d546d3b5f3781d5188" title="Computes a device-wide inclusive prefix sum. ">cub::DeviceScan::InclusiveSum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [8, 14, 21, 26, 29, 29, 38]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -536,7 +536,7 @@ template&lt;typename InputIterator , typename OutputIterator &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a1d4862639493a13bdfd419c7fffd4a08"></a>
+<a class="anchor" id="ac3a410cfbef9f349fcb815885ca3bcc0"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -546,7 +546,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ static __device__ cudaError_t cub::DeviceScan::InclusiveScan </td>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceScan::InclusiveScan </td>
           <td>(</td>
           <td class="paramtype">void *&#160;</td>
           <td class="paramname"><em>d_temp_storage</em>, </td>
@@ -613,7 +613,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
 <li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#aef33f56d8a26ccd2d7502031474ff894" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
+<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a7bcc25e4d9c14a23f71431cf1a6b2bd5" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the inclusive prefix min-scan of an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
@@ -621,7 +621,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
 <div class="line"><span class="keyword">struct </span>CustomMin</div>
 <div class="line">{</div>
 <div class="line">    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
-<div class="line">    __host__ __device__ __forceinline__</div>
+<div class="line">    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line">    T operator()(<span class="keyword">const</span> T &amp;a, <span class="keyword">const</span> T &amp;b)<span class="keyword"> const </span>{</div>
 <div class="line">        <span class="keywordflow">return</span> (b &lt; a) ? b : a;</div>
 <div class="line">    }</div>
@@ -637,13 +637,13 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
 <div class="line"><span class="comment">// Determine temporary device storage requirements for inclusive prefix scan</span></div>
 <div class="line">void *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span> temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a1d4862639493a13bdfd419c7fffd4a08" title="Computes a device-wide inclusive prefix scan using the specified binary scan_op functor. ">cub::DeviceScan::InclusiveScan</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_scan.html#ac3a410cfbef9f349fcb815885ca3bcc0" title="Computes a device-wide inclusive prefix scan using the specified binary scan_op functor. ">cub::DeviceScan::InclusiveScan</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage for inclusive prefix scan</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run inclusive prefix min-scan</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_scan.html#a1d4862639493a13bdfd419c7fffd4a08" title="Computes a device-wide inclusive prefix scan using the specified binary scan_op functor. ">cub::DeviceScan::InclusiveScan</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_scan.html#ac3a410cfbef9f349fcb815885ca3bcc0" title="Computes a device-wide inclusive prefix scan using the specified binary scan_op functor. ">cub::DeviceScan::InclusiveScan</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, min_op, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [8, 6, 6, 5, 3, 0, 0]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -680,7 +680,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename ScanOp &
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:14:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:56 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
