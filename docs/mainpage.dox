@@ -58,7 +58,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.2.3</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.3.0</b></em></a>
 
 </td><td>
 
@@ -507,8 +507,45 @@ for many of the algorithmic techniques used by CUB.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
+05/12/2014<br>
+[<b>CUB v1.3.0</b>](download_cub.html)
+</td><td style="vertical-align:text-top;">
+    - New features:
+    	- CUB's collective (block-wide, warp-wide) primitives underwent a minor 
+    	  interface refactoring:
+    	    - To provide the appropriate support for multidimensional thread blocks,
+    	      The interfaces for collective classes are now template-parameterized 
+    	      by X, Y, and Z block dimensions (with \p BLOCK_DIM_Y and \p BLOCK_DIM_Z being 
+    	      optional, and \p BLOCK_DIM_X replacing \p BLOCK_THREADS).  Furthermore, the 
+    	      constructors that accept remapped linear thread-identifiers have been 
+    	      removed: all primitives now assume a row-major thread-ranking for 
+    	      multidimensional thread blocks.  
+    	    - To allow the host program (compiled by the host-pass) to 
+    	      accurately determine the device-specific storage requirements for 
+    	      a given collective (compiled for each device-pass), the interfaces 
+    	      for collective classes are now (optionally) template-parameterized 
+    	      by the desired PTX compute capability. This is useful when 
+    	      aliasing collective storage to shared memory that has been 
+    	      allocated dynamically by the host at the kernel call site.   
+    	    - Most CUB programs having typical 1D usage should not require any 
+    	      changes to accomodate these updates.
+    - Bug fixes: 
+        - Fixed bug in cub::WarpScan (which affected cub::BlockScan and 
+          cub::DeviceScan) where incorrect results (e.g., NAN) would often be 
+          returned when parameterized for floating-point types (fp32, fp64).
+        - Workaround-fix for ptxas error when compiling with with -G flag on Linux 
+          (for debug instrumentation) 
+        - Misc. workaround-fixes for certain scan scenarios (using custom 
+          scan operators) where code compiled for SM1x is run on newer 
+          GPUs of higher compute-capability: the compiler could not tell
+          which memory space was being used collective operations and was 
+          mistakenly using global ops instead of shared ops. 
+  - See the [change-log](CHANGE_LOG.TXT) for further details
+</td></tr>
+
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
 04/01/2014<br>
-[<b>CUB v1.2.3</b>](download_cub.html)
+<b>CUB v1.2.3</b>
 </td><td style="vertical-align:text-top;">
   - Bug fixes: 
       - Fixed access violation bug in DeviceReduce::ReduceByKey for non-primitive value types
