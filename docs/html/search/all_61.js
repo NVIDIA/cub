@@ -5,8 +5,8 @@ var searchData=
   ['arg_5findex_5finput_5fiterator_2ecuh',['arg_index_input_iterator.cuh',['../arg__index__input__iterator_8cuh.html',1,'']]],
   ['argindexinputiterator',['ArgIndexInputIterator',['../classcub_1_1_arg_index_input_iterator.html',1,'cub']]],
   ['argindexinputiterator',['ArgIndexInputIterator',['../classcub_1_1_arg_index_input_iterator.html#a887ec418fa9f26f8fb2797d749565f0c',1,'cub::ArgIndexInputIterator']]],
-  ['argmax',['ArgMax',['../structcub_1_1_device_reduce.html#a7524b86cae1cb19d7a8899141d8c9908',1,'cub::DeviceReduce']]],
+  ['argmax',['ArgMax',['../structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af',1,'cub::DeviceReduce']]],
   ['argmax',['ArgMax',['../structcub_1_1_arg_max.html',1,'cub']]],
   ['argmin',['ArgMin',['../structcub_1_1_arg_min.html',1,'cub']]],
-  ['argmin',['ArgMin',['../structcub_1_1_device_reduce.html#af3dc1b284c8828d1e51da587a090a140',1,'cub::DeviceReduce']]]
+  ['argmin',['ArgMin',['../structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572',1,'cub::DeviceReduce']]]
 ];

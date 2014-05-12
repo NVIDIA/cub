@@ -1,8 +1,8 @@
 var searchData=
 [
   ['t',['T',['../structcub_1_1_item_offset_pair.html#aa6e5dfd6b22478ead18c080694768528',1,'cub::ItemOffsetPair']]],
-  ['tailsegmentedreduce',['TailSegmentedReduce',['../classcub_1_1_warp_reduce.html#a074ddcaf999d4e97376b145086e78ddb',1,'cub::WarpReduce']]],
-  ['tailsegmentedsum',['TailSegmentedSum',['../classcub_1_1_warp_reduce.html#a5b0134131d03909e43d24d6b0b50beb4',1,'cub::WarpReduce']]],
+  ['tailsegmentedreduce',['TailSegmentedReduce',['../classcub_1_1_warp_reduce.html#a1503c473a73c5dcfb3db5c11c2da4daa',1,'cub::WarpReduce']]],
+  ['tailsegmentedsum',['TailSegmentedSum',['../classcub_1_1_warp_reduce.html#a57747500b876173a6dcb113109306258',1,'cub::WarpReduce']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8d170856b7ed1df0ed565731a681b449.html',1,'cub::BlockStore::StoreInternal&lt; BLOCK_STORE_WARP_TRANSPOSE, DUMMY &gt;']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___t_r_a_n_s_p_o_s_e_00_01_d_u_m_m_y_01_4_1_1_temp_storage.html',1,'cub::BlockLoad::LoadInternal&lt; BLOCK_LOAD_TRANSPOSE, DUMMY &gt;']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_store_1_1_temp_storage.html',1,'cub::BlockStore']]],
