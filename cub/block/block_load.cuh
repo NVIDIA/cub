@@ -614,7 +614,7 @@ private:
      ******************************************************************************/
 
     /// Load helper
-    template <BlockLoadAlgorithm _POLICY, int DUMMY = 0>
+    template <BlockLoadAlgorithm _POLICY, int DUMMY>
     struct LoadInternal;
 
 
@@ -868,7 +868,7 @@ private:
      ******************************************************************************/
 
     /// Internal load implementation to use
-    typedef LoadInternal<ALGORITHM> InternalLoad;
+    typedef LoadInternal<ALGORITHM, 0> InternalLoad;
 
 
     /// Shared memory storage layout type
