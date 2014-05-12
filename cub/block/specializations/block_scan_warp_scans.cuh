@@ -129,7 +129,8 @@ struct BlockScanWarpScans
                     block_aggregate;
             }
 
-            block_aggregate = scan_op(block_aggregate, temp_storage.warp_aggregates[WARP]);
+            T addend = temp_storage.warp_aggregates[WARP];
+            block_aggregate = scan_op(block_aggregate, addend);
         }
     }
 
@@ -179,7 +180,8 @@ struct BlockScanWarpScans
         __syncthreads();
 
         // Incorporate threadblock prefix into outputs
-        output = scan_op(temp_storage.block_prefix, output);
+        T block_prefix = temp_storage.block_prefix;
+        output = scan_op(block_prefix, output);
     }
 
 
