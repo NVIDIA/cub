@@ -337,8 +337,10 @@ __device__ __forceinline__ void ThreadStoreVolatilePtr(
 
     const int VOLATILE_MULTIPLE = sizeof(T) / sizeof(VolatileWord);
 
-    VolatileWord words[VOLATILE_MULTIPLE];
-    *reinterpret_cast<T*>(words) = val;
+//    VolatileWord words[VOLATILE_MULTIPLE];
+//    *reinterpret_cast<T*>(words) = val;
+
+    VolatileWord *words = reinterpret_cast<VolatileWord*>(&val);
 
     IterateThreadStore<0, VOLATILE_MULTIPLE>::template Dereference(
         reinterpret_cast<volatile VolatileWord*>(ptr),

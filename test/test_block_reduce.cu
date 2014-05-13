@@ -417,8 +417,11 @@ void TestFullTile(
     // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, TEST_ARCH> BlockReduceT;
 
-    static const bool sufficient_smem       = sizeof(typename BlockReduceT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
-    static const bool sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
+    enum 
+    {
+        sufficient_smem       = (sizeof(typename BlockReduceT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH)),
+        sufficient_threads    = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH)),
+    };
 
     TestFullTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, type_string, Int2Type<sufficient_smem && sufficient_threads>());
 }
@@ -599,8 +602,11 @@ void TestPartialTile(
     // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, TEST_ARCH> BlockReduceT;
 
-    static const bool sufficient_smem       = sizeof(typename BlockReduceT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
-    static const bool sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
+    enum 
+    {
+        sufficient_smem       = sizeof(typename BlockReduceT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH),
+        sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH),
+    };
 
     TestPartialTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, T>(gen_mode, num_items, reduction_op, type_string, Int2Type<sufficient_smem && sufficient_threads>());
 }
@@ -674,11 +680,11 @@ void Test(
     ReductionOp     reduction_op,
     char            *type_string)
 {
-#if TEST_RAKING
+#ifdef TEST_RAKING
     Test<BLOCK_REDUCE_RAKING, BLOCK_THREADS, T>(reduction_op, type_string);
     Test<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY, BLOCK_THREADS, T>(reduction_op, type_string);
 #endif
-#if TEST_WARP_REDUCTIONS
+#ifdef TEST_WARP_REDUCTIONS
     Test<BLOCK_REDUCE_WARP_REDUCTIONS, BLOCK_THREADS, T>(reduction_op, type_string);
 #endif
 }
