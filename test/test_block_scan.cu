@@ -637,18 +637,21 @@ void Test(
     // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockScan<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockScanT;
 
-    static const bool sufficient_smem       = sizeof(typename BlockScanT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
-    static const bool sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
+    enum
+    {
+        sufficient_smem         = (sizeof(typename BlockScanT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH)),
+        sufficient_threads      = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH)),
 
 #if defined(_WIN32) || defined(_WIN64)
-    // Accommodate ptxas crash bug (access violation) on Windows
-    static const bool special_skip = (TEST_ARCH <= 130) && (Equals<T, TestBar>::VALUE) && (BLOCK_DIM_Z > 1);
+        // Accommodate ptxas crash bug (access violation) on Windows
+        special_skip            = ((TEST_ARCH <= 130) && (Equals<T, TestBar>::VALUE) && (BLOCK_DIM_Z > 1)),
 #else
-    static const bool special_skip = false;
+        special_skip            = false,
 #endif
+        sufficient_resources    = (sufficient_smem && sufficient_threads && !special_skip),
+    };
 
-    Test<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, type_string,
-        Int2Type<sufficient_smem && sufficient_threads && !special_skip>());
+    Test<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, type_string, Int2Type<sufficient_resources>());
 }
 
 
