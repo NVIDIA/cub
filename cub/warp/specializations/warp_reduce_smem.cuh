@@ -231,6 +231,99 @@ struct WarpReduceSmem
     }
 
 
+    enum
+    {
+        UNSET   = 0x0,  // Is initially unset
+        SET     = 0x1,  // Is initially set
+        SEEN    = 0x2,  // Has seen another head flag from a successor peer
+    };
+
+    /**
+     * Smem-based segmented reduce step
+     */
+    template <
+        bool            HEAD_SEGMENTED,     ///< Whether flags indicate a segment-head or a segment-tail
+        typename        ReductionOp,
+        int             STEP>
+    __device__ __forceinline__ T SegmentedReduceStep(
+        T               input,              ///< [in] Calling thread's input
+        SmemFlag        flag_status,        ///< [in] Whether or not the current lane is a segment head/tail
+        ReductionOp     reduction_op,       ///< [in] Reduction operator
+        Int2Type<STEP>  step)
+    {
+        // Alias flags onto shared data storage
+        volatile SmemFlag *flag_storage = reinterpret_cast<SmemFlag*>(temp_storage);
+
+        const int OFFSET = 1 << STEP;
+
+        // Share input through buffer
+        ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], input);
+
+        // Get peer from buffer
+        T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[lane_id + OFFSET]);
+
+        // Share flag through buffer
+        flag_storage[lane_id] = flag_status;
+
+        // Get peer flag from buffer
+        SmemFlag peer_flag_status = flag_storage[lane_id + OFFSET];
+
+        // Update input if peer was in range
+        if (lane_id < LOGICAL_WARP_THREADS - OFFSET)
+        {
+            if (HEAD_SEGMENTED)
+            {
+                // Head-segmented
+                if ((flag_status & SEEN) == 0)
+                {
+                    // Has not seen a more distant head flag
+                    if (peer_flag_status & SET)
+                    {
+                        // Has now seen a head flag
+                        flag_status |= SEEN;
+                    }
+                    else
+                    {
+                        // Peer is not a head flag: grab its count
+                        input = reduction_op(input, peer_addend);
+                    }
+
+                    // Update seen status to include that of peer
+                    flag_status |= (peer_flag_status & SEEN);
+                }
+            }
+            else
+            {
+                // Tail-segmented.  Simply propagate flag status
+                if (!flag_status)
+                {
+                    input = reduction_op(input, peer_addend);
+                    flag_status |= peer_flag_status;
+                }
+
+            }
+        }
+
+        return SegmentedReduceStep<HEAD_SEGMENTED>(input, flag_status, reduction_op, Int2Type<STEP + 1>());
+    }
+
+
+    /**
+     * Smem-based segmented reduce step (termination)
+     */
+    template <
+        bool            HEAD_SEGMENTED,     ///< Whether flags indicate a segment-head or a segment-tail
+        typename        ReductionOp>
+    __device__ __forceinline__ T SegmentedReduceStep(
+        T               input,              ///< [in] Calling thread's input
+        SmemFlag        flag_status,        ///< [in] Whether or not the current lane is a segment head/tail
+        ReductionOp     reduction_op,       ///< [in] Reduction operator
+        Int2Type<STEPS> step)
+    {
+        return input;
+    }
+
+
     /**
      * Smem-based segmented reduce
      */
@@ -244,73 +337,9 @@ struct WarpReduceSmem
         ReductionOp     reduction_op,       ///< [in] Reduction operator
         Int2Type<false> has_ballot)         ///< [in] Marker type for whether the target arch has ballot functionality
     {
-        enum
-        {
-            UNSET   = 0x0,  // Is initially unset
-            SET     = 0x1,  // Is initially set
-            SEEN    = 0x2,  // Has seen another head flag from a successor peer
-        };
-
-        // Alias flags onto shared data storage
-        volatile SmemFlag *flag_storage = reinterpret_cast<SmemFlag*>(temp_storage);
-
         SmemFlag flag_status = (flag) ? SET : UNSET;
 
-        #pragma unroll
-        for (int STEP = 0; STEP < STEPS; STEP++)
-        {
-            const int OFFSET = 1 << STEP;
-
-            // Share input through buffer
-            ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], input);
-
-            // Get peer from buffer
-            T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[lane_id + OFFSET]);
-
-            // Share flag through buffer
-            flag_storage[lane_id] = flag_status;
-
-            // Get peer flag from buffer
-            SmemFlag peer_flag_status = flag_storage[lane_id + OFFSET];
-
-            // Update input if peer was in range
-            if (lane_id < LOGICAL_WARP_THREADS - OFFSET)
-            {
-                if (HEAD_SEGMENTED)
-                {
-                    // Head-segmented
-                    if ((flag_status & SEEN) == 0)
-                    {
-                        // Has not seen a more distant head flag
-                        if (peer_flag_status & SET)
-                        {
-                            // Has now seen a head flag
-                            flag_status |= SEEN;
-                        }
-                        else
-                        {
-                            // Peer is not a head flag: grab its count
-                            input = reduction_op(input, peer_addend);
-                        }
-
-                        // Update seen status to include that of peer
-                        flag_status |= (peer_flag_status & SEEN);
-                    }
-                }
-                else
-                {
-                    // Tail-segmented.  Simply propagate flag status
-                    if (!flag_status)
-                    {
-                        input = reduction_op(input, peer_addend);
-                        flag_status |= peer_flag_status;
-                    }
-
-                }
-            }
-        }
-
-        return input;
+        return SegmentedReduceStep<HEAD_SEGMENTED>(input, flag_status, reduction_op, Int2Type<0>());
     }
 
 
