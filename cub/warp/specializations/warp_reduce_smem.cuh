@@ -114,6 +114,53 @@ struct WarpReduceSmem
      ******************************************************************************/
 
     /**
+     * Reduction step
+     */
+    template <
+        bool                ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
+        int                 FOLDED_ITEMS_PER_LANE,  ///< Number of items folded into each lane
+        typename            ReductionOp,
+        int                 STEP>
+    __device__ __forceinline__ T ReduceStep(
+        T                   input,                  ///< [in] Calling thread's input
+        int                 folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
+        ReductionOp         reduction_op,           ///< [in] Reduction operator
+        Int2Type<STEP>      step)
+    {
+        const int OFFSET = 1 << STEP;
+
+        // Share input through buffer
+        ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], input);
+
+        // Update input if peer_addend is in range
+        if ((ALL_LANES_VALID && IS_POW_OF_TWO) || ((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE < folded_items_per_warp))
+        {
+            T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[lane_id + OFFSET]);
+            input = reduction_op(input, peer_addend);
+        }
+
+        return ReduceStep<ALL_LANES_VALID, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, reduction_op, Int2Type<STEP + 1>());
+    }
+
+
+    /**
+     * Reduction step (terminate)
+     */
+    template <
+        bool                ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
+        int                 FOLDED_ITEMS_PER_LANE,  ///< Number of items folded into each lane
+        typename            ReductionOp>
+    __device__ __forceinline__ T ReduceStep(
+        T                   input,                  ///< [in] Calling thread's input
+        int                 folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
+        ReductionOp         reduction_op,           ///< [in] Reduction operator
+        Int2Type<STEPS>     step)
+    {
+        return input;
+    }
+
+
+    /**
      * Reduction
      */
     template <
@@ -125,23 +172,9 @@ struct WarpReduceSmem
         int                 folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
         ReductionOp         reduction_op)           ///< [in] Reduction operator
     {
-        for (int STEP = 0; STEP < STEPS; STEP++)
-        {
-            const int OFFSET = 1 << STEP;
-
-            // Share input through buffer
-            ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], input);
-
-            // Update input if peer_addend is in range
-            if ((ALL_LANES_VALID && IS_POW_OF_TWO) || ((lane_id + OFFSET) * FOLDED_ITEMS_PER_LANE < folded_items_per_warp))
-            {
-                T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[lane_id + OFFSET]);
-                input = reduction_op(input, peer_addend);
-            }
-        }
-
-        return input;
+        return ReduceStep<ALL_LANES_VALID, FOLDED_ITEMS_PER_LANE>(input, folded_items_per_warp, reduction_op, Int2Type<0>());
     }
+
 
     /**
      * Ballot-based segmented reduce
@@ -178,6 +211,7 @@ struct WarpReduceSmem
         if (LOGICAL_WARP_THREADS != 32)
             next_flag = CUB_MIN(next_flag, LOGICAL_WARP_THREADS);
 
+        #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
             const int OFFSET = 1 << STEP;
@@ -222,6 +256,7 @@ struct WarpReduceSmem
 
         SmemFlag flag_status = (flag) ? SET : UNSET;
 
+        #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
             const int OFFSET = 1 << STEP;
