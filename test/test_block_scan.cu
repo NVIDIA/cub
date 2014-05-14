@@ -372,18 +372,22 @@ __global__ void BlockScanKernel(
     // Store output
     StoreDirectBlocked(linear_tid, d_out, data);
 
-    // Store aggregate
-    d_aggregate[linear_tid] = aggregate;
-
-    // Store prefix and time
-    if (linear_tid == 0)
+    if (TEST_MODE != BASIC)
     {
-        d_out[TILE_SIZE] = prefix_op.prefix;
+        // Store aggregate
+        d_aggregate[linear_tid] = aggregate;
+
+        // Store prefix and time
+        if (linear_tid == 0)
+        {
+            d_out[TILE_SIZE] = prefix_op.prefix;
 
 #if CUB_PTX_ARCH > 100
-        *d_elapsed = (start > stop) ? start - stop : stop - start;
+           *d_elapsed = (start > stop) ? start - stop : stop - start;
 #endif
+        }
     }
+
 }
 
 
