@@ -406,18 +406,17 @@ T Initialize(
     IdentityT   identity,
     T           *prefix)
 {
-    T inclusive = (prefix != NULL) ? *prefix : identity;
-    T aggregate = identity;
+    T exclusive = (prefix != NULL) ? *prefix : identity;
 
     for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        h_reference[i] = inclusive;
-        inclusive = scan_op(inclusive, h_in[i]);
-        aggregate = scan_op(aggregate, h_in[i]);
+        T inclusive = scan_op(exclusive, h_in[i]);
+        h_reference[i] = exclusive;
+        exclusive = inclusive;
     }
 
-    return aggregate;
+    return exclusive;
 }
 
 
@@ -436,27 +435,19 @@ T Initialize(
     NullType,
     T           *prefix)
 {
-    T inclusive;
-    T aggregate;
-    for (int i = 0; i < num_items; ++i)
+    InitValue(gen_mode, h_in[0], 0);
+    T inclusive = (prefix != NULL) ?
+        scan_op(*prefix, h_in[0]) :
+        h_in[0];
+
+    for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        if (i == 0)
-        {
-            inclusive = (prefix != NULL) ?
-                scan_op(*prefix, h_in[0]) :
-                h_in[0];
-            aggregate = h_in[0];
-        }
-        else
-        {
-            inclusive = scan_op(inclusive, h_in[i]);
-            aggregate = scan_op(aggregate, h_in[i]);
-        }
+        inclusive = scan_op(inclusive, h_in[i]);
         h_reference[i] = inclusive;
     }
 
-    return aggregate;
+    return inclusive;
 }
 
 
@@ -783,9 +774,9 @@ void Test()
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<short>::min(), (short) 99, CUB_TYPE_STRING(Max<short>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<int>::min(), (int) 99, CUB_TYPE_STRING(Max<int>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<long long>::min(), (long long) 99, CUB_TYPE_STRING(Max<long long>));
-    
+
     if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
-        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<double>::min(), (double) 99, CUB_TYPE_STRING(Sum<double>));
+        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<double>::max() * -1, (double) 99, CUB_TYPE_STRING(Sum<double>));
 
     // vec-1
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
