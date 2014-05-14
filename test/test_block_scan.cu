@@ -406,17 +406,18 @@ T Initialize(
     IdentityT   identity,
     T           *prefix)
 {
-    T exclusive = (prefix != NULL) ? *prefix : identity;
+    T inclusive = (prefix != NULL) ? *prefix : identity;
+    T aggregate = identity;
 
     for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        T inclusive = scan_op(exclusive, h_in[i]);
-        h_reference[i] = exclusive;
-        exclusive = inclusive;
+        h_reference[i] = inclusive;
+        inclusive = scan_op(inclusive, h_in[i]);
+        aggregate = scan_op(aggregate, h_in[i]);
     }
 
-    return exclusive;
+    return aggregate;
 }
 
 
@@ -435,19 +436,27 @@ T Initialize(
     NullType,
     T           *prefix)
 {
-    InitValue(gen_mode, h_in[0], 0);
-    T inclusive = (prefix != NULL) ?
-        scan_op(*prefix, h_in[0]) :
-        h_in[0];
-
-    for (int i = 1; i < num_items; ++i)
+    T inclusive;
+    T aggregate;
+    for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        inclusive = scan_op(inclusive, h_in[i]);
+        if (i == 0)
+        {
+            inclusive = (prefix != NULL) ?
+                scan_op(*prefix, h_in[0]) :
+                h_in[0];
+            aggregate = h_in[0];
+        }
+        else
+        {
+            inclusive = scan_op(inclusive, h_in[i]);
+            aggregate = scan_op(aggregate, h_in[i]);
+        }
         h_reference[i] = inclusive;
     }
 
-    return inclusive;
+    return aggregate;
 }
 
 

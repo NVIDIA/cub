@@ -359,7 +359,7 @@ __device__ __forceinline__ T ThreadLoadVolatilePointer(
     typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
 
     const int VOLATILE_MULTIPLE = sizeof(T) / sizeof(VolatileWord);
-
+/*
     VolatileWord words[VOLATILE_MULTIPLE];
 
     IterateThreadLoad<0, VOLATILE_MULTIPLE>::Dereference(
@@ -367,6 +367,14 @@ __device__ __forceinline__ T ThreadLoadVolatilePointer(
         words);
 
     return *reinterpret_cast<T*>(words);
+*/
+
+    T retval;
+    VolatileWord *words = reinterpret_cast<VolatileWord*>(&retval);
+    IterateThreadLoad<0, VOLATILE_MULTIPLE>::Dereference(
+        reinterpret_cast<volatile VolatileWord*>(ptr),
+        words);
+    return retval;
 
 #endif  // CUB_PTX_ARCH <= 130
 }
