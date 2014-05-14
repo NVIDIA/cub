@@ -355,7 +355,7 @@ __global__ void BlockScanKernel(
     LoadDirectBlocked(linear_tid, d_in, data);
 
 #if CUB_PTX_ARCH > 100
-    // Start cycle timer
+    // Bug: using the clock on SM10 causes codegen issues (e.g., uchar4 sum)
     clock_t start = clock();
 #endif
 
@@ -366,7 +366,6 @@ __global__ void BlockScanKernel(
 
     // Stop cycle timer
 #if CUB_PTX_ARCH > 100
-    // Bug: using the clock on SM10 causes codegen issues (e.g., uchar4 sum)
     clock_t stop = 0;
 #endif
 
@@ -381,7 +380,7 @@ __global__ void BlockScanKernel(
     {
         d_out[TILE_SIZE] = prefix_op.prefix;
 
-#if CUB_PTX_ARCH == 100
+#if CUB_PTX_ARCH > 100
         *d_elapsed = (start > stop) ? start - stop : stop - start;
 #endif
     }
