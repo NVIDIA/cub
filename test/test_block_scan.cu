@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <limits>
 
 #include <cub/util_ptx.cuh>
 #include <cub/util_allocator.cuh>
@@ -778,13 +779,13 @@ void Test()
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
 
     // primitive (alternative scan op)
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (char) 0, (char) 99, CUB_TYPE_STRING(Max<char>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (short) 0, (short) 99, CUB_TYPE_STRING(Max<short>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (int) 0, (int) 99, CUB_TYPE_STRING(Max<int>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (long long) 0, (long long) 99, CUB_TYPE_STRING(Max<long long>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<char>::min(), (char) 99, CUB_TYPE_STRING(Max<char>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<short>::min(), (short) 99, CUB_TYPE_STRING(Max<short>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<int>::min(), (int) 99, CUB_TYPE_STRING(Max<int>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<long long>::min(), (long long) 99, CUB_TYPE_STRING(Max<long long>));
     
     if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
-        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
+        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<double>::min(), (double) 99, CUB_TYPE_STRING(Sum<double>));
 
     // vec-1
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
