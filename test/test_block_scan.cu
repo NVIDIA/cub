@@ -354,8 +354,10 @@ __global__ void BlockScanKernel(
     T data[ITEMS_PER_THREAD];
     LoadDirectBlocked(linear_tid, d_in, data);
 
+#if CUB_PTX_ARCH > 100
     // Start cycle timer
     clock_t start = clock();
+#endif
 
     // Test scan
     T aggregate;
@@ -363,12 +365,10 @@ __global__ void BlockScanKernel(
     DeviceTest<BlockScan>(temp_storage, data, identity, scan_op, aggregate, prefix_op, Int2Type<TEST_MODE>());
 
     // Stop cycle timer
-#if CUB_PTX_ARCH == 100
-    // Bug: recording stop clock causes mis-write of running prefix value
+#if CUB_PTX_ARCH > 100
+    // Bug: using the clock on SM10 causes codegen issues (e.g., uchar4 sum)
     clock_t stop = 0;
-#else
-    clock_t stop = clock();
-#endif // CUB_PTX_ARCH == 100
+#endif
 
     // Store output
     StoreDirectBlocked(linear_tid, d_out, data);
@@ -380,7 +380,10 @@ __global__ void BlockScanKernel(
     if (linear_tid == 0)
     {
         d_out[TILE_SIZE] = prefix_op.prefix;
+
+#if CUB_PTX_ARCH == 100
         *d_elapsed = (start > stop) ? start - stop : stop - start;
+#endif
     }
 }
 
