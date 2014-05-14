@@ -766,6 +766,10 @@ template <
     int ITEMS_PER_THREAD>
 void Test()
 {
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
+
     // primitive
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
@@ -774,11 +778,13 @@ void Test()
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
 
     // primitive (alternative scan op)
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Max<unsigned char>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Max<unsigned short>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Max<unsigned int>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Max<unsigned long long>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (char) 0, (char) 99, CUB_TYPE_STRING(Max<char>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (short) 0, (short) 99, CUB_TYPE_STRING(Max<short>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (int) 0, (int) 99, CUB_TYPE_STRING(Max<int>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (long long) 0, (long long) 99, CUB_TYPE_STRING(Max<long long>));
+    
+    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
 
     // vec-1
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
@@ -790,10 +796,10 @@ void Test()
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
 
     // vec-4
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar4(0, 0, 0, 0), make_uchar4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uchar4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_char4(0, 0, 0, 0), make_char4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<char4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_short4(0, 0, 0, 0), make_short4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<short4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_int4(0, 0, 0, 0), make_int4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<int4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<longlong4>));
 
     // complex
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
