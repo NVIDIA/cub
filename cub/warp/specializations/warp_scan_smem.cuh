@@ -73,9 +73,11 @@ struct WarpScanSmem
         WARP_SMEM_ELEMENTS =  LOGICAL_WARP_THREADS + HALF_WARP_THREADS,
     };
 
+    /// Storage cell type (workaround for SM1x compiler bugs with custom-ops like Max() on signed chars)
+    typedef typename If<((Equals<T, char>::VALUE || Equals<T, signed char>::VALUE) && (PTX_ARCH < 200)), int, T>::Type CellT;
 
     /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
-    typedef T _TempStorage[WARP_SMEM_ELEMENTS];
+    typedef CellT _TempStorage[WARP_SMEM_ELEMENTS];
 
     // Alias wrapper allowing storage to be unioned
     struct TempStorage : Uninitialized<_TempStorage> {};
@@ -112,7 +114,7 @@ struct WarpScanSmem
     __device__ __forceinline__ void InitIdentity(Int2Type<true> has_identity)
     {
         T identity = ZeroInitialize<T>();
-        ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], identity);
+        ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], (CellT) identity);
     }
 
 
@@ -145,12 +147,12 @@ struct WarpScanSmem
         const int OFFSET = 1 << STEP;
 
         // Share partial into buffer
-        ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], partial);
+        ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], (CellT) partial);
 
         // Update partial if addend is in range
         if (HAS_IDENTITY || (lane_id >= OFFSET))
         {
-            T addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - OFFSET]);
+            T addend = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - OFFSET]);
             partial = scan_op(addend, partial);
         }
 
@@ -165,10 +167,10 @@ struct WarpScanSmem
     {
         if (lane_id == src_lane)
         {
-            ThreadStore<STORE_VOLATILE>(temp_storage, input);
+            ThreadStore<STORE_VOLATILE>(temp_storage, (CellT) input);
         }
 
-        return ThreadLoad<LOAD_VOLATILE>(temp_storage);
+        return (T) ThreadLoad<LOAD_VOLATILE>(temp_storage);
     }
 
 
@@ -187,7 +189,7 @@ struct WarpScanSmem
         if (SHARE_FINAL)
         {
             // Share partial into buffer
-            ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], partial);
+            ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], (CellT) partial);
         }
 
         return partial;
@@ -224,7 +226,7 @@ struct WarpScanSmem
         output = BasicScan<HAS_IDENTITY, true>(input, Sum());
 
         // Retrieve aggregate in <em>warp-lane</em><sub>0</sub>
-        warp_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
+        warp_aggregate = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
     }
 
 
@@ -252,7 +254,7 @@ struct WarpScanSmem
         output = BasicScan<false, true>(input, scan_op);
 
         // Retrieve aggregate
-        warp_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
+        warp_aggregate = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
     }
 
     /// Exclusive scan
@@ -264,13 +266,13 @@ struct WarpScanSmem
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
         // Initialize identity region
-        ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], identity);
+        ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], (CellT) identity);
 
         // Compute inclusive warp scan (identity, share final)
         T inclusive = BasicScan<true, true>(input, scan_op);
 
         // Retrieve exclusive scan
-        output = ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - 1]);
+        output = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - 1]);
     }
 
 
@@ -287,7 +289,7 @@ struct WarpScanSmem
         ExclusiveScan(input, output, identity, scan_op);
 
         // Retrieve aggregate
-        warp_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
+        warp_aggregate = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
     }
 
 
@@ -302,7 +304,7 @@ struct WarpScanSmem
         T inclusive = BasicScan<false, true>(input, scan_op);
 
         // Retrieve exclusive scan
-        output = ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - 1]);
+        output = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - 1]);
     }
 
 
@@ -318,7 +320,7 @@ struct WarpScanSmem
         ExclusiveScan(input, output, scan_op);
 
         // Retrieve aggregate
-        warp_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
+        warp_aggregate = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
     }
 
 };
