@@ -289,6 +289,13 @@ void Initialize(
         else
             h_reference[0] = reduction_op(h_reference[0], h_in[i]);
     }
+
+    if (g_verbose)
+    {
+        printf("Input:\n");
+        DisplayResults(h_in, num_items);
+        printf("\n");
+    }
 }
 
 
