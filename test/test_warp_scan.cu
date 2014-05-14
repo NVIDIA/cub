@@ -320,17 +320,18 @@ T Initialize(
     IdentityT   identity,
     T           *prefix)
 {
-    T exclusive = (prefix != NULL) ? *prefix : identity;
+    T inclusive = (prefix != NULL) ? *prefix : identity;
+    T aggregate = identity;
 
     for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        T inclusive = scan_op(exclusive, h_in[i]);
-        h_reference[i] = exclusive;
-        exclusive = inclusive;
+        h_reference[i] = inclusive;
+        inclusive = scan_op(inclusive, h_in[i]);
+        aggregate = scan_op(aggregate, h_in[i]);
     }
 
-    return exclusive;
+    return aggregate;
 }
 
 
@@ -349,19 +350,27 @@ T Initialize(
     NullType,
     T           *prefix)
 {
-    InitValue(gen_mode, h_in[0], 0);
-    T inclusive = (prefix != NULL) ?
-        scan_op(*prefix, h_in[0]) :
-        h_in[0];
-
-    for (int i = 1; i < num_items; ++i)
+    T inclusive;
+    T aggregate;
+    for (int i = 0; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        inclusive = scan_op(inclusive, h_in[i]);
+        if (i == 0)
+        {
+            inclusive = (prefix != NULL) ?
+                scan_op(*prefix, h_in[0]) :
+                h_in[0];
+            aggregate = h_in[0];
+        }
+        else
+        {
+            inclusive = scan_op(inclusive, h_in[i]);
+            aggregate = scan_op(aggregate, h_in[i]);
+        }
         h_reference[i] = inclusive;
     }
 
-    return inclusive;
+    return aggregate;
 }
 
 
@@ -506,9 +515,9 @@ void Test(GenMode gen_mode)
     int device_ordinal;
     CubDebugExit(cudaGetDevice(&device_ordinal));
 
-    // Get device SM version
-    int sm_version;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
 
 
     // primitive
@@ -520,7 +529,7 @@ void Test(GenMode gen_mode)
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
         Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
-        if (sm_version > 130)
+        if (ptx_version > 100)
             Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
     }
 
@@ -539,7 +548,7 @@ void Test(GenMode gen_mode)
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
         Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float2(0, 0), make_float2(17, 21), CUB_TYPE_STRING(Sum<float2>));
-        if (sm_version > 130)
+        if (ptx_version > 100)
             Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double2(0, 0), make_double2(17, 21), CUB_TYPE_STRING(Sum<double2>));
     }
 
@@ -552,7 +561,7 @@ void Test(GenMode gen_mode)
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
         Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float4(0, 0, 0, 0), make_float4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<float2>));
-        if (sm_version > 130)
+        if (ptx_version > 100)
             Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double4(0, 0, 0, 0), make_double4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<double2>));
     }
 
