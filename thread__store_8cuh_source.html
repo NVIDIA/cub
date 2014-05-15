@@ -288,7 +288,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="preprocessor">    CUB_STORE_1(cub_modifier, ptx_modifier)                                                 \</span></div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="preprocessor">#if CUB_PTX_VERSION &gt;= 200</span></div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &gt;= 200</span></div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="preprocessor"></span>    CUB_STORE_ALL(<a class="code" href="group___util_io.html#gga648d25a92a50ca41cf73e93a35f21f37afd29f1e82f0a9dc8258fb7977b0a8237" title="Cache write-back all coherent levels. ">STORE_WB</a>, ca)</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    CUB_STORE_ALL(<a class="code" href="group___util_io.html#gga648d25a92a50ca41cf73e93a35f21f37aacea07ea298b89dd1962a40b4823652d" title="Cache at global level. ">STORE_CG</a>, cg)</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    CUB_STORE_ALL(<a class="code" href="group___util_io.html#gga648d25a92a50ca41cf73e93a35f21f37a00ae8891d1acad179d134fdd60d7839b" title="Cache streaming (likely to be accessed once) ">STORE_CS</a>, cs)</div>
@@ -339,7 +339,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;    T                           val,</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    Int2Type&lt;false&gt;             is_primitive)</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;{</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor">#if CUB_PTX_VERSION &lt;= 130</span></div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &lt;= 130</span></div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    *ptr = val;</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    __threadfence_block();</div>
@@ -357,7 +357,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        reinterpret_cast&lt;volatile VolatileWord*&gt;(ptr),</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        words);</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;<span class="preprocessor">#endif  // CUB_PTX_VERSION &lt;= 130</span></div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;<span class="preprocessor">#endif  // CUB_PTX_ARCH &lt;= 130</span></div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;}</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;</div>
@@ -417,7 +417,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

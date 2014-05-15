@@ -243,7 +243,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;</div>
 <div class="line"><a name="l00204"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#aa4ddf58f92378cbea9a58b0304c57e9a">  204</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#ad88897b6f2bef872179c6798260e424e" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#aa4ddf58f92378cbea9a58b0304c57e9a" title="Indirection. ">operator*</a>()<span class="keyword"> const</span></div>
 <div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION == 0)</span></div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;        <span class="keywordflow">return</span> ptr[tex_offset];</div>
 <div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;<span class="preprocessor">#else</span></div>
@@ -339,7 +339,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

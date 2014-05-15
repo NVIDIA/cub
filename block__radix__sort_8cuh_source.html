@@ -131,399 +131,395 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;</div>
 <div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;<span class="preprocessor">#pragma once</span></div>
 <div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &quot;../util_namespace.cuh&quot;</span></div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &quot;../util_arch.cuh&quot;</span></div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &quot;../util_type.cuh&quot;</span></div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="block__exchange_8cuh.html">block_exchange.cuh</a>&quot;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;block_radix_rank.cuh&quot;</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;CUB_NS_PREFIX</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">namespace </span>cub {</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    <span class="keyword">typename</span>                Key,</div>
-<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;    <span class="keywordtype">int</span>                     BLOCK_THREADS,</div>
-<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;    <span class="keywordtype">int</span>                     ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;    <span class="keyword">typename</span>                Value                   = NullType,</div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;    <span class="keywordtype">int</span>                     RADIX_BITS              = 4,</div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keywordtype">bool</span>                    MEMOIZE_OUTER_SCAN      = (<a class="code" href="group___util_mgmt.html#ga00b94cd7a57a714629dd6e75edce6742" title="CUB_PTX_VERSION reflects the PTX version targeted by the active compiler pass (or zero during the hos...">CUB_PTX_VERSION</a> &gt;= 350) ? <span class="keyword">true</span> : <span class="keyword">false</span>,</div>
-<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab" title="BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix ...">BlockScanAlgorithm</a>      INNER_SCAN_ALGORITHM    = <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>,</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte&gt;</div>
-<div class="line"><a name="l00123"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html">  123</a></span>&#160;<span class="keyword">class</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a></div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;{</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;</div>
-<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;<span class="comment">     * Constants and type definitions</span></div>
-<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">enum</span></div>
-<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    {</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        KEYS_ONLY = <a class="code" href="structcub_1_1_equals.html" title="Type equality test. ">Equals&lt;Value, NullType&gt;::VALUE</a>,</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;    };</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;</div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    <span class="comment">// Key traits and unsigned bits type</span></div>
-<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_numeric_traits.html" title="Numeric type traits. ">NumericTraits&lt;Key&gt;</a>                  <a class="code" href="structcub_1_1_numeric_traits.html" title="Numeric type traits. ">KeyTraits</a>;</div>
-<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> KeyTraits::UnsignedBits    UnsignedBits;</div>
-<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;</div>
-<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    <span class="keyword">typedef</span> BlockRadixRank&lt;</div>
-<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;            BLOCK_THREADS,</div>
-<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;            RADIX_BITS,</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;            <span class="keyword">false</span>,</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;            MEMOIZE_OUTER_SCAN,</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;            INNER_SCAN_ALGORITHM,</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;            SMEM_CONFIG&gt;</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        AscendingBlockRadixRank;</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keyword">typedef</span> BlockRadixRank&lt;</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;            BLOCK_THREADS,</div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;            RADIX_BITS,</div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;            <span class="keyword">true</span>,</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            MEMOIZE_OUTER_SCAN,</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;            INNER_SCAN_ALGORITHM,</div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            SMEM_CONFIG&gt;</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        DescendingBlockRadixRank;</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange&lt;Key, BLOCK_THREADS, ITEMS_PER_THREAD&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchangeKeys</a>;</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange&lt;Value, BLOCK_THREADS, ITEMS_PER_THREAD&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchangeValues</a>;</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <span class="keyword">struct </span>_TempStorage</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    {</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        <span class="keyword">union</span></div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;        {</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;            <span class="keyword">typename</span> AscendingBlockRadixRank::TempStorage  asending_ranking_storage;</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            <span class="keyword">typename</span> DescendingBlockRadixRank::TempStorage descending_ranking_storage;</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchangeKeys::TempStorage</a>        exchange_keys;</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchangeValues::TempStorage</a>      exchange_values;</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        };</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;    };</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &quot;<a class="code" href="block__exchange_8cuh.html">block_exchange.cuh</a>&quot;</span></div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &quot;block_radix_rank.cuh&quot;</span></div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;<span class="preprocessor">#include &quot;../util_ptx.cuh&quot;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;../util_arch.cuh&quot;</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;../util_type.cuh&quot;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &quot;../util_namespace.cuh&quot;</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;CUB_NS_PREFIX</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">namespace </span>cub {</div>
+<div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;<span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;    <span class="keyword">typename</span>                Key,</div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;    <span class="keywordtype">int</span>                     BLOCK_DIM_X,</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="keywordtype">int</span>                     ITEMS_PER_THREAD,</div>
+<div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keyword">typename</span>                Value                   = NullType,</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="keywordtype">int</span>                     RADIX_BITS              = 4,</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keywordtype">bool</span>                    MEMOIZE_OUTER_SCAN      = (<a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a> &gt;= 350) ? <span class="keyword">true</span> : <span class="keyword">false</span>,</div>
+<div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab" title="BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix ...">BlockScanAlgorithm</a>      INNER_SCAN_ALGORITHM    = <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>,</div>
+<div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte,</div>
+<div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordtype">int</span>                     BLOCK_DIM_Y             = 1,</div>
+<div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordtype">int</span>                     BLOCK_DIM_Z             = 1,</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keywordtype">int</span>                     PTX_ARCH                = <a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a>&gt;</div>
+<div class="line"><a name="l00131"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html">  131</a></span>&#160;<span class="keyword">class</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a></div>
+<div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;{</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;</div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;<span class="comment">     * Constants and type definitions</span></div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    <span class="keyword">enum</span></div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;    {</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;        <span class="comment">// The thread block size in threads</span></div>
+<div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;        BLOCK_THREADS               = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        <span class="comment">// Whether or not there are values to be trucked along with keys</span></div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        KEYS_ONLY                   = <a class="code" href="structcub_1_1_equals.html" title="Type equality test. ">Equals&lt;Value, NullType&gt;::VALUE</a>,</div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    };</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <span class="comment">// Key traits and unsigned bits type</span></div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_numeric_traits.html" title="Numeric type traits. ">NumericTraits&lt;Key&gt;</a>                  <a class="code" href="structcub_1_1_numeric_traits.html" title="Numeric type traits. ">KeyTraits</a>;</div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> KeyTraits::UnsignedBits    UnsignedBits;</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;</div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;    <span class="keyword">typedef</span> BlockRadixRank&lt;</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;            BLOCK_DIM_X,</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;            RADIX_BITS,</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;            <span class="keyword">false</span>,</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;            MEMOIZE_OUTER_SCAN,</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            INNER_SCAN_ALGORITHM,</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            SMEM_CONFIG,</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;            BLOCK_DIM_Y,</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;            BLOCK_DIM_Z,</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;            PTX_ARCH&gt;</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        AscendingBlockRadixRank;</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    <span class="keyword">typedef</span> BlockRadixRank&lt;</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            BLOCK_DIM_X,</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            RADIX_BITS,</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            <span class="keyword">true</span>,</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            MEMOIZE_OUTER_SCAN,</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;            INNER_SCAN_ALGORITHM,</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            SMEM_CONFIG,</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            BLOCK_DIM_Y,</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;            BLOCK_DIM_Z,</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;            PTX_ARCH&gt;</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;        DescendingBlockRadixRank;</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;</div>
-<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;</div>
-<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;<span class="comment">     * Thread fields</span></div>
-<div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;</div>
-<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;    _TempStorage &amp;temp_storage;</div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;</div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    <span class="keywordtype">int</span> linear_tid;</div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;</div>
-<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;<span class="comment">     * Utility methods</span></div>
-<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;</div>
-<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    __device__ __forceinline__ _TempStorage&amp; PrivateStorage()</div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;    {</div>
-<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        __shared__ _TempStorage private_storage;</div>
-<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;        <span class="keywordflow">return</span> private_storage;</div>
-<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;    }</div>
-<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> RankKeys(</div>
-<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;        UnsignedBits    (&amp;unsigned_keys)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <span class="keywordtype">int</span>             begin_bit,</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a> is_descending)</div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;    {</div>
-<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;        AscendingBlockRadixRank(temp_storage.asending_ranking_storage, linear_tid).RankKeys(</div>
-<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;            unsigned_keys,</div>
-<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;            ranks,</div>
-<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;            begin_bit);</div>
-<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;    }</div>
-<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;</div>
-<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> RankKeys(</div>
-<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;        UnsignedBits    (&amp;unsigned_keys)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;        <span class="keywordtype">int</span>             begin_bit,</div>
-<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>  is_descending)</div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    {</div>
-<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;        DescendingBlockRadixRank(temp_storage.descending_ranking_storage, linear_tid).RankKeys(</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;            unsigned_keys,</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;            ranks,</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;            begin_bit);</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    }</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        Value           (&amp;values)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a> is_keys_only,</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>  is_blocked)</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    {</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        __syncthreads();</div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        BlockExchangeValues(temp_storage.exchange_values, linear_tid).ScatterToBlocked(values, ranks);</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    }</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        Value           (&amp;values)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a> is_keys_only,</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a> is_blocked)</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    {</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        __syncthreads();</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        BlockExchangeValues(temp_storage.exchange_values, linear_tid).ScatterToStriped(values, ranks);</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    }</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> IS_BLOCKED&gt;</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        Value                   (&amp;values)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="keywordtype">int</span>                     (&amp;ranks)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>          is_keys_only,</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_BLOCKED&gt;</a>    is_blocked)</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    {}</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DESCENDING, <span class="keywordtype">int</span> KEYS_ONLY&gt;</div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> SortBlocked(</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        Key                     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        Value                   (&amp;values)[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;        <span class="keywordtype">int</span>                     begin_bit,                          </div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        <span class="keywordtype">int</span>                     end_bit,                            </div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;DESCENDING&gt;</a>    is_descending,                      </div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>     is_keys_only)                       </div>
-<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    {</div>
-<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;        UnsignedBits (&amp;unsigned_keys)[ITEMS_PER_THREAD] =</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;            <span class="keyword">reinterpret_cast&lt;</span>UnsignedBits (&amp;)[ITEMS_PER_THREAD]<span class="keyword">&gt;</span>(keys);</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        <span class="comment">// Twiddle bits if necessary</span></div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> KEY = 0; KEY &lt; ITEMS_PER_THREAD; KEY++)</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;        {</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        }</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        <span class="comment">// Radix sorting passes</span></div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        <span class="keywordflow">while</span> (<span class="keyword">true</span>)</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        {</div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;            <span class="comment">// Rank the blocked keys</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;            <span class="keywordtype">int</span> ranks[ITEMS_PER_THREAD];</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;            RankKeys(unsigned_keys, ranks, begin_bit, is_descending);</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;            begin_bit += RADIX_BITS;</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;            __syncthreads();</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;</div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;            <span class="comment">// Exchange keys through shared memory in blocked arrangement</span></div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;            BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToBlocked(keys, ranks);</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;            <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;            ExchangeValues(values, ranks, is_keys_only, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>());</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;            <span class="comment">// Quit if done</span></div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;            <span class="keywordflow">if</span> (begin_bit &gt;= end_bit) <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;            __syncthreads();</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        }</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="comment">// Untwiddle bits if necessary</span></div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> KEY = 0; KEY &lt; ITEMS_PER_THREAD; KEY++)</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        {</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        }</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    }</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DESCENDING, <span class="keywordtype">int</span> KEYS_ONLY&gt;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> SortBlockedToStriped(</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        Key                     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        Value                   (&amp;values)[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <span class="keywordtype">int</span>                     begin_bit,                          </div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="keywordtype">int</span>                     end_bit,                            </div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;DESCENDING&gt;</a>    is_descending,                      </div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>     is_keys_only)                       </div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    {</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;        UnsignedBits (&amp;unsigned_keys)[ITEMS_PER_THREAD] =</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;            <span class="keyword">reinterpret_cast&lt;</span>UnsignedBits (&amp;)[ITEMS_PER_THREAD]<span class="keyword">&gt;</span>(keys);</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;        <span class="comment">// Twiddle bits if necessary</span></div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> KEY = 0; KEY &lt; ITEMS_PER_THREAD; KEY++)</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;        {</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        }</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;        <span class="comment">// Radix sorting passes</span></div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;        <span class="keywordflow">while</span> (<span class="keyword">true</span>)</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        {</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;            <span class="comment">// Rank the blocked keys</span></div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;            <span class="keywordtype">int</span> ranks[ITEMS_PER_THREAD];</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;            RankKeys(unsigned_keys, ranks, begin_bit, is_descending);</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;            begin_bit += RADIX_BITS;</div>
-<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;</div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;            __syncthreads();</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;            <span class="comment">// Check if this is the last pass</span></div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;            <span class="keywordflow">if</span> (begin_bit &gt;= end_bit)</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;            {</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;                <span class="comment">// Last pass exchanges keys through shared memory in striped arrangement</span></div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;                BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToStriped(keys, ranks);</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;                <span class="comment">// Last pass exchanges through shared memory in striped arrangement</span></div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;                ExchangeValues(values, ranks, is_keys_only, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>());</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;                <span class="comment">// Quit</span></div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;                <span class="keywordflow">break</span>;</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;            }</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;            <span class="comment">// Exchange keys through shared memory in blocked arrangement</span></div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;            BlockExchangeKeys(temp_storage.exchange_keys, linear_tid).ScatterToBlocked(keys, ranks);</div>
+<div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange&lt;Key, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchangeKeys</a>;</div>
+<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;</div>
+<div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange&lt;Value, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH&gt;</a> <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchangeValues</a>;</div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;</div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    <span class="keyword">struct </span>_TempStorage</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;    {</div>
+<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;        <span class="keyword">union</span></div>
+<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;        {</div>
+<div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;            <span class="keyword">typename</span> AscendingBlockRadixRank::TempStorage  asending_ranking_storage;</div>
+<div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;            <span class="keyword">typename</span> DescendingBlockRadixRank::TempStorage descending_ranking_storage;</div>
+<div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;            <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchangeKeys::TempStorage</a>        exchange_keys;</div>
+<div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;            <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchangeValues::TempStorage</a>      exchange_values;</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        };</div>
+<div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    };</div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;</div>
+<div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;</div>
+<div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="comment">     * Thread fields</span></div>
+<div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
+<div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;</div>
+<div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    _TempStorage &amp;temp_storage;</div>
+<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    <span class="keywordtype">int</span> linear_tid;</div>
+<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;</div>
+<div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="comment">     * Utility methods</span></div>
+<div class="line"><a name="l00209"></a><span class="lineno">  209</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    __device__ __forceinline__ _TempStorage&amp; PrivateStorage()</div>
+<div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;    {</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;        __shared__ _TempStorage private_storage;</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;        <span class="keywordflow">return</span> private_storage;</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;    }</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> RankKeys(</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;        UnsignedBits    (&amp;unsigned_keys)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;        <span class="keywordtype">int</span>             begin_bit,</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a> is_descending)</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    {</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;        AscendingBlockRadixRank(temp_storage.asending_ranking_storage).RankKeys(</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;            unsigned_keys,</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            ranks,</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            begin_bit);</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    }</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> RankKeys(</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        UnsignedBits    (&amp;unsigned_keys)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        <span class="keywordtype">int</span>             begin_bit,</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>  is_descending)</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    {</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        DescendingBlockRadixRank(temp_storage.descending_ranking_storage).RankKeys(</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            unsigned_keys,</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            ranks,</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            begin_bit);</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    }</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        Value           (&amp;values)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a> is_keys_only,</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>  is_blocked)</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    {</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        BlockExchangeValues(temp_storage.exchange_values).ScatterToBlocked(values, ranks);</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    }</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        Value           (&amp;values)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a> is_keys_only,</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a> is_blocked)</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    {</div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;        <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        BlockExchangeValues(temp_storage.exchange_values).ScatterToStriped(values, ranks);</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    }</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> IS_BLOCKED&gt;</div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        Value                   (&amp;values)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        <span class="keywordtype">int</span>                     (&amp;ranks)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>          is_keys_only,</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_BLOCKED&gt;</a>    is_blocked)</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    {}</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DESCENDING, <span class="keywordtype">int</span> KEYS_ONLY&gt;</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> SortBlocked(</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        Key                     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;        Value                   (&amp;values)[ITEMS_PER_THREAD],        </div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;        <span class="keywordtype">int</span>                     begin_bit,                          </div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        <span class="keywordtype">int</span>                     end_bit,                            </div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;DESCENDING&gt;</a>    is_descending,                      </div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>     is_keys_only)                       </div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    {</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        UnsignedBits (&amp;unsigned_keys)[ITEMS_PER_THREAD] =</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;            <span class="keyword">reinterpret_cast&lt;</span>UnsignedBits (&amp;)[ITEMS_PER_THREAD]<span class="keyword">&gt;</span>(keys);</div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;        <span class="comment">// Twiddle bits if necessary</span></div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> KEY = 0; KEY &lt; ITEMS_PER_THREAD; KEY++)</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        {</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;        }</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;        <span class="comment">// Radix sorting passes</span></div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        <span class="keywordflow">while</span> (<span class="keyword">true</span>)</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        {</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;            <span class="comment">// Rank the blocked keys</span></div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;            <span class="keywordtype">int</span> ranks[ITEMS_PER_THREAD];</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;            RankKeys(unsigned_keys, ranks, begin_bit, is_descending);</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;            begin_bit += RADIX_BITS;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;            __syncthreads();</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;            <span class="comment">// Exchange keys through shared memory in blocked arrangement</span></div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;            BlockExchangeKeys(temp_storage.exchange_keys).ScatterToBlocked(keys, ranks);</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;            <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            ExchangeValues(values, ranks, is_keys_only, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>());</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            <span class="comment">// Quit if done</span></div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            <span class="keywordflow">if</span> (begin_bit &gt;= end_bit) <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;            __syncthreads();</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;        }</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;        <span class="comment">// Untwiddle bits if necessary</span></div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> KEY = 0; KEY &lt; ITEMS_PER_THREAD; KEY++)</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;        {</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;        }</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    }</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DESCENDING, <span class="keywordtype">int</span> KEYS_ONLY&gt;</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> SortBlockedToStriped(</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;        Key                     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        Value                   (&amp;values)[ITEMS_PER_THREAD],        </div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;        <span class="keywordtype">int</span>                     begin_bit,                          </div>
+<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordtype">int</span>                     end_bit,                            </div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;DESCENDING&gt;</a>    is_descending,                      </div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>     is_keys_only)                       </div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    {</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        UnsignedBits (&amp;unsigned_keys)[ITEMS_PER_THREAD] =</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;            <span class="keyword">reinterpret_cast&lt;</span>UnsignedBits (&amp;)[ITEMS_PER_THREAD]<span class="keyword">&gt;</span>(keys);</div>
+<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        <span class="comment">// Twiddle bits if necessary</span></div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> KEY = 0; KEY &lt; ITEMS_PER_THREAD; KEY++)</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        {</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;            unsigned_keys[KEY] = KeyTraits::TwiddleIn(unsigned_keys[KEY]);</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        }</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        <span class="comment">// Radix sorting passes</span></div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;        <span class="keywordflow">while</span> (<span class="keyword">true</span>)</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;        {</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;            <span class="comment">// Rank the blocked keys</span></div>
+<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;            <span class="keywordtype">int</span> ranks[ITEMS_PER_THREAD];</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;            RankKeys(unsigned_keys, ranks, begin_bit, is_descending);</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;            begin_bit += RADIX_BITS;</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;</div>
-<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;            <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;            ExchangeValues(values, ranks, is_keys_only, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>());</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;            __syncthreads();</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;        }</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;        <span class="comment">// Untwiddle bits if necessary</span></div>
-<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> KEY = 0; KEY &lt; ITEMS_PER_THREAD; KEY++)</div>
-<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;        {</div>
-<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;        }</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    }</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;            __syncthreads();</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;</div>
+<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;            <span class="comment">// Check if this is the last pass</span></div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;            <span class="keywordflow">if</span> (begin_bit &gt;= end_bit)</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;            {</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;                <span class="comment">// Last pass exchanges keys through shared memory in striped arrangement</span></div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;                BlockExchangeKeys(temp_storage.exchange_keys).ScatterToStriped(keys, ranks);</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;</div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;                <span class="comment">// Last pass exchanges through shared memory in striped arrangement</span></div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;                ExchangeValues(values, ranks, is_keys_only, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>());</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;</div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;                <span class="comment">// Quit</span></div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;                <span class="keywordflow">break</span>;</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;            }</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;</div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;            <span class="comment">// Exchange keys through shared memory in blocked arrangement</span></div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;            BlockExchangeKeys(temp_storage.exchange_keys).ScatterToBlocked(keys, ranks);</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;</div>
-<div class="line"><a name="l00376"></a><span class="lineno"><a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html">  376</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;            <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;            ExchangeValues(values, ranks, is_keys_only, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>());</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;</div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;</div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;</div>
-<div class="line"><a name="l00387"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#ac7c896d6549960400b7710a262532e0e">  387</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_radix_sort.html#ac7c896d6549960400b7710a262532e0e" title="Collective constructor for 1D thread blocks using a private static allocation of shared memory as tem...">BlockRadixSort</a>()</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;    :</div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;        temp_storage(PrivateStorage()),</div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;        linear_tid(threadIdx.x)</div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;    {}</div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;            __syncthreads();</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;        }</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;</div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;        <span class="comment">// Untwiddle bits if necessary</span></div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> KEY = 0; KEY &lt; ITEMS_PER_THREAD; KEY++)</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;        {</div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;            unsigned_keys[KEY] = KeyTraits::TwiddleOut(unsigned_keys[KEY]);</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;        }</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;    }</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;</div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;</div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;</div>
-<div class="line"><a name="l00397"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#af6840b09ce6bb530fffa56ed75e4529c">  397</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_radix_sort.html#af6840b09ce6bb530fffa56ed75e4529c" title="Collective constructor for 1D thread blocks using the specified memory allocation as temporary storag...">BlockRadixSort</a>(</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;        <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> &amp;temp_storage)             </div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;    :</div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;        temp_storage(temp_storage.Alias()),</div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;        linear_tid(threadIdx.x)</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;    {}</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;</div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;</div>
-<div class="line"><a name="l00408"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a311b6e5932dfea96e1844abaf428bfc3">  408</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_radix_sort.html#a311b6e5932dfea96e1844abaf428bfc3" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockRadixSort</a>(</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;        <span class="keywordtype">int</span> linear_tid)                        </div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;    :</div>
-<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;        temp_storage(PrivateStorage()),</div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;        linear_tid(linear_tid)</div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;    {}</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;</div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;</div>
-<div class="line"><a name="l00419"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a34b8e018887026786b02e8ac6556bd3a">  419</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_radix_sort.html#a34b8e018887026786b02e8ac6556bd3a" title="Collective constructor using the specified memory allocation as temporary storage. Each thread is identified using the supplied linear thread identifier. ">BlockRadixSort</a>(</div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> &amp;temp_storage,             </div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;        <span class="keywordtype">int</span> linear_tid)                        </div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;    :</div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;        temp_storage(temp_storage.Alias()),</div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;        linear_tid(linear_tid)</div>
-<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;    {}</div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;</div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;</div>
+<div class="line"><a name="l00394"></a><span class="lineno"><a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html">  394</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;</div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;</div>
+<div class="line"><a name="l00405"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a61350e5a0912695e7c61dde559fb3b54">  405</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_radix_sort.html#a61350e5a0912695e7c61dde559fb3b54" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockRadixSort</a>()</div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;    :</div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        temp_storage(PrivateStorage()),</div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;        linear_tid(<a class="code" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce" title="Returns the row-major linear thread identifier for a multidimensional threadblock. ">RowMajorTid</a>(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    {}</div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;</div>
+<div class="line"><a name="l00415"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a3db4338c1129aad727f0f60fb3593c73">  415</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_radix_sort.html#a3db4338c1129aad727f0f60fb3593c73" title="Collective constructor using the specified memory allocation as temporary storage. ">BlockRadixSort</a>(</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;        <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> &amp;temp_storage)             </div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;    :</div>
+<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;        temp_storage(temp_storage.Alias()),</div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;        linear_tid(<a class="code" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce" title="Returns the row-major linear thread identifier for a multidimensional threadblock. ">RowMajorTid</a>(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;    {}</div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;</div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;</div>
+<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;    <span class="comment">/******************************************************************/</span></div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;</div>
-<div class="line"><a name="l00472"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#ad04651e04e555350bd250c4681a97644">  472</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#ad04651e04e555350bd250c4681a97644" title="Performs an ascending block-wide radix sort over a blocked arrangement of keys. ">Sort</a>(</div>
-<div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
-<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
-<div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;    {</div>
-<div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;        <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> values[ITEMS_PER_THREAD];</div>
-<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;</div>
-<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;        SortBlocked(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
-<div class="line"><a name="l00480"></a><span class="lineno">  480</span>&#160;    }</div>
-<div class="line"><a name="l00481"></a><span class="lineno">  481</span>&#160;</div>
-<div class="line"><a name="l00482"></a><span class="lineno">  482</span>&#160;</div>
-<div class="line"><a name="l00527"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#aac3d9424388b0cb6da360624e627b61e">  527</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#aac3d9424388b0cb6da360624e627b61e" title="Performs an ascending block-wide radix sort across a blocked arrangement of keys and values...">Sort</a>(</div>
-<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;        Value   (&amp;values)[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
-<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
-<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;    {</div>
-<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;        SortBlocked(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
-<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;    }</div>
-<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;</div>
-<div class="line"><a name="l00573"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#ae1398d2e68fd263bb38605be824af818">  573</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#ae1398d2e68fd263bb38605be824af818" title="Performs a descending block-wide radix sort over a blocked arrangement of keys. ">SortDescending</a>(</div>
-<div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
-<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
-<div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;    {</div>
-<div class="line"><a name="l00578"></a><span class="lineno">  578</span>&#160;        <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> values[ITEMS_PER_THREAD];</div>
-<div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;</div>
-<div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;        SortBlocked(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
-<div class="line"><a name="l00581"></a><span class="lineno">  581</span>&#160;    }</div>
-<div class="line"><a name="l00582"></a><span class="lineno">  582</span>&#160;</div>
-<div class="line"><a name="l00583"></a><span class="lineno">  583</span>&#160;</div>
-<div class="line"><a name="l00628"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a2a8d768f3c009dd4e957f52b1f5d08c1">  628</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a2a8d768f3c009dd4e957f52b1f5d08c1" title="Performs a descending block-wide radix sort across a blocked arrangement of keys and values...">SortDescending</a>(</div>
-<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;        Value   (&amp;values)[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
-<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
-<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;    {</div>
-<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;        SortBlocked(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
-<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;    }</div>
-<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;</div>
+<div class="line"><a name="l00466"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#af97311d03e725f43eb7ae4a94422fd8f">  466</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#af97311d03e725f43eb7ae4a94422fd8f" title="Performs an ascending block-wide radix sort over a blocked arrangement of keys. ">Sort</a>(</div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
+<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;    {</div>
+<div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;        <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> values[ITEMS_PER_THREAD];</div>
+<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;</div>
+<div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;        SortBlocked(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
+<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;    }</div>
+<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;</div>
+<div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;</div>
+<div class="line"><a name="l00521"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#aa6b164f496c319269f83502d7fc53512">  521</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#aa6b164f496c319269f83502d7fc53512" title="Performs an ascending block-wide radix sort across a blocked arrangement of keys and values...">Sort</a>(</div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;        Value   (&amp;values)[ITEMS_PER_THREAD],        </div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
+<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;    {</div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;        SortBlocked(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
+<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;    }</div>
+<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;</div>
+<div class="line"><a name="l00567"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a2d8792ad5dff4be936fbdf566aeb7744">  567</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a2d8792ad5dff4be936fbdf566aeb7744" title="Performs a descending block-wide radix sort over a blocked arrangement of keys. ">SortDescending</a>(</div>
+<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
+<div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
+<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;    {</div>
+<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;        <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> values[ITEMS_PER_THREAD];</div>
+<div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;</div>
+<div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;        SortBlocked(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
+<div class="line"><a name="l00575"></a><span class="lineno">  575</span>&#160;    }</div>
+<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;</div>
+<div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;</div>
+<div class="line"><a name="l00622"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a94af642346a2a23925795435a9838c9a">  622</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a94af642346a2a23925795435a9838c9a" title="Performs a descending block-wide radix sort across a blocked arrangement of keys and values...">SortDescending</a>(</div>
+<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;        Value   (&amp;values)[ITEMS_PER_THREAD],        </div>
+<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
+<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
+<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;    {</div>
+<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;        SortBlocked(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
+<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;    }</div>
+<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;</div>
+<div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;</div>
+<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;    <span class="comment">/******************************************************************/</span></div>
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;</div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;</div>
-<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;</div>
-<div class="line"><a name="l00683"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a4be0c8d355a7fc75f8b405a776d884d3">  683</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a4be0c8d355a7fc75f8b405a776d884d3" title="Performs an ascending radix sort across a blocked arrangement of keys, leaving them in a striped arra...">SortBlockedToStriped</a>(</div>
-<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
-<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
-<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;    {</div>
-<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;        <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> values[ITEMS_PER_THREAD];</div>
-<div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;</div>
-<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;        SortBlockedToStriped(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
-<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;    }</div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;</div>
-<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;</div>
-<div class="line"><a name="l00738"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a9f707b1592f7354db0fba76a42afbc84">  738</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a9f707b1592f7354db0fba76a42afbc84" title="Performs an ascending radix sort across a blocked arrangement of keys and values, leaving them in a s...">SortBlockedToStriped</a>(</div>
-<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;        Value   (&amp;values)[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
-<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
-<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;    {</div>
-<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;        SortBlockedToStriped(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;    }</div>
-<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;</div>
-<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;</div>
-<div class="line"><a name="l00786"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#afcef7ab16bbc28445c673efe0b02cc37">  786</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#afcef7ab16bbc28445c673efe0b02cc37" title="Performs a descending radix sort across a blocked arrangement of keys, leaving them in a striped arra...">SortDescendingBlockedToStriped</a>(</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;    {</div>
-<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;        <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> values[ITEMS_PER_THREAD];</div>
-<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;</div>
-<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;        SortBlockedToStriped(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
-<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;    }</div>
-<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;</div>
-<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;</div>
-<div class="line"><a name="l00841"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#aa25b6670e66c17445d8fa4ea8f9c2536">  841</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#aa25b6670e66c17445d8fa4ea8f9c2536" title="Performs a descending radix sort across a blocked arrangement of keys and values, leaving them in a s...">SortDescendingBlockedToStriped</a>(</div>
-<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;        Value   (&amp;values)[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;    {</div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;        SortBlockedToStriped(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;    }</div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;</div>
-<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;};</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
-<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;</div>
+<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;</div>
+<div class="line"><a name="l00677"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#acef5df1f88f8d56857365c43bd032bc7">  677</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#acef5df1f88f8d56857365c43bd032bc7" title="Performs an ascending radix sort across a blocked arrangement of keys, leaving them in a striped arra...">SortBlockedToStriped</a>(</div>
+<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
+<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;    {</div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> values[ITEMS_PER_THREAD];</div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;</div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        SortBlockedToStriped(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
+<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;    }</div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;</div>
+<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;</div>
+<div class="line"><a name="l00732"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a088d03f619f4ea9d694c4736f2cdcfe6">  732</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a088d03f619f4ea9d694c4736f2cdcfe6" title="Performs an ascending radix sort across a blocked arrangement of keys and values, leaving them in a s...">SortBlockedToStriped</a>(</div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;        Value   (&amp;values)[ITEMS_PER_THREAD],        </div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
+<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;    {</div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;        SortBlockedToStriped(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;false&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
+<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;    }</div>
+<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;</div>
+<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;</div>
+<div class="line"><a name="l00780"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#af059067206ac007469b9a3dd8fe87f15">  780</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#af059067206ac007469b9a3dd8fe87f15" title="Performs a descending radix sort across a blocked arrangement of keys, leaving them in a striped arra...">SortDescendingBlockedToStriped</a>(</div>
+<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
+<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
+<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;    {</div>
+<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;        <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> values[ITEMS_PER_THREAD];</div>
+<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;</div>
+<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;        SortBlockedToStriped(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
+<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;    }</div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;</div>
+<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;</div>
+<div class="line"><a name="l00835"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#a261f5e8a77f2b4e47938d67ebd9d4525">  835</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_radix_sort.html#a261f5e8a77f2b4e47938d67ebd9d4525" title="Performs a descending radix sort across a blocked arrangement of keys and values, leaving them in a s...">SortDescendingBlockedToStriped</a>(</div>
+<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;        Key     (&amp;keys)[ITEMS_PER_THREAD],          </div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        Value   (&amp;values)[ITEMS_PER_THREAD],        </div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;        <span class="keywordtype">int</span>     begin_bit   = 0,                    </div>
+<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;        <span class="keywordtype">int</span>     end_bit     = <span class="keyword">sizeof</span>(Key) * 8)      </div>
+<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;    {</div>
+<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;        SortBlockedToStriped(keys, values, begin_bit, end_bit, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a>(), <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;KEYS_ONLY&gt;</a>());</div>
+<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;    }</div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;</div>
+<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;</div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;};</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;</div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;</div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

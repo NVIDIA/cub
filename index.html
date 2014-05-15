@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.2.3</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.3.0</b></em></a>
 
 </td><td>
 
@@ -226,9 +226,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    <span class="comment">// Store the sorted segment </span></div>
 <div class="line">    BlockStoreT(temp_storage.store).Store(d_out + block_offset, thread_keys);</div>
 <div class="line">}</div>
-<div class="line"></div>
-<div class="line"></div>
-<div class="line"><span class="comment">// Launch sorting kernel to sort blocks of 2048 keys</span></div>
+</div><!-- fragment --></dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="comment">// Elsewhere in the host program: parameterize and launch a block-sorting </span></div>
+<div class="line"><span class="comment">// kernel in which blocks of 128 threads each sort segments of 2048 keys</span></div>
 <div class="line"><span class="keywordtype">int</span> *d_in = ...; </div>
 <div class="line"><span class="keywordtype">int</span> *d_out = ...;</div>
 <div class="line"><span class="keywordtype">int</span> num_blocks = ...;</div>
@@ -320,7 +320,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Perform an exclusive block-wide prefix sum</span></div>
-<div class="line">    BlockScan(scan_storage).<a class="code" href="classcub_1_1_block_scan.html#acd75d5aad2d1385bcbe15517011800e8" title="Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. ">ExclusiveSum</a>(thread_data_in, thread_data_out);</div>
+<div class="line">    BlockScan(scan_storage).<a class="code" href="classcub_1_1_block_scan.html#a266a054160f65c87e43f645cd8e46fd1" title="Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. ">ExclusiveSum</a>(thread_data_in, thread_data_out);</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>Furthermore, the CUB interface is designed to separate parameter fields by concerns. CUB primitives have three distinct parameter fields:<ol type="1">
 <li><b><em>Static template parameters</em></b>. These are constants that will dictate the storage layout and the unrolling of algorithmic steps (e.g., the input data type and the number of block threads), and are used to specialize the class.</li>
@@ -393,11 +393,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 (8) Recent News</h1>
 <dl class="section user"><dt></dt><dd><table class="doxtable">
 <tr>
-<td style="white-space: nowrap; vertical-align:text-top;">04/01/2014<br/>
- <a href="download_cub.html"><b>CUB v1.2.3</b></a> </td><td style="vertical-align:text-top;"><ul>
+<td style="white-space: nowrap; vertical-align:text-top;">05/12/2014<br/>
+ <a href="download_cub.html"><b>CUB v1.3.0</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li>New features:<ul>
+<li>CUB's collective (block-wide, warp-wide) primitives underwent a minor interface refactoring:<ul>
+<li>To provide the appropriate support for multidimensional thread blocks, The interfaces for collective classes are now template-parameterized by X, Y, and Z block dimensions (with <code>BLOCK_DIM_Y</code> and <code>BLOCK_DIM_Z</code> being optional, and <code>BLOCK_DIM_X</code> replacing <code>BLOCK_THREADS</code>). Furthermore, the constructors that accept remapped linear thread-identifiers have been removed: all primitives now assume a row-major thread-ranking for multidimensional thread blocks.</li>
+<li>To allow the host program (compiled by the host-pass) to accurately determine the device-specific storage requirements for a given collective (compiled for each device-pass), the interfaces for collective classes are now (optionally) template-parameterized by the desired PTX compute capability. This is useful when aliasing collective storage to shared memory that has been allocated dynamically by the host at the kernel call site.</li>
+<li>Most CUB programs having typical 1D usage should not require any changes to accomodate these updates.</li>
+</ul>
+</li>
+</ul>
+</li>
 <li>Bug fixes:<ul>
-<li>Fixed access violation bug in DeviceReduce::ReduceByKey for non-primitive value types</li>
-<li>Fixed code-snippet bug in ArgIndexInputIterator documentation</li>
+<li>Fixed bug in <a class="el" href="classcub_1_1_warp_scan.html" title="The WarpScan class provides collective methods for computing a parallel prefix scan of items partitio...">cub::WarpScan</a> (which affected <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> and <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a>) where incorrect results (e.g., NAN) would often be returned when parameterized for floating-point types (fp32, fp64).</li>
+<li>Workaround-fix for ptxas error when compiling with with -G flag on Linux (for debug instrumentation)</li>
+<li>Misc. workaround-fixes for certain scan scenarios (using custom scan operators) where code compiled for SM1x is run on newer GPUs of higher compute-capability: the compiler could not tell which memory space was being used collective operations and was mistakenly using global ops instead of shared ops.</li>
 </ul>
 </li>
 <li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
@@ -405,33 +415,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p class="endtd"></p>
 </td></tr>
 <tr>
-<td style="white-space: nowrap; vertical-align:text-top;">03/03/2014<br/>
- <b>CUB v1.2.2</b> </td><td style="vertical-align:text-top;"><ul>
-<li>New features:<ul>
-<li>Added device-wide reduce-by-key (<a class="el" href="structcub_1_1_device_reduce.html#a62400e8632002f3ba601d4392b997bc7" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>, <a class="el" href="structcub_1_1_device_reduce.html#ac563c98fb1d6cde7d4365bc34f6b698d" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">cub::DeviceReduce::RunLengthEncode</a>)</li>
+<td style="white-space: nowrap; vertical-align:text-top;">04/01/2014<br/>
+ <b>CUB v1.2.3</b> </td><td style="vertical-align:text-top;"><ul>
+<li>Added device-wide reduce-by-key (<a class="el" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>, <a class="el" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">cub::DeviceReduce::RunLengthEncode</a>)</li>
 <li>Added MS VC++ project solutions for device-wide and block-wide examples</li>
-</ul>
-</li>
-<li>Performance:<ul>
-<li>Improved <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a>, <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">cub::DeviceSelect</a>, and <a class="el" href="structcub_1_1_device_partition.html" title="DevicePartition provides device-wide, parallel operations for partitioning sequences of data items re...">cub::DevicePartition</a> performance</li>
-<li>Added a third algorithmic variant of <a class="el" href="classcub_1_1_block_reduce.html" title="The BlockReduce class provides collective methods for computing a parallel reduction of items partiti...">cub::BlockReduce</a> for improved performance when using commutative operators (e.g., numeric addition)</li>
-</ul>
-</li>
-<li>Documentation and testing:<ul>
-<li>Compatible with CUDA 6.0</li>
-<li>Added performance-portabiltiy plots for many device-wide primitives to doc</li>
-<li>Update doc and tests to reflect CUB "fancy" iterator (in)compatibilities with CUDA 5.0 (and older) and Thrust 1.6 (and older).</li>
-</ul>
-</li>
-<li>Bug fixes:<ul>
-<li>Fixed bug where inclusion of Thrust headers in a certain order prevented CUB device-wide primitives from working properly</li>
-<li>Revised the fence operation of temporary tile status bookkeeping for <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> (and similar) to be safe for current code run on future platforms</li>
-<li>Fixed <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> bug where Win32 alignment disagreements between host and device regarding user-defined data types would corrupt tile status</li>
-<li>Fixed <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> bug where certain exclusive scans on custom data types for the <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">cub::BLOCK_SCAN_WARP_SCANS</a> variant would return incorrect results for the first thread in the block</li>
-<li>Added workaround for <a class="el" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">cub::TexRefInputIterator</a> to work with CUDA 6.0</li>
-</ul>
-</li>
-<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
 <p class="endtd"></p>
 </td></tr>
@@ -444,8 +432,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Added <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">cub::DeviceSelect</a> (select-unique, select-if, and select-flagged)</li>
 <li>Added <a class="el" href="structcub_1_1_device_partition.html" title="DevicePartition provides device-wide, parallel operations for partitioning sequences of data items re...">cub::DevicePartition</a> (partition-if, partition-flagged)</li>
 <li>Added generic <a class="el" href="group___warp_module.html#ga749c208dab03e3dc4ce1fa2e608a42aa" title="Shuffle-up for any data type. Each warp-lanei obtains the value input contributed by warp-lanei-src_o...">cub::ShuffleUp()</a>, <a class="el" href="group___warp_module.html#ga13869cffbcc535abf4b883f5a367cc4b" title="Shuffle-down for any data type. Each warp-lanei obtains the value input contributed by warp-lanei+src...">cub::ShuffleDown()</a>, and <a class="el" href="group___warp_module.html#ga70c8abccb5e0f361a953b88c92dc0986" title="Shuffle-broadcast for any data type. Each warp-lanei obtains the value input contributed by warp-lane...">cub::ShuffleBroadcast()</a> for warp-wide communication of arbitrary data types (SM3x+)</li>
-<li>Added <a class="el" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">cub::MaxSmOccupancy()</a> for accurately determining SM occupancy for any given kernel function pointer</li>
-<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
+<li>Added <a class="el" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">cub::MaxSmOccupancy()</a> for accurately determining SM occupancy for any given kernel function pointer</li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
 <p class="endtd"></p>
 </td></tr>
@@ -454,7 +442,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
  <b>CUB v1.0.1</b> </td><td style="vertical-align:text-top;"><ul>
 <li>New API for block-wide and warp-wide collective operations</li>
 <li>New <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> and <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> implementations</li>
-<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
 <p class="endtd"></p>
 </td></tr>
@@ -462,15 +450,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <td style="white-space: nowrap; vertical-align:text-top;">05/07/2013<br/>
  <b>CUB v0.9.4</b> </td><td style="vertical-align:text-top;"><ul>
 <li>New <a class="el" href="structcub_1_1_device_histogram.html" title="DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequenc...">cub::DeviceHistogram</a> and <a class="el" href="classcub_1_1_block_histogram.html" title="The BlockHistogram class provides collective methods for constructing block-wide histograms from data...">cub::BlockHistogram</a> implementations</li>
-<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
-</ul>
-<p class="endtd"></p>
-</td></tr>
-<tr>
-<td style="white-space: nowrap; vertical-align:text-top;">04/04/2013<br/>
- <b>CUB v0.9.2</b> </td><td style="vertical-align:text-top;"><ul>
-<li>Minor cosmetic, feature, and compilation updates</li>
-<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details </li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
 <p class="endtd"></p>
 </td></tr>
@@ -517,7 +497,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:14:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:57 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -106,16 +106,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;iterator&gt;</code><br/>
-<code>#include &quot;../util_namespace.cuh&quot;</code><br/>
+<code>#include &quot;<a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="util__ptx_8cuh_source.html">../util_ptx.cuh</a>&quot;</code><br/>
 <code>#include &quot;../util_macro.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="util__type_8cuh_source.html">../util_type.cuh</a>&quot;</code><br/>
-<code>#include &quot;<a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>&quot;</code><br/>
+<code>#include &quot;../util_namespace.cuh&quot;</code><br/>
 </div>
 <p><a href="block__load_8cuh_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
@@ -123,13 +124,13 @@ Classes</h2></td></tr>
 .</div></div>
   <a href="classcub_1_1_block_load.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___t_r_a_n_s_p_o_s_e_00_01_d_u_m_m_y_01_4_1_1_temp_storage.html">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::LoadInternal&lt; BLOCK_LOAD_TRANSPOSE, DUMMY &gt;::TempStorage</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___t_r_a_n_s_p_o_s_e_00_01_d_u_m_m_y_01_4_1_1_temp_storage.html">cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::LoadInternal&lt; BLOCK_LOAD_TRANSPOSE, DUMMY &gt;::TempStorage</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias wrapper allowing storage to be unioned.  <a href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___t_r_a_n_s_p_o_s_e_00_01_d_u_m_m_y_01_4_1_1_temp_storage.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___w_a_r_p___t_r_a_n_s_p_o_s_402c3164d23f1ec647db5dad06a54584.html">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::LoadInternal&lt; BLOCK_LOAD_WARP_TRANSPOSE, DUMMY &gt;::TempStorage</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___w_a_r_p___t_r_a_n_s_p_o_s_402c3164d23f1ec647db5dad06a54584.html">cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::LoadInternal&lt; BLOCK_LOAD_WARP_TRANSPOSE, DUMMY &gt;::TempStorage</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alias wrapper allowing storage to be unioned.  <a href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___w_a_r_p___t_r_a_n_s_p_o_s_402c3164d23f1ec647db5dad06a54584.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">cub::BlockLoad&lt; InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING &gt;::TempStorage</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_load_1_1_temp_storage.html">cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse.  <a href="structcub_1_1_block_load_1_1_temp_storage.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -203,7 +204,7 @@ Functions</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:53 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

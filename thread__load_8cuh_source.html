@@ -306,7 +306,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;<span class="preprocessor">    CUB_LOAD_1(cub_modifier, ptx_modifier)                                                  \</span></div>
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;<span class="preprocessor">#if CUB_PTX_VERSION &gt;= 200</span></div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &gt;= 200</span></div>
 <div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="preprocessor"></span>    CUB_LOAD_ALL(<a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9acec87ab52dfb122d1555bfdfe44c23ae" title="Cache at all levels. ">LOAD_CA</a>, ca)</div>
 <div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    CUB_LOAD_ALL(<a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9afad1bebebe5fe5ee6f6dfb5dc220009f" title="Cache at global level. ">LOAD_CG</a>, cg)</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    CUB_LOAD_ALL(<a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9a6f0ae5826ad5eee54046731f7c71c874" title="Cache streaming (likely to be accessed once) ">LOAD_CS</a>, cs)</div>
@@ -319,7 +319,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    CUB_LOAD_ALL(LOAD_CV, volatile.global)</div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;<span class="preprocessor">#if CUB_PTX_VERSION &gt;= 350</span></div>
+<div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &gt;= 350</span></div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="preprocessor"></span>    CUB_LOAD_ALL(<a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9a0217758d7be24e5fd450d1d49aec36b8" title="Cache as texture. ">LOAD_LDG</a>, global.nc)</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="preprocessor"></span>    CUB_LOAD_ALL(<a class="code" href="group___util_io.html#ggac5f2805ad56fdd0f2860a5421d76d9b9a0217758d7be24e5fd450d1d49aec36b8" title="Cache as texture. ">LOAD_LDG</a>, global)</div>
@@ -353,7 +353,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;{</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    T retval = *<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">volatile </span>T*<span class="keyword">&gt;</span>(ptr);</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;</div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;<span class="preprocessor">#if (CUB_PTX_VERSION &lt;= 130)</span></div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH &lt;= 130)</span></div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;<span class="preprocessor"></span>    <span class="keywordflow">if</span> (<span class="keyword">sizeof</span>(T) == 1) __threadfence_block();</div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;<span class="preprocessor"></span></div>
@@ -367,7 +367,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    Int2Type&lt;false&gt;          is_primitive)</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;{</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;</div>
-<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;<span class="preprocessor">#if CUB_PTX_VERSION &lt;= 130</span></div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &lt;= 130</span></div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;    T retval = *ptr;</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;    __threadfence_block();</div>
@@ -387,7 +387,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;</div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keywordflow">return</span> *<span class="keyword">reinterpret_cast&lt;</span>T*<span class="keyword">&gt;</span>(words);</div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;<span class="preprocessor">#endif  // CUB_PTX_VERSION &lt;= 130</span></div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;<span class="preprocessor">#endif  // CUB_PTX_ARCH &lt;= 130</span></div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;<span class="preprocessor"></span>}</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;</div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;</div>
@@ -447,7 +447,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

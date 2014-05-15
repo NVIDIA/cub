@@ -104,7 +104,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">block_exchange.cuh File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="util__arch_8cuh_source.html">../util_arch.cuh</a>&quot;</code><br/>
+<div class="textblock"><code>#include &quot;<a class="el" href="util__ptx_8cuh_source.html">../util_ptx.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="util__arch_8cuh_source.html">../util_arch.cuh</a>&quot;</code><br/>
 <code>#include &quot;../util_macro.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="util__type_8cuh_source.html">../util_type.cuh</a>&quot;</code><br/>
 <code>#include &quot;../util_namespace.cuh&quot;</code><br/>
@@ -113,7 +114,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html">cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> class provides <a href="index.html#sec0"><em>collective</em></a> methods for rearranging data partitioned across a CUDA thread block. </p>
 <div class="image">
 <img src="transpose_logo.png" alt="transpose_logo.png"/>
@@ -121,7 +122,7 @@ Classes</h2></td></tr>
 .</div></div>
   <a href="classcub_1_1_block_exchange.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">cub::BlockExchange&lt; T, BLOCK_THREADS, ITEMS_PER_THREAD, WARP_TIME_SLICING &gt;::TempStorage</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_exchange_1_1_temp_storage.html">cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse.  <a href="structcub_1_1_block_exchange_1_1_temp_storage.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -139,7 +140,7 @@ Namespaces</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:53 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

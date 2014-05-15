@@ -297,11 +297,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    <span class="comment">// Allocate temporary storage</span></div>
 <div class="line">    <span class="keywordtype">void</span>            *d_temp_storage = NULL;</div>
 <div class="line">    <span class="keywordtype">size_t</span>          temp_storage_bytes = 0;</div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op));</div>
 <div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate(&amp;d_temp_storage, temp_storage_bytes));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Run</span></div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a class="code" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a class="code" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Check for correctness (and display results, if specified)</span></div>
 <div class="line">    <span class="keywordtype">int</span> compare = CompareDeviceResults(h_reference, d_out, num_selected, <span class="keyword">true</span>, g_verbose);</div>
@@ -327,7 +327,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:57 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:51 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

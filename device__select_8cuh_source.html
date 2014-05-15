@@ -150,8 +150,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        <span class="keyword">typename</span>                    FlagIterator,</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIterator&gt;</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00134"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#ae2a77d395ccd2c0c839956469f04bb7d">  134</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#ae2a77d395ccd2c0c839956469f04bb7d" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">Flagged</a>(</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00134"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#a4bdafa080cce999f8694c820fd567c83">  134</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#a4bdafa080cce999f8694c820fd567c83" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">Flagged</a>(</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        InputIterator               d_in,                           </div>
@@ -186,8 +186,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIterator,</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="keyword">typename</span>                    SelectOp&gt;</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00241"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29">  241</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#a1fc0a6991fdf34a417856349a146de29" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">If</a>(</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00241"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a">  241</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">If</a>(</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        InputIterator               d_in,                           </div>
@@ -221,8 +221,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIterator&gt;</div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    __host__ __device__ __forceinline__</div>
-<div class="line"><a name="l00332"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#ae635fc4f38a07a1c1dd90c177e993312">  332</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#ae635fc4f38a07a1c1dd90c177e993312" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">Unique</a>(</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00332"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1">  332</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">Unique</a>(</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        InputIterator               d_in,                           </div>
@@ -261,7 +261,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:58 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

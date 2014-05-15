@@ -119,20 +119,20 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:gac3d86a53650d110862fe8a84fce61c2e"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#gac3d86a53650d110862fe8a84fce61c2e">cub::PtxVersion</a> (int &amp;ptx_version)</td></tr>
-<tr class="memdesc:gac3d86a53650d110862fe8a84fce61c2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10)  <a href="group___util_mgmt.html#gac3d86a53650d110862fe8a84fce61c2e">More...</a><br/></td></tr>
-<tr class="separator:gac3d86a53650d110862fe8a84fce61c2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga1ec5fed5face2bf098cee3ce7096364a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga1ec5fed5face2bf098cee3ce7096364a"></a>
-__host__ __device__ <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga1ec5fed5face2bf098cee3ce7096364a">cub::SmVersion</a> (int &amp;sm_version, int device_ordinal)</td></tr>
-<tr class="memdesc:ga1ec5fed5face2bf098cee3ce7096364a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the SM version (major * 100 + minor * 10) <br/></td></tr>
-<tr class="separator:ga1ec5fed5face2bf098cee3ce7096364a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga364b8a84e613c62761d58afb351a258b"><td class="memTemplParams" colspan="2">template&lt;typename KernelPtr &gt; </td></tr>
-<tr class="memitem:ga364b8a84e613c62761d58afb351a258b"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b">cub::MaxSmOccupancy</a> (int &amp;max_sm_occupancy, KernelPtr kernel_ptr, int block_threads)</td></tr>
-<tr class="memdesc:ga364b8a84e613c62761d58afb351a258b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer <code>kernel_ptr</code> on the current device with <code>block_threads</code> per thread block.  <a href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b">More...</a><br/></td></tr>
-<tr class="separator:ga364b8a84e613c62761d58afb351a258b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga274acbdeef0a8f56373501323ef51d05"><td class="memItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga274acbdeef0a8f56373501323ef51d05">cub::PtxVersion</a> (int &amp;ptx_version)</td></tr>
+<tr class="memdesc:ga274acbdeef0a8f56373501323ef51d05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10)  <a href="group___util_mgmt.html#ga274acbdeef0a8f56373501323ef51d05">More...</a><br/></td></tr>
+<tr class="separator:ga274acbdeef0a8f56373501323ef51d05"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga791244a362e168e8404403b5f4148de4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga791244a362e168e8404403b5f4148de4"></a>
+CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga791244a362e168e8404403b5f4148de4">cub::SmVersion</a> (int &amp;sm_version, int device_ordinal)</td></tr>
+<tr class="memdesc:ga791244a362e168e8404403b5f4148de4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the SM version (major * 100 + minor * 10) <br/></td></tr>
+<tr class="separator:ga791244a362e168e8404403b5f4148de4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gad47c4df33ee75496ad5ba3514c5c9334"><td class="memTemplParams" colspan="2">template&lt;typename KernelPtr &gt; </td></tr>
+<tr class="memitem:gad47c4df33ee75496ad5ba3514c5c9334"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334">cub::MaxSmOccupancy</a> (int &amp;max_sm_occupancy, KernelPtr kernel_ptr, int block_threads)</td></tr>
+<tr class="memdesc:gad47c4df33ee75496ad5ba3514c5c9334"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer <code>kernel_ptr</code> on the current device with <code>block_threads</code> per thread block.  <a href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334">More...</a><br/></td></tr>
+<tr class="separator:gad47c4df33ee75496ad5ba3514c5c9334"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Properties of a given CUDA device and the corresponding PTX bundle </p>
@@ -142,7 +142,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:53 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

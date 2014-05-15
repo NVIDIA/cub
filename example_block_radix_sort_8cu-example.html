@@ -278,7 +278,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line">    <span class="comment">// Kernel props</span></div>
 <div class="line">    <span class="keywordtype">int</span> max_sm_occupancy;</div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a3"></a><a class="code" href="group___util_mgmt.html#ga364b8a84e613c62761d58afb351a258b" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(max_sm_occupancy, BlockSortKernel&lt;Key, BLOCK_THREADS, ITEMS_PER_THREAD&gt;, BLOCK_THREADS));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a3"></a><a class="code" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(max_sm_occupancy, BlockSortKernel&lt;Key, BLOCK_THREADS, ITEMS_PER_THREAD&gt;, BLOCK_THREADS));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Copy problem to device</span></div>
 <div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(cudaMemcpy(d_in, h_in, <span class="keyword">sizeof</span>(Key) * TILE_SIZE * g_grid_size, cudaMemcpyHostToDevice));</div>
@@ -294,6 +294,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">        d_elapsed);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Check for kernel errors and STDIO from the kernel, if any</span></div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(cudaPeekAtLastError());</div>
 <div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(cudaDeviceSynchronize());</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Check results</span></div>
@@ -397,7 +398,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Apr 1 2014 17:13:57 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon May 12 2014 17:09:51 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
