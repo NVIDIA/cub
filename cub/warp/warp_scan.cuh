@@ -252,7 +252,7 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
-        InternalWarpScan(temp_storage).InclusiveSum(input, output);
+        InternalWarpScan(temp_storage).InclusiveScan(input, output, cub::Sum());
     }
 
 
@@ -297,7 +297,7 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).InclusiveSum(input, output, warp_aggregate);
+        InternalWarpScan(temp_storage).InclusiveScan(input, output, cub::Sum(), warp_aggregate);
     }
 
 
@@ -399,6 +399,22 @@ public:
 
 private:
 
+    /// Combination scan with identity
+    __device__ __forceinline__ void Sum(T input, T &inclusive_output, T &exclusive_output, Int2Type<true> is_integer)
+    {
+        // Compute exclusive warp scan from inclusive warp scan
+        InclusiveSum(input, inclusive_output);
+        exclusive_output = inclusive_output - input;
+    }
+
+    /// Combination scan with identity
+    __device__ __forceinline__ void Sum(T input, T &inclusive_output, T &exclusive_output, Int2Type<false> is_integer)
+    {
+        // Delegate to regular scan for non-integer types (because we won't be able to use subtraction)
+        T identity = ZeroInitialize<T>();
+        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, identity, cub::Sum());
+    }
+
     /// Computes an exclusive prefix sum in each logical warp.
     __device__ __forceinline__ void ExclusiveSum(T input, T &output, Int2Type<true> is_integer)
     {
@@ -413,7 +429,7 @@ private:
     {
         // Delegate to regular scan for non-integer types (because we won't be able to use subtraction)
         T identity = ZeroInitialize<T>();
-        ExclusiveScan(input, output, identity, Sum());
+        ExclusiveScan(input, output, identity, cub::Sum());
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
@@ -430,7 +446,7 @@ private:
     {
         // Delegate to regular scan for non-integer types (because we won't be able to use subtraction)
         T identity = ZeroInitialize<T>();
-        ExclusiveScan(input, output, identity, Sum(), warp_aggregate);
+        ExclusiveScan(input, output, identity, cub::Sum(), warp_aggregate);
     }
 
     /// Computes an exclusive prefix sum in each logical warp.  Instead of using 0 as the warp-wide prefix, the call-back functor \p warp_prefix_op is invoked to provide the "seed" value that logically prefixes the warp's scan inputs.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
@@ -449,7 +465,7 @@ private:
     {
         // Delegate to regular scan for non-integer types (because we won't be able to use subtraction)
         T identity = ZeroInitialize<T>();
-        ExclusiveScan(input, output, identity, Sum(), warp_aggregate, warp_prefix_op);
+        ExclusiveScan(input, output, identity, cub::Sum(), warp_aggregate, warp_prefix_op);
     }
 
 public:
@@ -900,7 +916,8 @@ public:
         T               identity,           ///< [in] Identity value
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op);
+        T inclusive_output;
+        InternalWarpScan(temp_storage).Scan(input, inclusive_output, output, identity, scan_op);
     }
 
 
@@ -1109,7 +1126,8 @@ public:
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op);
+        T inclusive_output;
+        InternalWarpScan(temp_storage).Scan(input, inclusive_output, output, scan_op);
     }
 
 
@@ -1263,6 +1281,45 @@ public:
             prefix :
             scan_op(prefix, output);
     }
+
+    //@}  end member group
+    /******************************************************************//**
+     * \name Combination (inclusive & exclusive) prefix scans
+     *********************************************************************/
+    //@{
+
+    /// Combination scan with identity
+    __device__ __forceinline__ void Sum(
+        T               input,              ///< [in] Calling thread's input item.
+        T               &inclusive_output,  ///< [out] Calling thread's inclusive-scan output item.
+        T               &exclusive_output)  ///< [out] Calling thread's exclusive-scan output item.
+    {
+        Sum(input, inclusive_output, exclusive_output, Int2Type<IS_INTEGER>());
+    }
+
+    /// Combination scan with identity
+    template <typename ScanOp>
+    __device__ __forceinline__ void Scan(
+        T               input,              ///< [in] Calling thread's input item.
+        T               &inclusive_output,  ///< [out] Calling thread's inclusive-scan output item.
+        T               &exclusive_output,  ///< [out] Calling thread's exclusive-scan output item.
+        T               identity,           ///< [in] Identity value
+        ScanOp          scan_op)            ///< [in] Binary scan operator
+    {
+        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, identity, scan_op);
+    }
+
+    /// Combination scan with without identity
+    template <typename ScanOp>
+    __device__ __forceinline__ void Scan(
+        T               input,              ///< [in] Calling thread's input item.
+        T               &inclusive_output,  ///< [out] Calling thread's inclusive-scan output item.
+        T               &exclusive_output,  ///< [out] Calling thread's exclusive-scan output item.
+        ScanOp          scan_op)            ///< [in] Binary scan operator
+    {
+        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, scan_op);
+    }
+
 
     //@}  end member group
 };

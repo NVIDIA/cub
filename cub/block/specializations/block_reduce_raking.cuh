@@ -131,7 +131,7 @@ struct BlockReduceRaking
     __device__ __forceinline__ T RakingReduction(
         ReductionOp                 reduction_op,       ///< [in] Binary scan operator
         T                           *raking_segment,
-        T                           partial,            ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        T                           partial,            ///< [in] <b>[<em>lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items
         int                         num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         Int2Type<ITERATION>         iteration)
     {
@@ -148,7 +148,7 @@ struct BlockReduceRaking
     __device__ __forceinline__ T RakingReduction(
         ReductionOp                 reduction_op,       ///< [in] Binary scan operator
         T                           *raking_segment,
-        T                           partial,            ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        T                           partial,            ///< [in] <b>[<em>lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items
         int                         num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         Int2Type<SEGMENT_LENGTH>    iteration)
     {
