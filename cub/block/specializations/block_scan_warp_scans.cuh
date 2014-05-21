@@ -105,7 +105,6 @@ struct BlockScanWarpScans
     __device__ __forceinline__ void ApplyWarpAggregates(
         T               &partial,           ///< [out] The calling thread's partial reduction
         ScanOp          scan_op,            ///< [in] Binary scan operator
-        T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
         T               &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
         bool            lane_valid,         ///< [in] Whether or not the partial belonging to the current thread is valid
         Int2Type<WARP>  addend_warp)
@@ -121,14 +120,13 @@ struct BlockScanWarpScans
             T addend = temp_storage.warp_aggregates[WARP];
             block_aggregate = scan_op(block_aggregate, addend);
 
-            ApplyWarpAggregates(partial, scan_op, warp_aggregate, block_aggregate, lane_valid, Int2Type<WARP + 1>());
+            ApplyWarpAggregates(partial, scan_op, block_aggregate, lane_valid, Int2Type<WARP + 1>());
     }
 
     template <typename ScanOp>
     __device__ __forceinline__ void ApplyWarpAggregates(
         T               &partial,           ///< [out] The calling thread's partial reduction
         ScanOp          scan_op,            ///< [in] Binary scan operator
-        T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
         T               &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
         bool            lane_valid,         ///< [in] Whether or not the partial belonging to the current thread is valid
         Int2Type<WARPS> addend_warp)
@@ -140,12 +138,13 @@ struct BlockScanWarpScans
     __device__ __forceinline__ void ApplyWarpAggregates(
         T               &partial,           ///< [out] The calling thread's partial reduction
         ScanOp          scan_op,            ///< [in] Binary scan operator
-        T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        T               warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>WARP_THREADS - 1</sub> only]</b> Warp-wide aggregate reduction of input items
         T               &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
         bool            lane_valid = true)  ///< [in] Whether or not the partial belonging to the current thread is valid
     {
-        // Share lane aggregates
-        temp_storage.warp_aggregates[warp_id] = warp_aggregate;
+        // Last lane in each warp shares its warp-aggregate
+        if (lane_id == WARP_THREADS - 1)
+            temp_storage.warp_aggregates[warp_id] = warp_aggregate;
 
         __syncthreads();
 
@@ -154,7 +153,7 @@ struct BlockScanWarpScans
 #if __CUDA_ARCH__ <= 130
 
         // Use template unrolling for SM1x (since the PTX backend can't handle it)
-        ApplyWarpAggregates(partial, scan_op, warp_aggregate, block_aggregate, lane_valid, Int2Type<1>());
+        ApplyWarpAggregates(partial, scan_op, block_aggregate, lane_valid, Int2Type<1>());
 
 #else
 
@@ -187,11 +186,11 @@ struct BlockScanWarpScans
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &block_aggregate)   ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        T warp_aggregate;
-        WarpScan(temp_storage.warp_scan[warp_id]).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
+        T inclusive_output;
+        WarpScan(temp_storage.warp_scan[warp_id]).Scan(input, inclusive_output, output, identity, scan_op);
 
         // Update outputs and block_aggregate with warp-wide aggregates
-        ApplyWarpAggregates(output, scan_op, warp_aggregate, block_aggregate);
+        ApplyWarpAggregates(output, scan_op, inclusive_output, block_aggregate);
     }
 
 
@@ -236,11 +235,11 @@ struct BlockScanWarpScans
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        T warp_aggregate;
-        WarpScan(temp_storage.warp_scan[warp_id]).ExclusiveScan(input, output, scan_op, warp_aggregate);
+        T inclusive_output;
+        WarpScan(temp_storage.warp_scan[warp_id]).Scan(input, inclusive_output, output, scan_op);
 
         // Update outputs and block_aggregate with warp-wide aggregates
-        ApplyWarpAggregates(output, scan_op, warp_aggregate, block_aggregate, (lane_id > 0));
+        ApplyWarpAggregates(output, scan_op, inclusive_output, block_aggregate, (lane_id > 0));
     }
 
 
@@ -280,15 +279,17 @@ struct BlockScanWarpScans
 
     /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
     __device__ __forceinline__ void ExclusiveSum(
-        T               input,                          ///< [in] Calling thread's input item
-        T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
+        T                       input,                          ///< [in] Calling thread's input item
+        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
+        T                       &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        T warp_aggregate;
-        WarpScan(temp_storage.warp_scan[warp_id]).ExclusiveSum(input, output, warp_aggregate);
+        Sum     scan_op;
+        T       inclusive_output;
 
-        // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-        ApplyWarpAggregates(output, Sum(), warp_aggregate, block_aggregate);
+        WarpScan(temp_storage.warp_scan[warp_id]).Sum(input, inclusive_output, output);
+
+        // Update outputs and block_aggregate with warp-wide aggregates from lane WARP_THREADS-1
+        ApplyWarpAggregates(output, scan_op, inclusive_output, block_aggregate);
     }
 
 
@@ -330,11 +331,10 @@ struct BlockScanWarpScans
         ScanOp          scan_op,                        ///< [in] Binary scan operator
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        T warp_aggregate;
-        WarpScan(temp_storage.warp_scan[warp_id]).InclusiveScan(input, output, scan_op, warp_aggregate);
+        WarpScan(temp_storage.warp_scan[warp_id]).InclusiveScan(input, output, scan_op);
 
-        // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-        ApplyWarpAggregates(output, scan_op, warp_aggregate, block_aggregate);
+        // Update outputs and block_aggregate with warp-wide aggregates from lane WARP_THREADS-1
+        ApplyWarpAggregates(output, scan_op, output, block_aggregate);
 
     }
 
@@ -377,11 +377,10 @@ struct BlockScanWarpScans
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
-        T warp_aggregate;
-        WarpScan(temp_storage.warp_scan[warp_id]).InclusiveSum(input, output, warp_aggregate);
+        WarpScan(temp_storage.warp_scan[warp_id]).InclusiveSum(input, output);
 
-        // Update outputs and block_aggregate with warp-wide aggregates from lane-0s
-        ApplyWarpAggregates(output, Sum(), warp_aggregate, block_aggregate);
+        // Update outputs and block_aggregate with warp-wide aggregates from lane WARP_THREADS-1
+        ApplyWarpAggregates(output, Sum(), output, block_aggregate);
     }
 
 

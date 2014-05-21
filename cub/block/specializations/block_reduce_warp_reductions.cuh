@@ -113,7 +113,7 @@ struct BlockReduceWarpReductions
     template <bool FULL_TILE, typename ReductionOp, int SUCCESSOR_WARP>
     __device__ __forceinline__ T ApplyWarpAggregates(
         ReductionOp                 reduction_op,       ///< [in] Binary scan operator
-        T                           warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        T                           warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items
         int                         num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         Int2Type<SUCCESSOR_WARP>    successor_warp)
     {
@@ -128,7 +128,7 @@ struct BlockReduceWarpReductions
     template <bool FULL_TILE, typename ReductionOp>
     __device__ __forceinline__ T ApplyWarpAggregates(
         ReductionOp         reduction_op,       ///< [in] Binary scan operator
-        T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items
         int                 num_valid,          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
         Int2Type<WARPS>     successor_warp)
     {
@@ -142,7 +142,7 @@ struct BlockReduceWarpReductions
         typename            ReductionOp>
     __device__ __forceinline__ T ApplyWarpAggregates(
         ReductionOp         reduction_op,       ///< [in] Binary scan operator
-        T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub>s only]</b> Warp-wide aggregate reduction of input items
+        T                   warp_aggregate,     ///< [in] <b>[<em>lane</em><sub>0</sub> only]</b> Warp-wide aggregate reduction of input items
         int                 num_valid)          ///< [in] Number of valid elements (may be less than BLOCK_THREADS)
     {
         // Share lane aggregates

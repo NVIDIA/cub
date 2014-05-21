@@ -941,7 +941,6 @@ int CompareResults(T* computed, S* reference, Offset len, bool verbose = true)
 template <typename Offset>
 int CompareResults(float* computed, float* reference, Offset len, bool verbose = true)
 {
-    int retval = 0;
     for (Offset i = 0; i < len; i++)
     {
         float difference = std::abs(computed[i]-reference[i]);
@@ -955,9 +954,7 @@ int CompareResults(float* computed, float* reference, Offset len, bool verbose =
             return 1;
         }
     }
-
-    if (!retval) printf("CORRECT\n");
-    return retval;
+    return 0;
 }
 
 
@@ -967,7 +964,6 @@ int CompareResults(float* computed, float* reference, Offset len, bool verbose =
 template <typename Offset>
 int CompareResults(cub::NullType* computed, cub::NullType* reference, Offset len, bool verbose = true)
 {
-    printf("CORRECT\n");
     return 0;
 }
 
@@ -977,7 +973,6 @@ int CompareResults(cub::NullType* computed, cub::NullType* reference, Offset len
 template <typename Offset>
 int CompareResults(double* computed, double* reference, Offset len, bool verbose = true)
 {
-    int retval = 0;
     for (Offset i = 0; i < len; i++)
     {
         double difference = std::abs(computed[i]-reference[i]);
@@ -991,9 +986,7 @@ int CompareResults(double* computed, double* reference, Offset len, bool verbose
             return 1;
         }
     }
-
-    if (!retval) printf("CORRECT\n");
-    return retval;
+    return 0;
 }
 
 
