@@ -366,7 +366,7 @@ __global__ void BlockScanKernel(
 
     // Stop cycle timer
 #if CUB_PTX_ARCH > 100
-    clock_t stop = 0;
+    clock_t stop = clock();
 #endif
 
     // Store output
@@ -376,16 +376,20 @@ __global__ void BlockScanKernel(
     {
         // Store aggregate
         d_aggregate[linear_tid] = aggregate;
+    }
 
-        // Store prefix and time
-        if (linear_tid == 0)
+    if (linear_tid == 0)
+    {
+        if (TEST_MODE == PREFIX_AGGREGATE)
         {
+            // Store prefix
             d_out[TILE_SIZE] = prefix_op.prefix;
-
-#if CUB_PTX_ARCH > 100
-           *d_elapsed = (start > stop) ? start - stop : stop - start;
-#endif
         }
+
+        // Store time
+#if CUB_PTX_ARCH > 100
+        *d_elapsed = (start > stop) ? start - stop : stop - start;
+#endif
     }
 
 }

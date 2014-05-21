@@ -288,14 +288,21 @@ __global__ void WarpScanKernel(
     // Store data
     d_out[threadIdx.x] = data;
 
-    // Store aggregate
-    d_aggregate[threadIdx.x] = aggregate;
+    if (TEST_MODE != BASIC)
+    {
+        // Store aggregate
+        d_aggregate[threadIdx.x] = aggregate;
+    }
 
     // Store prefix and time
     if (threadIdx.x == 0)
     {
-        d_out[LOGICAL_WARP_THREADS] = prefix_op.prefix;
         *d_elapsed = (start > stop) ? start - stop : stop - start;
+
+        if (TEST_MODE == PREFIX_AGGREGATE)
+        {
+            d_out[LOGICAL_WARP_THREADS] = prefix_op.prefix;
+        }
     }
 }
 
@@ -610,7 +617,11 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    Test<32, BASIC>(UNIFORM, Sum(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
+    Test<32, AGGREGATE>(UNIFORM, Sum(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
+    Test<32, AGGREGATE>(UNIFORM, Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
+
+    Test<32, AGGREGATE>(UNIFORM, Sum(), (long long) 0, (long long) 99, CUB_TYPE_STRING(Sum<long long>));
+    Test<32, AGGREGATE>(UNIFORM, Sum(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
 
 #else
 
