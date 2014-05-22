@@ -258,6 +258,7 @@ ALL = 				link \
 				 	test_device_reduce \
 			 		test_device_histogram \
 			 		test_device_scan \
+			 		test_device_radix_sort \
 					test_device_reduce_by_key\
 		 			test_device_select_unique \
 					test_device_select_flagged \
@@ -288,7 +289,7 @@ clean :
 # make all
 #-------------------------------------------------------------------------------
 
-all : $(ALL) test_device_radix_sort
+all : $(ALL)
 
 
 #-------------------------------------------------------------------------------
