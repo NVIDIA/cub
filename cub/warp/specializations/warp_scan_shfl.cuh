@@ -249,7 +249,7 @@ struct WarpScanShfl
 
 
     /// Inclusive prefix scan
-    template <typename _T, typename ScanOp, bool IS_SMALL_INTEGER>
+    template <typename _T, typename ScanOp, int IS_SMALL_INTEGER>
     __device__ __forceinline__ void InclusiveScan(
         _T                          input,              ///< [in] Calling thread's input item.
         _T                          &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
