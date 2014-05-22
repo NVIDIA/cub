@@ -64,7 +64,7 @@ template <
     typename            ValueInputIterator,             ///< Random-access input iterator type for values
     typename            ValueOutputIterator,            ///< Random-access output iterator type for values
     typename            NumSegmentsIterator,            ///< Output iterator type for recording number of segments encountered
-    typename            ScanTileState,             ///< Tile status interface type
+    typename            ScanTileState,                  ///< Tile status interface type
     typename            EqualityOp,                     ///< Key equality operator type
     typename            ReductionOp,                    ///< Value reduction operator type
     typename            Offset>                         ///< Signed integer type for global offsets
@@ -75,7 +75,7 @@ __global__ void ReduceByKeyRegionKernel(
     ValueInputIterator  d_values_in,                    ///< [in] Pointer to consecutive runs of input values
     ValueOutputIterator d_values_out,                   ///< [in] Pointer to output value aggregates (one aggregate per run)
     NumSegmentsIterator d_num_segments,                 ///< [in] Pointer to total number of runs
-    ScanTileState  tile_status,                    ///< [in] Tile status interface
+    ScanTileState  tile_status,                         ///< [in] Tile status interface
     EqualityOp          equality_op,                    ///< [in] Key equality operator
     ReductionOp         reduction_op,                   ///< [in] Value reduction operator
     Offset              num_items,                      ///< [in] Total number of items to select from

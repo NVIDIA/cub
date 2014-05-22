@@ -171,6 +171,9 @@ struct BlockRangeRadixSortUpsweep
     // The least-significant bit position of the current digit to extract
     int             current_bit;
 
+    // Number of bits in current digit
+    int             num_bits;
+
 
 
     //---------------------------------------------------------------------
@@ -214,15 +217,17 @@ struct BlockRangeRadixSortUpsweep
         // Perform transform op
         UnsignedBits converted_key = Traits<Key>::TwiddleIn(key);
 
-        // Add in sub-counter offset
-        UnsignedBits sub_counter = BFE(converted_key, current_bit, LOG_PACKING_RATIO);
+        // Extract current digit bits
+        UnsignedBits digit = BFE(converted_key, current_bit, num_bits);
 
-        // Add in row offset
-        UnsignedBits row_offset = BFE(converted_key, current_bit + LOG_PACKING_RATIO, LOG_COUNTER_LANES);
+        // Get sub-counter offset
+        UnsignedBits sub_counter = digit & (PACKING_RATIO - 1);
+
+        // Get row offset
+        UnsignedBits row_offset = digit >> LOG_PACKING_RATIO;
 
         // Increment counter
         temp_storage.digit_counters[row_offset][threadIdx.x][sub_counter]++;
-
     }
 
 
@@ -372,11 +377,13 @@ struct BlockRangeRadixSortUpsweep
     __device__ __forceinline__ BlockRangeRadixSortUpsweep(
         TempStorage &temp_storage,
         Key         *d_keys_in,
-        int         current_bit)
+        int         current_bit,
+        int         num_bits)
     :
         temp_storage(temp_storage.Alias()),
         d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
-        current_bit(current_bit)
+        current_bit(current_bit),
+        num_bits(num_bits)
     {}
 
 

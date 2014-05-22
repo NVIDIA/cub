@@ -220,12 +220,14 @@ private:
         UnsignedBits    (&unsigned_keys)[ITEMS_PER_THREAD],
         int             (&ranks)[ITEMS_PER_THREAD],
         int             begin_bit,
+        int             pass_bits,
         Int2Type<false> is_descending)
     {
         AscendingBlockRadixRank(temp_storage.asending_ranking_storage).RankKeys(
             unsigned_keys,
             ranks,
-            begin_bit);
+            begin_bit,
+            pass_bits);
     }
 
     /// Rank keys (specialized for descending sort)
@@ -299,9 +301,11 @@ private:
         // Radix sorting passes
         while (true)
         {
+            int pass_bits = CUB_MIN(RADIX_BITS, end_bit - begin_bit);
+
             // Rank the blocked keys
             int ranks[ITEMS_PER_THREAD];
-            RankKeys(unsigned_keys, ranks, begin_bit, is_descending);
+            RankKeys(unsigned_keys, ranks, begin_bit, pass_bits, is_descending);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
@@ -349,9 +353,11 @@ private:
         // Radix sorting passes
         while (true)
         {
+            int pass_bits = CUB_MIN(RADIX_BITS, end_bit - begin_bit);
+
             // Rank the blocked keys
             int ranks[ITEMS_PER_THREAD];
-            RankKeys(unsigned_keys, ranks, begin_bit, is_descending);
+            RankKeys(unsigned_keys, ranks, begin_bit, pass_bits, is_descending);
             begin_bit += RADIX_BITS;
 
             __syncthreads();
