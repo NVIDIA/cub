@@ -1030,7 +1030,7 @@ int CompareDeviceResults(
     bool display_data = false)
 {
     // Allocate array on host
-    T *h_data = new T[num_items];
+    T *h_data = (T*) malloc(num_items * sizeof(T));
 
     // Copy data back
     cudaMemcpy(h_data, d_data, sizeof(T) * num_items, cudaMemcpyDeviceToHost);
@@ -1055,7 +1055,7 @@ int CompareDeviceResults(
     int retval = CompareResults(h_data, h_reference, num_items, verbose);
 
     // Cleanup
-    if (h_data) delete[] h_data;
+    if (h_data) free(h_data);
 
     return retval;
 }
@@ -1074,8 +1074,8 @@ int CompareDeviceDeviceResults(
     bool display_data = false)
 {
     // Allocate array on host
-    T *h_reference  = new T[num_items];
-    T *h_data       = new T[num_items];
+    T *h_reference = (T*) malloc(num_items * sizeof(T));
+    T *h_data = (T*) malloc(num_items * sizeof(T));
 
     // Copy data back
     cudaMemcpy(h_reference, d_reference, sizeof(T) * num_items, cudaMemcpyDeviceToHost);
@@ -1100,8 +1100,8 @@ int CompareDeviceDeviceResults(
     int retval = CompareResults(h_data, h_reference, num_items, verbose);
 
     // Cleanup
-    if (h_reference) delete[] h_reference;
-    if (h_data) delete[] h_data;
+    if (h_reference) free(h_reference);
+    if (h_data) free(h_data);
 
     return retval;
 }
