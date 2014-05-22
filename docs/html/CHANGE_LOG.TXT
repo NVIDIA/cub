@@ -1,25 +1,39 @@
 //-----------------------------------------------------------------------------
 
-1.3.0    03/03/2014
+1.3.1    05/22/2014
     - New features:
-    	- CUB's collective (block-wide, warp-wide) primitives underwent a minor 
-    	  interface refactoring:
-    	    - To provide the appropriate support for multidimensional thread blocks,
-    	      The interfaces for collective classes are now template-parameterized 
-    	      by X, Y, and Z block dimensions (with BLOCK_DIM_Y and BLOCK_DIM_Z being 
-    	      optional, and BLOCK_DIM_X replacing BLOCK_THREADS).  Furthermore, the 
-    	      constructors that accept remapped linear thread-identifiers have been 
-    	      removed: all primitives now assume a row-major thread-ranking for 
-    	      multidimensional thread blocks.  
-    	    - To allow the host program (compiled by the host-pass) to 
-    	      accurately determine the device-specific storage requirements for 
-    	      a given collective (compiled for each device-pass), the interfaces 
-    	      for collective classes are now (optionally) template-parameterized 
-    	      by the desired PTX compute capability. This is useful when 
-    	      aliasing collective storage to shared memory that has been 
-    	      allocated dynamically by the host at the kernel call site.   
-    	    - Most CUB programs having typical 1D usage should not require any 
-    	      changes to accomodate these updates.
+        - Added new "combination" WarpScan methods for efficiently computing 
+          both inclusive and exclusive prefix scans (and sums).
+    - Bug fixes: 
+        - Workaround for a benign WAW race warning reported by cuda-memcheck
+          in BlockScan specialized for BLOCK_SCAN_WARP_SCANS algorithm.
+        - Fix for bug in DeviceRadixSort where the algorithm may sort more 
+          key bits than the caller specified (up to the nearest radix digit).
+        - Fix for ~3% DeviceRadixSort performance regression on Kepler and 
+          Fermi that was introduced in v1.3.0.  
+
+//-----------------------------------------------------------------------------
+
+1.3.0    05/12/2014
+    - New features:
+        - CUB's collective (block-wide, warp-wide) primitives underwent a minor 
+          interface refactoring:
+            - To provide the appropriate support for multidimensional thread blocks,
+              The interfaces for collective classes are now template-parameterized 
+              by X, Y, and Z block dimensions (with BLOCK_DIM_Y and BLOCK_DIM_Z being 
+              optional, and BLOCK_DIM_X replacing BLOCK_THREADS).  Furthermore, the 
+              constructors that accept remapped linear thread-identifiers have been 
+              removed: all primitives now assume a row-major thread-ranking for 
+              multidimensional thread blocks.  
+            - To allow the host program (compiled by the host-pass) to 
+              accurately determine the device-specific storage requirements for 
+              a given collective (compiled for each device-pass), the interfaces 
+              for collective classes are now (optionally) template-parameterized 
+              by the desired PTX compute capability. This is useful when 
+              aliasing collective storage to shared memory that has been 
+              allocated dynamically by the host at the kernel call site.   
+            - Most CUB programs having typical 1D usage should not require any 
+              changes to accomodate these updates.
     - Bug fixes: 
         - Fixed bug in cub::WarpScan (which affected cub::BlockScan and 
           cub::DeviceScan) where incorrect results (e.g., NAN) would often be 
@@ -34,7 +48,7 @@
 
 //-----------------------------------------------------------------------------
 
-1.2.3    03/03/2014
+1.2.3    04/01/2014
     - Bug fixes: 
         - Fixed access violation bug in DeviceReduce::ReduceByKey for non-primitive value types
         - Fixed code-snippet bug in ArgIndexInputIterator documentation 
@@ -43,18 +57,25 @@
 
 1.2.2    03/03/2014
     - New features:
-        - Added device-wide reduce-by-key (DeviceReduce::ReduceByKey, DeviceReduce::RunLengthEncode)
         - Added MS VC++ project solutions for device-wide and block-wide examples 
     - Performance:
-        - Improved DeviceScan, DeviceSelect, DevicePartition performance
         - Added a third algorithmic variant of cub::BlockReduce for improved performance
           when using commutative operators (e.g., numeric addition)
-    - Documentation and testing:
-        - Compatible with CUDA 6.0
-        - Added performance-portabiltiy plots for many device-wide primitives to doc 
-        - Update doc and tests to reflect iterator (in)compatibilities with CUDA 5.0 (and older) and Thrust 1.6 (and older).
     - Bug fixes: 
         - Fixed bug where inclusion of Thrust headers in a certain order prevented CUB device-wide primitives from working properly
+
+//-----------------------------------------------------------------------------
+
+1.2.0    02/25/2014
+    - New features:
+        - Added device-wide reduce-by-key (DeviceReduce::ReduceByKey, DeviceReduce::RunLengthEncode) 
+    - Performance
+        - Improved DeviceScan, DeviceSelect, DevicePartition performance
+    - Documentation and testing:
+        - Compatible with CUDA 6.0
+        - Added performance-portability plots for many device-wide primitives to doc 
+        - Update doc and tests to reflect iterator (in)compatibilities with CUDA 5.0 (and older) and Thrust 1.6 (and older).
+    - Bug fixes 
         - Revised the operation of temporary tile status bookkeeping for DeviceScan (and similar) to be safe for current code run on future platforms (now uses proper fences)  
         - Fixed DeviceScan bug where Win32 alignment disagreements between host and device regarding user-defined data types would corrupt tile status
         - Fixed BlockScan bug where certain exclusive scans on custom data types for the BLOCK_SCAN_WARP_SCANS variant would return incorrect results for the first thread in the block

@@ -413,6 +413,12 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 }
 
 
+/**
+ * TestFoo test initialization
+ */
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::NullType &value, int index = 0)
+{}
+
 /******************************************************************************
  * Comparison and ostream operators
  ******************************************************************************/
@@ -943,15 +949,18 @@ int CompareResults(float* computed, float* reference, Offset len, bool verbose =
 {
     for (Offset i = 0; i < len; i++)
     {
-        float difference = std::abs(computed[i]-reference[i]);
-        float fraction = difference / std::abs(reference[i]);
-
-        if (fraction > 0.0001)
+        if (computed[i] != reference[i])
         {
-            if (verbose) std::cout << "INCORRECT: [" << i << "]: "
-                << CoutCast(computed[i]) << " != "
-                << CoutCast(reference[i]) << " (difference:" << difference << ", fraction: " << fraction << ")";
-            return 1;
+            float difference = std::abs(computed[i]-reference[i]);
+            float fraction = difference / std::abs(reference[i]);
+
+            if (fraction > 0.0001)
+            {
+                if (verbose) std::cout << "INCORRECT: [" << i << "]: "
+                    << CoutCast(computed[i]) << " != "
+                    << CoutCast(reference[i]) << " (difference:" << difference << ", fraction: " << fraction << ")";
+                return 1;
+            }
         }
     }
     return 0;
@@ -975,15 +984,18 @@ int CompareResults(double* computed, double* reference, Offset len, bool verbose
 {
     for (Offset i = 0; i < len; i++)
     {
-        double difference = std::abs(computed[i]-reference[i]);
-        double fraction = difference / std::abs(reference[i]);
-
-        if (fraction > 0.0001)
+        if (computed[i] != reference[i])
         {
-            if (verbose) std::cout << "INCORRECT: [" << i << "]: "
-                << CoutCast(computed[i]) << " != "
-                << CoutCast(reference[i]) << " (difference:" << difference << ", fraction: " << fraction << ")";
-            return 1;
+            double difference = std::abs(computed[i]-reference[i]);
+            double fraction = difference / std::abs(reference[i]);
+
+            if (fraction > 0.0001)
+            {
+                if (verbose) std::cout << "INCORRECT: [" << i << "]: "
+                    << CoutCast(computed[i]) << " != "
+                    << CoutCast(reference[i]) << " (difference:" << difference << ", fraction: " << fraction << ")";
+                return 1;
+            }
         }
     }
     return 0;
@@ -1018,7 +1030,7 @@ int CompareDeviceResults(
     bool display_data = false)
 {
     // Allocate array on host
-    T *h_data = (T*) malloc(num_items * sizeof(T));
+    T *h_data = new T[num_items];
 
     // Copy data back
     cudaMemcpy(h_data, d_data, sizeof(T) * num_items, cudaMemcpyDeviceToHost);
@@ -1043,7 +1055,7 @@ int CompareDeviceResults(
     int retval = CompareResults(h_data, h_reference, num_items, verbose);
 
     // Cleanup
-    if (h_data) free(h_data);
+    if (h_data) delete[] h_data;
 
     return retval;
 }
@@ -1062,8 +1074,8 @@ int CompareDeviceDeviceResults(
     bool display_data = false)
 {
     // Allocate array on host
-    T *h_reference = (T*) malloc(num_items * sizeof(T));
-    T *h_data = (T*) malloc(num_items * sizeof(T));
+    T *h_reference  = new T[num_items];
+    T *h_data       = new T[num_items];
 
     // Copy data back
     cudaMemcpy(h_reference, d_reference, sizeof(T) * num_items, cudaMemcpyDeviceToHost);
@@ -1088,8 +1100,8 @@ int CompareDeviceDeviceResults(
     int retval = CompareResults(h_data, h_reference, num_items, verbose);
 
     // Cleanup
-    if (h_reference) free(h_reference);
-    if (h_data) free(h_data);
+    if (h_reference) delete[] h_reference;
+    if (h_data) delete[] h_data;
 
     return retval;
 }

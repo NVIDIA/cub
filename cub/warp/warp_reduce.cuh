@@ -215,7 +215,7 @@ public:
 
 
     /**
-     * \brief Computes a warp-wide sum in each active warp.  The output is valid in warp <em>lane</em><sub>0</sub>.
+     * \brief Computes a warp-wide sum in the calling warp.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
      * \smemreuse
      *
@@ -255,9 +255,9 @@ public:
     }
 
     /**
-     * \brief Computes a partially-full warp-wide sum in each active warp.  The output is valid in warp <em>lane</em><sub>0</sub>.
+     * \brief Computes a partially-full warp-wide sum in the calling warp.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
-     * All threads in each logical warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
+     * All threads across the calling warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
      *
      * \smemreuse
      *
@@ -309,7 +309,7 @@ public:
 
 
     /**
-     * \brief Computes a segmented sum in each active warp where segments are defined by head-flags.  The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
+     * \brief Computes a segmented sum in the calling warp where segments are defined by head-flags.  The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
      *
      * \smemreuse
      *
@@ -357,7 +357,7 @@ public:
 
 
     /**
-     * \brief Computes a segmented sum in each active warp where segments are defined by tail-flags.  The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
+     * \brief Computes a segmented sum in the calling warp where segments are defined by tail-flags.  The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
      *
      * \smemreuse
      *
@@ -411,7 +411,7 @@ public:
     //@{
 
     /**
-     * \brief Computes a warp-wide reduction in each active warp using the specified binary reduction functor.  The output is valid in warp <em>lane</em><sub>0</sub>.
+     * \brief Computes a warp-wide reduction in the calling warp using the specified binary reduction functor.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
      * Supports non-commutative reduction operators
      *
@@ -457,9 +457,9 @@ public:
     }
 
     /**
-     * \brief Computes a partially-full warp-wide reduction in each active warp using the specified binary reduction functor.  The output is valid in warp <em>lane</em><sub>0</sub>.
+     * \brief Computes a partially-full warp-wide reduction in the calling warp using the specified binary reduction functor.  The output is valid in warp <em>lane</em><sub>0</sub>.
      *
-     * All threads in each logical warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
+     * All threads across the calling warp must agree on the same value for \p valid_items.  Otherwise the result is undefined.
      *
      * Supports non-commutative reduction operators
      *
@@ -516,7 +516,7 @@ public:
 
 
     /**
-     * \brief Computes a segmented reduction in each active warp where segments are defined by head-flags.  The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
+     * \brief Computes a segmented reduction in the calling warp where segments are defined by head-flags.  The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
      *
      * Supports non-commutative reduction operators
      *
@@ -567,7 +567,7 @@ public:
 
 
     /**
-     * \brief Computes a segmented reduction in each active warp where segments are defined by tail-flags.  The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
+     * \brief Computes a segmented reduction in the calling warp where segments are defined by tail-flags.  The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).
      *
      * Supports non-commutative reduction operators
      *

@@ -202,32 +202,32 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;    <span class="comment">/******************************************************************/</span></div>
 <div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;</div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;</div>
-<div class="line"><a name="l00251"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233">  251</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum in each logical warp. ">InclusiveSum</a>(</div>
+<div class="line"><a name="l00251"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233">  251</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum across the calling warp. ">InclusiveSum</a>(</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        T               input,              </div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        T               &amp;output)            </div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    {</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        InternalWarpScan(temp_storage).InclusiveSum(input, output);</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        InternalWarpScan(temp_storage).InclusiveScan(input, output, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    }</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;</div>
-<div class="line"><a name="l00295"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a89402b341ee33c5e0a9941d1fc3a69dc">  295</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a89402b341ee33c5e0a9941d1fc3a69dc" title="Computes an inclusive prefix sum in each logical warp. Also provides every thread with the warp-wide ...">InclusiveSum</a>(</div>
+<div class="line"><a name="l00295"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a89402b341ee33c5e0a9941d1fc3a69dc">  295</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a89402b341ee33c5e0a9941d1fc3a69dc" title="Computes an inclusive prefix sum across the calling warp. Also provides every thread with the warp-wi...">InclusiveSum</a>(</div>
 <div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        T               input,              </div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;        T               &amp;output,            </div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;        T               &amp;warp_aggregate)    </div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    {</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        InternalWarpScan(temp_storage).InclusiveSum(input, output, warp_aggregate);</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        InternalWarpScan(temp_storage).InclusiveScan(input, output, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>(), warp_aggregate);</div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    }</div>
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;</div>
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l00380"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a5a89b9f8c7edebf6ec6e6c7a77fb10ba">  380</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a5a89b9f8c7edebf6ec6e6c7a77fb10ba" title="Computes an inclusive prefix sum in each logical warp. Instead of using 0 as the warp-wide prefix...">InclusiveSum</a>(</div>
+<div class="line"><a name="l00380"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a5a89b9f8c7edebf6ec6e6c7a77fb10ba">  380</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a5a89b9f8c7edebf6ec6e6c7a77fb10ba" title="Computes an inclusive prefix sum across the calling warp. Instead of using 0 as the warp-wide prefix...">InclusiveSum</a>(</div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;        T                       input,              </div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;        T                       &amp;output,            </div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;        T                       &amp;warp_aggregate,    </div>
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;    {</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;        <span class="comment">// Compute inclusive warp scan</span></div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum in each logical warp. ">InclusiveSum</a>(input, output, warp_aggregate);</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum across the calling warp. ">InclusiveSum</a>(input, output, warp_aggregate);</div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;        <span class="comment">// Compute warp-wide prefix from aggregate, then broadcast to other lanes</span></div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;        T prefix;</div>
@@ -241,240 +241,290 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;</div>
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a> is_integer)</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum</a>(T input, T &amp;inclusive_output, T &amp;exclusive_output, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;true&gt;</a> is_integer)</div>
 <div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;    {</div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;        <span class="comment">// Compute exclusive warp scan from inclusive warp scan</span></div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        T inclusive;</div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum in each logical warp. ">InclusiveSum</a>(input, inclusive);</div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;        output = inclusive - input;</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    }</div>
-<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;</div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, Int2Type&lt;false&gt; is_integer)</div>
-<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;    {</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;        <span class="comment">// Delegate to regular scan for non-integer types (because we won&#39;t be able to use subtraction)</span></div>
-<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
-<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(input, output, identity, Sum());</div>
-<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;    }</div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;</div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, Int2Type&lt;true&gt; is_integer)</div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;    {</div>
-<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;        <span class="comment">// Compute exclusive warp scan from inclusive warp scan</span></div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;        T inclusive;</div>
-<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum in each logical warp. ">InclusiveSum</a>(input, inclusive, warp_aggregate);</div>
-<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;        output = inclusive - input;</div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;    }</div>
-<div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;</div>
-<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, Int2Type&lt;false&gt; is_integer)</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;    {</div>
-<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;        <span class="comment">// Delegate to regular scan for non-integer types (because we won&#39;t be able to use subtraction)</span></div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(input, output, identity, Sum(), warp_aggregate);</div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    }</div>
-<div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;</div>
-<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op, Int2Type&lt;true&gt; is_integer)</div>
-<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;    {</div>
-<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;        <span class="comment">// Compute exclusive warp scan from inclusive warp scan</span></div>
-<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        T inclusive;</div>
-<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum in each logical warp. ">InclusiveSum</a>(input, inclusive, warp_aggregate, warp_prefix_op);</div>
-<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;        output = inclusive - input;</div>
-<div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;    }</div>
-<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;</div>
-<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op, Int2Type&lt;false&gt; is_integer)</div>
-<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    {</div>
-<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;        <span class="comment">// Delegate to regular scan for non-integer types (because we won&#39;t be able to use subtraction)</span></div>
-<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(input, output, identity, Sum(), warp_aggregate, warp_prefix_op);</div>
-<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;    }</div>
-<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;</div>
-<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;</div>
-<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;</div>
-<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;</div>
-<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;</div>
-<div class="line"><a name="l00503"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ae65304a415bfa8d4c8c38871fff50903">  503</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ae65304a415bfa8d4c8c38871fff50903" title="Computes an exclusive prefix sum in each logical warp. ">ExclusiveSum</a>(</div>
-<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;        T               &amp;output)            </div>
-<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;    {</div>
-<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        ExclusiveSum(input, output, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_INTEGER&gt;</a>());</div>
-<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;    }</div>
-<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;</div>
-<div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;</div>
-<div class="line"><a name="l00550"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a51429741a6b14cb8b12e8118d958d976">  550</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a51429741a6b14cb8b12e8118d958d976" title="Computes an exclusive prefix sum in each logical warp. Also provides every thread with the warp-wide ...">ExclusiveSum</a>(</div>
-<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;        T               &amp;warp_aggregate)    </div>
-<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;    {</div>
-<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;        ExclusiveSum(input, output, warp_aggregate, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_INTEGER&gt;</a>());</div>
-<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;    }</div>
-<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;</div>
-<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;</div>
-<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l00638"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a28bc23ef55cfdcb94819ef931544e2c6">  638</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a28bc23ef55cfdcb94819ef931544e2c6" title="Computes an exclusive prefix sum in each logical warp. Instead of using 0 as the warp-wide prefix...">ExclusiveSum</a>(</div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        T                       input,              </div>
-<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;        T                       &amp;output,            </div>
-<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;        T                       &amp;warp_aggregate,    </div>
-<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
-<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;    {</div>
-<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        ExclusiveSum(input, output, warp_aggregate, warp_prefix_op, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_INTEGER&gt;</a>());</div>
-<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;    }</div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;</div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;</div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;</div>
-<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
-<div class="line"><a name="l00692"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ae7cf1429e0d7d3895c40e6edbfe0ea48">  692</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ae7cf1429e0d7d3895c40e6edbfe0ea48" title="Computes an inclusive prefix sum using the specified binary scan functor in each logical warp...">InclusiveScan</a>(</div>
-<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;        ScanOp          scan_op)            </div>
-<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;    {</div>
-<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op);</div>
-<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;    }</div>
-<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;</div>
-<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;</div>
-<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
-<div class="line"><a name="l00743"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ae49afdc3dcafe6c12267bf714ceb7498">  743</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ae49afdc3dcafe6c12267bf714ceb7498" title="Computes an inclusive prefix sum using the specified binary scan functor in each logical warp...">InclusiveScan</a>(</div>
-<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;        ScanOp          scan_op,            </div>
-<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;        T               &amp;warp_aggregate)    </div>
-<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;    {</div>
-<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op, warp_aggregate);</div>
-<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;    }</div>
-<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;</div>
-<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
-<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l00833"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a3e56ff1cb1cc1e46eb80d2130b17157a">  833</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a3e56ff1cb1cc1e46eb80d2130b17157a" title="Computes an inclusive prefix sum using the specified binary scan functor in each logical warp...">InclusiveScan</a>(</div>
-<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        T                       input,              </div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;        T                       &amp;output,            </div>
-<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;        ScanOp                  scan_op,            </div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        T                       &amp;warp_aggregate,    </div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
-<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;    {</div>
-<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;        <span class="comment">// Compute inclusive warp scan</span></div>
-<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#ae7cf1429e0d7d3895c40e6edbfe0ea48" title="Computes an inclusive prefix sum using the specified binary scan functor in each logical warp...">InclusiveScan</a>(input, output, scan_op, warp_aggregate);</div>
-<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;</div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;        <span class="comment">// Compute warp-wide prefix from aggregate, then broadcast to other lanes</span></div>
-<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;        T prefix;</div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;        prefix = warp_prefix_op(warp_aggregate);</div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);</div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;        <span class="comment">// Update output</span></div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;        output = scan_op(prefix, output);</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;    }</div>
-<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum across the calling warp. ">InclusiveSum</a>(input, inclusive_output);</div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;        exclusive_output = inclusive_output - input;</div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    }</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;</div>
+<div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> Sum(T input, T &amp;inclusive_output, T &amp;exclusive_output, Int2Type&lt;false&gt; is_integer)</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    {</div>
+<div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;        <span class="comment">// Delegate to regular scan for non-integer types (because we won&#39;t be able to use subtraction)</span></div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, identity, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
+<div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;    }</div>
+<div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;</div>
+<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, Int2Type&lt;true&gt; is_integer)</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;    {</div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;        <span class="comment">// Compute exclusive warp scan from inclusive warp scan</span></div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;        T inclusive;</div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum across the calling warp. ">InclusiveSum</a>(input, inclusive);</div>
+<div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;        output = inclusive - input;</div>
+<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;    }</div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;</div>
+<div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, Int2Type&lt;false&gt; is_integer)</div>
+<div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;    {</div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;        <span class="comment">// Delegate to regular scan for non-integer types (because we won&#39;t be able to use subtraction)</span></div>
+<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(input, output, identity, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    }</div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;</div>
+<div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, Int2Type&lt;true&gt; is_integer)</div>
+<div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;    {</div>
+<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;        <span class="comment">// Compute exclusive warp scan from inclusive warp scan</span></div>
+<div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;        T inclusive;</div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum across the calling warp. ">InclusiveSum</a>(input, inclusive, warp_aggregate);</div>
+<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        output = inclusive - input;</div>
+<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;    }</div>
+<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;</div>
+<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, Int2Type&lt;false&gt; is_integer)</div>
+<div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;    {</div>
+<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        <span class="comment">// Delegate to regular scan for non-integer types (because we won&#39;t be able to use subtraction)</span></div>
+<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
+<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(input, output, identity, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>(), warp_aggregate);</div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    }</div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;</div>
+<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
+<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op, Int2Type&lt;true&gt; is_integer)</div>
+<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;    {</div>
+<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;        <span class="comment">// Compute exclusive warp scan from inclusive warp scan</span></div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;        T inclusive;</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233" title="Computes an inclusive prefix sum across the calling warp. ">InclusiveSum</a>(input, inclusive, warp_aggregate, warp_prefix_op);</div>
+<div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;        output = inclusive - input;</div>
+<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;    }</div>
+<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;</div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
+<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExclusiveSum(T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op, Int2Type&lt;false&gt; is_integer)</div>
+<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;    {</div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;        <span class="comment">// Delegate to regular scan for non-integer types (because we won&#39;t be able to use subtraction)</span></div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;        T identity = ZeroInitialize&lt;T&gt;();</div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(input, output, identity, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>(), warp_aggregate, warp_prefix_op);</div>
+<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;    }</div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;</div>
+<div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;</div>
+<div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;</div>
+<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;</div>
+<div class="line"><a name="l00479"></a><span class="lineno">  479</span>&#160;</div>
+<div class="line"><a name="l00519"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ae65304a415bfa8d4c8c38871fff50903">  519</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ae65304a415bfa8d4c8c38871fff50903" title="Computes an exclusive prefix sum across the calling warp. ">ExclusiveSum</a>(</div>
+<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;        T               input,              </div>
+<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        T               &amp;output)            </div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    {</div>
+<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;        ExclusiveSum(input, output, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_INTEGER&gt;</a>());</div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    }</div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;</div>
+<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;</div>
+<div class="line"><a name="l00566"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a51429741a6b14cb8b12e8118d958d976">  566</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a51429741a6b14cb8b12e8118d958d976" title="Computes an exclusive prefix sum across the calling warp. Also provides every thread with the warp-wi...">ExclusiveSum</a>(</div>
+<div class="line"><a name="l00567"></a><span class="lineno">  567</span>&#160;        T               input,              </div>
+<div class="line"><a name="l00568"></a><span class="lineno">  568</span>&#160;        T               &amp;output,            </div>
+<div class="line"><a name="l00569"></a><span class="lineno">  569</span>&#160;        T               &amp;warp_aggregate)    </div>
+<div class="line"><a name="l00570"></a><span class="lineno">  570</span>&#160;    {</div>
+<div class="line"><a name="l00571"></a><span class="lineno">  571</span>&#160;        ExclusiveSum(input, output, warp_aggregate, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_INTEGER&gt;</a>());</div>
+<div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    }</div>
+<div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;</div>
+<div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;</div>
+<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
+<div class="line"><a name="l00654"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a28bc23ef55cfdcb94819ef931544e2c6">  654</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a28bc23ef55cfdcb94819ef931544e2c6" title="Computes an exclusive prefix sum across the calling warp. Instead of using 0 as the warp-wide prefix...">ExclusiveSum</a>(</div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        T                       &amp;warp_aggregate,    </div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;    {</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;        ExclusiveSum(input, output, warp_aggregate, warp_prefix_op, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_INTEGER&gt;</a>());</div>
+<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;    }</div>
+<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;</div>
+<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;</div>
+<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;</div>
+<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l00708"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ae7cf1429e0d7d3895c40e6edbfe0ea48">  708</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ae7cf1429e0d7d3895c40e6edbfe0ea48" title="Computes an inclusive prefix scan using the specified binary scan functor across the calling warp...">InclusiveScan</a>(</div>
+<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;        T               input,              </div>
+<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;        T               &amp;output,            </div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;        ScanOp          scan_op)            </div>
+<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;    {</div>
+<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op);</div>
+<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;    }</div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;</div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;</div>
+<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l00759"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#ae49afdc3dcafe6c12267bf714ceb7498">  759</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#ae49afdc3dcafe6c12267bf714ceb7498" title="Computes an inclusive prefix scan using the specified binary scan functor across the calling warp...">InclusiveScan</a>(</div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;        T               input,              </div>
+<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;        T               &amp;output,            </div>
+<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;        ScanOp          scan_op,            </div>
+<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;        T               &amp;warp_aggregate)    </div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;    {</div>
+<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op, warp_aggregate);</div>
+<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;    }</div>
+<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;</div>
+<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
+<div class="line"><a name="l00849"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a3e56ff1cb1cc1e46eb80d2130b17157a">  849</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a3e56ff1cb1cc1e46eb80d2130b17157a" title="Computes an inclusive prefix scan using the specified binary scan functor across the calling warp...">InclusiveScan</a>(</div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;        ScanOp                  scan_op,            </div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;        T                       &amp;warp_aggregate,    </div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;    {</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;        <span class="comment">// Compute inclusive warp scan</span></div>
+<div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#ae7cf1429e0d7d3895c40e6edbfe0ea48" title="Computes an inclusive prefix scan using the specified binary scan functor across the calling warp...">InclusiveScan</a>(input, output, scan_op, warp_aggregate);</div>
 <div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;</div>
-<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
-<div class="line"><a name="l00897"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a">  897</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
-<div class="line"><a name="l00898"></a><span class="lineno">  898</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00899"></a><span class="lineno">  899</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00900"></a><span class="lineno">  900</span>&#160;        T               identity,           </div>
-<div class="line"><a name="l00901"></a><span class="lineno">  901</span>&#160;        ScanOp          scan_op)            </div>
-<div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;    {</div>
-<div class="line"><a name="l00903"></a><span class="lineno">  903</span>&#160;        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op);</div>
-<div class="line"><a name="l00904"></a><span class="lineno">  904</span>&#160;    }</div>
-<div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;</div>
-<div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;</div>
-<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
-<div class="line"><a name="l00948"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a460cabefa9fce321b3f9673c9fbdb525">  948</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a460cabefa9fce321b3f9673c9fbdb525" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
-<div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;        T               input,              </div>
-<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00951"></a><span class="lineno">  951</span>&#160;        T               identity,           </div>
-<div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;        ScanOp          scan_op,            </div>
-<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;        T               &amp;warp_aggregate)    </div>
-<div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;    {</div>
-<div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);</div>
-<div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;    }</div>
-<div class="line"><a name="l00957"></a><span class="lineno">  957</span>&#160;</div>
-<div class="line"><a name="l00958"></a><span class="lineno">  958</span>&#160;</div>
-<div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
-<div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l01039"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a3690d6ff828d1e1b5e21cad379ccb2d8"> 1039</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a3690d6ff828d1e1b5e21cad379ccb2d8" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
-<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;        T                       input,              </div>
-<div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160;        T                       &amp;output,            </div>
-<div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;        T                       identity,           </div>
-<div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;        ScanOp                  scan_op,            </div>
-<div class="line"><a name="l01044"></a><span class="lineno"> 1044</span>&#160;        T                       &amp;warp_aggregate,    </div>
-<div class="line"><a name="l01045"></a><span class="lineno"> 1045</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
-<div class="line"><a name="l01046"></a><span class="lineno"> 1046</span>&#160;    {</div>
-<div class="line"><a name="l01047"></a><span class="lineno"> 1047</span>&#160;        <span class="comment">// Exclusive warp scan</span></div>
-<div class="line"><a name="l01048"></a><span class="lineno"> 1048</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(input, output, identity, scan_op, warp_aggregate);</div>
-<div class="line"><a name="l01049"></a><span class="lineno"> 1049</span>&#160;</div>
-<div class="line"><a name="l01050"></a><span class="lineno"> 1050</span>&#160;        <span class="comment">// Compute warp-wide prefix from aggregate, then broadcast to other lanes</span></div>
-<div class="line"><a name="l01051"></a><span class="lineno"> 1051</span>&#160;        T prefix = warp_prefix_op(warp_aggregate);</div>
-<div class="line"><a name="l01052"></a><span class="lineno"> 1052</span>&#160;        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);</div>
-<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;</div>
-<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;        <span class="comment">// Update output</span></div>
-<div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;        output = (lane_id == 0) ?</div>
-<div class="line"><a name="l01056"></a><span class="lineno"> 1056</span>&#160;            prefix :</div>
-<div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160;            scan_op(prefix, output);</div>
-<div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;    }</div>
-<div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160;</div>
-<div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;</div>
-<div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;        <span class="comment">// Compute warp-wide prefix from aggregate, then broadcast to other lanes</span></div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;        T prefix;</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;        prefix = warp_prefix_op(warp_aggregate);</div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);</div>
+<div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;</div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;        <span class="comment">// Update output</span></div>
+<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;        output = scan_op(prefix, output);</div>
+<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;    }</div>
+<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;</div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;</div>
+<div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l00913"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a">  913</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(</div>
+<div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;        T               input,              </div>
+<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;        T               &amp;output,            </div>
+<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;        T               identity,           </div>
+<div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;        ScanOp          scan_op)            </div>
+<div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;    {</div>
+<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;        T inclusive_output;</div>
+<div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;        InternalWarpScan(temp_storage).Scan(input, inclusive_output, output, identity, scan_op);</div>
+<div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;    }</div>
+<div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;</div>
+<div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;</div>
+<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l00965"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a460cabefa9fce321b3f9673c9fbdb525">  965</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a460cabefa9fce321b3f9673c9fbdb525" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(</div>
+<div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;        T               input,              </div>
+<div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;        T               &amp;output,            </div>
+<div class="line"><a name="l00968"></a><span class="lineno">  968</span>&#160;        T               identity,           </div>
+<div class="line"><a name="l00969"></a><span class="lineno">  969</span>&#160;        ScanOp          scan_op,            </div>
+<div class="line"><a name="l00970"></a><span class="lineno">  970</span>&#160;        T               &amp;warp_aggregate)    </div>
+<div class="line"><a name="l00971"></a><span class="lineno">  971</span>&#160;    {</div>
+<div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);</div>
+<div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;    }</div>
+<div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;</div>
+<div class="line"><a name="l00975"></a><span class="lineno">  975</span>&#160;</div>
+<div class="line"><a name="l01053"></a><span class="lineno"> 1053</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l01054"></a><span class="lineno"> 1054</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
+<div class="line"><a name="l01055"></a><span class="lineno"> 1055</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
+<div class="line"><a name="l01056"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a3690d6ff828d1e1b5e21cad379ccb2d8"> 1056</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a3690d6ff828d1e1b5e21cad379ccb2d8" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(</div>
+<div class="line"><a name="l01057"></a><span class="lineno"> 1057</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l01058"></a><span class="lineno"> 1058</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l01059"></a><span class="lineno"> 1059</span>&#160;        T                       identity,           </div>
+<div class="line"><a name="l01060"></a><span class="lineno"> 1060</span>&#160;        ScanOp                  scan_op,            </div>
+<div class="line"><a name="l01061"></a><span class="lineno"> 1061</span>&#160;        T                       &amp;warp_aggregate,    </div>
+<div class="line"><a name="l01062"></a><span class="lineno"> 1062</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
+<div class="line"><a name="l01063"></a><span class="lineno"> 1063</span>&#160;    {</div>
+<div class="line"><a name="l01064"></a><span class="lineno"> 1064</span>&#160;        <span class="comment">// Exclusive warp scan</span></div>
+<div class="line"><a name="l01065"></a><span class="lineno"> 1065</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(input, output, identity, scan_op, warp_aggregate);</div>
 <div class="line"><a name="l01066"></a><span class="lineno"> 1066</span>&#160;</div>
-<div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160;</div>
-<div class="line"><a name="l01106"></a><span class="lineno"> 1106</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
-<div class="line"><a name="l01107"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#aaa70b8e943d8efafc8bc8f39b012a581"> 1107</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#aaa70b8e943d8efafc8bc8f39b012a581" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
-<div class="line"><a name="l01108"></a><span class="lineno"> 1108</span>&#160;        T               input,              </div>
-<div class="line"><a name="l01109"></a><span class="lineno"> 1109</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l01110"></a><span class="lineno"> 1110</span>&#160;        ScanOp          scan_op)            </div>
-<div class="line"><a name="l01111"></a><span class="lineno"> 1111</span>&#160;    {</div>
-<div class="line"><a name="l01112"></a><span class="lineno"> 1112</span>&#160;        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op);</div>
-<div class="line"><a name="l01113"></a><span class="lineno"> 1113</span>&#160;    }</div>
-<div class="line"><a name="l01114"></a><span class="lineno"> 1114</span>&#160;</div>
-<div class="line"><a name="l01115"></a><span class="lineno"> 1115</span>&#160;</div>
-<div class="line"><a name="l01156"></a><span class="lineno"> 1156</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
-<div class="line"><a name="l01157"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#afdf5e134de95f43d9c7749d6f1e22f2d"> 1157</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#afdf5e134de95f43d9c7749d6f1e22f2d" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
-<div class="line"><a name="l01158"></a><span class="lineno"> 1158</span>&#160;        T               input,              </div>
-<div class="line"><a name="l01159"></a><span class="lineno"> 1159</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l01160"></a><span class="lineno"> 1160</span>&#160;        ScanOp          scan_op,            </div>
-<div class="line"><a name="l01161"></a><span class="lineno"> 1161</span>&#160;        T               &amp;warp_aggregate)    </div>
-<div class="line"><a name="l01162"></a><span class="lineno"> 1162</span>&#160;    {</div>
-<div class="line"><a name="l01163"></a><span class="lineno"> 1163</span>&#160;        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op, warp_aggregate);</div>
-<div class="line"><a name="l01164"></a><span class="lineno"> 1164</span>&#160;    }</div>
-<div class="line"><a name="l01165"></a><span class="lineno"> 1165</span>&#160;</div>
-<div class="line"><a name="l01166"></a><span class="lineno"> 1166</span>&#160;</div>
-<div class="line"><a name="l01244"></a><span class="lineno"> 1244</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l01245"></a><span class="lineno"> 1245</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
-<div class="line"><a name="l01246"></a><span class="lineno"> 1246</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
-<div class="line"><a name="l01247"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a23b45f9e634fa4d39325630e168d23fb"> 1247</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a23b45f9e634fa4d39325630e168d23fb" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(</div>
-<div class="line"><a name="l01248"></a><span class="lineno"> 1248</span>&#160;        T                       input,              </div>
-<div class="line"><a name="l01249"></a><span class="lineno"> 1249</span>&#160;        T                       &amp;output,            </div>
-<div class="line"><a name="l01250"></a><span class="lineno"> 1250</span>&#160;        ScanOp                  scan_op,            </div>
-<div class="line"><a name="l01251"></a><span class="lineno"> 1251</span>&#160;        T                       &amp;warp_aggregate,    </div>
-<div class="line"><a name="l01252"></a><span class="lineno"> 1252</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
-<div class="line"><a name="l01253"></a><span class="lineno"> 1253</span>&#160;    {</div>
-<div class="line"><a name="l01254"></a><span class="lineno"> 1254</span>&#160;        <span class="comment">// Exclusive warp scan</span></div>
-<div class="line"><a name="l01255"></a><span class="lineno"> 1255</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor in each logical warp...">ExclusiveScan</a>(input, output, scan_op, warp_aggregate);</div>
-<div class="line"><a name="l01256"></a><span class="lineno"> 1256</span>&#160;</div>
-<div class="line"><a name="l01257"></a><span class="lineno"> 1257</span>&#160;        <span class="comment">// Compute warp-wide prefix from aggregate, then broadcast to other lanes</span></div>
-<div class="line"><a name="l01258"></a><span class="lineno"> 1258</span>&#160;        T prefix = warp_prefix_op(warp_aggregate);</div>
-<div class="line"><a name="l01259"></a><span class="lineno"> 1259</span>&#160;        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);</div>
-<div class="line"><a name="l01260"></a><span class="lineno"> 1260</span>&#160;</div>
-<div class="line"><a name="l01261"></a><span class="lineno"> 1261</span>&#160;        <span class="comment">// Update output with prefix</span></div>
-<div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160;        output = (lane_id == 0) ?</div>
-<div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160;            prefix :</div>
-<div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;            scan_op(prefix, output);</div>
-<div class="line"><a name="l01265"></a><span class="lineno"> 1265</span>&#160;    }</div>
-<div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160;</div>
-<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;};</div>
-<div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;       <span class="comment">// end group WarpModule</span></div>
-<div class="line"><a name="l01271"></a><span class="lineno"> 1271</span>&#160;</div>
-<div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l01067"></a><span class="lineno"> 1067</span>&#160;        <span class="comment">// Compute warp-wide prefix from aggregate, then broadcast to other lanes</span></div>
+<div class="line"><a name="l01068"></a><span class="lineno"> 1068</span>&#160;        T prefix = warp_prefix_op(warp_aggregate);</div>
+<div class="line"><a name="l01069"></a><span class="lineno"> 1069</span>&#160;        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);</div>
+<div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;</div>
+<div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160;        <span class="comment">// Update output</span></div>
+<div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;        output = (lane_id == 0) ?</div>
+<div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160;            prefix :</div>
+<div class="line"><a name="l01074"></a><span class="lineno"> 1074</span>&#160;            scan_op(prefix, output);</div>
+<div class="line"><a name="l01075"></a><span class="lineno"> 1075</span>&#160;    }</div>
+<div class="line"><a name="l01076"></a><span class="lineno"> 1076</span>&#160;</div>
+<div class="line"><a name="l01077"></a><span class="lineno"> 1077</span>&#160;</div>
+<div class="line"><a name="l01079"></a><span class="lineno"> 1079</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l01083"></a><span class="lineno"> 1083</span>&#160;</div>
+<div class="line"><a name="l01084"></a><span class="lineno"> 1084</span>&#160;</div>
+<div class="line"><a name="l01123"></a><span class="lineno"> 1123</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l01124"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#aaa70b8e943d8efafc8bc8f39b012a581"> 1124</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#aaa70b8e943d8efafc8bc8f39b012a581" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(</div>
+<div class="line"><a name="l01125"></a><span class="lineno"> 1125</span>&#160;        T               input,              </div>
+<div class="line"><a name="l01126"></a><span class="lineno"> 1126</span>&#160;        T               &amp;output,            </div>
+<div class="line"><a name="l01127"></a><span class="lineno"> 1127</span>&#160;        ScanOp          scan_op)            </div>
+<div class="line"><a name="l01128"></a><span class="lineno"> 1128</span>&#160;    {</div>
+<div class="line"><a name="l01129"></a><span class="lineno"> 1129</span>&#160;        T inclusive_output;</div>
+<div class="line"><a name="l01130"></a><span class="lineno"> 1130</span>&#160;        InternalWarpScan(temp_storage).Scan(input, inclusive_output, output, scan_op);</div>
+<div class="line"><a name="l01131"></a><span class="lineno"> 1131</span>&#160;    }</div>
+<div class="line"><a name="l01132"></a><span class="lineno"> 1132</span>&#160;</div>
+<div class="line"><a name="l01133"></a><span class="lineno"> 1133</span>&#160;</div>
+<div class="line"><a name="l01174"></a><span class="lineno"> 1174</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l01175"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#afdf5e134de95f43d9c7749d6f1e22f2d"> 1175</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#afdf5e134de95f43d9c7749d6f1e22f2d" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(</div>
+<div class="line"><a name="l01176"></a><span class="lineno"> 1176</span>&#160;        T               input,              </div>
+<div class="line"><a name="l01177"></a><span class="lineno"> 1177</span>&#160;        T               &amp;output,            </div>
+<div class="line"><a name="l01178"></a><span class="lineno"> 1178</span>&#160;        ScanOp          scan_op,            </div>
+<div class="line"><a name="l01179"></a><span class="lineno"> 1179</span>&#160;        T               &amp;warp_aggregate)    </div>
+<div class="line"><a name="l01180"></a><span class="lineno"> 1180</span>&#160;    {</div>
+<div class="line"><a name="l01181"></a><span class="lineno"> 1181</span>&#160;        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op, warp_aggregate);</div>
+<div class="line"><a name="l01182"></a><span class="lineno"> 1182</span>&#160;    }</div>
+<div class="line"><a name="l01183"></a><span class="lineno"> 1183</span>&#160;</div>
+<div class="line"><a name="l01184"></a><span class="lineno"> 1184</span>&#160;</div>
+<div class="line"><a name="l01262"></a><span class="lineno"> 1262</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l01263"></a><span class="lineno"> 1263</span>&#160;        <span class="keyword">typename</span> ScanOp,</div>
+<div class="line"><a name="l01264"></a><span class="lineno"> 1264</span>&#160;        <span class="keyword">typename</span> WarpPrefixCallbackOp&gt;</div>
+<div class="line"><a name="l01265"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a23b45f9e634fa4d39325630e168d23fb"> 1265</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a23b45f9e634fa4d39325630e168d23fb" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(</div>
+<div class="line"><a name="l01266"></a><span class="lineno"> 1266</span>&#160;        T                       input,              </div>
+<div class="line"><a name="l01267"></a><span class="lineno"> 1267</span>&#160;        T                       &amp;output,            </div>
+<div class="line"><a name="l01268"></a><span class="lineno"> 1268</span>&#160;        ScanOp                  scan_op,            </div>
+<div class="line"><a name="l01269"></a><span class="lineno"> 1269</span>&#160;        T                       &amp;warp_aggregate,    </div>
+<div class="line"><a name="l01270"></a><span class="lineno"> 1270</span>&#160;        WarpPrefixCallbackOp    &amp;warp_prefix_op)    </div>
+<div class="line"><a name="l01271"></a><span class="lineno"> 1271</span>&#160;    {</div>
+<div class="line"><a name="l01272"></a><span class="lineno"> 1272</span>&#160;        <span class="comment">// Exclusive warp scan</span></div>
+<div class="line"><a name="l01273"></a><span class="lineno"> 1273</span>&#160;        <a class="code" href="classcub_1_1_warp_scan.html#a516f9ff0e402df4277f492db46aac78a" title="Computes an exclusive prefix scan using the specified binary scan functor across the calling warp...">ExclusiveScan</a>(input, output, scan_op, warp_aggregate);</div>
+<div class="line"><a name="l01274"></a><span class="lineno"> 1274</span>&#160;</div>
+<div class="line"><a name="l01275"></a><span class="lineno"> 1275</span>&#160;        <span class="comment">// Compute warp-wide prefix from aggregate, then broadcast to other lanes</span></div>
+<div class="line"><a name="l01276"></a><span class="lineno"> 1276</span>&#160;        T prefix = warp_prefix_op(warp_aggregate);</div>
+<div class="line"><a name="l01277"></a><span class="lineno"> 1277</span>&#160;        prefix = InternalWarpScan(temp_storage).Broadcast(prefix, 0);</div>
+<div class="line"><a name="l01278"></a><span class="lineno"> 1278</span>&#160;</div>
+<div class="line"><a name="l01279"></a><span class="lineno"> 1279</span>&#160;        <span class="comment">// Update output with prefix</span></div>
+<div class="line"><a name="l01280"></a><span class="lineno"> 1280</span>&#160;        output = (lane_id == 0) ?</div>
+<div class="line"><a name="l01281"></a><span class="lineno"> 1281</span>&#160;            prefix :</div>
+<div class="line"><a name="l01282"></a><span class="lineno"> 1282</span>&#160;            scan_op(prefix, output);</div>
+<div class="line"><a name="l01283"></a><span class="lineno"> 1283</span>&#160;    }</div>
+<div class="line"><a name="l01284"></a><span class="lineno"> 1284</span>&#160;</div>
+<div class="line"><a name="l01286"></a><span class="lineno"> 1286</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l01290"></a><span class="lineno"> 1290</span>&#160;</div>
+<div class="line"><a name="l01333"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a25bd83f795e88b9260ec2bcbf846fb20"> 1333</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a25bd83f795e88b9260ec2bcbf846fb20" title="Computes both inclusive and exclusive prefix sums across the calling warp. ">Sum</a>(</div>
+<div class="line"><a name="l01334"></a><span class="lineno"> 1334</span>&#160;        T               input,              </div>
+<div class="line"><a name="l01335"></a><span class="lineno"> 1335</span>&#160;        T               &amp;inclusive_output,  </div>
+<div class="line"><a name="l01336"></a><span class="lineno"> 1336</span>&#160;        T               &amp;exclusive_output)  </div>
+<div class="line"><a name="l01337"></a><span class="lineno"> 1337</span>&#160;    {</div>
+<div class="line"><a name="l01338"></a><span class="lineno"> 1338</span>&#160;        <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum</a>(input, inclusive_output, exclusive_output, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;IS_INTEGER&gt;</a>());</div>
+<div class="line"><a name="l01339"></a><span class="lineno"> 1339</span>&#160;    }</div>
+<div class="line"><a name="l01340"></a><span class="lineno"> 1340</span>&#160;</div>
+<div class="line"><a name="l01341"></a><span class="lineno"> 1341</span>&#160;</div>
+<div class="line"><a name="l01382"></a><span class="lineno"> 1382</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l01383"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a32a247bea83254e7c3f3ae4ed8a1d5c7"> 1383</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a32a247bea83254e7c3f3ae4ed8a1d5c7" title="Computes both inclusive and exclusive prefix scans using the specified binary scan functor across the...">Scan</a>(</div>
+<div class="line"><a name="l01384"></a><span class="lineno"> 1384</span>&#160;        T               input,              </div>
+<div class="line"><a name="l01385"></a><span class="lineno"> 1385</span>&#160;        T               &amp;inclusive_output,  </div>
+<div class="line"><a name="l01386"></a><span class="lineno"> 1386</span>&#160;        T               &amp;exclusive_output,  </div>
+<div class="line"><a name="l01387"></a><span class="lineno"> 1387</span>&#160;        T               identity,           </div>
+<div class="line"><a name="l01388"></a><span class="lineno"> 1388</span>&#160;        ScanOp          scan_op)            </div>
+<div class="line"><a name="l01389"></a><span class="lineno"> 1389</span>&#160;    {</div>
+<div class="line"><a name="l01390"></a><span class="lineno"> 1390</span>&#160;        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, identity, scan_op);</div>
+<div class="line"><a name="l01391"></a><span class="lineno"> 1391</span>&#160;    }</div>
+<div class="line"><a name="l01392"></a><span class="lineno"> 1392</span>&#160;</div>
+<div class="line"><a name="l01393"></a><span class="lineno"> 1393</span>&#160;</div>
+<div class="line"><a name="l01434"></a><span class="lineno"> 1434</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l01435"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_scan.html#a3266a375b79e44f77087cec512e0c1a3"> 1435</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_warp_scan.html#a3266a375b79e44f77087cec512e0c1a3" title="Computes both inclusive and exclusive prefix scans using the specified binary scan functor across the...">Scan</a>(</div>
+<div class="line"><a name="l01436"></a><span class="lineno"> 1436</span>&#160;        T               input,              </div>
+<div class="line"><a name="l01437"></a><span class="lineno"> 1437</span>&#160;        T               &amp;inclusive_output,  </div>
+<div class="line"><a name="l01438"></a><span class="lineno"> 1438</span>&#160;        T               &amp;exclusive_output,  </div>
+<div class="line"><a name="l01439"></a><span class="lineno"> 1439</span>&#160;        ScanOp          scan_op)            </div>
+<div class="line"><a name="l01440"></a><span class="lineno"> 1440</span>&#160;    {</div>
+<div class="line"><a name="l01441"></a><span class="lineno"> 1441</span>&#160;        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, scan_op);</div>
+<div class="line"><a name="l01442"></a><span class="lineno"> 1442</span>&#160;    }</div>
+<div class="line"><a name="l01443"></a><span class="lineno"> 1443</span>&#160;</div>
+<div class="line"><a name="l01444"></a><span class="lineno"> 1444</span>&#160;</div>
+<div class="line"><a name="l01446"></a><span class="lineno"> 1446</span>&#160;};</div>
+<div class="line"><a name="l01447"></a><span class="lineno"> 1447</span>&#160;       <span class="comment">// end group WarpModule</span></div>
+<div class="line"><a name="l01449"></a><span class="lineno"> 1449</span>&#160;</div>
+<div class="line"><a name="l01450"></a><span class="lineno"> 1450</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l01451"></a><span class="lineno"> 1451</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 12 2014 17:09:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu May 22 2014 16:10:30 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
