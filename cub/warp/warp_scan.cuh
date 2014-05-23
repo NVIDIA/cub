@@ -1183,7 +1183,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  The \p warp_prefix_op value from thread-thread-lane<sub>0</sub> is applied to all scan outputs.  Also computes the warp-wide \p warp_aggregate of all inputs for thread-thread-lane<sub>0</sub>.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  The \p warp_prefix_op value from warp-lane<sub>0</sub> is applied to all scan outputs.  Also computes the warp-wide \p warp_aggregate of all inputs for warp-lane<sub>0</sub>.
      *
      * The \p warp_prefix_op functor must implement a member function <tt>T operator()(T warp_aggregate)}</tt>.
      * The functor's input parameter \p warp_aggregate is the same value also returned by the scan operation.

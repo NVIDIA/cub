@@ -257,7 +257,7 @@ Public Methods</h2></td></tr>
 <tr class="separator:afdf5e134de95f43d9c7749d6f1e22f2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a23b45f9e634fa4d39325630e168d23fb"><td class="memTemplParams" colspan="2">template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </td></tr>
 <tr class="memitem:a23b45f9e634fa4d39325630e168d23fb"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a23b45f9e634fa4d39325630e168d23fb">ExclusiveScan</a> (T input, T &amp;output, ScanOp scan_op, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op)</td></tr>
-<tr class="memdesc:a23b45f9e634fa4d39325630e168d23fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive prefix scan using the specified binary scan functor across the calling warp. The <code>warp_prefix_op</code> value from thread-thread-lane<sub>0</sub> is applied to all scan outputs. Also computes the warp-wide <code>warp_aggregate</code> of all inputs for thread-thread-lane<sub>0</sub>.  <a href="#a23b45f9e634fa4d39325630e168d23fb">More...</a><br/></td></tr>
+<tr class="memdesc:a23b45f9e634fa4d39325630e168d23fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an exclusive prefix scan using the specified binary scan functor across the calling warp. The <code>warp_prefix_op</code> value from warp-lane<sub>0</sub> is applied to all scan outputs. Also computes the warp-wide <code>warp_aggregate</code> of all inputs for warp-lane<sub>0</sub>.  <a href="#a23b45f9e634fa4d39325630e168d23fb">More...</a><br/></td></tr>
 <tr class="separator:a23b45f9e634fa4d39325630e168d23fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Combination (inclusive &amp; exclusive) prefix scans</div></td></tr>
 <tr class="memitem:a25bd83f795e88b9260ec2bcbf846fb20"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_scan.html#a25bd83f795e88b9260ec2bcbf846fb20">Sum</a> (T input, T &amp;inclusive_output, T &amp;exclusive_output)</td></tr>
@@ -1699,7 +1699,7 @@ template&lt;typename ScanOp , typename WarpPrefixCallbackOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes an exclusive prefix scan using the specified binary scan functor across the calling warp. The <code>warp_prefix_op</code> value from thread-thread-lane<sub>0</sub> is applied to all scan outputs. Also computes the warp-wide <code>warp_aggregate</code> of all inputs for thread-thread-lane<sub>0</sub>. </p>
+<p>Computes an exclusive prefix scan using the specified binary scan functor across the calling warp. The <code>warp_prefix_op</code> value from warp-lane<sub>0</sub> is applied to all scan outputs. Also computes the warp-wide <code>warp_aggregate</code> of all inputs for warp-lane<sub>0</sub>. </p>
 <p>The <code>warp_prefix_op</code> functor must implement a member function <code>T operator()(T warp_aggregate)}</code>. The functor's input parameter <code>warp_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the entire warp of threads, however only the return value from <em>lane</em><sub>0</sub> is applied as the threadblock-wide prefix. Can be stateful.</p>
 <p>Supports non-commutative scan operators.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
@@ -2046,7 +2046,7 @@ template&lt;typename ScanOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu May 22 2014 16:10:32 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 23 2014 07:20:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
