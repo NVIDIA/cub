@@ -345,6 +345,7 @@ void InitializeKeyBits(
     }
 }
 
+
 /**
  * Initialize solution
  */
@@ -362,11 +363,19 @@ void InitializeSolution(
     int num_bits = end_bit - begin_bit;
     for (int i = 0; i < num_items; ++i)
     {
+
         // Mask off unwanted portions
-        unsigned long long base = 0;
-        memcpy(&base, &h_keys[i], sizeof(Key));
-        base &= ((1ull << num_bits) - 1) << begin_bit;
-        memcpy(&h_pairs[i].key, &base, sizeof(Key));
+        if (num_bits < sizeof(Key) * 8)
+        {
+            unsigned long long base = 0;
+            memcpy(&base, &h_keys[i], sizeof(Key));
+            base &= ((1ull << num_bits) - 1) << begin_bit;
+            memcpy(&h_pairs[i].key, &base, sizeof(Key));
+        }
+        else
+        {
+            h_pairs[i].key = h_keys[i];
+        }
 
         h_pairs[i].value = i;
     }
@@ -630,11 +639,12 @@ void TestBits(
     if (Traits<Key>::CATEGORY == UNSIGNED_INTEGER)
     {
         // Don't test partial-word sorting for fp or signed types (the bit-flipping techniques get in the way)
-        printf("Testing key bits [%d,%d)\n", 3, 4); fflush(stdout);
-        TestDirection(h_keys, num_items, 3, 4);
+        int mid_bit = sizeof(Key) * 4;
+        printf("Testing key bits [%d,%d)\n", mid_bit - 1, mid_bit); fflush(stdout);
+        TestDirection(h_keys, num_items, mid_bit - 1, mid_bit);
     }
 
-    printf("Testing key bits [%d,%d)\n", 0, sizeof(Key) * 8); fflush(stdout);
+    printf("Testing key bits [%d,%d)\n", 0, int(sizeof(Key)) * 8); fflush(stdout);
     TestDirection(h_keys, num_items, 0, sizeof(Key) * 8);
 }
 
@@ -812,6 +822,7 @@ int main(int argc, char** argv)
     // Compare CUB and thrust on 64b key-value pairs
     Test<CUB, unsigned long long, unsigned long long, false> (num_items, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
     Test<THRUST, unsigned long long, unsigned long long, false> (num_items, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+
 
 #else
 
