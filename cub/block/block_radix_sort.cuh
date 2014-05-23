@@ -235,12 +235,14 @@ private:
         UnsignedBits    (&unsigned_keys)[ITEMS_PER_THREAD],
         int             (&ranks)[ITEMS_PER_THREAD],
         int             begin_bit,
+        int             pass_bits,
         Int2Type<true>  is_descending)
     {
         DescendingBlockRadixRank(temp_storage.descending_ranking_storage).RankKeys(
             unsigned_keys,
             ranks,
-            begin_bit);
+            begin_bit,
+            pass_bits);
     }
 
     /// ExchangeValues (specialized for key-value sort, to-blocked arrangement)
