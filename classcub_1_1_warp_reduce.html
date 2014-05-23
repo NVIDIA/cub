@@ -200,35 +200,35 @@ Public Methods</h2></td></tr>
 <tr class="separator:ac62468e86401f21b58b9dfb5db9f717b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Summation reductions</div></td></tr>
 <tr class="memitem:abe4aeeabf8859a7582a0b5858b84ee7a"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#abe4aeeabf8859a7582a0b5858b84ee7a">Sum</a> (T input)</td></tr>
-<tr class="memdesc:abe4aeeabf8859a7582a0b5858b84ee7a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide sum in each active warp. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#abe4aeeabf8859a7582a0b5858b84ee7a">More...</a><br/></td></tr>
+<tr class="memdesc:abe4aeeabf8859a7582a0b5858b84ee7a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide sum in the calling warp. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#abe4aeeabf8859a7582a0b5858b84ee7a">More...</a><br/></td></tr>
 <tr class="separator:abe4aeeabf8859a7582a0b5858b84ee7a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad9c4a8d85a7795cf220713f362c36f30"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#ad9c4a8d85a7795cf220713f362c36f30">Sum</a> (T input, int valid_items)</td></tr>
-<tr class="memdesc:ad9c4a8d85a7795cf220713f362c36f30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a partially-full warp-wide sum in each active warp. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#ad9c4a8d85a7795cf220713f362c36f30">More...</a><br/></td></tr>
+<tr class="memdesc:ad9c4a8d85a7795cf220713f362c36f30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a partially-full warp-wide sum in the calling warp. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#ad9c4a8d85a7795cf220713f362c36f30">More...</a><br/></td></tr>
 <tr class="separator:ad9c4a8d85a7795cf220713f362c36f30"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11b16118606a582bf9ce011938873305"><td class="memTemplParams" colspan="2">template&lt;typename Flag &gt; </td></tr>
 <tr class="memitem:a11b16118606a582bf9ce011938873305"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a11b16118606a582bf9ce011938873305">HeadSegmentedSum</a> (T input, Flag head_flag)</td></tr>
-<tr class="memdesc:a11b16118606a582bf9ce011938873305"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented sum in each active warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a11b16118606a582bf9ce011938873305">More...</a><br/></td></tr>
+<tr class="memdesc:a11b16118606a582bf9ce011938873305"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented sum in the calling warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a11b16118606a582bf9ce011938873305">More...</a><br/></td></tr>
 <tr class="separator:a11b16118606a582bf9ce011938873305"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a57747500b876173a6dcb113109306258"><td class="memTemplParams" colspan="2">template&lt;typename Flag &gt; </td></tr>
 <tr class="memitem:a57747500b876173a6dcb113109306258"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a57747500b876173a6dcb113109306258">TailSegmentedSum</a> (T input, Flag tail_flag)</td></tr>
-<tr class="memdesc:a57747500b876173a6dcb113109306258"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented sum in each active warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a57747500b876173a6dcb113109306258">More...</a><br/></td></tr>
+<tr class="memdesc:a57747500b876173a6dcb113109306258"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented sum in the calling warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a57747500b876173a6dcb113109306258">More...</a><br/></td></tr>
 <tr class="separator:a57747500b876173a6dcb113109306258"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Generic reductions</div></td></tr>
 <tr class="memitem:a0dd72fc4cf7e1ecf59e8b15bd6819185"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp &gt; </td></tr>
 <tr class="memitem:a0dd72fc4cf7e1ecf59e8b15bd6819185"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a0dd72fc4cf7e1ecf59e8b15bd6819185">Reduce</a> (T input, ReductionOp reduction_op)</td></tr>
-<tr class="memdesc:a0dd72fc4cf7e1ecf59e8b15bd6819185"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide reduction in each active warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#a0dd72fc4cf7e1ecf59e8b15bd6819185">More...</a><br/></td></tr>
+<tr class="memdesc:a0dd72fc4cf7e1ecf59e8b15bd6819185"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a warp-wide reduction in the calling warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#a0dd72fc4cf7e1ecf59e8b15bd6819185">More...</a><br/></td></tr>
 <tr class="separator:a0dd72fc4cf7e1ecf59e8b15bd6819185"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad1ecfeddf0e7fb3f359cf61b60f4745a"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp &gt; </td></tr>
 <tr class="memitem:ad1ecfeddf0e7fb3f359cf61b60f4745a"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#ad1ecfeddf0e7fb3f359cf61b60f4745a">Reduce</a> (T input, ReductionOp reduction_op, int valid_items)</td></tr>
-<tr class="memdesc:ad1ecfeddf0e7fb3f359cf61b60f4745a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a partially-full warp-wide reduction in each active warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#ad1ecfeddf0e7fb3f359cf61b60f4745a">More...</a><br/></td></tr>
+<tr class="memdesc:ad1ecfeddf0e7fb3f359cf61b60f4745a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a partially-full warp-wide reduction in the calling warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#ad1ecfeddf0e7fb3f359cf61b60f4745a">More...</a><br/></td></tr>
 <tr class="separator:ad1ecfeddf0e7fb3f359cf61b60f4745a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74291c266eaff04ad548f54af69756f8"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp , typename Flag &gt; </td></tr>
 <tr class="memitem:a74291c266eaff04ad548f54af69756f8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a74291c266eaff04ad548f54af69756f8">HeadSegmentedReduce</a> (T input, Flag head_flag, ReductionOp reduction_op)</td></tr>
-<tr class="memdesc:a74291c266eaff04ad548f54af69756f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented reduction in each active warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a74291c266eaff04ad548f54af69756f8">More...</a><br/></td></tr>
+<tr class="memdesc:a74291c266eaff04ad548f54af69756f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented reduction in the calling warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a74291c266eaff04ad548f54af69756f8">More...</a><br/></td></tr>
 <tr class="separator:a74291c266eaff04ad548f54af69756f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp , typename Flag &gt; </td></tr>
 <tr class="memitem:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a1503c473a73c5dcfb3db5c11c2da4daa">TailSegmentedReduce</a> (T input, Flag tail_flag, ReductionOp reduction_op)</td></tr>
-<tr class="memdesc:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented reduction in each active warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a1503c473a73c5dcfb3db5c11c2da4daa">More...</a><br/></td></tr>
+<tr class="memdesc:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented reduction in the calling warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a1503c473a73c5dcfb3db5c11c2da4daa">More...</a><br/></td></tr>
 <tr class="separator:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
@@ -293,7 +293,7 @@ template&lt;typename T , int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS, int PT
 </table>
 </div><div class="memdoc">
 
-<p>Computes a warp-wide sum in each active warp. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
+<p>Computes a warp-wide sum in the calling warp. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp sum reductions within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -359,8 +359,8 @@ template&lt;typename T , int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS, int PT
 </table>
 </div><div class="memdoc">
 
-<p>Computes a partially-full warp-wide sum in each active warp. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
-<p>All threads in each logical warp must agree on the same value for <code>valid_items</code>. Otherwise the result is undefined.</p>
+<p>Computes a partially-full warp-wide sum in the calling warp. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
+<p>All threads across the calling warp must agree on the same value for <code>valid_items</code>. Otherwise the result is undefined.</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a sum reduction within a single, partially-full block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -431,7 +431,7 @@ template&lt;typename Flag &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes a segmented sum in each active warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
+<p>Computes a segmented sum in the calling warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a head-segmented warp sum reduction within a block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -507,7 +507,7 @@ template&lt;typename Flag &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes a segmented sum in each active warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
+<p>Computes a segmented sum in the calling warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a tail-segmented warp sum reduction within a block of 32 threads (one warp). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span></div>
@@ -583,7 +583,7 @@ template&lt;typename ReductionOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes a warp-wide reduction in each active warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
+<p>Computes a warp-wide reduction in the calling warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
 <p>Supports non-commutative reduction operators</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates four concurrent warp max reductions within a block of 128 threads (one per each of the 32-thread warps). </dd></dl>
@@ -666,8 +666,8 @@ template&lt;typename ReductionOp &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes a partially-full warp-wide reduction in each active warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
-<p>All threads in each logical warp must agree on the same value for <code>valid_items</code>. Otherwise the result is undefined.</p>
+<p>Computes a partially-full warp-wide reduction in the calling warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>. </p>
+<p>All threads across the calling warp must agree on the same value for <code>valid_items</code>. Otherwise the result is undefined.</p>
 <p>Supports non-commutative reduction operators</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a max reduction within a single, partially-full block of 32 threads (one warp). </dd></dl>
@@ -752,7 +752,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes a segmented reduction in each active warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
+<p>Computes a segmented reduction in the calling warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
 <p>Supports non-commutative reduction operators</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a head-segmented warp max reduction within a block of 32 threads (one warp). </dd></dl>
@@ -836,7 +836,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Computes a segmented reduction in each active warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
+<p>Computes a segmented reduction in the calling warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>). </p>
 <p>Supports non-commutative reduction operators</p>
 <p>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</p>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a tail-segmented warp max reduction within a block of 32 threads (one warp). </dd></dl>
@@ -885,7 +885,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 12 2014 17:09:57 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 23 2014 07:20:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

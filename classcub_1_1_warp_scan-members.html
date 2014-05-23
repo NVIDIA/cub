@@ -119,12 +119,15 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <tr class="even"><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html#a10ca8891d04473f6d80c74f66882c233">InclusiveSum</a>(T input, T &amp;output)</td><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html#a89402b341ee33c5e0a9941d1fc3a69dc">InclusiveSum</a>(T input, T &amp;output, T &amp;warp_aggregate)</td><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
   <tr class="even"><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html#a5a89b9f8c7edebf6ec6e6c7a77fb10ba">InclusiveSum</a>(T input, T &amp;output, T &amp;warp_aggregate, WarpPrefixCallbackOp &amp;warp_prefix_op)</td><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
-  <tr><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html#a97e8ea275768d3fed3be69e813675461">WarpScan</a>(TempStorage &amp;temp_storage)</td><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html#a32a247bea83254e7c3f3ae4ed8a1d5c7">Scan</a>(T input, T &amp;inclusive_output, T &amp;exclusive_output, T identity, ScanOp scan_op)</td><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html#a3266a375b79e44f77087cec512e0c1a3">Scan</a>(T input, T &amp;inclusive_output, T &amp;exclusive_output, ScanOp scan_op)</td><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html#a25bd83f795e88b9260ec2bcbf846fb20">Sum</a>(T input, T &amp;inclusive_output, T &amp;exclusive_output)</td><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
+  <tr class="even"><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html#a97e8ea275768d3fed3be69e813675461">WarpScan</a>(TempStorage &amp;temp_storage)</td><td class="entry"><a class="el" href="classcub_1_1_warp_scan.html">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a></td><td class="entry"><span class="mlabel">inline</span></td></tr>
 </table></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon May 12 2014 17:09:57 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri May 23 2014 07:20:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
