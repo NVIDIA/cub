@@ -1,7 +1,7 @@
 <hr>
 <h3>About CUB</h3>
 
-Current release: v1.3.0 (May 12, 2014)
+Current release: v1.3.1 (May 23, 2014)
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) and the [cub-users discussion forum](http://groups.google.com/group/cub-users) for further information and examples.
 
@@ -78,17 +78,25 @@ shared memory needed by the thread block.  (Alternatively these storage types
 could be aliased to global memory allocations).
 
 <br><hr>
-<h3>Releases</h3>
+<h3>Stable Releases</h3>
 
-See [CUB Project Website](http://nvlabs.github.com/cub) for more information.
+CUB releases are labeled using version identifiers having three fields: 
+*epoch.feature.update*.  The *epoch* field corresponds to support for
+a major change in the CUDA programming model.  The *feature* field 
+corresponds to a stable set of features, functionality, and interface.  The
+*update* field corresponds to a bug-fix or performance update for that
+feature set.  At the moment, we do not publicly provide non-stable releases 
+such as development snapshots, beta releases or rolling releases.  (Feel free
+to contact us if you would like such things.)  See the 
+[CUB Project Website](http://nvlabs.github.com/cub) for more information.
  
 | Date | Version |
 | ---- | ------- |
-| 05/12/2014 | [CUB v1.3.0 Primary Release](https://github.com/NVlabs/cub/archive/1.3.0.zip) |
-| 04/01/2014 | [CUB v1.2.3 Primary Release](https://github.com/NVlabs/cub/archive/1.2.3.zip) |
-| 12/10/2013 | [CUB v1.1.1 Primary Release](https://github.com/NVlabs/cub/archive/1.1.1.zip) |
-| 08/08/2013 | [CUB v1.0.1 Primary Release](https://github.com/NVlabs/cub/archive/1.0.1.zip) |
-| 03/07/2013 | [CUB v0.9.0 Preview Release](https://github.com/NVlabs/cub/archive/0.9.zip) |
+| 05/23/2014 | [CUB v1.3.1](https://github.com/NVlabs/cub/archive/1.3.1.zip) |
+| 04/01/2014 | [CUB v1.2.3](https://github.com/NVlabs/cub/archive/1.2.3.zip) |
+| 12/10/2013 | [CUB v1.1.1](https://github.com/NVlabs/cub/archive/1.1.1.zip) |
+| 08/08/2013 | [CUB v1.0.1](https://github.com/NVlabs/cub/archive/1.0.1.zip) |
+| 03/07/2013 | [CUB v0.9.0](https://github.com/NVlabs/cub/archive/0.9.zip) |
 
 
 <br><hr>
