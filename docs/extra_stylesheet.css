@@ -2,8 +2,12 @@
  *  General
  *****************************************************************************/
 
-body, table, div, p, dl {
-		font: 12px/22px arial,sans-serif;
+body, div, p, dl {
+        font: 12px/22px arial,sans-serif;
+}
+
+table {
+        font: 12px/18px arial,sans-serif;
 }
 
 body {

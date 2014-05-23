@@ -504,18 +504,28 @@ and relies heavily on C++ template metaprogramming for situational specializatio
 CUB and MGPU are complementary in that MGPU serves as an excellent descriptive source 
 for many of the algorithmic techniques used by CUB. 
 
-\section sec8 (8) Recent News
+\section sec8 (8) Stable releases
 
 \par
+CUB releases are labeled using version identifiers having three fields: 
+<tt>\<epoch\>.\<feature\>.\<update\></tt>.  The <em>epoch</em> field 
+corresponds to support for a major change or update to the CUDA programming model.  
+The <em>feature</em> field corresponds to a stable set of features, 
+functionality, and interface.  The <em>update</em> field corresponds to a 
+bug-fix or performance update for that feature set.  At the moment, we do 
+not publicly provide non-stable releases such as development snapshots, 
+beta releases or rolling releases.  (Feel free to contact us if you would 
+like access to such things.)
+
+\par
+The following table enumerates prior feature releases as well as update versions 
+for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-05/22/2014<br>
-<b>CUB v1.3.1</b>
+05/23/2014<br>
+[<b>CUB v1.3.1</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
-  - New features:
-    - Added new "combination scan" methods to cub::WarpScan for efficiently computing 
-      both inclusive and exclusive prefix scans (and sums).
   - Bug fixes: 
     - Workaround for a benign WAW race warning reported by cuda-memcheck
       in cub::BlockScan specialized for cub::BLOCK_SCAN_WARP_SCANS algorithm.
@@ -528,7 +538,7 @@ for many of the algorithmic techniques used by CUB.
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 05/12/2014<br>
-[<b>CUB v1.3.0</b>](download_cub.html)
+<b>CUB v1.3.0</b>
 </td><td style="vertical-align:text-top;">
   - CUB's collective (block-wide, warp-wide) primitives underwent a minor 
     interface refactoring:
@@ -548,6 +558,8 @@ for many of the algorithmic techniques used by CUB.
    	  allocated dynamically by the host at the kernel call site.   
     - Most CUB programs having typical 1D usage should not require any 
       changes to accomodate these updates.
+  - Added new "combination scan" methods to cub::WarpScan for efficiently computing 
+    both inclusive and exclusive prefix scans (and sums).
   - Fixed bug in cub::WarpScan (which affected cub::BlockScan and 
     cub::DeviceScan) where incorrect results (e.g., NAN) would often be 
     returned when parameterized for floating-point types (fp32, fp64).
