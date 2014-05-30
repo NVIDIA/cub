@@ -58,7 +58,6 @@ enum TestMode
 {
     BASIC,
     AGGREGATE,
-    PREFIX_AGGREGATE,
 };
 
 
@@ -66,28 +65,6 @@ enum TestMode
 //---------------------------------------------------------------------
 // Test kernels
 //---------------------------------------------------------------------
-
-// Stateful prefix functor
-template <
-    typename T,
-    typename ScanOp>
-struct WarpPrefixCallbackOp
-{
-    T       prefix;
-    ScanOp  scan_op;
-
-    __device__ __forceinline__
-    WarpPrefixCallbackOp(T prefix, ScanOp scan_op) : prefix(prefix), scan_op(scan_op) {}
-
-    __device__ __forceinline__
-    T operator()(T block_aggregate)
-    {
-        T retval = prefix;
-        prefix = scan_op(prefix, block_aggregate);
-        return retval;
-    }
-};
-
 
 /**
  * Exclusive scan
@@ -100,15 +77,13 @@ struct DeviceTest
 {
     template <
         TestMode TEST_MODE,
-        typename WarpScan,
-        typename PrefixCallbackOp>
+        typename WarpScan>
     static __device__ __forceinline__ void Test(
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         IdentityT                       &identity,
         ScanOp                          &scan_op,
-        T                               &aggregate,
-        PrefixCallbackOp                        &prefix_op)
+        T                               &aggregate)
     {
         if (TEST_MODE == BASIC)
         {
@@ -119,11 +94,6 @@ struct DeviceTest
         {
             // Test with cumulative aggregate
             WarpScan(temp_storage).ExclusiveScan(data, data, identity, scan_op, aggregate);
-        }
-        else if (TEST_MODE == PREFIX_AGGREGATE)
-        {
-            // Test with warp-prefix and cumulative aggregate
-            WarpScan(temp_storage).ExclusiveScan(data, data, identity, scan_op, aggregate, prefix_op);
         }
     }
 };
@@ -139,15 +109,13 @@ struct DeviceTest<T, Sum, IdentityT>
 {
     template <
         TestMode TEST_MODE,
-        typename WarpScan,
-        typename PrefixCallbackOp>
+        typename WarpScan>
     static __device__ __forceinline__ void Test(
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         T                               &identity,
-        Sum                          &scan_op,
-        T                               &aggregate,
-        PrefixCallbackOp                        &prefix_op)
+        Sum                             &scan_op,
+        T                               &aggregate)
     {
         if (TEST_MODE == BASIC)
         {
@@ -158,11 +126,6 @@ struct DeviceTest<T, Sum, IdentityT>
         {
             // Test with cumulative aggregate
             WarpScan(temp_storage).ExclusiveSum(data, data, aggregate);
-        }
-        else if (TEST_MODE == PREFIX_AGGREGATE)
-        {
-            // Test with warp-prefix and cumulative aggregate
-            WarpScan(temp_storage).ExclusiveSum(data, data, aggregate, prefix_op);
         }
     }
 };
@@ -178,15 +141,13 @@ struct DeviceTest<T, ScanOp, NullType>
 {
     template <
         TestMode TEST_MODE,
-        typename WarpScan,
-        typename PrefixCallbackOp>
+        typename WarpScan>
     static __device__ __forceinline__ void Test(
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         NullType                        &identity,
         ScanOp                          &scan_op,
-        T                               &aggregate,
-        PrefixCallbackOp                        &prefix_op)
+        T                               &aggregate)
     {
         if (TEST_MODE == BASIC)
         {
@@ -197,11 +158,6 @@ struct DeviceTest<T, ScanOp, NullType>
         {
             // Test with cumulative aggregate
             WarpScan(temp_storage).InclusiveScan(data, data, scan_op, aggregate);
-        }
-        else if (TEST_MODE == PREFIX_AGGREGATE)
-        {
-            // Test with warp-prefix and cumulative aggregate
-            WarpScan(temp_storage).InclusiveScan(data, data, scan_op, aggregate, prefix_op);
         }
     }
 };
@@ -215,15 +171,13 @@ struct DeviceTest<T, Sum, NullType>
 {
     template <
         TestMode TEST_MODE,
-        typename WarpScan,
-        typename PrefixCallbackOp>
+        typename WarpScan>
     static __device__ __forceinline__ void Test(
         typename WarpScan::TempStorage  &temp_storage,
         T                               &data,
         NullType                        &identity,
         Sum                             &scan_op,
-        T                               &aggregate,
-        PrefixCallbackOp                &prefix_op)
+        T                               &aggregate)
     {
         if (TEST_MODE == BASIC)
         {
@@ -234,11 +188,6 @@ struct DeviceTest<T, Sum, NullType>
         {
             // Test with cumulative aggregate
             WarpScan(temp_storage).InclusiveSum(data, data, aggregate);
-        }
-        else if (TEST_MODE == PREFIX_AGGREGATE)
-        {
-            // Test with warp-prefix and cumulative aggregate
-            WarpScan(temp_storage).InclusiveSum(data, data, aggregate, prefix_op);
         }
     }
 };
@@ -276,11 +225,10 @@ __global__ void WarpScanKernel(
     clock_t start = clock();
 
     T aggregate;
-    WarpPrefixCallbackOp<T, ScanOp> prefix_op(prefix, scan_op);
 
     // Test scan
     DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, WarpScan>(
-        temp_storage, data, identity, scan_op, aggregate, prefix_op);
+        temp_storage, data, identity, scan_op, aggregate);
 
     // Stop cycle timer
     clock_t stop = clock();
@@ -298,11 +246,6 @@ __global__ void WarpScanKernel(
     if (threadIdx.x == 0)
     {
         *d_elapsed = (start > stop) ? start - stop : stop - start;
-
-        if (TEST_MODE == PREFIX_AGGREGATE)
-        {
-            d_out[LOGICAL_WARP_THREADS] = prefix_op.prefix;
-        }
     }
 }
 
@@ -403,7 +346,7 @@ void Test(
     T *h_aggregate = new T[LOGICAL_WARP_THREADS];
 
     // Initialize problem
-    T *p_prefix = (TEST_MODE == PREFIX_AGGREGATE) ? &prefix : NULL;
+    T *p_prefix = NULL;
     T aggregate = Initialize(gen_mode, h_in, h_reference, LOGICAL_WARP_THREADS, scan_op, identity, p_prefix);
 
     for (int i = 0; i < LOGICAL_WARP_THREADS; ++i)
@@ -457,22 +400,12 @@ void Test(
     AssertEquals(0, compare);
 
     // Copy out and display aggregate
-    if ((TEST_MODE == AGGREGATE) || (TEST_MODE == PREFIX_AGGREGATE))
+    if (TEST_MODE == AGGREGATE)
     {
         printf("\tScan aggregate: ");
         compare = CompareDeviceResults(h_aggregate, d_aggregate, LOGICAL_WARP_THREADS, g_verbose, g_verbose);
         printf("%s\n", compare ? "FAIL" : "PASS");
         AssertEquals(0, compare);
-
-        if (TEST_MODE == PREFIX_AGGREGATE)
-        {
-            printf("\tScan prefix: ");
-            T updated_prefix = scan_op(prefix, aggregate);
-            compare = CompareDeviceResults(&updated_prefix, d_out + LOGICAL_WARP_THREADS, 1, g_verbose, g_verbose);
-            printf("%s\n", compare ? "FAIL" : "PASS");
-            AssertEquals(0, compare);
-
-        }
     }
 
     // Cleanup
@@ -503,12 +436,10 @@ void Test(
     // Exclusive
     Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, identity, prefix, type_string);
     Test<LOGICAL_WARP_THREADS, AGGREGATE>(gen_mode, scan_op, identity, prefix, type_string);
-    Test<LOGICAL_WARP_THREADS, PREFIX_AGGREGATE>(gen_mode, scan_op, identity, prefix, type_string);
 
     // Inclusive
     Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, NullType(), prefix, type_string);
     Test<LOGICAL_WARP_THREADS, AGGREGATE>(gen_mode, scan_op, NullType(), prefix, type_string);
-    Test<LOGICAL_WARP_THREADS, PREFIX_AGGREGATE>(gen_mode, scan_op, NullType(), prefix, type_string);
 }
 
 
@@ -528,11 +459,11 @@ void Test(GenMode gen_mode)
 
 
     // primitive
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned long) 0, (unsigned long) 99, CUB_TYPE_STRING(Sum<unsigned long>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (char) 0, (char) 99, CUB_TYPE_STRING(Sum<char>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (short) 0, (short) 99, CUB_TYPE_STRING(Sum<short>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (long) 0, (long) 99, CUB_TYPE_STRING(Sum<long>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (long long) 0, (long long) 99, CUB_TYPE_STRING(Sum<long long>));
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
         Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
@@ -560,11 +491,11 @@ void Test(GenMode gen_mode)
     }
 
     // vec-4
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uchar4(0, 0, 0, 0), make_uchar4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uchar4>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ushort4(0, 0, 0, 0), make_ushort4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ushort4>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uint4(0, 0, 0, 0), make_uint4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<uint4>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulong4(0, 0, 0, 0), make_ulong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulong4>));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulonglong4(0, 0, 0, 0), make_ulonglong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<ulonglong4>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_char4(0, 0, 0, 0), make_char4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<char4>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_short4(0, 0, 0, 0), make_short4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<short4>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_int4(0, 0, 0, 0), make_int4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<int4>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_long4(0, 0, 0, 0), make_long4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<long4>));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<longlong4>));
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
         Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float4(0, 0, 0, 0), make_float4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<float2>));
@@ -619,7 +550,6 @@ int main(int argc, char** argv)
     // Compile/run quick tests
     Test<32, AGGREGATE>(UNIFORM, Sum(), (int) 0, (int) 99, CUB_TYPE_STRING(Sum<int>));
     Test<32, AGGREGATE>(UNIFORM, Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
-
     Test<32, AGGREGATE>(UNIFORM, Sum(), (long long) 0, (long long) 99, CUB_TYPE_STRING(Sum<long long>));
     Test<32, AGGREGATE>(UNIFORM, Sum(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
 
