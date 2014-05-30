@@ -312,8 +312,6 @@ __global__ void WarpTailSegmentedReduceKernel(
                             0 :
                             d_tail_flags[threadIdx.x - 1];
 
-    __syncthreads();
-
     // Record elapsed clocks
     clock_t start = clock();
 
@@ -365,8 +363,6 @@ void Initialize(
         char bits;
         RandomBits(bits, flag_entropy);
         h_flags[i] = bits & 0x1;
-
-//        printf("item[%d] = %d (%d)\n", i, h_in[i], h_flags[i]);
     }
 
     // Accumulate segments (lane 0 of each warp is implicitly a segment head)
@@ -452,8 +448,11 @@ void TestReduce(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * BLOCK_THREADS, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * BLOCK_THREADS));
 
+    printf("Data:\n");
+    DisplayResults(h_in, valid_warp_threads);
+
     // Run kernel
-    printf("Gen-mode %d, %d warps, %d warp threads, %d valid lanes, %s (%d bytes) elements:\n",
+    printf("\nGen-mode %d, %d warps, %d warp threads, %d valid lanes, %s (%d bytes) elements:\n",
         gen_mode,
         WARPS,
         LOGICAL_WARP_THREADS,
@@ -547,7 +546,13 @@ void TestSegmentedReduce(
     CubDebugExit(cudaMemset(d_head_out, 0, sizeof(T) * BLOCK_THREADS));
     CubDebugExit(cudaMemset(d_tail_out, 0, sizeof(T) * BLOCK_THREADS));
 
-    printf("Gen-mode %d, head flag entropy reduction %d, %d warps, %d warp threads, %s (%d bytes) elements:\n",
+    printf("Data:\n");
+    DisplayResults(h_in, LOGICAL_WARP_THREADS);
+
+    printf("\nFlags:\n");
+    DisplayResults(h_flags, LOGICAL_WARP_THREADS);
+
+    printf("\nGen-mode %d, head flag entropy reduction %d, %d warps, %d warp threads, %s (%d bytes) elements:\n",
         gen_mode,
         flag_entropy,
         WARPS,
@@ -555,7 +560,7 @@ void TestSegmentedReduce(
         type_string,
         (int) sizeof(T));
     fflush(stdout);
-
+/*
     // Run head-based kernel
     WarpHeadSegmentedReduceKernel<WARPS, LOGICAL_WARP_THREADS><<<1, BLOCK_THREADS>>>(
         d_in,
@@ -574,7 +579,7 @@ void TestSegmentedReduce(
     AssertEquals(0, compare);
     printf("\tElapsed clocks: ");
     DisplayDeviceResults(d_elapsed, 1);
-
+*/
     // Run tail-based kernel
     WarpTailSegmentedReduceKernel<WARPS, LOGICAL_WARP_THREADS><<<1, BLOCK_THREADS>>>(
         d_in,
@@ -733,7 +738,7 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
+//    TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
     TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
 
 #else
