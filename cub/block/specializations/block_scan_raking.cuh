@@ -61,6 +61,10 @@ template <
     int         PTX_ARCH>       ///< The PTX compute capability for which to to specialize this collective
 struct BlockScanRaking
 {
+    //---------------------------------------------------------------------
+    // Types and constants
+    //---------------------------------------------------------------------
+
     /// Constants
     enum
     {
@@ -100,20 +104,19 @@ struct BlockScanRaking
     struct TempStorage : Uninitialized<_TempStorage> {};
 
 
+    //---------------------------------------------------------------------
+    // Per-thread fields
+    //---------------------------------------------------------------------
+
     // Thread fields
     _TempStorage    &temp_storage;
     int             linear_tid;
     T               cached_segment[SEGMENT_LENGTH];
 
 
-    /// Constructor
-    __device__ __forceinline__ BlockScanRaking(
-        TempStorage &temp_storage)
-    :
-        temp_storage(temp_storage.Alias()),
-        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
-    {}
-
+    //---------------------------------------------------------------------
+    // Utility methods
+    //---------------------------------------------------------------------
 
     /// Templated reduction
     template <int ITERATION, typename ScanOp>
@@ -225,25 +228,35 @@ struct BlockScanRaking
     }
 
 
-    /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+    //---------------------------------------------------------------------
+    // Constructors
+    //---------------------------------------------------------------------
+
+    /// Constructor
+    __device__ __forceinline__ BlockScanRaking(
+        TempStorage &temp_storage)
+    :
+        temp_storage(temp_storage.Alias()),
+        linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))
+    {}
+
+
+    //---------------------------------------------------------------------
+    // Exclusive scans
+    //---------------------------------------------------------------------
+
+    /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input items
         T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
         const T         &identity,          ///< [in] Identity value
-        ScanOp          scan_op,            ///< [in] Binary scan operator
-        T               &block_aggregate)   ///< [out] Threadblock-wide aggregate reduction of input items
+        ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-
         if (WARP_SYNCHRONOUS)
         {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                input,
-                output,
-                identity,
-                scan_op,
-                block_aggregate);
+            // Short-circuit directly to warp-synchronous scan
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, output, identity, scan_op);
         }
         else
         {
@@ -256,24 +269,69 @@ struct BlockScanRaking
             // Reduce parallelism down to just raking threads
             if (linear_tid < RAKING_THREADS)
             {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial = Upsweep(scan_op);
 
-                // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                    raking_partial,
-                    raking_partial,
-                    identity,
-                    scan_op,
-                    temp_storage.block_aggregate);
+                // Exclusive Warp-synchronous scan
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(upsweep_partial, exclusive_partial, identity, scan_op);
 
                 // Exclusive raking downsweep scan
-                ExclusiveDownsweep(scan_op, raking_partial);
+                ExclusiveDownsweep(scan_op, exclusive_partial);
             }
 
             __syncthreads();
 
-            // Grab thread prefix from shared memory
+            // Grab exclusive partial from shared memory
+            output = *placement_ptr;
+        }
+    }
+
+
+    /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+    template <typename ScanOp>
+    __device__ __forceinline__ void ExclusiveScan(
+        T               input,              ///< [in] Calling thread's input items
+        T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
+        const T         &identity,          ///< [in] Identity value
+        ScanOp          scan_op,            ///< [in] Binary scan operator
+        T               &block_aggregate)   ///< [out] Threadblock-wide aggregate reduction of input items
+    {
+        if (WARP_SYNCHRONOUS)
+        {
+            // Short-circuit directly to warp-synchronous scan
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        }
+        else
+        {
+            // Place thread partial into shared memory raking grid
+            T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
+            *placement_ptr = input;
+
+            __syncthreads();
+
+            // Reduce parallelism down to just raking threads
+            if (linear_tid < RAKING_THREADS)
+            {
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial = Upsweep(scan_op);
+
+                // Warp-synchronous scan
+                T inclusive_partial;
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, identity, scan_op);
+
+                // Broadcast aggregate to other threads
+                if (threadIdx.x == RAKING_THREADS - 1)
+                    temp_storage.block_aggregate = inclusive_partial;
+
+                // Exclusive raking downsweep scan
+                ExclusiveDownsweep(scan_op, exclusive_partial);
+            }
+
+            __syncthreads();
+
+            // Grab exclusive partial from shared memory
             output = *placement_ptr;
 
             // Retrieve block aggregate
@@ -282,7 +340,7 @@ struct BlockScanRaking
     }
 
 
-    /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+    /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.
     template <
         typename        ScanOp,
         typename        BlockPrefixCallbackOp>
@@ -296,14 +354,17 @@ struct BlockScanRaking
     {
         if (WARP_SYNCHRONOUS)
         {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                input,
-                output,
-                identity,
-                scan_op,
-                block_aggregate,
-                block_prefix_callback_op);
+            // Short-circuit directly to warp-synchronous scan
+            T exclusive_partial;
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, exclusive_partial, identity, scan_op, block_aggregate);
+
+            // Obtain warp-wide prefix in lane0, then broadcast to other lanes
+            output = block_prefix_callback_op(block_aggregate);
+            output = WarpScan(temp_storage.warp_scan).Broadcast(output, 0);
+
+            // Update prefix with exclusive warpscan partial
+            if (linear_tid > 0)
+                output = scan_op(output, exclusive_partial);
         }
         else
         {
@@ -316,29 +377,83 @@ struct BlockScanRaking
             // Reduce parallelism down to just raking threads
             if (linear_tid < RAKING_THREADS)
             {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial = Upsweep(scan_op);
 
-                // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                    raking_partial,
-                    raking_partial,
-                    identity,
-                    scan_op,
-                    temp_storage.block_aggregate,
-                    block_prefix_callback_op);
+                // Warp-synchronous scan
+                T inclusive_partial;
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, identity, scan_op);
+
+                // Broadcast aggregate to other lanes (through smem because we eventually want it in all threads)
+                if (threadIdx.x == RAKING_THREADS - 1)
+                    ThreadStore<STORE_VOLATILE>(&temp_storage.block_aggregate, inclusive_partial);
+                block_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage.block_aggregate);
+
+                // Obtain block-wide prefix in lane0, then broadcast to other lanes
+                T prefix = block_prefix_callback_op(block_aggregate);
+                prefix = WarpScan(temp_storage.warp_scan).Broadcast(prefix, 0);
+
+                // Update prefix with warpscan exclusive partial
+                if (linear_tid > 0)
+                    prefix = scan_op(prefix, exclusive_partial);
 
                 // Exclusive raking downsweep scan
-                ExclusiveDownsweep(scan_op, raking_partial);
+                ExclusiveDownsweep(scan_op, prefix);
+            }
+
+            __syncthreads();
+
+            // Grab exclusive partial from shared memory
+            output = *placement_ptr;
+
+            // Retrieve block aggregate
+            block_aggregate = temp_storage.block_aggregate;
+        }
+    }
+
+    //---------------------------------------------------------------------
+    // Identity-less exclusive scans
+    //---------------------------------------------------------------------
+
+    /// Computes an exclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
+    template <typename ScanOp>
+    __device__ __forceinline__ void ExclusiveScan(
+        T               input,                          ///< [in] Calling thread's input item
+        T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
+        ScanOp          scan_op)                        ///< [in] Binary scan operator
+    {
+        if (WARP_SYNCHRONOUS)
+        {
+            // Short-circuit directly to warp-synchronous scan
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, output, scan_op);
+        }
+        else
+        {
+            // Place thread partial into shared memory raking grid
+            T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
+            *placement_ptr = input;
+
+            __syncthreads();
+
+            // Reduce parallelism down to just raking threads
+            if (linear_tid < RAKING_THREADS)
+            {
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial = Upsweep(scan_op);
+
+                // Warp-synchronous scan
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(upsweep_partial, exclusive_partial, scan_op);
+
+                // Exclusive raking downsweep scan
+                ExclusiveDownsweep(scan_op, exclusive_partial, (linear_tid != 0));
             }
 
             __syncthreads();
 
             // Grab thread prefix from shared memory
             output = *placement_ptr;
-
-            // Retrieve block aggregate
-            block_aggregate = temp_storage.block_aggregate;
         }
     }
 
@@ -353,12 +468,8 @@ struct BlockScanRaking
     {
         if (WARP_SYNCHRONOUS)
         {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                input,
-                output,
-                scan_op,
-                block_aggregate);
+            // Short-circuit directly to warp-synchronous scan
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, output, scan_op, block_aggregate);
         }
         else
         {
@@ -371,18 +482,20 @@ struct BlockScanRaking
             // Reduce parallelism down to just raking threads
             if (linear_tid < RAKING_THREADS)
             {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial= Upsweep(scan_op);
 
-                // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                    raking_partial,
-                    raking_partial,
-                    scan_op,
-                    temp_storage.block_aggregate);
+                // Warp-synchronous scan
+                T inclusive_partial;
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
+
+                // Broadcast aggregate to all threads
+                if (threadIdx.x == RAKING_THREADS - 1)
+                    temp_storage.block_aggregate = inclusive_partial;
 
                 // Exclusive raking downsweep scan
-                ExclusiveDownsweep(scan_op, raking_partial, (linear_tid != 0));
+                ExclusiveDownsweep(scan_op, exclusive_partial, (linear_tid != 0));
             }
 
             __syncthreads();
@@ -409,13 +522,17 @@ struct BlockScanRaking
     {
         if (WARP_SYNCHRONOUS)
         {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                input,
-                output,
-                scan_op,
-                block_aggregate,
-                block_prefix_callback_op);
+            // Short-circuit directly to warp-synchronous scan
+            T exclusive_partial;
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, exclusive_partial, scan_op, block_aggregate);
+
+            // Obtain warp-wide prefix in lane0, then broadcast to other lanes
+            output = block_prefix_callback_op(block_aggregate);
+            output = WarpScan(temp_storage.warp_scan).Broadcast(output, 0);
+
+            // Update prefix with exclusive warpscan partial
+            if (linear_tid > 0)
+                output = scan_op(output, exclusive_partial);
         }
         else
         {
@@ -428,19 +545,29 @@ struct BlockScanRaking
             // Reduce parallelism down to just raking threads
             if (linear_tid < RAKING_THREADS)
             {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial = Upsweep(scan_op);
 
-                // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                    raking_partial,
-                    raking_partial,
-                    scan_op,
-                    temp_storage.block_aggregate,
-                    block_prefix_callback_op);
+                // Warp-synchronous scan
+                T inclusive_partial;
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
+
+                // Broadcast aggregate to other lanes (through smem because we eventually want it in all threads)
+                if (threadIdx.x == RAKING_THREADS - 1)
+                    ThreadStore<STORE_VOLATILE>(&temp_storage.block_aggregate, inclusive_partial);
+                block_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage.block_aggregate);
+
+                // Obtain block-wide prefix in lane0, then broadcast to other lanes
+                T prefix = block_prefix_callback_op(block_aggregate);
+                prefix = WarpScan(temp_storage.warp_scan).Broadcast(prefix, 0);
+
+                // Update prefix with warpscan exclusive partial
+                if (linear_tid > 0)
+                    prefix = scan_op(prefix, exclusive_partial);
 
                 // Exclusive raking downsweep scan
-                ExclusiveDownsweep(scan_op, raking_partial);
+                ExclusiveDownsweep(scan_op, prefix);
             }
 
             __syncthreads();
@@ -454,25 +581,24 @@ struct BlockScanRaking
     }
 
 
-    /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
-    __device__ __forceinline__ void ExclusiveSum(
+    //---------------------------------------------------------------------
+    // Inclusive scans
+    //---------------------------------------------------------------------
+
+    /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.
+    template <typename ScanOp>
+    __device__ __forceinline__ void InclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
+        ScanOp          scan_op)                        ///< [in] Binary scan operator
     {
         if (WARP_SYNCHRONOUS)
         {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).ExclusiveSum(
-                input,
-                output,
-                block_aggregate);
+            // Short-circuit directly to warp-synchronous scan
+            WarpScan(temp_storage.warp_scan).InclusiveScan(input, output, scan_op);
         }
         else
         {
-            // Raking scan
-            Sum scan_op;
-
             // Place thread partial into shared memory raking grid
             T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
             *placement_ptr = input;
@@ -482,82 +608,21 @@ struct BlockScanRaking
             // Reduce parallelism down to just raking threads
             if (linear_tid < RAKING_THREADS)
             {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial = Upsweep(scan_op);
 
-                // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveSum(
-                    raking_partial,
-                    raking_partial,
-                    temp_storage.block_aggregate);
+                // Exclusive Warp-synchronous scan
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(upsweep_partial, exclusive_partial, scan_op);
 
-                // Exclusive raking downsweep scan
-                ExclusiveDownsweep(scan_op, raking_partial);
+                // Inclusive raking downsweep scan
+                InclusiveDownsweep(scan_op, exclusive_partial, (linear_tid != 0));
             }
 
             __syncthreads();
 
             // Grab thread prefix from shared memory
             output = *placement_ptr;
-
-            // Retrieve block aggregate
-            block_aggregate = temp_storage.block_aggregate;
-        }
-    }
-
-
-    /// Computes an exclusive threadblock-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
-    template <typename BlockPrefixCallbackOp>
-    __device__ __forceinline__ void ExclusiveSum(
-        T                       input,                          ///< [in] Calling thread's input item
-        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T                       &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
-        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
-    {
-        if (WARP_SYNCHRONOUS)
-        {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).ExclusiveSum(
-                input,
-                output,
-                block_aggregate,
-                block_prefix_callback_op);
-        }
-        else
-        {
-            // Raking scan
-            Sum scan_op;
-
-            // Place thread partial into shared memory raking grid
-            T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
-
-            __syncthreads();
-
-            // Reduce parallelism down to just raking threads
-            if (linear_tid < RAKING_THREADS)
-            {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
-
-                // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveSum(
-                    raking_partial,
-                    raking_partial,
-                    temp_storage.block_aggregate,
-                    block_prefix_callback_op);
-
-                // Exclusive raking downsweep scan
-                ExclusiveDownsweep(scan_op, raking_partial);
-            }
-
-            __syncthreads();
-
-            // Grab thread prefix from shared memory
-            output = *placement_ptr;
-
-            // Retrieve block aggregate
-            block_aggregate = temp_storage.block_aggregate;
         }
     }
 
@@ -572,12 +637,8 @@ struct BlockScanRaking
     {
         if (WARP_SYNCHRONOUS)
         {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).InclusiveScan(
-                input,
-                output,
-                scan_op,
-                block_aggregate);
+            // Short-circuit directly to warp-synchronous scan
+            WarpScan(temp_storage.warp_scan).InclusiveScan(input, output, scan_op, block_aggregate);
         }
         else
         {
@@ -590,18 +651,20 @@ struct BlockScanRaking
             // Reduce parallelism down to just raking threads
             if (linear_tid < RAKING_THREADS)
             {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial = Upsweep(scan_op);
 
-                // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                    raking_partial,
-                    raking_partial,
-                    scan_op,
-                    temp_storage.block_aggregate);
+                // Warp-synchronous scan
+                T inclusive_partial;
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
+
+                // Broadcast aggregate to all threads
+                if (threadIdx.x == RAKING_THREADS - 1)
+                    temp_storage.block_aggregate = inclusive_partial;
 
                 // Inclusive raking downsweep scan
-                InclusiveDownsweep(scan_op, raking_partial, (linear_tid != 0));
+                InclusiveDownsweep(scan_op, exclusive_partial, (linear_tid != 0));
             }
 
             __syncthreads();
@@ -628,13 +691,16 @@ struct BlockScanRaking
     {
         if (WARP_SYNCHRONOUS)
         {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).InclusiveScan(
-                input,
-                output,
-                scan_op,
-                block_aggregate,
-                block_prefix_callback_op);
+            // Short-circuit directly to warp-synchronous scan
+            T inclusive_partial;
+            WarpScan(temp_storage.warp_scan).InclusiveScan(input, inclusive_partial, scan_op, block_aggregate);
+
+            // Obtain warp-wide prefix in lane0, then broadcast to other lanes
+            output = block_prefix_callback_op(block_aggregate);
+            output = WarpScan(temp_storage.warp_scan).Broadcast(output, 0);
+
+            // Update prefix with exclusive warpscan partial
+            output = scan_op(output, inclusive_partial);
         }
         else
         {
@@ -647,127 +713,29 @@ struct BlockScanRaking
             // Reduce parallelism down to just raking threads
             if (linear_tid < RAKING_THREADS)
             {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
+                // Raking upsweep reduction across shared partials
+                T upsweep_partial = Upsweep(scan_op);
 
-                // Warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveScan(
-                    raking_partial,
-                    raking_partial,
-                    scan_op,
-                    temp_storage.block_aggregate,
-                    block_prefix_callback_op);
+                // Warp-synchronous scan
+                T inclusive_partial;
+                T exclusive_partial;
+                WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
 
-                // Inclusive raking downsweep scan
-                InclusiveDownsweep(scan_op, raking_partial);
-            }
+                // Broadcast aggregate to other lanes (through smem because we eventually want it in all threads)
+                if (threadIdx.x == RAKING_THREADS - 1)
+                    ThreadStore<STORE_VOLATILE>(&temp_storage.block_aggregate, inclusive_partial);
+                block_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage.block_aggregate);
 
-            __syncthreads();
+                // Obtain block-wide prefix in lane0, then broadcast to other lanes
+                T prefix = block_prefix_callback_op(block_aggregate);
+                prefix = WarpScan(temp_storage.warp_scan).Broadcast(prefix, 0);
 
-            // Grab thread prefix from shared memory
-            output = *placement_ptr;
-
-            // Retrieve block aggregate
-            block_aggregate = temp_storage.block_aggregate;
-        }
-    }
-
-
-    /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
-    __device__ __forceinline__ void InclusiveSum(
-        T               input,                          ///< [in] Calling thread's input item
-        T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
-    {
-        if (WARP_SYNCHRONOUS)
-        {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).InclusiveSum(
-                input,
-                output,
-                block_aggregate);
-        }
-        else
-        {
-            // Raking scan
-            Sum scan_op;
-
-            // Place thread partial into shared memory raking grid
-            T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
-
-            __syncthreads();
-
-            // Reduce parallelism down to just raking threads
-            if (linear_tid < RAKING_THREADS)
-            {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
-
-                // Exclusive warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveSum(
-                    raking_partial,
-                    raking_partial,
-                    temp_storage.block_aggregate);
+                // Update prefix with warpscan exclusive partial
+                if (linear_tid > 0)
+                    prefix = scan_op(prefix, exclusive_partial);
 
                 // Inclusive raking downsweep scan
-                InclusiveDownsweep(scan_op, raking_partial, (linear_tid != 0));
-            }
-
-            __syncthreads();
-
-            // Grab thread prefix from shared memory
-            output = *placement_ptr;
-
-            // Retrieve block aggregate
-            block_aggregate = temp_storage.block_aggregate;
-        }
-    }
-
-
-    /// Computes an inclusive threadblock-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Instead of using 0 as the threadblock-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
-    template <typename BlockPrefixCallbackOp>
-    __device__ __forceinline__ void InclusiveSum(
-        T                       input,                          ///< [in] Calling thread's input item
-        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T                       &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
-        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
-    {
-        if (WARP_SYNCHRONOUS)
-        {
-            // Short-circuit directly to warp scan
-            WarpScan(temp_storage.warp_scan).InclusiveSum(
-                input,
-                output,
-                block_aggregate,
-                block_prefix_callback_op);
-        }
-        else
-        {
-            // Raking scan
-            Sum scan_op;
-
-            // Place thread partial into shared memory raking grid
-            T *placement_ptr = BlockRakingLayout::PlacementPtr(temp_storage.raking_grid, linear_tid);
-            *placement_ptr = input;
-
-            __syncthreads();
-
-            // Reduce parallelism down to just raking threads
-            if (linear_tid < RAKING_THREADS)
-            {
-                // Raking upsweep reduction in grid
-                T raking_partial = Upsweep(scan_op);
-
-                // Warp synchronous scan
-                WarpScan(temp_storage.warp_scan).ExclusiveSum(
-                    raking_partial,
-                    raking_partial,
-                    temp_storage.block_aggregate,
-                    block_prefix_callback_op);
-
-                // Inclusive raking downsweep scan
-                InclusiveDownsweep(scan_op, raking_partial);
+                InclusiveDownsweep(scan_op, prefix);
             }
 
             __syncthreads();

@@ -340,8 +340,7 @@ struct BlockRangeRadixSortUpsweep
         LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_keys_in + block_offset, keys);
 
         // Prevent hoisting
-//        __threadfence_block();
-//        __syncthreads();
+        __syncthreads();
 
         // Bucket tile of keys
         Iterate<0, KEYS_PER_THREAD>::BucketKeys(*this, keys);

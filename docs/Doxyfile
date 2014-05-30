@@ -219,6 +219,9 @@ ALIASES                += warpstriped="Assumes a <em>warp-striped arrangement</e
 ALIASES                += linear_performance{1}="The work-complexity of \1 as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU."  
 ALIASES                += plots_below="Performance plots for other scenarios can be found in the detailed method descriptions below."
 
+ALIASES                += identityzero="This operation assumes the value of obtained by the <tt>T</tt>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value "zero" for addition."
+
+
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding
 # "class=itcl::class" will allow you to use the command class in the

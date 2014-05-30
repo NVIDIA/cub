@@ -66,11 +66,14 @@ struct WarpScanShfl
         /// The number of warp scan steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
 
-        // The 5-bit SHFL mask for logically splitting warps into sub-segments starts 8-bits up
+        /// The 5-bit SHFL mask for logically splitting warps into sub-segments starts 8-bits up
         SHFL_C = ((-1 << STEPS) & 31) << 8,
 
-        // Whether the data type is a small (32b or less) integer for which we can use a single SFHL instruction per exchange
-        SMALL_INTEGER = ((Traits<T>::CATEGORY == UNSIGNED_INTEGER) || (Traits<T>::CATEGORY == SIGNED_INTEGER)) && (sizeof(T) <= sizeof(unsigned int))
+        /// Whether the data type is a primitive integer
+        IS_INTEGER = (Traits<T>::CATEGORY == UNSIGNED_INTEGER) || (Traits<T>::CATEGORY == SIGNED_INTEGER),
+
+        ///Whether the data type is a small (32b or less) integer for which we can use a single SFHL instruction per exchange
+        IS_SMALL_INTEGER = IS_INTEGER && (sizeof(T) <= sizeof(unsigned int))
     };
 
     /// Shared memory storage layout type
@@ -249,12 +252,12 @@ struct WarpScanShfl
 
 
     /// Inclusive prefix scan
-    template <typename _T, typename ScanOp, int IS_SMALL_INTEGER>
+    template <typename _T, typename ScanOp, int _IS_SMALL_INTEGER>
     __device__ __forceinline__ void InclusiveScan(
         _T                          input,              ///< [in] Calling thread's input item.
         _T                          &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp                      scan_op,            ///< [in] Binary scan operator
-        Int2Type<IS_SMALL_INTEGER>  is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+        Int2Type<_IS_SMALL_INTEGER> is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
     {
         output = input;
 
@@ -272,6 +275,53 @@ struct WarpScanShfl
         }
     }
 
+
+    /// Get exclusive from inclusive (specialized for summation of integer types)
+    __device__ __forceinline__ T GetExclusive(
+        T               input,
+        T               inclusive,
+        Sum             scan_op,
+        Int2Type<true>  is_integer)
+    {
+        return inclusive - input;
+    }
+
+
+    /// Get exclusive from inclusive (specialized for scans other than summation of integer types)
+    template <typename ScanOp, int _IS_INTEGER>
+    __device__ __forceinline__ T GetExclusive(
+        T                       input,
+        T                       inclusive,
+        ScanOp                  scan_op,
+        Int2Type<_IS_INTEGER>   is_integer)
+    {
+        return ShuffleUp(inclusive, 1);
+    }
+
+    /// Get exclusive from inclusive (specialized for summation of integer types)
+    __device__ __forceinline__ T GetExclusive(
+        T               input,
+        T               inclusive,
+        T               identity,
+        Sum             scan_op,
+        Int2Type<true>  is_integer)
+    {
+        return inclusive - input;
+    }
+
+
+    /// Get exclusive from inclusive (specialized for scans other than summation of integer types)
+    template <typename ScanOp, int _IS_INTEGER>
+    __device__ __forceinline__ T GetExclusive(
+        T                       input,
+        T                       inclusive,
+        T                       identity,
+        ScanOp                  scan_op,
+        Int2Type<_IS_INTEGER>   is_integer)
+    {
+        T exclusive = ShuffleUp(inclusive, 1);
+        return (lane_id == 0) ? identity : exclusive;
+    }
 
 
     /******************************************************************************
@@ -299,7 +349,7 @@ struct WarpScanShfl
         T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InclusiveScan(input, output, scan_op, Int2Type<SMALL_INTEGER>());
+        InclusiveScan(input, output, scan_op, Int2Type<IS_SMALL_INTEGER>());
     }
 
 
@@ -334,7 +384,7 @@ struct WarpScanShfl
         InclusiveScan(input, inclusive_output, scan_op);
 
         // Grab result from predecessor
-        exclusive_output = ShuffleUp(inclusive_output, 1);
+        exclusive_output = GetExclusive(input, inclusive_output, scan_op, Int2Type<IS_INTEGER>());
     }
 
     /// Combination scan with identity
@@ -350,17 +400,38 @@ struct WarpScanShfl
         InclusiveScan(input, inclusive_output, scan_op);
 
         // Grab result from predecessor
-        exclusive_output = ShuffleUp(inclusive_output, 1);
-
-        exclusive_output = (lane_id == 0) ?
-            identity :
-            exclusive_output;
+        exclusive_output = GetExclusive(input, inclusive_output, identity, scan_op, Int2Type<IS_INTEGER>());
     }
 
 
     //---------------------------------------------------------------------
     // Exclusive operations
     //---------------------------------------------------------------------
+
+    /// Exclusive scan with aggregate
+    template <typename ScanOp>
+    __device__ __forceinline__ void ExclusiveScan(
+        T               input,              ///< [in] Calling thread's input item.
+        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               identity,           ///< [in] Identity value
+        ScanOp          scan_op)            ///< [in] Binary scan operator
+    {
+        T inclusive_output;
+        Scan(input, inclusive_output, output, identity, scan_op);
+    }
+
+
+    /// Exclusive scan with aggregate, without identity
+    template <typename ScanOp>
+    __device__ __forceinline__ void ExclusiveScan(
+        T               input,              ///< [in] Calling thread's input item.
+        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        ScanOp          scan_op)            ///< [in] Binary scan operator
+    {
+        T inclusive_output;
+        Scan(input, inclusive_output, output, scan_op);
+    }
+
 
     /// Exclusive scan with aggregate
     template <typename ScanOp>
