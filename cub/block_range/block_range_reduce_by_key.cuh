@@ -827,11 +827,10 @@ struct BlockRangeReduceByKey
         Offset              block_offset,       ///< Tile offset
         ScanTileState  &tile_status)       ///< Global list of tile status
     {
-            Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
-            Value               values[ITEMS_PER_THREAD];                       // Tile values
-            Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
-            ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
-
+        Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
+        Value               values[ITEMS_PER_THREAD];                       // Tile values
+        Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
+        ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
         ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
 
         if (tile_idx == 0)

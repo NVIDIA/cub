@@ -288,20 +288,20 @@ struct WarpReduceShfl
         // Get the start flags for each thread in the warp.
         int warp_flags = __ballot(flag);
 
-        if (!HEAD_SEGMENTED)
-            warp_flags <<= 1;
+        if (HEAD_SEGMENTED)
+            warp_flags >>= 1;
 
         // Keep bits above the current thread.
-        warp_flags &= LaneMaskGt();
+        warp_flags &= LaneMaskGe();
 
         // Accommodate packing of multiple logical warps in a single physical warp
         if (!IS_ARCH_WARP)
-        {
             warp_flags >>= (LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS;
-        }
 
         // Find next flag
         int next_flag = __clz(__brev(warp_flags));
+
+        next_flag = CUB_MIN(next_flag, 31);
 
         // Clip the next segment at the warp boundary if necessary
         if (LOGICAL_WARP_THREADS != 32)
@@ -313,12 +313,27 @@ struct WarpReduceShfl
         {
             // Grab addend from peer
             const int OFFSET = 1 << STEP;
-
+/*
             T temp = ShuffleDown(output, OFFSET);
 
             // Perform reduction op if valid
-            if (OFFSET < next_flag - lane_id)
+            if (OFFSET <= next_flag - lane_id)
+            {
                 output = reduction_op(output, temp);
+            }
+*/
+
+            // Use predicate set from SHFL to guard against invalid peers
+            asm(
+                "{"
+                "  .reg .u32 r0;"
+                "  .reg .pred p;"
+                "  shfl.down.b32 r0|p, %1, %2, %3;"
+                "  @p add.u32 r0, r0, %4;"
+                "  mov.u32 %0, r0;"
+                "}"
+                : "=r"(output) : "r"(output), "r"(OFFSET), "r"(next_flag), "r"(output));
+
         }
 
         return output;
