@@ -157,6 +157,11 @@ ifeq ($(keep), 1)
 	NVCCFLAGS += -keep
 endif
 
+# Debug mode
+ifeq ($(debug), 1)
+	NVCCFLAGS += -G
+endif
+
 
 #-------------------------------------------------------------------------------
 # Compiler and compilation platform

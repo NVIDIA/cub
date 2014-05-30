@@ -63,7 +63,7 @@ template <
     bool                    DESCENDING,                         ///< Whether or not the sorted-order is high-to-low
     typename                Key,                                ///< Key type
     typename                Offset>                             ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRangeRadixSortUpsweepPolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(BlockRangeRadixSortUpsweepPolicy::BLOCK_THREADS))
 __global__ void RadixSortUpsweepKernel(
     Key                     *d_keys,                            ///< [in] Input keys buffer
     Offset                  *d_spine,                           ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
@@ -142,7 +142,7 @@ template <
     typename                Key,                                    ///< Key type
     typename                Value,                                  ///< Value type
     typename                Offset>                                 ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRangeRadixSortDownsweepPolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(BlockRangeRadixSortDownsweepPolicy::BLOCK_THREADS))
 __global__ void RadixSortDownsweepKernel(
     Key                     *d_keys_in,                             ///< [in] Input keys ping buffer
     Key                     *d_keys_out,                            ///< [in] Output keys pong buffer
