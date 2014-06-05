@@ -75,6 +75,12 @@ struct WarpReduceShfl
 
         // The packed C argument (mask starts 8 bits up)
         SHFL_C = (SHFL_MASK << 8) | SHFL_CLAMP,
+
+        /// Whether the data type is a primitive integer
+        IS_INTEGER = (Traits<T>::CATEGORY == UNSIGNED_INTEGER) || (Traits<T>::CATEGORY == SIGNED_INTEGER),
+
+        ///Whether the data type is a small (32b or less) integer for which we can use a single SFHL instruction per exchange
+        IS_SMALL_INTEGER = IS_INTEGER && (sizeof(T) <= sizeof(unsigned int))
     };
 
 
@@ -104,7 +110,191 @@ struct WarpReduceShfl
 
 
     /******************************************************************************
-     * Operation
+     * Utility methods
+     ******************************************************************************/
+
+    /// Segmented reduction (specialized for summation across primitive integer types 32b or smaller)
+    template <typename _T>
+    __device__ __forceinline__ void SegmentedReduce(
+        _T              input,              ///< [in] Calling thread's input item.
+        _T              &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        cub::Sum        reduction_op,       ///< [in] Binary reduction operator
+        int             last_lane,          ///< [in] Index of last lane in segment
+        Int2Type<true>  is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+    {
+        unsigned int temp = reinterpret_cast<unsigned int &>(input);
+
+        // Iterate reduction steps
+        #pragma unroll
+        for (int STEP = 0; STEP < STEPS; STEP++)
+        {
+            // Use predicate set from SHFL to guard against invalid peers
+            asm(
+                "{"
+                "  .reg .u32 r0;"
+                "  .reg .pred p;"
+                "  shfl.down.b32 r0|p, %1, %2, %3;"
+                "  @p add.u32 r0, r0, %4;"
+                "  mov.u32 %0, r0;"
+                "}"
+                : "=r"(temp) : "r"(temp), "r"(1 << STEP), "r"(last_lane), "r"(temp));
+        }
+
+        output = reinterpret_cast<_T&>(temp);
+    }
+
+
+    /// Segmented reduction (specialized for summation across fp32 types)
+    __device__ __forceinline__ void SegmentedReduce(
+        float           input,              ///< [in] Calling thread's input item.
+        float           &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        cub::Sum        reduction_op,       ///< [in] Binary reduction operator
+        int             last_lane,          ///< [in] Index of last lane in segment
+        Int2Type<false> is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+    {
+        output = input;
+
+        // Iterate reduction steps
+        #pragma unroll
+        for (int STEP = 0; STEP < STEPS; STEP++)
+        {
+            // Use predicate set from SHFL to guard against invalid peers
+            asm(
+                "{"
+                "  .reg .f32 r0;"
+                "  .reg .pred p;"
+                "  shfl.down.b32 r0|p, %1, %2, %3;"
+                "  @p add.f32 r0, r0, %4;"
+                "  mov.f32 %0, r0;"
+                "}"
+                : "=f"(output) : "f"(output), "r"(1 << STEP), "r"(last_lane), "f"(output));
+        }
+    }
+
+
+    /// Segmented reduction (specialized for summation across unsigned long long types)
+    __device__ __forceinline__ void SegmentedReduce(
+        unsigned long long  input,              ///< [in] Calling thread's input item.
+        unsigned long long  &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        cub::Sum            reduction_op,       ///< [in] Binary reduction operator
+        int                 last_lane,          ///< [in] Index of last lane in segment
+        Int2Type<false>     is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+    {
+        output = input;
+
+        // Iterate reduction steps
+        #pragma unroll
+        for (int STEP = 0; STEP < STEPS; STEP++)
+        {
+            // Use predicate set from SHFL to guard against invalid peers
+            asm(
+                "{"
+                "  .reg .u32 lo;"
+                "  .reg .u32 hi;"
+                "  .reg .pred p;"
+                "  mov.b64 {lo, hi}, %1;"
+                "  shfl.down.b32 lo|p, lo, %2, %3;"
+                "  shfl.down.b32 hi|p, hi, %2, %3;"
+                "  mov.b64 %0, {lo, hi};"
+                "  @p add.u64 %0, %0, %1;"
+                "}"
+                : "=l"(output) : "l"(output), "r"(1 << STEP), "r"(last_lane));
+        }
+    }
+
+
+    /// Segmented reduction (specialized for summation across long long types)
+    __device__ __forceinline__ void SegmentedReduce(
+        long long           input,              ///< [in] Calling thread's input item.
+        long long           &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        cub::Sum            reduction_op,       ///< [in] Binary reduction operator
+        int                 last_lane,          ///< [in] Index of last lane in segment
+        Int2Type<false>     is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+    {
+        output = input;
+
+        // Iterate reduction steps
+        #pragma unroll
+        for (int STEP = 0; STEP < STEPS; STEP++)
+        {
+            // Use predicate set from SHFL to guard against invalid peers
+            asm(
+                "{"
+                "  .reg .u32 lo;"
+                "  .reg .u32 hi;"
+                "  .reg .pred p;"
+                "  mov.b64 {lo, hi}, %1;"
+                "  shfl.down.b32 lo|p, lo, %2, %3;"
+                "  shfl.down.b32 hi|p, hi, %2, %3;"
+                "  mov.b64 %0, {lo, hi};"
+                "  @p add.s64 %0, %0, %1;"
+                "}"
+                : "=l"(output) : "l"(output), "r"(1 << STEP), "r"(last_lane));
+        }
+    }
+
+
+    /// Segmented reduction (specialized for summation across double types)
+    __device__ __forceinline__ void SegmentedReduce(
+        double              input,              ///< [in] Calling thread's input item.
+        double              &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        cub::Sum            reduction_op,       ///< [in] Binary reduction operator
+        int                 last_lane,          ///< [in] Index of last lane in segment
+        Int2Type<false>     is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+    {
+        output = input;
+
+        // Iterate reduction steps
+        #pragma unroll
+        for (int STEP = 0; STEP < STEPS; STEP++)
+        {
+            // Use predicate set from SHFL to guard against invalid peers
+            asm(
+                "{"
+                "  .reg .u32 lo;"
+                "  .reg .u32 hi;"
+                "  .reg .pred p;"
+                "  mov.b64 {lo, hi}, %1;"
+                "  shfl.down.b32 lo|p, lo, %2, %3;"
+                "  shfl.down.b32 hi|p, hi, %2, %3;"
+                "  mov.b64 %0, {lo, hi};"
+                "  @p add.f64 %0, %0, %1;"
+                "}"
+                : "=d"(output) : "d"(output), "r"(1 << STEP), "r"(last_lane));
+        }
+    }
+
+    /// Segmented reduction
+    template <typename _T, typename ReductionOp, int _IS_SMALL_INTEGER>
+    __device__ __forceinline__ void SegmentedReduce(
+        _T                              input,              ///< [in] Calling thread's input item.
+        _T                              &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        ReductionOp                     reduction_op,       ///< [in] Binary reduction operator
+        int                             last_lane,          ///< [in] Index of last lane in segment
+        Int2Type<_IS_SMALL_INTEGER>     is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+    {
+        output = input;
+        int lane_id = LaneId();
+
+        // Iterate reduction steps
+        #pragma unroll
+        for (int STEP = 0; STEP < STEPS; STEP++)
+        {
+            const int OFFSET = 1 << STEP;
+
+            T temp = ShuffleDown(output, OFFSET);
+
+            // Perform reduction op if valid
+            if (OFFSET <= last_lane - lane_id)
+            {
+                output = reduction_op(output, temp);
+            }
+        }
+    }
+
+
+    /******************************************************************************
+     * Interface
      ******************************************************************************/
 
     /// Summation (single-SHFL)
@@ -294,47 +484,18 @@ struct WarpReduceShfl
         // Keep bits above the current thread.
         warp_flags &= LaneMaskGe();
 
-        // Accommodate packing of multiple logical warps in a single physical warp
-        if (!IS_ARCH_WARP)
-            warp_flags >>= (LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS;
-
         // Find next flag
-        int next_flag = __clz(__brev(warp_flags));
+        int last_lane = __clz(__brev(warp_flags));
 
-        next_flag = CUB_MIN(next_flag, 31);
+        // Get the last lane in the logical warp
+        int last_warp_thread = LOGICAL_WARP_THREADS - 1;
+        if (!IS_ARCH_WARP)
+            last_warp_thread |= LaneId();
 
-        // Clip the next segment at the warp boundary if necessary
-        if (LOGICAL_WARP_THREADS != 32)
-            next_flag = CUB_MIN(next_flag, LOGICAL_WARP_THREADS);
+        // Set the last lane in the warp
+        last_lane = CUB_MIN(last_lane, last_warp_thread);
 
-        // Iterate scan steps
-        #pragma unroll
-        for (int STEP = 0; STEP < STEPS; STEP++)
-        {
-            // Grab addend from peer
-            const int OFFSET = 1 << STEP;
-/*
-            T temp = ShuffleDown(output, OFFSET);
-
-            // Perform reduction op if valid
-            if (OFFSET <= next_flag - lane_id)
-            {
-                output = reduction_op(output, temp);
-            }
-*/
-
-            // Use predicate set from SHFL to guard against invalid peers
-            asm(
-                "{"
-                "  .reg .u32 r0;"
-                "  .reg .pred p;"
-                "  shfl.down.b32 r0|p, %1, %2, %3;"
-                "  @p add.u32 r0, r0, %4;"
-                "  mov.u32 %0, r0;"
-                "}"
-                : "=r"(output) : "r"(output), "r"(OFFSET), "r"(next_flag), "r"(output));
-
-        }
+        SegmentedReduce(input, output, reduction_op, last_lane, Int2Type<IS_SMALL_INTEGER>());
 
         return output;
     }

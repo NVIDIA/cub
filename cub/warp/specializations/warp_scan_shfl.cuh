@@ -109,7 +109,7 @@ struct WarpScanShfl
     __device__ __forceinline__ void InclusiveScan(
         _T              input,              ///< [in] Calling thread's input item.
         _T              &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        Sum             scan_op,            ///< [in] Binary scan operator
+        cub::Sum        scan_op,            ///< [in] Binary scan operator
         Int2Type<true>  is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
     {
         unsigned int temp = reinterpret_cast<unsigned int &>(input);
@@ -134,11 +134,11 @@ struct WarpScanShfl
     }
 
 
-    /// Inclusive prefix scan (specialized for summation across float types)
+    /// Inclusive prefix scan (specialized for summation across fp32 types)
     __device__ __forceinline__ void InclusiveScan(
         float           input,              ///< [in] Calling thread's input item.
         float           &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        Sum             scan_op,            ///< [in] Binary scan operator
+        cub::Sum        scan_op,            ///< [in] Binary scan operator
         Int2Type<false> is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
     {
         output = input;
@@ -165,7 +165,7 @@ struct WarpScanShfl
     __device__ __forceinline__ void InclusiveScan(
         unsigned long long  input,              ///< [in] Calling thread's input item.
         unsigned long long  &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        Sum                 scan_op,            ///< [in] Binary scan operator
+        cub::Sum            scan_op,            ///< [in] Binary scan operator
         Int2Type<false>     is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
     {
         output = input;
@@ -195,7 +195,7 @@ struct WarpScanShfl
     __device__ __forceinline__ void InclusiveScan(
         long long           input,              ///< [in] Calling thread's input item.
         long long           &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        Sum                 scan_op,            ///< [in] Binary scan operator
+        cub::Sum            scan_op,            ///< [in] Binary scan operator
         Int2Type<false>     is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
     {
         output = input;
@@ -221,11 +221,11 @@ struct WarpScanShfl
     }
 
 
-    /// Inclusive prefix scan (specialized for summation across double types)
+    /// Inclusive prefix scan (specialized for summation across fp64 types)
     __device__ __forceinline__ void InclusiveScan(
         double              input,              ///< [in] Calling thread's input item.
         double              &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        Sum                 scan_op,            ///< [in] Binary scan operator
+        cub::Sum            scan_op,            ///< [in] Binary scan operator
         Int2Type<false>     is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
     {
         output = input;
