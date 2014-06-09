@@ -759,10 +759,10 @@ int main(int argc, char** argv)
 
     // Compile/run quick tests
 
-//    TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
-//    TestReduce<1, 32, double>(UNIFORM, Sum(), CUB_TYPE_STRING(double), 32);
-//    TestReduce<2, 16, TestBar>(UNIFORM, Sum(), CUB_TYPE_STRING(TestBar), 7);
-//    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
+    TestReduce<1, 32, double>(UNIFORM, Sum(), CUB_TYPE_STRING(double), 32);
+    TestReduce<2, 16, TestBar>(UNIFORM, Sum(), CUB_TYPE_STRING(TestBar), 7);
+    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
 
     typedef ItemOffsetPair<int, int> T;
     cub::Sum sum_op;
