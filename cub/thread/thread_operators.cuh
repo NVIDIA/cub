@@ -189,7 +189,7 @@ struct ArgMin
 template <typename B>
 struct Cast
 {
-    /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
+    /// Cast operator, returns <tt>(B) a</tt>
     template <typename A>
     __host__ __device__ __forceinline__ B operator()(const A &a) const
     {
@@ -197,6 +197,99 @@ struct Cast
     }
 };
 
+
+/**
+ * \brief Reduce-by-segment functor.
+ *
+ * Given two cub::ItemOffsetPair inputs \p a and \p b and a
+ * binary associative combining operator \p <tt>f(const T &x, const T &y)</tt>,
+ * an instance of this functor returns a cub::ItemOffsetPair whose \p offset
+ * field is <tt>a.offset</tt> + <tt>a.offset</tt>, and whose \p value field
+ * is either b.value if b.offset is non-zero, or f(a.value, b.value) otherwise.
+ *
+ * ReduceBySegmentOp is an associative, non-commutative binary combining operator
+ * for input sequences of cub::ItemOffsetPair pairings.  Such
+ * sequences are typically used to represent a segmented set of values to be reduced
+ * and a corresponding set of {0,1}-valued integer "head flags" demarcating the
+ * first value of each segment.
+ *
+ */
+template <
+    typename ReductionOp,                           ///< Binary reduction operator to apply to values
+    typename ItemOffsetPair>                        ///< ItemOffsetPair pairing of T (value) and Offset (head flag)
+class ReduceBySegmentOp
+{
+private:
+
+    typedef typename ItemOffsetPair::T T;
+
+    enum
+    {
+        /// Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
+        HAS_IDENTITY_ZERO = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<T>::PRIMITIVE),
+    };
+
+    /// Wrapped reduction operator
+    ReductionOp op;
+
+    /// Scan operator (specialized for sum on primitive types)
+    __host__ __device__ __forceinline__ ItemOffsetPair operator()(
+        const ItemOffsetPair     &first,             ///< First partial reduction
+        const ItemOffsetPair     &second,            ///< Second partial reduction
+        Int2Type<true>           has_identity_zero)  ///< Marker type indicating whether the operation has a zero-valued identity
+    {
+        T select = (second.offset) ? 0 : first.value;
+
+        ItemOffsetPair retval;
+        retval.offset = first.offset + second.offset;
+        retval.value = op(select, second.value);
+        return retval;
+    }
+
+    /// Scan operator (specialized for reductions without zero-valued identity)
+    __host__ __device__ __forceinline__ ItemOffsetPair operator()(
+        const ItemOffsetPair     &first,             ///< First partial reduction
+        const ItemOffsetPair     &second,            ///< Second partial reduction
+        Int2Type<false>          has_identity_zero)  ///< Marker type indicating whether the operation has a zero-valued identity
+    {
+#if (__CUDA_ARCH__ > 130)
+        // This expression uses less registers and is faster when compiled with nvvm
+        ItemOffsetPair retval;
+        retval.offset = first.offset + second.offset;
+        if (second.offset)
+        {
+            retval.value = second.value;
+            return retval;
+        }
+        else
+        {
+            retval.value = op(first.value, second.value);
+            return retval;
+        }
+#else
+        // This expression uses less registers and is faster when compiled with Open64
+        ItemOffsetPair retval;
+        retval.offset = first.offset + second.offset;
+        retval.value = (second.offset) ?
+                second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
+                op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
+        return retval;
+#endif
+    }
+
+public:
+
+    /// Constructor
+    __host__ __device__ __forceinline__ ReduceBySegmentOp(ReductionOp op) : op(op) {}
+
+    /// Scan operator
+    __host__ __device__ __forceinline__ ItemOffsetPair operator()(
+        const ItemOffsetPair &first,       ///< First partial reduction
+        const ItemOffsetPair &second)      ///< Second partial reduction
+    {
+        return (*this)(first, second, Int2Type<HAS_IDENTITY_ZERO>());
+    }
+};
 
 
 /** @} */       // end group UtilModule
