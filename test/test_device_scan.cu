@@ -816,24 +816,24 @@ int main(int argc, char** argv)
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;
 
-//    TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
-//   TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
+    TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
+    TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0), CUB_TYPE_STRING(char));
 
     printf("----------------------------\n");
-//    TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
-//    TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
+    TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
+    TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0), CUB_TYPE_STRING(short));
 
     printf("----------------------------\n");
     TestPointer<CUB, int>(         num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
-//    TestPointer<THRUST, int>(      num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
+    TestPointer<THRUST, int>(      num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
 
     printf("----------------------------\n");
     TestPointer<CUB, long long>(   num_items / 2, UNIFORM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
-//    TestPointer<THRUST, long long>(num_items / 2, UNIFORM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
+    TestPointer<THRUST, long long>(num_items / 2, UNIFORM, Sum(), (long long) (0), CUB_TYPE_STRING(long long));
 
     printf("----------------------------\n");
-//    TestPointer<CUB, TestBar>(     num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
-//    TestPointer<THRUST, TestBar>(  num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
+    TestPointer<CUB, TestBar>(     num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
+    TestPointer<THRUST, TestBar>(  num_items / 4, UNIFORM, Sum(), TestBar(), CUB_TYPE_STRING(TestBar));
 
 #else
 
