@@ -472,7 +472,6 @@ void TestReduce(
             reduction_op,
             d_elapsed);
     }
-/*
     else
     {
         // Run partial-warp kernel
@@ -483,7 +482,6 @@ void TestReduce(
             d_elapsed,
             valid_warp_threads);
     }
-*/
 
     CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
