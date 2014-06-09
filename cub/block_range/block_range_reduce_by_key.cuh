@@ -357,66 +357,7 @@ struct BlockRangeReduceByKey
     typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
 
     // Reduce-value-by-segment scan operator
-    struct ReduceByKeyOp
-    {
-        ReductionOp op;                 ///< Wrapped reduction operator
-
-        /// Constructor
-        __device__ __forceinline__ ReduceByKeyOp(ReductionOp op) : op(op) {}
-
-        /// Scan operator (specialized for sum on primitive types)
-        __device__ __forceinline__ ValueOffsetPair operator()(
-            const ValueOffsetPair   &first,             ///< First partial reduction
-            const ValueOffsetPair   &second,            ///< Second partial reduction
-            Int2Type<true>          has_identity_zero)  ///< Whether the operation has a zero-valued identity
-        {
-            Value select = (second.offset) ? 0 : first.value;
-
-            ValueOffsetPair retval;
-            retval.offset = first.offset + second.offset;
-            retval.value = op(select, second.value);
-            return retval;
-        }
-
-        /// Scan operator (specialized for reductions without zero-valued identity)
-        __device__ __forceinline__ ValueOffsetPair operator()(
-            const ValueOffsetPair   &first,             ///< First partial reduction
-            const ValueOffsetPair   &second,            ///< Second partial reduction
-            Int2Type<false>         has_identity_zero)  ///< Whether the operation has a zero-valued identity
-        {
-#if (__CUDA_ARCH__ > 130)
-            // This expression uses less registers and is faster when compiled with nvvm
-            ValueOffsetPair retval;
-            retval.offset = first.offset + second.offset;
-            if (second.offset)
-            {
-                retval.value = second.value;
-                return retval;
-            }
-            else
-            {
-                retval.value = op(first.value, second.value);
-                return retval;
-            }
-#else
-            // This expression uses less registers and is faster when compiled with Open64
-            ValueOffsetPair retval;
-            retval.offset = first.offset + second.offset;
-            retval.value = (second.offset) ?
-                    second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
-                    op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
-            return retval;
-#endif
-        }
-
-        /// Scan operator
-        __device__ __forceinline__ ValueOffsetPair operator()(
-            const ValueOffsetPair &first,       ///< First partial reduction
-            const ValueOffsetPair &second)      ///< Second partial reduction
-        {
-            return (*this)(first, second, Int2Type<HAS_IDENTITY_ZERO>());
-        }
-    };
+    typedef ReduceBySegmentOp<ReductionOp, ValueOffsetPair> ReduceBySegmentOp;
 
     // Parameterized BlockLoad type for keys
     typedef BlockLoad<
@@ -463,7 +404,7 @@ struct BlockRangeReduceByKey
     // Callback type for obtaining tile prefix during block scan
     typedef BlockScanLookbackPrefixOp<
             ValueOffsetPair,
-            ReduceByKeyOp,
+            ReduceBySegmentOp,
             ScanTileState>
         LookbackPrefixCallbackOp;
 
@@ -513,7 +454,7 @@ struct BlockRangeReduceByKey
     ValueOutputIterator             d_values_out;       ///< Output values
 
     InequalityWrapper<EqualityOp>   inequality_op;      ///< Key inequality operator
-    ReduceByKeyOp                   scan_op;            ///< Reduce-value-by flag scan operator
+    ReduceBySegmentOp               scan_op;            ///< Reduce-value-by-flag scan operator
     Offset                          num_items;          ///< Total number of input items
 
 

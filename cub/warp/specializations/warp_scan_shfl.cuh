@@ -280,7 +280,7 @@ struct WarpScanShfl
     __device__ __forceinline__ T GetExclusive(
         T               input,
         T               inclusive,
-        Sum             scan_op,
+        cub::Sum        scan_op,
         Int2Type<true>  is_integer)
     {
         return inclusive - input;
@@ -303,7 +303,7 @@ struct WarpScanShfl
         T               input,
         T               inclusive,
         T               identity,
-        Sum             scan_op,
+        cub::Sum        scan_op,
         Int2Type<true>  is_integer)
     {
         return inclusive - input;
