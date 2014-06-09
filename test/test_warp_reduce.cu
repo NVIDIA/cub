@@ -263,8 +263,6 @@ __global__ void WarpHeadSegmentedReduceKernel(
     T       input       = d_in[threadIdx.x];
     Flag    head_flag   = d_head_flags[threadIdx.x];
 
-    __syncthreads();
-
     // Record elapsed clocks
     clock_t start = clock();
 
@@ -451,7 +449,8 @@ void TestReduce(
     if (g_verbose)
     {
         printf("Data:\n");
-        DisplayResults(h_in, valid_warp_threads);
+        for (int i = 0; i < WARPS; ++i)
+            DisplayResults(h_in + (i * LOGICAL_WARP_THREADS), valid_warp_threads);
     }
 
     // Run kernel
@@ -473,6 +472,7 @@ void TestReduce(
             reduction_op,
             d_elapsed);
     }
+/*
     else
     {
         // Run partial-warp kernel
@@ -483,6 +483,7 @@ void TestReduce(
             d_elapsed,
             valid_warp_threads);
     }
+*/
 
     CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(cudaDeviceSynchronize());
@@ -552,10 +553,12 @@ void TestSegmentedReduce(
     if (g_verbose)
     {
         printf("Data:\n");
-        DisplayResults(h_in, LOGICAL_WARP_THREADS);
+        for (int i = 0; i < WARPS; ++i)
+            DisplayResults(h_in + (i * LOGICAL_WARP_THREADS), LOGICAL_WARP_THREADS);
 
         printf("\nFlags:\n");
-        DisplayResults(h_flags, LOGICAL_WARP_THREADS);
+        for (int i = 0; i < WARPS; ++i)
+            DisplayResults(h_flags + (i * LOGICAL_WARP_THREADS), LOGICAL_WARP_THREADS);
     }
 
     printf("\nGen-mode %d, head flag entropy reduction %d, %d warps, %d warp threads, %s (%d bytes) elements:\n",
@@ -665,10 +668,10 @@ void Test(GenMode gen_mode)
     Test<WARPS, LOGICAL_WARP_THREADS, int>(                 gen_mode, Sum(), CUB_TYPE_STRING(int));
     Test<WARPS, LOGICAL_WARP_THREADS, long long>(           gen_mode, Sum(), CUB_TYPE_STRING(long long));
 
-    Test<WARPS, LOGICAL_WARP_THREADS, char>(                gen_mode, Sum(), CUB_TYPE_STRING(char));
-    Test<WARPS, LOGICAL_WARP_THREADS, short>(               gen_mode, Sum(), CUB_TYPE_STRING(short));
-    Test<WARPS, LOGICAL_WARP_THREADS, int>(                 gen_mode, Sum(), CUB_TYPE_STRING(int));
-    Test<WARPS, LOGICAL_WARP_THREADS, long long>(           gen_mode, Sum(), CUB_TYPE_STRING(long long));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned char>(       gen_mode, Sum(), CUB_TYPE_STRING(unsigned char));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned short>(      gen_mode, Sum(), CUB_TYPE_STRING(unsigned short));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned int>(        gen_mode, Sum(), CUB_TYPE_STRING(unsigned int));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned long long>(  gen_mode, Sum(), CUB_TYPE_STRING(unsigned long long));
 
     if (gen_mode != RANDOM)
     {
@@ -755,8 +758,15 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
-    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+
+//    TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
+//    TestReduce<1, 32, double>(UNIFORM, Sum(), CUB_TYPE_STRING(double), 32);
+//    TestReduce<2, 16, TestBar>(UNIFORM, Sum(), CUB_TYPE_STRING(TestBar), 7);
+//    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+
+    typedef ItemOffsetPair<int, int> T;
+    cub::Sum sum_op;
+    TestReduce<1, 32, T>(UNIFORM, ReduceBySegmentOp<cub::Sum, T>(sum_op), CUB_TYPE_STRING(T), 32);
 
 #else
 

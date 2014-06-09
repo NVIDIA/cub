@@ -251,7 +251,7 @@ public:
     __device__ __forceinline__ T Sum(
         T                   input)              ///< [in] Calling thread's input
     {
-        return InternalWarpReduce(temp_storage).Sum<true, 1>(input, LOGICAL_WARP_THREADS);
+        return InternalWarpReduce(temp_storage).Reduce<true, 1>(input, LOGICAL_WARP_THREADS, cub::Sum());
     }
 
     /**
@@ -297,14 +297,7 @@ public:
         int                 valid_items)        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
     {
         // Determine if we don't need bounds checking
-        if (valid_items >= LOGICAL_WARP_THREADS)
-        {
-            return InternalWarpReduce(temp_storage).Sum<true, 1>(input, valid_items);
-        }
-        else
-        {
-            return InternalWarpReduce(temp_storage).Sum<false, 1>(input, valid_items);
-        }
+        return InternalWarpReduce(temp_storage).Reduce<false, 1>(input, valid_items, cub::Sum());
     }
 
 
@@ -503,15 +496,7 @@ public:
         ReductionOp         reduction_op,       ///< [in] Binary reduction operator
         int                 valid_items)        ///< [in] Total number of valid items in the calling thread's logical warp (may be less than \p LOGICAL_WARP_THREADS)
     {
-        // Determine if we don't need bounds checking
-        if (valid_items >= LOGICAL_WARP_THREADS)
-        {
-            return InternalWarpReduce(temp_storage).Reduce<true, 1>(input, valid_items, reduction_op);
-        }
-        else
-        {
-            return InternalWarpReduce(temp_storage).Reduce<false, 1>(input, valid_items, reduction_op);
-        }
+        return InternalWarpReduce(temp_storage).Reduce<false, 1>(input, valid_items, reduction_op);
     }
 
 

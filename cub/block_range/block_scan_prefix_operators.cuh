@@ -457,23 +457,6 @@ struct BlockScanLookbackPrefixOp
     // Type of status word
     typedef typename ScanTileState::StatusWord StatusWord;
 
-    // Scan operator for switching the scan arguments
-    struct SwizzleScanOp
-    {
-        ScanOp scan_op;
-
-        // Constructor
-        __host__ __device__ __forceinline__
-        SwizzleScanOp(ScanOp scan_op) : scan_op(scan_op) {}
-
-        // Switch the scan arguments
-        __host__ __device__ __forceinline__
-        T operator()(const T &a, const T &b)
-        {
-            return scan_op(b, a);
-        }
-    };
-
     // Fields
     ScanTileState               &tile_status;       ///< Interface to tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
@@ -507,14 +490,12 @@ struct BlockScanLookbackPrefixOp
         tile_status.WaitForValid(predecessor_idx, predecessor_status, value);
 
         // Perform a segmented reduction to get the prefix for the current window.
-        // Use the swizzled scan operator because we are now scanning *down* towards thread0.
-
         int tail_flag = (predecessor_status == StatusWord(SCAN_TILE_INCLUSIVE));
 
         window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(
             value,
             tail_flag,
-            SwizzleScanOp(scan_op));
+            scan_op);
     }
 
 
