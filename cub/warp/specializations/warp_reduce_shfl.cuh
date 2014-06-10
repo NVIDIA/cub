@@ -133,16 +133,13 @@ struct WarpReduceShfl
      * Utility methods
      ******************************************************************************/
 
-    /// Reduction (specialized for summation across primitive uint32 types)
+    /// Reduction (specialized for summation across uint32 types)
     __device__ __forceinline__ unsigned int ReduceStep(
         unsigned int    input,              ///< [in] Calling thread's input item.
         cub::Sum        reduction_op,       ///< [in] Binary reduction operator
         int             last_lane,          ///< [in] Index of last lane in segment
         int             offset)             ///< [in] Up-offset to pull from
     {
-//        unsigned int temp = reinterpret_cast<unsigned int &>(input);
-//        output = reinterpret_cast<_T&>(temp);
-
         unsigned int output;
 
         // Use predicate set from SHFL to guard against invalid peers
@@ -267,18 +264,21 @@ struct WarpReduceShfl
     /// Reduction (specialized for ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<Value, Offset> types)
     template <typename Value, typename Offset>
     __device__ __forceinline__ ItemOffsetPair<Value, Offset> ReduceStep(
-        ItemOffsetPair<Value, Offset>                                  input,              ///< [in] Calling thread's input item.
-        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<Value, Offset> >    reduction_op,       ///< [in] Binary reduction operator
-        int                                                         last_lane,          ///< [in] Index of last lane in segment
-        int                                                         offset)             ///< [in] Up-offset to pull from
+        ItemOffsetPair<Value, Offset>                                   input,              ///< [in] Calling thread's input item.
+        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<Value, Offset> >     reduction_op,       ///< [in] Binary reduction operator
+        int                                                             last_lane,          ///< [in] Index of last lane in segment
+        int                                                             offset)             ///< [in] Up-offset to pull from
     {
         ItemOffsetPair<Value, Offset> output;
 
-        // Use predicate set from SHFL to guard against invalid peers
-        int last_lane2 = (input.offset > 0) ? 0 : last_lane;
-
+        output.value = ReduceStep(input.value, cub::Sum(), last_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_INTEGER>());
         output.offset = ReduceStep(input.offset, cub::Sum(), last_lane, offset, Int2Type<IsInteger<Offset>::IS_SMALL_INTEGER>());
-        output.value = ReduceStep(input.value, cub::Sum(), last_lane2, offset, Int2Type<IsInteger<Value>::IS_SMALL_INTEGER>());
+
+//        int last_value_lane = (input.offset > 0) ? 0 : last_lane;
+//        output.value = ReduceStep(input.value, cub::Sum(), last_value_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_INTEGER>());
+
+        if (input.offset > 0)
+            output.value = input.value;
 
         return output;
     }
@@ -298,9 +298,7 @@ struct WarpReduceShfl
 
         // Perform reduction op if valid
         if (offset <= last_lane - lane_id)
-        {
             output = reduction_op(temp, output);
-        }
 
         return output;
     }
@@ -401,7 +399,7 @@ struct WarpReduceShfl
         warp_flags &= LaneMaskGe();
 
         // Find the next set flag
-        int last_lane = __ffs(warp_flags) - 1;
+        int last_lane = __clz(__brev(warp_flags));
 
         T output = input;
 
