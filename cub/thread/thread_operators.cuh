@@ -238,11 +238,20 @@ private:
         const ItemOffsetPair     &second,            ///< Second partial reduction
         Int2Type<true>           has_identity_zero)  ///< Marker type indicating whether the operation has a zero-valued identity
     {
+/*
         T select = (second.offset) ? 0 : first.value;
 
         ItemOffsetPair retval;
         retval.offset = first.offset + second.offset;
         retval.value = op(select, second.value);
+        return retval;
+*/
+        // This expression uses less registers and is faster when compiled with Open64
+        ItemOffsetPair retval;
+        retval.offset = first.offset + second.offset;
+        retval.value = (second.offset) ?
+                second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
+                op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
         return retval;
     }
 
@@ -252,7 +261,8 @@ private:
         const ItemOffsetPair     &second,            ///< Second partial reduction
         Int2Type<false>          has_identity_zero)  ///< Marker type indicating whether the operation has a zero-valued identity
     {
-#if (__CUDA_ARCH__ > 130)
+//#if (__CUDA_ARCH__ > 130)
+#if 0
         // This expression uses less registers and is faster when compiled with nvvm
         ItemOffsetPair retval;
         retval.offset = first.offset + second.offset;

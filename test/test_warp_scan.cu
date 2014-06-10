@@ -553,6 +553,11 @@ int main(int argc, char** argv)
     Test<32, AGGREGATE>(UNIFORM, Sum(), (long long) 0, (long long) 99, CUB_TYPE_STRING(Sum<long long>));
     Test<32, AGGREGATE>(UNIFORM, Sum(), (double) 0, (double) 99, CUB_TYPE_STRING(Sum<double>));
 
+    typedef ItemOffsetPair<float, int> T;
+    cub::Sum sum_op;
+    Test<32, AGGREGATE>(UNIFORM, ReduceBySegmentOp<cub::Sum, T>(sum_op), ZeroInitialize<T>(), ZeroInitialize<T>(), CUB_TYPE_STRING(T));
+
+
 #else
 
     // Compile/run thorough tests
