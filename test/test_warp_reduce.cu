@@ -762,7 +762,7 @@ int main(int argc, char** argv)
     TestReduce<2, 16, TestBar>(UNIFORM, Sum(), CUB_TYPE_STRING(TestBar), 7);
     TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
 
-    typedef ItemOffsetPair<int, int> T;
+    typedef ItemOffsetPair<float, int> T;
     cub::Sum sum_op;
     TestReduce<1, 32, T>(UNIFORM, ReduceBySegmentOp<cub::Sum, T>(sum_op), CUB_TYPE_STRING(T), 32);
 

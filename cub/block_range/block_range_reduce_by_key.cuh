@@ -276,7 +276,7 @@ struct ReduceByKeyScanTileState<Value, Offset, true>
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
         TileDescriptor tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-        while ((tile_descriptor.status == SCAN_TILE_INVALID))
+        while (WarpAny(tile_descriptor.status == SCAN_TILE_INVALID))
         {
             alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
@@ -729,7 +729,7 @@ struct BlockRangeReduceByKey
         Offset          tile_num_flags_prefix)
     {
         // Do a one-phase scatter if (a) two-phase is disabled or (b) the average number of selected items per thread is less than one
-        if ((TWO_PHASE_SCATTER) && ((tile_num_flags >> Log2<BLOCK_THREADS>::VALUE) > 0))
+        if (TWO_PHASE_SCATTER && (tile_num_flags > BLOCK_THREADS))
         {
             ScatterTwoPhase<LAST_TILE, FIRST_TILE>(
                 num_remaining,
@@ -774,22 +774,16 @@ struct BlockRangeReduceByKey
         ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
         ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
 
+        // Load keys
+        if (LAST_TILE)
+            BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining);
+        else
+            BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
+
         if (tile_idx == 0)
         {
             // First tile
-
-            // Load keys and values
-            if (LAST_TILE)
-            {
-                BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining);
-            }
-            else
-            {
-                BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
-            }
-
-            if (SYNC_AFTER_LOAD)
-                __syncthreads();
+            __syncthreads();
 
             // Load values
             if (LAST_TILE)
@@ -797,8 +791,7 @@ struct BlockRangeReduceByKey
             else
                 BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
 
-            if (SYNC_AFTER_LOAD)
-                __syncthreads();
+            __syncthreads();
 
             // Set head flags.  First tile sets the first flag for the first item
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(flags, keys, inequality_op);
@@ -827,18 +820,11 @@ struct BlockRangeReduceByKey
         {
             // Not first tile
 
-            // Load keys and values
-            if (LAST_TILE)
-            {
-                BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys, num_remaining);
-            }
-            else
-            {
-                BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + block_offset, keys);
-            }
+            Key tile_predecessor_key = (threadIdx.x == 0) ?
+                d_keys_in[block_offset - 1] :
+                ZeroInitialize<Key>();
 
-            if (SYNC_AFTER_LOAD)
-                __syncthreads();
+            __syncthreads();
 
             // Load values
             if (LAST_TILE)
@@ -846,13 +832,7 @@ struct BlockRangeReduceByKey
             else
                 BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
 
-            if (SYNC_AFTER_LOAD)
-                __syncthreads();
-
-            // Obtain the last key in the previous tile to compare with
-            Key tile_predecessor_key = (threadIdx.x == 0) ?
-                d_keys_in[block_offset - 1] :
-                ZeroInitialize<Key>();
+            __syncthreads();
 
             // Set head flags
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(flags, keys, inequality_op, tile_predecessor_key);
@@ -929,9 +909,6 @@ struct BlockRangeReduceByKey
 
         while (num_remaining > TILE_ITEMS)
         {
-            if (SYNC_AFTER_LOAD)
-                __syncthreads();
-
             // Consume full tile
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
