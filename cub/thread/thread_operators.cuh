@@ -221,71 +221,8 @@ class ReduceBySegmentOp
 {
 private:
 
-    typedef typename ItemOffsetPair::T T;
-
-    enum
-    {
-        /// Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
-        HAS_IDENTITY_ZERO = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<T>::PRIMITIVE),
-    };
-
     /// Wrapped reduction operator
     ReductionOp op;
-
-    /// Scan operator (specialized for sum on primitive types)
-    __host__ __device__ __forceinline__ ItemOffsetPair operator()(
-        const ItemOffsetPair     &first,             ///< First partial reduction
-        const ItemOffsetPair     &second,            ///< Second partial reduction
-        Int2Type<true>           has_identity_zero)  ///< Marker type indicating whether the operation has a zero-valued identity
-    {
-/*
-        T select = (second.offset) ? 0 : first.value;
-
-        ItemOffsetPair retval;
-        retval.offset = first.offset + second.offset;
-        retval.value = op(select, second.value);
-        return retval;
-*/
-        // This expression uses less registers and is faster when compiled with Open64
-        ItemOffsetPair retval;
-        retval.offset = first.offset + second.offset;
-        retval.value = (second.offset) ?
-                second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
-                op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
-        return retval;
-    }
-
-    /// Scan operator (specialized for reductions without zero-valued identity)
-    __host__ __device__ __forceinline__ ItemOffsetPair operator()(
-        const ItemOffsetPair     &first,             ///< First partial reduction
-        const ItemOffsetPair     &second,            ///< Second partial reduction
-        Int2Type<false>          has_identity_zero)  ///< Marker type indicating whether the operation has a zero-valued identity
-    {
-//#if (__CUDA_ARCH__ > 130)
-#if 0
-        // This expression uses less registers and is faster when compiled with nvvm
-        ItemOffsetPair retval;
-        retval.offset = first.offset + second.offset;
-        if (second.offset)
-        {
-            retval.value = second.value;
-            return retval;
-        }
-        else
-        {
-            retval.value = op(first.value, second.value);
-            return retval;
-        }
-#else
-        // This expression uses less registers and is faster when compiled with Open64
-        ItemOffsetPair retval;
-        retval.offset = first.offset + second.offset;
-        retval.value = (second.offset) ?
-                second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
-                op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
-        return retval;
-#endif
-    }
 
 public:
 
@@ -297,7 +234,13 @@ public:
         const ItemOffsetPair &first,       ///< First partial reduction
         const ItemOffsetPair &second)      ///< Second partial reduction
     {
-        return (*this)(first, second, Int2Type<HAS_IDENTITY_ZERO>());
+        // This expression uses less registers and is faster when compiled with Open64
+        ItemOffsetPair retval;
+        retval.offset = first.offset + second.offset;
+        retval.value = (second.offset) ?
+                second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
+                op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
+        return retval;
     }
 };
 

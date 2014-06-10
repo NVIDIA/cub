@@ -356,12 +356,13 @@ struct WarpReduceShfl
             last_warp_thread |= lane_id;
         }
 
-        int lanes_with_valid_data = (folded_items_per_warp + FOLDED_ITEMS_PER_LANE - 1) / FOLDED_ITEMS_PER_LANE;
+        // Common case is FOLDED_ITEMS_PER_LANE = 1 (or a multiple of 32)
+        int lanes_with_valid_data = (folded_items_per_warp - 1) / FOLDED_ITEMS_PER_LANE;
 
         // Get the last valid lane
         int last_lane = (ALL_LANES_VALID) ?
             last_warp_thread :
-            first_warp_thread + lanes_with_valid_data - 1;
+            CUB_MIN(last_warp_thread, first_warp_thread + lanes_with_valid_data);
 
         T output = input;
 
