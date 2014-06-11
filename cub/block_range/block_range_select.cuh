@@ -447,7 +447,7 @@ struct BlockRangeSelect
         Int2Type<false> keep_rejects,
         Int2Type<true>  two_phase_scatter)
     {
-        if ((tile_num_selected >> Log2<BLOCK_THREADS>::VALUE) == 0)
+        if (tile_num_selected < BLOCK_THREADS)
         {
             // Average number of selected items per thread is less than one, so just do a one-phase scatter
             Scatter<LAST_TILE>(
@@ -657,7 +657,7 @@ struct BlockRangeSelect
     __device__ __forceinline__ void ConsumeRange(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        ScanTileState      &tile_status,       ///< Global list of tile status
+        ScanTileState           &tile_status,       ///< Global list of tile status
         NumSelectedIterator     d_num_selected)     ///< Output total number selected
     {
 #if (CUB_PTX_ARCH <= 130)
@@ -669,10 +669,12 @@ struct BlockRangeSelect
 
         if (num_remaining > TILE_ITEMS)
         {
+            // Full tile
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
         }
         else if (num_remaining > 0)
         {
+            // Last tile
             Offset total_selected = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             // Output the total number of items selected
@@ -692,8 +694,8 @@ struct BlockRangeSelect
         __syncthreads();
 
         int     tile_idx        = temp_storage.tile_idx;
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;
-        Offset  num_remaining   = num_items - block_offset;
+        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
+        Offset  num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
 
         while (num_remaining > TILE_ITEMS)
         {
@@ -711,9 +713,9 @@ struct BlockRangeSelect
             num_remaining   = num_items - block_offset;
         }
 
-        // Consume the last (and potentially partially-full) tile
         if (num_remaining > 0)
         {
+            // Consume last tile (treat as partially-full)
             Offset total_selected = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             // Output the total number of items selected

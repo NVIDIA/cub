@@ -248,7 +248,7 @@ public:
         size_t          tex_offset = 0)         ///< Offset (in items) from \p ptr denoting the position of the iterator
     {
         this->ptr = ptr;
-        this->tex_offset = tex_offset;
+        this->tex_offset = (difference_type) tex_offset;
         return TexId::BindTexture(ptr);
     }
 
