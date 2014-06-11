@@ -206,7 +206,7 @@ public:
      */
     int ParsedArgc()
     {
-        return keys.size();
+        return (int) keys.size();
     }
 
     /**

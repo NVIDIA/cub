@@ -862,7 +862,7 @@ struct BlockRangeReduceByKey
     __device__ __forceinline__ void ConsumeRange(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        ScanTileState      &tile_status,       ///< Global list of tile status
+        ScanTileState           &tile_status,       ///< Global list of tile status
         NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
     {
 #if (CUB_PTX_ARCH <= 130)

@@ -88,8 +88,8 @@ int Solve(
     int           *h_reference,
     int             num_items)
 {
-    int inclusive = 0.0;
-    int aggregate = 0.0;
+    int inclusive = 0;
+    int aggregate = 0;
 
     for (int i = 0; i < num_items; ++i)
     {
