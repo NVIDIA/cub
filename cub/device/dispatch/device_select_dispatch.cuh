@@ -155,12 +155,12 @@ struct DeviceSelectDispatch
     struct Policy350
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 11,
+            NOMINAL_4B_ITEMS_PER_THREAD = 17,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef BlockRangeSelectPolicy<
-                128,
+                96,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
@@ -191,7 +191,7 @@ struct DeviceSelectDispatch
     struct Policy200
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = (KEEP_REJECTS) ? 7 : 17,
+            NOMINAL_4B_ITEMS_PER_THREAD = (KEEP_REJECTS) ? 7 : 15,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
@@ -200,7 +200,7 @@ struct DeviceSelectDispatch
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
-                true,
+                false,
                 BLOCK_SCAN_WARP_SCANS>
             SelectRegionPolicy;
     };
@@ -321,7 +321,7 @@ struct DeviceSelectDispatch
         int                     block_threads;
         int                     items_per_thread;
         BlockLoadAlgorithm      load_policy;
-        bool                    two_phase_scatter;
+        bool                    store_warp_time_slicing;
         BlockScanAlgorithm      scan_algorithm;
 
         template <typename BlockRangeSelectPolicy>
@@ -331,7 +331,7 @@ struct DeviceSelectDispatch
             block_threads               = BlockRangeSelectPolicy::BLOCK_THREADS;
             items_per_thread            = BlockRangeSelectPolicy::ITEMS_PER_THREAD;
             load_policy                 = BlockRangeSelectPolicy::LOAD_ALGORITHM;
-            two_phase_scatter           = BlockRangeSelectPolicy::TWO_PHASE_SCATTER;
+            store_warp_time_slicing     = BlockRangeSelectPolicy::STORE_WARP_TIME_SLICING;
             scan_algorithm              = BlockRangeSelectPolicy::SCAN_ALGORITHM;
         }
 
@@ -342,7 +342,7 @@ struct DeviceSelectDispatch
                 block_threads,
                 items_per_thread,
                 load_policy,
-                two_phase_scatter,
+                store_warp_time_slicing,
                 scan_algorithm);
         }
     };
@@ -451,24 +451,10 @@ struct DeviceSelectDispatch
 
             // Get grid size for scanning tiles
             dim3 select_grid_size;
-            if (ptx_version <= 130)
-            {
-                // Blocks are launched in order, so just assign one block per tile
-                int max_dim_x = 32 * 1024;
-                select_grid_size.z = 1;
-                select_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
-                select_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
-            }
-            else
-            {
-                // Blocks may not be launched in order, so use atomics
-                int select_range_occupancy = select_range_sm_occupancy * sm_count;        // Whole-device occupancy for select_range_kernel
-                select_grid_size.z = 1;
-                select_grid_size.y = 1;
-                select_grid_size.x = (num_tiles < select_range_occupancy) ?
-                    num_tiles :                     // Not enough to fill the device with threadblocks
-                    select_range_occupancy;        // Fill the device with threadblocks
-            }
+            int max_dim_x = 32 * 1024;
+            select_grid_size.z = 1;
+            select_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
+            select_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
             // Log select_range_kernel configuration
             if (debug_synchronous) CubLog("Invoking select_range_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
