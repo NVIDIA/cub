@@ -124,6 +124,10 @@ struct BlockRangeScan
         BLOCK_THREADS       = BlockRangeScanPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = BlockRangeScanPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
+
+        // Whether or not to sync after loading data
+        SYNC_AFTER_LOAD     = (BlockRangeScanPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+
     };
 
     // Parameterized BlockLoad type
@@ -329,7 +333,8 @@ struct BlockRangeScan
         else
             BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
-        __syncthreads();
+        if (SYNC_AFTER_LOAD)
+            __syncthreads();
 
         // Perform tile scan
         if (tile_idx == 0)
@@ -366,18 +371,18 @@ struct BlockRangeScan
     __device__ __forceinline__ void ConsumeRange(
         int                     num_items,          ///< Total number of input items
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        ScanTileState      &tile_status)       ///< Global list of tile status
+        ScanTileState           &tile_status)       ///< Global list of tile status
     {
 #if (CUB_PTX_ARCH <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
-        if (block_offset + TILE_ITEMS <= num_items)
+        if (num_remaining > TILE_ITEMS)
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-        else if (block_offset < num_items)
+        else if (num_remaining > 0)
             ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
 #else
@@ -416,6 +421,7 @@ struct BlockRangeScan
         }
 
 #endif
+
     }
 
 
