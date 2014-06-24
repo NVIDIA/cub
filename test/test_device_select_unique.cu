@@ -224,7 +224,7 @@ void Initialize(
     int         num_items,
     int         max_segment)
 {
-    unsigned short max_short = (unsigned short) -1;
+    unsigned int max_short = (unsigned int) -1;
 
     int key = 0;
     int i = 0;
@@ -232,9 +232,9 @@ void Initialize(
     {
         // Select number of repeating occurrences
 
-        unsigned short repeat;
+        unsigned int repeat;
         RandomBits(repeat, entropy_reduction);
-        repeat = (unsigned short) ((float(repeat) * (float(max_segment) / float(max_short))));
+        repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_short));
         repeat = CUB_MAX(1, repeat);
 
         int j = i;
@@ -392,9 +392,9 @@ void TestPointer(
     Initialize(entropy_reduction, h_in, num_items, max_segment);
     int num_selected = Solve(h_in, h_reference, num_items);
 
-    printf("\nPointer %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %d), %s %d-byte elements, entropy_reduction %d\n",
+    printf("\nPointer %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, num_items / num_selected,
+        num_items, num_selected, float(num_items) / num_selected,
         type_string,
         (int) sizeof(T),
         entropy_reduction);
@@ -437,9 +437,9 @@ void TestIterator(
     // Initialize problem and solution
     int num_selected = Solve(h_in, h_reference, num_items);
 
-    printf("\nIterator %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %d), %s %d-byte elements\n",
+    printf("\nIterator %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, num_items / num_selected,
+        num_items, num_selected, float(num_items) / num_selected,
         type_string,
         (int) sizeof(T));
     fflush(stdout);
@@ -475,7 +475,7 @@ void Test(
     int             num_items,
     char*           type_string)
 {
-    for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
+    for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned int) -1); max_segment *= 11)
     {
         TestPointer<BACKEND, T>(num_items, 0, max_segment, type_string);
         TestPointer<BACKEND, T>(num_items, 2, max_segment, type_string);

@@ -308,8 +308,29 @@ private:
         T               items[ITEMS_PER_THREAD],   ///< [in-out] Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements.
         Int2Type<true>  time_slicing)
     {
+        if (warp_id == 0)
+        {
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                int item_offset = ITEM + (lane_id * ITEMS_PER_THREAD);
+                if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                temp_storage[item_offset] = items[ITEM];
+            }
+
+            __threadfence_block();
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                int item_offset = (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
+                if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
+                items[ITEM] = temp_storage[item_offset];
+            }
+        }
+
         #pragma unroll
-        for (int SLICE = 0; SLICE < TIME_SLICES; ++SLICE)
+        for (int SLICE = 1; SLICE < TIME_SLICES; ++SLICE)
         {
             __syncthreads();
 
