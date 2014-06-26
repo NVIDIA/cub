@@ -83,214 +83,6 @@ struct BlockRangeReduceByKeyPolicy
 
 
 /******************************************************************************
- * Tile status interface types
- ******************************************************************************/
-
-/**
- * Tile status interface for reduction by key.
- *
- */
-template <
-    typename    Value,
-    typename    Offset,
-    bool        SINGLE_WORD = (Traits<Value>::PRIMITIVE) && (sizeof(Value) + sizeof(Offset) < 16)>
-struct ReduceByKeyScanTileState;
-
-
-/**
- * Tile status interface for reduction by key, specialized for scan status and value types that
- * cannot be combined into one machine word.
- */
-template <
-    typename    Value,
-    typename    Offset>
-struct ReduceByKeyScanTileState<Value, Offset, false> :
-    ScanTileState<ItemOffsetPair<Value, Offset> >
-{
-    typedef ScanTileState<ItemOffsetPair<Value, Offset> > SuperClass;
-
-    /// Constructor
-    __host__ __device__ __forceinline__
-    ReduceByKeyScanTileState() : SuperClass() {}
-};
-
-
-/**
- * Tile status interface for reduction by key, specialized for scan status and value types that
- * can be combined into one machine word that can be read/written coherently in a single access.
- */
-template <
-    typename Value,
-    typename Offset>
-struct ReduceByKeyScanTileState<Value, Offset, true>
-{
-    typedef ItemOffsetPair<Value, Offset> ItemOffsetPair;
-
-    // Constants
-    enum
-    {
-        PAIR_SIZE           = sizeof(Value) + sizeof(Offset),
-        TXN_WORD_SIZE       = 1 << Log2<PAIR_SIZE + 1>::VALUE,
-        STATUS_WORD_SIZE    = TXN_WORD_SIZE - PAIR_SIZE,
-
-        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
-    };
-
-    // Status word type
-    typedef typename If<(STATUS_WORD_SIZE == 8),
-        long long,
-        typename If<(STATUS_WORD_SIZE == 4),
-            int,
-            typename If<(STATUS_WORD_SIZE == 2),
-                short,
-                char>::Type>::Type>::Type StatusWord;
-
-    // Status word type
-    typedef typename If<(TXN_WORD_SIZE == 16),
-        longlong2,
-        typename If<(TXN_WORD_SIZE == 8),
-            long long,
-            int>::Type>::Type TxnWord;
-
-    // Device word type (for when sizeof(Value) == sizeof(Offset))
-    struct TileDescriptorBigStatus
-    {
-        Offset      offset;
-        Value       value;
-        StatusWord  status;
-    };
-
-    // Device word type (for when sizeof(Value) != sizeof(Offset))
-    struct TileDescriptorLittleStatus
-    {
-        Value       value;
-        StatusWord  status;
-        Offset      offset;
-    };
-
-    // Device word type
-    typedef typename If<
-            (sizeof(Value) == sizeof(Offset)),
-            TileDescriptorBigStatus,
-            TileDescriptorLittleStatus>::Type
-        TileDescriptor;
-
-
-    // Device storage
-    TileDescriptor *d_tile_status;
-
-
-    /// Constructor
-    __host__ __device__ __forceinline__
-    ReduceByKeyScanTileState()
-    :
-        d_tile_status(NULL)
-    {}
-
-
-    /// Initializer
-    __host__ __device__ __forceinline__
-    cudaError_t Init(
-        int     num_tiles,                          ///< [in] Number of tiles
-        void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t  temp_storage_bytes)                 ///< [in] Size in bytes of \t d_temp_storage allocation
-    {
-        d_tile_status = reinterpret_cast<TileDescriptor*>(d_temp_storage);
-        return cudaSuccess;
-    }
-
-
-    /**
-     * Compute device memory needed for tile status
-     */
-    __host__ __device__ __forceinline__
-    static cudaError_t AllocationSize(
-        int     num_tiles,                          ///< [in] Number of tiles
-        size_t  &temp_storage_bytes)                ///< [out] Size in bytes of \t d_temp_storage allocation
-    {
-        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor);       // bytes needed for tile status descriptors
-        return cudaSuccess;
-    }
-
-
-    /**
-     * Initialize (from device)
-     */
-    __device__ __forceinline__ void InitializeStatus(int num_tiles)
-    {
-        int tile_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
-        if (tile_idx < num_tiles)
-        {
-            // Not-yet-set
-            d_tile_status[TILE_STATUS_PADDING + tile_idx].status = StatusWord(SCAN_TILE_INVALID);
-        }
-
-        if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
-        {
-            // Padding
-            d_tile_status[threadIdx.x].status = StatusWord(SCAN_TILE_OOB);
-        }
-    }
-
-
-    /**
-     * Update the specified tile's inclusive value and corresponding status
-     */
-    __device__ __forceinline__ void SetInclusive(int tile_idx, ItemOffsetPair tile_inclusive)
-    {
-        TileDescriptor tile_descriptor;
-        tile_descriptor.status = SCAN_TILE_INCLUSIVE;
-        tile_descriptor.value = tile_inclusive.value;
-        tile_descriptor.offset = tile_inclusive.offset;
-
-        TxnWord alias;
-        *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx), alias);
-    }
-
-
-    /**
-     * Update the specified tile's partial value and corresponding status
-     */
-    __device__ __forceinline__ void SetPartial(int tile_idx, ItemOffsetPair tile_partial)
-    {
-        TileDescriptor tile_descriptor;
-        tile_descriptor.status = SCAN_TILE_PARTIAL;
-        tile_descriptor.value = tile_partial.value;
-        tile_descriptor.offset = tile_partial.offset;
-
-        TxnWord alias;
-        *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
-        ThreadStore<STORE_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx), alias);
-    }
-
-    /**
-     * Wait for the corresponding tile to become non-invalid
-     */
-    __device__ __forceinline__ void WaitForValid(
-        int             tile_idx,
-        StatusWord      &status,
-        ItemOffsetPair  &value)
-    {
-        // Use warp-any to determine when all threads have valid status
-        TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
-        TileDescriptor tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
-
-        while (WarpAny(tile_descriptor.status == SCAN_TILE_INVALID))
-        {
-            alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
-            tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
-        }
-
-        status = tile_descriptor.status;
-        value.value = tile_descriptor.value;
-        value.offset = tile_descriptor.offset;
-    }
-
-};
-
-
-/******************************************************************************
  * Thread block abstractions
  ******************************************************************************/
 
@@ -317,6 +109,9 @@ struct BlockRangeReduceByKey
 
     // Data type of value iterator
     typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
+
+    // Tuple type for scanning (pairs accumulated segment-value with segment-index)
+    typedef ItemOffsetPair<Value, Offset> ReductionOffsetPair;
 
     // Tile status descriptor interface type
     typedef ReduceByKeyScanTileState<Value, Offset> ScanTileState;
@@ -353,11 +148,8 @@ struct BlockRangeReduceByKey
             ValueInputIterator>::Type                                                                // Directly use the supplied input iterator type
         WrappedValueInputIterator;
 
-    // Value-offset tuple type for scanning (maps accumulated values to segment index)
-    typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
-
     // Reduce-value-by-segment scan operator
-    typedef ReduceBySegmentOp<ReductionOp, ValueOffsetPair> ReduceBySegmentOp;
+    typedef ReduceBySegmentOp<ReductionOp, ReductionOffsetPair> ReduceBySegmentOp;
 
     // Parameterized BlockLoad type for keys
     typedef BlockLoad<
@@ -396,14 +188,14 @@ struct BlockRangeReduceByKey
 
     // Parameterized BlockScan type
     typedef BlockScan<
-            ValueOffsetPair,
+            ReductionOffsetPair,
             BlockRangeReduceByKeyPolicy::BLOCK_THREADS,
             BlockRangeReduceByKeyPolicy::SCAN_ALGORITHM>
         BlockScanAllocations;
 
     // Callback type for obtaining tile prefix during block scan
     typedef BlockScanLookbackPrefixOp<
-            ValueOffsetPair,
+            ReductionOffsetPair,
             ReduceBySegmentOp,
             ScanTileState>
         LookbackPrefixCallbackOp;
@@ -494,11 +286,11 @@ struct BlockRangeReduceByKey
      */
     __device__ __forceinline__
     void ScanBlock(
-        ValueOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
-        ValueOffsetPair     &block_aggregate,
+        ReductionOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
+        ReductionOffsetPair     &block_aggregate,
         Int2Type<true>      has_identity)
     {
-        ValueOffsetPair identity;
+        ReductionOffsetPair identity;
         identity.value = 0;
         identity.offset = 0;
         BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, identity, scan_op, block_aggregate);
@@ -510,8 +302,8 @@ struct BlockRangeReduceByKey
      */
     __device__ __forceinline__
     void ScanBlock(
-        ValueOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
-        ValueOffsetPair     &block_aggregate,
+        ReductionOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
+        ReductionOffsetPair     &block_aggregate,
         Int2Type<false>     has_identity)
     {
         BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, scan_op, block_aggregate);
@@ -522,12 +314,12 @@ struct BlockRangeReduceByKey
      */
     __device__ __forceinline__
     void ScanBlock(
-        ValueOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
-        ValueOffsetPair             &block_aggregate,
+        ReductionOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
+        ReductionOffsetPair             &block_aggregate,
         LookbackPrefixCallbackOp    &prefix_op,
         Int2Type<true>              has_identity)
     {
-        ValueOffsetPair identity;
+        ReductionOffsetPair identity;
         identity.value = 0;
         identity.offset = 0;
         BlockScanAllocations(temp_storage.scan).ExclusiveScan(values_and_segments, values_and_segments, identity, scan_op, block_aggregate, prefix_op);
@@ -538,8 +330,8 @@ struct BlockRangeReduceByKey
      */
     __device__ __forceinline__
     void ScanBlock(
-        ValueOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
-        ValueOffsetPair             &block_aggregate,
+        ReductionOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
+        ReductionOffsetPair             &block_aggregate,
         LookbackPrefixCallbackOp    &prefix_op,
         Int2Type<false>             has_identity)
     {
@@ -556,7 +348,7 @@ struct BlockRangeReduceByKey
         Offset          num_remaining,
         Value           (&values)[ITEMS_PER_THREAD],
         Offset          (&flags)[ITEMS_PER_THREAD],
-        ValueOffsetPair (&values_and_segments)[ITEMS_PER_THREAD])
+        ReductionOffsetPair (&values_and_segments)[ITEMS_PER_THREAD])
     {
         // Zip values and flags
         #pragma unroll
@@ -591,7 +383,7 @@ struct BlockRangeReduceByKey
     __device__ __forceinline__ void ScatterDirect(
         Offset              num_remaining,
         Key                 (&keys)[ITEMS_PER_THREAD],
-        ValueOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
+        ReductionOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
         Offset              (&flags)[ITEMS_PER_THREAD],
         Offset              tile_num_flags,
         Int2Type<ITEM>      iteration)
@@ -618,7 +410,7 @@ struct BlockRangeReduceByKey
     __device__ __forceinline__ void ScatterDirect(
         Offset                      num_remaining,
         Key                         (&keys)[ITEMS_PER_THREAD],
-        ValueOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
+        ReductionOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
         Offset                      (&flags)[ITEMS_PER_THREAD],
         Offset                      tile_num_flags,
         Int2Type<ITEMS_PER_THREAD>  iteration)
@@ -638,7 +430,7 @@ struct BlockRangeReduceByKey
     __device__ __forceinline__ void ScatterTwoPhase(
         Offset          num_remaining,
         Key             (&keys)[ITEMS_PER_THREAD],
-        ValueOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
+        ReductionOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
         Offset          (&flags)[ITEMS_PER_THREAD],
         Offset          tile_num_flags,
         Offset          tile_num_flags_prefix)
@@ -723,7 +515,7 @@ struct BlockRangeReduceByKey
     __device__ __forceinline__ void Scatter(
         Offset          num_remaining,
         Key             (&keys)[ITEMS_PER_THREAD],
-        ValueOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
+        ReductionOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
         Offset          (&flags)[ITEMS_PER_THREAD],
         Offset          tile_num_flags,
         Offset          tile_num_flags_prefix)
@@ -761,7 +553,7 @@ struct BlockRangeReduceByKey
      */
     template <
         bool                LAST_TILE>
-    __device__ __forceinline__ ValueOffsetPair ConsumeTile(
+    __device__ __forceinline__ ReductionOffsetPair ConsumeTile(
         Offset              num_items,          ///< Total number of global input items
         Offset              num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
@@ -771,8 +563,8 @@ struct BlockRangeReduceByKey
         Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
         Value               values[ITEMS_PER_THREAD];                       // Tile values
         Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
-        ValueOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
-        ValueOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
+        ReductionOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
+        ReductionOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
 
         // Load keys
         if (LAST_TILE)
@@ -800,7 +592,7 @@ struct BlockRangeReduceByKey
             ZipValuesAndFlags<LAST_TILE>(num_remaining, values, flags, values_and_segments);
 
             // Exclusive scan of values and flags
-            ValueOffsetPair block_aggregate;
+            ReductionOffsetPair block_aggregate;
             ScanBlock(values_and_segments, block_aggregate, Int2Type<HAS_IDENTITY_ZERO>());
 
             // Update tile status if this is not the last tile
@@ -841,7 +633,7 @@ struct BlockRangeReduceByKey
             ZipValuesAndFlags<LAST_TILE>(num_remaining, values, flags, values_and_segments);
 
             // Exclusive scan of values and flags
-            ValueOffsetPair block_aggregate;
+            ReductionOffsetPair block_aggregate;
             LookbackPrefixCallbackOp prefix_op(tile_status, temp_storage.prefix, scan_op, tile_idx);
 
             ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
@@ -880,7 +672,7 @@ struct BlockRangeReduceByKey
         else if (num_remaining > 0)
         {
             // Last tile
-            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+            ReductionOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             // Output the total number of items selected
             if (threadIdx.x == 0)
@@ -926,7 +718,7 @@ struct BlockRangeReduceByKey
         if (num_remaining > 0)
         {
             // Consume last tile (treat as partially-full)
-            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+            ReductionOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
             if ((threadIdx.x == 0))
             {
