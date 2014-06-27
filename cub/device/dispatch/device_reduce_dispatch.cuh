@@ -68,7 +68,7 @@ template <
     typename                Offset,                     ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceSweepPolicy::BLOCK_THREADS))
-__global__ void RangeReduceKernel(
+__global__ void DeviceReduceSweepKernel(
     InputIterator           d_in,                       ///< [in] Pointer to the input sequence of data items
     OutputIterator          d_out,                      ///< [out] Pointer to the output aggregate
     Offset                  num_items,                  ///< [in] Total number of input data items
@@ -114,7 +114,7 @@ template <
     typename                Offset,                     ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceSweepPolicy::BLOCK_THREADS), 1)
-__global__ void SingleTileKernel(
+__global__ void SingleReduceSweepKernel(
     InputIterator           d_in,                       ///< [in] Pointer to the input sequence of data items
     OutputIterator          d_out,                      ///< [out] Pointer to the output aggregate
     Offset                  num_items,                  ///< [in] Total number of input data items
@@ -391,42 +391,42 @@ struct DeviceReduceDispatch
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &range_reduce_config,
-        KernelConfig    &single_tile_config)
+        KernelConfig    &device_reduce_sweep_config,
+        KernelConfig    &single_reduce_sweep_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        range_reduce_config.template Init<PtxRangeReducePolicy>();
-        single_tile_config.template Init<PtxSingleTilePolicy>();
+        device_reduce_sweep_config.template Init<PtxRangeReducePolicy>();
+        single_reduce_sweep_config.template Init<PtxSingleTilePolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            range_reduce_config.template    Init<typename Policy350::RangeReducePolicy>();
-            single_tile_config.template     Init<typename Policy350::SingleTilePolicy>();
+            device_reduce_sweep_config.template    Init<typename Policy350::RangeReducePolicy>();
+            single_reduce_sweep_config.template     Init<typename Policy350::SingleTilePolicy>();
         }
         else if (ptx_version >= 300)
         {
-            range_reduce_config.template    Init<typename Policy300::RangeReducePolicy>();
-            single_tile_config.template     Init<typename Policy300::SingleTilePolicy>();
+            device_reduce_sweep_config.template    Init<typename Policy300::RangeReducePolicy>();
+            single_reduce_sweep_config.template     Init<typename Policy300::SingleTilePolicy>();
         }
         else if (ptx_version >= 200)
         {
-            range_reduce_config.template    Init<typename Policy200::RangeReducePolicy>();
-            single_tile_config.template     Init<typename Policy200::SingleTilePolicy>();
+            device_reduce_sweep_config.template    Init<typename Policy200::RangeReducePolicy>();
+            single_reduce_sweep_config.template     Init<typename Policy200::SingleTilePolicy>();
         }
         else if (ptx_version >= 130)
         {
-            range_reduce_config.template    Init<typename Policy130::RangeReducePolicy>();
-            single_tile_config.template     Init<typename Policy130::SingleTilePolicy>();
+            device_reduce_sweep_config.template    Init<typename Policy130::RangeReducePolicy>();
+            single_reduce_sweep_config.template     Init<typename Policy130::SingleTilePolicy>();
         }
         else
         {
-            range_reduce_config.template    Init<typename Policy100::RangeReducePolicy>();
-            single_tile_config.template     Init<typename Policy100::SingleTilePolicy>();
+            device_reduce_sweep_config.template    Init<typename Policy100::RangeReducePolicy>();
+            single_reduce_sweep_config.template     Init<typename Policy100::SingleTilePolicy>();
         }
 
     #endif
@@ -482,9 +482,9 @@ struct DeviceReduceDispatch
      * kernel invocations.
      */
     template <
-        typename                    RangeReduceKernelPtr,              ///< Function type of cub::RangeReduceKernel
-        typename                    AggregateTileKernelPtr,             ///< Function type of cub::SingleTileKernel for consuming partial reductions (T*)
-        typename                    SingleTileKernelPtr,                ///< Function type of cub::SingleTileKernel for consuming input (InputIterator)
+        typename                    DeviceReduceSweepKernelPtr,              ///< Function type of cub::DeviceReduceSweepKernel
+        typename                    AggregateTileKernelPtr,             ///< Function type of cub::SingleReduceSweepKernel for consuming partial reductions (T*)
+        typename                    SingleReduceSweepKernelPtr,                ///< Function type of cub::SingleReduceSweepKernel for consuming input (InputIterator)
         typename                    FillAndResetDrainKernelPtr>         ///< Function type of cub::FillAndResetDrainKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
@@ -497,11 +497,11 @@ struct DeviceReduceDispatch
         cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         FillAndResetDrainKernelPtr  prepare_drain_kernel,               ///< [in] Kernel function pointer to parameterization of cub::FillAndResetDrainKernel
-        RangeReduceKernelPtr       range_reduce_kernel,               ///< [in] Kernel function pointer to parameterization of cub::RangeReduceKernel
-        AggregateTileKernelPtr      aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::SingleTileKernel for consuming partial reductions (T*)
-        SingleTileKernelPtr         single_kernel,                      ///< [in] Kernel function pointer to parameterization of cub::SingleTileKernel for consuming input (InputIterator)
-        KernelConfig                &range_reduce_config,              ///< [in] Dispatch parameters that match the policy that \p range_reduce_kernel_ptr was compiled for
-        KernelConfig                &single_tile_config)                ///< [in] Dispatch parameters that match the policy that \p single_kernel was compiled for
+        DeviceReduceSweepKernelPtr       range_reduce_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceSweepKernel
+        AggregateTileKernelPtr      aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::SingleReduceSweepKernel for consuming partial reductions (T*)
+        SingleReduceSweepKernelPtr         single_kernel,                      ///< [in] Kernel function pointer to parameterization of cub::SingleReduceSweepKernel for consuming input (InputIterator)
+        KernelConfig                &device_reduce_sweep_config,              ///< [in] Dispatch parameters that match the policy that \p range_reduce_kernel_ptr was compiled for
+        KernelConfig                &single_reduce_sweep_config)                ///< [in] Dispatch parameters that match the policy that \p single_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -525,7 +525,7 @@ struct DeviceReduceDispatch
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Tile size of range_reduce_kernel
-            int tile_size = range_reduce_config.block_threads * range_reduce_config.items_per_thread;
+            int tile_size = device_reduce_sweep_config.block_threads * device_reduce_sweep_config.items_per_thread;
 
             if ((range_reduce_kernel == NULL) || (num_items <= tile_size))
             {
@@ -540,10 +540,10 @@ struct DeviceReduceDispatch
 
                 // Log single_kernel configuration
                 if (debug_synchronous) CubLog("Invoking ReduceSingle<<<1, %d, 0, %lld>>>(), %d items per thread\n",
-                    single_tile_config.block_threads, (long long) stream, single_tile_config.items_per_thread);
+                    single_reduce_sweep_config.block_threads, (long long) stream, single_reduce_sweep_config.items_per_thread);
 
                 // Invoke single_kernel
-                single_kernel<<<1, single_tile_config.block_threads>>>(
+                single_kernel<<<1, single_reduce_sweep_config.block_threads>>>(
                     d_in,
                     d_out,
                     num_items,
@@ -568,7 +568,7 @@ struct DeviceReduceDispatch
                     range_reduce_sm_occupancy,
                     sm_version,
                     range_reduce_kernel,
-                    range_reduce_config.block_threads))) break;
+                    device_reduce_sweep_config.block_threads))) break;
 
                 // Get device occupancy for range_reduce_kernel
                 int range_reduce_occupancy = range_reduce_sm_occupancy * sm_count;
@@ -582,7 +582,7 @@ struct DeviceReduceDispatch
 
                 // Get grid size for range_reduce_kernel
                 int range_reduce_grid_size;
-                switch (range_reduce_config.grid_mapping)
+                switch (device_reduce_sweep_config.grid_mapping)
                 {
                 case GRID_MAPPING_EVEN_SHARE:
 
@@ -623,7 +623,7 @@ struct DeviceReduceDispatch
                 GridQueue<Offset> queue(allocations[1]);
 
                 // Prepare the dynamic queue descriptor if necessary
-                if (range_reduce_config.grid_mapping == GRID_MAPPING_DYNAMIC)
+                if (device_reduce_sweep_config.grid_mapping == GRID_MAPPING_DYNAMIC)
                 {
                     // Prepare queue using a kernel so we know it gets prepared once per operation
                     if (debug_synchronous) CubLog("Invoking prepare_drain_kernel<<<1, 1, 0, %lld>>>()\n", (long long) stream);
@@ -640,10 +640,10 @@ struct DeviceReduceDispatch
 
                 // Log range_reduce_kernel configuration
                 if (debug_synchronous) CubLog("Invoking range_reduce_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                    range_reduce_grid_size, range_reduce_config.block_threads, (long long) stream, range_reduce_config.items_per_thread, range_reduce_sm_occupancy);
+                    range_reduce_grid_size, device_reduce_sweep_config.block_threads, (long long) stream, device_reduce_sweep_config.items_per_thread, range_reduce_sm_occupancy);
 
                 // Invoke range_reduce_kernel
-                range_reduce_kernel<<<range_reduce_grid_size, range_reduce_config.block_threads, 0, stream>>>(
+                range_reduce_kernel<<<range_reduce_grid_size, device_reduce_sweep_config.block_threads, 0, stream>>>(
                     d_in,
                     d_block_reductions,
                     num_items,
@@ -659,10 +659,10 @@ struct DeviceReduceDispatch
 
                 // Log single_kernel configuration
                 if (debug_synchronous) CubLog("Invoking single_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
-                    1, single_tile_config.block_threads, (long long) stream, single_tile_config.items_per_thread);
+                    1, single_reduce_sweep_config.block_threads, (long long) stream, single_reduce_sweep_config.items_per_thread);
 
                 // Invoke single_kernel
-                aggregate_kernel<<<1, single_tile_config.block_threads, 0, stream>>>(
+                aggregate_kernel<<<1, single_reduce_sweep_config.block_threads, 0, stream>>>(
                     d_block_reductions,
                     d_out,
                     range_reduce_grid_size,
@@ -709,9 +709,9 @@ struct DeviceReduceDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig range_reduce_config;
-            KernelConfig single_tile_config;
-            InitConfigs(ptx_version, range_reduce_config, single_tile_config);
+            KernelConfig device_reduce_sweep_config;
+            KernelConfig single_reduce_sweep_config;
+            InitConfigs(ptx_version, device_reduce_sweep_config, single_reduce_sweep_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -724,11 +724,11 @@ struct DeviceReduceDispatch
                 stream,
                 debug_synchronous,
                 FillAndResetDrainKernel<Offset>,
-                RangeReduceKernel<PtxRangeReducePolicy, InputIterator, T*, Offset, ReductionOp>,
-                SingleTileKernel<PtxSingleTilePolicy, T*, OutputIterator, Offset, ReductionOp>,
-                SingleTileKernel<PtxSingleTilePolicy, InputIterator, OutputIterator, Offset, ReductionOp>,
-                range_reduce_config,
-                single_tile_config))) break;
+                DeviceReduceSweepKernel<PtxRangeReducePolicy, InputIterator, T*, Offset, ReductionOp>,
+                SingleReduceSweepKernel<PtxSingleTilePolicy, T*, OutputIterator, Offset, ReductionOp>,
+                SingleReduceSweepKernel<PtxSingleTilePolicy, InputIterator, OutputIterator, Offset, ReductionOp>,
+                device_reduce_sweep_config,
+                single_reduce_sweep_config))) break;
         }
         while (0);
 
