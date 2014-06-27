@@ -102,7 +102,10 @@ endif
 
 
 # Testing mode option (quick/thorough)
-ifeq ($(quicktest), 1)
+ifeq ($(quickertest), 1)
+	NVCCFLAGS += -DQUICKER_TEST
+	TEST_SUFFIX = quicker
+else ifeq ($(quicktest), 1)
 	NVCCFLAGS += -DQUICK_TEST
 	TEST_SUFFIX = quick
 else 

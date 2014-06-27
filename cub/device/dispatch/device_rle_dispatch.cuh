@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within global memory.
+ * cub::DeviceRle provides device-wide, parallel operations for run-length-encoding sequences of data items residing within global memory.
  */
 
 #pragma once
@@ -62,23 +62,23 @@ namespace cub {
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename            BlockRangeSelectPolicy,     ///< Parameterized BlockRangeSelectPolicy tuning policy type
+    typename            BlockRangeRlePolicy,     ///< Parameterized BlockRangeRlePolicy tuning policy type
     typename            InputIterator,              ///< Random-access input iterator type for reading input items
     typename            FlagIterator,               ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
     typename            OutputIterator,             ///< Random-access output iterator type for writing selected items
     typename            NumSelectedIterator,        ///< Output iterator type for recording the number of items selected
-    typename            ScanTileState,         ///< Tile status interface type
+    typename            ScanTileState,              ///< Tile status interface type
     typename            SelectOp,                   ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename            EqualityOp,                 ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename            Offset,                     ///< Signed integer type for global offsets
     bool                KEEP_REJECTS>               ///< Whether or not we push rejected items to the back of the output
-__launch_bounds__ (int(BlockRangeSelectPolicy::BLOCK_THREADS))
-__global__ void RangeSelectKernel(
+__launch_bounds__ (int(BlockRangeRlePolicy::BLOCK_THREADS))
+__global__ void SelectRegionKernel(
     InputIterator       d_in,                       ///< [in] Pointer to input sequence of data items
     FlagIterator        d_flags,                    ///< [in] Pointer to the input sequence of selection flags
     OutputIterator      d_out,                      ///< [in] Pointer to output sequence of selected data items
     NumSelectedIterator d_num_selected,             ///< [in] Pointer to total number of items selected (i.e., length of \p d_out)
-    ScanTileState  tile_status,                ///< [in] Tile status interface
+    ScanTileState  tile_status,                     ///< [in] Tile status interface
     SelectOp            select_op,                  ///< [in] Selection operator
     EqualityOp          equality_op,                ///< [in] Equality operator
     Offset              num_items,                  ///< [in] Total number of input items (i.e., length of \p d_in)
@@ -86,21 +86,21 @@ __global__ void RangeSelectKernel(
     GridQueue<int>      queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for selecting data from input tiles
-    typedef BlockRangeSelect<
-        BlockRangeSelectPolicy,
+    typedef BlockRangeRle<
+        BlockRangeRlePolicy,
         InputIterator,
         FlagIterator,
         OutputIterator,
         SelectOp,
         EqualityOp,
         Offset,
-        KEEP_REJECTS> BlockRangeSelectT;
+        KEEP_REJECTS> BlockRangeRleT;
 
-    // Shared memory for BlockRangeSelect
-    __shared__ typename BlockRangeSelectT::TempStorage temp_storage;
+    // Shared memory for BlockRangeRle
+    __shared__ typename BlockRangeRleT::TempStorage temp_storage;
 
     // Process tiles
-    BlockRangeSelectT(temp_storage, d_in, d_flags, d_out, select_op, equality_op, num_items).ConsumeRange(
+    BlockRangeRleT(temp_storage, d_in, d_flags, d_out, select_op, equality_op, num_items).ConsumeRange(
         num_tiles,
         queue,
         tile_status,
@@ -159,14 +159,14 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeSelectPolicy<
+        typedef BlockRangeRlePolicy<
                 96,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
                 BLOCK_SCAN_WARP_SCANS>
-            RangeSelectPolicy;
+            SelectRegionPolicy;
     };
 
     /// SM30
@@ -177,14 +177,14 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeSelectPolicy<
+        typedef BlockRangeRlePolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            RangeSelectPolicy;
+            SelectRegionPolicy;
     };
 
     /// SM20
@@ -195,14 +195,14 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeSelectPolicy<
+        typedef BlockRangeRlePolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_WARP_SCANS>
-            RangeSelectPolicy;
+            SelectRegionPolicy;
     };
 
     /// SM13
@@ -213,14 +213,14 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeSelectPolicy<
+        typedef BlockRangeRlePolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            RangeSelectPolicy;
+            SelectRegionPolicy;
     };
 
     /// SM10
@@ -231,14 +231,14 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeSelectPolicy<
+        typedef BlockRangeRlePolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            RangeSelectPolicy;
+            SelectRegionPolicy;
     };
 
 
@@ -264,7 +264,7 @@ struct DeviceSelectDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxRangeSelectPolicy : PtxPolicy::RangeSelectPolicy {};
+    struct PtxSelectRegionPolicy : PtxPolicy::SelectRegionPolicy {};
 
 
     /******************************************************************************
@@ -278,35 +278,35 @@ struct DeviceSelectDispatch
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &range_select_config)
+        KernelConfig    &rle_range_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        range_select_config.template Init<PtxRangeSelectPolicy>();
+        rle_range_config.template Init<PtxSelectRegionPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            range_select_config.template Init<typename Policy350::RangeSelectPolicy>();
+            rle_range_config.template Init<typename Policy350::SelectRegionPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            range_select_config.template Init<typename Policy300::RangeSelectPolicy>();
+            rle_range_config.template Init<typename Policy300::SelectRegionPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            range_select_config.template Init<typename Policy200::RangeSelectPolicy>();
+            rle_range_config.template Init<typename Policy200::SelectRegionPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            range_select_config.template Init<typename Policy130::RangeSelectPolicy>();
+            rle_range_config.template Init<typename Policy130::SelectRegionPolicy>();
         }
         else
         {
-            range_select_config.template Init<typename Policy100::RangeSelectPolicy>();
+            rle_range_config.template Init<typename Policy100::SelectRegionPolicy>();
         }
 
     #endif
@@ -314,7 +314,7 @@ struct DeviceSelectDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRangeSelectPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRangeRlePolicy.
      */
     struct KernelConfig
     {
@@ -324,15 +324,15 @@ struct DeviceSelectDispatch
         bool                    store_warp_time_slicing;
         BlockScanAlgorithm      scan_algorithm;
 
-        template <typename BlockRangeSelectPolicy>
+        template <typename BlockRangeRlePolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
         void Init()
         {
-            block_threads               = BlockRangeSelectPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockRangeSelectPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockRangeSelectPolicy::LOAD_ALGORITHM;
-            store_warp_time_slicing     = BlockRangeSelectPolicy::STORE_WARP_TIME_SLICING;
-            scan_algorithm              = BlockRangeSelectPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockRangeRlePolicy::BLOCK_THREADS;
+            items_per_thread            = BlockRangeRlePolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockRangeRlePolicy::LOAD_ALGORITHM;
+            store_warp_time_slicing     = BlockRangeRlePolicy::STORE_WARP_TIME_SLICING;
+            scan_algorithm              = BlockRangeRlePolicy::SCAN_ALGORITHM;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__
@@ -358,7 +358,7 @@ struct DeviceSelectDispatch
      */
     template <
         typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
-        typename                    RangeSelectKernelPtr>          ///< Function type of cub::RangeSelectKernelPtr
+        typename                    SelectRegionKernelPtr>          ///< Function type of cub::SelectRegionKernelPtr
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -374,8 +374,8 @@ struct DeviceSelectDispatch
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
         ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        RangeSelectKernelPtr       range_select_kernel,           ///< [in] Kernel function pointer to parameterization of cub::RangeSelectKernel
-        KernelConfig                range_select_config)           ///< [in] Dispatch parameters that match the policy that \p range_select_kernel was compiled for
+        SelectRegionKernelPtr       rle_range_kernel,            ///< [in] Kernel function pointer to parameterization of cub::SelectRegionKernel
+        KernelConfig                rle_range_config)            ///< [in] Dispatch parameters that match the policy that \p rle_range_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -401,7 +401,7 @@ struct DeviceSelectDispatch
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int tile_size = range_select_config.block_threads * range_select_config.items_per_thread;
+            int tile_size = rle_range_config.block_threads * rle_range_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
@@ -441,13 +441,13 @@ struct DeviceSelectDispatch
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            // Get SM occupancy for range_select_kernel
-            int range_select_sm_occupancy;
+            // Get SM occupancy for rle_range_kernel
+            int rle_range_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                range_select_sm_occupancy,            // out
+                rle_range_sm_occupancy,            // out
                 sm_version,
-                range_select_kernel,
-                range_select_config.block_threads))) break;
+                rle_range_kernel,
+                rle_range_config.block_threads))) break;
 
             // Get grid size for scanning tiles
             dim3 select_grid_size;
@@ -456,12 +456,12 @@ struct DeviceSelectDispatch
             select_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
             select_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
-            // Log range_select_kernel configuration
-            if (debug_synchronous) CubLog("Invoking range_select_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                select_grid_size.x, select_grid_size.y, select_grid_size.z, range_select_config.block_threads, (long long) stream, range_select_config.items_per_thread, range_select_sm_occupancy);
+            // Log rle_range_kernel configuration
+            if (debug_synchronous) CubLog("Invoking rle_range_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                select_grid_size.x, select_grid_size.y, select_grid_size.z, rle_range_config.block_threads, (long long) stream, rle_range_config.items_per_thread, rle_range_sm_occupancy);
 
-            // Invoke range_select_kernel
-            range_select_kernel<<<select_grid_size, range_select_config.block_threads, 0, stream>>>(
+            // Invoke rle_range_kernel
+            rle_range_kernel<<<select_grid_size, rle_range_config.block_threads, 0, stream>>>(
                 d_in,
                 d_flags,
                 d_out,
@@ -516,8 +516,8 @@ struct DeviceSelectDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig range_select_config;
-            InitConfigs(ptx_version, range_select_config);
+            KernelConfig rle_range_config;
+            InitConfigs(ptx_version, rle_range_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -534,8 +534,8 @@ struct DeviceSelectDispatch
                 debug_synchronous,
                 ptx_version,
                 ScanInitKernel<Offset, ScanTileState>,
-                RangeSelectKernel<PtxRangeSelectPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, ScanTileState, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
-                range_select_config))) break;
+                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, ScanTileState, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
+                rle_range_config))) break;
         }
         while (0);
 

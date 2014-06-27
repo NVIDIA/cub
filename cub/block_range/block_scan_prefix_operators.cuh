@@ -680,10 +680,10 @@ struct BlockScanLookbackPrefixOp
     // Constructor
     __device__ __forceinline__
     BlockScanLookbackPrefixOp(
-        ScanTileState      &tile_status,
-        TempStorage             &temp_storage,
-        ScanOp                  scan_op,
-        int                     tile_idx)
+        ScanTileState       &tile_status,
+        TempStorage         &temp_storage,
+        ScanOp              scan_op,
+        int                 tile_idx)
     :
         tile_status(tile_status),
         temp_storage(temp_storage.Alias()),

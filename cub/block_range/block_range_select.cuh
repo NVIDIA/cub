@@ -445,6 +445,7 @@ struct BlockRangeSelect
         int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
         int lane_id = LaneId();
 
+        // Locally compact items within the warp (first warp)
         if (warp_id == 0)
         {
             #pragma unroll
@@ -463,7 +464,7 @@ struct BlockRangeSelect
             }
         }
 
-        // Locally compact items, warp-by-warp
+        // Locally compact items within the warp (remaining warps)
         #pragma unroll
         for (int SLICE = 1; SLICE < WARPS; ++SLICE)
         {
@@ -542,6 +543,9 @@ struct BlockRangeSelect
 
 
 
+    /**
+     * Scatter
+     */
     __device__ __forceinline__ void Scatter(
         Offset  tile_aggregate,
         Offset  tile_exclusive,
@@ -559,9 +563,7 @@ struct BlockRangeSelect
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
                 {
                     if (thread_exclusives[ITEM] < warp_aggregate)
-                    {
                         d_out[tile_exclusive + warp_exclusive + thread_exclusives[ITEM]] = items[ITEM];
-                    }
                 }
             }
         }
@@ -586,7 +588,7 @@ struct BlockRangeSelect
     //---------------------------------------------------------------------
 
     /**
-     * Process a tile of input (dynamic domino scan)
+     * Process a tile of input (dynamic chained scan)
      */
     template <bool LAST_TILE>
     __device__ __forceinline__ Offset ConsumeTile(
@@ -598,6 +600,8 @@ struct BlockRangeSelect
     {
         if (tile_idx == 0)
         {
+            // First tile
+
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
@@ -640,6 +644,8 @@ struct BlockRangeSelect
         }
         else
         {
+            // Not first tile
+
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
@@ -674,11 +680,8 @@ struct BlockRangeSelect
             if (warp_id == 0)
             {
                 prefix_op(tile_aggregate);
-
                 if (threadIdx.x == 0)
-                {
                     temp_storage.tile_exclusive = prefix_op.exclusive_prefix;
-                }
             }
 
             __syncthreads();
@@ -695,7 +698,7 @@ struct BlockRangeSelect
 
 
     /**
-     * Dequeue and scan tiles of items as part of a dynamic domino scan
+     * Dequeue and scan tiles of items as part of a dynamic chained scan
      */
     template <typename NumSelectedIterator>         ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRange(
