@@ -144,8 +144,8 @@ struct DeviceRadixSort
     static cudaError_t SortPairs(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
-        DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
+        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
+        DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose "current" buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         int                 num_items,                              ///< [in] Number of items to reduce
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
         int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -227,8 +227,8 @@ struct DeviceRadixSort
     static cudaError_t SortPairsDescending(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
-        DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
+        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
+        DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose "current" buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         int                 num_items,                              ///< [in] Number of items to reduce
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
         int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -306,7 +306,7 @@ struct DeviceRadixSort
     static cudaError_t SortKeys(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
+        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] Number of items to reduce
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
         int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
@@ -383,7 +383,7 @@ struct DeviceRadixSort
     static cudaError_t SortKeysDescending(
         void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
+        DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] Number of items to reduce
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
         int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison

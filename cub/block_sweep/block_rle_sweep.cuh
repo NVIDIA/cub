@@ -95,8 +95,8 @@ struct BlockRleSweepPolicy
 template <
     typename    BlockRleSweepPolicy,      ///< Parameterized BlockRleSweepPolicy tuning policy type
     typename    InputIterator,            ///< Random-access input iterator type for data
-    typename    OffsetOutputIterator,     ///< Random-access output iterator type for offset values
-    typename    LengthOutputIterator,     ///< Random-access output iterator type for length values
+    typename    OffsetsOutputIterator,     ///< Random-access output iterator type for offset values
+    typename    LengthsOutputIterator,     ///< Random-access output iterator type for length values
     typename    EqualityOp,               ///< T equality operator type
     typename    Offset>                   ///< Signed integer type for global offsets
 struct BlockRleSweep
@@ -203,9 +203,9 @@ struct BlockRleSweep
 
     _TempStorage                    &temp_storage;      ///< Reference to temp_storage
 
-    WrappedInputIterator            d_in;               ///< Input data
-    OffsetOutputIterator            d_offsets_out;      ///< Input segment offsets
-    LengthOutputIterator            d_lengths_out;      ///< Output segment lengths
+    WrappedInputIterator            d_in;               ///< Pointer to input sequence of data items
+    OffsetsOutputIterator            d_offsets_out;      ///< Input segment offsets
+    LengthsOutputIterator            d_lengths_out;      ///< Output segment lengths
 
     InequalityWrapper<EqualityOp>   inequality_op;      ///< T inequality operator
     ReduceBySegmentOp               scan_op;            ///< Reduce-length-by-flag scan operator
@@ -219,12 +219,12 @@ struct BlockRleSweep
     // Constructor
     __device__ __forceinline__
     BlockRleSweep(
-        TempStorage                 &temp_storage,      ///< Reference to temp_storage
-        InputIterator               d_in,               ///< Input data
-        OffsetOutputIterator        d_offsets_out,      ///< Input segment offsets
-        LengthOutputIterator        d_lengths_out,      ///< Output segment lengths
-        EqualityOp                  equality_op,        ///< T equality operator
-        Offset                      num_items)          ///< Total number of input items
+        TempStorage                 &temp_storage,      ///< [in] Reference to temp_storage
+        InputIterator               d_in,               ///< [in] Pointer to input sequence of data items
+        OffsetsOutputIterator        d_offsets_out,      ///< [out] Pointer to output sequence of segment offsets
+        LengthsOutputIterator        d_lengths_out,      ///< [out] Pointer to output sequence of segment lengths
+        EqualityOp                  equality_op,        ///< [in] T equality operator
+        Offset                      num_items)          ///< [in] Total number of input items
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
@@ -768,12 +768,12 @@ struct BlockRleSweep
     /**
      * Dequeue and scan tiles of items as part of a dynamic chained scan
      */
-    template <typename NumSegmentsIterator>         ///< Output iterator type for recording number of items selected
+    template <typename NumRunsIterator>         ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRange(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         ScanTileState           &tile_status,       ///< Global list of tile status
-        NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
+        NumRunsIterator     d_num_runs)     ///< Output pointer for total number of segments identified
     {
 
 #if __CUDA_ARCH__ > 130
@@ -811,7 +811,7 @@ struct BlockRleSweep
                 // Output the total number of items selected
                 if (threadIdx.x == 0)
                 {
-                    *d_num_segments = running_total.offset;
+                    *d_num_runs = running_total.offset;
 
                     // If the last tile is a whole tile, the inclusive prefix contains accumulated length reduction for the last segment
                     if (num_remaining == TILE_ITEMS)

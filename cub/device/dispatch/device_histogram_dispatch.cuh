@@ -254,31 +254,31 @@ struct DeviceHistogramDispatch
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &histo_range_config)
+        KernelConfig    &device_histogram_sweep_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        histo_range_config.template Init<PtxRangeHistoPolicy>();
+        device_histogram_sweep_config.template Init<PtxRangeHistoPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            histo_range_config.template Init<typename Policy350::RangeHistoPolicy>();
+            device_histogram_sweep_config.template Init<typename Policy350::RangeHistoPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            histo_range_config.template Init<typename Policy300::RangeHistoPolicy>();
+            device_histogram_sweep_config.template Init<typename Policy300::RangeHistoPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            histo_range_config.template Init<typename Policy200::RangeHistoPolicy>();
+            device_histogram_sweep_config.template Init<typename Policy200::RangeHistoPolicy>();
         }
         else
         {
-            histo_range_config.template Init<typename Policy100::RangeHistoPolicy>();
+            device_histogram_sweep_config.template Init<typename Policy100::RangeHistoPolicy>();
         }
 
     #endif
@@ -323,22 +323,22 @@ struct DeviceHistogramDispatch
      * Internal dispatch routine
      */
     template <
-        typename                    InitHistoKernelPtr,                 ///< Function type of cub::DeviceHistogramInitKernel
-        typename                    DeviceHistogramSweepKernelPtr,               ///< Function type of cub::DeviceHistogramSweepKernel
-        typename                    AggregateHistoKernelPtr>            ///< Function type of cub::DeviceHistogramAggregateKernel
+        typename                            InitHistoKernelPtr,                 ///< Function type of cub::DeviceHistogramInitKernel
+        typename                            DeviceHistogramSweepKernelPtr,      ///< Function type of cub::DeviceHistogramSweepKernel
+        typename                            SingleHistogramPartialsKernelPtr>   ///< Function type of cub::DeviceHistogramAggregateKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_samples,                          ///< [in] Input samples to histogram
-        HistoCounter                *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
-        Offset                      num_samples,                        ///< [in] Number of samples to process
-        cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
-        InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramInitKernel
-        DeviceHistogramSweepKernelPtr        histo_range_kernel,                ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
-        AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramAggregateKernel
-        KernelConfig                histo_range_config)                ///< [in] Dispatch parameters that match the policy that \p histo_range_kernel was compiled for
+        void                                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t                              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIterator                       d_samples,                          ///< [in] Pointer to the input sequence of samples to histogram
+        HistoCounter                        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
+        Offset                              num_samples,                        ///< [in] Number of samples to process
+        cudaStream_t                        stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                                debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
+        InitHistoKernelPtr                  init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramInitKernel
+        DeviceHistogramSweepKernelPtr       device_histogram_sweep_kernel,      ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
+        SingleHistogramPartialsKernelPtr    single_histogram_partials_kernel,   ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramAggregateKernel
+        KernelConfig                        device_histogram_sweep_config)      ///< [in] Dispatch parameters that match the policy that \p device_histogram_sweep_kernel was compiled for
     {
     #ifndef CUB_RUNTIME_ENABLED
 
@@ -362,19 +362,19 @@ struct DeviceHistogramDispatch
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-            // Get SM occupancy for histo_range_kernel
+            // Get SM occupancy for device_histogram_sweep_kernel
             int histo_range_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
                 histo_range_sm_occupancy,
                 sm_version,
-                histo_range_kernel,
-                histo_range_config.block_threads))) break;
+                device_histogram_sweep_kernel,
+                device_histogram_sweep_config.block_threads))) break;
 
-            // Get device occupancy for histo_range_kernel
+            // Get device occupancy for device_histogram_sweep_kernel
             int histo_range_occupancy = histo_range_sm_occupancy * sm_count;
 
-            // Get tile size for histo_range_kernel
-            int channel_tile_size = histo_range_config.block_threads * histo_range_config.items_per_thread;
+            // Get tile size for device_histogram_sweep_kernel
+            int channel_tile_size = device_histogram_sweep_config.block_threads * device_histogram_sweep_config.items_per_thread;
             int tile_size = channel_tile_size * CHANNELS;
 
             // Even-share work distribution
@@ -384,9 +384,9 @@ struct DeviceHistogramDispatch
                 histo_range_occupancy * subscription_factor,
                 tile_size);
 
-            // Get grid size for histo_range_kernel
+            // Get grid size for device_histogram_sweep_kernel
             int histo_range_grid_size;
-            switch (histo_range_config.grid_mapping)
+            switch (device_histogram_sweep_config.grid_mapping)
             {
             case GRID_MAPPING_EVEN_SHARE:
 
@@ -449,14 +449,14 @@ struct DeviceHistogramDispatch
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Whether we need privatized histograms (i.e., non-global atomics and multi-block)
-            bool privatized_temporaries = (histo_range_grid_size > 1) && (histo_range_config.block_algorithm != DEVICE_HISTO_GLOBAL_ATOMIC);
+            bool privatized_temporaries = (histo_range_grid_size > 1) && (device_histogram_sweep_config.block_algorithm != DEVICE_HISTO_GLOBAL_ATOMIC);
 
-            // Log histo_range_kernel configuration
-            if (debug_synchronous) CubLog("Invoking histo_range_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                histo_range_grid_size, histo_range_config.block_threads, (long long) stream, histo_range_config.items_per_thread, histo_range_sm_occupancy);
+            // Log device_histogram_sweep_kernel configuration
+            if (debug_synchronous) CubLog("Invoking device_histogram_sweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                histo_range_grid_size, device_histogram_sweep_config.block_threads, (long long) stream, device_histogram_sweep_config.items_per_thread, histo_range_sm_occupancy);
 
-            // Invoke histo_range_kernel
-            histo_range_kernel<<<histo_range_grid_size, histo_range_config.block_threads, 0, stream>>>(
+            // Invoke device_histogram_sweep_kernel
+            device_histogram_sweep_kernel<<<histo_range_grid_size, device_histogram_sweep_config.block_threads, 0, stream>>>(
                 d_samples,
                 (privatized_temporaries) ?
                     d_temp_histo_wrapper :
@@ -474,12 +474,12 @@ struct DeviceHistogramDispatch
             // Aggregate privatized block histograms if necessary
             if (privatized_temporaries)
             {
-                // Log aggregate_kernel configuration
-                if (debug_synchronous) CubLog("Invoking aggregate_kernel<<<%d, %d, 0, %lld>>>()\n",
+                // Log single_histogram_partials_kernel configuration
+                if (debug_synchronous) CubLog("Invoking single_histogram_partials_kernel<<<%d, %d, 0, %lld>>>()\n",
                     ACTIVE_CHANNELS, BINS, (long long) stream);
 
-                // Invoke aggregate_kernel
-                aggregate_kernel<<<ACTIVE_CHANNELS, BINS, 0, stream>>>(
+                // Invoke single_histogram_partials_kernel
+                single_histogram_partials_kernel<<<ACTIVE_CHANNELS, BINS, 0, stream>>>(
                     d_block_histograms,
                     d_histo_wrapper,
                     histo_range_grid_size);
@@ -506,7 +506,7 @@ struct DeviceHistogramDispatch
     static cudaError_t Dispatch(
         void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator       d_samples,                          ///< [in] Input samples to histogram
+        InputIterator       d_samples,                          ///< [in] Pointer to the input sequence of samples to histogram
         HistoCounter        *d_histograms[ACTIVE_CHANNELS],     ///< [out] Array of channel histograms, each having BINS counters of integral type \p HistoCounter.
         int                 num_samples,                        ///< [in] Number of samples to process
         cudaStream_t        stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -524,8 +524,8 @@ struct DeviceHistogramDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig histo_range_config;
-            InitConfigs(ptx_version, histo_range_config);
+            KernelConfig device_histogram_sweep_config;
+            InitConfigs(ptx_version, device_histogram_sweep_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -539,7 +539,7 @@ struct DeviceHistogramDispatch
                 DeviceHistogramInitKernel<BINS, ACTIVE_CHANNELS, Offset, HistoCounter>,
                 DeviceHistogramSweepKernel<PtxRangeHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
                 DeviceHistogramAggregateKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
-                histo_range_config))) break;
+                device_histogram_sweep_config))) break;
         }
         while (0);
 

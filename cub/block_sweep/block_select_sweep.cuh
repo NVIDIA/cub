@@ -91,14 +91,14 @@ struct BlockSelectSweepPolicy
  * \brief BlockSelectSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles
  *
  * Performs functor-based selection if SelectOp functor type != NullType
- * Otherwise performs flag-based selection if FlagIterator's value type != NullType
+ * Otherwise performs flag-based selection if FlagsInputIterator's value type != NullType
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
     typename    BlockSelectSweepPolicy,         ///< Parameterized BlockSelectSweepPolicy tuning policy type
     typename    InputIterator,                  ///< Random-access input iterator type for selection items
-    typename    FlagIterator,                   ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    OutputIterator,                 ///< Random-access input iterator type for selected items
+    typename    FlagsInputIterator,                   ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    SelectedOutputIterator,                 ///< Random-access input iterator type for selected items
     typename    SelectOp,                       ///< Selection operator type (NullType if selections or discontinuity flagging is to be used for selection)
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
     typename    Offset,                         ///< Signed integer type for global offsets
@@ -113,7 +113,7 @@ struct BlockSelectSweep
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Data type of flag iterator
-    typedef typename std::iterator_traits<FlagIterator>::value_type Flag;
+    typedef typename std::iterator_traits<FlagsInputIterator>::value_type Flag;
 
     // Tile status descriptor interface type
     typedef ScanTileState<Offset> ScanTileState;
@@ -157,10 +157,10 @@ struct BlockSelectSweep
         WrappedInputIterator;
 
     // Flag iterator wrapper type
-    typedef typename If<IsPointer<FlagIterator>::VALUE,
+    typedef typename If<IsPointer<FlagsInputIterator>::VALUE,
             CacheModifiedInputIterator<BlockSelectSweepPolicy::LOAD_MODIFIER, Flag, Offset>,   // Wrap the native input pointer with CacheModifiedInputIterator
-            FlagIterator>::Type                                                                 // Directly use the supplied input iterator type
-        WrappedFlagIterator;
+            FlagsInputIterator>::Type                                                                 // Directly use the supplied input iterator type
+        WrappedFlagsInputIterator;
 
     // Parameterized BlockLoad type for input items
     typedef BlockLoad<
@@ -172,7 +172,7 @@ struct BlockSelectSweep
 
     // Parameterized BlockLoad type for flags
     typedef BlockLoad<
-            WrappedFlagIterator,
+            WrappedFlagsInputIterator,
             BlockSelectSweepPolicy::BLOCK_THREADS,
             BlockSelectSweepPolicy::ITEMS_PER_THREAD,
             BlockSelectSweepPolicy::LOAD_ALGORITHM>
@@ -235,8 +235,8 @@ struct BlockSelectSweep
 
     _TempStorage                    &temp_storage;      ///< Reference to temp_storage
     WrappedInputIterator            d_in;               ///< Input data
-    WrappedFlagIterator             d_flags;            ///< Input flags
-    OutputIterator                  d_out;              ///< Output data
+    WrappedFlagsInputIterator             d_flags;            ///< Input flags
+    SelectedOutputIterator                  d_selected_out;              ///< Output data
     SelectOp                        select_op;          ///< Selection operator
     InequalityWrapper<EqualityOp>   inequality_op;      ///< Inequality operator
     Offset                          num_items;          ///< Total number of input items
@@ -251,8 +251,8 @@ struct BlockSelectSweep
     BlockSelectSweep(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIterator               d_in,               ///< Input data
-        FlagIterator                d_flags,            ///< Input flags
-        OutputIterator              d_out,              ///< Output data
+        FlagsInputIterator                d_flags,            ///< Input flags
+        SelectedOutputIterator              d_selected_out,              ///< Output data
         SelectOp                    select_op,          ///< Selection operator
         EqualityOp                  equality_op,        ///< Equality operator
         Offset                      num_items)          ///< Total number of input items
@@ -260,7 +260,7 @@ struct BlockSelectSweep
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_flags(d_flags),
-        d_out(d_out),
+        d_selected_out(d_selected_out),
         select_op(select_op),
         inequality_op(equality_op),
         num_items(num_items)
@@ -494,7 +494,7 @@ struct BlockSelectSweep
         {
             if ((ITEM * WARP_THREADS) < warp_aggregate - lane_id)
             {
-                d_out[tile_exclusive + warp_exclusive + (ITEM * WARP_THREADS) + lane_id] = items[ITEM];
+                d_selected_out[tile_exclusive + warp_exclusive + (ITEM * WARP_THREADS) + lane_id] = items[ITEM];
             }
         }
     }
@@ -536,7 +536,7 @@ struct BlockSelectSweep
         {
             if ((ITEM * WARP_THREADS) < warp_aggregate - lane_id)
             {
-                d_out[tile_exclusive + warp_exclusive + (ITEM * WARP_THREADS) + lane_id] = items[ITEM];
+                d_selected_out[tile_exclusive + warp_exclusive + (ITEM * WARP_THREADS) + lane_id] = items[ITEM];
             }
         }
     }
@@ -563,7 +563,7 @@ struct BlockSelectSweep
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
                 {
                     if (thread_exclusives[ITEM] < warp_aggregate)
-                        d_out[tile_exclusive + warp_exclusive + thread_exclusives[ITEM]] = items[ITEM];
+                        d_selected_out[tile_exclusive + warp_exclusive + thread_exclusives[ITEM]] = items[ITEM];
                 }
             }
         }
