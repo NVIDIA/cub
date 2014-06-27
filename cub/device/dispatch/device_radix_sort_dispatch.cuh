@@ -59,7 +59,7 @@ namespace cub {
  * Upsweep pass kernel entry point (multi-block).  Computes privatized digit histograms, one per block.
  */
 template <
-    typename                BlockRadixSortUpsweepPolicy,   ///< Parameterized BlockRadixSortUpsweepPolicy tuning policy type
+    typename                BlockRadixSortUpsweepPolicy,        ///< Parameterized BlockRadixSortUpsweepPolicy tuning policy type
     bool                    DESCENDING,                         ///< Whether or not the sorted-order is high-to-low
     typename                Key,                                ///< Key type
     typename                Offset>                             ///< Signed integer type for global offsets
@@ -137,7 +137,7 @@ __global__ void RadixSortScanBinsKernel(
  * Downsweep pass kernel entry point (multi-block).  Scatters keys (and values) into corresponding bins for the current digit place.
  */
 template <
-    typename                BlockRadixSortDownsweepPolicy,     ///< Parameterizable tuning policy type for cub::BlockRadixSortUpsweep abstraction
+    typename                BlockRadixSortDownsweepPolicy,          ///< Parameterizable tuning policy type for cub::BlockRadixSortUpsweep abstraction
     bool                    DESCENDING,                             ///< Whether or not the sorted-order is high-to-low
     typename                Key,                                    ///< Key type
     typename                Value,                                  ///< Value type
@@ -504,7 +504,7 @@ struct DeviceRadixSortDispatch
         int                     tile_size;
         cudaSharedMemConfig     smem_config;
         int                     radix_bits;
-        int                     sm_occupancy;       // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
+        int                     sm_occupancy;
         int                     max_grid_size;
         int                     subscription_factor;
 
