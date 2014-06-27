@@ -85,7 +85,7 @@ template <
     typename                                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
     typename                                        Offset>                     ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockRangeHistogramPolicy::BLOCK_THREADS))
-__global__ void HistoRegionKernel(
+__global__ void RangeHistoKernel(
     InputIterator                                   d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
     Offset                                          num_samples,                ///< [in] Total number of samples \p d_samples for all channels
@@ -175,49 +175,49 @@ struct DeviceHistogramDispatch
     /// SM35
     struct Policy350
     {
-        // HistoRegionPolicy
+        // RangeHistoPolicy
         typedef BlockRangeHistogramPolicy<
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 128 : 256,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE>
-            HistoRegionPolicy;
+            RangeHistoPolicy;
     };
 
     /// SM30
     struct Policy300
     {
-        // HistoRegionPolicy
+        // RangeHistoPolicy
         typedef BlockRangeHistogramPolicy<
                 128,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? GRID_MAPPING_DYNAMIC : GRID_MAPPING_EVEN_SHARE>
-            HistoRegionPolicy;
+            RangeHistoPolicy;
     };
 
     /// SM20
     struct Policy200
     {
-        // HistoRegionPolicy
+        // RangeHistoPolicy
         typedef BlockRangeHistogramPolicy<
                 128,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
                 GRID_MAPPING_DYNAMIC>
-            HistoRegionPolicy;
+            RangeHistoPolicy;
     };
 
     /// SM10
     struct Policy100
     {
-        // HistoRegionPolicy
+        // RangeHistoPolicy
         typedef BlockRangeHistogramPolicy<
                 128,
                 7,
                 DEVICE_HISTO_SORT,        // (use sort regardless because g-atomics are unsupported and s-atomics are perf-useless)
                 GRID_MAPPING_EVEN_SHARE>
-            HistoRegionPolicy;
+            RangeHistoPolicy;
     };
 
 
@@ -240,7 +240,7 @@ struct DeviceHistogramDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxHistoRegionPolicy : PtxPolicy::HistoRegionPolicy {};
+    struct PtxRangeHistoPolicy : PtxPolicy::RangeHistoPolicy {};
 
 
     /******************************************************************************
@@ -259,26 +259,26 @@ struct DeviceHistogramDispatch
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        histo_range_config.template Init<PtxHistoRegionPolicy>();
+        histo_range_config.template Init<PtxRangeHistoPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            histo_range_config.template Init<typename Policy350::HistoRegionPolicy>();
+            histo_range_config.template Init<typename Policy350::RangeHistoPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            histo_range_config.template Init<typename Policy300::HistoRegionPolicy>();
+            histo_range_config.template Init<typename Policy300::RangeHistoPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            histo_range_config.template Init<typename Policy200::HistoRegionPolicy>();
+            histo_range_config.template Init<typename Policy200::RangeHistoPolicy>();
         }
         else
         {
-            histo_range_config.template Init<typename Policy100::HistoRegionPolicy>();
+            histo_range_config.template Init<typename Policy100::RangeHistoPolicy>();
         }
 
     #endif
@@ -324,7 +324,7 @@ struct DeviceHistogramDispatch
      */
     template <
         typename                    InitHistoKernelPtr,                 ///< Function type of cub::HistoInitKernel
-        typename                    HistoRegionKernelPtr,               ///< Function type of cub::HistoRegionKernel
+        typename                    RangeHistoKernelPtr,               ///< Function type of cub::RangeHistoKernel
         typename                    AggregateHistoKernelPtr>            ///< Function type of cub::HistoAggregateKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
@@ -336,7 +336,7 @@ struct DeviceHistogramDispatch
         cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
         InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::HistoInitKernel
-        HistoRegionKernelPtr        histo_range_kernel,                ///< [in] Kernel function pointer to parameterization of cub::HistoRegionKernel
+        RangeHistoKernelPtr        histo_range_kernel,                ///< [in] Kernel function pointer to parameterization of cub::RangeHistoKernel
         AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::HistoAggregateKernel
         KernelConfig                histo_range_config)                ///< [in] Dispatch parameters that match the policy that \p histo_range_kernel was compiled for
     {
@@ -537,7 +537,7 @@ struct DeviceHistogramDispatch
                 stream,
                 debug_synchronous,
                 HistoInitKernel<BINS, ACTIVE_CHANNELS, Offset, HistoCounter>,
-                HistoRegionKernel<PtxHistoRegionPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
+                RangeHistoKernel<PtxRangeHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
                 HistoAggregateKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
                 histo_range_config))) break;
         }

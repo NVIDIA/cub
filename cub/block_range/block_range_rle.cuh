@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockRangeFindDupRanges implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
+ * cub::BlockRangeRle implements a stateful abstraction of CUDA thread blocks for participating in device-wide run-length-encode.
  */
 
 #pragma once
@@ -58,7 +58,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRangeFindDupRanges
+ * Parameterizable tuning policy type for BlockRangeRle
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -67,7 +67,7 @@ template <
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockRangeFindDupRangesPolicy
+struct BlockRangeRlePolicy
 {
     enum
     {
@@ -90,85 +90,80 @@ struct BlockRangeFindDupRangesPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRangeFindDupRanges implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key across a range of tiles
+ * \brief BlockRangeRle implements a stateful abstraction of CUDA thread blocks for participating in device-wide run-length-encode across a range of tiles
  */
 template <
-    typename    BlockRangeFindDupRangesPolicy,      ///< Parameterized BlockRangeFindDupRangesPolicy tuning policy type
+    typename    BlockRangeRlePolicy,      ///< Parameterized BlockRangeRlePolicy tuning policy type
     typename    InputIterator,                      ///< Random-access input iterator type for data
     typename    OffsetOutputIterator,               ///< Random-access output iterator type for offset values
-    typename    ValueOutputIterator,               ///< Random-access output iterator type for value values
-    typename    EqualityOp>                         ///< T equality operator type
-struct BlockRangeFindDupRanges
+    typename    LengthOutputIterator,               ///< Random-access output iterator type for length values
+    typename    EqualityOp,                         ///< T equality operator type
+    typename    Offset>                             ///< Signed integer type for global offsets
+struct BlockRangeRle
 {
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
-    // Data type of key iterator
+    // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
-
-    // Signed integer type for global offsets
-    typedef typename std::iterator_traits<OffsetOutputIterator>::value_type Offset;
 
     // Signed integer type for segment indices
     typedef Offset Index;
 
-    // Signed integer type for segment values
-    typedef typename std::iterator_traits<ValueOutputIterator>::value_type Value;
+    // Signed integer type for segment lengths
+    typedef Offset Length;
 
-    // Tuple type for scanning (pairs segment-value and segment-index)
-    typedef ItemOffsetPair<Value, Index> ValueOffsetPair;
+    // Tuple type for scanning (pairs segment-length and segment-index)
+    typedef ItemOffsetPair<Length, Index> LengthOffsetPair;
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<Value, Index> ScanTileState;
+    typedef ReduceByKeyScanTileState<Length, Index> ScanTileState;
 
     // Constants
     enum
     {
-        BLOCK_THREADS           = BlockRangeFindDupRangesPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = BlockRangeFindDupRangesPolicy::ITEMS_PER_THREAD,
-        TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
-
-        /// Number of warp threads
         WARP_THREADS            = CUB_WARP_THREADS(PTX_ARCH),
-
-        /// Number of active warps
+        BLOCK_THREADS           = BlockRangeRlePolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = BlockRangeRlePolicy::ITEMS_PER_THREAD,
+        WARP_ITEMS              = WARP_THREADS * ITEMS_PER_THREAD,
+        TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
         WARPS                   = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
         /// Whether or not to sync after loading data
-        SYNC_AFTER_LOAD         = (BlockRangeFindDupRangesPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        SYNC_AFTER_LOAD         = (BlockRangeRlePolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
         /// Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
-        STORE_WARP_TIME_SLICING = BlockRangeFindDupRangesPolicy::STORE_WARP_TIME_SLICING,
+        STORE_WARP_TIME_SLICING = BlockRangeRlePolicy::STORE_WARP_TIME_SLICING,
         ACTIVE_EXCHANGE_WARPS   = (STORE_WARP_TIME_SLICING) ? 1 : WARPS,
     };
 
     // Cache-modified input iterator wrapper type for data
     typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRangeFindDupRangesPolicy::LOAD_MODIFIER, T, Offset>,      // Wrap the native input pointer with CacheModifiedValueInputIterator
+            CacheModifiedInputIterator<BlockRangeRlePolicy::LOAD_MODIFIER, T, Offset>,      // Wrap the native input pointer with CacheModifiedVLengthnputIterator
             InputIterator>::Type                                                                     // Directly use the supplied input iterator type
         WrappedInputIterator;
 
     // Parameterized BlockLoad type for data
     typedef BlockLoad<
             WrappedInputIterator,
-            BlockRangeFindDupRangesPolicy::BLOCK_THREADS,
-            BlockRangeFindDupRangesPolicy::ITEMS_PER_THREAD,
-            BlockRangeFindDupRangesPolicy::LOAD_ALGORITHM>
+            BlockRangeRlePolicy::BLOCK_THREADS,
+            BlockRangeRlePolicy::ITEMS_PER_THREAD,
+            BlockRangeRlePolicy::LOAD_ALGORITHM>
         BlockLoadT;
 
     // Parameterized BlockDiscontinuity type for data
     typedef BlockDiscontinuity<T, BLOCK_THREADS> BlockDiscontinuityT;
 
     // Parameterized WarpScan type
-    typedef WarpScan<ValueOffsetPair> WarpScanPairs;
+    typedef WarpScan<LengthOffsetPair> WarpScanPairs;
 
-    // Reduce-value-by-segment scan operator
-    typedef ReduceBySegmentOp<cub::Sum, ValueOffsetPair> ReduceBySegmentOp;
+    // Reduce-length-by-segment scan operator
+    typedef ReduceBySegmentOp<cub::Sum, LengthOffsetPair> ReduceBySegmentOp;
 
     // Callback type for obtaining tile prefix during block scan
     typedef BlockScanLookbackPrefixOp<
-            ValueOffsetPair,
+            LengthOffsetPair,
             ReduceBySegmentOp,
             ScanTileState>
         LookbackPrefixCallbackOp;
@@ -181,21 +176,21 @@ struct BlockRangeFindDupRanges
             struct
             {
                 typename BlockDiscontinuityT::TempStorage       discontinuity;              // Smem needed for discontinuity detection
-                typename WarpScanPairs::TempStorage         warp_scan[WARPS];           // Smem needed for warp-synchronous scans
-                ValueOffsetPair                                warp_aggregates[WARPS];     // Smem needed for sharing warp-wide aggregates
+                typename WarpScanPairs::TempStorage             warp_scan[WARPS];           // Smem needed for warp-synchronous scans
+                LengthOffsetPair                                warp_aggregates[WARPS];     // Smem needed for sharing warp-wide aggregates
                 typename LookbackPrefixCallbackOp::TempStorage  prefix;                     // Smem needed for cooperative prefix callback
             };
 
             // Smem needed for input loading
-            typename BlockLoadT::TempStorage        load_items;
+            typename BlockLoadT::TempStorage                    load;
 
             // Smem needed for two-phase scatter
-            ValueOffsetPair exchange[ACTIVE_EXCHANGE_WARPS][(WARP_THREADS * ITEMS_PER_THREAD) + 1];
+            LengthOffsetPair exchange[ACTIVE_EXCHANGE_WARPS][WARP_ITEMS + 1];
         };
 
-        Offset      tile_idx;                   // Shared tile index
-        Offset      tile_inclusive;             // Inclusive tile prefix
-        Offset      exclusive_in_tile;             // Exclusive tile prefix
+        Offset              tile_idx;                   // Shared tile index
+        LengthOffsetPair    tile_inclusive;             // Inclusive tile prefix
+        LengthOffsetPair    tile_exclusive;             // Exclusive tile prefix
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -210,10 +205,10 @@ struct BlockRangeFindDupRanges
 
     WrappedInputIterator            d_in;               ///< Input data
     OffsetOutputIterator            d_offsets_out;      ///< Input segment offsets
-    ValueOutputIterator             d_values_out;       ///< Output segment values
+    LengthOutputIterator            d_lengths_out;      ///< Output segment lengths
 
     InequalityWrapper<EqualityOp>   inequality_op;      ///< T inequality operator
-    ReduceBySegmentOp               scan_op;            ///< Reduce-value-by-flag scan operator
+    ReduceBySegmentOp               scan_op;            ///< Reduce-length-by-flag scan operator
     Offset                          num_items;          ///< Total number of input items
 
 
@@ -223,18 +218,18 @@ struct BlockRangeFindDupRanges
 
     // Constructor
     __device__ __forceinline__
-    BlockRangeFindDupRanges(
+    BlockRangeRle(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIterator               d_in,               ///< Input data
         OffsetOutputIterator        d_offsets_out,      ///< Input segment offsets
-        ValueOutputIterator        d_values_out,      ///< Output segment values
+        LengthOutputIterator        d_lengths_out,      ///< Output segment lengths
         EqualityOp                  equality_op,        ///< T equality operator
         Offset                      num_items)          ///< Total number of input items
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_offsets_out(d_offsets_out),
-        d_values_out(d_values_out),
+        d_lengths_out(d_lengths_out),
         inequality_op(equality_op),
         scan_op(cub::Sum),
         num_items(num_items)
@@ -253,7 +248,7 @@ struct BlockRangeFindDupRanges
         Offset              num_remaining,
         T                   (&items)[ITEMS_PER_THREAD],
         int                 (&head_flags)[ITEMS_PER_THREAD],
-        ValueOffsetPair    (&values_and_segments)[ITEMS_PER_THREAD])
+        LengthOffsetPair    (&lengths_and_segments)[ITEMS_PER_THREAD])
     {
         int                 tail_flags[ITEMS_PER_THREAD];
 
@@ -301,18 +296,26 @@ struct BlockRangeFindDupRanges
                 tile_predecessor_item = d_in[block_offset - 1];
 
             BlockDiscontinuityT(temp_storage.discontinuity).FlagHeadsAndTails(
-                head_flags, tile_predecessor_item, tail_flags, items, inequality_op);
+                head_flags, tile_predecessor_item, tail_flags, tile_successor_item, items, inequality_op);
         }
 
         // Zip counts and segments
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            bool    is_trivial                  = head_flags[ITEM] & tail_flags[ITEM];
-            bool    oob                         = (!LAST_TILE) || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM >= num_remaining);
-
-            values_and_segments[ITEM].offset   = (is_trivial) ? head_flags[ITEM] : 0;                      //
-            values_and_segments[ITEM].value    = (oob || is_trivial) ? 0 : 1;
+            if ((!LAST_TILE) || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining))
+            {
+                // In bounds
+                lengths_and_segments[ITEM].offset   = 0;
+                lengths_and_segments[ITEM].value    = head_flags[ITEM] - (head_flags[ITEM] & tail_flags[ITEM]);
+            }
+            else
+            {
+                // Out of bounds
+                head_flags[ITEM]                    = 0;
+                lengths_and_segments[ITEM].offset   = 0;
+                lengths_and_segments[ITEM].value    = 0;
+            }
         }
     }
 
@@ -324,19 +327,19 @@ struct BlockRangeFindDupRanges
      * Scan of allocations
      */
     __device__ __forceinline__ void WarpScanAllocations(
-        ValueOffsetPair    &tile_aggregate,
-        ValueOffsetPair    &warp_aggregate,
-        ValueOffsetPair    &exclusive_in_warp,
-        ValueOffsetPair    &thread_exclusive,
-        ValueOffsetPair    (&values_and_segments)[ITEMS_PER_THREAD])
+        LengthOffsetPair    &tile_aggregate,
+        LengthOffsetPair    &warp_aggregate,
+        LengthOffsetPair    &warp_exclusive_in_tile,
+        LengthOffsetPair    &thread_exclusive_in_warp,
+        LengthOffsetPair    (&lengths_and_segments)[ITEMS_PER_THREAD])
     {
         // Perform warpscans
         int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
         int lane_id = LaneId();
 
-        ValueOffsetPair thread_inclusive;
-        ValueOffsetPair thread_aggregate = ThreadReduce(values_and_segments, scan_op);
-        WarpScanPairs(temp_storage.warp_scan[warp_id]).Sum(thread_aggregate, thread_inclusive, thread_exclusive);
+        LengthOffsetPair thread_inclusive;
+        LengthOffsetPair thread_aggregate = ThreadReduce(lengths_and_segments, scan_op);
+        WarpScanPairs(temp_storage.warp_scan[warp_id]).Sum(thread_aggregate, thread_inclusive, thread_exclusive_in_warp);
 
         // Last lane in each warp shares its warp-aggregate
         if (lane_id == WARP_THREADS - 1)
@@ -345,15 +348,16 @@ struct BlockRangeFindDupRanges
         __syncthreads();
 
         // Accumulate total selected and the warp-wide prefix
-        exclusive_in_warp   = 0;
-        warp_aggregate   = temp_storage.warp_aggregates[warp_id];
-        tile_aggregate   = temp_storage.warp_aggregates[0];
+        warp_exclusive_in_tile.value    = 0;
+        warp_exclusive_in_tile.offset   = 0;
+        warp_aggregate                  = temp_storage.warp_aggregates[warp_id];
+        tile_aggregate                  = temp_storage.warp_aggregates[0];
 
         #pragma unroll
         for (int WARP = 1; WARP < WARPS; ++WARP)
         {
             if (warp_id == WARP)
-                exclusive_in_warp = tile_aggregate;
+                warp_exclusive_in_tile = tile_aggregate;
 
             tile_aggregate = scan_op(tile_aggregate, temp_storage.warp_aggregates[WARP]);
         }
@@ -373,19 +377,19 @@ struct BlockRangeFindDupRanges
         Offset              warp_segments_aggregate,
         Offset              warp_segments_exclusive_in_tile,
         Offset              (&thread_segments_exclusive_in_warp)[ITEMS_PER_THREAD],
-        ValueOffsetPair     (&values_and_offsets)[ITEMS_PER_THREAD],
+        LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD],
         Int2Type<true>      is_warp_time_slice)
     {
         int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
         int lane_id = LaneId();
 
-        // Locally compact items, warp-by-warp
+        // Locally compact items within the warp (first warp)
         if (warp_id == 0)
         {
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                temp_storage.exchange[0][thread_segments_exclusive_in_warp[ITEM]] = values_and_offsets[ITEM];
+                temp_storage.exchange[0][thread_segments_exclusive_in_warp[ITEM]] = lengths_and_offsets[ITEM];
             }
 
             __threadfence_block();
@@ -394,11 +398,11 @@ struct BlockRangeFindDupRanges
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
                 int item_offset = (ITEM * WARP_THREADS) + lane_id;
-                values_and_offsets[ITEM] = temp_storage.exchange[0][item_offset];
+                lengths_and_offsets[ITEM] = temp_storage.exchange[0][item_offset];
             }
         }
 
-        // Locally compact items, warp-by-warp
+        // Locally compact items within the warp (remaining warps)
         #pragma unroll
         for (int SLICE = 1; SLICE < WARPS; ++SLICE)
         {
@@ -409,7 +413,7 @@ struct BlockRangeFindDupRanges
                 #pragma unroll
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
-                    temp_storage.exchange[0][thread_segments_exclusive_in_warp[ITEM]] = values_and_offsets[ITEM];
+                    temp_storage.exchange[0][thread_segments_exclusive_in_warp[ITEM]] = lengths_and_offsets[ITEM];
                 }
 
                 __threadfence_block();
@@ -418,7 +422,7 @@ struct BlockRangeFindDupRanges
                 for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
                 {
                     int item_offset = (ITEM * WARP_THREADS) + lane_id;
-                    values_and_offsets[ITEM] = temp_storage.exchange[0][item_offset];
+                    lengths_and_offsets[ITEM] = temp_storage.exchange[0][item_offset];
                 }
             }
         }
@@ -435,39 +439,38 @@ struct BlockRangeFindDupRanges
                     (ITEM * WARP_THREADS) + lane_id;
 
                 // Scatter offset
-                d_offsets_out[item_offset] = values_and_offsets[ITEM].offset;
+                d_offsets_out[item_offset] = lengths_and_offsets[ITEM].offset;
 
-                // Scatter value if not the first (global) value
+                // Scatter length if not the first (global) length
                 if ((!FIRST_TILE) || (ITEM != 0) || (threadIdx.x > 0))
                 {
-                    d_values_out[item_offset - 1] = values_and_offsets[ITEM].value;
+                    d_lengths_out[item_offset - 1] = lengths_and_offsets[ITEM].value;
                 }
             }
         }
     }
 
 
-
     /**
      * Two-phase scatter
-     * /
+     */
+    template <bool FIRST_TILE>
     __device__ __forceinline__ void ScatterTwoPhase(
-        ValueOffsetPair    tile_aggregate,
-        ValueOffsetPair    exclusive_in_tile,
-        ValueOffsetPair    warp_aggregate,
-        ValueOffsetPair    exclusive_in_warp,
-        ValueOffsetPair    (&thread_exclusives)[ITEMS_PER_THREAD],
-        T                   (&items)[ITEMS_PER_THREAD],
+        Offset              tile_segments_exclusive_in_global,
+        Offset              warp_segments_aggregate,
+        Offset              warp_segments_exclusive_in_tile,
+        Offset              (&thread_segments_exclusive_in_warp)[ITEMS_PER_THREAD],
+        LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD],
         Int2Type<false>     is_warp_time_slice)
     {
         int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
         int lane_id = LaneId();
 
-        // Locally compact items in each warp
+        // Locally compact items within the warp
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            temp_storage.exchange[warp_id][thread_exclusives[ITEM]] = items[ITEM];
+            temp_storage.exchange[warp_id][thread_segments_exclusive_in_warp[ITEM]] = lengths_and_offsets[ITEM];
         }
 
         __threadfence_block();
@@ -476,27 +479,43 @@ struct BlockRangeFindDupRanges
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (ITEM * WARP_THREADS) + lane_id;
-            items[ITEM] = temp_storage.exchange[warp_id][item_offset];
+            lengths_and_offsets[ITEM] = temp_storage.exchange[warp_id][item_offset];
         }
 
+        // Global scatter
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            if ((ITEM * WARP_THREADS) < warp_aggregate - lane_id)
+            if ((ITEM * WARP_THREADS) < warp_segments_aggregate - lane_id)
             {
-                d_out[exclusive_in_tile + exclusive_in_warp + (ITEM * WARP_THREADS) + lane_id] = items[ITEM];
+                Offset item_offset =
+                    tile_segments_exclusive_in_global +
+                    warp_segments_exclusive_in_tile +
+                    (ITEM * WARP_THREADS) + lane_id;
+
+                // Scatter offset
+                d_offsets_out[item_offset] = lengths_and_offsets[ITEM].offset;
+
+                // Scatter length if not the first (global) length
+                if ((!FIRST_TILE) || (ITEM != 0) || (threadIdx.x > 0))
+                {
+                    d_lengths_out[item_offset - 1] = lengths_and_offsets[ITEM].value;
+                }
             }
         }
     }
-*/
 
+
+    /**
+     * Direct scatter
+     */
     template <bool FIRST_TILE>
     __device__ __forceinline__ void ScatterDirect(
         Offset              tile_segments_exclusive_in_global,
         Offset              warp_segments_aggregate,
         Offset              warp_segments_exclusive_in_tile,
         Offset              (&thread_segments_exclusive_in_warp)[ITEMS_PER_THREAD],
-        ValueOffsetPair     (&values_and_offsets)[ITEMS_PER_THREAD])
+        LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD])
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -509,18 +528,21 @@ struct BlockRangeFindDupRanges
                     thread_segments_exclusive_in_warp[ITEM];
 
                 // Scatter offset
-                d_offsets_out[item_offset] = values_and_offsets[ITEM].offset;
+                d_offsets_out[item_offset] = lengths_and_offsets[ITEM].offset;
 
-                // Scatter value if not the first (global) value
+                // Scatter length if not the first (global) length
                 if ((!FIRST_TILE) || (ITEM != 0) || (threadIdx.x > 0))
                 {
-                    d_values_out[item_offset - 1] = values_and_offsets[ITEM].value;
+                    d_lengths_out[item_offset - 1] = lengths_and_offsets[ITEM].value;
                 }
             }
         }
     }
 
 
+    /**
+     * Scatter
+     */
     template <bool FIRST_TILE>
     __device__ __forceinline__ void Scatter(
         Offset              tile_segments_aggregate,
@@ -528,7 +550,7 @@ struct BlockRangeFindDupRanges
         Offset              warp_segments_aggregate,
         Offset              warp_segments_exclusive_in_tile,
         Offset              (&thread_segments_exclusive_in_warp)[ITEMS_PER_THREAD],
-        ValueOffsetPair     (&values_and_offsets)[ITEMS_PER_THREAD])
+        LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD])
     {
         if ((ITEMS_PER_THREAD == 1) || (tile_segments_aggregate < BLOCK_THREADS))
         {
@@ -540,18 +562,18 @@ struct BlockRangeFindDupRanges
                     warp_segments_aggregate,
                     warp_segments_exclusive_in_tile,
                     thread_segments_exclusive_in_warp,
-                    values_and_offsets);
+                    lengths_and_offsets);
             }
         }
         else
         {
             // Scatter two phase
-            ScatterTwoPhase(
+            ScatterTwoPhase<FIRST_TILE>(
                 tile_segments_exclusive_in_global,
                 warp_segments_aggregate,
                 warp_segments_exclusive_in_tile,
                 thread_segments_exclusive_in_warp,
-                values_and_offsets);
+                lengths_and_offsets,
                 Int2Type<STORE_WARP_TIME_SLICING>());
         }
     }
@@ -563,79 +585,75 @@ struct BlockRangeFindDupRanges
     //---------------------------------------------------------------------
 
     /**
-     * Process a tile of input (dynamic domino scan)
+     * Process a tile of input (dynamic chained scan)
      */
     template <
         bool                LAST_TILE>
-    __device__ __forceinline__ ValueOffsetPair ConsumeTile(
+    __device__ __forceinline__ LengthOffsetPair ConsumeTile(
         Offset              num_items,          ///< Total number of global input items
         Offset              num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
         Offset              block_offset,       ///< Tile offset
-        ScanTileState  &tile_status)       ///< Global list of tile status
+        ScanTileState       &tile_status)       ///< Global list of tile status
     {
         if (tile_idx == 0)
         {
+            // First tile
+
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-            {
-                // Repeat last item
-                T oob_item = d_in[num_items - 1];
-                BlockLoadT(temp_storage.load_items).Load(d_in + block_offset, items, num_remaining, oob_item);
-            }
+                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, ZeroInitialize<T>());
             else
-            {
-                BlockLoadT(temp_storage.load_items).Load(d_in + block_offset, items);
-            }
+                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
             if (SYNC_AFTER_LOAD)
                 __syncthreads();
 
             // Set flags
-            int                head_flags[ITEMS_PER_THREAD];
-            ValueOffsetPair    values_and_segments[ITEMS_PER_THREAD];
+            int                 head_flags[ITEMS_PER_THREAD];
+            LengthOffsetPair    lengths_and_segments[ITEMS_PER_THREAD];
 
             InitializeSelections<true, LAST_TILE>(
                 block_offset,
                 num_remaining,
                 items,
                 head_flags,
-                values_and_segments);
+                lengths_and_segments);
 
-            // Exclusive scan of values and segments
-            ValueOffsetPair tile_aggregate;
-            ValueOffsetPair warp_aggregate;
-            ValueOffsetPair warp_exclusive_in_tile;
-            ValueOffsetPair thread_exclusive_in_warp;
+            // Exclusive scan of lengths and segments
+            LengthOffsetPair tile_aggregate;
+            LengthOffsetPair warp_aggregate;
+            LengthOffsetPair warp_exclusive_in_tile;
+            LengthOffsetPair thread_exclusive_in_warp;
 
             WarpScanAllocations(
                 tile_aggregate,
                 warp_aggregate,
                 warp_exclusive_in_tile,
                 thread_exclusive_in_warp,
-                values_and_segments);
+                lengths_and_segments);
 
             // Update tile status if this is not the last tile
             if (!LAST_TILE && (threadIdx.x == 0))
                 tile_status.SetInclusive(0, tile_aggregate);
 
-            // Update values (global scope) and segment indices (block scope)
-            ValueOffsetPair thread_exclusive = scan_op(warp_exclusive_in_tile, thread_exclusive_in_warp);
-            ThreadScanExclusive(values_and_segments, values_and_segments, scan_op, thread_exclusive);
+            // Update lengths (global scope) and segment indices (block scope)
+            LengthOffsetPair thread_exclusive = scan_op(warp_exclusive_in_tile, thread_exclusive_in_warp);
+            ThreadScanExclusive(lengths_and_segments, lengths_and_segments, scan_op, thread_exclusive);
 
             // Zip
-            ValueOffsetPair    values_and_offsets[ITEMS_PER_THREAD];
-            Offset             thread_segments_exclusive_in_warp[ITEMS_PER_THREAD];
+            LengthOffsetPair    lengths_and_offsets[ITEMS_PER_THREAD];
+            Offset              thread_segments_exclusive_in_warp[ITEMS_PER_THREAD];
 
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                values_and_offsets[ITEM].value              = values_and_segments[ITEM].value;
-                values_and_offsets[ITEM].offset             = block_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                thread_segments_exclusive_in_warp[ITEM]     = (head_flags[ITEM]) ?
-                                                                values_and_segments[ITEM].offset :      // keep
-                                                                WARP_THREADS * ITEMS_PER_THREAD;        // discard
+                lengths_and_offsets[ITEM].value         = lengths_and_segments[ITEM].value;
+                lengths_and_offsets[ITEM].offset        = block_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+                thread_segments_exclusive_in_warp[ITEM] = (head_flags[ITEM]) ?
+                                                                lengths_and_segments[ITEM].offset :         // keep
+                                                                WARP_THREADS * ITEMS_PER_THREAD;            // discard
             }
 
             Offset tile_segments_aggregate              = tile_aggregate.offset;
@@ -650,52 +668,105 @@ struct BlockRangeFindDupRanges
                 warp_segments_aggregate,
                 warp_segments_exclusive_in_tile,
                 thread_segments_exclusive_in_warp,
-                values_and_offsets);
+                lengths_and_offsets);
 
-            // Return total number of segments found so far (inclusive of this tile)
-            return tile_segments_aggregate;
+            // Return running total (inclusive of this tile)
+            return tile_aggregate;
         }
         else
         {
             // Not first tile
 
-            T tile_predecessor_key = (threadIdx.x == 0) ?
-                d_in[block_offset - 1] :
-                ZeroInitialize<T>();
-
-            __syncthreads();
-
-            // Load values
+            // Load items
+            T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values, num_remaining);
+                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, ZeroInitialize<T>());
             else
-                BlockLoadValues(temp_storage.load_values).Load(d_values_in + block_offset, values);
+                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
+
+            if (SYNC_AFTER_LOAD)
+                __syncthreads();
+
+            // Set flags
+            int                 head_flags[ITEMS_PER_THREAD];
+            LengthOffsetPair    lengths_and_segments[ITEMS_PER_THREAD];
+
+            InitializeSelections<false, LAST_TILE>(
+                block_offset,
+                num_remaining,
+                items,
+                head_flags,
+                lengths_and_segments);
+
+            // Exclusive scan of lengths and segments
+            LengthOffsetPair tile_aggregate;
+            LengthOffsetPair warp_aggregate;
+            LengthOffsetPair warp_exclusive_in_tile;
+            LengthOffsetPair thread_exclusive_in_warp;
+
+            WarpScanAllocations(
+                tile_aggregate,
+                warp_aggregate,
+                warp_exclusive_in_tile,
+                thread_exclusive_in_warp,
+                lengths_and_segments);
+
+            // First warp computes tile prefix in lane 0
+            LookbackPrefixCallbackOp prefix_op(tile_status, temp_storage.prefix, Sum(), tile_idx);
+            int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
+            if (warp_id == 0)
+            {
+                prefix_op(tile_aggregate);
+                if (threadIdx.x == 0)
+                    temp_storage.tile_exclusive = prefix_op.exclusive_prefix;
+            }
 
             __syncthreads();
 
-            // Set head flags
-            BlockDiscontinuityT(temp_storage.discontinuity).FlagHeads(flags, data, inequality_op, tile_predecessor_key);
+            LengthOffsetPair tile_exclusive_in_global = temp_storage.tile_exclusive;
 
-            // Zip values and flags
-            ZipValuesAndFlags<LAST_TILE>(num_remaining, values, flags, values_and_segments);
+            // Update lengths (global scope) and segment indices (block scope)
+            LengthOffsetPair thread_exclusive = scan_op(warp_exclusive_in_tile, thread_exclusive_in_warp);
+            if (thread_exclusive.offset == 0)
+                thread_exclusive.value += tile_exclusive_in_global.value;
+            ThreadScanExclusive(lengths_and_segments, lengths_and_segments, scan_op, thread_exclusive);
 
-            // Exclusive scan of values and flags
-            ValueOffsetPair block_aggregate;
-            LookbackPrefixCallbackOp prefix_op(tile_status, temp_storage.prefix, scan_op, tile_idx);
+            // Zip
+            LengthOffsetPair    lengths_and_offsets[ITEMS_PER_THREAD];
+            Offset              thread_segments_exclusive_in_warp[ITEMS_PER_THREAD];
 
-            ScanBlock(values_and_segments, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
-            running_total = prefix_op.inclusive_prefix;
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            {
+                lengths_and_offsets[ITEM].value         = lengths_and_segments[ITEM].value;
+                lengths_and_offsets[ITEM].offset        = block_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+                thread_segments_exclusive_in_warp[ITEM] = (head_flags[ITEM]) ?
+                                                                lengths_and_segments[ITEM].offset :         // keep
+                                                                WARP_THREADS * ITEMS_PER_THREAD;            // discard
+            }
 
-            // Scatter flagged items
-            Scatter<LAST_TILE, false>(num_remaining, data, values_and_segments, flags, block_aggregate.offset, prefix_op.exclusive_prefix.offset);
+            Offset tile_segments_aggregate              = tile_aggregate.offset;
+            Offset tile_segments_exclusive_in_global    = tile_exclusive_in_global.offset;
+            Offset warp_segments_aggregate              = warp_aggregate.offset;
+            Offset warp_segments_exclusive_in_tile      = warp_exclusive_in_tile.offset;
+
+            // Scatter
+            Scatter(
+                tile_segments_aggregate,
+                tile_segments_exclusive_in_global,
+                warp_segments_aggregate,
+                warp_segments_exclusive_in_tile,
+                thread_segments_exclusive_in_warp,
+                lengths_and_offsets);
+
+            // Return running total (inclusive of this tile)
+            return prefix_op.inclusive_prefix;
         }
-
-        return running_total;
     }
 
 
     /**
-     * Dequeue and scan tiles of items as part of a dynamic domino scan
+     * Dequeue and scan tiles of items as part of a dynamic chained scan
      */
     template <typename NumSegmentsIterator>         ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRange(
@@ -704,82 +775,52 @@ struct BlockRangeFindDupRanges
         ScanTileState           &tile_status,       ///< Global list of tile status
         NumSegmentsIterator     d_num_segments)     ///< Output pointer for total number of segments identified
     {
-#if (CUB_PTX_ARCH <= 130)
-        // Blocks are launched in increasing order, so just assign one tile per block
 
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
-        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
+#if __CUDA_ARCH__ > 130
 
-        if (num_remaining > TILE_ITEMS)
-        {
-            // Full tile
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-        }
-        else if (num_remaining > 0)
-        {
-            // Last tile
-            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-
-            // Output the total number of items selected
-            if (threadIdx.x == 0)
-            {
-                *d_num_segments = running_total.offset;
-
-                // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
-                if (num_remaining == TILE_ITEMS)
-                {
-                    d_values_out[running_total.offset - 1] = running_total.value;
-                }
-            }
-        }
-#else
         // Blocks may not be launched in increasing order, so work-steal tiles
-
-        // Get first tile index
         if (threadIdx.x == 0)
             temp_storage.tile_idx = queue.Drain(1);
 
         __syncthreads();
 
-        int     tile_idx        = temp_storage.tile_idx;
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
-        Offset  num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
+        int tile_idx = temp_storage.tile_idx;
 
-        while (num_remaining > TILE_ITEMS)
-        {
-            // Consume full tile
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+#else
 
-            // Get tile index
-            if (threadIdx.x == 0)
-                temp_storage.tile_idx = queue.Drain(1);
+        // Blocks are launched in increasing order, so just assign one tile per block
+        int tile_idx = (blockIdx.y * gridDim.x) + blockIdx.x;
 
-            __syncthreads();
+#endif
 
-            tile_idx        = temp_storage.tile_idx;
-            block_offset    = Offset(TILE_ITEMS) * tile_idx;
-            num_remaining   = num_items - block_offset;
-        }
+        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
+        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (num_remaining > 0)
         {
-            // Consume last tile (treat as partially-full)
-            ValueOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-
-            if ((threadIdx.x == 0))
+            if (num_remaining > TILE_ITEMS)
             {
-                // Output the total number of items selected
-                *d_num_segments = running_total.offset;
+                // Full tile
+                ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+            }
+            else
+            {
+                // Last tile
+                LengthOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
-                // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
-                if (num_remaining == TILE_ITEMS)
+                // Output the total number of items selected
+                if (threadIdx.x == 0)
                 {
-                    d_values_out[running_total.offset - 1] = running_total.value;
+                    *d_num_segments = running_total.offset;
+
+                    // If the last tile is a whole tile, the inclusive prefix contains accumulated length reduction for the last segment
+                    if (num_remaining == TILE_ITEMS)
+                    {
+                        d_lengths_out[running_total.offset - 1] = running_total.value;
+                    }
                 }
             }
         }
-#endif
     }
 
 };

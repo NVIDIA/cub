@@ -315,7 +315,7 @@ struct BlockRangeScan
     //---------------------------------------------------------------------
 
     /**
-     * Process a tile of input (dynamic domino scan)
+     * Process a tile of input (dynamic chained scan)
      */
     template <bool LAST_TILE>
     __device__ __forceinline__ void ConsumeTile(
@@ -366,7 +366,7 @@ struct BlockRangeScan
 
 
     /**
-     * Dequeue and scan tiles of items as part of a dynamic domino scan
+     * Dequeue and scan tiles of items as part of a dynamic chained scan
      */
     __device__ __forceinline__ void ConsumeRange(
         int                     num_items,          ///< Total number of input items
