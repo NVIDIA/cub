@@ -123,8 +123,8 @@ struct DeviceScan
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading scan input data \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access output iterator type for writing scan output data \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading scan inputs \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access output iterator type for writing scan outputs \iterator
      */
     template <
         typename        InputIterator,
@@ -207,8 +207,8 @@ struct DeviceScan
      *
      * \endcode
      *
-     * \tparam InputIterator    <b>[inferred]</b> Random-access input iterator type for reading scan input data \iterator
-     * \tparam OutputIterator   <b>[inferred]</b> Random-access output iterator type for writing scan output data \iterator
+     * \tparam InputIterator    <b>[inferred]</b> Random-access input iterator type for reading scan inputs \iterator
+     * \tparam OutputIterator   <b>[inferred]</b> Random-access output iterator type for writing scan outputs \iterator
      * \tparam ScanOp           <b>[inferred]</b> Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam Identity         <b>[inferred]</b> Type of the \p identity value used Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
@@ -290,8 +290,8 @@ struct DeviceScan
      *
      * \endcode
      *
-     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading scan input data \iterator
-     * \tparam OutputIterator     <b>[inferred]</b> Random-access output iterator type for writing scan output data \iterator
+     * \tparam InputIterator      <b>[inferred]</b> Random-access input iterator type for reading scan inputs \iterator
+     * \tparam OutputIterator     <b>[inferred]</b> Random-access output iterator type for writing scan outputs \iterator
      */
     template <
         typename            InputIterator,
@@ -371,8 +371,8 @@ struct DeviceScan
      *
      * \endcode
      *
-     * \tparam InputIterator    <b>[inferred]</b> Random-access input iterator type for reading scan input data \iterator
-     * \tparam OutputIterator   <b>[inferred]</b> Random-access output iterator type for writing scan output data \iterator
+     * \tparam InputIterator    <b>[inferred]</b> Random-access input iterator type for reading scan inputs \iterator
+     * \tparam OutputIterator   <b>[inferred]</b> Random-access output iterator type for writing scan outputs \iterator
      * \tparam ScanOp           <b>[inferred]</b> Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      */
     template <
