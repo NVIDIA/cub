@@ -549,7 +549,7 @@ struct BlockRangeReduceByKey
     //---------------------------------------------------------------------
 
     /**
-     * Process a tile of input (dynamic domino scan)
+     * Process a tile of input (dynamic chained scan)
      */
     template <
         bool                LAST_TILE>
@@ -648,7 +648,7 @@ struct BlockRangeReduceByKey
 
 
     /**
-     * Dequeue and scan tiles of items as part of a dynamic domino scan
+     * Dequeue and scan tiles of items as part of a dynamic chained scan
      */
     template <typename NumSegmentsIterator>         ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRange(
