@@ -94,11 +94,11 @@ struct BlockRleSweepPolicy
  */
 template <
     typename    BlockRleSweepPolicy,      ///< Parameterized BlockRleSweepPolicy tuning policy type
-    typename    InputIterator,                      ///< Random-access input iterator type for data
-    typename    OffsetOutputIterator,               ///< Random-access output iterator type for offset values
-    typename    LengthOutputIterator,               ///< Random-access output iterator type for length values
-    typename    EqualityOp,                         ///< T equality operator type
-    typename    Offset>                             ///< Signed integer type for global offsets
+    typename    InputIterator,            ///< Random-access input iterator type for data
+    typename    OffsetOutputIterator,     ///< Random-access output iterator type for offset values
+    typename    LengthOutputIterator,     ///< Random-access output iterator type for length values
+    typename    EqualityOp,               ///< T equality operator type
+    typename    Offset>                   ///< Signed integer type for global offsets
 struct BlockRleSweep
 {
     //---------------------------------------------------------------------

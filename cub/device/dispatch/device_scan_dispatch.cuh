@@ -61,7 +61,7 @@ namespace cub {
 template <
     typename            Offset,                 ///< Signed integer type for global offsets
     typename            ScanTileState>          ///< Tile status interface type
-__global__ void ScanInitKernel(
+__global__ void DeviceScanInitKernel(
     GridQueue<Offset>   grid_queue,             ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
     ScanTileState       tile_status,            ///< [in] Tile status interface
     int                 num_tiles)              ///< [in] Number of tiles
@@ -87,7 +87,7 @@ template <
     typename            Identity,                   ///< Identity value type (cub::NullType for inclusive scans)
     typename            Offset>                     ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockScanSweepPolicy::BLOCK_THREADS))
-__global__ void RangeScanKernel(
+__global__ void DeviceScanSweepKernel(
     InputIterator       d_in,                       ///< Input data
     OutputIterator      d_out,                      ///< Output data
     ScanTileState       tile_status,                ///< [in] Tile status interface
@@ -288,35 +288,35 @@ struct DeviceScanDispatch
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &range_scan_config)
+        KernelConfig    &device_scan_sweep_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        range_scan_config.template Init<PtxRangeScanPolicy>();
+        device_scan_sweep_config.template Init<PtxRangeScanPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            range_scan_config.template Init<typename Policy350::RangeScanPolicy>();
+            device_scan_sweep_config.template Init<typename Policy350::RangeScanPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            range_scan_config.template Init<typename Policy300::RangeScanPolicy>();
+            device_scan_sweep_config.template Init<typename Policy300::RangeScanPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            range_scan_config.template Init<typename Policy200::RangeScanPolicy>();
+            device_scan_sweep_config.template Init<typename Policy200::RangeScanPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            range_scan_config.template Init<typename Policy130::RangeScanPolicy>();
+            device_scan_sweep_config.template Init<typename Policy130::RangeScanPolicy>();
         }
         else
         {
-            range_scan_config.template Init<typename Policy100::RangeScanPolicy>();
+            device_scan_sweep_config.template Init<typename Policy100::RangeScanPolicy>();
         }
 
     #endif
@@ -367,8 +367,8 @@ struct DeviceScanDispatch
      * specified kernel functions.
      */
     template <
-        typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
-        typename                    RangeScanKernelPtr>            ///< Function type of cub::RangeScanKernelPtr
+        typename                    DeviceScanInitKernelPtr,              ///< Function type of cub::DeviceScanInitKernel
+        typename                    DeviceScanSweepKernelPtr>            ///< Function type of cub::DeviceScanSweepKernelPtr
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -381,9 +381,9 @@ struct DeviceScanDispatch
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
-        ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        RangeScanKernelPtr         range_scan_kernel,             ///< [in] Kernel function pointer to parameterization of cub::RangeScanKernel
-        KernelConfig                range_scan_config)             ///< [in] Dispatch parameters that match the policy that \p range_scan_kernel was compiled for
+        DeviceScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
+        DeviceScanSweepKernelPtr         range_scan_kernel,             ///< [in] Kernel function pointer to parameterization of cub::DeviceScanSweepKernel
+        KernelConfig                device_scan_sweep_config)             ///< [in] Dispatch parameters that match the policy that \p range_scan_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -408,7 +408,7 @@ struct DeviceScanDispatch
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int tile_size = range_scan_config.block_threads * range_scan_config.items_per_thread;
+            int tile_size = device_scan_sweep_config.block_threads * device_scan_sweep_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
@@ -454,7 +454,7 @@ struct DeviceScanDispatch
                 range_scan_sm_occupancy,            // out
                 sm_version,
                 range_scan_kernel,
-                range_scan_config.block_threads))) break;
+                device_scan_sweep_config.block_threads))) break;
 
             // Get grid size for scanning tiles
             dim3 scan_grid_size;
@@ -479,10 +479,10 @@ struct DeviceScanDispatch
 
             // Log range_scan_kernel configuration
             if (debug_synchronous) CubLog("Invoking range_scan_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, range_scan_config.block_threads, (long long) stream, range_scan_config.items_per_thread, range_scan_sm_occupancy);
+                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, device_scan_sweep_config.block_threads, (long long) stream, device_scan_sweep_config.items_per_thread, range_scan_sm_occupancy);
 
             // Invoke range_scan_kernel
-            range_scan_kernel<<<scan_grid_size, range_scan_config.block_threads, 0, stream>>>(
+            range_scan_kernel<<<scan_grid_size, device_scan_sweep_config.block_threads, 0, stream>>>(
                 d_in,
                 d_out,
                 tile_status,
@@ -532,8 +532,8 @@ struct DeviceScanDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig range_scan_config;
-            InitConfigs(ptx_version, range_scan_config);
+            KernelConfig device_scan_sweep_config;
+            InitConfigs(ptx_version, device_scan_sweep_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -547,9 +547,9 @@ struct DeviceScanDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ScanInitKernel<Offset, ScanTileState>,
-                RangeScanKernel<PtxRangeScanPolicy, InputIterator, OutputIterator, ScanTileState, ScanOp, Identity, Offset>,
-                range_scan_config))) break;
+                DeviceScanInitKernel<Offset, ScanTileState>,
+                DeviceScanSweepKernel<PtxRangeScanPolicy, InputIterator, OutputIterator, ScanTileState, ScanOp, Identity, Offset>,
+                device_scan_sweep_config))) break;
         }
         while (0);
 
