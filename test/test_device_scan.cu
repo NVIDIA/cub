@@ -811,7 +811,13 @@ int main(int argc, char** argv)
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
-#ifdef QUICK_TEST
+#ifdef QUICKER_TEST
+
+    // Compile/run basic CUB test
+    if (num_items < 0) num_items = 32000000;
+    TestPointer<CUB, int>(         num_items    , UNIFORM, Sum(), (int) (0), CUB_TYPE_STRING(int));
+
+#elif defined(QUICK_TEST)
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;

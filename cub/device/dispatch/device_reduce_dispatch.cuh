@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "device_reduce_by_key_dispatch.cuh"
-#include "../../block_range/block_range_reduce.cuh"
+#include "../../block_sweep/block_reduce_sweep.cuh"
 #include "../../iterator/constant_input_iterator.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_even_share.cuh"
@@ -62,12 +62,12 @@ namespace cub {
  * Reduce region kernel entry point (multi-block).  Computes privatized reductions, one per thread block.
  */
 template <
-    typename                BlockRangeReducePolicy,     ///< Parameterized BlockRangeReducePolicy tuning policy type
+    typename                BlockReduceSweepPolicy,     ///< Parameterized BlockReduceSweepPolicy tuning policy type
     typename                InputIterator,              ///< Random-access input iterator type for reading input items \iterator
     typename                OutputIterator,             ///< Output iterator type for recording the reduced aggregate \iterator
     typename                Offset,                     ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (int(BlockRangeReducePolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockReduceSweepPolicy::BLOCK_THREADS))
 __global__ void RangeReduceKernel(
     InputIterator           d_in,                       ///< [in] Pointer to the input sequence of data items
     OutputIterator          d_out,                      ///< [out] Pointer to the output aggregate
@@ -80,21 +80,21 @@ __global__ void RangeReduceKernel(
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockRangeReduce<BlockRangeReducePolicy, InputIterator, Offset, ReductionOp> BlockRangeReduceT;
+    typedef BlockReduceSweep<BlockReduceSweepPolicy, InputIterator, Offset, ReductionOp> BlockReduceSweepT;
 
     // Block-wide aggregate
     T block_aggregate;
 
     // Shared memory storage
-    __shared__ typename BlockRangeReduceT::TempStorage temp_storage;
+    __shared__ typename BlockReduceSweepT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockRangeReduceT(temp_storage, d_in, reduction_op).ConsumeRange(
+    BlockReduceSweepT(temp_storage, d_in, reduction_op).ConsumeRange(
         num_items,
         even_share,
         queue,
         block_aggregate,
-        Int2Type<BlockRangeReducePolicy::GRID_MAPPING>());
+        Int2Type<BlockReduceSweepPolicy::GRID_MAPPING>());
 
     // Output result
     if (threadIdx.x == 0)
@@ -108,12 +108,12 @@ __global__ void RangeReduceKernel(
  * Reduce a single tile kernel entry point (single-block).  Can be used to aggregate privatized threadblock reductions from a previous multi-block reduction pass.
  */
 template <
-    typename                BlockRangeReducePolicy,     ///< Parameterized BlockRangeReducePolicy tuning policy type
+    typename                BlockReduceSweepPolicy,     ///< Parameterized BlockReduceSweepPolicy tuning policy type
     typename                InputIterator,              ///< Random-access input iterator type for reading input items \iterator
     typename                OutputIterator,             ///< Output iterator type for recording the reduced aggregate \iterator
     typename                Offset,                     ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (int(BlockRangeReducePolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(BlockReduceSweepPolicy::BLOCK_THREADS), 1)
 __global__ void SingleTileKernel(
     InputIterator           d_in,                       ///< [in] Pointer to the input sequence of data items
     OutputIterator          d_out,                      ///< [out] Pointer to the output aggregate
@@ -124,16 +124,16 @@ __global__ void SingleTileKernel(
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockRangeReduce<BlockRangeReducePolicy, InputIterator, Offset, ReductionOp> BlockRangeReduceT;
+    typedef BlockReduceSweep<BlockReduceSweepPolicy, InputIterator, Offset, ReductionOp> BlockReduceSweepT;
 
     // Block-wide aggregate
     T block_aggregate;
 
     // Shared memory storage
-    __shared__ typename BlockRangeReduceT::TempStorage temp_storage;
+    __shared__ typename BlockReduceSweepT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockRangeReduceT(temp_storage, d_in, reduction_op).ConsumeRange(
+    BlockReduceSweepT(temp_storage, d_in, reduction_op).ConsumeRange(
         Offset(0),
         Offset(num_items),
         block_aggregate);
@@ -174,7 +174,7 @@ struct DeviceReduceDispatch
     struct Policy350
     {
         // RangeReducePolicy1B (GTX Titan: 228.7 GB/s @ 192M 1B items)
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
                 24,                                 ///< Items per thread per tile of input
                 4,                                  ///< Number of items per vectorized load
@@ -189,7 +189,7 @@ struct DeviceReduceDispatch
         };
 
         // RangeReducePolicy4B (GTX Titan: 255.1 GB/s @ 48M 4B items)
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 2,                                  ///< Number of items per vectorized load
@@ -204,7 +204,7 @@ struct DeviceReduceDispatch
             RangeReducePolicy1B>::Type RangeReducePolicy;
 
         // SingleTilePolicy
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
                 8,                                  ///< Items per thread per tile of input
                 1,                                  ///< Number of items per vectorized load
@@ -223,7 +223,7 @@ struct DeviceReduceDispatch
         };
 
         // RangeReducePolicy (GTX670: 154.0 @ 48M 4B items)
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 1,                                  ///< Number of items per vectorized load
@@ -233,7 +233,7 @@ struct DeviceReduceDispatch
             RangeReducePolicy;
 
         // SingleTilePolicy
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
                 24,                                 ///< Items per thread per tile of input
                 4,                                  ///< Number of items per vectorized load
@@ -247,7 +247,7 @@ struct DeviceReduceDispatch
     struct Policy200
     {
         // RangeReducePolicy1B (GTX 580: 158.1 GB/s @ 192M 1B items)
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 192,                                ///< Threads per thread block
                 24,                                 ///< Items per thread per tile of input
                 4,                                  ///< Number of items per vectorized load
@@ -266,7 +266,7 @@ struct DeviceReduceDispatch
         };
 
         // RangeReducePolicy4B (GTX 580: 178.9 GB/s @ 48M 4B items)
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VEC_ITEMS,                          ///< Number of items per vectorized load
@@ -281,7 +281,7 @@ struct DeviceReduceDispatch
             RangeReducePolicy4B>::Type RangeReducePolicy;
 
         // SingleTilePolicy
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 192,                                ///< Threads per thread block
                 7,                                  ///< Items per thread per tile of input
                 1,                                  ///< Number of items per vectorized load
@@ -302,7 +302,7 @@ struct DeviceReduceDispatch
         };
 
         // RangeReducePolicy
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VEC_ITEMS,                          ///< Number of items per vectorized load
@@ -312,7 +312,7 @@ struct DeviceReduceDispatch
             RangeReducePolicy;
 
         // SingleTilePolicy
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 32,                                 ///< Threads per thread block
                 4,                                  ///< Items per thread per tile of input
                 VEC_ITEMS,                          ///< Number of items per vectorized load
@@ -333,7 +333,7 @@ struct DeviceReduceDispatch
         };
 
         // RangeReducePolicy
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VEC_ITEMS,                          ///< Number of items per vectorized load
@@ -343,7 +343,7 @@ struct DeviceReduceDispatch
             RangeReducePolicy;
 
         // SingleTilePolicy
-        typedef BlockRangeReducePolicy<
+        typedef BlockReduceSweepPolicy<
                 32,                                 ///< Threads per thread block
                 4,                                  ///< Items per thread per tile of input
                 4,                                  ///< Number of items per vectorized load
