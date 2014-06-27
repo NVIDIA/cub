@@ -578,9 +578,12 @@ int main(int argc, char** argv)
 
 #ifdef QUICKER_TEST
 
+    // Compile/run basic CUB test
+    if (num_items < 0) num_items = 32000000;
     TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
 
 #elif defined(QUICK_TEST)
+
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;

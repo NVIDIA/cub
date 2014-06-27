@@ -892,7 +892,13 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     printf("\n");
 
-#ifdef QUICK_TEST
+#ifdef QUICKER_TEST
+
+    // Compile/run basic CUB test
+    if (num_items < 0) num_items = 32000000;
+    TestPointer<CUB, int>(          num_items,     UNIFORM, Sum(), CUB_TYPE_STRING(int));
+
+#elif defined(QUICK_TEST)
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;

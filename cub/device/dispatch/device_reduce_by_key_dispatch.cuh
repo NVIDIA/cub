@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "device_scan_dispatch.cuh"
-#include "../../block_range/block_range_reduce_by_key.cuh"
+#include "../../block_sweep/block_reduce_by_key_sweep.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_device.cuh"
@@ -58,7 +58,7 @@ namespace cub {
  * Reduce-by-key kernel entry point (multi-block)
  */
 template <
-    typename            BlockRangeReduceByKeyPolicy,    ///< Parameterized BlockRangeReduceByKeyPolicy tuning policy type
+    typename            BlockReduceSweepByKeyPolicy,    ///< Parameterized BlockReduceSweepByKeyPolicy tuning policy type
     typename            KeyInputIterator,               ///< Random-access input iterator type for keys
     typename            KeyOutputIterator,              ///< Random-access output iterator type for keys
     typename            ValueInputIterator,             ///< Random-access input iterator type for values
@@ -68,7 +68,7 @@ template <
     typename            EqualityOp,                     ///< Key equality operator type
     typename            ReductionOp,                    ///< Value reduction operator type
     typename            Offset>                         ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRangeReduceByKeyPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockReduceSweepByKeyPolicy::BLOCK_THREADS))
 __global__ void RangeReduceByKeyKernel(
     KeyInputIterator    d_keys_in,                      ///< [in] Pointer to consecutive runs of input keys
     KeyOutputIterator   d_keys_out,                     ///< [in] Pointer to output keys (one key per run)
@@ -83,21 +83,21 @@ __global__ void RangeReduceByKeyKernel(
     GridQueue<int>      queue)                          ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for reducing tiles of value segments
-    typedef BlockRangeReduceByKey<
-        BlockRangeReduceByKeyPolicy,
+    typedef BlockReduceSweepByKey<
+        BlockReduceSweepByKeyPolicy,
         KeyInputIterator,
         KeyOutputIterator,
         ValueInputIterator,
         ValueOutputIterator,
         EqualityOp,
         ReductionOp,
-        Offset> BlockRangeReduceByKeyT;
+        Offset> BlockReduceSweepByKeyT;
 
-    // Shared memory for BlockRangeReduceByKey
-    __shared__ typename BlockRangeReduceByKeyT::TempStorage temp_storage;
+    // Shared memory for BlockReduceSweepByKey
+    __shared__ typename BlockReduceSweepByKeyT::TempStorage temp_storage;
 
     // Process tiles
-    BlockRangeReduceByKeyT(temp_storage, d_keys_in, d_keys_out, d_values_in, d_values_out, equality_op, reduction_op, num_items).ConsumeRange(
+    BlockReduceSweepByKeyT(temp_storage, d_keys_in, d_keys_out, d_values_in, d_values_out, equality_op, reduction_op, num_items).ConsumeRange(
         num_tiles,
         queue,
         tile_status,
@@ -161,7 +161,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = (MAX_INPUT_BYTES <= 8) ? 8 : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRangeReduceByKeyPolicy<
+        typedef BlockReduceSweepByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
@@ -179,7 +179,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRangeReduceByKeyPolicy<
+        typedef BlockReduceSweepByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -197,7 +197,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRangeReduceByKeyPolicy<
+        typedef BlockReduceSweepByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -215,7 +215,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRangeReduceByKeyPolicy<
+        typedef BlockReduceSweepByKeyPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -233,7 +233,7 @@ struct DeviceReduceByKeyDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8) / COMBINED_INPUT_BYTES)),
         };
 
-        typedef BlockRangeReduceByKeyPolicy<
+        typedef BlockReduceSweepByKeyPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -316,7 +316,7 @@ struct DeviceReduceByKeyDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRangeReduceByKeyPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockReduceSweepByKeyPolicy.
      */
     struct KernelConfig
     {
@@ -327,15 +327,15 @@ struct DeviceReduceByKeyDispatch
         BlockScanAlgorithm      scan_algorithm;
         cudaSharedMemConfig     smem_config;
 
-        template <typename BlockRangeReduceByKeyPolicy>
+        template <typename BlockReduceSweepByKeyPolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
         void Init()
         {
-            block_threads               = BlockRangeReduceByKeyPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockRangeReduceByKeyPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockRangeReduceByKeyPolicy::LOAD_ALGORITHM;
-            two_phase_scatter           = BlockRangeReduceByKeyPolicy::TWO_PHASE_SCATTER;
-            scan_algorithm              = BlockRangeReduceByKeyPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockReduceSweepByKeyPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockReduceSweepByKeyPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockReduceSweepByKeyPolicy::LOAD_ALGORITHM;
+            two_phase_scatter           = BlockReduceSweepByKeyPolicy::TWO_PHASE_SCATTER;
+            scan_algorithm              = BlockReduceSweepByKeyPolicy::SCAN_ALGORITHM;
             smem_config                 = cudaSharedMemBankSizeEightByte;
         }
 
