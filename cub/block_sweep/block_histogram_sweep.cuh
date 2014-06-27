@@ -28,16 +28,16 @@
 
 /**
  * \file
- * cub::BlockRangeHistogram implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles.
+ * cub::BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "specializations/block_range_histo_gatomic.cuh"
-#include "specializations/block_range_histo_satomic.cuh"
-#include "specializations/block_range_histo_sort.cuh"
+#include "specializations/block_histogram_gatomic_sweep.cuh"
+#include "specializations/block_histogram_satomic_sweep.cuh"
+#include "specializations/block_histogram_sort_sweep.cuh"
 #include "../util_type.cuh"
 #include "../grid/grid_mapping.cuh"
 #include "../grid/grid_even_share.cuh"
@@ -57,7 +57,7 @@ namespace cub {
 
 
 /**
- * \brief DeviceHistogramAlgorithm enumerates alternative algorithms for BlockRangeHistogram.
+ * \brief DeviceHistogramAlgorithm enumerates alternative algorithms for BlockHistogramSweep.
  */
 enum DeviceHistogramAlgorithm
 {
@@ -124,14 +124,14 @@ enum DeviceHistogramAlgorithm
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRangeHistogram
+ * Parameterizable tuning policy type for BlockHistogramSweep
  */
 template <
     int                             _BLOCK_THREADS,         ///< Threads per thread block
     int                             _ITEMS_PER_THREAD,      ///< Items per thread (per tile of input)
     DeviceHistogramAlgorithm        _HISTO_ALGORITHM,       ///< Cooperative histogram algorithm to use
     GridMappingStrategy             _GRID_MAPPING>          ///< How to map tiles of input onto thread blocks
-struct BlockRangeHistogramPolicy
+struct BlockHistogramSweepPolicy
 {
     enum
     {
@@ -150,36 +150,36 @@ struct BlockRangeHistogramPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRangeHistogram implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles.
+ * \brief BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles.
  */
 template <
-    typename    BlockRangeHistogramPolicy,      ///< Parameterized BlockRangeHistogramPolicy tuning policy type
+    typename    BlockHistogramSweepPolicy,      ///< Parameterized BlockHistogramSweepPolicy tuning policy type
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
     typename    InputIterator,                  ///< Random-access input iterator type for reading samples.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
     typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    Offset>                         ///< Signed integer type for global offsets
-struct BlockRangeHistogram
+struct BlockHistogramSweep
 {
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
     // Histogram grid algorithm
-    static const DeviceHistogramAlgorithm HISTO_ALGORITHM = BlockRangeHistogramPolicy::HISTO_ALGORITHM;
+    static const DeviceHistogramAlgorithm HISTO_ALGORITHM = BlockHistogramSweepPolicy::HISTO_ALGORITHM;
 
     // Alternative internal implementation types
-    typedef BlockRangeHistogramSort<            BlockRangeHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRangeHistogramSortT;
-    typedef BlockRangeHistogramSharedAtomic<    BlockRangeHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRangeHistogramSharedAtomicT;
-    typedef BlockRangeHistogramGlobalAtomic<    BlockRangeHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockRangeHistogramGlobalAtomicT;
+    typedef BlockHistogramSweepSort<            BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramSweepSortT;
+    typedef BlockHistogramSweepSharedAtomic<    BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramSweepSharedAtomicT;
+    typedef BlockHistogramSweepGlobalAtomic<    BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramSweepGlobalAtomicT;
 
     // Internal block sweep histogram type
     typedef typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SORT),
-        BlockRangeHistogramSortT,
+        BlockHistogramSweepSortT,
         typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SHARED_ATOMIC),
-            BlockRangeHistogramSharedAtomicT,
-            BlockRangeHistogramGlobalAtomicT>::Type>::Type InternalBlockDelegate;
+            BlockHistogramSweepSharedAtomicT,
+            BlockHistogramSweepGlobalAtomicT>::Type>::Type InternalBlockDelegate;
 
     enum
     {
@@ -205,7 +205,7 @@ struct BlockRangeHistogram
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockRangeHistogram(
+    __device__ __forceinline__ BlockHistogramSweep(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIterator     d_in,                                           ///< Input data to reduce
         HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms

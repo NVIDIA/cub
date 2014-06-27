@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "../../block_range/block_range_histo.cuh"
+#include "../../block_sweep/block_histogram_sweep.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_debug.cuh"
@@ -77,14 +77,14 @@ __global__ void HistoInitKernel(
  * Histogram tiles kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                        BlockRangeHistogramPolicy,  ///< Parameterized BlockRangeHistogramPolicy tuning policy type
+    typename                                        BlockHistogramSweepPolicy,  ///< Parameterized BlockHistogramSweepPolicy tuning policy type
     int                                             BINS,                       ///< Number of histogram bins per channel
     int                                             CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                             ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                                        InputIterator,              ///< The input iterator type \iterator.  Must have a value type that is assignable to <tt>unsigned char</tt>
     typename                                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
     typename                                        Offset>                     ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRangeHistogramPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockHistogramSweepPolicy::BLOCK_THREADS))
 __global__ void RangeHistoKernel(
     InputIterator                                   d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
@@ -95,23 +95,23 @@ __global__ void RangeHistoKernel(
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockRangeHistogramPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockRangeHistogramPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockHistogramSweepPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockHistogramSweepPolicy::ITEMS_PER_THREAD,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     // Thread block type for compositing input tiles
-    typedef BlockRangeHistogram<BlockRangeHistogramPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset> BlockRangeHistogramT;
+    typedef BlockHistogramSweep<BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset> BlockHistogramSweepT;
 
-    // Shared memory for BlockRangeHistogram
-    __shared__ typename BlockRangeHistogramT::TempStorage temp_storage;
+    // Shared memory for BlockHistogramSweep
+    __shared__ typename BlockHistogramSweepT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockRangeHistogramT(temp_storage, d_samples, d_out_histograms.array).ConsumeRange(
+    BlockHistogramSweepT(temp_storage, d_samples, d_out_histograms.array).ConsumeRange(
         num_samples,
         even_share,
         queue,
-        Int2Type<BlockRangeHistogramPolicy::GRID_MAPPING>());
+        Int2Type<BlockHistogramSweepPolicy::GRID_MAPPING>());
 }
 
 
@@ -176,7 +176,7 @@ struct DeviceHistogramDispatch
     struct Policy350
     {
         // RangeHistoPolicy
-        typedef BlockRangeHistogramPolicy<
+        typedef BlockHistogramSweepPolicy<
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 128 : 256,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 12 : (30 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
@@ -188,7 +188,7 @@ struct DeviceHistogramDispatch
     struct Policy300
     {
         // RangeHistoPolicy
-        typedef BlockRangeHistogramPolicy<
+        typedef BlockHistogramSweepPolicy<
                 128,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 20 : (22 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
@@ -200,7 +200,7 @@ struct DeviceHistogramDispatch
     struct Policy200
     {
         // RangeHistoPolicy
-        typedef BlockRangeHistogramPolicy<
+        typedef BlockHistogramSweepPolicy<
                 128,
                 (HISTO_ALGORITHM == DEVICE_HISTO_SORT) ? 21 : (23 / ACTIVE_CHANNELS),
                 HISTO_ALGORITHM,
@@ -212,7 +212,7 @@ struct DeviceHistogramDispatch
     struct Policy100
     {
         // RangeHistoPolicy
-        typedef BlockRangeHistogramPolicy<
+        typedef BlockHistogramSweepPolicy<
                 128,
                 7,
                 DEVICE_HISTO_SORT,        // (use sort regardless because g-atomics are unsupported and s-atomics are perf-useless)

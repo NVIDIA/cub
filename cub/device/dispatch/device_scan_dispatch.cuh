@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "../../block_range/block_range_scan.cuh"
+#include "../../block_sweep/block_scan_sweep.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_debug.cuh"
@@ -79,14 +79,14 @@ __global__ void ScanInitKernel(
  * Scan kernel entry point (multi-block)
  */
 template <
-    typename            BlockRangeScanPolicy,       ///< Parameterized BlockRangeScanPolicy tuning policy type
+    typename            BlockScanSweepPolicy,       ///< Parameterized BlockScanSweepPolicy tuning policy type
     typename            InputIterator,              ///< Random-access input iterator type for reading scan input data \iterator
     typename            OutputIterator,             ///< Random-access output iterator type for writing scan output data \iterator
     typename            ScanTileState,              ///< Tile status interface type
     typename            ScanOp,                     ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename            Identity,                   ///< Identity value type (cub::NullType for inclusive scans)
     typename            Offset>                     ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRangeScanPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockScanSweepPolicy::BLOCK_THREADS))
 __global__ void RangeScanKernel(
     InputIterator       d_in,                       ///< Input data
     OutputIterator      d_out,                      ///< Output data
@@ -97,19 +97,19 @@ __global__ void RangeScanKernel(
     GridQueue<int>      queue)                      ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for scanning input tiles
-    typedef BlockRangeScan<
-        BlockRangeScanPolicy,
+    typedef BlockScanSweep<
+        BlockScanSweepPolicy,
         InputIterator,
         OutputIterator,
         ScanOp,
         Identity,
-        Offset> BlockRangeScanT;
+        Offset> BlockScanSweepT;
 
-    // Shared memory for BlockRangeScan
-    __shared__ typename BlockRangeScanT::TempStorage temp_storage;
+    // Shared memory for BlockScanSweep
+    __shared__ typename BlockScanSweepT::TempStorage temp_storage;
 
     // Process tiles
-    BlockRangeScanT(temp_storage, d_in, d_out, scan_op, identity).ConsumeRange(
+    BlockScanSweepT(temp_storage, d_in, d_out, scan_op, identity).ConsumeRange(
         num_items,
         queue,
         tile_status);
@@ -158,7 +158,7 @@ struct DeviceScanDispatch
         };
 
         // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
-        typedef BlockRangeScanPolicy<
+        typedef BlockScanSweepPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
@@ -178,7 +178,7 @@ struct DeviceScanDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeScanPolicy<
+        typedef BlockScanSweepPolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -199,7 +199,7 @@ struct DeviceScanDispatch
         };
 
         // GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
-        typedef BlockRangeScanPolicy<
+        typedef BlockScanSweepPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -219,7 +219,7 @@ struct DeviceScanDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeScanPolicy<
+        typedef BlockScanSweepPolicy<
                 96,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -239,7 +239,7 @@ struct DeviceScanDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeScanPolicy<
+        typedef BlockScanSweepPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -324,7 +324,7 @@ struct DeviceScanDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRangeScanPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockScanSweepPolicy.
      */
     struct KernelConfig
     {
@@ -334,15 +334,15 @@ struct DeviceScanDispatch
         BlockStoreAlgorithm     store_policy;
         BlockScanAlgorithm      scan_algorithm;
 
-        template <typename BlockRangeScanPolicy>
+        template <typename BlockScanSweepPolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
         void Init()
         {
-            block_threads               = BlockRangeScanPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockRangeScanPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockRangeScanPolicy::LOAD_ALGORITHM;
-            store_policy                = BlockRangeScanPolicy::STORE_ALGORITHM;
-            scan_algorithm              = BlockRangeScanPolicy::SCAN_ALGORITHM;
+            block_threads               = BlockScanSweepPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockScanSweepPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockScanSweepPolicy::LOAD_ALGORITHM;
+            store_policy                = BlockScanSweepPolicy::STORE_ALGORITHM;
+            scan_algorithm              = BlockScanSweepPolicy::SCAN_ALGORITHM;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__

@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "device_scan_dispatch.cuh"
-#include "../../block_range/block_range_select.cuh"
+#include "../../block_sweep/block_rle_sweep.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_device.cuh"
@@ -62,7 +62,7 @@ namespace cub {
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename            BlockRangeRlePolicy,     ///< Parameterized BlockRangeRlePolicy tuning policy type
+    typename            BlockRleSweepPolicy,     ///< Parameterized BlockRleSweepPolicy tuning policy type
     typename            InputIterator,              ///< Random-access input iterator type for reading input items
     typename            FlagIterator,               ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
     typename            OutputIterator,             ///< Random-access output iterator type for writing selected items
@@ -72,7 +72,7 @@ template <
     typename            EqualityOp,                 ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
     typename            Offset,                     ///< Signed integer type for global offsets
     bool                KEEP_REJECTS>               ///< Whether or not we push rejected items to the back of the output
-__launch_bounds__ (int(BlockRangeRlePolicy::BLOCK_THREADS))
+__launch_bounds__ (int(BlockRleSweepPolicy::BLOCK_THREADS))
 __global__ void SelectRegionKernel(
     InputIterator       d_in,                       ///< [in] Pointer to input sequence of data items
     FlagIterator        d_flags,                    ///< [in] Pointer to the input sequence of selection flags
@@ -86,21 +86,21 @@ __global__ void SelectRegionKernel(
     GridQueue<int>      queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for selecting data from input tiles
-    typedef BlockRangeRle<
-        BlockRangeRlePolicy,
+    typedef BlockRleSweep<
+        BlockRleSweepPolicy,
         InputIterator,
         FlagIterator,
         OutputIterator,
         SelectOp,
         EqualityOp,
         Offset,
-        KEEP_REJECTS> BlockRangeRleT;
+        KEEP_REJECTS> BlockRleSweepT;
 
-    // Shared memory for BlockRangeRle
-    __shared__ typename BlockRangeRleT::TempStorage temp_storage;
+    // Shared memory for BlockRleSweep
+    __shared__ typename BlockRleSweepT::TempStorage temp_storage;
 
     // Process tiles
-    BlockRangeRleT(temp_storage, d_in, d_flags, d_out, select_op, equality_op, num_items).ConsumeRange(
+    BlockRleSweepT(temp_storage, d_in, d_flags, d_out, select_op, equality_op, num_items).ConsumeRange(
         num_tiles,
         queue,
         tile_status,
@@ -159,7 +159,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeRlePolicy<
+        typedef BlockRleSweepPolicy<
                 96,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
@@ -177,7 +177,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeRlePolicy<
+        typedef BlockRleSweepPolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -195,7 +195,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeRlePolicy<
+        typedef BlockRleSweepPolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -213,7 +213,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeRlePolicy<
+        typedef BlockRleSweepPolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -231,7 +231,7 @@ struct DeviceSelectDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRangeRlePolicy<
+        typedef BlockRleSweepPolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -314,7 +314,7 @@ struct DeviceSelectDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRangeRlePolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRleSweepPolicy.
      */
     struct KernelConfig
     {
@@ -324,15 +324,15 @@ struct DeviceSelectDispatch
         bool                    store_warp_time_slicing;
         BlockScanAlgorithm      scan_algorithm;
 
-        template <typename BlockRangeRlePolicy>
+        template <typename BlockRleSweepPolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
         void Init()
         {
-            block_threads               = BlockRangeRlePolicy::BLOCK_THREADS;
-            items_per_thread            = BlockRangeRlePolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockRangeRlePolicy::LOAD_ALGORITHM;
-            store_warp_time_slicing     = BlockRangeRlePolicy::STORE_WARP_TIME_SLICING;
-            scan_algorithm              = BlockRangeRlePolicy::SCAN_ALGORITHM;
+            block_threads               = BlockRleSweepPolicy::BLOCK_THREADS;
+            items_per_thread            = BlockRleSweepPolicy::ITEMS_PER_THREAD;
+            load_policy                 = BlockRleSweepPolicy::LOAD_ALGORITHM;
+            store_warp_time_slicing     = BlockRleSweepPolicy::STORE_WARP_TIME_SLICING;
+            scan_algorithm              = BlockRleSweepPolicy::SCAN_ALGORITHM;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__
