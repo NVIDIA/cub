@@ -63,7 +63,7 @@ template <
     typename                                        Offset,                 ///< Signed integer type for global offsets
     typename                                        HistoCounter>           ///< Integer type for counting sample occurrences per histogram bin
 __launch_bounds__ (BINS, 1)
-__global__ void HistoInitKernel(
+__global__ void DeviceHistogramInitKernel(
     GridQueue<Offset>                               grid_queue,             ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,       ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][BINS]</tt>
     Offset                                          num_samples)            ///< [in] Total number of samples \p d_samples for all channels
@@ -85,7 +85,7 @@ template <
     typename                                        HistoCounter,               ///< Integer type for counting sample occurrences per histogram bin
     typename                                        Offset>                     ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockHistogramSweepPolicy::BLOCK_THREADS))
-__global__ void RangeHistoKernel(
+__global__ void DeviceHistogramSweepKernel(
     InputIterator                                   d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,           ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][gridDim.x][BINS]</tt>
     Offset                                          num_samples,                ///< [in] Total number of samples \p d_samples for all channels
@@ -123,7 +123,7 @@ template <
     int                                             ACTIVE_CHANNELS,        ///< Number of channels actively being histogrammed
     typename                                        HistoCounter>           ///< Integer type for counting sample occurrences per histogram bin
 __launch_bounds__ (BINS, 1)
-__global__ void HistoAggregateKernel(
+__global__ void DeviceHistogramAggregateKernel(
     HistoCounter*                                   d_block_histograms,     ///< [in] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][num_threadblocks][BINS]</tt>
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS>    d_out_histograms,       ///< [out] Histogram counter data having logical dimensions <tt>HistoCounter[ACTIVE_CHANNELS][BINS]</tt>
     int                                             num_threadblocks)       ///< [in] Number of threadblock histograms per channel in \p d_block_histograms
@@ -323,9 +323,9 @@ struct DeviceHistogramDispatch
      * Internal dispatch routine
      */
     template <
-        typename                    InitHistoKernelPtr,                 ///< Function type of cub::HistoInitKernel
-        typename                    RangeHistoKernelPtr,               ///< Function type of cub::RangeHistoKernel
-        typename                    AggregateHistoKernelPtr>            ///< Function type of cub::HistoAggregateKernel
+        typename                    InitHistoKernelPtr,                 ///< Function type of cub::DeviceHistogramInitKernel
+        typename                    DeviceHistogramSweepKernelPtr,               ///< Function type of cub::DeviceHistogramSweepKernel
+        typename                    AggregateHistoKernelPtr>            ///< Function type of cub::DeviceHistogramAggregateKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -335,9 +335,9 @@ struct DeviceHistogramDispatch
         Offset                      num_samples,                        ///< [in] Number of samples to process
         cudaStream_t                stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Default is \p false.
-        InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::HistoInitKernel
-        RangeHistoKernelPtr        histo_range_kernel,                ///< [in] Kernel function pointer to parameterization of cub::RangeHistoKernel
-        AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::HistoAggregateKernel
+        InitHistoKernelPtr          init_kernel,                        ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramInitKernel
+        DeviceHistogramSweepKernelPtr        histo_range_kernel,                ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
+        AggregateHistoKernelPtr     aggregate_kernel,                   ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramAggregateKernel
         KernelConfig                histo_range_config)                ///< [in] Dispatch parameters that match the policy that \p histo_range_kernel was compiled for
     {
     #ifndef CUB_RUNTIME_ENABLED
@@ -536,9 +536,9 @@ struct DeviceHistogramDispatch
                 num_samples,
                 stream,
                 debug_synchronous,
-                HistoInitKernel<BINS, ACTIVE_CHANNELS, Offset, HistoCounter>,
-                RangeHistoKernel<PtxRangeHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
-                HistoAggregateKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
+                DeviceHistogramInitKernel<BINS, ACTIVE_CHANNELS, Offset, HistoCounter>,
+                DeviceHistogramSweepKernel<PtxRangeHistoPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>,
+                DeviceHistogramAggregateKernel<BINS, ACTIVE_CHANNELS, HistoCounter>,
                 histo_range_config))) break;
         }
         while (0);

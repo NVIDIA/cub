@@ -64,7 +64,7 @@ template <
     typename                Key,                                ///< Key type
     typename                Offset>                             ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockRadixSortUpsweepPolicy::BLOCK_THREADS))
-__global__ void RadixSortUpsweepKernel(
+__global__ void DeviceRadixSortUpsweepKernel(
     Key                     *d_keys,                            ///< [in] Input keys buffer
     Offset                  *d_spine,                           ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
     Offset                  num_items,                          ///< [in] Total number of input data items
@@ -107,7 +107,7 @@ template <
     typename    BlockScanSweepPolicy,       ///< Parameterizable tuning policy type for cub::BlockScanSweep abstraction
     typename    Offset>                     ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockScanSweepPolicy::BLOCK_THREADS), 1)
-__global__ void RadixSortScanKernel(
+__global__ void RadixSortScanBinsKernel(
     Offset      *d_spine,                   ///< [in,out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
     int         num_counts)                 ///< [in] Total number of bin-counts
 {
@@ -143,7 +143,7 @@ template <
     typename                Value,                                  ///< Value type
     typename                Offset>                                 ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockRadixSortDownsweepPolicy::BLOCK_THREADS))
-__global__ void RadixSortDownsweepKernel(
+__global__ void DeviceRadixSortDownsweepKernel(
     Key                     *d_keys_in,                             ///< [in] Input keys ping buffer
     Key                     *d_keys_out,                            ///< [in] Output keys pong buffer
     Value                   *d_values_in,                           ///< [in] Input values ping buffer
@@ -390,9 +390,9 @@ struct DeviceRadixSortDispatch
     template <
         typename Policy,
         typename KernelConfig,
-        typename UpsweepKernelPtr,          ///< Function type of cub::RadixSortUpsweepKernel
+        typename UpsweepKernelPtr,          ///< Function type of cub::DeviceRadixSortUpsweepKernel
         typename ScanKernelPtr,            ///< Function type of cub::SpineScanKernel
-        typename DownsweepKernelPtr>        ///< Function type of cub::RadixSortUpsweepKernel
+        typename DownsweepKernelPtr>        ///< Function type of cub::DeviceRadixSortUpsweepKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t InitConfigs(
         int                     sm_version,
@@ -427,9 +427,9 @@ struct DeviceRadixSortDispatch
      */
     template <
         typename KernelConfig,
-        typename UpsweepKernelPtr,          ///< Function type of cub::RadixSortUpsweepKernel
+        typename UpsweepKernelPtr,          ///< Function type of cub::DeviceRadixSortUpsweepKernel
         typename ScanKernelPtr,            ///< Function type of cub::SpineScanKernel
-        typename DownsweepKernelPtr>        ///< Function type of cub::RadixSortUpsweepKernel
+        typename DownsweepKernelPtr>        ///< Function type of cub::DeviceRadixSortUpsweepKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t InitConfigs(
         int                     ptx_version,
@@ -608,9 +608,9 @@ struct DeviceRadixSortDispatch
      * specified kernel functions.
      */
     template <
-        typename                UpsweepKernelPtr,               ///< Function type of cub::RadixSortUpsweepKernel
+        typename                UpsweepKernelPtr,               ///< Function type of cub::DeviceRadixSortUpsweepKernel
         typename                ScanKernelPtr,                  ///< Function type of cub::SpineScanKernel
-        typename                DownsweepKernelPtr>             ///< Function type of cub::RadixSortUpsweepKernel
+        typename                DownsweepKernelPtr>             ///< Function type of cub::DeviceRadixSortUpsweepKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         DoubleBuffer<Key>       &d_keys,                        ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
@@ -625,9 +625,9 @@ struct DeviceRadixSortDispatch
         KernelConfig            &upsweep_config,                ///< [in] Dispatch parameters that match the policy that \p upsweep_kernel was compiled for
         KernelConfig            &scan_config,                   ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
         KernelConfig            &downsweep_config,              ///< [in] Dispatch parameters that match the policy that \p downsweep_kernel was compiled for
-        UpsweepKernelPtr        upsweep_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
+        UpsweepKernelPtr        upsweep_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
         ScanKernelPtr           scan_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::SpineScanKernel
-        DownsweepKernelPtr      downsweep_kernel)               ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
+        DownsweepKernelPtr      downsweep_kernel)               ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -761,9 +761,9 @@ struct DeviceRadixSortDispatch
      * Internal dispatch routine
      */
     template <
-        typename UpsweepKernelPtr,          ///< Function type of cub::RadixSortUpsweepKernel
+        typename UpsweepKernelPtr,          ///< Function type of cub::DeviceRadixSortUpsweepKernel
         typename ScanKernelPtr,             ///< Function type of cub::SpineScanKernel
-        typename DownsweepKernelPtr>        ///< Function type of cub::RadixSortUpsweepKernel
+        typename DownsweepKernelPtr>        ///< Function type of cub::DeviceRadixSortUpsweepKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                    *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -775,11 +775,11 @@ struct DeviceRadixSortDispatch
         int                     end_bit,                        ///< [in] The past-the-end (most-significant) bit index needed for key comparison
         cudaStream_t            stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
-        UpsweepKernelPtr        upsweep_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
-        UpsweepKernelPtr        alt_upsweep_kernel,             ///< [in] Alternate kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
+        UpsweepKernelPtr        upsweep_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
+        UpsweepKernelPtr        alt_upsweep_kernel,             ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
         ScanKernelPtr           scan_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::SpineScanKernel
-        DownsweepKernelPtr      downsweep_kernel,               ///< [in] Kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
-        DownsweepKernelPtr      alt_downsweep_kernel)           ///< [in] Alternate kernel function pointer to parameterization of cub::RadixSortUpsweepKernel
+        DownsweepKernelPtr      downsweep_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
+        DownsweepKernelPtr      alt_downsweep_kernel)           ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -924,11 +924,11 @@ struct DeviceRadixSortDispatch
             end_bit,
             stream,
             debug_synchronous,
-            RadixSortUpsweepKernel<PtxUpsweepPolicy, DESCENDING, Key, Offset>,
-            RadixSortUpsweepKernel<PtxAltUpsweepPolicy, DESCENDING, Key, Offset>,
-            RadixSortScanKernel<PtxScanPolicy, Offset>,
-            RadixSortDownsweepKernel<PtxDownsweepPolicy, DESCENDING, Key, Value, Offset>,
-            RadixSortDownsweepKernel<PtxAltDownsweepPolicy, DESCENDING, Key, Value, Offset>);
+            DeviceRadixSortUpsweepKernel<PtxUpsweepPolicy, DESCENDING, Key, Offset>,
+            DeviceRadixSortUpsweepKernel<PtxAltUpsweepPolicy, DESCENDING, Key, Offset>,
+            RadixSortScanBinsKernel<PtxScanPolicy, Offset>,
+            DeviceRadixSortDownsweepKernel<PtxDownsweepPolicy, DESCENDING, Key, Value, Offset>,
+            DeviceRadixSortDownsweepKernel<PtxAltDownsweepPolicy, DESCENDING, Key, Value, Offset>);
     }
 
 };

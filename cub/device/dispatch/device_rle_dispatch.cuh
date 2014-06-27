@@ -50,6 +50,7 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
@@ -73,7 +74,7 @@ template <
     typename            Offset,                     ///< Signed integer type for global offsets
     bool                KEEP_REJECTS>               ///< Whether or not we push rejected items to the back of the output
 __launch_bounds__ (int(BlockRleSweepPolicy::BLOCK_THREADS))
-__global__ void SelectRegionKernel(
+__global__ void DeviceRleKernel(
     InputIterator       d_in,                       ///< [in] Pointer to input sequence of data items
     FlagIterator        d_flags,                    ///< [in] Pointer to the input sequence of selection flags
     OutputIterator      d_out,                      ///< [in] Pointer to output sequence of selected data items
@@ -166,7 +167,7 @@ struct DeviceSelectDispatch
                 LOAD_LDG,
                 true,
                 BLOCK_SCAN_WARP_SCANS>
-            SelectRegionPolicy;
+            RleSweepPolicy;
     };
 
     /// SM30
@@ -184,7 +185,7 @@ struct DeviceSelectDispatch
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            SelectRegionPolicy;
+            RleSweepPolicy;
     };
 
     /// SM20
@@ -202,7 +203,7 @@ struct DeviceSelectDispatch
                 LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_WARP_SCANS>
-            SelectRegionPolicy;
+            RleSweepPolicy;
     };
 
     /// SM13
@@ -220,7 +221,7 @@ struct DeviceSelectDispatch
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            SelectRegionPolicy;
+            RleSweepPolicy;
     };
 
     /// SM10
@@ -238,7 +239,7 @@ struct DeviceSelectDispatch
                 LOAD_DEFAULT,
                 true,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            SelectRegionPolicy;
+            RleSweepPolicy;
     };
 
 
@@ -264,7 +265,7 @@ struct DeviceSelectDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxSelectRegionPolicy : PtxPolicy::SelectRegionPolicy {};
+    struct PtxRleSweepPolicy : PtxPolicy::RleSweepPolicy {};
 
 
     /******************************************************************************
@@ -278,35 +279,35 @@ struct DeviceSelectDispatch
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &rle_range_config)
+        KernelConfig    &device_rle_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        rle_range_config.template Init<PtxSelectRegionPolicy>();
+        device_rle_config.template Init<PtxRleSweepPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 350)
         {
-            rle_range_config.template Init<typename Policy350::SelectRegionPolicy>();
+            device_rle_config.template Init<typename Policy350::RleSweepPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            rle_range_config.template Init<typename Policy300::SelectRegionPolicy>();
+            device_rle_config.template Init<typename Policy300::RleSweepPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            rle_range_config.template Init<typename Policy200::SelectRegionPolicy>();
+            device_rle_config.template Init<typename Policy200::RleSweepPolicy>();
         }
         else if (ptx_version >= 130)
         {
-            rle_range_config.template Init<typename Policy130::SelectRegionPolicy>();
+            device_rle_config.template Init<typename Policy130::RleSweepPolicy>();
         }
         else
         {
-            rle_range_config.template Init<typename Policy100::SelectRegionPolicy>();
+            device_rle_config.template Init<typename Policy100::RleSweepPolicy>();
         }
 
     #endif
@@ -357,8 +358,8 @@ struct DeviceSelectDispatch
      * specified kernel functions.
      */
     template <
-        typename                    ScanInitKernelPtr,              ///< Function type of cub::ScanInitKernel
-        typename                    SelectRegionKernelPtr>          ///< Function type of cub::SelectRegionKernelPtr
+        typename                    DeviceScanInitKernelPtr,              ///< Function type of cub::DeviceScanInitKernel
+        typename                    DeviceRleKernelPtr>          ///< Function type of cub::DeviceRleKernelPtr
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -373,9 +374,9 @@ struct DeviceSelectDispatch
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
-        ScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::ScanInitKernel
-        SelectRegionKernelPtr       rle_range_kernel,            ///< [in] Kernel function pointer to parameterization of cub::SelectRegionKernel
-        KernelConfig                rle_range_config)            ///< [in] Dispatch parameters that match the policy that \p rle_range_kernel was compiled for
+        DeviceScanInitKernelPtr           init_kernel,                    ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
+        DeviceRleKernelPtr       rle_range_kernel,            ///< [in] Kernel function pointer to parameterization of cub::DeviceRleKernel
+        KernelConfig                device_rle_config)            ///< [in] Dispatch parameters that match the policy that \p rle_range_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -401,7 +402,7 @@ struct DeviceSelectDispatch
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int tile_size = rle_range_config.block_threads * rle_range_config.items_per_thread;
+            int tile_size = device_rle_config.block_threads * device_rle_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
@@ -447,7 +448,7 @@ struct DeviceSelectDispatch
                 rle_range_sm_occupancy,            // out
                 sm_version,
                 rle_range_kernel,
-                rle_range_config.block_threads))) break;
+                device_rle_config.block_threads))) break;
 
             // Get grid size for scanning tiles
             dim3 select_grid_size;
@@ -458,10 +459,10 @@ struct DeviceSelectDispatch
 
             // Log rle_range_kernel configuration
             if (debug_synchronous) CubLog("Invoking rle_range_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                select_grid_size.x, select_grid_size.y, select_grid_size.z, rle_range_config.block_threads, (long long) stream, rle_range_config.items_per_thread, rle_range_sm_occupancy);
+                select_grid_size.x, select_grid_size.y, select_grid_size.z, device_rle_config.block_threads, (long long) stream, device_rle_config.items_per_thread, rle_range_sm_occupancy);
 
             // Invoke rle_range_kernel
-            rle_range_kernel<<<select_grid_size, rle_range_config.block_threads, 0, stream>>>(
+            rle_range_kernel<<<select_grid_size, device_rle_config.block_threads, 0, stream>>>(
                 d_in,
                 d_flags,
                 d_out,
@@ -516,8 +517,8 @@ struct DeviceSelectDispatch
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig rle_range_config;
-            InitConfigs(ptx_version, rle_range_config);
+            KernelConfig device_rle_config;
+            InitConfigs(ptx_version, device_rle_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -533,9 +534,9 @@ struct DeviceSelectDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                ScanInitKernel<Offset, ScanTileState>,
-                SelectRegionKernel<PtxSelectRegionPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, ScanTileState, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
-                rle_range_config))) break;
+                DeviceScanInitKernel<Offset, ScanTileState>,
+                DeviceRleKernel<PtxRleSweepPolicy, InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, ScanTileState, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
+                device_rle_config))) break;
         }
         while (0);
 
