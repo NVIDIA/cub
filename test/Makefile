@@ -268,6 +268,7 @@ ALL = 				link \
 			 		test_device_scan \
 			 		test_device_radix_sort \
 					test_device_reduce_by_key\
+					test_device_run_length_encode\
 		 			test_device_select_unique \
 					test_device_select_flagged \
 					test_device_select_if 
@@ -590,6 +591,15 @@ bin/test_device_reduce_by_key_$(SUFFIX) : test_device_reduce_by_key.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_reduce_by_key_$(SUFFIX) test_device_reduce_by_key.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
+#-------------------------------------------------------------------------------
+# make test_device_run_length_encode
+#-------------------------------------------------------------------------------
+
+test_device_run_length_encode: bin/test_device_run_length_encode_$(SUFFIX)
+
+bin/test_device_run_length_encode_$(SUFFIX) : test_device_run_length_encode.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_run_length_encode_$(SUFFIX) test_device_run_length_encode.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 

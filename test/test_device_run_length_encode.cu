@@ -441,12 +441,10 @@ template <
     RleMethod           RLE_METHOD,
     Backend             BACKEND,
     typename            DeviceInputIterator,
-    typename            DeviceValueInputIterator,
     typename            T,
     typename            Offset,
     typename            Length,
-    typename            EqualityOp,
-    typename            ReductionOp>
+    typename            EqualityOp>
 void Test(
     DeviceInputIterator d_in,
     T                   *h_unique_reference,
@@ -481,10 +479,10 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output arrays
-    CubDebugExit(cudaMemset(d_unique_out, 0, sizeof(T) * num_items));
-    CubDebugExit(cudaMemset(d_offsets_out, 0, sizeof(Offset) * num_items));
-    CubDebugExit(cudaMemset(d_lengths_out, 0, sizeof(Length) * num_items));
-    CubDebugExit(cudaMemset(d_num_runs, 0, sizeof(int)));
+    CubDebugExit(cudaMemset(d_unique_out,   0, sizeof(T) * num_items));
+    CubDebugExit(cudaMemset(d_offsets_out,  0, sizeof(Offset) * num_items));
+    CubDebugExit(cudaMemset(d_lengths_out,  0, sizeof(Length) * num_items));
+    CubDebugExit(cudaMemset(d_num_runs,     0, sizeof(int)));
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(Int2Type<RLE_METHOD>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items, 0, true));
@@ -560,133 +558,127 @@ void Test(
  * Test DeviceSelect on pointer type
  */
 template <
+    RleMethod       RLE_METHOD,
     Backend         BACKEND,
     typename        T,
-    typename        Length,
-    typename        ReductionOp>
+    typename        Offset,
+    typename        Length>
 void TestPointer(
     int             num_items,
     int             entropy_reduction,
     int             max_segment,
-    ReductionOp     reduction_op,
     char*           key_type_string,
     char*           offset_type_string)
 {
     // Allocate host arrays
-    T* h_in        = new T[num_items];
-    T* h_unique_reference = new T[num_items];
-
-    Length* h_values_in        = new Length[num_items];
-    Length* h_lengths_reference = new Length[num_items];
+    T*      h_in                    = new T[num_items];
+    T*      h_unique_reference      = new T[num_items];
+    Offset* h_offsets_reference     = new Offset[num_items];
+    Length* h_lengths_reference     = new Length[num_items];
 
     for (int i = 0; i < num_items; ++i)
-        InitValue(INTEGER_SEED, h_values_in[i], 1);
+        InitValue(INTEGER_SEED, h_offsets_reference[i], 1);
 
     // Initialize problem and solution
     Equality equality_op;
     Initialize(entropy_reduction, h_in, num_items, max_segment);
-    int num_runs = Solve(h_in, h_unique_reference, h_values_in, h_lengths_reference, equality_op, num_items);
+    int num_runs = Solve(h_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_items);
 
-    printf("\nPointer %s cub::DeviceReduce::RunLengthEncode %s reduction of %d items, %d segments (avg run length %d), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
+    printf("\nPointer %s cub::%s on %d items, %d segments (avg run length %d), {%s,%s} key-offset pairs, max_segment %d, entropy_reduction %d\n",
+        (RLE_METHOD == RLE) ? "DeviceReduce::RunLengthEncode" : (RLE_METHOD == NON_TRIVIAL) ? "DeviceRunLengthEncode::NonTrivialRuns" : "Other",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Max",
-        num_items, num_runs, num_items / num_runs,
+        num_items, num_runs, (num_items / num_runs),
         key_type_string, offset_type_string,
         max_segment, entropy_reduction);
     fflush(stdout);
 
     // Allocate problem device arrays
-    T     *d_in = NULL;
-    Length   *d_values_in = NULL;
+    T* d_in = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values_in, sizeof(Length) * num_items));
 
     // Initialize device input
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(d_values_in, h_values_in, sizeof(Length) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_in, d_values_in, h_unique_reference, h_lengths_reference, equality_op, num_runs, num_items, key_type_string, offset_type_string);
+    Test<RLE_METHOD, BACKEND>(d_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_runs, num_items, key_type_string, offset_type_string);
 
     // Cleanup
     if (h_in) delete[] h_in;
-    if (h_values_in) delete[] h_values_in;
     if (h_unique_reference) delete[] h_unique_reference;
+    if (h_offsets_reference) delete[] h_offsets_reference;
     if (h_lengths_reference) delete[] h_lengths_reference;
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
-    if (d_values_in) CubDebugExit(g_allocator.DeviceFree(d_values_in));
 }
 
 
 /**
- * Test DeviceSelect on iterator type
+ * Test on iterator type
  */
 template <
+    RleMethod       RLE_METHOD,
     Backend         BACKEND,
     typename        T,
-    typename        Length,
-    typename        ReductionOp>
+    typename        Offset,
+    typename        Length>
 void TestIterator(
     int             num_items,
     int             entropy_reduction,
     int             max_segment,
-    ReductionOp     reduction_op,
     char*           key_type_string,
     char*           offset_type_string,
     Int2Type<true>  is_primitive)
 {
     // Allocate host arrays
-    T* h_in        = new T[num_items];
-    T* h_unique_reference = new T[num_items];
+    T* h_in                     = new T[num_items];
+    T* h_unique_reference       = new T[num_items];
+    Offset* h_offsets_reference = new Offset[num_items];
+    Length* h_lengths_reference = new Length[num_items];
 
     Length one_val;
     InitValue(INTEGER_SEED, one_val, 1);
-    ConstantInputIterator<Length, int> h_values_in(one_val);
-    Length* h_lengths_reference = new Length[num_items];
 
     // Initialize problem and solution
     Equality equality_op;
     Initialize(entropy_reduction, h_in, num_items, max_segment);
-    int num_runs = Solve(h_in, h_unique_reference, h_values_in, h_lengths_reference, equality_op, num_items);
+    int num_runs = Solve(h_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_items);
 
-    printf("\nIterator %s cub::DeviceReduce::RunLengthEncode %s reduction of %d items, %d segments (avg run length %d), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
+    printf("\nIterator %s cub::%s on %d items, %d segments (avg run length %d), {%s,%s} key-offset pairs, max_segment %d, entropy_reduction %d\n",
+        (RLE_METHOD == RLE) ? "DeviceReduce::RunLengthEncode" : (RLE_METHOD == NON_TRIVIAL) ? "DeviceRunLengthEncode::NonTrivialRuns" : "Other",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Max",
-        num_items, num_runs, num_items / num_runs,
+        num_items, num_runs, (num_items / num_runs),
         key_type_string, offset_type_string,
         max_segment, entropy_reduction);
     fflush(stdout);
 
     // Allocate problem device arrays
-    T     *d_in = NULL;
+    T *d_in = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
 
     // Initialize device input
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_in, h_values_in, h_unique_reference, h_lengths_reference, equality_op, num_runs, num_items, key_type_string, offset_type_string);
+    Test<BACKEND>(d_in, h_offsets_reference, h_unique_reference, h_lengths_reference, equality_op, num_runs, num_items, key_type_string, offset_type_string);
 
     // Cleanup
     if (h_in) delete[] h_in;
     if (h_unique_reference) delete[] h_unique_reference;
+    if (h_offsets_reference) delete[] h_offsets_reference;
     if (h_lengths_reference) delete[] h_lengths_reference;
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
 }
 
-/**
- * Test DeviceSelect on iterator type
- */
+
 template <
+    RleMethod       RLE_METHOD,
     Backend         BACKEND,
     typename        T,
-    typename        Length,
-    typename        ReductionOp>
+    typename        Offset,
+    typename        Length>
 void TestIterator(
     int             num_items,
     int             entropy_reduction,
     int             max_segment,
-    ReductionOp     reduction_op,
     char*           key_type_string,
     char*           offset_type_string,
     Int2Type<false> is_primitive)
@@ -697,13 +689,13 @@ void TestIterator(
  * Test different gen modes
  */
 template <
+    RleMethod       RLE_METHOD,
     Backend         BACKEND,
     typename        T,
-    typename        Length,
-    typename        ReductionOp>
+    typename        Offset,
+    typename        Length>
 void Test(
     int             num_items,
-    ReductionOp     reduction_op,
     char*           key_type_string,
     char*           offset_type_string)
 {
@@ -711,18 +703,18 @@ void Test(
     for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
     {
         // 0 key-bit entropy reduction rounds
-        TestPointer<BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string);
-        TestIterator<BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+        TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string);
+        TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
 
         if (max_segment > 1)
         {
             // 2 key-bit entropy reduction rounds
-            TestPointer<BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string);
-            TestIterator<BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+            TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string);
+            TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
 
             // 7 key-bit entropy reduction rounds
-            TestPointer<BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string);
-            TestIterator<BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+            TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string);
+            TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
         }
     }
 }
