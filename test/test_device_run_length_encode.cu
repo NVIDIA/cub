@@ -246,7 +246,7 @@ cudaError_t Dispatch(
 //---------------------------------------------------------------------
 
 /**
- * Simple wrapper kernel to invoke DeviceSelect
+ * Simple wrapper kernel to invoke DeviceRunLengthEncode
  */
 template <
     int                         RLE_METHOD,
@@ -340,42 +340,42 @@ cudaError_t Dispatch(
 
 
 /**
- * Initialize problem.  Keys are initialized to segment number
+ * Initialize problem
  */
-template <typename KeyIterator>
+template <typename T>
 void Initialize(
-    int             entropy_reduction,
-    KeyIterator     h_in,
-    int             num_items,
-    int             max_segment)
+    int         entropy_reduction,
+    T           *h_in,
+    int         num_items,
+    int         max_segment)
 {
-    unsigned short max_short = (unsigned short) -1;
+    unsigned int max_short = (unsigned int) -1;
 
-    int segment_id = 0;
+    int key = 0;
     int i = 0;
     while (i < num_items)
     {
         // Select number of repeating occurrences
 
-        unsigned short repeat;
+        unsigned int repeat;
         RandomBits(repeat, entropy_reduction);
-        repeat = (unsigned short) ((float(repeat) * (float(max_segment) / float(max_short))));
+        repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_short));
         repeat = CUB_MAX(1, repeat);
 
         int j = i;
         while (j < CUB_MIN(i + repeat, num_items))
         {
-            InitValue(INTEGER_SEED, h_in[j], segment_id);
+            InitValue(INTEGER_SEED, h_in[j], key);
             j++;
         }
 
         i = j;
-        segment_id++;
+        key++;
     }
 
     if (g_verbose)
     {
-        printf("Input keys:\n");
+        printf("Input:\n");
         DisplayResults(h_in, num_items);
         printf("\n\n");
     }
@@ -394,16 +394,17 @@ template <
     typename        EqualityOp>
 int Solve(
     InputIterator   h_in,
-    T             *h_unique_reference,
+    T               *h_unique_reference,
     Offset          *h_offsets_reference,
     Length          *h_lengths_reference,
     EqualityOp      equality_op,
     int             num_items)
 {
     // First item
-    T     previous    = h_in[0];
-    Length  length      = 1;
-    int num_runs    = 0;
+    T       previous        = h_in[0];
+    Length  length          = 1;
+    int     num_runs        = 0;
+    int     run_begin       = 0;
 
     // Subsequent items
     for (int i = 1; i < num_items; ++i)
@@ -413,10 +414,12 @@ int Solve(
             if ((RLE_METHOD != NON_TRIVIAL) || (length > 1))
             {
                 h_unique_reference[num_runs]      = previous;
+                h_offsets_reference[num_runs]     = run_begin;
                 h_lengths_reference[num_runs]     = length;
                 num_runs++;
             }
             length = 1;
+            run_begin = i;
         }
         else
         {
@@ -425,9 +428,13 @@ int Solve(
         previous = h_in[i];
     }
 
-    h_unique_reference[num_runs] = previous;
-    h_lengths_reference[num_runs] = length;
-    num_runs++;
+    if ((RLE_METHOD != NON_TRIVIAL) || (length > 1))
+    {
+        h_unique_reference[num_runs]    = previous;
+        h_offsets_reference[num_runs]   = run_begin;
+        h_lengths_reference[num_runs]   = length;
+        num_runs++;
+    }
 
     return num_runs;
 }
@@ -435,7 +442,7 @@ int Solve(
 
 
 /**
- * Test DeviceSelect for a given problem input
+ * Test DeviceRunLengthEncode for a given problem input
  */
 template <
     RleMethod           RLE_METHOD,
@@ -452,9 +459,7 @@ void Test(
     Length              *h_lengths_reference,
     EqualityOp          equality_op,
     int                 num_runs,
-    int                 num_items,
-    char*               key_type_string,
-    char*               offset_type_string)
+    int                 num_items)
 {
     // Allocate device output arrays and number of segments
     T       *d_unique_out       = NULL;
@@ -496,23 +501,23 @@ void Test(
     if (RLE_METHOD == RLE)
     {
         compare0 = CompareDeviceResults(h_unique_reference, d_unique_out, num_runs, true, g_verbose);
-        printf("\t Keys %s ", compare1 ? "FAIL" : "PASS");
+        printf("\t Keys %s\n", compare0 ? "FAIL" : "PASS");
     }
 
     if (RLE_METHOD != RLE)
     {
         compare1 = CompareDeviceResults(h_offsets_reference, d_offsets_out, num_runs, true, g_verbose);
-        printf("\t Values %s ", compare2 ? "FAIL" : "PASS");
+        printf("\t Offsets %s\n", compare1 ? "FAIL" : "PASS");
     }
 
     if (RLE_METHOD != CSR)
     {
         compare2 = CompareDeviceResults(h_lengths_reference, d_lengths_out, num_runs, true, g_verbose);
-        printf("\t Values %s ", compare2 ? "FAIL" : "PASS");
+        printf("\t Lengths %s\n", compare2 ? "FAIL" : "PASS");
     }
 
     compare3 = CompareDeviceResults(&num_runs, d_num_runs, 1, true, g_verbose);
-    printf("\t Count %s ", compare3 ? "FAIL" : "PASS");
+    printf("\t Count %s\n", compare3 ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -555,7 +560,7 @@ void Test(
 
 
 /**
- * Test DeviceSelect on pointer type
+ * Test DeviceRunLengthEncode on pointer type
  */
 template <
     RleMethod       RLE_METHOD,
@@ -568,7 +573,8 @@ void TestPointer(
     int             entropy_reduction,
     int             max_segment,
     char*           key_type_string,
-    char*           offset_type_string)
+    char*           offset_type_string,
+    char*           length_type_string)
 {
     // Allocate host arrays
     T*      h_in                    = new T[num_items];
@@ -582,13 +588,14 @@ void TestPointer(
     // Initialize problem and solution
     Equality equality_op;
     Initialize(entropy_reduction, h_in, num_items, max_segment);
-    int num_runs = Solve(h_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_items);
 
-    printf("\nPointer %s cub::%s on %d items, %d segments (avg run length %d), {%s,%s} key-offset pairs, max_segment %d, entropy_reduction %d\n",
+    int num_runs = Solve<RLE_METHOD>(h_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_items);
+
+    printf("\nPointer %s cub::%s on %d items, %d segments (avg run length %d), {%s key, %s offset, %s length}, max_segment %d, entropy_reduction %d\n",
         (RLE_METHOD == RLE) ? "DeviceReduce::RunLengthEncode" : (RLE_METHOD == NON_TRIVIAL) ? "DeviceRunLengthEncode::NonTrivialRuns" : "Other",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_runs, (num_items / num_runs),
-        key_type_string, offset_type_string,
+        key_type_string, offset_type_string, length_type_string,
         max_segment, entropy_reduction);
     fflush(stdout);
 
@@ -600,7 +607,7 @@ void TestPointer(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<RLE_METHOD, BACKEND>(d_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_runs, num_items, key_type_string, offset_type_string);
+    Test<RLE_METHOD, BACKEND>(d_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_runs, num_items);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -626,6 +633,7 @@ void TestIterator(
     int             max_segment,
     char*           key_type_string,
     char*           offset_type_string,
+    char*           length_type_string,
     Int2Type<true>  is_primitive)
 {
     // Allocate host arrays
@@ -640,13 +648,13 @@ void TestIterator(
     // Initialize problem and solution
     Equality equality_op;
     Initialize(entropy_reduction, h_in, num_items, max_segment);
-    int num_runs = Solve(h_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_items);
+    int num_runs = Solve<RLE_METHOD>(h_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_items);
 
-    printf("\nIterator %s cub::%s on %d items, %d segments (avg run length %d), {%s,%s} key-offset pairs, max_segment %d, entropy_reduction %d\n",
+    printf("\nIterator %s cub::%s on %d items, %d segments (avg run length %d), {%s key, %s offset, %s length}, max_segment %d, entropy_reduction %d\n",
         (RLE_METHOD == RLE) ? "DeviceReduce::RunLengthEncode" : (RLE_METHOD == NON_TRIVIAL) ? "DeviceRunLengthEncode::NonTrivialRuns" : "Other",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_runs, (num_items / num_runs),
-        key_type_string, offset_type_string,
+        key_type_string, offset_type_string, length_type_string,
         max_segment, entropy_reduction);
     fflush(stdout);
 
@@ -658,7 +666,7 @@ void TestIterator(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_in, h_offsets_reference, h_unique_reference, h_lengths_reference, equality_op, num_runs, num_items, key_type_string, offset_type_string);
+    Test<BACKEND>(d_in, h_offsets_reference, h_unique_reference, h_lengths_reference, equality_op, num_runs, num_items);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -681,6 +689,7 @@ void TestIterator(
     int             max_segment,
     char*           key_type_string,
     char*           offset_type_string,
+    char*           length_type_string,
     Int2Type<false> is_primitive)
 {}
 
@@ -697,24 +706,25 @@ template <
 void Test(
     int             num_items,
     char*           key_type_string,
-    char*           offset_type_string)
+    char*           offset_type_string,
+    char*           length_type_string)
 {
     // Evaluate different max-segment lengths
     for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
     {
         // 0 key-bit entropy reduction rounds
-        TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string);
-        TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+        TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, length_type_string);
+        TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
 
         if (max_segment > 1)
         {
             // 2 key-bit entropy reduction rounds
-            TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string);
-            TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+            TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string, length_type_string);
+            TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
 
             // 7 key-bit entropy reduction rounds
-            TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string);
-            TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+            TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string, length_type_string);
+            TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
         }
     }
 }
@@ -725,17 +735,19 @@ void Test(
  */
 template <
     typename        T,
-    typename        Length,
-    typename        ReductionOp>
+    typename        Length>
 void TestDispatch(
     int             num_items,
-    ReductionOp     reduction_op,
     char*           key_type_string,
-    char*           offset_type_string)
+    char*           offset_type_string,
+    char*           length_type_string)
 {
-    Test<CUB, T, Length>(num_items, key_type_string, offset_type_string);
+    Test<RLE,           CUB, T, Length>(num_items, key_type_string, offset_type_string, length_type_string);
+    Test<NON_TRIVIAL,   CUB, T, Length>(num_items, key_type_string, offset_type_string, length_type_string);
+
 #ifdef CUB_CDP
-    Test<CDP, T, Length>(num_items, key_type_string, offset_type_string);
+    Test<RLE,           CDP, T, Length>(num_items, key_type_string, offset_type_string, length_type_string);
+    Test<NON_TRIVIAL,   CDP, T, Length>(num_items, key_type_string, offset_type_string, length_type_string);
 #endif
 }
 
@@ -745,41 +757,26 @@ void TestDispatch(
  */
 template <
     typename        T,
-    typename        Length,
-    typename        ReductionOp>
+    typename        Length>
 void TestSize(
     int             num_items,
-    ReductionOp     reduction_op,
     char*           key_type_string,
-    char*           offset_type_string)
+    char*           offset_type_string,
+    char*           length_type_string)
 {
     if (num_items < 0)
     {
-        TestDispatch<T, Length>(1,        key_type_string, offset_type_string);
-        TestDispatch<T, Length>(100,      key_type_string, offset_type_string);
-        TestDispatch<T, Length>(10000,    key_type_string, offset_type_string);
-        TestDispatch<T, Length>(1000000,  key_type_string, offset_type_string);
+        TestDispatch<T, Length>(1,        key_type_string, offset_type_string, length_type_string);
+        TestDispatch<T, Length>(100,      key_type_string, offset_type_string, length_type_string);
+        TestDispatch<T, Length>(10000,    key_type_string, offset_type_string, length_type_string);
+        TestDispatch<T, Length>(1000000,  key_type_string, offset_type_string, length_type_string);
     }
     else
     {
-        TestDispatch<T, Length>(num_items, key_type_string, offset_type_string);
+        TestDispatch<T, Length>(num_items, key_type_string, offset_type_string, length_type_string);
     }
 
 }
-
-
-template <
-    typename        T,
-    typename        Length>
-void TestOp(
-    int             num_items,
-    char*           key_type_string,
-    char*           offset_type_string)
-{
-    TestSize<T, Length>(num_items, cub::Sum(), key_type_string, offset_type_string);
-    TestSize<T, Length>(num_items, cub::Max(), key_type_string, offset_type_string);
-}
-
 
 
 //---------------------------------------------------------------------
@@ -828,33 +825,18 @@ int main(int argc, char** argv)
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef QUICK_TEST
+//#ifdef QUICKER_TEST
+
+    // Compile/run basic CUB test
+    if (num_items < 0) num_items = 32000000;
+
+    TestPointer<NON_TRIVIAL, CUB, int, int, int>(num_items, entropy_reduction, maxseg, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+
+/*
+#elif defined(QUICK_TEST)
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;
-
-    printf("---- RLE int ---- \n");
-    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
-    TestIterator<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
-
-    printf("---- RLE long long ---- \n");
-    TestIterator<CUB, long long, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
-    TestIterator<THRUST, long long, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
-
-    printf("---- int ---- \n");
-    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-
-    printf("---- float ---- \n");
-    TestPointer<CUB, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
-    TestPointer<THRUST, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
-
-    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
-    {
-        printf("---- double ---- \n");
-        TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
-        TestPointer<THRUST, int, double>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
-    }
 
 #else
 
@@ -863,32 +845,32 @@ int main(int argc, char** argv)
     {
 
         // Test different input types
-        TestOp<int, char>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-        TestOp<int, short>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(short));
-        TestOp<int, int>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-        TestOp<int, long>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(long));
-        TestOp<int, long long>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(long long));
-        TestOp<int, float>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
+        TestSize<char,          int>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<short,         int>(num_items, CUB_TYPE_STRING(short), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<int,           int>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<long,          int>(num_items, CUB_TYPE_STRING(long), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<long long,     int>(num_items, CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<float,         int>(num_items, CUB_TYPE_STRING(float), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
         if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
-            TestOp<int, double>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
+            TestSize<double, int>(num_items, CUB_TYPE_STRING(double), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
 
-        TestOp<int, uchar2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uchar2));
-        TestOp<int, uint2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint2));
-        TestOp<int, uint3>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint3));
-        TestOp<int, uint4>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint4));
-        TestOp<int, ulonglong4>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(ulonglong4));
-        TestOp<int, TestFoo>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(TestFoo));
-        TestOp<int, TestBar>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(TestBar));
+        TestSize<uchar2,        int>(num_items, CUB_TYPE_STRING(uchar2), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<uint2,         int>(num_items, CUB_TYPE_STRING(uint2), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<uint3,         int>(num_items, CUB_TYPE_STRING(uint3), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<uint4,         int>(num_items, CUB_TYPE_STRING(uint4), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<ulonglong4,    int>(num_items, CUB_TYPE_STRING(ulonglong4), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<TestFoo,       int>(num_items, CUB_TYPE_STRING(TestFoo), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<TestBar,       int>(num_items, CUB_TYPE_STRING(TestBar), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
 
-        TestOp<char, int>(num_items, CUB_TYPE_STRING(char), CUB_TYPE_STRING(int));
-        TestOp<long long, int>(num_items, CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int));
-        TestOp<TestFoo, int>(num_items, CUB_TYPE_STRING(TestFoo), CUB_TYPE_STRING(int));
-        TestOp<TestBar, int>(num_items, CUB_TYPE_STRING(TestBar), CUB_TYPE_STRING(int));
+        TestSize<char,          int>(num_items, CUB_TYPE_STRING(char), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<long long,     int>(num_items, CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<TestFoo,       int>(num_items, CUB_TYPE_STRING(TestFoo), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+        TestSize<TestBar,       int>(num_items, CUB_TYPE_STRING(TestBar), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
 
     }
 
 #endif
-
+*/
     return 0;
 }
 
