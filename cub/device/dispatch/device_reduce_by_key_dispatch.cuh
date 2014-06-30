@@ -142,9 +142,6 @@ struct DeviceReduceByKeyDispatch
         COMBINED_INPUT_BYTES    = sizeof(Key) + sizeof(Value),
     };
 
-    // Value-offset tuple type for scanning (maps accumulated values to segment index)
-    typedef ItemOffsetPair<Value, Offset> ValueOffsetPair;
-
     // Tile status descriptor interface type
     typedef ReduceByKeyScanTileState<Value, Offset> ScanTileState;
 

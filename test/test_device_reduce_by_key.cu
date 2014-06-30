@@ -403,44 +403,43 @@ cudaError_t Dispatch(
 
 
 /**
- * Initialize problem.  Keys are initialized to segment number
- * and values are initialized to 1
+ * Initialize problem
  */
-template <typename KeyIterator>
+template <typename T>
 void Initialize(
-    int             entropy_reduction,
-    KeyIterator     h_keys_in,
-    int             num_items,
-    int             max_segment)
+    int         entropy_reduction,
+    T           *h_in,
+    int         num_items,
+    int         max_segment)
 {
-    unsigned short max_short = (unsigned short) -1;
+    unsigned int max_short = (unsigned int) -1;
 
-    int segment_id = 0;
+    int key = 0;
     int i = 0;
     while (i < num_items)
     {
         // Select number of repeating occurrences
 
-        unsigned short repeat;
+        unsigned int repeat;
         RandomBits(repeat, entropy_reduction);
-        repeat = (unsigned short) ((float(repeat) * (float(max_segment) / float(max_short))));
+        repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_short));
         repeat = CUB_MAX(1, repeat);
 
         int j = i;
         while (j < CUB_MIN(i + repeat, num_items))
         {
-            InitValue(INTEGER_SEED, h_keys_in[j], segment_id);
+            InitValue(INTEGER_SEED, h_in[j], key);
             j++;
         }
 
         i = j;
-        segment_id++;
+        key++;
     }
 
     if (g_verbose)
     {
-        printf("Input keys:\n");
-        DisplayResults(h_keys_in, num_items);
+        printf("Input:\n");
+        DisplayResults(h_in, num_items);
         printf("\n\n");
     }
 }

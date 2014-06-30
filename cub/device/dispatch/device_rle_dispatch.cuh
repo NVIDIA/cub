@@ -65,18 +65,18 @@ namespace cub {
 template <
     typename            BlockRleSweepPolicy,        ///< Parameterized BlockRleSweepPolicy tuning policy type
     typename            InputIterator,              ///< Random-access input iterator type for reading input items \iterator
-    typename            OffsetsOutputIterator,       ///< Random-access output iterator type for writing run-offset values \iterator
-    typename            LengthsOutputIterator,       ///< Random-access output iterator type for writing run-length values \iterator
-    typename            NumRunsOutputIterator,            ///< Output iterator type for recording the number of runs encountered \iterator
+    typename            OffsetsOutputIterator,      ///< Random-access output iterator type for writing run-offset values \iterator
+    typename            LengthsOutputIterator,      ///< Random-access output iterator type for writing run-length values \iterator
+    typename            NumRunsOutputIterator,      ///< Output iterator type for recording the number of runs encountered \iterator
     typename            ScanTileState,              ///< Tile status interface type
     typename            EqualityOp,                 ///< T equality operator type
     typename            Offset>                     ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockRleSweepPolicy::BLOCK_THREADS))
 __global__ void DeviceRleSweepKernel(
     InputIterator               d_in,               ///< [in] Pointer to input sequence of data items
-    OffsetsOutputIterator        d_offsets_out,      ///< [out] Pointer to output sequence of run-offsets
-    LengthsOutputIterator        d_lengths_out,      ///< [out] Pointer to output sequence of run-lengths
-    NumRunsOutputIterator             d_num_runs,         ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+    OffsetsOutputIterator       d_offsets_out,      ///< [out] Pointer to output sequence of run-offsets
+    LengthsOutputIterator       d_lengths_out,      ///< [out] Pointer to output sequence of run-lengths
+    NumRunsOutputIterator       d_num_runs,         ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
     ScanTileState               tile_status,        ///< [in] Tile status interface
     EqualityOp                  equality_op,        ///< [in] Equality operator for input items
     Offset                      num_items,          ///< [in] Total number of input items (i.e., length of \p d_in)
@@ -115,9 +115,9 @@ __global__ void DeviceRleSweepKernel(
  */
 template <
     typename            InputIterator,              ///< Random-access input iterator type for reading input items \iterator
-    typename            OffsetsOutputIterator,       ///< Random-access output iterator type for writing run-offset values \iterator
-    typename            LengthsOutputIterator,       ///< Random-access output iterator type for writing run-length values \iterator
-    typename            NumRunsOutputIterator,            ///< Output iterator type for recording the number of runs encountered \iterator
+    typename            OffsetsOutputIterator,      ///< Random-access output iterator type for writing run-offset values \iterator
+    typename            LengthsOutputIterator,      ///< Random-access output iterator type for writing run-length values \iterator
+    typename            NumRunsOutputIterator,      ///< Output iterator type for recording the number of runs encountered \iterator
     typename            EqualityOp,                 ///< T equality operator type
     typename            Offset>                     ///< Signed integer type for global offsets
 struct DeviceRleDispatch
@@ -129,13 +129,16 @@ struct DeviceRleDispatch
     // Data type of input iterator
     typedef typename std::iterator_traits<InputIterator>::value_type T;
 
+    // Signed integer type for run lengths
+    typedef typename std::iterator_traits<LengthsOutputIterator>::value_type Length;
+
     enum
     {
         INIT_KERNEL_THREADS = 128,
     };
 
     // Tile status descriptor interface type
-    typedef ScanTileState<Offset> ScanTileState;
+    typedef ReduceByKeyScanTileState<Length, Offset> ScanTileState;
 
 
     /******************************************************************************
@@ -453,11 +456,10 @@ struct DeviceRleDispatch
             // Invoke device_rle_sweep_kernel
             device_rle_sweep_kernel<<<select_grid_size, device_rle_config.block_threads, 0, stream>>>(
                 d_in,
-                d_flags,
-                d_out,
+                d_offsets_out,
+                d_lengths_out,
                 d_num_runs,
                 tile_status,
-                select_op,
                 equality_op,
                 num_items,
                 num_tiles,
@@ -485,9 +487,9 @@ struct DeviceRleDispatch
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIterator               d_in,                           ///< [in] Pointer to input sequence of data items
-        OffsetsOutputIterator        d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets
-        LengthsOutputIterator        d_lengths_out,                  ///< [out] Pointer to output sequence of run-lengths
-        NumRunsOutputIterator             d_num_runs,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+        OffsetsOutputIterator       d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets
+        LengthsOutputIterator       d_lengths_out,                  ///< [out] Pointer to output sequence of run-lengths
+        NumRunsOutputIterator       d_num_runs,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
         EqualityOp                  equality_op,                    ///< [in] Equality operator for input items
         Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
