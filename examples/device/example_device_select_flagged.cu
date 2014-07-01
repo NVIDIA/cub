@@ -195,23 +195,23 @@ int main(int argc, char** argv)
 
     // Allocate device output array and num selected
     int     *d_out            = NULL;
-    int     *d_num_selected   = NULL;
+    int     *d_num_selected_out   = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(int) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_selected, sizeof(int)));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_selected_out, sizeof(int)));
 
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items));
+    CubDebugExit(DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Run
-    CubDebugExit(DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items));
+    CubDebugExit(DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
     printf("\t Data %s ", compare ? "FAIL" : "PASS");
-    compare |= CompareDeviceResults(&num_selected, d_num_selected, 1, true, g_verbose);
+    compare |= CompareDeviceResults(&num_selected, d_num_selected_out, 1, true, g_verbose);
     printf("\t Count %s ", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
@@ -219,7 +219,7 @@ int main(int argc, char** argv)
     if (h_in) delete[] h_in;
     if (h_reference) delete[] h_reference;
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
-    if (d_num_selected) CubDebugExit(g_allocator.DeviceFree(d_num_selected));
+    if (d_num_selected_out) CubDebugExit(g_allocator.DeviceFree(d_num_selected_out));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
     if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
     if (d_flags) CubDebugExit(g_allocator.DeviceFree(d_flags));

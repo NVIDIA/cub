@@ -300,7 +300,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="keywordtype">size_t</span> max_cached_bytes,    </div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="keywordtype">bool</span> skip_cleanup = <span class="keyword">false</span>)  </div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    :</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    #if (<a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a> == 0)   <span class="comment">// Only define STL container members in host code</span></div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    #if (CUB_PTX_ARCH == 0)   <span class="comment">// Only define STL container members in host code</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;            cached_blocks(BlockDescriptor::SizeCompare),</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;            live_blocks(BlockDescriptor::PtrCompare),</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    #endif</div>
@@ -318,7 +318,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00287"></a><span class="lineno"><a class="code" href="structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff">  287</a></span>&#160;    <a class="code" href="structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff" title="Default constructor. ">CachingDeviceAllocator</a>(</div>
 <div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keywordtype">bool</span> skip_cleanup = <span class="keyword">false</span>)  </div>
 <div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    :</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    #if (<a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a> == 0)   <span class="comment">// Only define STL container members in host code</span></div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    #if (CUB_PTX_ARCH == 0)   <span class="comment">// Only define STL container members in host code</span></div>
 <div class="line"><a name="l00291"></a><span class="lineno">  291</span>&#160;        cached_blocks(BlockDescriptor::SizeCompare),</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;        live_blocks(BlockDescriptor::PtrCompare),</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    #endif</div>
@@ -675,7 +675,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 1 2014 10:39:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

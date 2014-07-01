@@ -518,6 +518,8 @@ void Test(
     char*                       key_type_string,
     char*                       value_type_string)
 {
+    const bool IS_RLE = Equals<DeviceValueInputIterator, ConstantInputIterator<Value, int> >::VALUE;
+
     // Allocate device output arrays and number of segments
     Key     *d_keys_out             = NULL;
     Value   *d_values_out           = NULL;
@@ -572,7 +574,9 @@ void Test(
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        int bytes_moved = (num_items + num_segments) * (sizeof(Key) + sizeof(Value));
+        int bytes_moved = IS_RLE ?
+            ((num_items + num_segments) * sizeof(Key)) + (num_segments * sizeof(Value)) :
+            ((num_items + num_segments) * sizeof(Key)) + ((num_items + num_segments) * sizeof(Value));
         float gbandwidth = float(bytes_moved) / avg_millis / 1000.0 / 1000.0;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
@@ -626,10 +630,10 @@ void TestPointer(
     Initialize(entropy_reduction, h_keys_in, num_items, max_segment);
     int num_segments = Solve(h_keys_in, h_keys_reference, h_values_in, h_values_reference, equality_op, reduction_op, num_items);
 
-    printf("\nPointer %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %d), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
+    printf("\nPointer %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %.3f), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Max",
-        num_items, num_segments, num_items / num_segments,
+        num_items, num_segments, float(num_items) / num_segments,
         key_type_string, value_type_string,
         max_segment, entropy_reduction);
     fflush(stdout);
@@ -688,10 +692,10 @@ void TestIterator(
     Initialize(entropy_reduction, h_keys_in, num_items, max_segment);
     int num_segments = Solve(h_keys_in, h_keys_reference, h_values_in, h_values_reference, equality_op, reduction_op, num_items);
 
-    printf("\nIterator %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %d), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
+    printf("\nIterator %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %.3f), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Max",
-        num_items, num_segments, num_items / num_segments,
+        num_items, num_segments, float(num_items) / num_segments,
         key_type_string, value_type_string,
         max_segment, entropy_reduction);
     fflush(stdout);
@@ -875,7 +879,14 @@ int main(int argc, char** argv)
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef QUICK_TEST
+#ifdef QUICKER_TEST
+
+    // Compile/run basic CUB test
+    if (num_items < 0) num_items = 32000000;
+
+    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
+
+#elif defined(QUICK_TEST)
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;

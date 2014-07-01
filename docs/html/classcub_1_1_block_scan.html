@@ -329,7 +329,7 @@ template&lt;typename T , int BLOCK_DIM_X, BlockScanAlgorithm ALGORITHM = BLOCK_S
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00350">350</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00353">353</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -370,6 +370,7 @@ template&lt;typename T , int BLOCK_DIM_X, BlockScanAlgorithm ALGORITHM = BLOCK_S
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. </p>
 <dl class="section user"><dt></dt><dd><ul>
+<li>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value zero for addition.</li>
 <li>For multi-dimensional blocks, threads are linearly ranked in row-major order.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
@@ -401,7 +402,7 @@ template&lt;typename T , int BLOCK_DIM_X, BlockScanAlgorithm ALGORITHM = BLOCK_S
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00404">404</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00408">408</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -447,6 +448,7 @@ template&lt;typename T , int BLOCK_DIM_X, BlockScanAlgorithm ALGORITHM = BLOCK_S
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
+<li>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value zero for addition.</li>
 <li>For multi-dimensional blocks, threads are linearly ranked in row-major order.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
 </ul>
@@ -480,7 +482,7 @@ template&lt;typename T , int BLOCK_DIM_X, BlockScanAlgorithm ALGORITHM = BLOCK_S
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00450">450</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00454">454</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -534,6 +536,7 @@ template&lt;typename BlockPrefixCallbackOp &gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_callback_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
+<li>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value zero for addition.</li>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
 <li>For multi-dimensional blocks, threads are linearly ranked in row-major order.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
@@ -606,7 +609,7 @@ template&lt;typename BlockPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00535">535</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00540">540</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -648,6 +651,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
+<li>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value zero for addition.</li>
 <li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
 <li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
@@ -686,7 +690,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00591">591</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00597">597</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -734,6 +738,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
+<li>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value zero for addition.</li>
 <li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
 <li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
@@ -774,7 +779,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00648">648</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00655">655</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -828,6 +833,7 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixCallbackOp &gt; </div>
 
 <p>Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes an array of consecutive input elements. Instead of using 0 as the block-wide prefix, the call-back functor <code>block_prefix_callback_op</code> is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs. Also provides every thread with the block-wide <code>block_aggregate</code> of all inputs. </p>
 <dl class="section user"><dt></dt><dd><ul>
+<li>This operation assumes the value of obtained by the <code>T</code>'s default constructor (or by zero-initialization if no user-defined default constructor exists) is suitable as the identity value zero for addition.</li>
 <li>The <code>block_prefix_callback_op</code> functor must implement a member function <code>T operator()(T block_aggregate)</code>. The functor's input parameter <code>block_aggregate</code> is the same value also returned by the scan operation. The functor will be invoked by the first warp of threads in the block, however only the return value from <em>lane</em><sub>0</sub> is applied as the block-wide prefix. Can be stateful.</li>
 <li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
 <li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
@@ -911,7 +917,7 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00755">755</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00763">763</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1005,7 +1011,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00819">819</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00827">827</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1107,7 +1113,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00870">870</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00877">877</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1249,7 +1255,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00962">962</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00969">969</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1345,7 +1351,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01026">1026</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01033">1033</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1449,7 +1455,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01088">1088</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01095">1095</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1602,7 +1608,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01199">1199</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01206">1206</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1673,7 +1679,7 @@ template&lt;typename T , int BLOCK_DIM_X, BlockScanAlgorithm ALGORITHM = BLOCK_S
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01455">1455</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01466">1466</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1752,7 +1758,7 @@ template&lt;typename T , int BLOCK_DIM_X, BlockScanAlgorithm ALGORITHM = BLOCK_S
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01501">1501</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01511">1511</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1878,7 +1884,7 @@ template&lt;typename BlockPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01587">1587</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01597">1597</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -1958,7 +1964,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01643">1643</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01653">1653</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2047,7 +2053,7 @@ template&lt;int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01710">1710</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01720">1720</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2184,7 +2190,7 @@ template&lt;int ITEMS_PER_THREAD, typename BlockPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01824">1824</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01834">1834</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2271,7 +2277,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01894">1894</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01904">1904</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2366,7 +2372,7 @@ template&lt;typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01944">1944</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l01953">1953</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2501,7 +2507,7 @@ template&lt;typename ScanOp , typename BlockPrefixCallbackOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02035">2035</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02044">2044</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2590,7 +2596,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02096">2096</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02105">2105</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2687,7 +2693,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02166">2166</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02175">2175</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2833,7 +2839,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02283">2283</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l02292">2292</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -2844,7 +2850,7 @@ template&lt;int ITEMS_PER_THREAD, typename ScanOp , typename BlockPrefixCallback
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 1 2014 10:39:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

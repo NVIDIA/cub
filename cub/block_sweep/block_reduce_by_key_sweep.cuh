@@ -558,13 +558,13 @@ struct BlockReduceSweepByKey
         Offset              num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
         Offset              block_offset,       ///< Tile offset
-        ScanTileState  &tile_status)       ///< Global list of tile status
+        ScanTileState       &tile_status)       ///< Global list of tile status
     {
         Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
         Value               values[ITEMS_PER_THREAD];                       // Tile values
         Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
-        ReductionOffsetPair     values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
-        ReductionOffsetPair     running_total;                                  // Running count of segments and current value aggregate (including this tile)
+        ReductionOffsetPair values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
+        ReductionOffsetPair running_total;                                  // Running count of segments and current value aggregate (including this tile)
 
         // Load keys
         if (LAST_TILE)
@@ -655,7 +655,7 @@ struct BlockReduceSweepByKey
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         ScanTileState           &tile_status,       ///< Global list of tile status
-        NumRunsIterator     d_num_runs)     ///< Output pointer for total number of segments identified
+        NumRunsIterator     d_num_runs_out)     ///< Output pointer for total number of segments identified
     {
 #if (CUB_PTX_ARCH <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
@@ -677,7 +677,7 @@ struct BlockReduceSweepByKey
             // Output the total number of items selected
             if (threadIdx.x == 0)
             {
-                *d_num_runs = running_total.offset;
+                *d_num_runs_out = running_total.offset;
 
                 // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
                 if (num_remaining == TILE_ITEMS)
@@ -723,7 +723,7 @@ struct BlockReduceSweepByKey
             if ((threadIdx.x == 0))
             {
                 // Output the total number of items selected
-                *d_num_runs = running_total.offset;
+                *d_num_runs_out = running_total.offset;
 
                 // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
                 if (num_remaining == TILE_ITEMS)

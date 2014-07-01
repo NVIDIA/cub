@@ -199,6 +199,23 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memitem:a8e3ac8c56afab6e1e4f2e66b8b5160d3"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_discontinuity.html#a8e3ac8c56afab6e1e4f2e66b8b5160d3">FlagTails</a> (FlagT(&amp;tail_flags)[ITEMS_PER_THREAD], T(&amp;input)[ITEMS_PER_THREAD], FlagOp flag_op, T tile_successor_item)</td></tr>
 <tr class="memdesc:a8e3ac8c56afab6e1e4f2e66b8b5160d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets tail flags indicating discontinuities between items partitioned across the thread block.  <a href="#a8e3ac8c56afab6e1e4f2e66b8b5160d3">More...</a><br/></td></tr>
 <tr class="separator:a8e3ac8c56afab6e1e4f2e66b8b5160d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr><td colspan="2"><div class="groupHeader">Head &amp; tail flag operations</div></td></tr>
+<tr class="memitem:a9c774f5ad2d72c6346b04a504898a699"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </td></tr>
+<tr class="memitem:a9c774f5ad2d72c6346b04a504898a699"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_discontinuity.html#a9c774f5ad2d72c6346b04a504898a699">FlagHeadsAndTails</a> (FlagT(&amp;head_flags)[ITEMS_PER_THREAD], FlagT(&amp;tail_flags)[ITEMS_PER_THREAD], T(&amp;input)[ITEMS_PER_THREAD], FlagOp flag_op)</td></tr>
+<tr class="memdesc:a9c774f5ad2d72c6346b04a504898a699"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets both head and tail flags indicating discontinuities between items partitioned across the thread block.  <a href="#a9c774f5ad2d72c6346b04a504898a699">More...</a><br/></td></tr>
+<tr class="separator:a9c774f5ad2d72c6346b04a504898a699"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad48545206889d5270ad1e92d193a3b90"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </td></tr>
+<tr class="memitem:ad48545206889d5270ad1e92d193a3b90"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_discontinuity.html#ad48545206889d5270ad1e92d193a3b90">FlagHeadsAndTails</a> (FlagT(&amp;head_flags)[ITEMS_PER_THREAD], FlagT(&amp;tail_flags)[ITEMS_PER_THREAD], T tile_successor_item, T(&amp;input)[ITEMS_PER_THREAD], FlagOp flag_op)</td></tr>
+<tr class="memdesc:ad48545206889d5270ad1e92d193a3b90"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets both head and tail flags indicating discontinuities between items partitioned across the thread block.  <a href="#ad48545206889d5270ad1e92d193a3b90">More...</a><br/></td></tr>
+<tr class="separator:ad48545206889d5270ad1e92d193a3b90"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2c9f60bdf8dddaa3d3140e2b340de28e"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </td></tr>
+<tr class="memitem:a2c9f60bdf8dddaa3d3140e2b340de28e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_discontinuity.html#a2c9f60bdf8dddaa3d3140e2b340de28e">FlagHeadsAndTails</a> (FlagT(&amp;head_flags)[ITEMS_PER_THREAD], T tile_predecessor_item, FlagT(&amp;tail_flags)[ITEMS_PER_THREAD], T(&amp;input)[ITEMS_PER_THREAD], FlagOp flag_op)</td></tr>
+<tr class="memdesc:a2c9f60bdf8dddaa3d3140e2b340de28e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets both head and tail flags indicating discontinuities between items partitioned across the thread block.  <a href="#a2c9f60bdf8dddaa3d3140e2b340de28e">More...</a><br/></td></tr>
+<tr class="separator:a2c9f60bdf8dddaa3d3140e2b340de28e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae0b251839d139e6773eb2745029654c6"><td class="memTemplParams" colspan="2">template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </td></tr>
+<tr class="memitem:ae0b251839d139e6773eb2745029654c6"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_discontinuity.html#ae0b251839d139e6773eb2745029654c6">FlagHeadsAndTails</a> (FlagT(&amp;head_flags)[ITEMS_PER_THREAD], T tile_predecessor_item, FlagT(&amp;tail_flags)[ITEMS_PER_THREAD], T tile_successor_item, T(&amp;input)[ITEMS_PER_THREAD], FlagOp flag_op)</td></tr>
+<tr class="memdesc:ae0b251839d139e6773eb2745029654c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets both head and tail flags indicating discontinuities between items partitioned across the thread block.  <a href="#ae0b251839d139e6773eb2745029654c6">More...</a><br/></td></tr>
+<tr class="separator:ae0b251839d139e6773eb2745029654c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="aa641f119413a2c64058770335fad3e98"></a>
@@ -233,7 +250,7 @@ template&lt;typename T , int BLOCK_DIM_X, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z =
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00238">238</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00277">277</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -326,7 +343,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00306">306</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00345">345</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -430,7 +447,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00389">389</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00428">428</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -522,7 +539,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00477">477</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00516">516</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -577,7 +594,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 <p>Sets tail flags indicating discontinuities between items partitioned across the thread block. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread).</li>
-<li>For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared against <code>tile_predecessor_item</code>.</li>
+<li>For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared against <code>tile_successor_item</code>.</li>
 <li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
 <li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
@@ -626,7 +643,469 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00561">561</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00600">600</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a9c774f5ad2d72c6346b04a504898a699"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_DIM_X, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+<div class="memtemplate">
+template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_discontinuity.html">cub::BlockDiscontinuity</a>&lt; T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::FlagHeadsAndTails </td>
+          <td>(</td>
+          <td class="paramtype">FlagT(&amp;)&#160;</td>
+          <td class="paramname"><em>head_flags</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FlagT(&amp;)&#160;</td>
+          <td class="paramname"><em>tail_flags</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FlagOp&#160;</td>
+          <td class="paramname"><em>flag_op</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets both head and tail flags indicating discontinuities between items partitioned across the thread block. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread).</li>
+<li>For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is always flagged.</li>
+<li>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread).</li>
+<li>For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is always flagged.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the head- and tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockDiscontinuity for a 1D block of 128 threads on type int</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">cub::BlockDiscontinuity&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_discontinuity.html#ac713e6aa90ae9da93725434533fef3a0" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockDiscontinuity</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockDiscontinuity</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockDiscontinuity::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Collectively compute head and flags for discontinuities in the segment</span></div>
+<div class="line">    <span class="keywordtype">int</span> head_flags[4];</div>
+<div class="line">    <span class="keywordtype">int</span> tail_flags[4];</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_discontinuity.html#ac713e6aa90ae9da93725434533fef3a0" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockDiscontinuity</a>(temp_storage).FlagTails(</div>
+<div class="line">        head_flags, tail_flags, thread_data, <a class="code" href="structcub_1_1_inequality.html" title="Default inequality functor. ">cub::Inequality</a>());</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], ..., [124,125,125,125] }</code> and that the tile_successor_item is <code>125</code>. The corresponding output <code>head_flags</code> in those threads will be <code>{ [1,0,1,0], [0,0,0,0], [1,1,0,0], [0,1,0,0], ... }</code>. and the corresponding output <code>tail_flags</code> in those threads will be <code>{ [0,1,0,0], [0,0,0,1], [1,0,0,...], ..., [1,0,0,1] }</code>.</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">FlagT</td><td><b>[inferred]</b> The flag type (must be an integer type) </td></tr>
+    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary predicate functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> or member <code>T operator()(const T &amp;a, const T &amp;b, unsigned int b_index)</code>, and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. <code>b_index</code> is the rank of b in the aggregate tile of data. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">head_flags</td><td>Calling thread's discontinuity head_flags </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">tail_flags</td><td>Calling thread's discontinuity tail_flags </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00698">698</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ad48545206889d5270ad1e92d193a3b90"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_DIM_X, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+<div class="memtemplate">
+template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_discontinuity.html">cub::BlockDiscontinuity</a>&lt; T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::FlagHeadsAndTails </td>
+          <td>(</td>
+          <td class="paramtype">FlagT(&amp;)&#160;</td>
+          <td class="paramname"><em>head_flags</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FlagT(&amp;)&#160;</td>
+          <td class="paramname"><em>tail_flags</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>tile_successor_item</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FlagOp&#160;</td>
+          <td class="paramname"><em>flag_op</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets both head and tail flags indicating discontinuities between items partitioned across the thread block. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread).</li>
+<li>For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is always flagged.</li>
+<li>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread).</li>
+<li>For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared against <code>tile_predecessor_item</code>.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the head- and tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockDiscontinuity for a 1D block of 128 threads on type int</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">cub::BlockDiscontinuity&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_discontinuity.html#ac713e6aa90ae9da93725434533fef3a0" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockDiscontinuity</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockDiscontinuity</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockDiscontinuity::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Have thread127 obtain the successor item for the entire tile</span></div>
+<div class="line">    <span class="keywordtype">int</span> tile_successor_item;</div>
+<div class="line">    <span class="keywordflow">if</span> (threadIdx.x == 127) tile_successor_item == ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Collectively compute head and flags for discontinuities in the segment</span></div>
+<div class="line">    <span class="keywordtype">int</span> head_flags[4];</div>
+<div class="line">    <span class="keywordtype">int</span> tail_flags[4];</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_discontinuity.html#ac713e6aa90ae9da93725434533fef3a0" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockDiscontinuity</a>(temp_storage).FlagTails(</div>
+<div class="line">        head_flags, tail_flags, tile_successor_item, thread_data, <a class="code" href="structcub_1_1_inequality.html" title="Default inequality functor. ">cub::Inequality</a>());</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], ..., [124,125,125,125] }</code> and that the tile_successor_item is <code>125</code>. The corresponding output <code>head_flags</code> in those threads will be <code>{ [1,0,1,0], [0,0,0,0], [1,1,0,0], [0,1,0,0], ... }</code>. and the corresponding output <code>tail_flags</code> in those threads will be <code>{ [0,1,0,0], [0,0,0,1], [1,0,0,...], ..., [1,0,0,0] }</code>.</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">FlagT</td><td><b>[inferred]</b> The flag type (must be an integer type) </td></tr>
+    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary predicate functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> or member <code>T operator()(const T &amp;a, const T &amp;b, unsigned int b_index)</code>, and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. <code>b_index</code> is the rank of b in the aggregate tile of data. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">head_flags</td><td>Calling thread's discontinuity head_flags </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">tail_flags</td><td>Calling thread's discontinuity tail_flags </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tile_successor_item</td><td><b>[<em>thread</em><sub><code>BLOCK_THREADS</code>-1</sub> only]</b> Item with which to compare the last tile item (<code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> from <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>). </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00805">805</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a2c9f60bdf8dddaa3d3140e2b340de28e"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_DIM_X, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+<div class="memtemplate">
+template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_discontinuity.html">cub::BlockDiscontinuity</a>&lt; T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::FlagHeadsAndTails </td>
+          <td>(</td>
+          <td class="paramtype">FlagT(&amp;)&#160;</td>
+          <td class="paramname"><em>head_flags</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>tile_predecessor_item</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FlagT(&amp;)&#160;</td>
+          <td class="paramname"><em>tail_flags</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FlagOp&#160;</td>
+          <td class="paramname"><em>flag_op</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets both head and tail flags indicating discontinuities between items partitioned across the thread block. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread).</li>
+<li>For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against <code>tile_predecessor_item</code>.</li>
+<li>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread).</li>
+<li>For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is always flagged.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the head- and tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockDiscontinuity for a 1D block of 128 threads on type int</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">cub::BlockDiscontinuity&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_discontinuity.html#ac713e6aa90ae9da93725434533fef3a0" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockDiscontinuity</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockDiscontinuity</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockDiscontinuity::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Have thread0 obtain the predecessor item for the entire tile</span></div>
+<div class="line">    <span class="keywordtype">int</span> tile_predecessor_item;</div>
+<div class="line">    <span class="keywordflow">if</span> (threadIdx.x == 0) tile_predecessor_item == ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Have thread127 obtain the successor item for the entire tile</span></div>
+<div class="line">    <span class="keywordtype">int</span> tile_successor_item;</div>
+<div class="line">    <span class="keywordflow">if</span> (threadIdx.x == 127) tile_successor_item == ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Collectively compute head and flags for discontinuities in the segment</span></div>
+<div class="line">    <span class="keywordtype">int</span> head_flags[4];</div>
+<div class="line">    <span class="keywordtype">int</span> tail_flags[4];</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_discontinuity.html#ac713e6aa90ae9da93725434533fef3a0" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockDiscontinuity</a>(temp_storage).FlagTails(</div>
+<div class="line">        head_flags, tile_predecessor_item, tail_flags, tile_successor_item,</div>
+<div class="line">        thread_data, <a class="code" href="structcub_1_1_inequality.html" title="Default inequality functor. ">cub::Inequality</a>());</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], ..., [124,125,125,125] }</code>, that the <code>tile_predecessor_item</code> is <code>0</code>, and that the <code>tile_successor_item</code> is <code>125</code>. The corresponding output <code>head_flags</code> in those threads will be <code>{ [0,0,1,0], [0,0,0,0], [1,1,0,0], [0,1,0,0], ... }</code>. and the corresponding output <code>tail_flags</code> in those threads will be <code>{ [0,1,0,0], [0,0,0,1], [1,0,0,...], ..., [1,0,0,1] }</code>.</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">FlagT</td><td><b>[inferred]</b> The flag type (must be an integer type) </td></tr>
+    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary predicate functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> or member <code>T operator()(const T &amp;a, const T &amp;b, unsigned int b_index)</code>, and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. <code>b_index</code> is the rank of b in the aggregate tile of data. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">head_flags</td><td>Calling thread's discontinuity head_flags </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tile_predecessor_item</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<code>input<sub>0</sub></code> from <em>thread</em><sub>0</sub>). </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">tail_flags</td><td>Calling thread's discontinuity tail_flags </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l00921">921</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ae0b251839d139e6773eb2745029654c6"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename T , int BLOCK_DIM_X, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+<div class="memtemplate">
+template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_discontinuity.html">cub::BlockDiscontinuity</a>&lt; T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::FlagHeadsAndTails </td>
+          <td>(</td>
+          <td class="paramtype">FlagT(&amp;)&#160;</td>
+          <td class="paramname"><em>head_flags</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>tile_predecessor_item</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FlagT(&amp;)&#160;</td>
+          <td class="paramname"><em>tail_flags</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>tile_successor_item</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramname"><em>input</em>[ITEMS_PER_THREAD], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">FlagOp&#160;</td>
+          <td class="paramname"><em>flag_op</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Sets both head and tail flags indicating discontinuities between items partitioned across the thread block. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The flag <code>head_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(</code><em>previous-item</em><code>, input<sub><em>i</em></sub>)</code> returns <code>true</code> (where <em>previous-item</em> is either the preceding item in the same thread or the last item in the previous thread).</li>
+<li>For <em>thread</em><sub>0</sub>, item <code>input<sub>0</sub></code> is compared against <code>tile_predecessor_item</code>.</li>
+<li>The flag <code>tail_flags<sub><em>i</em></sub></code> is set for item <code>input<sub><em>i</em></sub></code> when <code>flag_op(input<sub><em>i</em></sub>, </code><em>next-item</em><code>)</code> returns <code>true</code> (where <em>next-item</em> is either the next item in the same thread or the first item in the next thread).</li>
+<li>For <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>, item <code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> is compared against <code>tile_successor_item</code>.</li>
+<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
+<li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
+<li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the head- and tail-flagging of 512 integer items that are partitioned in a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across 128 threads where each thread owns 4 consecutive items. </dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/block/block_discontinuity.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(...)</div>
+<div class="line">{</div>
+<div class="line">    <span class="comment">// Specialize BlockDiscontinuity for a 1D block of 128 threads on type int</span></div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_discontinuity.html" title="The BlockDiscontinuity class provides collective methods for flagging discontinuities within an order...">cub::BlockDiscontinuity&lt;int, 128&gt;</a> <a class="code" href="classcub_1_1_block_discontinuity.html#ac713e6aa90ae9da93725434533fef3a0" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockDiscontinuity</a>;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Allocate shared memory for BlockDiscontinuity</span></div>
+<div class="line">    __shared__ <span class="keyword">typename</span> BlockDiscontinuity::TempStorage temp_storage;</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Obtain a segment of consecutive items that are blocked across threads</span></div>
+<div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
+<div class="line">    ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Have thread0 obtain the predecessor item for the entire tile</span></div>
+<div class="line">    <span class="keywordtype">int</span> tile_predecessor_item;</div>
+<div class="line">    <span class="keywordflow">if</span> (threadIdx.x == 0) tile_predecessor_item == ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Have thread127 obtain the successor item for the entire tile</span></div>
+<div class="line">    <span class="keywordtype">int</span> tile_successor_item;</div>
+<div class="line">    <span class="keywordflow">if</span> (threadIdx.x == 127) tile_successor_item == ...</div>
+<div class="line"></div>
+<div class="line">    <span class="comment">// Collectively compute head and flags for discontinuities in the segment</span></div>
+<div class="line">    <span class="keywordtype">int</span> head_flags[4];</div>
+<div class="line">    <span class="keywordtype">int</span> tail_flags[4];</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_discontinuity.html#ac713e6aa90ae9da93725434533fef3a0" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockDiscontinuity</a>(temp_storage).FlagTails(</div>
+<div class="line">        head_flags, tile_predecessor_item, tail_flags, tile_successor_item,</div>
+<div class="line">        thread_data, <a class="code" href="structcub_1_1_inequality.html" title="Default inequality functor. ">cub::Inequality</a>());</div>
+</div><!-- fragment --> </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the block of threads is <code>{ [0,0,1,1], [1,1,1,1], [2,3,3,3], ..., [124,125,125,125] }</code>, that the <code>tile_predecessor_item</code> is <code>0</code>, and that the <code>tile_successor_item</code> is <code>125</code>. The corresponding output <code>head_flags</code> in those threads will be <code>{ [0,0,1,0], [0,0,0,0], [1,1,0,0], [0,1,0,0], ... }</code>. and the corresponding output <code>tail_flags</code> in those threads will be <code>{ [0,1,0,0], [0,0,0,1], [1,0,0,...], ..., [1,0,0,0] }</code>.</dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
+    <tr><td class="paramname">FlagT</td><td><b>[inferred]</b> The flag type (must be an integer type) </td></tr>
+    <tr><td class="paramname">FlagOp</td><td><b>[inferred]</b> Binary predicate functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> or member <code>T operator()(const T &amp;a, const T &amp;b, unsigned int b_index)</code>, and returning <code>true</code> if a discontinuity exists between <code>a</code> and <code>b</code>, otherwise <code>false</code>. <code>b_index</code> is the rank of b in the aggregate tile of data. </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">head_flags</td><td>Calling thread's discontinuity head_flags </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tile_predecessor_item</td><td><b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<code>input<sub>0</sub></code> from <em>thread</em><sub>0</sub>). </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">tail_flags</td><td>Calling thread's discontinuity tail_flags </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">tile_successor_item</td><td><b>[<em>thread</em><sub><code>BLOCK_THREADS</code>-1</sub> only]</b> Item with which to compare the last tile item (<code>input</code><sub><em>ITEMS_PER_THREAD</em>-1</sub> from <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>). </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input items </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">flag_op</td><td>Binary boolean flag predicate </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="block__discontinuity_8cuh_source.html#l01038">1038</a> of file <a class="el" href="block__discontinuity_8cuh_source.html">block_discontinuity.cuh</a>.</p>
 
 </div>
 </div>
@@ -637,7 +1116,7 @@ template&lt;int ITEMS_PER_THREAD, typename FlagT , typename FlagOp &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 1 2014 10:39:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

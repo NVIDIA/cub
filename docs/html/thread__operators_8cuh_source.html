@@ -244,23 +244,50 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00190"></a><span class="lineno"><a class="code" href="structcub_1_1_cast.html">  190</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structcub_1_1_cast.html" title="Default cast functor. ">Cast</a></div>
 <div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;{</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> A&gt;</div>
-<div class="line"><a name="l00194"></a><span class="lineno"><a class="code" href="structcub_1_1_cast.html#a649573c7f5d02ab09f176b5cc7cf1e5c">  194</a></span>&#160;    __host__ __device__ __forceinline__ B <a class="code" href="structcub_1_1_cast.html#a649573c7f5d02ab09f176b5cc7cf1e5c" title="Boolean max operator, returns (a &gt; b) ? a : b ">operator()</a>(<span class="keyword">const</span> A &amp;a)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00194"></a><span class="lineno"><a class="code" href="structcub_1_1_cast.html#a649573c7f5d02ab09f176b5cc7cf1e5c">  194</a></span>&#160;    __host__ __device__ __forceinline__ B <a class="code" href="structcub_1_1_cast.html#a649573c7f5d02ab09f176b5cc7cf1e5c" title="Cast operator, returns (B) a ">operator()</a>(<span class="keyword">const</span> A &amp;a)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;<span class="keyword">    </span>{</div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;        <span class="keywordflow">return</span> (B) a;</div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    }</div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;};</div>
 <div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;</div>
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;</div>
-<div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;       <span class="comment">// end group UtilModule</span></div>
-<div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;</div>
-<div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    <span class="keyword">typename</span> ReductionOp,                           </div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    <span class="keyword">typename</span> ItemOffsetPair&gt;                        </div>
+<div class="line"><a name="l00220"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html">  220</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_reduce_by_segment_op.html" title="Reduce-by-segment functor. ">ReduceBySegmentOp</a></div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;{</div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;</div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    ReductionOp op;</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;</div>
+<div class="line"><a name="l00230"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html#afe9fea5e67755f66033b6473df0ba4fc">  230</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_reduce_by_segment_op.html#afe9fea5e67755f66033b6473df0ba4fc" title="Constructor. ">ReduceBySegmentOp</a>(ReductionOp op) : op(op) {}</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;</div>
+<div class="line"><a name="l00233"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html#a2b0dc8dc37809e37fc0a2f09c5c23d67">  233</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> <a class="code" href="classcub_1_1_reduce_by_segment_op.html#a2b0dc8dc37809e37fc0a2f09c5c23d67" title="Scan operator. ">operator()</a>(</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> &amp;first,       </div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> &amp;second)      </div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    {</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <span class="comment">// This expression uses less registers and is faster when compiled with Open64</span></div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> retval;</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        retval.<a class="code" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173" title="Offset. ">offset</a> = first.<a class="code" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173" title="Offset. ">offset</a> + second.<a class="code" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173" title="Offset. ">offset</a>;</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        retval.<a class="code" href="structcub_1_1_item_offset_pair.html#a7faea6eea84a2e5bb4250bd78e765685" title="Item value. ">value</a> = (second.<a class="code" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173" title="Offset. ">offset</a>) ?</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;                second.<a class="code" href="structcub_1_1_item_offset_pair.html#a7faea6eea84a2e5bb4250bd78e765685" title="Item value. ">value</a> :                          <span class="comment">// The second partial reduction spans a segment reset, so it&#39;s value aggregate becomes the running aggregate</span></div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;                op(first.<a class="code" href="structcub_1_1_item_offset_pair.html#a7faea6eea84a2e5bb4250bd78e765685" title="Item value. ">value</a>, second.<a class="code" href="structcub_1_1_item_offset_pair.html#a7faea6eea84a2e5bb4250bd78e765685" title="Item value. ">value</a>);          <span class="comment">// The second partial reduction does not span a reset, so accumulate both into the running aggregate</span></div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        <span class="keywordflow">return</span> retval;</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;    }</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;};</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;       <span class="comment">// end group UtilModule</span></div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 1 2014 10:39:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
