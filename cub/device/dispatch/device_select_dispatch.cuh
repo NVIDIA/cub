@@ -77,7 +77,7 @@ __global__ void DeviceSelectSweepKernel(
     InputIterator       d_in,                       ///< [in] Pointer to the input sequence of data items
     FlagsInputIterator        d_flags,                    ///< [in] Pointer to the input sequence of selection flags
     SelectedOutputIterator      d_selected_out,                      ///< [out] Pointer to the output sequence of selected data items
-    NumSelectedIterator d_num_selected,             ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+    NumSelectedIterator d_num_selected_out,             ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
     ScanTileState       tile_status,                ///< [in] Tile status interface
     SelectOp            select_op,                  ///< [in] Selection operator
     EqualityOp          equality_op,                ///< [in] Equality operator
@@ -104,7 +104,7 @@ __global__ void DeviceSelectSweepKernel(
         num_tiles,
         queue,
         tile_status,
-        d_num_selected);
+        d_num_selected_out);
 }
 
 
@@ -366,7 +366,7 @@ struct DeviceSelectDispatch
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
         FlagsInputIterator          d_flags,                        ///< [in] Pointer to the input sequence of selection flags
         SelectedOutputIterator      d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+        NumSelectedIterator         d_num_selected_out,                 ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
         SelectOp                    select_op,                      ///< [in] Selection operator
         EqualityOp                  equality_op,                    ///< [in] Equality operator
         Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
@@ -465,7 +465,7 @@ struct DeviceSelectDispatch
                 d_in,
                 d_flags,
                 d_selected_out,
-                d_num_selected,
+                d_num_selected_out,
                 tile_status,
                 select_op,
                 equality_op,
@@ -497,7 +497,7 @@ struct DeviceSelectDispatch
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
         FlagsInputIterator          d_flags,                        ///< [in] Pointer to the input sequence of selection flags
         SelectedOutputIterator      d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected,                 ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+        NumSelectedIterator         d_num_selected_out,                 ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
         SelectOp                    select_op,                      ///< [in] Selection operator
         EqualityOp                  equality_op,                    ///< [in] Equality operator
         Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
@@ -526,7 +526,7 @@ struct DeviceSelectDispatch
                 d_in,
                 d_flags,
                 d_selected_out,
-                d_num_selected,
+                d_num_selected_out,
                 select_op,
                 equality_op,
                 num_items,

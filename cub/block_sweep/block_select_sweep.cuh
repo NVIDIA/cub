@@ -191,11 +191,8 @@ struct BlockSelectSweep
             ScanTileState>
         LookbackPrefixCallbackOp;
 
-    // Parameterized exchange type for block-wide local compaction
-    typedef T BlockExchangeT[(BLOCK_THREADS * ITEMS_PER_THREAD) + 1];
-
-    // Parameterized exchange type for warp-wide local compaction
-    typedef T WarpExchangeT[(WARP_THREADS * ITEMS_PER_THREAD) + 1];
+    // Warp exchange type
+    typedef WarpExchange<T, ITEMS_PER_THREAD> WarpExchangeT;
 
     // Shared memory type for this threadblock
     struct _TempStorage
@@ -217,7 +214,11 @@ struct BlockSelectSweep
             typename BlockLoadFlags::TempStorage    load_flags;
 
             // Smem needed for two-phase scatter
-            T exchange[ACTIVE_EXCHANGE_WARPS][(WARP_THREADS * ITEMS_PER_THREAD) + 1];
+            union
+            {
+                unsigned long long                  align;
+                typename WarpExchangeT::TempStorage exchange[ACTIVE_EXCHANGE_WARPS];
+            };
         };
 
         Offset      tile_idx;                   // Shared tile index
@@ -235,8 +236,8 @@ struct BlockSelectSweep
 
     _TempStorage                    &temp_storage;      ///< Reference to temp_storage
     WrappedInputIterator            d_in;               ///< Input data
-    WrappedFlagsInputIterator             d_flags;            ///< Input flags
-    SelectedOutputIterator                  d_selected_out;              ///< Output data
+    WrappedFlagsInputIterator       d_flags;            ///< Input flags
+    SelectedOutputIterator          d_selected_out;     ///< Output data
     SelectOp                        select_op;          ///< Selection operator
     InequalityWrapper<EqualityOp>   inequality_op;      ///< Inequality operator
     Offset                          num_items;          ///< Total number of input items
@@ -251,8 +252,8 @@ struct BlockSelectSweep
     BlockSelectSweep(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIterator               d_in,               ///< Input data
-        FlagsInputIterator                d_flags,            ///< Input flags
-        SelectedOutputIterator              d_selected_out,              ///< Output data
+        FlagsInputIterator          d_flags,            ///< Input flags
+        SelectedOutputIterator      d_selected_out,     ///< Output data
         SelectOp                    select_op,          ///< Selection operator
         EqualityOp                  equality_op,        ///< Equality operator
         Offset                      num_items)          ///< Total number of input items
@@ -448,20 +449,7 @@ struct BlockSelectSweep
         // Locally compact items within the warp (first warp)
         if (warp_id == 0)
         {
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                temp_storage.exchange[0][thread_exclusives[ITEM]] = items[ITEM];
-            }
-
-            __threadfence_block();
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (ITEM * WARP_THREADS) + lane_id;
-                items[ITEM] = temp_storage.exchange[0][item_offset];
-            }
+            WarpExchangeT(temp_storage.exchange[0]).ScatterToStriped(items, thread_exclusives);
         }
 
         // Locally compact items within the warp (remaining warps)
@@ -472,20 +460,7 @@ struct BlockSelectSweep
 
             if (warp_id == SLICE)
             {
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    temp_storage.exchange[0][thread_exclusives[ITEM]] = items[ITEM];
-                }
-
-                __threadfence_block();
-
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    int item_offset = (ITEM * WARP_THREADS) + lane_id;
-                    items[ITEM] = temp_storage.exchange[0][item_offset];
-                }
+                WarpExchangeT(temp_storage.exchange[0]).ScatterToStriped(items, thread_exclusives);
             }
         }
 
@@ -515,21 +490,7 @@ struct BlockSelectSweep
         int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
         int lane_id = LaneId();
 
-        // Locally compact items in each warp
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            temp_storage.exchange[warp_id][thread_exclusives[ITEM]] = items[ITEM];
-        }
-
-        __threadfence_block();
-
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            int item_offset = (ITEM * WARP_THREADS) + lane_id;
-            items[ITEM] = temp_storage.exchange[warp_id][item_offset];
-        }
+        WarpExchangeT(temp_storage.exchange[warp_id]).ScatterToStriped(items, thread_exclusives);
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -705,7 +666,7 @@ struct BlockSelectSweep
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         ScanTileState           &tile_status,       ///< Global list of tile status
-        NumSelectedIterator     d_num_selected)     ///< Output total number selected
+        NumSelectedIterator     d_num_selected_out)     ///< Output total number selected
     {
 
 #if __CUDA_ARCH__ > 130
@@ -743,7 +704,7 @@ struct BlockSelectSweep
                 // Output the total number of items selected
                 if (threadIdx.x == 0)
                 {
-                    *d_num_selected = total_selected;
+                    *d_num_selected_out = total_selected;
                 }
             }
         }

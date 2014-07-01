@@ -36,8 +36,8 @@ var searchData=
   ['blockedtowarpstriped',['BlockedToWarpStriped',['../classcub_1_1_block_exchange.html#a852508850f7cc778c6f2036dcfb74ce5',1,'cub::BlockExchange']]],
   ['blockexchange',['BlockExchange',['../classcub_1_1_block_exchange.html',1,'cub']]],
   ['blockexchange',['BlockExchange',['../classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8',1,'cub::BlockExchange::BlockExchange()'],['../classcub_1_1_block_exchange.html#a8b0988bd9c987b3923af302e9e56b521',1,'cub::BlockExchange::BlockExchange(TempStorage &amp;temp_storage)']]],
-  ['blockhistogram',['BlockHistogram',['../classcub_1_1_block_histogram.html#a0cebf0947dda55b487e33ca63d900d7b',1,'cub::BlockHistogram::BlockHistogram()'],['../classcub_1_1_block_histogram.html#a875a03627d3fc144b616c2353569281c',1,'cub::BlockHistogram::BlockHistogram(TempStorage &amp;temp_storage)']]],
   ['blockhistogram',['BlockHistogram',['../classcub_1_1_block_histogram.html',1,'cub']]],
+  ['blockhistogram',['BlockHistogram',['../classcub_1_1_block_histogram.html#a0cebf0947dda55b487e33ca63d900d7b',1,'cub::BlockHistogram::BlockHistogram()'],['../classcub_1_1_block_histogram.html#a875a03627d3fc144b616c2353569281c',1,'cub::BlockHistogram::BlockHistogram(TempStorage &amp;temp_storage)']]],
   ['blockhistogramalgorithm',['BlockHistogramAlgorithm',['../namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2',1,'cub']]],
   ['blockload',['BlockLoad',['../classcub_1_1_block_load.html#aa7bae805b2e333db6080aa9215fcaeb3',1,'cub::BlockLoad::BlockLoad()'],['../classcub_1_1_block_load.html#a2a7065d0d6a14ab27586d55271b7ae05',1,'cub::BlockLoad::BlockLoad(TempStorage &amp;temp_storage)']]],
   ['blockload',['BlockLoad',['../classcub_1_1_block_load.html',1,'cub']]],
@@ -48,10 +48,11 @@ var searchData=
   ['blockreduce',['BlockReduce',['../classcub_1_1_block_reduce.html',1,'cub']]],
   ['blockreduce',['BlockReduce',['../classcub_1_1_block_reduce.html#a253f6c152fbb75e3d5d11bfa49224459',1,'cub::BlockReduce::BlockReduce()'],['../classcub_1_1_block_reduce.html#a66f94839182ae9981219c6313d5ccff4',1,'cub::BlockReduce::BlockReduce(TempStorage &amp;temp_storage)']]],
   ['blockreducealgorithm',['BlockReduceAlgorithm',['../namespacecub.html#add0251c713859b8974806079e498d10a',1,'cub']]],
-  ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html#a5133f76e261ce0b33d381e8be747966c',1,'cub::BlockScan::BlockScan()'],['../classcub_1_1_block_scan.html#aa5156b3509d81ed5e53e06e270ab28cf',1,'cub::BlockScan::BlockScan(TempStorage &amp;temp_storage)']]],
   ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html',1,'cub']]],
+  ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html#a5133f76e261ce0b33d381e8be747966c',1,'cub::BlockScan::BlockScan()'],['../classcub_1_1_block_scan.html#aa5156b3509d81ed5e53e06e270ab28cf',1,'cub::BlockScan::BlockScan(TempStorage &amp;temp_storage)']]],
   ['blockscanalgorithm',['BlockScanAlgorithm',['../namespacecub.html#abec44bba36037c547e7e84906d0d23ab',1,'cub']]],
   ['blockstore',['BlockStore',['../classcub_1_1_block_store.html#a8a7f0cab61faf9389c84af932afef987',1,'cub::BlockStore::BlockStore()'],['../classcub_1_1_block_store.html#a2c02c72add23d782a5eb5cdb30c812b7',1,'cub::BlockStore::BlockStore(TempStorage &amp;temp_storage)']]],
   ['blockstore',['BlockStore',['../classcub_1_1_block_store.html',1,'cub']]],
-  ['blockstorealgorithm',['BlockStoreAlgorithm',['../namespacecub.html#a839b145451e9eec3d44172e3c3619700',1,'cub']]]
+  ['blockstorealgorithm',['BlockStoreAlgorithm',['../namespacecub.html#a839b145451e9eec3d44172e3c3619700',1,'cub']]],
+  ['broadcast',['Broadcast',['../classcub_1_1_warp_scan.html#a97e5ad8bd37d95b39f9f7dee8254d9ad',1,'cub::WarpScan']]]
 ];

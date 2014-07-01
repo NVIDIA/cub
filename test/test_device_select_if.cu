@@ -95,7 +95,7 @@ cudaError_t Dispatch(
     size_t                      &temp_storage_bytes,
     InputIterator               d_in,
     OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected,
+    NumSelectedIterator         d_num_selected_out,
     Offset                      num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
@@ -104,7 +104,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op, stream, debug_synchronous);
+        error = DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, stream, debug_synchronous);
     }
     return error;
 }
@@ -126,7 +126,7 @@ cudaError_t Dispatch(
     size_t                      &temp_storage_bytes,
     InputIterator               d_in,
     OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected,
+    NumSelectedIterator         d_num_selected_out,
     Offset                      num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
@@ -135,7 +135,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op, stream, debug_synchronous);
+        error = DevicePartition::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, stream, debug_synchronous);
     }
     return error;
 }
@@ -162,7 +162,7 @@ cudaError_t Dispatch(
     size_t                      &temp_storage_bytes,
     InputIterator               d_in,
     OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected,
+    NumSelectedIterator         d_num_selected_out,
     Offset                      num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
@@ -186,7 +186,7 @@ cudaError_t Dispatch(
         }
 
         Offset num_selected = d_out_wrapper_end - d_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_selected, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -209,7 +209,7 @@ cudaError_t Dispatch(
     size_t                      &temp_storage_bytes,
     InputIterator               d_in,
     OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected,
+    NumSelectedIterator         d_num_selected_out,
     Offset                      num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
@@ -243,7 +243,7 @@ cudaError_t Dispatch(
         }
 
         Offset num_selected = d_out_wrapper_end.first - d_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_selected, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -269,7 +269,7 @@ __global__ void CnpDispatchKernel(
     size_t                      temp_storage_bytes,
     InputIterator               d_in,
     OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected,
+    NumSelectedIterator         d_num_selected_out,
     Offset                      num_items,
     SelectOp                    select_op,
     bool                        debug_synchronous)
@@ -279,7 +279,7 @@ __global__ void CnpDispatchKernel(
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(Int2Type<CUB>(), partition, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op, 0, debug_synchronous);
+        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, 0, debug_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
@@ -300,7 +300,7 @@ cudaError_t Dispatch(
     size_t                      &temp_storage_bytes,
     InputIterator               d_in,
     OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected,
+    NumSelectedIterator         d_num_selected_out,
     Offset                      num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
@@ -308,7 +308,7 @@ cudaError_t Dispatch(
 {
     // Invoke kernel to invoke device-side dispatch
     CnpDispatchKernel<<<1,1>>>(partition, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op, debug_synchronous);
+        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
@@ -404,9 +404,9 @@ void Test(
 {
     // Allocate device output array and num selected
     T       *d_out            = NULL;
-    int     *d_num_selected   = NULL;
+    int     *d_num_selected_out   = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_selected, sizeof(int)));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_selected_out, sizeof(int)));
 
     // Allocate CDP device arrays
     size_t          *d_temp_storage_bytes = NULL;
@@ -418,16 +418,16 @@ void Test(
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<PARTITION>(), 1, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op, 0, true));
+        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output array
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
-    CubDebugExit(cudaMemset(d_num_selected, 0, sizeof(int)));
+    CubDebugExit(cudaMemset(d_num_selected_out, 0, sizeof(int)));
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<PARTITION>(), 1, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op, 0, true));
+        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare1 = (PARTITION) ?
@@ -435,7 +435,7 @@ void Test(
         CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
     printf("\t Data %s ", compare1 ? "FAIL" : "PASS");
 
-    int compare2 = CompareDeviceResults(&num_selected, d_num_selected, 1, true, g_verbose);
+    int compare2 = CompareDeviceResults(&num_selected, d_num_selected_out, 1, true, g_verbose);
     printf("\t Count %s ", compare2 ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
@@ -446,7 +446,7 @@ void Test(
     GpuTimer gpu_timer;
     gpu_timer.Start();
     CubDebugExit(Dispatch(Int2Type<BACKEND>(), Int2Type<PARTITION>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op, 0, false));
+        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -467,7 +467,7 @@ void Test(
 
     // Cleanup
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
-    if (d_num_selected) CubDebugExit(g_allocator.DeviceFree(d_num_selected));
+    if (d_num_selected_out) CubDebugExit(g_allocator.DeviceFree(d_num_selected_out));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));

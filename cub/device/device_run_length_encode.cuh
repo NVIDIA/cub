@@ -85,7 +85,7 @@ struct DeviceRunLengthEncode
      * - For the <em>i</em><sup>th</sup> run encountered, the first key of the run and its length are written to
      *   <tt>d_unique_out[<em>i</em>]</tt> and <tt>d_counts_out[<em>i</em>]</tt>,
      *   respectively.
-     * - The total number of runs encountered is written to \p d_num_runs.
+     * - The total number of runs encountered is written to \p d_num_runs_out.
      * - The <tt>==</tt> equality operator is used to determine whether values are equivalent
      * - \devicestorage
      * - \cdp
@@ -111,27 +111,27 @@ struct DeviceRunLengthEncode
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_run_length_encode.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
-     * int          num_items;      // e.g., 8
-     * int          *d_in;          // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
-     * int          *d_unique_out;  // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int          *d_counts_out;  // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int          *d_num_runs;    // e.g., [ ]
+     * int          num_items;          // e.g., 8
+     * int          *d_in;              // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
+     * int          *d_unique_out;      // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int          *d_counts_out;      // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int          *d_num_runs_out;    // e.g., [ ]
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceRunLengthEncode::Encode(d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs, num_items);
+     * cub::DeviceRunLengthEncode::Encode(d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run encoding
-     * cub::DeviceRunLengthEncode::Encode(d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs, num_items);
+     * cub::DeviceRunLengthEncode::Encode(d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_counts_out, d_num_runs_out, num_items);
      *
-     * // d_unique_out  <-- [0, 2, 9, 5, 8]
-     * // d_counts_out  <-- [1, 2, 1, 3, 1]
-     * // d_num_runs    <-- [5]
+     * // d_unique_out      <-- [0, 2, 9, 5, 8]
+     * // d_counts_out      <-- [1, 2, 1, 3, 1]
+     * // d_num_runs_out    <-- [5]
      *
      * \endcode
      *
@@ -152,7 +152,7 @@ struct DeviceRunLengthEncode
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of keys
         UniqueOutputIterator        d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
         LengthsOutputIterator       d_counts_out,                   ///< [out] Pointer to the output sequence of run-lengths (one count per run)
-        NumRunsOutputIterator       d_num_runs,                     ///< [out] Pointer to total number of runs
+        NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to total number of runs
         int                         num_items,                      ///< [in] Total number of associated key+value pairs (i.e., the length of \p d_in_keys and \p d_in_values)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -179,7 +179,7 @@ struct DeviceRunLengthEncode
             d_unique_out,
             LengthsInputIterator(one_val),
             d_counts_out,
-            d_num_runs,
+            d_num_runs_out,
             EqualityOp(),
             ReductionOp(),
             num_items,
@@ -189,13 +189,13 @@ struct DeviceRunLengthEncode
 
 
     /**
-     * \brief Identifies offsets and lengths of all non-trivial runs (of length > 1) of same-valued keys in the sequence \p d_in.
+     * \brief Enumerates the starting offsets and lengths of all non-trivial runs (of length > 1) of same-valued keys in the sequence \p d_in.
      *
      * \par
      * - For the <em>i</em><sup>th</sup> non-trivial run, the run's starting offset
      *   its length are written to <tt>d_offsets_out[<em>i</em>]</tt> and
      *   <tt>d_lengths_out[<em>i</em>]</tt>, respectively.
-     * - The total number of runs encountered is written to \p d_num_runs.
+     * - The total number of runs encountered is written to \p d_num_runs_out.
      * - The <tt>==</tt> equality operator is used to determine whether values are equivalent
      * - \devicestorage
      * - \cdp
@@ -209,27 +209,27 @@ struct DeviceRunLengthEncode
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_run_length_encode.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
-     * int          num_items;      // e.g., 8
-     * int          *d_in;          // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
-     * int          *d_offsets_out; // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int          *d_lengths_out; // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int          *d_num_runs;    // e.g., [ ]
+     * int          num_items;          // e.g., 8
+     * int          *d_in;              // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
+     * int          *d_offsets_out;     // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int          *d_lengths_out;     // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int          *d_num_runs_out;    // e.g., [ ]
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceRunLengthEncode::NonTrivialRuns(d_temp_storage, temp_storage_bytes, d_in, d_offsets_out, d_lengths_out, d_num_runs, num_items);
+     * cub::DeviceRunLengthEncode::NonTrivialRuns(d_temp_storage, temp_storage_bytes, d_in, d_offsets_out, d_lengths_out, d_num_runs_out, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run encoding
-     * cub::DeviceRunLengthEncode::NonTrivialRuns(d_temp_storage, temp_storage_bytes, d_in, d_offsets_out, d_lengths_out, d_num_runs, num_items);
+     * cub::DeviceRunLengthEncode::NonTrivialRuns(d_temp_storage, temp_storage_bytes, d_in, d_offsets_out, d_lengths_out, d_num_runs_out, num_items);
      *
-     * // d_offsets_out     <-- [1, 4]
-     * // d_lengths_out     <-- [2, 3]
-     * // d_num_runs        <-- [2]
+     * // d_offsets_out         <-- [1, 4]
+     * // d_lengths_out         <-- [2, 3]
+     * // d_num_runs_out        <-- [2]
      *
      * \endcode
      *
@@ -250,7 +250,7 @@ struct DeviceRunLengthEncode
         InputIterator           d_in,                           ///< [in] Pointer to input sequence of data items
         OffsetsOutputIterator   d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets (one offset per non-trivial run)
         LengthsOutputIterator   d_lengths_out,                  ///< [out] Pointer to output sequence of run-lengths (one count per non-trivial run)
-        NumRunsOutputIterator   d_num_runs,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+        NumRunsOutputIterator   d_num_runs_out,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
         int                     num_items,                      ///< [in] Total number of associated key+value pairs (i.e., the length of \p d_in_keys and \p d_in_values)
         cudaStream_t            stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -264,7 +264,7 @@ struct DeviceRunLengthEncode
             d_in,
             d_offsets_out,
             d_lengths_out,
-            d_num_runs,
+            d_num_runs_out,
             EqualityOp(),
             num_items,
             stream,

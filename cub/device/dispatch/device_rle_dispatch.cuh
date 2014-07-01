@@ -76,7 +76,7 @@ __global__ void DeviceRleSweepKernel(
     InputIterator               d_in,               ///< [in] Pointer to input sequence of data items
     OffsetsOutputIterator       d_offsets_out,      ///< [out] Pointer to output sequence of run-offsets
     LengthsOutputIterator       d_lengths_out,      ///< [out] Pointer to output sequence of run-lengths
-    NumRunsOutputIterator       d_num_runs,         ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+    NumRunsOutputIterator       d_num_runs_out,         ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
     ScanTileState               tile_status,        ///< [in] Tile status interface
     EqualityOp                  equality_op,        ///< [in] Equality operator for input items
     Offset                      num_items,          ///< [in] Total number of input items (i.e., length of \p d_in)
@@ -100,7 +100,7 @@ __global__ void DeviceRleSweepKernel(
         num_tiles,
         queue,
         tile_status,
-        d_num_runs);
+        d_num_runs_out);
 }
 
 
@@ -149,7 +149,7 @@ struct DeviceRleDispatch
     struct Policy350
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 17,
+            NOMINAL_4B_ITEMS_PER_THREAD = 13,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
@@ -317,6 +317,7 @@ struct DeviceRleDispatch
         BlockLoadAlgorithm      load_policy;
         bool                    store_warp_time_slicing;
         BlockScanAlgorithm      scan_algorithm;
+        cudaSharedMemConfig     smem_config;
 
         template <typename BlockRleSweepPolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
@@ -327,17 +328,19 @@ struct DeviceRleDispatch
             load_policy                 = BlockRleSweepPolicy::LOAD_ALGORITHM;
             store_warp_time_slicing     = BlockRleSweepPolicy::STORE_WARP_TIME_SLICING;
             scan_algorithm              = BlockRleSweepPolicy::SCAN_ALGORITHM;
+            smem_config                 = cudaSharedMemBankSizeEightByte;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__
         void Print()
         {
-            printf("%d, %d, %d, %d, %d",
+            printf("%d, %d, %d, %d, %d, %d",
                 block_threads,
                 items_per_thread,
                 load_policy,
                 store_warp_time_slicing,
-                scan_algorithm);
+                scan_algorithm,
+                smem_config);
         }
     };
 
@@ -360,7 +363,7 @@ struct DeviceRleDispatch
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
         OffsetsOutputIterator       d_offsets_out,                  ///< [out] Pointer to the output sequence of run-offsets
         LengthsOutputIterator       d_lengths_out,                  ///< [out] Pointer to the output sequence of run-lengths
-        NumRunsOutputIterator       d_num_runs,                     ///< [out] Pointer to the total number of runs encountered (i.e., length of \p d_offsets_out)
+        NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to the total number of runs encountered (i.e., length of \p d_offsets_out)
         EqualityOp                  equality_op,                    ///< [in] Equality operator for input items
         Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -443,22 +446,36 @@ struct DeviceRleDispatch
                 device_rle_config.block_threads))) break;
 
             // Get grid size for scanning tiles
-            dim3 select_grid_size;
+            dim3 rle_grid_size;
             int max_dim_x = 32 * 1024;
-            select_grid_size.z = 1;
-            select_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
-            select_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
+            rle_grid_size.z = 1;
+            rle_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
+            rle_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
             // Log device_rle_sweep_kernel configuration
             if (debug_synchronous) CubLog("Invoking device_rle_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                select_grid_size.x, select_grid_size.y, select_grid_size.z, device_rle_config.block_threads, (long long) stream, device_rle_config.items_per_thread, device_rle_kernel_sm_occupancy);
+                rle_grid_size.x, rle_grid_size.y, rle_grid_size.z, device_rle_config.block_threads, (long long) stream, device_rle_config.items_per_thread, device_rle_kernel_sm_occupancy);
+
+#if (CUB_PTX_ARCH == 0)
+            // Get current smem bank configuration
+            cudaSharedMemConfig original_smem_config;
+            if (CubDebug(error = cudaDeviceGetSharedMemConfig(&original_smem_config))) break;
+            cudaSharedMemConfig current_smem_config = original_smem_config;
+
+            // Update smem config if necessary
+            if (current_smem_config != device_rle_config.smem_config)
+            {
+                if (CubDebug(error = cudaDeviceSetSharedMemConfig(device_rle_config.smem_config))) break;
+                current_smem_config = device_rle_config.smem_config;
+            }
+#endif
 
             // Invoke device_rle_sweep_kernel
-            device_rle_sweep_kernel<<<select_grid_size, device_rle_config.block_threads, 0, stream>>>(
+            device_rle_sweep_kernel<<<rle_grid_size, device_rle_config.block_threads, 0, stream>>>(
                 d_in,
                 d_offsets_out,
                 d_lengths_out,
-                d_num_runs,
+                d_num_runs_out,
                 tile_status,
                 equality_op,
                 num_items,
@@ -470,6 +487,15 @@ struct DeviceRleDispatch
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+#if (CUB_PTX_ARCH == 0)
+            // Reset smem config if necessary
+            if (current_smem_config != original_smem_config)
+            {
+                if (CubDebug(error = cudaDeviceSetSharedMemConfig(original_smem_config))) break;
+            }
+#endif
+
         }
         while (0);
 
@@ -489,7 +515,7 @@ struct DeviceRleDispatch
         InputIterator               d_in,                           ///< [in] Pointer to input sequence of data items
         OffsetsOutputIterator       d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets
         LengthsOutputIterator       d_lengths_out,                  ///< [out] Pointer to output sequence of run-lengths
-        NumRunsOutputIterator       d_num_runs,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+        NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
         EqualityOp                  equality_op,                    ///< [in] Equality operator for input items
         Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -517,7 +543,7 @@ struct DeviceRleDispatch
                 d_in,
                 d_offsets_out,
                 d_lengths_out,
-                d_num_runs,
+                d_num_runs_out,
                 equality_op,
                 num_items,
                 stream,

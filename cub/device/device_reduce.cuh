@@ -559,7 +559,7 @@ struct DeviceReduce
      * consecutive, identical keys.  For the <em>i</em><sup>th</sup> run encountered,
      * the first key of the run and the corresponding value aggregate of that run are
      * written to <tt>d_unique_out[<em>i</em>]</tt> and <tt>d_aggregates_out[<em>i</em>]</tt>,
-     * respectively. The total number of runs encountered is written to \p d_num_runs.
+     * respectively. The total number of runs encountered is written to \p d_num_runs_out.
      *
      * \par
      * - The <tt>==</tt> equality operator is used to determine whether keys are equivalent
@@ -603,24 +603,24 @@ struct DeviceReduce
      * int          *d_values_in;       // e.g., [0, 7, 1, 6, 2, 5, 3, 4]
      * int          *d_unique_out;      // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
      * int          *d_aggregates_out;  // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int          *d_num_runs;        // e.g., [ ]
+     * int          *d_num_runs_out;        // e.g., [ ]
      * CustomMin    reduction_op;
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceReduce::ReduceByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_unique_out, d_values_in, d_aggregates_out, d_num_runs, reduction_op, num_items);
+     * cub::DeviceReduce::ReduceByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_unique_out, d_values_in, d_aggregates_out, d_num_runs_out, reduction_op, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run reduce-by-key
-     * cub::DeviceReduce::ReduceByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_unique_out, d_values_in, d_aggregates_out, d_num_runs, reduction_op, num_items);
+     * cub::DeviceReduce::ReduceByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_unique_out, d_values_in, d_aggregates_out, d_num_runs_out, reduction_op, num_items);
      *
      * // d_unique_out      <-- [0, 2, 9, 5, 8]
      * // d_aggregates_out  <-- [0, 1, 6, 2, 4]
-     * // d_num_runs        <-- [5]
+     * // d_num_runs_out        <-- [5]
      *
      * \endcode
      *
@@ -646,7 +646,7 @@ struct DeviceReduce
         UniqueOutputIterator        d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
         ValuesInputIterator         d_values_in,                    ///< [in] Pointer to the input sequence of corresponding values
         AggregatesOutputIterator    d_aggregates_out,               ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
-        NumRunsOutputIterator       d_num_runs,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
+        NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
         ReductionOp                 reduction_op,                   ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         int                         num_items,                      ///< [in] Total number of associated key+value pairs (i.e., the length of \p d_in_keys and \p d_in_values)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -664,7 +664,7 @@ struct DeviceReduce
             d_unique_out,
             d_values_in,
             d_aggregates_out,
-            d_num_runs,
+            d_num_runs_out,
             EqualityOp(),
             reduction_op,
             num_items,
