@@ -1059,7 +1059,7 @@ int CompareDeviceResults(
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
-        printf("\n\nData:\n");
+        printf("\n\nComputed:\n");
         for (int i = 0; i < int(num_items); i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";
@@ -1104,7 +1104,7 @@ int CompareDeviceDeviceResults(
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
-        printf("\n\nData:\n");
+        printf("\n\nComputed:\n");
         for (int i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";
