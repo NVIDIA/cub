@@ -80,6 +80,17 @@ struct Pair
 
 
 /**
+ * Pair ostream operator
+ */
+template <typename Key, typename Value>
+std::ostream& operator<<(std::ostream& os, const Pair<Key, Value>& val)
+{
+    os << '<' << val.key << ',' << val.value << '>';
+    return os;
+}
+
+
+/**
  * Initialize problem
  */
 template <typename Key, typename Value>
@@ -94,7 +105,7 @@ void Initialize(
     {
         Key sample;
         RandomBits(sample);
-        h_keys[i] = (Key) (scale * sample);
+        h_keys[i] = (max_key == -1) ? i : (Key) (scale * sample);
         h_values[i] = i;
     }
 
@@ -133,6 +144,13 @@ int Solve(
     }
 
     std::stable_sort(h_pairs, h_pairs + num_items);
+
+    if (g_verbose)
+    {
+        printf("Sorted pairs:\n");
+        DisplayResults(h_pairs, num_items);
+        printf("\n\n");
+    }
 
     // Find non-trivial runs
 
@@ -186,6 +204,7 @@ int main(int argc, char** argv)
     typedef unsigned int    Key;
     typedef int             Value;
 
+    int timing_iterations   = 0;
     int num_items           = 40;
     Key max_key             = 20;       // Max item
 
@@ -194,14 +213,16 @@ int main(int argc, char** argv)
     g_verbose = args.CheckCmdLineFlag("v");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("maxkey", max_key);
+    args.GetCmdLineArgument("i", timing_iterations);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
+            "[--i=<timing iterations> "
             "[--n=<input items, default 40> "
-            "[--maxkey=<max key, default 20>]"
+            "[--maxkey=<max key, default 20 (use -1 to test only unique keys)>]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -218,104 +239,143 @@ int main(int argc, char** argv)
     int     *h_lengths_reference    = new int[num_items];
 
     // Initialize key-value pairs and compute reference solution (sort them, and identify non-trivial runs)
+    printf("Computing reference solution on CPU for %d items (max key %d)\n", num_items, max_key);
+    fflush(stdout);
 
     Initialize(h_keys, h_values, num_items, max_key);
     int num_runs = Solve(h_keys, h_values, num_items, h_offsets_reference, h_lengths_reference);
 
-    printf("%d non-trivial runs from %d items\n", num_runs, num_items);
+    printf("%d non-trivial runs\n", num_runs);
     fflush(stdout);
 
-    // Allocate and initialize device arrays for sorting
+    // Repeat for performance timing
+    GpuTimer gpu_timer;
+    GpuTimer gpu_rle_timer;
+    float elapsed_millis = 0.0;
+    float elapsed_rle_millis = 0.0;
+    for (int i = 0; i <= timing_iterations; ++i)
+    {
 
-    DoubleBuffer<Key>       d_keys;
-    DoubleBuffer<Value>     d_values;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[0], sizeof(Key) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[1], sizeof(Key) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[0], sizeof(Value) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[1], sizeof(Value) * num_items));
+        // Allocate and initialize device arrays for sorting
+        DoubleBuffer<Key>       d_keys;
+        DoubleBuffer<Value>     d_values;
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[0], sizeof(Key) * num_items));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[1], sizeof(Key) * num_items));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[0], sizeof(Value) * num_items));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[1], sizeof(Value) * num_items));
 
-    CubDebugExit(cudaMemcpy(d_keys.d_buffers[d_keys.selector], h_keys, sizeof(float) * num_items, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(d_values.d_buffers[d_values.selector], h_values, sizeof(int) * num_items, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(d_keys.d_buffers[d_keys.selector], h_keys, sizeof(float) * num_items, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(d_values.d_buffers[d_values.selector], h_values, sizeof(int) * num_items, cudaMemcpyHostToDevice));
 
-    // Allocate temporary storage for sorting
+        // Start timer
+        gpu_timer.Start();
 
-    size_t  temp_storage_bytes  = 0;
-    void    *d_temp_storage     = NULL;
-    CubDebugExit(DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items));
-    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
+        // Allocate temporary storage for sorting
+        size_t  temp_storage_bytes  = 0;
+        void    *d_temp_storage     = NULL;
+        CubDebugExit(DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items));
+        CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
-    // Do the sort
-    CubDebugExit(DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items));
+        // Do the sort
+        CubDebugExit(DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items));
 
-    // Free unused buffers and sorting temporary storage
+        // Free unused buffers and sorting temporary storage
+        if (d_keys.d_buffers[d_keys.selector ^ 1]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[d_keys.selector ^ 1]));
+        if (d_values.d_buffers[d_values.selector ^ 1]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[d_values.selector ^ 1]));
+        if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
 
-    if (d_keys.d_buffers[d_keys.selector ^ 1]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[d_keys.selector ^ 1]));
-    if (d_values.d_buffers[d_values.selector ^ 1]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[d_values.selector ^ 1]));
-    if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
+        // Start timer
+        gpu_rle_timer.Start();
 
-    // Allocate device arrays for enumerating non-trivial runs
+        // Allocate device arrays for enumerating non-trivial runs
+        int     *d_offests_out   = NULL;
+        int     *d_lengths_out   = NULL;
+        int     *d_num_runs      = NULL;
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_offests_out, sizeof(int) * num_items));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_lengths_out, sizeof(int) * num_items));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_runs, sizeof(int) * 1));
 
-    int     *d_offests_out   = NULL;
-    int     *d_lengths_out   = NULL;
-    int     *d_num_runs      = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_offests_out, sizeof(int) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_lengths_out, sizeof(int) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_runs, sizeof(int) * 1));
+        // Allocate temporary storage for isolating non-trivial runs
+        d_temp_storage = NULL;
+        CubDebugExit(DeviceRunLengthEncode::NonTrivialRuns(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys.d_buffers[d_keys.selector],
+            d_offests_out,
+            d_lengths_out,
+            d_num_runs,
+            num_items));
+        CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
-    // Allocate temporary storage for isolating non-trivial runs
-    d_temp_storage = NULL;
-    CubDebugExit(DeviceRunLengthEncode::NonTrivialRuns(
-        d_temp_storage,
-        temp_storage_bytes,
-        d_keys.d_buffers[d_keys.selector],
-        d_offests_out,
-        d_lengths_out,
-        d_num_runs,
-        num_items));
-    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
+        // Do the isolation
+        CubDebugExit(DeviceRunLengthEncode::NonTrivialRuns(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys.d_buffers[d_keys.selector],
+            d_offests_out,
+            d_lengths_out,
+            d_num_runs,
+            num_items));
 
-    // Do the isolation
-    CubDebugExit(DeviceRunLengthEncode::NonTrivialRuns(
-        d_temp_storage,
-        temp_storage_bytes,
-        d_keys.d_buffers[d_keys.selector],
-        d_offests_out,
-        d_lengths_out,
-        d_num_runs,
-        num_items));
+        // Free keys buffer
+        if (d_keys.d_buffers[d_keys.selector]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[d_keys.selector]));
 
-    // Free keys buffer
-    if (d_keys.d_buffers[d_keys.selector]) CubDebugExit(g_allocator.DeviceFree(d_keys.d_buffers[d_keys.selector]));
+        //
+        // Hypothetically do stuff with the original key-indices corresponding to non-trivial runs of identical keys
+        //
 
-    // Check for correctness (and display results, if specified)
+        // Stop sort timer
+        gpu_timer.Stop();
+        gpu_rle_timer.Stop();
 
-    int compare = CompareDeviceResults(h_offsets_reference, d_offests_out, num_runs, true, g_verbose);
-    printf("\t Run offsets %s ", compare ? "FAIL" : "PASS");
+        if (i == 0)
+        {
+            // First iteration is a warmup: // Check for correctness (and display results, if specified)
 
-    compare |= CompareDeviceResults(h_lengths_reference, d_lengths_out, num_runs, true, g_verbose);
-    printf("\t Run lengths %s ", compare ? "FAIL" : "PASS");
+            printf("\nRUN OFFSETS: \n");
+            int compare = CompareDeviceResults(h_offsets_reference, d_offests_out, num_runs, true, g_verbose);
+            printf("\t\t %s ", compare ? "FAIL" : "PASS");
 
-    compare |= CompareDeviceResults(&num_runs, d_num_runs, 1, true, g_verbose);
-    printf("\t Num runs %s ", compare ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
+            printf("\nRUN LENGTHS: \n");
+            compare |= CompareDeviceResults(h_lengths_reference, d_lengths_out, num_runs, true, g_verbose);
+            printf("\t\t %s ", compare ? "FAIL" : "PASS");
 
-    //
-    // Hypothetically do stuff with runs of same-keyed values
-    //
+            printf("\nNUM RUNS: \n");
+            compare |= CompareDeviceResults(&num_runs, d_num_runs, 1, true, g_verbose);
+            printf("\t\t %s ", compare ? "FAIL" : "PASS");
 
-    // Cleanup
+            AssertEquals(0, compare);
+        }
+        else
+        {
+            elapsed_millis += gpu_timer.ElapsedMillis();
+            elapsed_rle_millis += gpu_rle_timer.ElapsedMillis();
+        }
+
+        // GPU cleanup
+
+        if (d_values.d_buffers[d_values.selector]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[d_values.selector]));
+        if (d_offests_out) CubDebugExit(g_allocator.DeviceFree(d_offests_out));
+        if (d_lengths_out) CubDebugExit(g_allocator.DeviceFree(d_lengths_out));
+        if (d_num_runs) CubDebugExit(g_allocator.DeviceFree(d_num_runs));
+        if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
+    }
+
+    // Host cleanup
     if (h_keys) delete[] h_keys;
     if (h_values) delete[] h_values;
     if (h_offsets_reference) delete[] h_offsets_reference;
     if (h_lengths_reference) delete[] h_lengths_reference;
 
-    if (d_values.d_buffers[d_values.selector]) CubDebugExit(g_allocator.DeviceFree(d_values.d_buffers[d_values.selector]));
-    if (d_offests_out) CubDebugExit(g_allocator.DeviceFree(d_offests_out));
-    if (d_lengths_out) CubDebugExit(g_allocator.DeviceFree(d_lengths_out));
-    if (d_num_runs) CubDebugExit(g_allocator.DeviceFree(d_num_runs));
-    if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
-
     printf("\n\n");
+
+    if (timing_iterations > 0)
+    {
+        printf("%d timing iterations, average time to isolate non-trivial duplicates: %.3f ms (%.3f ms spent in RLE isolation)\n",
+            timing_iterations,
+            elapsed_millis / timing_iterations,
+            elapsed_rle_millis / timing_iterations);
+    }
 
     return 0;
 }
