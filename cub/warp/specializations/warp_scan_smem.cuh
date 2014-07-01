@@ -91,7 +91,7 @@ struct WarpScanSmem
      * Thread fields
      ******************************************************************************/
 
-    _TempStorage     &temp_storage;
+    _TempStorage    &temp_storage;
     unsigned int    lane_id;
 
 

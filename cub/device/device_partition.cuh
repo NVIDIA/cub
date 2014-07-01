@@ -73,7 +73,7 @@ namespace cub {
 struct DevicePartition
 {
     /**
-     * \brief Uses the \p d_flags sequence to split the corresponding items from \p d_in into a partitioned sequence \p d_out.  The total number of items copied into the first partition is written to \p d_num_selected. ![](partition_flags_logo.png)
+     * \brief Uses the \p d_flags sequence to split the corresponding items from \p d_in into a partitioned sequence \p d_out.  The total number of items copied into the first partition is written to \p d_num_selected_out. ![](partition_flags_logo.png)
      *
      * \par
      * - The value type of \p d_flags must be castable to \p bool (e.g., \p bool, \p char, \p int, etc.).
@@ -87,29 +87,29 @@ struct DevicePartition
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_partition.cuh>
+     * #include <cub/cub.cuh>       // or equivalently <cub/device/device_partition.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input, flags, and output
-     * int  num_items;          // e.g., 8
-     * int  *d_in;              // e.g., [1, 2, 3, 4, 5, 6, 7, 8]
-     * char *d_flags;           // e.g., [1, 0, 0, 1, 0, 1, 1, 0]
-     * int  *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int  *d_num_selected;    // e.g., [ ]
+     * int  num_items;              // e.g., 8
+     * int  *d_in;                  // e.g., [1, 2, 3, 4, 5, 6, 7, 8]
+     * char *d_flags;               // e.g., [1, 0, 0, 1, 0, 1, 1, 0]
+     * int  *d_out;                 // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int  *d_num_selected_out;    // e.g., [ ]
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
+     * cub::DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run selection
-     * cub::DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
+     * cub::DevicePartition::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items);
      *
-     * // d_out             <-- [1, 4, 6, 7, 8, 5, 3, 2]
-     * // d_num_selected    <-- [4]
+     * // d_out                 <-- [1, 4, 6, 7, 8, 5, 3, 2]
+     * // d_num_selected_out    <-- [4]
      *
      * \endcode
      *
@@ -130,7 +130,7 @@ struct DevicePartition
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
         FlagIterator                d_flags,                        ///< [in] Pointer to the input sequence of selection flags
         OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of partitioned data items
-        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., the offset of the unselected partition)
+        NumSelectedIterator         d_num_selected_out,                 ///< [out] Pointer to the output total number of items selected (i.e., the offset of the unselected partition)
         int                         num_items,                      ///< [in] Total number of items to select from
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -145,7 +145,7 @@ struct DevicePartition
             d_in,
             d_flags,
             d_out,
-            d_num_selected,
+            d_num_selected_out,
             SelectOp(),
             EqualityOp(),
             num_items,
@@ -155,7 +155,7 @@ struct DevicePartition
 
 
     /**
-     * \brief Uses the \p select_op functor to split the corresponding items from \p d_in into a partitioned sequence \p d_out.  The total number of items copied into the first partition is written to \p d_num_selected. ![](partition_logo.png)
+     * \brief Uses the \p select_op functor to split the corresponding items from \p d_in into a partitioned sequence \p d_out.  The total number of items copied into the first partition is written to \p d_num_selected_out. ![](partition_logo.png)
      *
      * \par
      * - Copies of the selected items are compacted into \p d_out and maintain their original
@@ -199,26 +199,26 @@ struct DevicePartition
      * };
      *
      * // Declare, allocate, and initialize device pointers for input and output
-     * int      num_items;          // e.g., 8
-     * int      *d_in;              // e.g., [0, 2, 3, 9, 5, 2, 81, 8]
-     * int      *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int      *d_num_selected;    // e.g., [ ]
+     * int      num_items;              // e.g., 8
+     * int      *d_in;                  // e.g., [0, 2, 3, 9, 5, 2, 81, 8]
+     * int      *d_out;                 // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int      *d_num_selected_out;    // e.g., [ ]
      * LessThan select_op(7);
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);
+     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run selection
-     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);
+     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
      *
-     * // d_out             <-- [0, 2, 3, 5, 2, 8, 81, 9]
-     * // d_num_selected    <-- [5]
+     * // d_out                 <-- [0, 2, 3, 5, 2, 8, 81, 9]
+     * // d_num_selected_out    <-- [5]
      *
      * \endcode
      *
@@ -238,7 +238,7 @@ struct DevicePartition
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
         OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of partitioned data items
-        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., the offset of the unselected partition)
+        NumSelectedIterator         d_num_selected_out,                 ///< [out] Pointer to the output total number of items selected (i.e., the offset of the unselected partition)
         int                         num_items,                      ///< [in] Total number of items to select from
         SelectOp                    select_op,                      ///< [in] Unary selection operator
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -254,7 +254,7 @@ struct DevicePartition
             d_in,
             NULL,
             d_out,
-            d_num_selected,
+            d_num_selected_out,
             select_op,
             EqualityOp(),
             num_items,

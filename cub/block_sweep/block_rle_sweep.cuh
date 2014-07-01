@@ -165,6 +165,9 @@ struct BlockRleSweep
             ScanTileState>
         LookbackPrefixCallbackOp;
 
+    // Warp exchange type
+    typedef WarpExchange<LengthOffsetPair, ITEMS_PER_THREAD> WarpExchangeOffsets;
+
     // Shared memory type for this threadblock
     struct _TempStorage
     {
@@ -182,7 +185,11 @@ struct BlockRleSweep
             typename BlockLoadT::TempStorage                    load;
 
             // Smem needed for two-phase scatter
-            LengthOffsetPair exchange[ACTIVE_EXCHANGE_WARPS][WARP_ITEMS + 1];
+            union
+            {
+                unsigned long long                              align;
+                typename WarpExchangeOffsets::TempStorage       exchange[ACTIVE_EXCHANGE_WARPS];
+            };
         };
 
         Offset              tile_idx;                   // Shared tile index
@@ -300,12 +307,12 @@ struct BlockRleSweep
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            bool invalid         = LAST_TILE && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM >= num_remaining);
-            bool non_trivial     = !(invalid || (head_flags[ITEM] & tail_flags[ITEM]));
+            bool valid          = !LAST_TILE || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining);
+            int trivial         = head_flags[ITEM] & tail_flags[ITEM];
 
-            head_flags[ITEM]                    = head_flags[ITEM] & non_trivial;
+            head_flags[ITEM]                    = (head_flags[ITEM] - trivial) & valid;
             lengths_and_num_runs[ITEM].offset   = head_flags[ITEM];
-            lengths_and_num_runs[ITEM].value    = non_trivial;
+            lengths_and_num_runs[ITEM].value    = (1 - trivial) & valid;
         }
     }
 
@@ -384,20 +391,7 @@ struct BlockRleSweep
         // Locally compact items within the warp (first warp)
         if (warp_id == 0)
         {
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                temp_storage.exchange[0][thread_num_runs_exclusive_in_warp[ITEM]] = lengths_and_offsets[ITEM];
-            }
-
-            __threadfence_block();
-
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-            {
-                int item_offset = (ITEM * WARP_THREADS) + lane_id;
-                lengths_and_offsets[ITEM] = temp_storage.exchange[0][item_offset];
-            }
+            WarpExchangeOffsets(temp_storage.exchange[0]).ScatterToStriped(lengths_and_offsets, thread_num_runs_exclusive_in_warp);
         }
 
         // Locally compact items within the warp (remaining warps)
@@ -408,20 +402,7 @@ struct BlockRleSweep
 
             if (warp_id == SLICE)
             {
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    temp_storage.exchange[0][thread_num_runs_exclusive_in_warp[ITEM]] = lengths_and_offsets[ITEM];
-                }
-
-                __threadfence_block();
-
-                #pragma unroll
-                for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-                {
-                    int item_offset = (ITEM * WARP_THREADS) + lane_id;
-                    lengths_and_offsets[ITEM] = temp_storage.exchange[0][item_offset];
-                }
+                WarpExchangeOffsets(temp_storage.exchange[0]).ScatterToStriped(lengths_and_offsets, thread_num_runs_exclusive_in_warp);
             }
         }
 
@@ -464,27 +445,13 @@ struct BlockRleSweep
         int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
         int lane_id = LaneId();
 
-        // Locally compact items within the warp
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            temp_storage.exchange[warp_id][thread_num_runs_exclusive_in_warp[ITEM]] = lengths_and_offsets[ITEM];
-        }
-
-        __threadfence_block();
-
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-        {
-            int item_offset = (ITEM * WARP_THREADS) + lane_id;
-            lengths_and_offsets[ITEM] = temp_storage.exchange[warp_id][item_offset];
-        }
+        WarpExchangeOffsets(temp_storage.exchange[warp_id]).ScatterToStriped(lengths_and_offsets, thread_num_runs_exclusive_in_warp);
 
         // Global scatter
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            if ((ITEM * WARP_THREADS) < warp_num_runs_aggregate - lane_id)
+            if ((ITEM * WARP_THREADS) + lane_id < warp_num_runs_aggregate)
             {
                 Offset item_offset =
                     tile_num_runs_exclusive_in_global +
@@ -550,7 +517,6 @@ struct BlockRleSweep
         Offset              (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
         LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD])
     {
-/*
         if ((ITEMS_PER_THREAD == 1) || (tile_num_runs_aggregate < BLOCK_THREADS))
         {
             // Direct scatter if the warp has any items
@@ -565,7 +531,7 @@ struct BlockRleSweep
             }
         }
         else
-*/        {
+        {
             // Scatter two phase
             ScatterTwoPhase<FIRST_TILE>(
                 tile_num_runs_exclusive_in_global,
@@ -778,7 +744,7 @@ struct BlockRleSweep
         int                 num_tiles,          ///< Total number of input tiles
         GridQueue<int>      queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         ScanTileState       &tile_status,       ///< Global list of tile status
-        NumRunsIterator     d_num_runs)         ///< Output pointer for total number of runs identified
+        NumRunsIterator     d_num_runs_out)         ///< Output pointer for total number of runs identified
     {
 
 #if __CUDA_ARCH__ > 130
@@ -801,28 +767,26 @@ struct BlockRleSweep
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
-        if (num_remaining > 0)
+        if (tile_idx == num_tiles - 1)
         {
-            if (num_remaining > TILE_ITEMS)
-            {
-                // Full tile
-                ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-            }
-            else
-            {
-                // Last tile
-                LengthOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+            // Last tile
+            LengthOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
-                if (threadIdx.x == 0)
-                {
-                    // Output the total number of items selected
-                    *d_num_runs = running_total.offset;
+            if (threadIdx.x == 0)
+            {
+                // Output the total number of items selected
+                *d_num_runs_out = running_total.offset;
 
-                    // The inclusive prefix contains accumulated length reduction for the last run
-                    d_lengths_out[running_total.offset - 1] = running_total.value;
-                }
+                // The inclusive prefix contains accumulated length reduction for the last run
+                d_lengths_out[running_total.offset - 1] = running_total.value;
             }
         }
+        else
+        {
+            // Full tile
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+        }
+
     }
 
 };

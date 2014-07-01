@@ -104,17 +104,6 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
-<tr class="memitem:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga76769ce380739b38e0bd00f57e0dbe4f"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f">CUB_PTX_ARCH</a>&#160;&#160;&#160;0</td></tr>
-<tr class="memdesc:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="mdescLeft">&#160;</td><td class="mdescRight">CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host pass). <br/></td></tr>
-<tr class="separator:ga76769ce380739b38e0bd00f57e0dbe4f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gac029dc29df3c1871ab3b8a38f50904a6"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gac029dc29df3c1871ab3b8a38f50904a6"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#gac029dc29df3c1871ab3b8a38f50904a6">CUB_RUNTIME_ENABLED</a></td></tr>
-<tr class="memdesc:gac029dc29df3c1871ab3b8a38f50904a6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Whether or not the source targeted by the active compiler pass is allowed to invoke device kernels or methods from the CUDA runtime API. <br/></td></tr>
-<tr class="separator:gac029dc29df3c1871ab3b8a38f50904a6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga9df9e91e6389c12dee453459dfe1cf8b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga9df9e91e6389c12dee453459dfe1cf8b"></a>
-#define&#160;</td><td class="memItemRight" valign="bottom"><b>CUB_RUNTIME_FUNCTION</b>&#160;&#160;&#160;__host__ __device__</td></tr>
-<tr class="separator:ga9df9e91e6389c12dee453459dfe1cf8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga07eedb9de4a50680067c2d51eb438f69"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga07eedb9de4a50680067c2d51eb438f69"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga07eedb9de4a50680067c2d51eb438f69">CUB_LOG_WARP_THREADS</a>(arch)&#160;&#160;&#160;(5)</td></tr>
 <tr class="memdesc:ga07eedb9de4a50680067c2d51eb438f69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Number of threads per warp (log) <br/></td></tr>
@@ -221,7 +210,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Number of smem banks (log) </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00078">78</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00079">79</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -244,7 +233,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Number of smem bytes provisioned per SM. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00092">92</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00093">93</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -269,7 +258,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Smem allocation size in bytes. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00098">98</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00099">99</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -292,7 +281,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Whether or not the architecture allocates registers by block (or by warp) </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00106">106</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00107">107</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -319,7 +308,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Number of registers allocated at a time per block (or by warp) </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00112">112</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00113">113</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -342,7 +331,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Granularity of warps for which registers are allocated. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00122">122</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00123">123</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -369,7 +358,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Maximum number of threads per SM. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00128">128</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00129">129</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -392,7 +381,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Maximum number of thread blocks per SM. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00138">138</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00139">139</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -415,7 +404,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Maximum number of threads per thread block. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00144">144</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00145">145</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -442,7 +431,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Maximum number of registers per SM. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00150">150</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00151">151</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -467,7 +456,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Oversubscription factor. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00160">160</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00161">161</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -490,7 +479,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 </div><!-- fragment -->
 <p>Prefer padding overhead vs X-way conflicts greater than this threshold. </p>
 
-<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00168">168</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__arch_8cuh_source.html#l00169">169</a> of file <a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>.</p>
 
 </div>
 </div>
@@ -628,7 +617,7 @@ template&lt;typename KernelPtr &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 1 2014 10:39:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

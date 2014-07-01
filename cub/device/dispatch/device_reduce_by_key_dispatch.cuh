@@ -74,7 +74,7 @@ __global__ void DeviceReduceByKeySweepKernel(
     UniqueOutputIterator        d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
     ValuesInputIterator         d_values_in,                    ///< [in] Pointer to the input sequence of corresponding values
     AggregatesOutputIterator    d_aggregates_out,               ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
-    NumRunsOutputIterator       d_num_runs,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
+    NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
     ScanTileState               tile_status,                    ///< [in] Tile status interface
     EqualityOp                  equality_op,                    ///< [in] Key equality operator
     ReductionOp                 reduction_op,                   ///< [in] Value reduction operator
@@ -101,7 +101,7 @@ __global__ void DeviceReduceByKeySweepKernel(
         num_tiles,
         queue,
         tile_status,
-        d_num_runs);
+        d_num_runs_out);
 }
 
 
@@ -339,12 +339,13 @@ struct DeviceReduceByKeyDispatch
         CUB_RUNTIME_FUNCTION __forceinline__
         void Print()
         {
-            printf("%d, %d, %d, %d, %d",
+            printf("%d, %d, %d, %d, %d, %d",
                 block_threads,
                 items_per_thread,
                 load_policy,
                 two_phase_scatter,
-                scan_algorithm);
+                scan_algorithm,
+                smem_config);
         }
     };
 
@@ -368,7 +369,7 @@ struct DeviceReduceByKeyDispatch
         UniqueOutputIterator            d_unique_out,                       ///< [out] Pointer to the output sequence of unique keys (one key per run)
         ValuesInputIterator             d_values_in,                        ///< [in] Pointer to the input sequence of corresponding values
         AggregatesOutputIterator        d_aggregates_out,                   ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
-        NumRunsOutputIterator           d_num_runs,                         ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
+        NumRunsOutputIterator           d_num_runs_out,                         ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
         EqualityOp                      equality_op,                        ///< [in] Key equality operator
         ReductionOp                     reduction_op,                       ///< [in] Value reduction operator
         Offset                          num_items,                          ///< [in] Total number of items to select from
@@ -496,7 +497,7 @@ struct DeviceReduceByKeyDispatch
                 d_unique_out,
                 d_values_in,
                 d_aggregates_out,
-                d_num_runs,
+                d_num_runs_out,
                 tile_status,
                 equality_op,
                 reduction_op,
@@ -538,7 +539,7 @@ struct DeviceReduceByKeyDispatch
         UniqueOutputIterator        d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
         ValuesInputIterator         d_values_in,                    ///< [in] Pointer to the input sequence of corresponding values
         AggregatesOutputIterator    d_aggregates_out,               ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
-        NumRunsOutputIterator       d_num_runs,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
+        NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
         EqualityOp                  equality_op,                    ///< [in] Key equality operator
         ReductionOp                 reduction_op,                   ///< [in] Value reduction operator
         Offset                      num_items,                      ///< [in] Total number of items to select from
@@ -568,7 +569,7 @@ struct DeviceReduceByKeyDispatch
                 d_unique_out,
                 d_values_in,
                 d_aggregates_out,
-                d_num_runs,
+                d_num_runs_out,
                 equality_op,
                 reduction_op,
                 num_items,

@@ -136,311 +136,264 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;iterator&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
 <div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;dispatch/device_reduce_dispatch.cuh&quot;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;../util_namespace.cuh&quot;</span></div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
-<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;CUB_NS_PREFIX</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;</div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">namespace </span>cub {</div>
-<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;dispatch/device_reduce_by_key_dispatch.cuh&quot;</span></div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &quot;../util_namespace.cuh&quot;</span></div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;CUB_NS_PREFIX</div>
+<div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;</div>
+<div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;<span class="keyword">namespace </span>cub {</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
-<div class="line"><a name="l00089"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html">   89</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides device-wide, parallel operations for computing a reduction across a sequence of...">DeviceReduce</a></div>
-<div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;{</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
-<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00149"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f">  149</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">Reduce</a>(</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        InputIterator               d_in,                               </div>
-<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        OutputIterator              d_out,                              </div>
-<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        ReductionOp                 reduction_op,                       </div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        cudaStream_t                stream              = 0,            </div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    {</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        <span class="comment">// Dispatch type</span></div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;InputIterator, OutputIterator, Offset, ReductionOp&gt; DeviceReduceDispatch;</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            d_in,</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            d_out,</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            num_items,</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;            reduction_op,</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            stream,</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    }</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;</div>
-<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00226"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371">  226</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">Sum</a>(</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        InputIterator               d_in,                               </div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        OutputIterator              d_out,                              </div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        cudaStream_t                stream              = 0,            </div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;    {</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="comment">// Dispatch type</span></div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;InputIterator, OutputIterator, Offset, cub::Sum&gt; DeviceReduceDispatch;</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;            d_in,</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;            d_out,</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;            num_items,</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;            <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>(),</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;            stream,</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    }</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00298"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a">  298</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a" title="Computes a device-wide minimum using the less-than (&#39;&lt;&#39;) operator. ">Min</a>(</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        InputIterator               d_in,                               </div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;        OutputIterator              d_out,                              </div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        cudaStream_t                stream              = 0,            </div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;    {</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="comment">// Dispatch type</span></div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;InputIterator, OutputIterator, Offset, cub::Min&gt; DeviceReduceDispatch;</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            d_in,</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;            d_out,</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;            num_items,</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;            <a class="code" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>(),</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            stream,</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    }</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00375"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572">  375</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572" title="Finds the first device-wide minimum using the less-than (&#39;&lt;&#39;) operator, also returning the index o...">ArgMin</a>(</div>
-<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
-<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;        InputIterator               d_in,                               </div>
-<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;        OutputIterator              d_out,                              </div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;        cudaStream_t                stream              = 0,            </div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;    {</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;</div>
+<div class="line"><a name="l00082"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html">   82</a></span>&#160;<span class="keyword">struct </span><a class="code" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides device-wide, parallel operations for computing a reduction across a sequence of...">DeviceReduce</a></div>
+<div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;{</div>
+<div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
+<div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
+<div class="line"><a name="l00140"></a><span class="lineno">  140</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;</div>
+<div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00142"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f">  142</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a834eccddb91e7b5f03e219ab5e7d2c0f" title="Computes a device-wide reduction using the specified binary reduction_op functor. ...">Reduce</a>(</div>
+<div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
+<div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        InputIterator               d_in,                               </div>
+<div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        OutputIterator              d_out,                              </div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        ReductionOp                 reduction_op,                       </div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        cudaStream_t                stream              = 0,            </div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    {</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        <span class="comment">// Dispatch type</span></div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;InputIterator, OutputIterator, Offset, ReductionOp&gt; DeviceReduceDispatch;</div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;            d_in,</div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;            d_out,</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;            num_items,</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;            reduction_op,</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;            stream,</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    }</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
+<div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00219"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371">  219</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#aaf68d747ee676df2b5b5ff016ee6c371" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">Sum</a>(</div>
+<div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
+<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;        InputIterator               d_in,                               </div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        OutputIterator              d_out,                              </div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;        cudaStream_t                stream              = 0,            </div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    {</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        <span class="comment">// Dispatch type</span></div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;InputIterator, OutputIterator, Offset, cub::Sum&gt; DeviceReduceDispatch;</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;            d_in,</div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            d_out,</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            num_items,</div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>(),</div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            stream,</div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    }</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;</div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00291"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a">  291</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a61340d7798e1baca171d08393d21426a" title="Computes a device-wide minimum using the less-than (&#39;&lt;&#39;) operator. ">Min</a>(</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;        InputIterator               d_in,                               </div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        OutputIterator              d_out,                              </div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;        cudaStream_t                stream              = 0,            </div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    {</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="comment">// Dispatch type</span></div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;InputIterator, OutputIterator, Offset, cub::Min&gt; DeviceReduceDispatch;</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;            d_in,</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;            d_out,</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;            num_items,</div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;            <a class="code" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>(),</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            stream,</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    }</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;</div>
+<div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
+<div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00368"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572">  368</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#acaede84f69de9ed6ffdce604ba64f572" title="Finds the first device-wide minimum using the less-than (&#39;&lt;&#39;) operator, also returning the index o...">ArgMin</a>(</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;        InputIterator               d_in,                               </div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;        OutputIterator              d_out,                              </div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;        cudaStream_t                stream              = 0,            </div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
+<div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;    {</div>
+<div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;        <span class="comment">// Wrapped input iterator</span></div>
+<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator&lt;InputIterator, int&gt;</a> <a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator</a>;</div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;        ArgIndexInputIterator d_argmin_in(d_in, 0);</div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;        <span class="comment">// Dispatch type</span></div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;ArgIndexInputIterator, OutputIterator, Offset, cub::ArgMin&gt; DeviceReduceDispatch;</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;</div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;        <span class="comment">// Wrapped input iterator</span></div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator&lt;InputIterator, int&gt;</a> <a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator</a>;</div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;        ArgIndexInputIterator d_argmin_in(d_in, 0);</div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;</div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;        <span class="comment">// Dispatch type</span></div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;ArgIndexInputIterator, OutputIterator, Offset, cub::ArgMin&gt; DeviceReduceDispatch;</div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;</div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;            d_argmin_in,</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;            d_out,</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;            num_items,</div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;            <a class="code" href="structcub_1_1_arg_min.html" title="Arg min functor (keeps the value and offset of the first occurrence of the smallest item) ...">cub::ArgMin</a>(),</div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;            stream,</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;    }</div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;</div>
-<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
-<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00451"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66">  451</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66" title="Computes a device-wide maximum using the greater-than (&#39;&gt;&#39;) operator. ">Max</a>(</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
-<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;        InputIterator               d_in,                               </div>
-<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;        OutputIterator              d_out,                              </div>
-<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
-<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;        cudaStream_t                stream              = 0,            </div>
-<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
-<div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;    {</div>
-<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
-<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;</div>
-<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;        <span class="comment">// Dispatch type</span></div>
-<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;InputIterator, OutputIterator, Offset, cub::Max&gt; DeviceReduceDispatch;</div>
-<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;</div>
-<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
-<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;            d_in,</div>
-<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;            d_out,</div>
-<div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;            num_items,</div>
-<div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;            <a class="code" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>(),</div>
-<div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;            stream,</div>
-<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;    }</div>
-<div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;</div>
-<div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;</div>
-<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
-<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
-<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00528"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af">  528</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af" title="Finds the first device-wide maximum using the greater-than (&#39;&gt;&#39;) operator, also returning the inde...">ArgMax</a>(</div>
-<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
-<div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;        InputIterator               d_in,                               </div>
-<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;        OutputIterator              d_out,                              </div>
-<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
-<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;        cudaStream_t                stream              = 0,            </div>
-<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
-<div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;    {</div>
-<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;            d_argmin_in,</div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;            d_out,</div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;            num_items,</div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;            <a class="code" href="structcub_1_1_arg_min.html" title="Arg min functor (keeps the value and offset of the first occurrence of the smallest item) ...">cub::ArgMin</a>(),</div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;            stream,</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    }</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;</div>
+<div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
+<div class="line"><a name="l00442"></a><span class="lineno">  442</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
+<div class="line"><a name="l00443"></a><span class="lineno">  443</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00444"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66">  444</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#aa800cb70d7115a3a581f024ea103fd66" title="Computes a device-wide maximum using the greater-than (&#39;&gt;&#39;) operator. ">Max</a>(</div>
+<div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
+<div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
+<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        InputIterator               d_in,                               </div>
+<div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;        OutputIterator              d_out,                              </div>
+<div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;        cudaStream_t                stream              = 0,            </div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;    {</div>
+<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;</div>
+<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;        <span class="comment">// Dispatch type</span></div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;InputIterator, OutputIterator, Offset, cub::Max&gt; DeviceReduceDispatch;</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;</div>
+<div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
+<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;            d_in,</div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;            d_out,</div>
+<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;            num_items,</div>
+<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;            <a class="code" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>(),</div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;            stream,</div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;    }</div>
+<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;</div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;</div>
+<div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
+<div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;        <span class="keyword">typename</span>                    OutputIterator&gt;</div>
+<div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00521"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af">  521</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a173261355e9172c3f51d6f6ea7a598af" title="Finds the first device-wide maximum using the greater-than (&#39;&gt;&#39;) operator, also returning the inde...">ArgMax</a>(</div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                    </div>
+<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,                </div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        InputIterator               d_in,                               </div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;        OutputIterator              d_out,                              </div>
+<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;        <span class="keywordtype">int</span>                         num_items,                          </div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;        cudaStream_t                stream              = 0,            </div>
+<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous   = <span class="keyword">false</span>)        </div>
+<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;    {</div>
+<div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> Offset;</div>
+<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;</div>
+<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;        <span class="comment">// Wrapped input iterator</span></div>
+<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator&lt;InputIterator, int&gt;</a> <a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator</a>;</div>
+<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;        ArgIndexInputIterator d_argmax_in(d_in, 0);</div>
+<div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;</div>
+<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;        <span class="comment">// Dispatch type</span></div>
+<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;ArgIndexInputIterator, OutputIterator, Offset, cub::ArgMax&gt; DeviceReduceDispatch;</div>
 <div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;</div>
-<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;        <span class="comment">// Wrapped input iterator</span></div>
-<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator&lt;InputIterator, int&gt;</a> <a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">ArgIndexInputIterator</a>;</div>
-<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;        ArgIndexInputIterator d_argmax_in(d_in, 0);</div>
-<div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;</div>
-<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;        <span class="comment">// Dispatch type</span></div>
-<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        <span class="keyword">typedef</span> DeviceReduceDispatch&lt;ArgIndexInputIterator, OutputIterator, Offset, cub::ArgMax&gt; DeviceReduceDispatch;</div>
-<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;</div>
-<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
-<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;            d_argmax_in,</div>
-<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;            d_out,</div>
-<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;            num_items,</div>
-<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;            <a class="code" href="structcub_1_1_arg_max.html" title="Arg max functor (keeps the value and offset of the first occurrence of the l item) ...">cub::ArgMax</a>(),</div>
-<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;            stream,</div>
-<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;    }</div>
-<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;</div>
-<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;</div>
-<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;        <span class="keyword">typename</span>                    KeyInputIterator,</div>
-<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;        <span class="keyword">typename</span>                    KeyOutputIterator,</div>
-<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;        <span class="keyword">typename</span>                    ValueInputIterator,</div>
-<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        <span class="keyword">typename</span>                    ValueOutputIterator,</div>
-<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;        <span class="keyword">typename</span>                    NumSegmentsIterator,</div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;</div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
-<div class="line"><a name="l00648"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3">  648</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a4822e04d8701b10ac3f2d28effb454d3" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">ReduceByKey</a>(</div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
-<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
-<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;        KeyInputIterator            d_keys_in,                      </div>
-<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;        KeyOutputIterator           d_keys_out,                     </div>
-<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;        ValueInputIterator          d_values_in,                    </div>
-<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;        ValueOutputIterator         d_values_out,                   </div>
-<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;        NumSegmentsIterator         d_num_segments,                 </div>
-<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;        ReductionOp                 reduction_op,                   </div>
-<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        <span class="keywordtype">int</span>                         num_items,                      </div>
-<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;        cudaStream_t                stream             = 0,         </div>
-<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous  = <span class="keyword">false</span>)     </div>
-<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;    {</div>
-<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span>                 Offset;         <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>*           FlagIterator;   <span class="comment">// Flag iterator type (not used)</span></div>
-<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>            SelectOp;       <span class="comment">// Selection op (not used)</span></div>
-<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_equality.html" title="Default equality functor. ">Equality</a>            EqualityOp;     <span class="comment">// Default == operator</span></div>
-<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;</div>
-<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        <span class="keywordflow">return</span> DeviceReduceByKeyDispatch&lt;KeyInputIterator, KeyOutputIterator, ValueInputIterator, ValueOutputIterator, NumSegmentsIterator, EqualityOp, ReductionOp, Offset&gt;::Dispatch(</div>
-<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;            d_keys_in,</div>
-<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;            d_keys_out,</div>
-<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;            d_values_in,</div>
-<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;            d_values_out,</div>
-<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;            d_num_segments,</div>
-<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;            EqualityOp(),</div>
-<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;            reduction_op,</div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            num_items,</div>
-<div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;            stream,</div>
-<div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;    }</div>
-<div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;</div>
-<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;</div>
-<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;        <span class="keyword">typename</span>                    InputIterator,</div>
-<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
-<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;        <span class="keyword">typename</span>                    CountsOutputIterator,</div>
-<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;        <span class="keyword">typename</span>                    NumSegmentsIterator&gt;</div>
-<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
-<div class="line"><a name="l00754"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f">  754</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#abd3971072f62f2874bf7ea956ec9817f" title="Counts the segment lengths in the sequence d_in, where segments are demarcated by runs of identical v...">RunLengthEncode</a>(</div>
-<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
-<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;        InputIterator               d_in,                           </div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;        OutputIterator              d_compacted_out,                </div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;        CountsOutputIterator        d_counts_out,                   </div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;        NumSegmentsIterator         d_num_segments,                 </div>
-<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;        <span class="keywordtype">int</span>                         num_items,                      </div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;        cudaStream_t                stream             = 0,         </div>
-<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous  = <span class="keyword">false</span>)     </div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;    {</div>
-<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;        <span class="comment">// Data type of value iterator</span></div>
-<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;CountsOutputIterator&gt;::value_type Value;</div>
-<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;</div>
-<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span>         Offset;                     <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>*   FlagIterator;               <span class="comment">// Flag iterator type (not used)</span></div>
-<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>    SelectOp;                   <span class="comment">// Selection op (not used)</span></div>
-<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_equality.html" title="Default equality functor. ">Equality</a>    EqualityOp;                 <span class="comment">// Default == operator</span></div>
-<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>    ReductionOp;                <span class="comment">// Value reduction operator</span></div>
-<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;</div>
-<div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;        <span class="comment">// Generator type for providing 1s values for run-length reduction</span></div>
-<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_constant_input_iterator.html" title="A random-access input generator for dereferencing a sequence of homogeneous values. ">ConstantInputIterator&lt;Value, Offset&gt;</a> CountsInputIterator;</div>
-<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;</div>
-<div class="line"><a name="l00777"></a><span class="lineno">  777</span>&#160;        Value one_val;</div>
-<div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;        one_val = 1;</div>
-<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;</div>
-<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;        <span class="keywordflow">return</span> DeviceReduceByKeyDispatch&lt;InputIterator, OutputIterator, CountsInputIterator, CountsOutputIterator, NumSegmentsIterator, EqualityOp, ReductionOp, Offset&gt;::Dispatch(</div>
-<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;            d_in,</div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;            d_compacted_out,</div>
-<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;            CountsInputIterator(one_val),</div>
-<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;            d_counts_out,</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;            d_num_segments,</div>
-<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;            EqualityOp(),</div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;            ReductionOp(),</div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;            num_items,</div>
-<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;            stream,</div>
-<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;    }</div>
-<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;</div>
-<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;};</div>
-<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;</div>
-<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;</div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;</div>
+<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;        <span class="keywordflow">return</span> DeviceReduceDispatch::Dispatch(</div>
+<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;            d_argmax_in,</div>
+<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;            d_out,</div>
+<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;            num_items,</div>
+<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;            <a class="code" href="structcub_1_1_arg_max.html" title="Arg max functor (keeps the value and offset of the first occurrence of the l item) ...">cub::ArgMax</a>(),</div>
+<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;            stream,</div>
+<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;    }</div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;</div>
+<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;</div>
+<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;        <span class="keyword">typename</span>                    KeysInputIterator,</div>
+<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;        <span class="keyword">typename</span>                    UniqueOutputIterator,</div>
+<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;        <span class="keyword">typename</span>                    ValuesInputIterator,</div>
+<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;        <span class="keyword">typename</span>                    AggregatesOutputIterator,</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        <span class="keyword">typename</span>                    NumRunsOutputIterator,</div>
+<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;        <span class="keyword">typename</span>                    ReductionOp&gt;</div>
+<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
+<div class="line"><a name="l00642"></a><span class="lineno"><a class="code" href="structcub_1_1_device_reduce.html#a8da48212903662849abc5cea7813e236">  642</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_reduce.html#a8da48212903662849abc5cea7813e236" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">ReduceByKey</a>(</div>
+<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
+<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
+<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;        KeysInputIterator           d_keys_in,                      </div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;        UniqueOutputIterator        d_unique_out,                   </div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;        ValuesInputIterator         d_values_in,                    </div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        AggregatesOutputIterator    d_aggregates_out,               </div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;        NumRunsOutputIterator       d_num_runs_out,                     </div>
+<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;        ReductionOp                 reduction_op,                   </div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;        <span class="keywordtype">int</span>                         num_items,                      </div>
+<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;        cudaStream_t                stream             = 0,         </div>
+<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous  = <span class="keyword">false</span>)     </div>
+<div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;    {</div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span>                 Offset;         <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>*           FlagIterator;   <span class="comment">// Flag iterator type (not used)</span></div>
+<div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>            SelectOp;       <span class="comment">// Selection op (not used)</span></div>
+<div class="line"><a name="l00658"></a><span class="lineno">  658</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_equality.html" title="Default equality functor. ">Equality</a>            EqualityOp;     <span class="comment">// Default == operator</span></div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;        <span class="keywordflow">return</span> DeviceReduceByKeyDispatch&lt;KeysInputIterator, UniqueOutputIterator, ValuesInputIterator, AggregatesOutputIterator, NumRunsOutputIterator, EqualityOp, ReductionOp, Offset&gt;::Dispatch(</div>
+<div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;            d_keys_in,</div>
+<div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;            d_unique_out,</div>
+<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;            d_values_in,</div>
+<div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;            d_aggregates_out,</div>
+<div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;            d_num_runs_out,</div>
+<div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;            EqualityOp(),</div>
+<div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;            reduction_op,</div>
+<div class="line"><a name="l00670"></a><span class="lineno">  670</span>&#160;            num_items,</div>
+<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;            stream,</div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;    }</div>
+<div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;</div>
+<div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;};</div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;</div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;</div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;</div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 1 2014 10:39:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -98,6 +98,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
       <li><a href="functions_func_0x69.html#index_i"><span>i</span></a></li>
       <li><a href="functions_func_0x6c.html#index_l"><span>l</span></a></li>
       <li><a href="functions_func_0x6d.html#index_m"><span>m</span></a></li>
+      <li><a href="functions_func_0x6e.html#index_n"><span>n</span></a></li>
       <li class="current"><a href="functions_func_0x6f.html#index_o"><span>o</span></a></li>
       <li><a href="functions_func_0x72.html#index_r"><span>r</span></a></li>
       <li><a href="functions_func_0x73.html#index_s"><span>s</span></a></li>
@@ -143,6 +144,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="structcub_1_1_min.html#ade40f60337afc51da556ed65d5708136">cub::Min</a>
 , <a class="el" href="structcub_1_1_arg_min.html#a1f4f80b759ea2de34a47b8a82341d080">cub::ArgMin</a>
 , <a class="el" href="structcub_1_1_cast.html#a649573c7f5d02ab09f176b5cc7cf1e5c">cub::Cast&lt; B &gt;</a>
+, <a class="el" href="classcub_1_1_reduce_by_segment_op.html#a2b0dc8dc37809e37fc0a2f09c5c23d67">cub::ReduceBySegmentOp&lt; ReductionOp, ItemOffsetPair &gt;</a>
 , <a class="el" href="structcub_1_1_equality.html#a9db81c4cbcf79dbb8087b3c59593cae0">cub::Equality</a>
 , <a class="el" href="structcub_1_1_inequality.html#ac2b51f35b929dc74ea766b012e89b552">cub::Inequality</a>
 , <a class="el" href="structcub_1_1_inequality_wrapper.html#a97067089c24f8d6a09c914ab6a163c65">cub::InequalityWrapper&lt; EqualityOp &gt;</a>
@@ -160,14 +162,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="classcub_1_1_transform_input_iterator.html#a0ee8ba233d25467965a8a0eefb3034ef">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
 </li>
 <li>operator+()
-: <a class="el" href="classcub_1_1_counting_input_iterator.html#a472f06efd2522c1b70ea07bbffba64a9">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
+: <a class="el" href="classcub_1_1_constant_input_iterator.html#ae1f38c55715f94ca391ba110ba79429a">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_counting_input_iterator.html#a472f06efd2522c1b70ea07bbffba64a9">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#a6db6b2221c4ee1e16a48a069d8474a49">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac72d1843a95908cef8a8b1ab9760bf0f">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_transform_input_iterator.html#a010734c257b1f3066a9fc9c9e4f2f627">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_arg_index_input_iterator.html#ad0c5a6cc415c20051a927af6d4e6df71">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a336ebbe86565d962115d4c4f89e2b89e">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a89fbb29fb80e63ad0539164ba7be7aec">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_constant_input_iterator.html#ae1f38c55715f94ca391ba110ba79429a">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
 </li>
 <li>operator++()
 : <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a8345afa938fe2908259b2df34cb37e45">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
@@ -180,73 +182,75 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 , <a class="el" href="classcub_1_1_transform_input_iterator.html#a1bc470f02f945da7ba0b174e7e29ca61">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
 </li>
 <li>operator+=()
-: <a class="el" href="classcub_1_1_transform_input_iterator.html#a51ca6e3b2787417feb58b334ca1dab19">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
+: <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a2ba00b39ccd8d7e42f5f977fbcb52b20">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a0e0a8b964adeae4d81215fbc3fbbe2d1">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a6a08f84dac17177cc1a915a343dc74cd">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a065fac06241aa5dd9ac4308a03f007ab">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_constant_input_iterator.html#a01bb29a69359c76a222c80d9263015b5">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_counting_input_iterator.html#ac7539b871961e3cbb8280f470309e7d8">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#a60868f14da7e39f8a70d1d5aed75c09f">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a2ba00b39ccd8d7e42f5f977fbcb52b20">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_transform_input_iterator.html#a51ca6e3b2787417feb58b334ca1dab19">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
 </li>
 <li>operator-()
-: <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a4dd7581b7292088e963ff28d3c111c6f">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a39ee0a1336083bb1b686597ff982e7eb">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_constant_input_iterator.html#a6ad5b635b5327e07939c797fc308d3ad">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_counting_input_iterator.html#a3547991f38f41c6728fa0fde5f9683b6">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#aaf1cfc5ab132b34e7f3b08c37d2e7feb">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a284412d7f09c61614d887d293d1ce3ec">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_transform_input_iterator.html#a6a3b33938fc1550ed967155a241fb2b0">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
+: <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#aaf1cfc5ab132b34e7f3b08c37d2e7feb">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ad9f5854d8f1836d93ee238c7e1f89284">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a39ee0a1336083bb1b686597ff982e7eb">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_constant_input_iterator.html#aabdaae3a6f50e490c277cdf889a66bea">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_counting_input_iterator.html#a3547991f38f41c6728fa0fde5f9683b6">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#a8d0fda0d43c93ed8629b03d38075b9d7">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a284412d7f09c61614d887d293d1ce3ec">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_transform_input_iterator.html#a0aa97cf90716a70c6b27cc6f5c8b95b8">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a3e76e91194d43d69a13ae8a612525da2">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a0adc5136a59e9e832cf7d4640be7f899">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_constant_input_iterator.html#a6ad5b635b5327e07939c797fc308d3ad">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a3e76e91194d43d69a13ae8a612525da2">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_transform_input_iterator.html#a6a3b33938fc1550ed967155a241fb2b0">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a4dd7581b7292088e963ff28d3c111c6f">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
 </li>
 <li>operator-=()
-: <a class="el" href="classcub_1_1_constant_input_iterator.html#ac15211a5b9f1458a04c1a2b4fd1854d3">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a994916b4437347efe62704fcc08d4458">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a3cf24bc9c5d99a9c68112ae50b39c0fa">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#aa50d0a6feb550af3be277a903c5f092e">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_counting_input_iterator.html#a5bdbf7079896771ed930a65dfcf35a2f">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
+: <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a9d74b806cf1c1db58bd755c2f0f96bf9">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#ae801e1d2b5703807667ab3e8cb8e687f">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a9d74b806cf1c1db58bd755c2f0f96bf9">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#aa50d0a6feb550af3be277a903c5f092e">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_constant_input_iterator.html#ac15211a5b9f1458a04c1a2b4fd1854d3">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_counting_input_iterator.html#a5bdbf7079896771ed930a65dfcf35a2f">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_transform_input_iterator.html#a1731d50418a37409ae9027f6fdd16171">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a3cf24bc9c5d99a9c68112ae50b39c0fa">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a994916b4437347efe62704fcc08d4458">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
 </li>
 <li>operator-&gt;()
-: <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a75982cc7834f4a847fd47e89a2327f9f">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a76ade71f9fb2f221de67875b2bef5a11">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#a769e19ee7fc96c24e42592e6ed4b2988">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
+: <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a76ade71f9fb2f221de67875b2bef5a11">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_constant_input_iterator.html#aa42ce5d78369220c6f8cf7db4e56ba9d">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a75982cc7834f4a847fd47e89a2327f9f">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_counting_input_iterator.html#a291261b223bef166519eac45ebefaeea">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#a769e19ee7fc96c24e42592e6ed4b2988">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a5d8ecad7184a7e22c55c89ebfdfcdccf">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_transform_input_iterator.html#aee0d93b2cb0de0d966900fa5b27c2560">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_constant_input_iterator.html#aa42ce5d78369220c6f8cf7db4e56ba9d">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
 </li>
 <li>operator==()
-: <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac36e960c97b9b22237f37e5b56fa5825">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a395cdf7deaee302ef4d7298bcd5a96e4">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ae675299a0be31078f2f0b0176b398786">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_constant_input_iterator.html#ab5023f957a7936d857cb71675f8e3686">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+: <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ae675299a0be31078f2f0b0176b398786">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_counting_input_iterator.html#a8425cc964432a2a6a56ab7d03cdc061e">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#adef8af46d707fb4bbdd5807b5a129009">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_transform_input_iterator.html#a911b0641ee4ae5f6201d4d8d2aa72225">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a66149095bbb213147440dd573e123639">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_constant_input_iterator.html#ab5023f957a7936d857cb71675f8e3686">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac36e960c97b9b22237f37e5b56fa5825">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#adef8af46d707fb4bbdd5807b5a129009">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a395cdf7deaee302ef4d7298bcd5a96e4">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_transform_input_iterator.html#a911b0641ee4ae5f6201d4d8d2aa72225">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
 </li>
 <li>operator[]()
-: <a class="el" href="classcub_1_1_constant_input_iterator.html#ada2f3bf4e7edfb3ee9dd1925fbbe4a48">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a769da01b142e99941c0bd97b40474c0f">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_counting_input_iterator.html#a5bc7a624fe342aa6221f0ee3f3857fd2">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a86a4e1e67c5e6aac69e58591740a9f52">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_transform_input_iterator.html#ad6046d5f0b08724272aeeac17ca6d264">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
-, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab0d83dc6dfaf84feff1c6e09ded4c35b">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
+: <a class="el" href="classcub_1_1_transform_input_iterator.html#ad6046d5f0b08724272aeeac17ca6d264">cub::TransformInputIterator&lt; ValueType, ConversionOp, InputIterator, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#adeddb184043173371fd4fa714bab5877">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab0d83dc6dfaf84feff1c6e09ded4c35b">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</a>
 , <a class="el" href="classcub_1_1_tex_obj_input_iterator.html#a99a7a09887abfe977cb0cd4188ec2dd9">cub::TexObjInputIterator&lt; T, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a86a4e1e67c5e6aac69e58591740a9f52">cub::ArgIndexInputIterator&lt; InputIterator, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a769da01b142e99941c0bd97b40474c0f">cub::CacheModifiedOutputIterator&lt; MODIFIER, ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_constant_input_iterator.html#ada2f3bf4e7edfb3ee9dd1925fbbe4a48">cub::ConstantInputIterator&lt; ValueType, Offset &gt;</a>
+, <a class="el" href="classcub_1_1_counting_input_iterator.html#a5bc7a624fe342aa6221f0ee3f3857fd2">cub::CountingInputIterator&lt; ValueType, Offset &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 1 2014 10:39:19 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
