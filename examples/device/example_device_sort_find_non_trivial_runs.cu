@@ -32,7 +32,7 @@
  * isolating all maximal, non-trivial (having length > 1) "runs" of duplicates.
  *
  * To compile using the command line:
- *   nvcc -arch=sm_XX example_device_select_unique.cu -I../.. -lcudart -O3
+ *   nvcc -arch=sm_XX example_device_sort_find_non_trivial_runs.cu -I../.. -lcudart -O3
  *
  ******************************************************************************/
 
