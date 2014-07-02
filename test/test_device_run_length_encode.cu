@@ -466,8 +466,10 @@ void Test(
     Length  *d_offsets_out      = NULL;
     Offset  *d_lengths_out      = NULL;
     int     *d_num_runs         = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_unique_out, sizeof(T) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_offsets_out, sizeof(Offset) * num_items));
+    if (RLE_METHOD == RLE)
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_unique_out, sizeof(T) * num_items));
+    if (RLE_METHOD == NON_TRIVIAL)
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_offsets_out, sizeof(Offset) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_lengths_out, sizeof(Length) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_runs, sizeof(int)));
 
@@ -484,8 +486,10 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output arrays
-    CubDebugExit(cudaMemset(d_unique_out,   0, sizeof(T) * num_items));
-    CubDebugExit(cudaMemset(d_offsets_out,  0, sizeof(Offset) * num_items));
+    if (RLE_METHOD == RLE)
+        CubDebugExit(cudaMemset(d_unique_out,   0, sizeof(T) * num_items));
+    if (RLE_METHOD == NON_TRIVIAL)
+        CubDebugExit(cudaMemset(d_offsets_out,  0, sizeof(Offset) * num_items));
     CubDebugExit(cudaMemset(d_lengths_out,  0, sizeof(Length) * num_items));
     CubDebugExit(cudaMemset(d_num_runs,     0, sizeof(int)));
 
