@@ -371,7 +371,7 @@ int main(int argc, char** argv)
 
     if (timing_iterations > 0)
     {
-        printf("%d timing iterations, average time to isolate non-trivial duplicates: %.3f ms (%.3f ms spent in RLE isolation)\n",
+        printf("%d timing iterations, average time to sort and isolate non-trivial duplicates: %.3f ms (%.3f ms spent in RLE isolation)\n",
             timing_iterations,
             elapsed_millis / timing_iterations,
             elapsed_rle_millis / timing_iterations);
