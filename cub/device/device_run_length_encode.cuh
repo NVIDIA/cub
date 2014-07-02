@@ -193,7 +193,7 @@ struct DeviceRunLengthEncode
      *
      * \par
      * - For the <em>i</em><sup>th</sup> non-trivial run, the run's starting offset
-     *   its length are written to <tt>d_offsets_out[<em>i</em>]</tt> and
+     *   and its length are written to <tt>d_offsets_out[<em>i</em>]</tt> and
      *   <tt>d_lengths_out[<em>i</em>]</tt>, respectively.
      * - The total number of runs encountered is written to \p d_num_runs_out.
      * - The <tt>==</tt> equality operator is used to determine whether values are equivalent
@@ -250,7 +250,7 @@ struct DeviceRunLengthEncode
         InputIterator           d_in,                           ///< [in] Pointer to input sequence of data items
         OffsetsOutputIterator   d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets (one offset per non-trivial run)
         LengthsOutputIterator   d_lengths_out,                  ///< [out] Pointer to output sequence of run-lengths (one count per non-trivial run)
-        NumRunsOutputIterator   d_num_runs_out,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+        NumRunsOutputIterator   d_num_runs_out,                 ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
         int                     num_items,                      ///< [in] Total number of associated key+value pairs (i.e., the length of \p d_in_keys and \p d_in_values)
         cudaStream_t            stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
