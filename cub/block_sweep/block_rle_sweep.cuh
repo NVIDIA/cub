@@ -165,8 +165,13 @@ struct BlockRleSweep
             ScanTileState>
         LookbackPrefixCallbackOp;
 
-    // Warp exchange type
-    typedef WarpExchange<LengthOffsetPair, ITEMS_PER_THREAD> WarpExchangeOffsets;
+    // Warp exchange types
+    typedef WarpExchange<LengthOffsetPair, ITEMS_PER_THREAD>    WarpExchangePairs;
+
+    typedef typename If<STORE_WARP_TIME_SLICING, typename WarpExchangePairs::TempStorage, NullType>::Type WarpExchangePairsStorage;
+
+    typedef WarpExchange<Offset, ITEMS_PER_THREAD>              WarpExchangeOffsets;
+    typedef WarpExchange<Length, ITEMS_PER_THREAD>              WarpExchangeLengths;
 
     // Shared memory type for this threadblock
     struct _TempStorage
@@ -188,7 +193,9 @@ struct BlockRleSweep
             union
             {
                 unsigned long long                              align;
-                typename WarpExchangeOffsets::TempStorage       exchange[ACTIVE_EXCHANGE_WARPS];
+                WarpExchangePairsStorage                        exchange_pairs[ACTIVE_EXCHANGE_WARPS];
+                typename WarpExchangeOffsets::TempStorage       exchange_offsets[ACTIVE_EXCHANGE_WARPS];
+                typename WarpExchangeLengths::TempStorage       exchange_lengths[ACTIVE_EXCHANGE_WARPS];
             };
         };
 
@@ -251,10 +258,10 @@ struct BlockRleSweep
         Offset              block_offset,
         Offset              num_remaining,
         T                   (&items)[ITEMS_PER_THREAD],
-        int                 (&head_flags)[ITEMS_PER_THREAD],
         LengthOffsetPair    (&lengths_and_num_runs)[ITEMS_PER_THREAD])
     {
-        int                 tail_flags[ITEMS_PER_THREAD];
+        bool                head_flags[ITEMS_PER_THREAD];
+        bool                tail_flags[ITEMS_PER_THREAD];
 
         if (FIRST_TILE && LAST_TILE)
         {
@@ -307,12 +314,13 @@ struct BlockRleSweep
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            bool valid          = !LAST_TILE || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining);
-            int trivial         = head_flags[ITEM] & tail_flags[ITEM];
+            if (LAST_TILE && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining - 1))
+                tail_flags[ITEM] = 1;
 
-            head_flags[ITEM]                    = (head_flags[ITEM] - trivial) & valid;
-            lengths_and_num_runs[ITEM].offset   = head_flags[ITEM];
-            lengths_and_num_runs[ITEM].value    = (1 - trivial) & valid;
+            bool valid = (!LAST_TILE || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining));
+
+            lengths_and_num_runs[ITEM].offset   = head_flags[ITEM] && (!tail_flags[ITEM]);
+            lengths_and_num_runs[ITEM].value    = ((!head_flags[ITEM]) || (!tail_flags[ITEM])) && valid;
         }
     }
 
@@ -391,7 +399,7 @@ struct BlockRleSweep
         // Locally compact items within the warp (first warp)
         if (warp_id == 0)
         {
-            WarpExchangeOffsets(temp_storage.exchange[0]).ScatterToStriped(lengths_and_offsets, thread_num_runs_exclusive_in_warp);
+            WarpExchangePairs(temp_storage.exchange_pairs[0]).ScatterToStriped(lengths_and_offsets, thread_num_runs_exclusive_in_warp);
         }
 
         // Locally compact items within the warp (remaining warps)
@@ -402,7 +410,7 @@ struct BlockRleSweep
 
             if (warp_id == SLICE)
             {
-                WarpExchangeOffsets(temp_storage.exchange[0]).ScatterToStriped(lengths_and_offsets, thread_num_runs_exclusive_in_warp);
+                WarpExchangePairs(temp_storage.exchange_pairs[0]).ScatterToStriped(lengths_and_offsets, thread_num_runs_exclusive_in_warp);
             }
         }
 
@@ -445,7 +453,25 @@ struct BlockRleSweep
         int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
         int lane_id = LaneId();
 
-        WarpExchangeOffsets(temp_storage.exchange[warp_id]).ScatterToStriped(lengths_and_offsets, thread_num_runs_exclusive_in_warp);
+        // Unzip
+        Offset run_offsets[ITEMS_PER_THREAD];
+        Length run_lengths[ITEMS_PER_THREAD];
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+        {
+            run_offsets[ITEM] = lengths_and_offsets[ITEM].offset;
+            run_lengths[ITEM] = lengths_and_offsets[ITEM].value;
+        }
+
+        WarpExchangeOffsets(temp_storage.exchange_offsets[warp_id]).ScatterToStriped(run_offsets, thread_num_runs_exclusive_in_warp);
+
+        if (sizeof(Length) == sizeof(Offset))
+            __threadfence_block();
+        else
+            __syncthreads();
+
+        WarpExchangeLengths(temp_storage.exchange_lengths[warp_id]).ScatterToStriped(run_lengths, thread_num_runs_exclusive_in_warp);
 
         // Global scatter
         #pragma unroll
@@ -459,12 +485,12 @@ struct BlockRleSweep
                     (ITEM * WARP_THREADS) + lane_id;
 
                 // Scatter offset
-                d_offsets_out[item_offset] = lengths_and_offsets[ITEM].offset;
+                d_offsets_out[item_offset] = run_offsets[ITEM];
 
                 // Scatter length if not the first (global) length
                 if ((!FIRST_TILE) || (ITEM != 0) || (threadIdx.x > 0))
                 {
-                    d_lengths_out[item_offset - 1] = lengths_and_offsets[ITEM].value;
+                    d_lengths_out[item_offset - 1] = run_lengths[ITEM];
                 }
             }
         }
@@ -569,7 +595,7 @@ struct BlockRleSweep
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, ZeroInitialize<T>());
+                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, d_in[num_items - 1]);
             else
                 BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
@@ -577,14 +603,12 @@ struct BlockRleSweep
                 __syncthreads();
 
             // Set flags
-            int                 head_flags[ITEMS_PER_THREAD];
             LengthOffsetPair    lengths_and_num_runs[ITEMS_PER_THREAD];
 
             InitializeSelections<true, LAST_TILE>(
                 block_offset,
                 num_remaining,
                 items,
-                head_flags,
                 lengths_and_num_runs);
 
             // Exclusive scan of lengths and runs
@@ -608,20 +632,22 @@ struct BlockRleSweep
             if (thread_exclusive_in_warp.offset == 0)
                 thread_exclusive_in_warp.value += warp_exclusive_in_tile.value;
 
-            // Downsweep scan through lengths_and_num_runs
-            ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs, scan_op, thread_exclusive_in_warp);
-
-            // Zip
             LengthOffsetPair    lengths_and_offsets[ITEMS_PER_THREAD];
             Offset              thread_num_runs_exclusive_in_warp[ITEMS_PER_THREAD];
+            LengthOffsetPair    lengths_and_num_runs2[ITEMS_PER_THREAD];
+
+            // Downsweep scan through lengths_and_num_runs
+            ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs2, scan_op, thread_exclusive_in_warp);
+
+            // Zip
 
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                lengths_and_offsets[ITEM].value         = lengths_and_num_runs[ITEM].value;
+                lengths_and_offsets[ITEM].value         = lengths_and_num_runs2[ITEM].value;
                 lengths_and_offsets[ITEM].offset        = block_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                thread_num_runs_exclusive_in_warp[ITEM] = (head_flags[ITEM]) ?
-                                                                lengths_and_num_runs[ITEM].offset :         // keep
+                thread_num_runs_exclusive_in_warp[ITEM] = (lengths_and_num_runs[ITEM].offset) ?
+                                                                lengths_and_num_runs2[ITEM].offset :         // keep
                                                                 WARP_THREADS * ITEMS_PER_THREAD;            // discard
             }
 
@@ -649,7 +675,7 @@ struct BlockRleSweep
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, ZeroInitialize<T>());
+                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, d_in[num_items - 1]);
             else
                 BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
@@ -657,14 +683,12 @@ struct BlockRleSweep
                 __syncthreads();
 
             // Set flags
-            int                 head_flags[ITEMS_PER_THREAD];
             LengthOffsetPair    lengths_and_num_runs[ITEMS_PER_THREAD];
 
             InitializeSelections<false, LAST_TILE>(
                 block_offset,
                 num_remaining,
                 items,
-                head_flags,
                 lengths_and_num_runs);
 
             // Exclusive scan of lengths and runs
@@ -700,19 +724,20 @@ struct BlockRleSweep
                 thread_exclusive_in_warp.value += thread_exclusive.value;
 
             // Downsweep scan through lengths_and_num_runs
-            ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs, scan_op, thread_exclusive_in_warp);
-
-            // Zip
+            LengthOffsetPair    lengths_and_num_runs2[ITEMS_PER_THREAD];
             LengthOffsetPair    lengths_and_offsets[ITEMS_PER_THREAD];
             Offset              thread_num_runs_exclusive_in_warp[ITEMS_PER_THREAD];
 
+            ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs2, scan_op, thread_exclusive_in_warp);
+
+            // Zip
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
-                lengths_and_offsets[ITEM].value         = lengths_and_num_runs[ITEM].value;
+                lengths_and_offsets[ITEM].value         = lengths_and_num_runs2[ITEM].value;
                 lengths_and_offsets[ITEM].offset        = block_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                thread_num_runs_exclusive_in_warp[ITEM] = (head_flags[ITEM]) ?
-                                                                lengths_and_num_runs[ITEM].offset :         // keep
+                thread_num_runs_exclusive_in_warp[ITEM] = (lengths_and_num_runs[ITEM].offset) ?
+                                                                lengths_and_num_runs2[ITEM].offset :         // keep
                                                                 WARP_THREADS * ITEMS_PER_THREAD;            // discard
             }
 
