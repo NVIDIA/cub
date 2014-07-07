@@ -355,12 +355,18 @@ void Initialize(
     int i = 0;
     while (i < num_items)
     {
-        // Select number of repeating occurrences
-
+        // Select number of repeating occurrences for the current run
         unsigned int repeat;
-        RandomBits(repeat, entropy_reduction);
-        repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_short));
-        repeat = CUB_MAX(1, repeat);
+        if (max_segment == -1)
+        {
+            repeat = num_items;
+        }
+        else
+        {
+            RandomBits(repeat, entropy_reduction);
+            repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_short));
+            repeat = CUB_MAX(1, repeat);
+        }
 
         int j = i;
         while (j < CUB_MIN(i + repeat, num_items))

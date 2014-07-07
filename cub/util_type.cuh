@@ -817,21 +817,22 @@ template <typename T, typename BinaryOp>
 struct BinaryOpHasIdxParam
 {
 private:
+/*
     template <typename BinaryOpT, bool (BinaryOpT::*)(const T &a, const T &b, unsigned int idx) const>  struct SFINAE1 {};
     template <typename BinaryOpT, bool (BinaryOpT::*)(const T &a, const T &b, unsigned int idx)>        struct SFINAE2 {};
     template <typename BinaryOpT, bool (BinaryOpT::*)(T a, T b, unsigned int idx) const>                struct SFINAE3 {};
     template <typename BinaryOpT, bool (BinaryOpT::*)(T a, T b, unsigned int idx)>                      struct SFINAE4 {};
-
+*/
     template <typename BinaryOpT, bool (BinaryOpT::*)(const T &a, const T &b, int idx) const>           struct SFINAE5 {};
     template <typename BinaryOpT, bool (BinaryOpT::*)(const T &a, const T &b, int idx)>                 struct SFINAE6 {};
     template <typename BinaryOpT, bool (BinaryOpT::*)(T a, T b, int idx) const>                         struct SFINAE7 {};
     template <typename BinaryOpT, bool (BinaryOpT::*)(T a, T b, int idx)>                               struct SFINAE8 {};
-
+/*
     template <typename BinaryOpT> static char Test(SFINAE1<BinaryOpT, &BinaryOpT::operator()> *);
     template <typename BinaryOpT> static char Test(SFINAE2<BinaryOpT, &BinaryOpT::operator()> *);
     template <typename BinaryOpT> static char Test(SFINAE3<BinaryOpT, &BinaryOpT::operator()> *);
     template <typename BinaryOpT> static char Test(SFINAE4<BinaryOpT, &BinaryOpT::operator()> *);
-
+*/
     template <typename BinaryOpT> static char Test(SFINAE5<BinaryOpT, &BinaryOpT::operator()> *);
     template <typename BinaryOpT> static char Test(SFINAE6<BinaryOpT, &BinaryOpT::operator()> *);
     template <typename BinaryOpT> static char Test(SFINAE7<BinaryOpT, &BinaryOpT::operator()> *);
