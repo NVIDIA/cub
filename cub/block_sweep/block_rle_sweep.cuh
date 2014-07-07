@@ -135,6 +135,37 @@ struct BlockRleSweep
         ACTIVE_EXCHANGE_WARPS   = (STORE_WARP_TIME_SLICING) ? 1 : WARPS,
     };
 
+
+    /**
+     * Special operator that signals all out-of-bounds items are not equal to everything else,
+     * forcing both (1) the last item to be tail-flagged and (2) all oob items to be marked
+     * trivial.
+     */
+    template <bool LAST_TILE>
+    struct OobInequalityOp
+    {
+        Offset          num_remaining;
+        EqualityOp      equality_op;
+
+        __device__ __forceinline__ OobInequalityOp(
+            Offset      num_remaining,
+            EqualityOp  equality_op)
+        :
+            num_remaining(num_remaining),
+            equality_op(equality_op)
+        {}
+
+        template <typename Index>
+        __device__ __forceinline__ bool operator()(T first, T second, Index idx)
+        {
+            if (!LAST_TILE || (idx < num_remaining))
+                return !equality_op(first, second);
+            else
+                return true;
+        }
+    };
+
+
     // Cache-modified input iterator wrapper type for data
     typedef typename If<IsPointer<InputIterator>::VALUE,
             CacheModifiedInputIterator<BlockRleSweepPolicy::LOAD_MODIFIER, T, Offset>,      // Wrap the native input pointer with CacheModifiedVLengthnputIterator
@@ -218,7 +249,7 @@ struct BlockRleSweep
     OffsetsOutputIterator           d_offsets_out;      ///< Input run offsets
     LengthsOutputIterator           d_lengths_out;      ///< Output run lengths
 
-    InequalityWrapper<EqualityOp>   inequality_op;      ///< T inequality operator
+    EqualityOp                      equality_op;        ///< T equality operator
     ReduceBySegmentOp               scan_op;            ///< Reduce-length-by-flag scan operator
     Offset                          num_items;          ///< Total number of input items
 
@@ -241,12 +272,10 @@ struct BlockRleSweep
         d_in(d_in),
         d_offsets_out(d_offsets_out),
         d_lengths_out(d_lengths_out),
-        inequality_op(equality_op),
+        equality_op(equality_op),
         scan_op(cub::Sum()),
         num_items(num_items)
     {}
-
-
 
 
     //---------------------------------------------------------------------
@@ -262,6 +291,8 @@ struct BlockRleSweep
     {
         bool                head_flags[ITEMS_PER_THREAD];
         bool                tail_flags[ITEMS_PER_THREAD];
+
+        OobInequalityOp<LAST_TILE> inequality_op(num_remaining, equality_op);
 
         if (FIRST_TILE && LAST_TILE)
         {
@@ -314,13 +345,8 @@ struct BlockRleSweep
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            if (LAST_TILE && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining - 1))
-                tail_flags[ITEM] = 1;
-
-            bool valid = (!LAST_TILE || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining));
-
             lengths_and_num_runs[ITEM].offset   = head_flags[ITEM] && (!tail_flags[ITEM]);
-            lengths_and_num_runs[ITEM].value    = ((!head_flags[ITEM]) || (!tail_flags[ITEM])) && valid;
+            lengths_and_num_runs[ITEM].value    = ((!head_flags[ITEM]) || (!tail_flags[ITEM]));
         }
     }
 
@@ -595,7 +621,7 @@ struct BlockRleSweep
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, d_in[num_items - 1]);
+                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, ZeroInitialize<T>());
             else
                 BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
@@ -675,7 +701,7 @@ struct BlockRleSweep
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, d_in[num_items - 1]);
+                BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining, ZeroInitialize<T>());
             else
                 BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
@@ -792,7 +818,12 @@ struct BlockRleSweep
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
-        if (tile_idx == num_tiles - 1)
+        if (tile_idx < num_tiles - 1)
+        {
+            // Full tile
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+        }
+        else
         {
             // Last tile
             LengthOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
@@ -805,11 +836,6 @@ struct BlockRleSweep
                 // The inclusive prefix contains accumulated length reduction for the last run
                 d_lengths_out[running_total.offset - 1] = running_total.value;
             }
-        }
-        else
-        {
-            // Full tile
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
         }
 
     }
