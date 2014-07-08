@@ -66,12 +66,17 @@ namespace cub {
  * \brief A simple caching allocator for device memory allocations.
  *
  * \par Overview
- * The allocator is thread-safe and is capable of managing cached device allocations
- * on multiple devices.  It behaves as follows:
+ * The allocator is thread-safe and stream-safe and is capable of managing cached
+ * device allocations on multiple devices.  It behaves as follows:
  *
  * \par
- * - Allocations categorized by bin size.
- * - Bin sizes progress geometrically in accordance with the growth factor
+ * - Allocations from the allocator are associated with an \p active_stream.  Once freed,
+ *   the allocation becomes available immediately for reuse within the \p active_stream
+ *   with which it was associated with during allocation, and it becomes available for
+ *   reuse within other streams when all prior work submitted to \p active_stream has completed.
+ * - Allocations are categorized and cached by bin size.  A new allocation request of
+ *   a given size will only consider cached allocations within the corresponding bin.
+ * - Bin limits progress geometrically in accordance with the growth factor
  *   \p bin_growth provided during construction.  Unused device allocations within
  *   a larger bin cache are not reused for allocation requests that categorize to
  *   smaller bin sizes.
@@ -336,7 +341,7 @@ struct CachingDeviceAllocator
      * \brief Provides a suitable allocation of device memory for the given size on the specified device.
      *
      * Once freed, the allocation becomes available immediately for reuse within the \p active_stream
-     * with which it was associated with during allocation, and becomes available for reuse within other
+     * with which it was associated with during allocation, and it becomes available for reuse within other
      * streams when all prior work submitted to \p active_stream has completed.
      */
     cudaError_t DeviceAllocate(
@@ -474,7 +479,7 @@ struct CachingDeviceAllocator
      * \brief Provides a suitable allocation of device memory for the given size on the current device.
      *
      * Once freed, the allocation becomes available immediately for reuse within the \p active_stream
-     * with which it was associated with during allocation, and becomes available for reuse within other
+     * with which it was associated with during allocation, and it becomes available for reuse within other
      * streams when all prior work submitted to \p active_stream has completed.
      */
     cudaError_t DeviceAllocate(
@@ -495,7 +500,7 @@ struct CachingDeviceAllocator
      * \brief Frees a live allocation of device memory on the specified device, returning it to the allocator.
      *
      * Once freed, the allocation becomes available immediately for reuse within the \p active_stream
-     * with which it was associated with during allocation, and becomes available for reuse within other
+     * with which it was associated with during allocation, and it becomes available for reuse within other
      * streams when all prior work submitted to \p active_stream has completed.
      */
     cudaError_t DeviceFree(
@@ -593,7 +598,7 @@ struct CachingDeviceAllocator
      * \brief Frees a live allocation of device memory on the current device, returning it to the allocator.
      *
      * Once freed, the allocation becomes available immediately for reuse within the \p active_stream
-     * with which it was associated with during allocation, and becomes available for reuse within other
+     * with which it was associated with during allocation, and it becomes available for reuse within other
      * streams when all prior work submitted to \p active_stream has completed.
      */
     cudaError_t DeviceFree(
