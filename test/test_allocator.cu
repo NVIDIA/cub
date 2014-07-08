@@ -138,11 +138,9 @@ int main(int argc, char** argv)
     CubDebugExit(allocator.DeviceFree(d_999B_stream_other_a));
 
     // Check that we can now use both allocations in stream 0 after synchronizing the device
-    printf("3-----------------------------\n");
     CubDebugExit(cudaDeviceSynchronize());
     CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream0_a, 999, 0));
     CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream0_b, 999, 0));
-    printf("3-----------------------------\n");
 
     // Check that that we have 2 live blocks on the initial GPU
     AssertEquals(allocator.live_blocks.size(), 2);

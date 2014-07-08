@@ -350,36 +350,42 @@ struct CachingDeviceAllocator
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
 
+        *d_ptr                          = NULL;
         bool locked                     = false;
         int entrypoint_device           = INVALID_DEVICE_ORDINAL;
         cudaError_t error               = cudaSuccess;
 
-        // Round up to nearest bin size
-        unsigned int bin;
-        size_t bin_bytes;
-        NearestPowerOf(bin, bin_bytes, bin_growth, bytes);
-        if (bin < min_bin) {
-            bin = min_bin;
-            bin_bytes = min_bin_bytes;
-        }
-
-        // Check if bin is greater than our maximum bin
-        if (bin > max_bin)
-        {
-            // Allocate the request exactly and give out-of-range bin
-            bin = (unsigned int) -1;
-            bin_bytes = bytes;
-        }
-
-        BlockDescriptor search_key(bin_bytes, bin, device, active_stream);
-
-        // Lock
-        if (!locked) {
-            Lock(&spin_lock);
-            locked = true;
-        }
-
         do {
+
+            if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
+            if (device == INVALID_DEVICE_ORDINAL)
+                device = entrypoint_device;
+
+            // Round up to nearest bin size
+            unsigned int bin;
+            size_t bin_bytes;
+            NearestPowerOf(bin, bin_bytes, bin_growth, bytes);
+            if (bin < min_bin) {
+                bin = min_bin;
+                bin_bytes = min_bin_bytes;
+            }
+
+            // Check if bin is greater than our maximum bin
+            if (bin > max_bin)
+            {
+                // Allocate the request exactly and give out-of-range bin
+                bin = (unsigned int) -1;
+                bin_bytes = bytes;
+            }
+
+            BlockDescriptor search_key(bin_bytes, bin, device, active_stream);
+
+            // Lock
+            if (!locked) {
+                Lock(&spin_lock);
+                locked = true;
+            }
+
             // Find the range of freed blocks big enough within the same bin on the same device
             CachedBlocks::iterator block_itr = cached_blocks.lower_bound(search_key);
 
@@ -420,8 +426,9 @@ struct CachingDeviceAllocator
                 }
 
                 // Set to specified device
-                if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
-                if (CubDebug(error = cudaSetDevice(device))) break;
+                if (device != entrypoint_device) {
+                    if (CubDebug(error = cudaSetDevice(device))) break;
+                }
 
                 // Allocate
                 if (CubDebug(error = cudaMalloc(&search_key.d_ptr, search_key.bytes))) break;
@@ -440,6 +447,9 @@ struct CachingDeviceAllocator
                     device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
             }
 
+            // Copy device pointer to output parameter
+            *d_ptr = search_key.d_ptr;
+
         } while(0);
 
         // Unlock
@@ -448,11 +458,8 @@ struct CachingDeviceAllocator
             locked = false;
         }
 
-        // Copy device pointer to output parameter (NULL on error)
-        *d_ptr = search_key.d_ptr;
-
         // Attempt to revert back to previous device if necessary
-        if (entrypoint_device != INVALID_DEVICE_ORDINAL)
+        if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device))
         {
             if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
         }
@@ -479,15 +486,7 @@ struct CachingDeviceAllocator
         // Caching functionality only defined on host
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
-        cudaError_t error = cudaSuccess;
-        do {
-            int current_device;
-            if (CubDebug(error = cudaGetDevice(&current_device))) break;
-            if (CubDebug(error = DeviceAllocate(current_device, d_ptr, bytes, active_stream))) break;
-        } while(0);
-
-        return error;
-
+        return DeviceAllocate(INVALID_DEVICE_ORDINAL, d_ptr, bytes, active_stream);
     #endif // CUB_PTX_ARCH
     }
 
@@ -513,9 +512,14 @@ struct CachingDeviceAllocator
         cudaError_t error               = cudaSuccess;
 
         do {
-            // Set to specified device
             if (CubDebug(error = cudaGetDevice(&entrypoint_device))) break;
-            if (CubDebug(error = cudaSetDevice(device))) break;
+            if (device == INVALID_DEVICE_ORDINAL)
+                device = entrypoint_device;
+
+            // Set to specified device
+            if (device != entrypoint_device) {
+                if (CubDebug(error = cudaSetDevice(device))) break;
+            }
 
             // Lock
             if (!locked) {
@@ -574,8 +578,7 @@ struct CachingDeviceAllocator
             locked = false;
         }
 
-        // Attempt to revert back to entry-point device if necessary
-        if (entrypoint_device != INVALID_DEVICE_ORDINAL)
+        if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device))
         {
             if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
         }
@@ -600,17 +603,7 @@ struct CachingDeviceAllocator
         // Caching functionality only defined on host
         return CubDebug(cudaErrorInvalidConfiguration);
     #else
-
-        int current_device;
-        cudaError_t error = cudaSuccess;
-
-        do {
-            if (CubDebug(error = cudaGetDevice(&current_device))) break;
-            if (CubDebug(error = DeviceFree(current_device, d_ptr))) break;
-        } while(0);
-
-        return error;
-
+        return DeviceFree(INVALID_DEVICE_ORDINAL, d_ptr);
     #endif // CUB_PTX_ARCH
     }
 
