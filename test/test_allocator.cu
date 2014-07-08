@@ -256,47 +256,88 @@ int main(int argc, char** argv)
     }
 #endif  // CUB_CDP
 
-    // Performance comparison.  Allocate and free a 1MB block 2000 times
-    CpuTimer    timer;
+    // CPU performance comparisons.  Allocate and free a 1MB block 2000 times
+    CpuTimer    cpu_timer;
     float       cuda_malloc_elapsed_millis      = 0.0;
     float       cuda_free_elapsed_millis        = 0.0;
     float       cub_calloc_elapsed_millis       = 0.0;
     float       cub_free_elapsed_millis         = 0.0;
     char        *d_1024MB                       = NULL;
+    allocator.debug                             = false;
 
     for (int i = 0; i < timing_iterations; ++i)
     {
-        timer.Start();
+        cpu_timer.Start();
         CubDebugExit(cudaMalloc((void **) &d_1024MB, timing_bytes));
-        timer.Stop();
-        cuda_malloc_elapsed_millis += timer.ElapsedMillis();
+        cpu_timer.Stop();
+        cuda_malloc_elapsed_millis += cpu_timer.ElapsedMillis();
 
-        timer.Start();
+        cpu_timer.Start();
         CubDebugExit(cudaFree(d_1024MB));
-        timer.Stop();
-        cuda_free_elapsed_millis += timer.ElapsedMillis();
+        cpu_timer.Stop();
+        cuda_free_elapsed_millis += cpu_timer.ElapsedMillis();
 
-        timer.Start();
+        cpu_timer.Start();
         CubDebugExit(allocator.DeviceAllocate((void **) &d_1024MB, timing_bytes));
-        timer.Stop();
-        cub_calloc_elapsed_millis += timer.ElapsedMillis();
+        cpu_timer.Stop();
+        cub_calloc_elapsed_millis += cpu_timer.ElapsedMillis();
 
-        timer.Start();
+        cpu_timer.Start();
         CubDebugExit(allocator.DeviceFree(d_1024MB));
-        timer.Stop();
-        cub_free_elapsed_millis += timer.ElapsedMillis();
+        cpu_timer.Stop();
+        cub_free_elapsed_millis += cpu_timer.ElapsedMillis();
     }
 
-    printf("Performance (%d timing iterations):\n", timing_iterations);
-    printf("\t CUB CachingDeviceAllocator allocation speedup: %.2f (avg cudaMalloc %.4f ms vs. avg DeviceAllocate %.4f ms)\n",
+    printf("\nCPU Performance (%d timing iterations):\n", timing_iterations);
+    printf("\t CUB CachingDeviceAllocator allocation CPU speedup: %.2f (avg cudaMalloc %.4f ms vs. avg DeviceAllocate %.4f ms)\n",
         cuda_malloc_elapsed_millis / cub_calloc_elapsed_millis,
         cuda_malloc_elapsed_millis / timing_iterations,
         cub_calloc_elapsed_millis / timing_iterations);
-    printf("\t CUB CachingDeviceAllocator free speedup: %.2f (avg cudaFree %.4f ms vs. avg DeviceFree %.4f ms)\n",
+    printf("\t CUB CachingDeviceAllocator free CPU speedup: %.2f (avg cudaFree %.4f ms vs. avg DeviceFree %.4f ms)\n",
         cub_calloc_elapsed_millis / cub_free_elapsed_millis,
         cub_calloc_elapsed_millis / timing_iterations,
         cub_free_elapsed_millis / timing_iterations);
 
+    // GPU performance comparisons.  Allocate and free a 1MB block 2000 times
+    GpuTimer gpu_timer;
+    cuda_malloc_elapsed_millis      = 0.0;
+    cuda_free_elapsed_millis        = 0.0;
+    cub_calloc_elapsed_millis       = 0.0;
+    cub_free_elapsed_millis         = 0.0;
+    d_1024MB                        = NULL;
+
+    for (int i = 0; i < timing_iterations; ++i)
+    {
+        gpu_timer.Start();
+        CubDebugExit(cudaMalloc((void **) &d_1024MB, timing_bytes));
+        gpu_timer.Stop();
+        cuda_malloc_elapsed_millis += gpu_timer.ElapsedMillis();
+
+        gpu_timer.Start();
+        CubDebugExit(cudaFree(d_1024MB));
+        gpu_timer.Stop();
+        cuda_free_elapsed_millis += gpu_timer.ElapsedMillis();
+
+        gpu_timer.Start();
+        CubDebugExit(allocator.DeviceAllocate((void **) &d_1024MB, timing_bytes));
+        gpu_timer.Stop();
+        cub_calloc_elapsed_millis += gpu_timer.ElapsedMillis();
+
+        gpu_timer.Start();
+        CubDebugExit(allocator.DeviceFree(d_1024MB));
+        gpu_timer.Stop();
+        cub_free_elapsed_millis += gpu_timer.ElapsedMillis();
+    }
+
+    printf("\nGPU Performance (%d timing iterations):\n", timing_iterations);
+    printf("\t CUB CachingDeviceAllocator allocation CPU speedup: %.2f (avg cudaMalloc %.4f ms vs. avg DeviceAllocate %.4f ms)\n",
+        cuda_malloc_elapsed_millis / cub_calloc_elapsed_millis,
+        cuda_malloc_elapsed_millis / timing_iterations,
+        cub_calloc_elapsed_millis / timing_iterations);
+    printf("\t CUB CachingDeviceAllocator free CPU speedup: %.2f (avg cudaFree %.4f ms vs. avg DeviceFree %.4f ms)\n",
+        cub_calloc_elapsed_millis / cub_free_elapsed_millis,
+        cub_calloc_elapsed_millis / timing_iterations,
+        cub_free_elapsed_millis / timing_iterations);
 
 
 #endif
