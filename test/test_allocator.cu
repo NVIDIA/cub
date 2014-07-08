@@ -87,12 +87,117 @@ int main(int argc, char** argv)
     printf("Running single-gpu tests...\n"); fflush(stdout);
 
     //
+    // Test0
+    //
+
+    // Create a new stream
+    cudaStream_t other_stream;
+    CubDebugExit(cudaStreamCreate(&other_stream));
+
+    // Allocate 999 bytes on the current gpu in stream0
+    char *d_999B_stream0_a;
+    char *d_999B_stream0_b;
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream0_a, 999, 0));
+
+    // Run some big kernel in stream 0
+    EmptyKernel<void><<<32000, 512, 1024 * 8, 0>>>();
+
+    // Free d_999B_stream0_a
+    CubDebugExit(allocator.DeviceFree(d_999B_stream0_a));
+
+    // Allocate another 999 bytes in stream 0
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream0_b, 999, 0));
+
+    // Check that that we have 1 live block on the initial GPU
+    AssertEquals(allocator.live_blocks.size(), 1);
+
+    // Check that that we have no cached block on the initial GPU
+    AssertEquals(allocator.cached_blocks.size(), 0);
+
+    // Run some big kernel in stream 0
+    EmptyKernel<void><<<32000, 512, 1024 * 8, 0>>>();
+
+    // Free d_999B_stream0_b
+    CubDebugExit(allocator.DeviceFree(d_999B_stream0_b));
+
+    // Allocate 999 bytes on the current gpu in other_stream
+    char *d_999B_stream_other_a;
+    char *d_999B_stream_other_b;
+    allocator.DeviceAllocate((void **) &d_999B_stream_other_a, 999, other_stream);
+
+    // Check that that we have 1 live blocks on the initial GPU (that we allocated a new one because d_999B_stream0_b is only available for stream 0 until it becomes idle)
+    AssertEquals(allocator.live_blocks.size(), 1);
+
+    // Check that that we have one cached block on the initial GPU
+    AssertEquals(allocator.cached_blocks.size(), 1);
+
+    // Run some big kernel in other_stream
+    EmptyKernel<void><<<32000, 512, 1024 * 8, other_stream>>>();
+
+    // Free d_999B_stream_other
+    CubDebugExit(allocator.DeviceFree(d_999B_stream_other_a));
+
+    // Check that we can now use both allocations in stream 0 after synchronizing the device
+    printf("3-----------------------------\n");
+    CubDebugExit(cudaDeviceSynchronize());
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream0_a, 999, 0));
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream0_b, 999, 0));
+    printf("3-----------------------------\n");
+
+    // Check that that we have 2 live blocks on the initial GPU
+    AssertEquals(allocator.live_blocks.size(), 2);
+
+    // Check that that we have no cached block on the initial GPU
+    AssertEquals(allocator.cached_blocks.size(), 0);
+
+    // Free d_999B_stream0_a and d_999B_stream0_b
+    CubDebugExit(allocator.DeviceFree(d_999B_stream0_a));
+    CubDebugExit(allocator.DeviceFree(d_999B_stream0_b));
+
+    // Check that we can now use both allocations in other_stream
+    CubDebugExit(cudaDeviceSynchronize());
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream_other_a, 999, other_stream));
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream_other_b, 999, other_stream));
+
+    // Check that that we have 2 live blocks on the initial GPU
+    AssertEquals(allocator.live_blocks.size(), 2);
+
+    // Check that that we have no cached block on the initial GPU
+    AssertEquals(allocator.cached_blocks.size(), 0);
+
+    // Run some big kernel in other_stream
+    EmptyKernel<void><<<32000, 512, 1024 * 8, other_stream>>>();
+
+    // Free d_999B_stream_other_a and d_999B_stream_other_b
+    CubDebugExit(allocator.DeviceFree(d_999B_stream_other_a));
+    CubDebugExit(allocator.DeviceFree(d_999B_stream_other_b));
+
+    // Check that we can now use both allocations in stream 0 after synchronizing the device and destroying the other stream
+    CubDebugExit(cudaDeviceSynchronize());
+    CubDebugExit(cudaStreamDestroy(other_stream));
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream0_a, 999, 0));
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_999B_stream0_b, 999, 0));
+
+    // Check that that we have 2 live blocks on the initial GPU
+    AssertEquals(allocator.live_blocks.size(), 2);
+
+    // Check that that we have no cached block on the initial GPU
+    AssertEquals(allocator.cached_blocks.size(), 0);
+
+    // Free d_999B_stream0_a and d_999B_stream0_b
+    CubDebugExit(allocator.DeviceFree(d_999B_stream0_a));
+    CubDebugExit(allocator.DeviceFree(d_999B_stream0_b));
+
+    // Free all cached
+    CubDebugExit(allocator.FreeAllCached());
+
+    //
     // Test1
     //
 
     // Allocate 5 bytes on the current gpu
     char *d_5B;
-    allocator.DeviceAllocate((void **) &d_5B, 5);
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_5B, 5));
 
     // Check that that we have zero bytes allocated on the initial GPU
     AssertEquals(allocator.cached_bytes[initial_gpu], 0);
@@ -106,7 +211,7 @@ int main(int argc, char** argv)
 
     // Allocate 4096 bytes on the current gpu
     char *d_4096B;
-    allocator.DeviceAllocate((void **) &d_4096B, 4096);
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_4096B, 4096));
 
     // Check that that we have 2 live blocks on the initial GPU
     AssertEquals(allocator.live_blocks.size(), 2);
@@ -116,7 +221,7 @@ int main(int argc, char** argv)
     //
 
     // DeviceFree d_5B
-    allocator.DeviceFree(d_5B);
+    CubDebugExit(allocator.DeviceFree(d_5B));
 
     // Check that that we have min_bin_bytes free bytes cached on the initial gpu
     AssertEquals(allocator.cached_bytes[initial_gpu], allocator.min_bin_bytes);
@@ -132,7 +237,7 @@ int main(int argc, char** argv)
     //
 
     // DeviceFree d_4096B
-    allocator.DeviceFree(d_4096B);
+    CubDebugExit(allocator.DeviceFree(d_4096B));
 
     // Check that that we have the 4096 + min_bin free bytes cached on the initial gpu
     AssertEquals(allocator.cached_bytes[initial_gpu], allocator.min_bin_bytes + 4096);
@@ -149,7 +254,7 @@ int main(int argc, char** argv)
 
     // Allocate 768 bytes on the current gpu
     char *d_768B;
-    allocator.DeviceAllocate((void **) &d_768B, 768);
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_768B, 768));
 
     // Check that that we have the min_bin free bytes cached on the initial gpu (4096 was reused)
     AssertEquals(allocator.cached_bytes[initial_gpu], allocator.min_bin_bytes);
@@ -166,10 +271,10 @@ int main(int argc, char** argv)
 
     // Allocate max_cached_bytes on the current gpu
     char *d_max_cached;
-    allocator.DeviceAllocate((void **) &d_max_cached, allocator.max_cached_bytes);
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_max_cached, allocator.max_cached_bytes));
 
     // DeviceFree d_max_cached
-    allocator.DeviceFree(d_max_cached);
+    CubDebugExit(allocator.DeviceFree(d_max_cached));
 
     // Check that that we have the min_bin free bytes cached on the initial gpu (max cached was not returned because we went over)
     AssertEquals(allocator.cached_bytes[initial_gpu], allocator.min_bin_bytes);
@@ -185,7 +290,7 @@ int main(int argc, char** argv)
     //
 
     // Free all cached blocks on all GPUs
-    allocator.FreeAllCached();
+    CubDebugExit(allocator.FreeAllCached());
 
     // Check that that we have 0 bytes cached on the initial GPU
     AssertEquals(allocator.cached_bytes[initial_gpu], 0);
@@ -202,13 +307,13 @@ int main(int argc, char** argv)
 
     // Allocate max cached bytes + 1 on the current gpu
     char *d_max_cached_plus;
-    allocator.DeviceAllocate((void **) &d_max_cached_plus, allocator.max_cached_bytes + 1);
+    CubDebugExit(allocator.DeviceAllocate((void **) &d_max_cached_plus, allocator.max_cached_bytes + 1));
 
     // DeviceFree max cached bytes
-    allocator.DeviceFree(d_max_cached_plus);
+    CubDebugExit(allocator.DeviceFree(d_max_cached_plus));
 
     // DeviceFree d_768B
-    allocator.DeviceFree(d_768B);
+    CubDebugExit(allocator.DeviceFree(d_768B));
 
     unsigned int power;
     size_t rounded_bytes;
@@ -228,7 +333,7 @@ int main(int argc, char** argv)
 
     if (num_gpus > 1)
     {
-        printf("Running multi-gpu tests...\n"); fflush(stdout);
+        printf("\nRunning multi-gpu tests...\n"); fflush(stdout);
 
         //
         // Test9
@@ -237,10 +342,10 @@ int main(int argc, char** argv)
         // Allocate 768 bytes on the next gpu
         int next_gpu = (initial_gpu + 1) % num_gpus;
         char *d_768B_2;
-        allocator.DeviceAllocate((void **) &d_768B_2, 768, next_gpu);
+        CubDebugExit(allocator.DeviceAllocate(next_gpu, (void **) &d_768B_2, 768));
 
         // DeviceFree d_768B on the next gpu
-        allocator.DeviceFree(d_768B_2, next_gpu);
+        CubDebugExit(allocator.DeviceFree(next_gpu, d_768B_2));
 
         // Check that that we have 4096 free bytes cached on the initial gpu
         AssertEquals(allocator.cached_bytes[initial_gpu], rounded_bytes);
@@ -255,6 +360,13 @@ int main(int argc, char** argv)
         AssertEquals(allocator.live_blocks.size(), 0);
     }
 #endif  // CUB_CDP
+
+    //
+    // Performance
+    //
+
+    printf("\nCPU Performance (%d timing iterations, %d bytes):\n", timing_iterations, timing_bytes);
+    fflush(stdout); fflush(stderr);
 
     // CPU performance comparisons vs cached.  Allocate and free a 1MB block 2000 times
     CpuTimer    cpu_timer;
@@ -286,7 +398,6 @@ int main(int argc, char** argv)
     cpu_timer.Stop();
     float cub_calloc_elapsed_millis = cpu_timer.ElapsedMillis();
 
-    printf("\nCPU Performance (%d timing iterations):\n", timing_iterations);
     printf("\t CUB CachingDeviceAllocator allocation CPU speedup: %.2f (avg cudaMalloc %.4f ms vs. avg DeviceAllocate %.4f ms)\n",
         cuda_malloc_elapsed_millis / cub_calloc_elapsed_millis,
         cuda_malloc_elapsed_millis / timing_iterations,
@@ -294,6 +405,9 @@ int main(int argc, char** argv)
 
     // GPU performance comparisons.  Allocate and free a 1MB block 2000 times
     GpuTimer gpu_timer;
+
+    printf("\nGPU Performance (%d timing iterations, %d bytes):\n", timing_iterations, timing_bytes);
+    fflush(stdout); fflush(stderr);
 
     // Kernel-only
     gpu_timer.Start();
@@ -326,8 +440,7 @@ int main(int argc, char** argv)
     gpu_timer.Stop();
     cub_calloc_elapsed_millis = gpu_timer.ElapsedMillis() - cuda_empty_elapsed_millis;
 
-    printf("\nGPU Performance (%d timing iterations):\n", timing_iterations);
-    printf("\t CUB CachingDeviceAllocator allocation CPU speedup: %.2f (avg cudaMalloc %.4f ms vs. avg DeviceAllocate %.4f ms)\n",
+    printf("\t CUB CachingDeviceAllocator allocation GPU speedup: %.2f (avg cudaMalloc %.4f ms vs. avg DeviceAllocate %.4f ms)\n",
         cuda_malloc_elapsed_millis / cub_calloc_elapsed_millis,
         cuda_malloc_elapsed_millis / timing_iterations,
         cub_calloc_elapsed_millis / timing_iterations);
