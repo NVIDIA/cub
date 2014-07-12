@@ -38,6 +38,7 @@
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/device/device_reduce.cuh>
+#include <cub/device/device_run_length_encode.cuh>
 #include <cub/thread/thread_operators.cuh>
 
 #include <thrust/device_ptr.h>
@@ -61,7 +62,7 @@ CachingDeviceAllocator  g_allocator(true);
 
 
 //---------------------------------------------------------------------
-// Dispatch to different CUB DeviceSelect entrypoints
+// Dispatch to different CUB entrypoints
 //---------------------------------------------------------------------
 
 
@@ -73,7 +74,7 @@ template <
     typename                    KeyOutputIterator,
     typename                    ValueInputIterator,
     typename                    ValueOutputIterator,
-    typename                    NumSegmentsIterator,
+    typename                    NumRunsIterator,
     typename                    EqualityOp,
     typename                    ReductionOp,
     typename                    Offset>
@@ -90,7 +91,7 @@ cudaError_t Dispatch(
     KeyOutputIterator           d_keys_out,
     ValueInputIterator          d_values_in,
     ValueOutputIterator         d_values_out,
-    NumSegmentsIterator         d_num_segments,
+    NumRunsIterator         d_num_runs,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
     Offset                      num_items,
@@ -107,7 +108,7 @@ cudaError_t Dispatch(
             d_keys_out,
             d_values_in,
             d_values_out,
-            d_num_segments,
+            d_num_runs,
             reduction_op,
             num_items,
             stream,
@@ -124,7 +125,7 @@ template <
     typename                    KeyInputIterator,
     typename                    KeyOutputIterator,
     typename                    ValueOutputIterator,
-    typename                    NumSegmentsIterator,
+    typename                    NumRunsIterator,
     typename                    Offset>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
@@ -139,7 +140,7 @@ cudaError_t Dispatch(
     KeyOutputIterator           d_keys_out,
     ConstantInputIterator<typename std::iterator_traits<ValueOutputIterator>::value_type, Offset> d_values_in,
     ValueOutputIterator         d_values_out,
-    NumSegmentsIterator         d_num_segments,
+    NumRunsIterator         d_num_runs,
     cub::Equality               equality_op,
     cub::Sum                    reduction_op,
     Offset                      num_items,
@@ -149,13 +150,13 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceReduce::RunLengthEncode(
+        error = DeviceRunLengthEncode::Encode(
             d_temp_storage,
             temp_storage_bytes,
             d_keys_in,
             d_keys_out,
             d_values_out,
-            d_num_segments,
+            d_num_runs,
             num_items,
             stream,
             debug_synchronous);
@@ -177,7 +178,7 @@ template <
     typename                    KeyOutputIterator,
     typename                    ValueInputIterator,
     typename                    ValueOutputIterator,
-    typename                    NumSegmentsIterator,
+    typename                    NumRunsIterator,
     typename                    EqualityOp,
     typename                    ReductionOp,
     typename                    Offset>
@@ -193,7 +194,7 @@ cudaError_t Dispatch(
     KeyOutputIterator           d_keys_out,
     ValueInputIterator          d_values_in,
     ValueOutputIterator         d_values_out,
-    NumSegmentsIterator         d_num_segments,
+    NumRunsIterator         d_num_runs,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
     Offset                      num_items,
@@ -228,7 +229,7 @@ cudaError_t Dispatch(
         }
 
         Offset num_segments = d_out_ends.first - d_keys_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_segments, &num_segments, sizeof(Offset), cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(d_num_runs, &num_segments, sizeof(Offset), cudaMemcpyHostToDevice));
 
     }
 
@@ -243,7 +244,7 @@ template <
     typename                    KeyInputIterator,
     typename                    KeyOutputIterator,
     typename                    ValueOutputIterator,
-    typename                    NumSegmentsIterator,
+    typename                    NumRunsIterator,
     typename                    Offset>
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
@@ -257,7 +258,7 @@ cudaError_t Dispatch(
     KeyOutputIterator           d_keys_out,
     ConstantInputIterator<typename std::iterator_traits<ValueOutputIterator>::value_type, Offset> d_values_in,
     ValueOutputIterator         d_values_out,
-    NumSegmentsIterator         d_num_segments,
+    NumRunsIterator         d_num_runs,
     cub::Equality               equality_op,
     cub::Sum                    reduction_op,
     Offset                      num_items,
@@ -295,7 +296,7 @@ cudaError_t Dispatch(
         }
 
         Offset num_segments = d_out_ends.first - d_keys_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_segments, &num_segments, sizeof(Offset), cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(d_num_runs, &num_segments, sizeof(Offset), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -315,7 +316,7 @@ template <
     typename                    KeyOutputIterator,
     typename                    ValueInputIterator,
     typename                    ValueOutputIterator,
-    typename                    NumSegmentsIterator,
+    typename                    NumRunsIterator,
     typename                    EqualityOp,
     typename                    ReductionOp,
     typename                    Offset>
@@ -330,7 +331,7 @@ __global__ void CnpDispatchKernel(
     KeyOutputIterator           d_keys_out,
     ValueInputIterator          d_values_in,
     ValueOutputIterator         d_values_out,
-    NumSegmentsIterator         d_num_segments,
+    NumRunsIterator         d_num_runs,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
     Offset                      num_items,
@@ -342,7 +343,7 @@ __global__ void CnpDispatchKernel(
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, equality_op, reduction_op, num_items, 0, debug_synchronous);
+        d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_runs, equality_op, reduction_op, num_items, 0, debug_synchronous);
 
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
@@ -357,7 +358,7 @@ template <
     typename                    KeyOutputIterator,
     typename                    ValueInputIterator,
     typename                    ValueOutputIterator,
-    typename                    NumSegmentsIterator,
+    typename                    NumRunsIterator,
     typename                    EqualityOp,
     typename                    ReductionOp,
     typename                    Offset>
@@ -374,7 +375,7 @@ cudaError_t Dispatch(
     KeyOutputIterator           d_keys_out,
     ValueInputIterator          d_values_in,
     ValueOutputIterator         d_values_out,
-    NumSegmentsIterator         d_num_segments,
+    NumRunsIterator         d_num_runs,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
     Offset                      num_items,
@@ -383,7 +384,7 @@ cudaError_t Dispatch(
 {
     // Invoke kernel to invoke device-side dispatch
     CnpDispatchKernel<<<1,1>>>(timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, equality_op, reduction_op, num_items, 0, debug_synchronous);
+        d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_runs, equality_op, reduction_op, num_items, 0, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
@@ -402,44 +403,43 @@ cudaError_t Dispatch(
 
 
 /**
- * Initialize problem.  Keys are initialized to segment number
- * and values are initialized to 1
+ * Initialize problem
  */
-template <typename KeyIterator>
+template <typename T>
 void Initialize(
-    int             entropy_reduction,
-    KeyIterator     h_keys_in,
-    int             num_items,
-    int             max_segment)
+    int         entropy_reduction,
+    T           *h_in,
+    int         num_items,
+    int         max_segment)
 {
-    unsigned short max_short = (unsigned short) -1;
+    unsigned int max_short = (unsigned int) -1;
 
-    int segment_id = 0;
+    int key = 0;
     int i = 0;
     while (i < num_items)
     {
         // Select number of repeating occurrences
 
-        unsigned short repeat;
+        unsigned int repeat;
         RandomBits(repeat, entropy_reduction);
-        repeat = (unsigned short) ((float(repeat) * (float(max_segment) / float(max_short))));
+        repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_short));
         repeat = CUB_MAX(1, repeat);
 
         int j = i;
         while (j < CUB_MIN(i + repeat, num_items))
         {
-            InitValue(INTEGER_SEED, h_keys_in[j], segment_id);
+            InitValue(INTEGER_SEED, h_in[j], key);
             j++;
         }
 
         i = j;
-        segment_id++;
+        key++;
     }
 
     if (g_verbose)
     {
-        printf("Input keys:\n");
-        DisplayResults(h_keys_in, num_items);
+        printf("Input:\n");
+        DisplayResults(h_in, num_items);
         printf("\n\n");
     }
 }
@@ -518,13 +518,15 @@ void Test(
     char*                       key_type_string,
     char*                       value_type_string)
 {
+    const bool IS_RLE = Equals<DeviceValueInputIterator, ConstantInputIterator<Value, int> >::VALUE;
+
     // Allocate device output arrays and number of segments
     Key     *d_keys_out             = NULL;
     Value   *d_values_out           = NULL;
-    int     *d_num_segments         = NULL;
+    int     *d_num_runs         = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys_out, sizeof(Key) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values_out, sizeof(Value) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_segments, sizeof(int)));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_runs, sizeof(int)));
 
     // Allocate CDP device arrays
     size_t          *d_temp_storage_bytes = NULL;
@@ -535,16 +537,16 @@ void Test(
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, equality_op, reduction_op, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_runs, equality_op, reduction_op, num_items, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output arrays
     CubDebugExit(cudaMemset(d_keys_out, 0, sizeof(Key) * num_items));
     CubDebugExit(cudaMemset(d_values_out, 0, sizeof(Value) * num_items));
-    CubDebugExit(cudaMemset(d_num_segments, 0, sizeof(int)));
+    CubDebugExit(cudaMemset(d_num_runs, 0, sizeof(int)));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, equality_op, reduction_op, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_runs, equality_op, reduction_op, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare1 = CompareDeviceResults(h_keys_reference, d_keys_out, num_segments, true, g_verbose);
@@ -553,7 +555,7 @@ void Test(
     int compare2 = CompareDeviceResults(h_values_reference, d_values_out, num_segments, true, g_verbose);
     printf("\t Values %s ", compare2 ? "FAIL" : "PASS");
 
-    int compare3 = CompareDeviceResults(&num_segments, d_num_segments, 1, true, g_verbose);
+    int compare3 = CompareDeviceResults(&num_segments, d_num_runs, 1, true, g_verbose);
     printf("\t Count %s ", compare3 ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
@@ -563,7 +565,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_segments, equality_op, reduction_op, num_items, 0, false));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, d_values_in, d_values_out, d_num_runs, equality_op, reduction_op, num_items, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -572,7 +574,9 @@ void Test(
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        int bytes_moved = (num_items + num_segments) * (sizeof(Key) + sizeof(Value));
+        int bytes_moved = IS_RLE ?
+            ((num_items + num_segments) * sizeof(Key)) + (num_segments * sizeof(Value)) :
+            ((num_items + num_segments) * sizeof(Key)) + ((num_items + num_segments) * sizeof(Value));
         float gbandwidth = float(bytes_moved) / avg_millis / 1000.0 / 1000.0;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
@@ -585,7 +589,7 @@ void Test(
     // Cleanup
     if (d_keys_out) CubDebugExit(g_allocator.DeviceFree(d_keys_out));
     if (d_values_out) CubDebugExit(g_allocator.DeviceFree(d_values_out));
-    if (d_num_segments) CubDebugExit(g_allocator.DeviceFree(d_num_segments));
+    if (d_num_runs) CubDebugExit(g_allocator.DeviceFree(d_num_runs));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
@@ -626,10 +630,10 @@ void TestPointer(
     Initialize(entropy_reduction, h_keys_in, num_items, max_segment);
     int num_segments = Solve(h_keys_in, h_keys_reference, h_values_in, h_values_reference, equality_op, reduction_op, num_items);
 
-    printf("\nPointer %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %d), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
+    printf("\nPointer %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %.3f), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Max",
-        num_items, num_segments, num_items / num_segments,
+        num_items, num_segments, float(num_items) / num_segments,
         key_type_string, value_type_string,
         max_segment, entropy_reduction);
     fflush(stdout);
@@ -688,10 +692,10 @@ void TestIterator(
     Initialize(entropy_reduction, h_keys_in, num_items, max_segment);
     int num_segments = Solve(h_keys_in, h_keys_reference, h_values_in, h_values_reference, equality_op, reduction_op, num_items);
 
-    printf("\nIterator %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %d), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
+    printf("\nIterator %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %.3f), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Max",
-        num_items, num_segments, num_items / num_segments,
+        num_items, num_segments, float(num_items) / num_segments,
         key_type_string, value_type_string,
         max_segment, entropy_reduction);
     fflush(stdout);
@@ -875,7 +879,14 @@ int main(int argc, char** argv)
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef QUICK_TEST
+#ifdef QUICKER_TEST
+
+    // Compile/run basic CUB test
+    if (num_items < 0) num_items = 32000000;
+
+    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), Int2Type<Traits<int>::PRIMITIVE>());
+
+#elif defined(QUICK_TEST)
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;

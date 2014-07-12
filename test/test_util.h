@@ -206,7 +206,7 @@ public:
      */
     int ParsedArgc()
     {
-        return keys.size();
+        return (int) keys.size();
     }
 
     /**
@@ -414,10 +414,26 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 
 
 /**
- * TestFoo test initialization
+ * cub::NullType test initialization
  */
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::NullType &value, int index = 0)
 {}
+
+
+/**
+ * cub::ItemOffsetPair<Value, Offset> test initialization
+ */
+template <typename Value, typename Offset>
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::ItemOffsetPair<Value, Offset> &value, int index = 0)
+{
+    InitValue(gen_mode, value.value, index);
+
+    // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
+    RandomBits(value.offset, 3);
+    value.offset = (value.offset & 0x1);
+}
+
+
 
 /******************************************************************************
  * Comparison and ostream operators
@@ -1043,7 +1059,7 @@ int CompareDeviceResults(
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
-        printf("\n\nData:\n");
+        printf("\n\nComputed:\n");
         for (int i = 0; i < int(num_items); i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";
@@ -1088,7 +1104,7 @@ int CompareDeviceDeviceResults(
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
-        printf("\n\nData:\n");
+        printf("\n\nComputed:\n");
         for (int i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";

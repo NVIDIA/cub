@@ -50,7 +50,8 @@ namespace cub {
 
 
 /******************************************************************************
- * Prefix functor type for maintaining a running prefix while scanning a region
+ * Prefix functor type for maintaining a running prefix while scanning a
+ * region independent of other thread blocks
  ******************************************************************************/
 
 /**
@@ -95,9 +96,8 @@ struct BlockScanRunningPrefixOp
 
 
 /******************************************************************************
- * Bookkeeping and prefix functor types for single-pass device-wide scan with dynamic lookback
+ * Generic tile status interface types for block-cooperative scans
  ******************************************************************************/
-
 
 /**
  * Enumerations of tile status
@@ -433,6 +433,218 @@ struct ScanTileState<T, false>
 };
 
 
+/******************************************************************************
+ * ReduceByKey tile status interface types for block-cooperative scans
+ ******************************************************************************/
+
+/**
+ * Tile status interface for reduction by key.
+ *
+ */
+template <
+    typename    Value,
+    typename    Offset,
+    bool        SINGLE_WORD = (Traits<Value>::PRIMITIVE) && (sizeof(Value) + sizeof(Offset) < 16)>
+struct ReduceByKeyScanTileState;
+
+
+/**
+ * Tile status interface for reduction by key, specialized for scan status and value types that
+ * cannot be combined into one machine word.
+ */
+template <
+    typename    Value,
+    typename    Offset>
+struct ReduceByKeyScanTileState<Value, Offset, false> :
+    ScanTileState<ItemOffsetPair<Value, Offset> >
+{
+    typedef ScanTileState<ItemOffsetPair<Value, Offset> > SuperClass;
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    ReduceByKeyScanTileState() : SuperClass() {}
+};
+
+
+/**
+ * Tile status interface for reduction by key, specialized for scan status and value types that
+ * can be combined into one machine word that can be read/written coherently in a single access.
+ */
+template <
+    typename Value,
+    typename Offset>
+struct ReduceByKeyScanTileState<Value, Offset, true>
+{
+    typedef ItemOffsetPair<Value, Offset> ReductionOffsetPair;
+
+    // Constants
+    enum
+    {
+        PAIR_SIZE           = sizeof(Value) + sizeof(Offset),
+        TXN_WORD_SIZE       = 1 << Log2<PAIR_SIZE + 1>::VALUE,
+        STATUS_WORD_SIZE    = TXN_WORD_SIZE - PAIR_SIZE,
+
+        TILE_STATUS_PADDING = CUB_PTX_WARP_THREADS,
+    };
+
+    // Status word type
+    typedef typename If<(STATUS_WORD_SIZE == 8),
+        long long,
+        typename If<(STATUS_WORD_SIZE == 4),
+            int,
+            typename If<(STATUS_WORD_SIZE == 2),
+                short,
+                char>::Type>::Type>::Type StatusWord;
+
+    // Status word type
+    typedef typename If<(TXN_WORD_SIZE == 16),
+        longlong2,
+        typename If<(TXN_WORD_SIZE == 8),
+            long long,
+            int>::Type>::Type TxnWord;
+
+    // Device word type (for when sizeof(Value) == sizeof(Offset))
+    struct TileDescriptorBigStatus
+    {
+        Offset      offset;
+        Value       value;
+        StatusWord  status;
+    };
+
+    // Device word type (for when sizeof(Value) != sizeof(Offset))
+    struct TileDescriptorLittleStatus
+    {
+        Value       value;
+        StatusWord  status;
+        Offset      offset;
+    };
+
+    // Device word type
+    typedef typename If<
+            (sizeof(Value) == sizeof(Offset)),
+            TileDescriptorBigStatus,
+            TileDescriptorLittleStatus>::Type
+        TileDescriptor;
+
+
+    // Device storage
+    TileDescriptor *d_tile_status;
+
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    ReduceByKeyScanTileState()
+    :
+        d_tile_status(NULL)
+    {}
+
+
+    /// Initializer
+    __host__ __device__ __forceinline__
+    cudaError_t Init(
+        int     num_tiles,                          ///< [in] Number of tiles
+        void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t  temp_storage_bytes)                 ///< [in] Size in bytes of \t d_temp_storage allocation
+    {
+        d_tile_status = reinterpret_cast<TileDescriptor*>(d_temp_storage);
+        return cudaSuccess;
+    }
+
+
+    /**
+     * Compute device memory needed for tile status
+     */
+    __host__ __device__ __forceinline__
+    static cudaError_t AllocationSize(
+        int     num_tiles,                          ///< [in] Number of tiles
+        size_t  &temp_storage_bytes)                ///< [out] Size in bytes of \t d_temp_storage allocation
+    {
+        temp_storage_bytes = (num_tiles + TILE_STATUS_PADDING) * sizeof(TileDescriptor);       // bytes needed for tile status descriptors
+        return cudaSuccess;
+    }
+
+
+    /**
+     * Initialize (from device)
+     */
+    __device__ __forceinline__ void InitializeStatus(int num_tiles)
+    {
+        int tile_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+        if (tile_idx < num_tiles)
+        {
+            // Not-yet-set
+            d_tile_status[TILE_STATUS_PADDING + tile_idx].status = StatusWord(SCAN_TILE_INVALID);
+        }
+
+        if ((blockIdx.x == 0) && (threadIdx.x < TILE_STATUS_PADDING))
+        {
+            // Padding
+            d_tile_status[threadIdx.x].status = StatusWord(SCAN_TILE_OOB);
+        }
+    }
+
+
+    /**
+     * Update the specified tile's inclusive value and corresponding status
+     */
+    __device__ __forceinline__ void SetInclusive(int tile_idx, ReductionOffsetPair tile_inclusive)
+    {
+        TileDescriptor tile_descriptor;
+        tile_descriptor.status = SCAN_TILE_INCLUSIVE;
+        tile_descriptor.value = tile_inclusive.value;
+        tile_descriptor.offset = tile_inclusive.offset;
+
+        TxnWord alias;
+        *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
+        ThreadStore<STORE_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx), alias);
+    }
+
+
+    /**
+     * Update the specified tile's partial value and corresponding status
+     */
+    __device__ __forceinline__ void SetPartial(int tile_idx, ReductionOffsetPair tile_partial)
+    {
+        TileDescriptor tile_descriptor;
+        tile_descriptor.status = SCAN_TILE_PARTIAL;
+        tile_descriptor.value = tile_partial.value;
+        tile_descriptor.offset = tile_partial.offset;
+
+        TxnWord alias;
+        *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
+        ThreadStore<STORE_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx), alias);
+    }
+
+    /**
+     * Wait for the corresponding tile to become non-invalid
+     */
+    __device__ __forceinline__ void WaitForValid(
+        int             tile_idx,
+        StatusWord      &status,
+        ReductionOffsetPair  &value)
+    {
+        // Use warp-any to determine when all threads have valid status
+        TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
+        TileDescriptor tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
+
+        while (WarpAny(tile_descriptor.status == SCAN_TILE_INVALID))
+        {
+            alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
+            tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
+        }
+
+        status = tile_descriptor.status;
+        value.value = tile_descriptor.value;
+        value.offset = tile_descriptor.offset;
+    }
+
+};
+
+
+/******************************************************************************
+ * Prefix call-back operator for coupling local block scan within a
+ * block-cooperative scan
+ ******************************************************************************/
 
 /**
  * Stateful block-scan prefix functor.  Provides the the running prefix for
@@ -457,23 +669,6 @@ struct BlockScanLookbackPrefixOp
     // Type of status word
     typedef typename ScanTileState::StatusWord StatusWord;
 
-    // Scan operator for switching the scan arguments
-    struct SwizzleScanOp
-    {
-        ScanOp scan_op;
-
-        // Constructor
-        __host__ __device__ __forceinline__
-        SwizzleScanOp(ScanOp scan_op) : scan_op(scan_op) {}
-
-        // Switch the scan arguments
-        __host__ __device__ __forceinline__
-        T operator()(const T &a, const T &b)
-        {
-            return scan_op(b, a);
-        }
-    };
-
     // Fields
     ScanTileState               &tile_status;       ///< Interface to tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
@@ -485,10 +680,10 @@ struct BlockScanLookbackPrefixOp
     // Constructor
     __device__ __forceinline__
     BlockScanLookbackPrefixOp(
-        ScanTileState      &tile_status,
-        TempStorage             &temp_storage,
-        ScanOp                  scan_op,
-        int                     tile_idx)
+        ScanTileState       &tile_status,
+        TempStorage         &temp_storage,
+        ScanOp              scan_op,
+        int                 tile_idx)
     :
         tile_status(tile_status),
         temp_storage(temp_storage.Alias()),
@@ -507,14 +702,12 @@ struct BlockScanLookbackPrefixOp
         tile_status.WaitForValid(predecessor_idx, predecessor_status, value);
 
         // Perform a segmented reduction to get the prefix for the current window.
-        // Use the swizzled scan operator because we are now scanning *down* towards thread0.
-
         int tail_flag = (predecessor_status == StatusWord(SCAN_TILE_INCLUSIVE));
 
         window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(
             value,
             tail_flag,
-            SwizzleScanOp(scan_op));
+            scan_op);
     }
 
 

@@ -148,12 +148,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    <span class="keywordtype">int</span>                     ITEMS_PER_THREAD,</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keyword">typename</span>                Value                   = NullType,</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="keywordtype">int</span>                     RADIX_BITS              = 4,</div>
-<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keywordtype">bool</span>                    MEMOIZE_OUTER_SCAN      = (<a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a> &gt;= 350) ? <span class="keyword">true</span> : <span class="keyword">false</span>,</div>
+<div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    <span class="keywordtype">bool</span>                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH &gt;= 350) ? <span class="keyword">true</span> : <span class="keyword">false</span>,</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab" title="BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix ...">BlockScanAlgorithm</a>      INNER_SCAN_ALGORITHM    = <a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">BLOCK_SCAN_WARP_SCANS</a>,</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;    cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte,</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    <span class="keywordtype">int</span>                     BLOCK_DIM_Y             = 1,</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordtype">int</span>                     BLOCK_DIM_Z             = 1,</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keywordtype">int</span>                     PTX_ARCH                = <a class="code" href="group___util_mgmt.html#ga76769ce380739b38e0bd00f57e0dbe4f" title="CUB_PTX_ARCH reflects the PTX version targeted by the active compiler pass (or zero during the host p...">CUB_PTX_ARCH</a>&gt;</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keywordtype">int</span>                     PTX_ARCH                = CUB_PTX_ARCH&gt;</div>
 <div class="line"><a name="l00131"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html">  131</a></span>&#160;<span class="keyword">class</span> <a class="code" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a></div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;{</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;<span class="keyword">private</span>:</div>
@@ -527,7 +527,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 8 2014 15:57:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

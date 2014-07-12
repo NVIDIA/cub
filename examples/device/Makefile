@@ -204,7 +204,8 @@ ALL = 	example_device_histogram \
 	 	example_device_scan \
 	 	example_device_select_unique \
 		example_device_select_flagged \
-		example_device_select_if
+		example_device_select_if \
+		example_device_sort_find_non_trivial_runs
 		
 
 
@@ -332,5 +333,17 @@ example_device_select_if: bin/example_device_select_if_$(SUFFIX)
 bin/example_device_select_if_$(SUFFIX) : example_device_select_if.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_device_select_if_$(SUFFIX) example_device_select_if.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+
+#-------------------------------------------------------------------------------
+# make example_device_sort_find_non_trivial_runs
+#-------------------------------------------------------------------------------
+
+example_device_sort_find_non_trivial_runs: bin/example_device_sort_find_non_trivial_runs_$(SUFFIX)
+
+bin/example_device_sort_find_non_trivial_runs_$(SUFFIX) : example_device_sort_find_non_trivial_runs.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_device_sort_find_non_trivial_runs_$(SUFFIX) example_device_sort_find_non_trivial_runs.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
 
 

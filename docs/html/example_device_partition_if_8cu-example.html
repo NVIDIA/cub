@@ -290,23 +290,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate device output array and num selected</span></div>
 <div class="line">    <span class="keywordtype">int</span>     *d_out            = NULL;</div>
-<div class="line">    <span class="keywordtype">int</span>     *d_num_selected   = NULL;</div>
+<div class="line">    <span class="keywordtype">int</span>     *d_num_selected_out   = NULL;</div>
 <div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate((<span class="keywordtype">void</span>**)&amp;d_out, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>) * num_items));</div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate((<span class="keywordtype">void</span>**)&amp;d_num_selected, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>)));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate((<span class="keywordtype">void</span>**)&amp;d_num_selected_out, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>)));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate temporary storage</span></div>
 <div class="line">    <span class="keywordtype">void</span>            *d_temp_storage = NULL;</div>
 <div class="line">    <span class="keywordtype">size_t</span>          temp_storage_bytes = 0;</div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="structcub_1_1_device_partition.html#aed5978367be0eabd6b74dc0e2eb69927" title="Uses the select_op functor to split the corresponding items from d_in into a partitioned sequence d_o...">DevicePartition::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="structcub_1_1_device_partition.html#a96ebad8c8804eca08c25c6d9cea000c3" title="Uses the select_op functor to split the corresponding items from d_in into a partitioned sequence d_o...">DevicePartition::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op));</div>
 <div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate(&amp;d_temp_storage, temp_storage_bytes));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Run</span></div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a class="code" href="structcub_1_1_device_partition.html#aed5978367be0eabd6b74dc0e2eb69927" title="Uses the select_op functor to split the corresponding items from d_in into a partitioned sequence d_o...">DevicePartition::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a class="code" href="structcub_1_1_device_partition.html#a96ebad8c8804eca08c25c6d9cea000c3" title="Uses the select_op functor to split the corresponding items from d_in into a partitioned sequence d_o...">DevicePartition::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Check for correctness (and display results, if specified)</span></div>
 <div class="line">    <span class="keywordtype">int</span> compare = CompareDeviceResults(h_reference, d_out, num_items, <span class="keyword">true</span>, g_verbose);</div>
 <div class="line">    printf(<span class="stringliteral">&quot;\t Data %s &quot;</span>, compare ? <span class="stringliteral">&quot;FAIL&quot;</span> : <span class="stringliteral">&quot;PASS&quot;</span>);</div>
-<div class="line">    compare = compare | CompareDeviceResults(&amp;num_selected, d_num_selected, 1, <span class="keyword">true</span>, g_verbose);</div>
+<div class="line">    compare = compare | CompareDeviceResults(&amp;num_selected, d_num_selected_out, 1, <span class="keyword">true</span>, g_verbose);</div>
 <div class="line">    printf(<span class="stringliteral">&quot;\t Count %s &quot;</span>, compare ? <span class="stringliteral">&quot;FAIL&quot;</span> : <span class="stringliteral">&quot;PASS&quot;</span>);</div>
 <div class="line">    AssertEquals(0, compare);</div>
 <div class="line"></div>
@@ -315,7 +315,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    <span class="keywordflow">if</span> (h_reference) <span class="keyword">delete</span>[] h_reference;</div>
 <div class="line">    <span class="keywordflow">if</span> (d_in) <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceFree(d_in));</div>
 <div class="line">    <span class="keywordflow">if</span> (d_out) <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceFree(d_out));</div>
-<div class="line">    <span class="keywordflow">if</span> (d_num_selected) <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceFree(d_num_selected));</div>
+<div class="line">    <span class="keywordflow">if</span> (d_num_selected_out) <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceFree(d_num_selected_out));</div>
 <div class="line">    <span class="keywordflow">if</span> (d_temp_storage) <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceFree(d_temp_storage));</div>
 <div class="line"></div>
 <div class="line">    printf(<span class="stringliteral">&quot;\n\n&quot;</span>);</div>
@@ -329,7 +329,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:12 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 8 2014 15:57:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

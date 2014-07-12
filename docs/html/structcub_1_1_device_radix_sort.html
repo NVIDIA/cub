@@ -277,8 +277,8 @@ template&lt;typename Key , typename Value &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose "current" buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -417,8 +417,8 @@ template&lt;typename Key , typename Value &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose "current" buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -551,7 +551,7 @@ template&lt;typename Key &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -678,7 +678,7 @@ template&lt;typename Key &gt; </div>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
-    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Number of items to reduce </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The first (least-significant) bit index needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison </td></tr>
@@ -699,7 +699,7 @@ template&lt;typename Key &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 8 2014 15:57:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

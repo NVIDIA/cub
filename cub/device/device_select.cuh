@@ -82,7 +82,7 @@ namespace cub {
 struct DeviceSelect
 {
     /**
-     * \brief Uses the \p d_flags sequence to selectively copy the corresponding items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected. ![](select_flags_logo.png)
+     * \brief Uses the \p d_flags sequence to selectively copy the corresponding items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected_out. ![](select_flags_logo.png)
      *
      * \par
      * - The value type of \p d_flags must be castable to \p bool (e.g., \p bool, \p char, \p int, etc.).
@@ -94,29 +94,29 @@ struct DeviceSelect
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_select.cuh>
+     * #include <cub/cub.cuh>       // or equivalently <cub/device/device_select.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input, flags, and output
-     * int  num_items;          // e.g., 8
-     * int  *d_in;              // e.g., [1, 2, 3, 4, 5, 6, 7, 8]
-     * char *d_flags;           // e.g., [1, 0, 0, 1, 0, 1, 1, 0]
-     * int  *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int  *d_num_selected;    // e.g., [ ]
+     * int  num_items;              // e.g., 8
+     * int  *d_in;                  // e.g., [1, 2, 3, 4, 5, 6, 7, 8]
+     * char *d_flags;               // e.g., [1, 0, 0, 1, 0, 1, 1, 0]
+     * int  *d_out;                 // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int  *d_num_selected_out;    // e.g., [ ]
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
+     * cub::DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run selection
-     * cub::DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);
+     * cub::DeviceSelect::Flagged(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items);
      *
-     * // d_out             <-- [1, 4, 6, 7]
-     * // d_num_selected    <-- [4]
+     * // d_out                 <-- [1, 4, 6, 7]
+     * // d_num_selected_out    <-- [4]
      *
      * \endcode
      *
@@ -137,7 +137,7 @@ struct DeviceSelect
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
         FlagIterator                d_flags,                        ///< [in] Pointer to the input sequence of selection flags
         OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        NumSelectedIterator         d_num_selected_out,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
         int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -152,7 +152,7 @@ struct DeviceSelect
             d_in,
             d_flags,
             d_out,
-            d_num_selected,
+            d_num_selected_out,
             SelectOp(),
             EqualityOp(),
             num_items,
@@ -162,7 +162,7 @@ struct DeviceSelect
 
 
     /**
-     * \brief Uses the \p select_op functor to selectively copy items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected. ![](select_logo.png)
+     * \brief Uses the \p select_op functor to selectively copy items from \p d_in into \p d_out.  The total number of items selected is written to \p d_num_selected_out. ![](select_logo.png)
      *
      * \par
      * - Copies of the selected items are compacted into \p d_out and maintain their original relative ordering.
@@ -204,26 +204,26 @@ struct DeviceSelect
      * };
      *
      * // Declare, allocate, and initialize device pointers for input and output
-     * int      num_items;          // e.g., 8
-     * int      *d_in;              // e.g., [0, 2, 3, 9, 5, 2, 81, 8]
-     * int      *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int      *d_num_selected;    // e.g., [ ]
+     * int      num_items;              // e.g., 8
+     * int      *d_in;                  // e.g., [0, 2, 3, 9, 5, 2, 81, 8]
+     * int      *d_out;                 // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int      *d_num_selected_out;    // e.g., [ ]
      * LessThan select_op(7);
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);
+     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run selection
-     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);
+     * cub::DeviceSelect::If(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);
      *
-     * // d_out             <-- [0, 2, 3, 5, 2]
-     * // d_num_selected    <-- [5]
+     * // d_out                 <-- [0, 2, 3, 5, 2]
+     * // d_num_selected_out    <-- [5]
      *
      * \endcode
      *
@@ -243,7 +243,7 @@ struct DeviceSelect
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
         OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        NumSelectedIterator         d_num_selected_out,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
         int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         SelectOp                    select_op,                      ///< [in] Unary selection operator
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -259,7 +259,7 @@ struct DeviceSelect
             d_in,
             NULL,
             d_out,
-            d_num_selected,
+            d_num_selected_out,
             select_op,
             EqualityOp(),
             num_items,
@@ -269,7 +269,7 @@ struct DeviceSelect
 
 
     /**
-     * \brief Given an input sequence \p d_in having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to \p d_out.  The total number of items selected is written to \p d_num_selected. ![](unique_logo.png)
+     * \brief Given an input sequence \p d_in having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to \p d_out.  The total number of items selected is written to \p d_num_selected_out. ![](unique_logo.png)
      *
      * \par
      * - The <tt>==</tt> equality operator is used to determine whether keys are equivalent
@@ -295,28 +295,28 @@ struct DeviceSelect
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_select.cuh>
+     * #include <cub/cub.cuh>       // or equivalently <cub/device/device_select.cuh>
      *
      * // Declare, allocate, and initialize device pointers for input and output
-     * int      num_items;          // e.g., 8
-     * int      *d_in;              // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
-     * int      *d_out;             // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int      *d_num_selected;    // e.g., [ ]
+     * int  num_items;              // e.g., 8
+     * int  *d_in;                  // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
+     * int  *d_out;                 // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
+     * int  *d_num_selected_out;    // e.g., [ ]
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceSelect::Unique(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);
+     * cub::DeviceSelect::Unique(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run selection
-     * cub::DeviceSelect::Unique(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);
+     * cub::DeviceSelect::Unique(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items);
      *
-     * // d_out             <-- [0, 2, 9, 5, 8]
-     * // d_num_selected    <-- [5]
+     * // d_out                 <-- [0, 2, 9, 5, 8]
+     * // d_num_selected_out    <-- [5]
      *
      * \endcode
      *
@@ -334,7 +334,7 @@ struct DeviceSelect
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
         OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        NumSelectedIterator         d_num_selected_out,             ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
         int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -350,7 +350,7 @@ struct DeviceSelect
             d_in,
             NULL,
             d_out,
-            d_num_selected,
+            d_num_selected_out,
             SelectOp(),
             EqualityOp(),
             num_items,

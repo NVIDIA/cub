@@ -273,7 +273,7 @@ cudaError_t MaxSmOccupancy(
 
         // Shared memory per threadblock
         int block_allocated_smem = CUB_ROUND_UP_NEAREST(
-            kernel_attrs.sharedSizeBytes,
+            (int) kernel_attrs.sharedSizeBytes,
             smem_alloc_unit);
 
         // Max shared memory occupancy

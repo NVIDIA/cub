@@ -280,7 +280,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <span class="keywordtype">size_t</span>          tex_offset = 0)         </div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    {</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        this-&gt;ptr = ptr;</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        this-&gt;tex_offset = tex_offset;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        this-&gt;tex_offset = (<a class="code" href="classcub_1_1_tex_ref_input_iterator.html#aa3b77636ad17c957fddd808e8bc42d76" title="Type to express the result of subtracting one iterator from another. ">difference_type</a>) tex_offset;</div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        <span class="keywordflow">return</span> TexId::BindTexture(ptr);</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;    }</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;</div>
@@ -389,7 +389,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 8 2014 15:57:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

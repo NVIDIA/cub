@@ -116,11 +116,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The work-complexity of select-flagged, select-if, and select-unique as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU.</dd></dl>
-<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a> performance across different CUDA architectures for <code>int32</code> items, where 50% of the items are randomly selected.</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#a20db779254b19fd413cb3601b5370ef8" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">DeviceSelect::If</a> performance across different CUDA architectures for <code>int32</code> items, where 50% of the items are randomly selected.</dd></dl>
 <div class="image">
 <img src="select_if_int32_50_percent.png" alt="select_if_int32_50_percent.png"/>
 </div>
-<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">DeviceSelect::Unique</a> performance across different CUDA architectures for <code>int32</code> items where segments have lengths uniformly sampled from [1,1000].</dd></dl>
+<dl class="section user"><dt></dt><dd>The following chart illustrates <a class="el" href="structcub_1_1_device_select.html#a84a69dd65ecc13f96b4dc82bf1508589" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">DeviceSelect::Unique</a> performance across different CUDA architectures for <code>int32</code> items where segments have lengths uniformly sampled from [1,1000].</dd></dl>
 <div class="image">
 <img src="select_unique_int32_len_500.png" alt="select_unique_int32_len_500.png"/>
 </div>
@@ -130,39 +130,39 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:a4bdafa080cce999f8694c820fd567c83"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename FlagIterator , typename OutputIterator , typename NumSelectedIterator &gt; </td></tr>
-<tr class="memitem:a4bdafa080cce999f8694c820fd567c83"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#a4bdafa080cce999f8694c820fd567c83">Flagged</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, FlagIterator d_flags, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a4bdafa080cce999f8694c820fd567c83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses the <code>d_flags</code> sequence to selectively copy the corresponding items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+<tr class="memitem:ac66310602e82ff6d49477016a906a7ae"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename FlagIterator , typename OutputIterator , typename NumSelectedIterator &gt; </td></tr>
+<tr class="memitem:ac66310602e82ff6d49477016a906a7ae"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#ac66310602e82ff6d49477016a906a7ae">Flagged</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, FlagIterator d_flags, OutputIterator d_out, NumSelectedIterator d_num_selected_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:ac66310602e82ff6d49477016a906a7ae"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses the <code>d_flags</code> sequence to selectively copy the corresponding items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected_out</code>. </p>
 <div class="image">
 <img src="select_flags_logo.png" alt="select_flags_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#a4bdafa080cce999f8694c820fd567c83">More...</a><br/></td></tr>
-<tr class="separator:a4bdafa080cce999f8694c820fd567c83"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ffe7f660d8188b05b79a00f7bfb9e0a"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename NumSelectedIterator , typename SelectOp &gt; </td></tr>
-<tr class="memitem:a0ffe7f660d8188b05b79a00f7bfb9e0a"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a">If</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, SelectOp select_op, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a0ffe7f660d8188b05b79a00f7bfb9e0a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses the <code>select_op</code> functor to selectively copy items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+  <a href="#ac66310602e82ff6d49477016a906a7ae">More...</a><br/></td></tr>
+<tr class="separator:ac66310602e82ff6d49477016a906a7ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a20db779254b19fd413cb3601b5370ef8"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename NumSelectedIterator , typename SelectOp &gt; </td></tr>
+<tr class="memitem:a20db779254b19fd413cb3601b5370ef8"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#a20db779254b19fd413cb3601b5370ef8">If</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, NumSelectedIterator d_num_selected_out, int num_items, SelectOp select_op, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a20db779254b19fd413cb3601b5370ef8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Uses the <code>select_op</code> functor to selectively copy items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected_out</code>. </p>
 <div class="image">
 <img src="select_logo.png" alt="select_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#a0ffe7f660d8188b05b79a00f7bfb9e0a">More...</a><br/></td></tr>
-<tr class="separator:a0ffe7f660d8188b05b79a00f7bfb9e0a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae5f491589b45e16197438d884dcda3a1"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename NumSelectedIterator &gt; </td></tr>
-<tr class="memitem:ae5f491589b45e16197438d884dcda3a1"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1">Unique</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, NumSelectedIterator d_num_selected, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:ae5f491589b45e16197438d884dcda3a1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Given an input sequence <code>d_in</code> having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+  <a href="#a20db779254b19fd413cb3601b5370ef8">More...</a><br/></td></tr>
+<tr class="separator:a20db779254b19fd413cb3601b5370ef8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a84a69dd65ecc13f96b4dc82bf1508589"><td class="memTemplParams" colspan="2">template&lt;typename InputIterator , typename OutputIterator , typename NumSelectedIterator &gt; </td></tr>
+<tr class="memitem:a84a69dd65ecc13f96b4dc82bf1508589"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION static <br class="typebreak"/>
+__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_select.html#a84a69dd65ecc13f96b4dc82bf1508589">Unique</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIterator d_in, OutputIterator d_out, NumSelectedIterator d_num_selected_out, int num_items, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a84a69dd65ecc13f96b4dc82bf1508589"><td class="mdescLeft">&#160;</td><td class="mdescRight">Given an input sequence <code>d_in</code> having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to <code>d_out</code>. The total number of items selected is written to <code>d_num_selected_out</code>. </p>
 <div class="image">
 <img src="unique_logo.png" alt="unique_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#ae5f491589b45e16197438d884dcda3a1">More...</a><br/></td></tr>
-<tr class="separator:ae5f491589b45e16197438d884dcda3a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+  <a href="#a84a69dd65ecc13f96b4dc82bf1508589">More...</a><br/></td></tr>
+<tr class="separator:a84a69dd65ecc13f96b4dc82bf1508589"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a4bdafa080cce999f8694c820fd567c83"></a>
+<a class="anchor" id="ac66310602e82ff6d49477016a906a7ae"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -205,7 +205,7 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">NumSelectedIterator&#160;</td>
-          <td class="paramname"><em>d_num_selected</em>, </td>
+          <td class="paramname"><em>d_num_selected_out</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -238,7 +238,7 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
 </table>
 </div><div class="memdoc">
 
-<p>Uses the <code>d_flags</code> sequence to selectively copy the corresponding items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+<p>Uses the <code>d_flags</code> sequence to selectively copy the corresponding items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected_out</code>. </p>
 <div class="image">
 <img src="select_flags_logo.png" alt="select_flags_logo.png"/>
 <div class="caption">
@@ -252,29 +252,29 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_select.cuh&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>       <span class="comment">// or equivalently &lt;cub/device/device_select.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input, flags, and output</span></div>
-<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 8</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_in;              <span class="comment">// e.g., [1, 2, 3, 4, 5, 6, 7, 8]</span></div>
-<div class="line"><span class="keywordtype">char</span> *d_flags;           <span class="comment">// e.g., [1, 0, 0, 1, 0, 1, 1, 0]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_out;             <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_num_selected;    <span class="comment">// e.g., [ ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;              <span class="comment">// e.g., 8</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_in;                  <span class="comment">// e.g., [1, 2, 3, 4, 5, 6, 7, 8]</span></div>
+<div class="line"><span class="keywordtype">char</span> *d_flags;               <span class="comment">// e.g., [1, 0, 0, 1, 0, 1, 1, 0]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_out;                 <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_num_selected_out;    <span class="comment">// e.g., [ ]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#a4bdafa080cce999f8694c820fd567c83" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">cub::DeviceSelect::Flagged</a>(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#ac66310602e82ff6d49477016a906a7ae" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">cub::DeviceSelect::Flagged</a>(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run selection</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#a4bdafa080cce999f8694c820fd567c83" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">cub::DeviceSelect::Flagged</a>(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#ac66310602e82ff6d49477016a906a7ae" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">cub::DeviceSelect::Flagged</a>(d_temp_storage, temp_storage_bytes, d_in, d_flags, d_out, d_num_selected_out, num_items);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out             &lt;-- [1, 4, 6, 7]</span></div>
-<div class="line"><span class="comment">// d_num_selected    &lt;-- [4]</span></div>
+<div class="line"><span class="comment">// d_out                 &lt;-- [1, 4, 6, 7]</span></div>
+<div class="line"><span class="comment">// d_num_selected_out    &lt;-- [4]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -292,7 +292,7 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_flags</td><td>Pointer to the input sequence of selection flags </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of selected data items </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected_out</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
@@ -305,7 +305,7 @@ template&lt;typename InputIterator , typename FlagIterator , typename OutputIter
 
 </div>
 </div>
-<a class="anchor" id="a0ffe7f660d8188b05b79a00f7bfb9e0a"></a>
+<a class="anchor" id="a20db779254b19fd413cb3601b5370ef8"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -342,7 +342,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">NumSelectedIterator&#160;</td>
-          <td class="paramname"><em>d_num_selected</em>, </td>
+          <td class="paramname"><em>d_num_selected_out</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -381,7 +381,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 </table>
 </div><div class="memdoc">
 
-<p>Uses the <code>select_op</code> functor to selectively copy items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+<p>Uses the <code>select_op</code> functor to selectively copy items from <code>d_in</code> into <code>d_out</code>. The total number of items selected is written to <code>d_num_selected_out</code>. </p>
 <div class="image">
 <img src="select_logo.png" alt="select_logo.png"/>
 <div class="caption">
@@ -425,26 +425,26 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <div class="line">};</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
-<div class="line"><span class="keywordtype">int</span>      num_items;          <span class="comment">// e.g., 8</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_in;              <span class="comment">// e.g., [0, 2, 3, 9, 5, 2, 81, 8]</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_out;             <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_num_selected;    <span class="comment">// e.g., [ ]</span></div>
+<div class="line"><span class="keywordtype">int</span>      num_items;              <span class="comment">// e.g., 8</span></div>
+<div class="line"><span class="keywordtype">int</span>      *d_in;                  <span class="comment">// e.g., [0, 2, 3, 9, 5, 2, 81, 8]</span></div>
+<div class="line"><span class="keywordtype">int</span>      *d_out;                 <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
+<div class="line"><span class="keywordtype">int</span>      *d_num_selected_out;    <span class="comment">// e.g., [ ]</span></div>
 <div class="line">LessThan select_op(7);</div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#a20db779254b19fd413cb3601b5370ef8" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run selection</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#a0ffe7f660d8188b05b79a00f7bfb9e0a" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items, select_op);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#a20db779254b19fd413cb3601b5370ef8" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">cub::DeviceSelect::If</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, select_op);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out             &lt;-- [0, 2, 3, 5, 2]</span></div>
-<div class="line"><span class="comment">// d_num_selected    &lt;-- [5]</span></div>
+<div class="line"><span class="comment">// d_out                 &lt;-- [0, 2, 3, 5, 2]</span></div>
+<div class="line"><span class="comment">// d_num_selected_out    &lt;-- [5]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -461,7 +461,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of selected data items </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected_out</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">select_op</td><td>Unary selection operator </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -475,7 +475,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 
 </div>
 </div>
-<a class="anchor" id="ae5f491589b45e16197438d884dcda3a1"></a>
+<a class="anchor" id="a84a69dd65ecc13f96b4dc82bf1508589"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -512,7 +512,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">NumSelectedIterator&#160;</td>
-          <td class="paramname"><em>d_num_selected</em>, </td>
+          <td class="paramname"><em>d_num_selected_out</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -545,7 +545,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 </table>
 </div><div class="memdoc">
 
-<p>Given an input sequence <code>d_in</code> having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to <code>d_out</code>. The total number of items selected is written to <code>d_num_selected</code>. </p>
+<p>Given an input sequence <code>d_in</code> having runs of consecutive equal-valued keys, only the first key from each run is selectively copied to <code>d_out</code>. The total number of items selected is written to <code>d_num_selected_out</code>. </p>
 <div class="image">
 <img src="unique_logo.png" alt="unique_logo.png"/>
 <div class="caption">
@@ -573,28 +573,28 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <img src="select_unique_int64_len_5.png" alt="select_unique_int64_len_5.png"/>
 </div>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
-<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_select.cuh&gt;</span></div>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>       <span class="comment">// or equivalently &lt;cub/device/device_select.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
-<div class="line"><span class="keywordtype">int</span>      num_items;          <span class="comment">// e.g., 8</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_in;              <span class="comment">// e.g., [0, 2, 2, 9, 5, 5, 5, 8]</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_out;             <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
-<div class="line"><span class="keywordtype">int</span>      *d_num_selected;    <span class="comment">// e.g., [ ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;              <span class="comment">// e.g., 8</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_in;                  <span class="comment">// e.g., [0, 2, 2, 9, 5, 5, 5, 8]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_out;                 <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_num_selected_out;    <span class="comment">// e.g., [ ]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">cub::DeviceSelect::Unique</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#a84a69dd65ecc13f96b4dc82bf1508589" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">cub::DeviceSelect::Unique</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run selection</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_select.html#ae5f491589b45e16197438d884dcda3a1" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">cub::DeviceSelect::Unique</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected, num_items);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_select.html#a84a69dd65ecc13f96b4dc82bf1508589" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">cub::DeviceSelect::Unique</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out             &lt;-- [0, 2, 9, 5, 8]</span></div>
-<div class="line"><span class="comment">// d_num_selected    &lt;-- [5]</span></div>
+<div class="line"><span class="comment">// d_out                 &lt;-- [0, 2, 9, 5, 8]</span></div>
+<div class="line"><span class="comment">// d_num_selected_out    &lt;-- [5]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -610,7 +610,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of selected data items </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_num_selected_out</td><td>Pointer to the output total number of items selected (i.e., length of <code>d_out</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
@@ -630,7 +630,7 @@ template&lt;typename InputIterator , typename OutputIterator , typename NumSelec
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 8 2014 15:57:55 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockRangeScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
+ * cub::BlockScanSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
  */
 
 #pragma once
@@ -55,7 +55,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRangeScan
+ * Parameterizable tuning policy type for BlockScanSweep
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -66,7 +66,7 @@ template <
     BlockStoreAlgorithm         _STORE_ALGORITHM,               ///< The BlockStore algorithm to use
     bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockRangeScanPolicy
+struct BlockScanSweepPolicy
 {
     enum
     {
@@ -90,16 +90,16 @@ struct BlockRangeScanPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRangeScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
+ * \brief BlockScanSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
  */
 template <
-    typename BlockRangeScanPolicy,      ///< Parameterized BlockRangeScanPolicy tuning policy type
+    typename BlockScanSweepPolicy,      ///< Parameterized BlockScanSweepPolicy tuning policy type
     typename InputIterator,             ///< Random-access input iterator type
     typename OutputIterator,            ///< Random-access output iterator type
     typename ScanOp,                    ///< Scan functor type
     typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
     typename Offset>                    ///< Signed integer type for global offsets
-struct BlockRangeScan
+struct BlockScanSweep
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -113,7 +113,7 @@ struct BlockRangeScan
 
     // Input iterator wrapper type
     typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRangeScanPolicy::LOAD_MODIFIER, T, Offset>,    // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<BlockScanSweepPolicy::LOAD_MODIFIER, T, Offset>,    // Wrap the native input pointer with CacheModifiedInputIterator
             InputIterator>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIterator;
 
@@ -121,34 +121,38 @@ struct BlockRangeScan
     enum
     {
         INCLUSIVE           = Equals<Identity, NullType>::VALUE,            // Inclusive scan if no identity type is provided
-        BLOCK_THREADS       = BlockRangeScanPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockRangeScanPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = BlockScanSweepPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = BlockScanSweepPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
+
+        // Whether or not to sync after loading data
+        SYNC_AFTER_LOAD     = (BlockScanSweepPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+
     };
 
     // Parameterized BlockLoad type
     typedef BlockLoad<
             WrappedInputIterator,
-            BlockRangeScanPolicy::BLOCK_THREADS,
-            BlockRangeScanPolicy::ITEMS_PER_THREAD,
-            BlockRangeScanPolicy::LOAD_ALGORITHM,
-            BlockRangeScanPolicy::LOAD_WARP_TIME_SLICING>
+            BlockScanSweepPolicy::BLOCK_THREADS,
+            BlockScanSweepPolicy::ITEMS_PER_THREAD,
+            BlockScanSweepPolicy::LOAD_ALGORITHM,
+            BlockScanSweepPolicy::LOAD_WARP_TIME_SLICING>
         BlockLoadT;
 
     // Parameterized BlockStore type
     typedef BlockStore<
             OutputIterator,
-            BlockRangeScanPolicy::BLOCK_THREADS,
-            BlockRangeScanPolicy::ITEMS_PER_THREAD,
-            BlockRangeScanPolicy::STORE_ALGORITHM,
-            BlockRangeScanPolicy::STORE_WARP_TIME_SLICING>
+            BlockScanSweepPolicy::BLOCK_THREADS,
+            BlockScanSweepPolicy::ITEMS_PER_THREAD,
+            BlockScanSweepPolicy::STORE_ALGORITHM,
+            BlockScanSweepPolicy::STORE_WARP_TIME_SLICING>
         BlockStoreT;
 
     // Parameterized BlockScan type
     typedef BlockScan<
             T,
-            BlockRangeScanPolicy::BLOCK_THREADS,
-            BlockRangeScanPolicy::SCAN_ALGORITHM>
+            BlockScanSweepPolicy::BLOCK_THREADS,
+            BlockScanSweepPolicy::SCAN_ALGORITHM>
         BlockScanT;
 
     // Callback type for obtaining tile prefix during block scan
@@ -291,7 +295,7 @@ struct BlockRangeScan
 
     // Constructor
     __device__ __forceinline__
-    BlockRangeScan(
+    BlockScanSweep(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIterator               d_in,               ///< Input data
         OutputIterator              d_out,              ///< Output data
@@ -311,15 +315,15 @@ struct BlockRangeScan
     //---------------------------------------------------------------------
 
     /**
-     * Process a tile of input (dynamic domino scan)
+     * Process a tile of input (dynamic chained scan)
      */
     template <bool LAST_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        Offset                      num_items,          ///< Total number of input items
-        Offset                      num_remaining,      ///< Total number of items remaining to be processed (including this tile)
-        int                         tile_idx,           ///< Tile index
-        Offset                      block_offset,       ///< Tile offset
-        ScanTileState          &tile_status)       ///< Global list of tile status
+        Offset              num_items,          ///< Total number of input items
+        Offset              num_remaining,      ///< Total number of items remaining to be processed (including this tile)
+        int                 tile_idx,           ///< Tile index
+        Offset              block_offset,       ///< Tile offset
+        ScanTileState       &tile_status)       ///< Global list of tile status
     {
         // Load items
         T items[ITEMS_PER_THREAD];
@@ -329,7 +333,8 @@ struct BlockRangeScan
         else
             BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
 
-        __syncthreads();
+        if (SYNC_AFTER_LOAD)
+            __syncthreads();
 
         // Perform tile scan
         if (tile_idx == 0)
@@ -361,23 +366,23 @@ struct BlockRangeScan
 
 
     /**
-     * Dequeue and scan tiles of items as part of a dynamic domino scan
+     * Dequeue and scan tiles of items as part of a dynamic chained scan
      */
     __device__ __forceinline__ void ConsumeRange(
-        int                     num_items,          ///< Total number of input items
-        GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        ScanTileState      &tile_status)       ///< Global list of tile status
+        int                 num_items,          ///< Total number of input items
+        GridQueue<int>      queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        ScanTileState       &tile_status)       ///< Global list of tile status
     {
 #if (CUB_PTX_ARCH <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
-        int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
         Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
         Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
-        if (block_offset + TILE_ITEMS <= num_items)
+        if (num_remaining > TILE_ITEMS)
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-        else if (block_offset < num_items)
+        else if (num_remaining > 0)
             ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
 #else
@@ -416,6 +421,7 @@ struct BlockRangeScan
         }
 
 #endif
+
     }
 
 

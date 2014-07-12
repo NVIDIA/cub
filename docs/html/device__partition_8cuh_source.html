@@ -151,13 +151,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;        <span class="keyword">typename</span>                    OutputIterator,</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIterator&gt;</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
-<div class="line"><a name="l00127"></a><span class="lineno"><a class="code" href="structcub_1_1_device_partition.html#a84ca1ba3be36800927d8220a05a75e08">  127</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_partition.html#a84ca1ba3be36800927d8220a05a75e08" title="Uses the d_flags sequence to split the corresponding items from d_in into a partitioned sequence d_ou...">Flagged</a>(</div>
+<div class="line"><a name="l00127"></a><span class="lineno"><a class="code" href="structcub_1_1_device_partition.html#a597a0311dd083f72bb65ea830a784528">  127</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_partition.html#a597a0311dd083f72bb65ea830a784528" title="Uses the d_flags sequence to split the corresponding items from d_in into a partitioned sequence d_ou...">Flagged</a>(</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        InputIterator               d_in,                           </div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        FlagIterator                d_flags,                        </div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        OutputIterator              d_out,                          </div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        NumSelectedIterator         d_num_selected,                 </div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        NumSelectedIterator         d_num_selected_out,                 </div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        <span class="keywordtype">int</span>                         num_items,                      </div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        cudaStream_t                stream             = 0,         </div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        <span class="keywordtype">bool</span>                        debug_synchronous  = <span class="keyword">false</span>)     </div>
@@ -172,7 +172,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;            d_in,</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;            d_flags,</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;            d_out,</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;            d_num_selected,</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;            d_num_selected_out,</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;            SelectOp(),</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;            EqualityOp(),</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;            num_items,</div>
@@ -187,12 +187,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIterator,</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keyword">typename</span>                    SelectOp&gt;</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
-<div class="line"><a name="l00236"></a><span class="lineno"><a class="code" href="structcub_1_1_device_partition.html#aed5978367be0eabd6b74dc0e2eb69927">  236</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_partition.html#aed5978367be0eabd6b74dc0e2eb69927" title="Uses the select_op functor to split the corresponding items from d_in into a partitioned sequence d_o...">If</a>(</div>
+<div class="line"><a name="l00236"></a><span class="lineno"><a class="code" href="structcub_1_1_device_partition.html#a96ebad8c8804eca08c25c6d9cea000c3">  236</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_partition.html#a96ebad8c8804eca08c25c6d9cea000c3" title="Uses the select_op functor to split the corresponding items from d_in into a partitioned sequence d_o...">If</a>(</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        InputIterator               d_in,                           </div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        OutputIterator              d_out,                          </div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        NumSelectedIterator         d_num_selected,                 </div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        NumSelectedIterator         d_num_selected_out,                 </div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keywordtype">int</span>                         num_items,                      </div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        SelectOp                    select_op,                      </div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        cudaStream_t                stream             = 0,         </div>
@@ -208,7 +208,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            d_in,</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;            NULL,</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;            d_out,</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            d_num_selected,</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            d_num_selected_out,</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;            select_op,</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;            EqualityOp(),</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;            num_items,</div>
@@ -226,7 +226,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Jul 8 2014 15:57:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

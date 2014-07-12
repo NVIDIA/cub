@@ -71,6 +71,10 @@ struct WarpScanSmem
 
         /// The number of shared memory elements per warp
         WARP_SMEM_ELEMENTS =  LOGICAL_WARP_THREADS + HALF_WARP_THREADS,
+
+        /// Whether the data type is a primitive integer
+        IS_INTEGER = (Traits<T>::CATEGORY == UNSIGNED_INTEGER) || (Traits<T>::CATEGORY == SIGNED_INTEGER),
+
     };
 
     /// Storage cell type (workaround for SM1x compiler bugs with custom-ops like Max() on signed chars)
@@ -87,7 +91,7 @@ struct WarpScanSmem
      * Thread fields
      ******************************************************************************/
 
-    _TempStorage     &temp_storage;
+    _TempStorage    &temp_storage;
     unsigned int    lane_id;
 
 
@@ -109,17 +113,6 @@ struct WarpScanSmem
     /******************************************************************************
      * Utility methods
      ******************************************************************************/
-
-    /// Basic inclusive scan iteration(template unrolled, base-case specialization)
-    template <
-        bool HAS_IDENTITY,
-        typename ScanOp>
-    __device__ __forceinline__ void ScanStep(
-        T               &partial,
-        ScanOp          scan_op,
-        Int2Type<STEPS>  step)
-    {}
-
 
     /// Basic inclusive scan iteration (template unrolled, inductive-case specialization)
     template <
@@ -145,6 +138,17 @@ struct WarpScanSmem
 
         ScanStep<HAS_IDENTITY>(partial, scan_op, Int2Type<STEP + 1>());
     }
+
+
+    /// Basic inclusive scan iteration(template unrolled, base-case specialization)
+    template <
+        bool        HAS_IDENTITY,
+        typename    ScanOp>
+    __device__ __forceinline__ void ScanStep(
+        T               &partial,
+        ScanOp          scan_op,
+        Int2Type<STEPS>  step)
+    {}
 
 
     /// Inclusive prefix scan with identity
@@ -188,6 +192,60 @@ struct WarpScanSmem
         ScanStep<false>(output, scan_op, Int2Type<0>());
     }
 
+
+    /// Get exclusive from inclusive (specialized for summation of integer types)
+    __device__ __forceinline__ T GetExclusive(
+        T               input,
+        T               inclusive,
+        Sum             scan_op,
+        Int2Type<true>  is_integer)
+    {
+        return inclusive - input;
+    }
+
+
+    /// Get exclusive from inclusive (specialized for scans other than summation of integer types)
+    template <typename ScanOp, int _IS_INTEGER>
+    __device__ __forceinline__ T GetExclusive(
+        T                       input,
+        T                       inclusive,
+        ScanOp                  scan_op,
+        Int2Type<_IS_INTEGER>   is_integer)
+    {
+        ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], (CellT) inclusive);
+        return (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - 1]);
+    }
+
+
+    /// Get exclusive from inclusive (specialized for summation of integer types)
+    __device__ __forceinline__ T GetExclusive(
+        T               input,
+        T               inclusive,
+        Sum             scan_op,
+        T               &warp_aggregate,
+        Int2Type<true>  is_integer)
+    {
+        ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], (CellT) inclusive);
+        warp_aggregate = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
+
+        return inclusive - input;
+    }
+
+
+    /// Get exclusive from inclusive (specialized for scans other than summation of integer types)
+    template <typename ScanOp, int _IS_INTEGER>
+    __device__ __forceinline__ T GetExclusive(
+        T                       input,
+        T                       inclusive,
+        ScanOp                  scan_op,
+        T                       &warp_aggregate,
+        Int2Type<_IS_INTEGER>   is_integer)
+    {
+        ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], (CellT) inclusive);
+        warp_aggregate = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
+
+        return (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - 1]);
+    }
 
 
     /******************************************************************************
@@ -254,8 +312,7 @@ struct WarpScanSmem
         InclusiveScan(input, inclusive_output, scan_op);
 
         // Grab result from predecessor
-        ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], (CellT) inclusive_output);
-        exclusive_output = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - 1]);
+        exclusive_output = GetExclusive(input, inclusive_output, scan_op, Int2Type<IS_INTEGER>());
     }
 
     /// Combination scan with identity
@@ -271,14 +328,37 @@ struct WarpScanSmem
         InclusiveScan(input, inclusive_output, identity, scan_op);
 
         // Grab result from predecessor
-        ThreadStore<STORE_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id], (CellT) inclusive_output);
-        exclusive_output = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[HALF_WARP_THREADS + lane_id - 1]);
+        exclusive_output = GetExclusive(input, inclusive_output, scan_op, Int2Type<IS_INTEGER>());
     }
 
 
     //---------------------------------------------------------------------
     // Exclusive operations
     //---------------------------------------------------------------------
+
+    /// Exclusive scan
+    template <typename ScanOp>
+    __device__ __forceinline__ void ExclusiveScan(
+        T               input,              ///< [in] Calling thread's input item.
+        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               identity,           ///< [in] Identity value
+        ScanOp          scan_op)            ///< [in] Binary scan operator
+    {
+        T inclusive_output;
+        Scan(input, inclusive_output, output, identity, scan_op);
+    }
+
+
+    /// Exclusive scan without identity
+    template <typename ScanOp>
+    __device__ __forceinline__ void ExclusiveScan(
+        T               input,              ///< [in] Calling thread's input item.
+        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        ScanOp          scan_op)            ///< [in] Binary scan operator
+    {
+        T inclusive_output;
+        Scan(input, inclusive_output, output, scan_op);
+    }
 
     /// Exclusive scan with aggregate
     template <typename ScanOp>
@@ -289,11 +369,12 @@ struct WarpScanSmem
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
+        // Compute inclusive scan
         T inclusive_output;
-        Scan(input, inclusive_output, output, identity, scan_op);
+        InclusiveScan(input, inclusive_output, identity, scan_op);
 
-        // Retrieve aggregate
-        warp_aggregate = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
+        // Grab result from predecessor
+        output = GetExclusive(input, inclusive_output, scan_op, warp_aggregate, Int2Type<IS_INTEGER>());
     }
 
 
@@ -305,12 +386,14 @@ struct WarpScanSmem
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
+        // Compute inclusive scan
         T inclusive_output;
-        Scan(input, inclusive_output, output, scan_op);
+        InclusiveScan(input, inclusive_output, scan_op);
 
-        // Retrieve aggregate
-        warp_aggregate = (T) ThreadLoad<LOAD_VOLATILE>(&temp_storage[WARP_SMEM_ELEMENTS - 1]);
+        // Grab result from predecessor
+        output = GetExclusive(input, inclusive_output, scan_op, warp_aggregate, Int2Type<IS_INTEGER>());
     }
+
 
 };
 

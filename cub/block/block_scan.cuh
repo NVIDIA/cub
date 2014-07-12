@@ -323,6 +323,9 @@ private:
     }
 
 
+    /******************************************************************************
+     * Public types
+     ******************************************************************************/
 public:
 
     /// \smemstorage{BlockScan}
@@ -370,6 +373,7 @@ public:
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.
      *
      * \par
+     * - \identityzero
      * - \rowmajor
      * - \smemreuse
      *
@@ -405,8 +409,7 @@ public:
         T               input,                          ///< [in] Calling thread's input item
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
-        T block_aggregate;
-        InternalBlockScan(temp_storage).ExclusiveSum(input, output, block_aggregate);
+        ExclusiveScan(input, output, ZeroInitialize<T>(), cub::Sum());
     }
 
 
@@ -414,6 +417,7 @@ public:
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
+     * - \identityzero
      * - \rowmajor
      * - \smemreuse
      *
@@ -452,7 +456,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
-        InternalBlockScan(temp_storage).ExclusiveSum(input, output, block_aggregate);
+        ExclusiveScan(input, output, ZeroInitialize<T>(), cub::Sum(), block_aggregate);
     }
 
 
@@ -460,6 +464,7 @@ public:
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
+     * - \identityzero
      * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      *   The functor will be invoked by the first warp of threads in the block, however only the return value from
@@ -538,7 +543,7 @@ public:
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage).ExclusiveSum(input, output, block_aggregate, block_prefix_callback_op);
+        ExclusiveScan(input, output, ZeroInitialize<T>(), cub::Sum(), block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -553,6 +558,7 @@ public:
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.
      *
      * \par
+     * - \identityzero
      * - \blocked
      * - \granularity
      * - \smemreuse
@@ -608,6 +614,7 @@ public:
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
+     * - \identityzero
      * - \blocked
      * - \granularity
      * - \smemreuse
@@ -666,6 +673,7 @@ public:
      * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
+     * - \identityzero
      * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
      *   The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
      *   The functor will be invoked by the first warp of threads in the block, however only the return value from
@@ -822,8 +830,7 @@ public:
         T               identity,                       ///< [in] Identity value
         ScanOp          scan_op)                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
-        T block_aggregate;
-        InternalBlockScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage).ExclusiveScan(input, output, identity, scan_op);
     }
 
 
@@ -1219,6 +1226,8 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+#if 0
+
     /******************************************************************//**
      * \name Exclusive prefix scan operations (identityless, single datum per thread)
      *********************************************************************/
@@ -1241,8 +1250,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op)                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
-        T block_aggregate;
-        InternalBlockScan(temp_storage).ExclusiveScan(input, output, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage).ExclusiveScan(input, output, scan_op);
     }
 
 
@@ -1298,6 +1306,9 @@ public:
 
 
     //@}  end member group
+
+#endif // #if 0
+
     /******************************************************************//**
      * \name Exclusive prefix scan operations (identityless, multiple data per thread)
      *********************************************************************/
@@ -1456,8 +1467,7 @@ public:
         T               input,                          ///< [in] Calling thread's input item
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
-        T block_aggregate;
-        InternalBlockScan(temp_storage).InclusiveSum(input, output, block_aggregate);
+        InclusiveScan(input, output, cub::Sum());
     }
 
 
@@ -1503,7 +1513,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
-        InternalBlockScan(temp_storage).InclusiveSum(input, output, block_aggregate);
+        InclusiveScan(input, output, cub::Sum(), block_aggregate);
     }
 
 
@@ -1590,7 +1600,7 @@ public:
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage).InclusiveSum(input, output, block_aggregate, block_prefix_callback_op);
+        InclusiveScan(input, output, cub::Sum(), block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -1896,8 +1906,7 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp          scan_op)                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     {
-        T block_aggregate;
-        InclusiveScan(input, output, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage).InclusiveScan(input, output, scan_op);
     }
 
 

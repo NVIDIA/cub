@@ -263,8 +263,6 @@ __global__ void WarpHeadSegmentedReduceKernel(
     T       input       = d_in[threadIdx.x];
     Flag    head_flag   = d_head_flags[threadIdx.x];
 
-    __syncthreads();
-
     // Record elapsed clocks
     clock_t start = clock();
 
@@ -311,8 +309,6 @@ __global__ void WarpTailSegmentedReduceKernel(
     Flag    head_flag   = (threadIdx.x == 0) ?
                             0 :
                             d_tail_flags[threadIdx.x - 1];
-
-    __syncthreads();
 
     // Record elapsed clocks
     clock_t start = clock();
@@ -365,8 +361,6 @@ void Initialize(
         char bits;
         RandomBits(bits, flag_entropy);
         h_flags[i] = bits & 0x1;
-
-//        printf("item[%d] = %d (%d)\n", i, h_in[i], h_flags[i]);
     }
 
     // Accumulate segments (lane 0 of each warp is implicitly a segment head)
@@ -452,8 +446,15 @@ void TestReduce(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * BLOCK_THREADS, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * BLOCK_THREADS));
 
+    if (g_verbose)
+    {
+        printf("Data:\n");
+        for (int i = 0; i < WARPS; ++i)
+            DisplayResults(h_in + (i * LOGICAL_WARP_THREADS), valid_warp_threads);
+    }
+
     // Run kernel
-    printf("Gen-mode %d, %d warps, %d warp threads, %d valid lanes, %s (%d bytes) elements:\n",
+    printf("\nGen-mode %d, %d warps, %d warp threads, %d valid lanes, %s (%d bytes) elements:\n",
         gen_mode,
         WARPS,
         LOGICAL_WARP_THREADS,
@@ -547,7 +548,18 @@ void TestSegmentedReduce(
     CubDebugExit(cudaMemset(d_head_out, 0, sizeof(T) * BLOCK_THREADS));
     CubDebugExit(cudaMemset(d_tail_out, 0, sizeof(T) * BLOCK_THREADS));
 
-    printf("Gen-mode %d, head flag entropy reduction %d, %d warps, %d warp threads, %s (%d bytes) elements:\n",
+    if (g_verbose)
+    {
+        printf("Data:\n");
+        for (int i = 0; i < WARPS; ++i)
+            DisplayResults(h_in + (i * LOGICAL_WARP_THREADS), LOGICAL_WARP_THREADS);
+
+        printf("\nFlags:\n");
+        for (int i = 0; i < WARPS; ++i)
+            DisplayResults(h_flags + (i * LOGICAL_WARP_THREADS), LOGICAL_WARP_THREADS);
+    }
+
+    printf("\nGen-mode %d, head flag entropy reduction %d, %d warps, %d warp threads, %s (%d bytes) elements:\n",
         gen_mode,
         flag_entropy,
         WARPS,
@@ -649,35 +661,46 @@ template <
 void Test(GenMode gen_mode)
 {
     // primitive
-    Test<WARPS, LOGICAL_WARP_THREADS, unsigned char>(      gen_mode, Sum(), CUB_TYPE_STRING(unsigned char));
-    Test<WARPS, LOGICAL_WARP_THREADS, unsigned short>(     gen_mode, Sum(), CUB_TYPE_STRING(unsigned short));
-    Test<WARPS, LOGICAL_WARP_THREADS, unsigned int>(       gen_mode, Sum(), CUB_TYPE_STRING(unsigned int));
-    Test<WARPS, LOGICAL_WARP_THREADS, unsigned long long>( gen_mode, Sum(), CUB_TYPE_STRING(unsigned long long));
+    Test<WARPS, LOGICAL_WARP_THREADS, char>(                gen_mode, Sum(), CUB_TYPE_STRING(char));
+    Test<WARPS, LOGICAL_WARP_THREADS, short>(               gen_mode, Sum(), CUB_TYPE_STRING(short));
+    Test<WARPS, LOGICAL_WARP_THREADS, int>(                 gen_mode, Sum(), CUB_TYPE_STRING(int));
+    Test<WARPS, LOGICAL_WARP_THREADS, long long>(           gen_mode, Sum(), CUB_TYPE_STRING(long long));
+
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned char>(       gen_mode, Sum(), CUB_TYPE_STRING(unsigned char));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned short>(      gen_mode, Sum(), CUB_TYPE_STRING(unsigned short));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned int>(        gen_mode, Sum(), CUB_TYPE_STRING(unsigned int));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned long long>(  gen_mode, Sum(), CUB_TYPE_STRING(unsigned long long));
+
+    if (gen_mode != RANDOM)
+    {
+        Test<WARPS, LOGICAL_WARP_THREADS, float>(           gen_mode, Sum(), CUB_TYPE_STRING(float));
+        Test<WARPS, LOGICAL_WARP_THREADS, double>(          gen_mode, Sum(), CUB_TYPE_STRING(double));
+    }
 
     // primitive (alternative reduce op)
-    Test<WARPS, LOGICAL_WARP_THREADS, unsigned char>(      gen_mode, Max(), CUB_TYPE_STRING(unsigned char));
-    Test<WARPS, LOGICAL_WARP_THREADS, unsigned short>(     gen_mode, Max(), CUB_TYPE_STRING(unsigned short));
-    Test<WARPS, LOGICAL_WARP_THREADS, unsigned int>(       gen_mode, Max(), CUB_TYPE_STRING(unsigned int));
-    Test<WARPS, LOGICAL_WARP_THREADS, unsigned long long>( gen_mode, Max(), CUB_TYPE_STRING(unsigned long long));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned char>(       gen_mode, Max(), CUB_TYPE_STRING(unsigned char));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned short>(      gen_mode, Max(), CUB_TYPE_STRING(unsigned short));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned int>(        gen_mode, Max(), CUB_TYPE_STRING(unsigned int));
+    Test<WARPS, LOGICAL_WARP_THREADS, unsigned long long>(  gen_mode, Max(), CUB_TYPE_STRING(unsigned long long));
 
     // vec-1
-    Test<WARPS, LOGICAL_WARP_THREADS, uchar1>(             gen_mode, Sum(), CUB_TYPE_STRING(uchar1));
+    Test<WARPS, LOGICAL_WARP_THREADS, uchar1>(              gen_mode, Sum(), CUB_TYPE_STRING(uchar1));
 
     // vec-2
-    Test<WARPS, LOGICAL_WARP_THREADS, uchar2>(             gen_mode, Sum(), CUB_TYPE_STRING(uchar2));
-    Test<WARPS, LOGICAL_WARP_THREADS, ushort2>(            gen_mode, Sum(), CUB_TYPE_STRING(ushort2));
-    Test<WARPS, LOGICAL_WARP_THREADS, uint2>(              gen_mode, Sum(), CUB_TYPE_STRING(uint2));
-    Test<WARPS, LOGICAL_WARP_THREADS, ulonglong2>(         gen_mode, Sum(), CUB_TYPE_STRING(ulonglong2));
+    Test<WARPS, LOGICAL_WARP_THREADS, uchar2>(              gen_mode, Sum(), CUB_TYPE_STRING(uchar2));
+    Test<WARPS, LOGICAL_WARP_THREADS, ushort2>(             gen_mode, Sum(), CUB_TYPE_STRING(ushort2));
+    Test<WARPS, LOGICAL_WARP_THREADS, uint2>(               gen_mode, Sum(), CUB_TYPE_STRING(uint2));
+    Test<WARPS, LOGICAL_WARP_THREADS, ulonglong2>(          gen_mode, Sum(), CUB_TYPE_STRING(ulonglong2));
 
     // vec-4
-    Test<WARPS, LOGICAL_WARP_THREADS, uchar4>(             gen_mode, Sum(), CUB_TYPE_STRING(uchar4));
-    Test<WARPS, LOGICAL_WARP_THREADS, ushort4>(            gen_mode, Sum(), CUB_TYPE_STRING(ushort4));
-    Test<WARPS, LOGICAL_WARP_THREADS, uint4>(              gen_mode, Sum(), CUB_TYPE_STRING(uint4));
-    Test<WARPS, LOGICAL_WARP_THREADS, ulonglong4>(         gen_mode, Sum(), CUB_TYPE_STRING(ulonglong4));
+    Test<WARPS, LOGICAL_WARP_THREADS, uchar4>(              gen_mode, Sum(), CUB_TYPE_STRING(uchar4));
+    Test<WARPS, LOGICAL_WARP_THREADS, ushort4>(             gen_mode, Sum(), CUB_TYPE_STRING(ushort4));
+    Test<WARPS, LOGICAL_WARP_THREADS, uint4>(               gen_mode, Sum(), CUB_TYPE_STRING(uint4));
+    Test<WARPS, LOGICAL_WARP_THREADS, ulonglong4>(          gen_mode, Sum(), CUB_TYPE_STRING(ulonglong4));
 
     // complex
-    Test<WARPS, LOGICAL_WARP_THREADS, TestFoo>(            gen_mode, Sum(), CUB_TYPE_STRING(TestFoo));
-    Test<WARPS, LOGICAL_WARP_THREADS, TestBar>(            gen_mode, Sum(), CUB_TYPE_STRING(TestBar));
+    Test<WARPS, LOGICAL_WARP_THREADS, TestFoo>(             gen_mode, Sum(), CUB_TYPE_STRING(TestFoo));
+    Test<WARPS, LOGICAL_WARP_THREADS, TestBar>(             gen_mode, Sum(), CUB_TYPE_STRING(TestBar));
 }
 
 
@@ -733,8 +756,15 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
+
     TestReduce<1, 32, int>(UNIFORM, Sum(), CUB_TYPE_STRING(int), 32);
+    TestReduce<1, 32, double>(UNIFORM, Sum(), CUB_TYPE_STRING(double), 32);
+    TestReduce<2, 16, TestBar>(UNIFORM, Sum(), CUB_TYPE_STRING(TestBar), 7);
     TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+
+    typedef ItemOffsetPair<float, int> T;
+    cub::Sum sum_op;
+    TestReduce<1, 32, T>(UNIFORM, ReduceBySegmentOp<cub::Sum, T>(sum_op), CUB_TYPE_STRING(T), 32);
 
 #else
 
