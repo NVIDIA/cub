@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.3.1</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.3.2</b></em></a>
 
 </td><td>
 
@@ -394,8 +394,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>CUB releases are labeled using version identifiers having three fields: <code>&lt;epoch&gt;.&lt;feature&gt;.&lt;update&gt;</code>. The <em>epoch</em> field corresponds to support for a major change or update to the CUDA programming model. The <em>feature</em> field corresponds to a stable set of features, functionality, and interface. The <em>update</em> field corresponds to a bug-fix or performance update for that feature set. At the moment, we do not publicly provide non-stable releases such as development snapshots, beta releases or rolling releases. (Feel free to contact us if you would like access to such things.)</dd></dl>
 <dl class="section user"><dt></dt><dd>The following table enumerates prior feature releases as well as update versions for the current feature release. <table class="doxtable">
 <tr>
+<td style="white-space: nowrap; vertical-align:text-top;">07/28/2014<br/>
+ <a href="download_cub.html"><b>CUB v1.3.2</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li>Bug fixes:<ul>
+<li>Fix for bug in <a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides device-wide, parallel operations for computing a reduction across a sequence of...">cub::DeviceReduce</a> where reductions of small problems (small enough to only dispatch a single threadblock) would run in the default stream (stream zero) regardless of whether an alternate stream was specified.</li>
+</ul>
+</li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
+</ul>
+<p class="endtd"></p>
+</td></tr>
+<tr>
 <td style="white-space: nowrap; vertical-align:text-top;">05/23/2014<br/>
- <a href="download_cub.html"><b>CUB v1.3.1</b></a> </td><td style="vertical-align:text-top;"><ul>
+ <b>CUB v1.3.1</b> </td><td style="vertical-align:text-top;"><ul>
 <li>Bug fixes:<ul>
 <li>Workaround for a benign WAW race warning reported by cuda-memcheck in <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> specialized for <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">cub::BLOCK_SCAN_WARP_SCANS</a> algorithm.</li>
 <li>Fix for bug in <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> where the algorithm may sort more key bits than the caller specified (up to the nearest radix digit).</li>
@@ -506,7 +517,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri May 23 2014 07:20:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Jul 28 2014 22:37:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
