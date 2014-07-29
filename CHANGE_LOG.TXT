@@ -1,5 +1,14 @@
 //-----------------------------------------------------------------------------
 
+1.3.2    07/28/2014
+    - Bug fixes: 
+        - Fix for cub::DeviceReduce where reductions of small problems 
+          (small enough to only dispatch a single threadblock) would run in 
+          the default stream (stream zero) regardless of whether an alternate
+          stream was specified.  
+          
+//-----------------------------------------------------------------------------
+
 1.3.1    05/23/2014
     - Bug fixes: 
         - Workaround for a benign WAW race warning reported by cuda-memcheck

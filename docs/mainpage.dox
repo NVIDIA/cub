@@ -58,7 +58,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.3.1</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.3.2</b></em></a>
 
 </td><td>
 
@@ -523,8 +523,20 @@ for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
+07/28/2014<br>
+[<b>CUB v1.3.2</b>](download_cub.html)
+</td><td style="vertical-align:text-top;">
+  - Bug fixes: 
+    - Fix for bug in cub::DeviceReduce where reductions of small problems 
+      (small enough to only dispatch a single threadblock) would run in 
+      the default stream (stream zero) regardless of whether an alternate
+      stream was specified.  
+  - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
+</td></tr>
+
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
 05/23/2014<br>
-[<b>CUB v1.3.1</b>](download_cub.html)
+<b>CUB v1.3.1</b>
 </td><td style="vertical-align:text-top;">
   - Bug fixes: 
     - Workaround for a benign WAW race warning reported by cuda-memcheck
