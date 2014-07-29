@@ -62,7 +62,7 @@ CachingDeviceAllocator  g_allocator(true);
 
 enum RleMethod
 {
-    RLE,
+    RLE,                // Run length encode
     NON_TRIVIAL,
     CSR,
 };
@@ -357,9 +357,13 @@ void Initialize(
     {
         // Select number of repeating occurrences for the current run
         unsigned int repeat;
-        if (max_segment == -1)
+        if (max_segment < 0)
         {
             repeat = num_items;
+        }
+        else if (max_segment < 2)
+        {
+            repeat = 1;
         }
         else
         {
@@ -719,23 +723,24 @@ void Test(
     char*           offset_type_string,
     char*           length_type_string)
 {
-    // Evaluate different max-segment lengths
-    for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
+    // One run
+    TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, -1, key_type_string, offset_type_string, length_type_string);
+    TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, -1, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+
+    // num_items runs
+    TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, 1, key_type_string, offset_type_string, length_type_string);
+    TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, 1, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+
+    // Evaluate different run lengths
+    for (int max_segment = 3; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 3)
     {
-        // 0 key-bit entropy reduction rounds
+        // Uniform selection run length
         TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, length_type_string);
         TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
 
-        if (max_segment > 1)
-        {
-            // 2 key-bit entropy reduction rounds
-            TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string, length_type_string);
-            TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 2, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
-
-            // 7 key-bit entropy reduction rounds
-            TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string, length_type_string);
-            TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 7, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
-        }
+        // Reduced-entropy run length
+        TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 4, max_segment, key_type_string, offset_type_string, length_type_string);
+        TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 4, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
     }
 }
 
@@ -754,7 +759,8 @@ void TestDispatch(
     char*           length_type_string)
 {
     Test<RLE,           CUB, T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
-    Test<NON_TRIVIAL,   CUB, T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
+// Mooch
+//    Test<NON_TRIVIAL,   CUB, T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
 
 #ifdef CUB_CDP
     Test<RLE,           CDP, T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
@@ -856,6 +862,8 @@ int main(int argc, char** argv)
     {
 
         // Test different input types
+        TestSize<int,           int, int>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+/*
         TestSize<char,          int, int>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
         TestSize<short,         int, int>(num_items, CUB_TYPE_STRING(short), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
         TestSize<int,           int, int>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
@@ -871,6 +879,7 @@ int main(int argc, char** argv)
         TestSize<ulonglong4,    int, int>(num_items, CUB_TYPE_STRING(ulonglong4), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
         TestSize<TestFoo,       int, int>(num_items, CUB_TYPE_STRING(TestFoo), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
         TestSize<TestBar,       int, int>(num_items, CUB_TYPE_STRING(TestBar), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+*/
     }
 
 #endif
