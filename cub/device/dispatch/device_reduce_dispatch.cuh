@@ -542,7 +542,7 @@ struct DeviceReduceDispatch
                     single_reduce_sweep_config.block_threads, (long long) stream, single_reduce_sweep_config.items_per_thread);
 
                 // Invoke single_reduce_sweep_kernel
-                single_reduce_sweep_kernel<<<1, single_reduce_sweep_config.block_threads>>>(
+                single_reduce_sweep_kernel<<<1, single_reduce_sweep_config.block_threads, 0, stream>>>(
                     d_in,
                     d_out,
                     num_items,
