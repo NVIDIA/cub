@@ -543,7 +543,7 @@ struct DeviceReduceDispatch
                     single_tile_config.block_threads, (long long) stream, single_tile_config.items_per_thread);
 
                 // Invoke single_kernel
-                single_kernel<<<1, single_tile_config.block_threads>>>(
+                single_kernel<<<1, single_tile_config.block_threads, 0, stream>>>(
                     d_in,
                     d_out,
                     num_items,
