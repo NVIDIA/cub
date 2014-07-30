@@ -405,7 +405,7 @@ struct DeviceRleDispatch
             if (CubDebug(error = ScanTileState::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
             allocation_sizes[1] = GridQueue<int>::AllocationSize();                                             // bytes needed for grid queue descriptor
 
-            // Compute allocation pointers into the single storage blob (or set the necessary size of the blob)
+            // Compute allocation pointers into the single storage blob (or compute the necessary size of the blob)
             void* allocations[2];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
