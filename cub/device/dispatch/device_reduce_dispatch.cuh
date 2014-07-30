@@ -607,7 +607,7 @@ struct DeviceReduceDispatch
                     GridQueue<int>::AllocationSize()        // bytes needed for grid queue descriptor
                 };
 
-                // Alias the temporary allocations from the single storage blob (or set the necessary size of the blob)
+                // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
                 if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
                 if (d_temp_storage == NULL)
                 {

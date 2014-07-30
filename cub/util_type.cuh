@@ -624,6 +624,10 @@ struct DoubleBuffer
 
     /// \brief Return pointer to the currently valid buffer
     __host__ __device__ __forceinline__ T* Current() { return d_buffers[selector]; }
+
+    /// \brief Return pointer to the currently invalid buffer
+    __host__ __device__ __forceinline__ T* Invalid() { return d_buffers[selector ^ 1]; }
+
 };
 
 

@@ -155,7 +155,7 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int Offset;
 
-        return DeviceRadixSortDispatch<false, Key, Value, Offset>::Dispatch(
+        return DeviceRadixSortDispatch<false, false, Key, Value, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -238,7 +238,7 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int Offset;
 
-        return DeviceRadixSortDispatch<true, Key, Value, Offset>::Dispatch(
+        return DeviceRadixSortDispatch<true, false, Key, Value, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -319,7 +319,7 @@ struct DeviceRadixSort
         // Null value type
         DoubleBuffer<NullType> d_values;
 
-        return DeviceRadixSortDispatch<false, Key, NullType, Offset>::Dispatch(
+        return DeviceRadixSortDispatch<false, false, Key, NullType, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -396,7 +396,7 @@ struct DeviceRadixSort
         // Null value type
         DoubleBuffer<NullType> d_values;
 
-        return DeviceRadixSortDispatch<true, Key, NullType, Offset>::Dispatch(
+        return DeviceRadixSortDispatch<true, false, Key, NullType, Offset>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
