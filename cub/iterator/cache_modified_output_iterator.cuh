@@ -100,12 +100,12 @@ namespace cub {
  *
  * \tparam CacheStoreModifier     The cub::CacheStoreModifier to use when accessing data
  * \tparam ValueType            The value type of this iterator
- * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam OffsetT              The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     CacheStoreModifier  MODIFIER,
     typename            ValueType,
-    typename            Offset = ptrdiff_t>
+    typename            OffsetT = ptrdiff_t>
 class CacheModifiedOutputIterator
 {
 private:
@@ -130,7 +130,7 @@ public:
 
     // Required iterator traits
     typedef CacheModifiedOutputIterator         self_type;              ///< My own type
-    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef OffsetT                             difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef Reference                           reference;              ///< The type of a reference to an element the iterator can point to

@@ -96,12 +96,12 @@ struct BlockSelectSweepPolicy
  */
 template <
     typename    BlockSelectSweepPolicy,         ///< Parameterized BlockSelectSweepPolicy tuning policy type
-    typename    InputIterator,                  ///< Random-access input iterator type for selection items
-    typename    FlagsInputIterator,                   ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    SelectedOutputIterator,                 ///< Random-access input iterator type for selected items
+    typename    InputIteratorT,                 ///< Random-access input iterator type for selection items
+    typename    FlagsInputIteratorT,                  ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    SelectedOutputIteratorT,                ///< Random-access input iterator type for selected items
     typename    SelectOp,                       ///< Selection operator type (NullType if selections or discontinuity flagging is to be used for selection)
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
-    typename    Offset,                         ///< Signed integer type for global offsets
+    typename    OffsetT,                        ///< Signed integer type for global offsets
     bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
 struct BlockSelectSweep
 {
@@ -110,13 +110,13 @@ struct BlockSelectSweep
     //---------------------------------------------------------------------
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Data type of flag iterator
-    typedef typename std::iterator_traits<FlagsInputIterator>::value_type Flag;
+    typedef typename std::iterator_traits<FlagsInputIteratorT>::value_type FlagT;
 
     // Tile status descriptor interface type
-    typedef ScanTileState<Offset> ScanTileState;
+    typedef ScanTileState<OffsetT> ScanTileState;
 
     // Constants
     enum
@@ -145,26 +145,26 @@ struct BlockSelectSweep
 
         SELECT_METHOD           = (!Equals<SelectOp, NullType>::VALUE) ?
                                     USE_SELECT_OP :
-                                    (!Equals<Flag, NullType>::VALUE) ?
+                                    (!Equals<FlagT, NullType>::VALUE) ?
                                         USE_SELECT_FLAGS :
                                         USE_DISCONTINUITY
     };
 
     // Input iterator wrapper type
-    typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockSelectSweepPolicy::LOAD_MODIFIER, T, Offset>,      // Wrap the native input pointer with CacheModifiedInputIterator
-            InputIterator>::Type                                                                // Directly use the supplied input iterator type
-        WrappedInputIterator;
+    typedef typename If<IsPointer<InputIteratorT>::VALUE,
+            CacheModifiedInputIterator<BlockSelectSweepPolicy::LOAD_MODIFIER, T, OffsetT>,      // Wrap the native input pointer with CacheModifiedInputIterator
+            InputIteratorT>::Type                                                                // Directly use the supplied input iterator type
+        WrappedInputIteratorT;
 
-    // Flag iterator wrapper type
-    typedef typename If<IsPointer<FlagsInputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockSelectSweepPolicy::LOAD_MODIFIER, Flag, Offset>,   // Wrap the native input pointer with CacheModifiedInputIterator
-            FlagsInputIterator>::Type                                                                 // Directly use the supplied input iterator type
-        WrappedFlagsInputIterator;
+    // FlagT iterator wrapper type
+    typedef typename If<IsPointer<FlagsInputIteratorT>::VALUE,
+            CacheModifiedInputIterator<BlockSelectSweepPolicy::LOAD_MODIFIER, FlagT, OffsetT>,   // Wrap the native input pointer with CacheModifiedInputIterator
+            FlagsInputIteratorT>::Type                                                                 // Directly use the supplied input iterator type
+        WrappedFlagsInputIteratorT;
 
     // Parameterized BlockLoad type for input items
     typedef BlockLoad<
-            WrappedInputIterator,
+            WrappedInputIteratorT,
             BlockSelectSweepPolicy::BLOCK_THREADS,
             BlockSelectSweepPolicy::ITEMS_PER_THREAD,
             BlockSelectSweepPolicy::LOAD_ALGORITHM>
@@ -172,7 +172,7 @@ struct BlockSelectSweep
 
     // Parameterized BlockLoad type for flags
     typedef BlockLoad<
-            WrappedFlagsInputIterator,
+            WrappedFlagsInputIteratorT,
             BlockSelectSweepPolicy::BLOCK_THREADS,
             BlockSelectSweepPolicy::ITEMS_PER_THREAD,
             BlockSelectSweepPolicy::LOAD_ALGORITHM>
@@ -182,11 +182,11 @@ struct BlockSelectSweep
     typedef BlockDiscontinuity<T, BLOCK_THREADS> BlockDiscontinuityT;
 
     // Parameterized WarpScan
-    typedef WarpScan<Offset> WarpScanAllocations;
+    typedef WarpScan<OffsetT> WarpScanAllocations;
 
     // Callback type for obtaining tile prefix during block scan
     typedef BlockScanLookbackPrefixOp<
-            Offset,
+            OffsetT,
             Sum,
             ScanTileState>
         LookbackPrefixCallbackOp;
@@ -203,7 +203,7 @@ struct BlockSelectSweep
             {
                 typename BlockDiscontinuityT::TempStorage       discontinuity;              // Smem needed for discontinuity detection
                 typename WarpScanAllocations::TempStorage       warp_scan[WARPS];           // Smem needed for warp-synchronous scans
-                Offset                                          warp_aggregates[WARPS];     // Smem needed for sharing warp-wide aggregates
+                OffsetT                                         warp_aggregates[WARPS];     // Smem needed for sharing warp-wide aggregates
                 typename LookbackPrefixCallbackOp::TempStorage  prefix;                     // Smem needed for cooperative prefix callback
             };
 
@@ -221,9 +221,9 @@ struct BlockSelectSweep
             };
         };
 
-        Offset      tile_idx;                   // Shared tile index
-        Offset      tile_inclusive;             // Inclusive tile prefix
-        Offset      tile_exclusive;             // Exclusive tile prefix
+        OffsetT     tile_idx;                   // Shared tile index
+        OffsetT     tile_inclusive;             // Inclusive tile prefix
+        OffsetT     tile_exclusive;             // Exclusive tile prefix
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -235,12 +235,12 @@ struct BlockSelectSweep
     //---------------------------------------------------------------------
 
     _TempStorage                    &temp_storage;      ///< Reference to temp_storage
-    WrappedInputIterator            d_in;               ///< Input data
-    WrappedFlagsInputIterator       d_flags;            ///< Input flags
-    SelectedOutputIterator          d_selected_out;     ///< Output data
+    WrappedInputIteratorT           d_in;               ///< Input data
+    WrappedFlagsInputIteratorT      d_flags;            ///< Input flags
+    SelectedOutputIteratorT         d_selected_out;     ///< Output data
     SelectOp                        select_op;          ///< Selection operator
     InequalityWrapper<EqualityOp>   inequality_op;      ///< Inequality operator
-    Offset                          num_items;          ///< Total number of input items
+    OffsetT                         num_items;          ///< Total number of input items
 
 
     //---------------------------------------------------------------------
@@ -251,12 +251,12 @@ struct BlockSelectSweep
     __device__ __forceinline__
     BlockSelectSweep(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
-        InputIterator               d_in,               ///< Input data
-        FlagsInputIterator          d_flags,            ///< Input flags
-        SelectedOutputIterator      d_selected_out,     ///< Output data
+        InputIteratorT              d_in,               ///< Input data
+        FlagsInputIteratorT         d_flags,            ///< Input flags
+        SelectedOutputIteratorT     d_selected_out,     ///< Output data
         SelectOp                    select_op,          ///< Selection operator
         EqualityOp                  equality_op,        ///< Equality operator
-        Offset                      num_items)          ///< Total number of input items
+        OffsetT                     num_items)          ///< Total number of input items
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
@@ -277,14 +277,14 @@ struct BlockSelectSweep
      */
     template <bool FIRST_TILE, bool LAST_TILE, int ITERATION>
     __device__ __forceinline__ void ApplySelectionOp(
-        Offset                      block_offset,
-        Offset                      num_remaining,
+        OffsetT                     block_offset,
+        OffsetT                     num_remaining,
         T                           (&items)[ITEMS_PER_THREAD],
-        Offset                      (&selected)[ITEMS_PER_THREAD],
+        OffsetT                     (&selected)[ITEMS_PER_THREAD],
         Int2Type<ITERATION>         iteration)
     {
         selected[ITERATION] = 0;
-        if (!LAST_TILE || (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITERATION < num_remaining))
+        if (!LAST_TILE || (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITERATION < num_remaining))
             selected[ITERATION] = select_op(items[ITERATION]);
 
         ApplySelectionOp<FIRST_TILE, LAST_TILE>(block_offset, num_remaining, items, selected, Int2Type<ITERATION + 1>());
@@ -295,10 +295,10 @@ struct BlockSelectSweep
      */
     template <bool FIRST_TILE, bool LAST_TILE>
     __device__ __forceinline__ void ApplySelectionOp(
-        Offset                      block_offset,
-        Offset                      num_remaining,
+        OffsetT                     block_offset,
+        OffsetT                     num_remaining,
         T                           (&items)[ITEMS_PER_THREAD],
-        Offset                      (&selected)[ITEMS_PER_THREAD],
+        OffsetT                     (&selected)[ITEMS_PER_THREAD],
         Int2Type<ITEMS_PER_THREAD>  iteration)
     {}
 
@@ -307,10 +307,10 @@ struct BlockSelectSweep
      */
     template <bool FIRST_TILE, bool LAST_TILE>
     __device__ __forceinline__ void InitializeSelections(
-        Offset                      block_offset,
-        Offset                      num_remaining,
+        OffsetT                     block_offset,
+        OffsetT                     num_remaining,
         T                           (&items)[ITEMS_PER_THREAD],
-        Offset                      (&selected)[ITEMS_PER_THREAD],
+        OffsetT                     (&selected)[ITEMS_PER_THREAD],
         Int2Type<USE_SELECT_OP>     select_method)
     {
         __syncthreads();
@@ -324,13 +324,13 @@ struct BlockSelectSweep
      */
     template <bool FIRST_TILE, bool LAST_TILE>
     __device__ __forceinline__ void InitializeSelections(
-        Offset                      block_offset,
-        Offset                      num_remaining,
+        OffsetT                     block_offset,
+        OffsetT                     num_remaining,
         T                           (&items)[ITEMS_PER_THREAD],
-        Offset                      (&selected)[ITEMS_PER_THREAD],
+        OffsetT                     (&selected)[ITEMS_PER_THREAD],
         Int2Type<USE_SELECT_FLAGS>  select_method)
     {
-        Flag flags[ITEMS_PER_THREAD];
+        FlagT flags[ITEMS_PER_THREAD];
 
         if (LAST_TILE)
             BlockLoadFlags(temp_storage.load_flags).Load(d_flags + block_offset, flags, num_remaining, 0);
@@ -353,10 +353,10 @@ struct BlockSelectSweep
      */
     template <bool FIRST_TILE, bool LAST_TILE>
     __device__ __forceinline__ void InitializeSelections(
-        Offset                      block_offset,
-        Offset                      num_remaining,
+        OffsetT                     block_offset,
+        OffsetT                     num_remaining,
         T                           (&items)[ITEMS_PER_THREAD],
-        Offset                      (&selected)[ITEMS_PER_THREAD],
+        OffsetT                     (&selected)[ITEMS_PER_THREAD],
         Int2Type<USE_DISCONTINUITY> select_method)
     {
         if (FIRST_TILE)
@@ -384,7 +384,7 @@ struct BlockSelectSweep
      * Scan of allocations
      */
     __device__ __forceinline__ void ScanAllocations(
-        Offset  &tile_aggregate,
+        OffsetT &tile_aggregate,
         int     &warp_aggregate,
         int     &warp_exclusive,
         int     (&selected)[ITEMS_PER_THREAD],
@@ -436,7 +436,7 @@ struct BlockSelectSweep
      * Two-phase scatter, specialized for warp time-slicing
      */
     __device__ __forceinline__ void ScatterTwoPhase(
-        Offset          tile_exclusive,
+        OffsetT         tile_exclusive,
         int             warp_aggregate,
         int             warp_exclusive,
         int             (&thread_exclusives)[ITEMS_PER_THREAD],
@@ -480,7 +480,7 @@ struct BlockSelectSweep
      * Two-phase scatter
      */
     __device__ __forceinline__ void ScatterTwoPhase(
-        Offset          tile_exclusive,
+        OffsetT         tile_exclusive,
         int             warp_aggregate,
         int             warp_exclusive,
         int             (&thread_exclusives)[ITEMS_PER_THREAD],
@@ -508,8 +508,8 @@ struct BlockSelectSweep
      * Scatter
      */
     __device__ __forceinline__ void Scatter(
-        Offset  tile_aggregate,
-        Offset  tile_exclusive,
+        OffsetT tile_aggregate,
+        OffsetT tile_exclusive,
         int     warp_aggregate,
         int     warp_exclusive,
         int     (&thread_exclusives)[ITEMS_PER_THREAD],
@@ -552,11 +552,11 @@ struct BlockSelectSweep
      * Process a tile of input (dynamic chained scan)
      */
     template <bool LAST_TILE>
-    __device__ __forceinline__ Offset ConsumeTile(
-        Offset              num_items,          ///< Total number of input items
-        Offset              num_remaining,      ///< Total number of items remaining to be processed (including this tile)
+    __device__ __forceinline__ OffsetT ConsumeTile(
+        OffsetT             num_items,          ///< Total number of input items
+        OffsetT             num_remaining,      ///< Total number of items remaining to be processed (including this tile)
         int                 tile_idx,           ///< Tile index
-        Offset              block_offset,       ///< Tile offset
+        OffsetT             block_offset,       ///< Tile offset
         ScanTileState       &tile_status)       ///< Global list of tile status
     {
         if (tile_idx == 0)
@@ -586,7 +586,7 @@ struct BlockSelectSweep
             InitializeSelections<true, LAST_TILE>(block_offset, num_remaining, items, selected, Int2Type<SELECT_METHOD>());
 
             // Scan the selected flags
-            Offset tile_aggregate;
+            OffsetT tile_aggregate;
             int warp_aggregate, warp_exclusive;
             int thread_exclusives[ITEMS_PER_THREAD];    // Thread exclusive scatter prefixes
             ScanAllocations(tile_aggregate, warp_aggregate, warp_exclusive, selected, thread_exclusives);
@@ -595,7 +595,7 @@ struct BlockSelectSweep
             if (!LAST_TILE && (threadIdx.x == 0))
                 tile_status.SetInclusive(0, tile_aggregate);
 
-            Offset tile_exclusive = 0;
+            OffsetT tile_exclusive = 0;
 
             // Scatter
             Scatter(tile_aggregate, tile_exclusive, warp_aggregate, warp_exclusive, thread_exclusives, items);
@@ -630,7 +630,7 @@ struct BlockSelectSweep
             InitializeSelections<false, LAST_TILE>(block_offset, num_remaining, items, selected, Int2Type<SELECT_METHOD>());
 
             // Scan the selected flags
-            Offset tile_aggregate;
+            OffsetT tile_aggregate;
             int warp_aggregate, warp_exclusive;
             int thread_exclusives[ITEMS_PER_THREAD];       // Scatter offsets
             ScanAllocations(tile_aggregate, warp_aggregate, warp_exclusive, selected, thread_exclusives);
@@ -647,7 +647,7 @@ struct BlockSelectSweep
 
             __syncthreads();
 
-            Offset tile_exclusive = temp_storage.tile_exclusive;
+            OffsetT tile_exclusive = temp_storage.tile_exclusive;
 
             // Scatter
             Scatter(tile_aggregate, tile_exclusive, warp_aggregate, warp_exclusive, thread_exclusives, items);
@@ -661,12 +661,12 @@ struct BlockSelectSweep
     /**
      * Dequeue and scan tiles of items as part of a dynamic chained scan
      */
-    template <typename NumSelectedIterator>         ///< Output iterator type for recording number of items selected
+    template <typename NumSelectedIteratorT>         ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRange(
         int                     num_tiles,          ///< Total number of input tiles
         GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         ScanTileState           &tile_status,       ///< Global list of tile status
-        NumSelectedIterator     d_num_selected_out)     ///< Output total number selected
+        NumSelectedIteratorT     d_num_selected_out)     ///< Output total number selected
     {
 
 #if __CUDA_ARCH__ > 130
@@ -686,8 +686,8 @@ struct BlockSelectSweep
 
 #endif
 
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
-        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
+        OffsetT block_offset    = OffsetT(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
+        OffsetT num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (num_remaining > 0)
         {
@@ -699,7 +699,7 @@ struct BlockSelectSweep
             else
             {
                 // Last tile
-                Offset total_selected = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+                OffsetT total_selected = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
 
                 // Output the total number of items selected
                 if (threadIdx.x == 0)

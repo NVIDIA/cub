@@ -54,9 +54,9 @@ template <
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIterator,                ///< The input iterator type \iterator.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
-    typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
-    typename    Offset>                          ///< Signed integer type for global offsets
+    typename    InputIteratorT,                 ///< The input iterator type \iterator.  Must have an an InputIteratorT::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+    typename    HistoCounterT,                  ///< Integer type for counting sample occurrences per histogram bin
+    typename    OffsetT>                        ///< Signed integer type for global offsets
 struct BlockHistogramSweepGlobalAtomic
 {
     //---------------------------------------------------------------------
@@ -64,7 +64,7 @@ struct BlockHistogramSweepGlobalAtomic
     //---------------------------------------------------------------------
 
     // Sample type
-    typedef typename std::iterator_traits<InputIterator>::value_type SampleT;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type SampleT;
 
     // Constants
     enum
@@ -84,10 +84,10 @@ struct BlockHistogramSweepGlobalAtomic
     //---------------------------------------------------------------------
 
     /// Reference to output histograms
-    HistoCounter* (&d_out_histograms)[ACTIVE_CHANNELS];
+    HistoCounterT* (&d_out_histograms)[ACTIVE_CHANNELS];
 
     /// Input data to reduce
-    InputIterator d_in;
+    InputIteratorT d_in;
 
 
     //---------------------------------------------------------------------
@@ -99,8 +99,8 @@ struct BlockHistogramSweepGlobalAtomic
      */
     __device__ __forceinline__ BlockHistogramSweepGlobalAtomic(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
-        InputIterator     d_in,                                           ///< Input data to reduce
-        HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
+        InputIteratorT      d_in,                                           ///< Input data to reduce
+        HistoCounterT*      (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
         d_in(d_in),
         d_out_histograms(d_out_histograms)
@@ -112,7 +112,7 @@ struct BlockHistogramSweepGlobalAtomic
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        Offset   block_offset,               ///< The offset the tile to consume
+        OffsetT  block_offset,               ///< The offset the tile to consume
         int     valid_items = TILE_ITEMS)   ///< The number of valid items in the tile
     {
         if (FULL_TILE)

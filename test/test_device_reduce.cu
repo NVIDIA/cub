@@ -57,6 +57,15 @@ int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
+// Dispatch types
+enum Backend
+{
+    CUB,        // CUB method
+    THRUST,     // Thrust method
+    CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
+};
+
+
 // Custom max functor
 struct CustomMax
 {
@@ -76,7 +85,7 @@ struct CustomMax
 /**
  * Dispatch to reduce entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename ReductionOp>
+template <typename InputIteratorT, typename OutputIteratorT, typename ReductionOp>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
@@ -86,8 +95,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     ReductionOp         reduction_op,
     cudaStream_t        stream,
@@ -105,7 +114,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to sum entrypoint
  */
-template <typename InputIterator, typename OutputIterator>
+template <typename InputIteratorT, typename OutputIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
@@ -115,8 +124,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     cub::Sum            reduction_op,
     cudaStream_t        stream,
@@ -134,7 +143,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to min entrypoint
  */
-template <typename InputIterator, typename OutputIterator>
+template <typename InputIteratorT, typename OutputIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
@@ -144,8 +153,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     cub::Min            reduction_op,
     cudaStream_t        stream,
@@ -163,7 +172,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to max entrypoint
  */
-template <typename InputIterator, typename OutputIterator>
+template <typename InputIteratorT, typename OutputIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
@@ -173,8 +182,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     cub::Max            reduction_op,
     cudaStream_t        stream,
@@ -192,7 +201,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to argmin entrypoint
  */
-template <typename InputIterator, typename OutputIterator>
+template <typename InputIteratorT, typename OutputIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
@@ -202,8 +211,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     cub::ArgMin         reduction_op,
     cudaStream_t        stream,
@@ -221,7 +230,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to argmax entrypoint
  */
-template <typename InputIterator, typename OutputIterator>
+template <typename InputIteratorT, typename OutputIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       dispatch_to,
@@ -231,8 +240,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     cub::ArgMax         reduction_op,
     cudaStream_t        stream,
@@ -255,7 +264,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to reduction entrypoint (min or max specialization)
  */
-template <typename InputIterator, typename OutputIterator, typename ReductionOp>
+template <typename InputIteratorT, typename OutputIteratorT, typename ReductionOp>
 cudaError_t Dispatch(
     Int2Type<THRUST>    dispatch_to,
     int                 timing_timing_iterations,
@@ -264,14 +273,14 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     ReductionOp         reduction_op,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     if (d_temp_storage == 0)
     {
@@ -298,7 +307,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to reduction entrypoint (sum specialization)
  */
-template <typename InputIterator, typename OutputIterator>
+template <typename InputIteratorT, typename OutputIteratorT>
 cudaError_t Dispatch(
     Int2Type<THRUST>    dispatch_to,
     int                 timing_timing_iterations,
@@ -307,14 +316,14 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     Sum                 reduction_op,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     if (d_temp_storage == 0)
     {
@@ -347,8 +356,8 @@ cudaError_t Dispatch(
  * Simple wrapper kernel to invoke DeviceReduce
  */
 template <
-    typename            InputIterator,
-    typename            OutputIterator,
+    typename            InputIteratorT,
+    typename            OutputIteratorT,
     typename            ReductionOp>
 __global__ void CnpDispatchKernel(
     int                 timing_timing_iterations,
@@ -357,8 +366,8 @@ __global__ void CnpDispatchKernel(
 
     void                *d_temp_storage,
     size_t              temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     ReductionOp         reduction_op,
     bool                debug_synchronous)
@@ -375,7 +384,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIterator, typename OutputIterator, typename ReductionOp>
+template <typename InputIteratorT, typename OutputIteratorT, typename ReductionOp>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CDP>       dispatch_to,
@@ -385,8 +394,8 @@ cudaError_t Dispatch(
 
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
-    InputIterator       d_in,
-    OutputIterator      d_out,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out,
     int                 num_items,
     ReductionOp         reduction_op,
     cudaStream_t        stream,
@@ -435,11 +444,11 @@ void Initialize(
  * Compute solution
  */
 template <
-    typename        InputIterator,
+    typename        InputIteratorT,
     typename        T,
     typename        ReductionOp>
 void Solve(
-    InputIterator   h_in,
+    InputIteratorT  h_in,
     T               &h_reference,
     ReductionOp     reduction_op,
     int             num_items)
@@ -459,15 +468,18 @@ void Solve(
  */
 template <
     Backend     BACKEND,
-    typename    DeviceInputIterator,
+    typename    DeviceInputIteratorT,
     typename    T,
     typename    ReductionOp>
 void Test(
-    DeviceInputIterator     d_in,
+    DeviceInputIteratorT    d_in,
     T                       &h_reference,
     int                     num_items,
     ReductionOp             reduction_op)
 {
+    // Data type
+    typedef typename std::iterator_traits<DeviceInputIteratorT>::value_type SampleT;
+
     // Allocate device output array
     T *d_out = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * 1));
@@ -510,7 +522,7 @@ void Test(
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = grate * sizeof(T);
+        float gbandwidth = grate * sizeof(SampleT);
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
 
@@ -896,7 +908,12 @@ int main(int argc, char** argv)
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
-    TestPointer<CUB, int>(          num_items,     UNIFORM, Sum(), CUB_TYPE_STRING(int));
+
+    TestPointer<CUB, int>(          num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(int));
+    TestPointer<CUB, int>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(int));
+
+    TestPointer<CUB, short>(          num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(short));
+    TestPointer<CUB, short>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(short));
 
 #elif defined(QUICK_TEST)
 

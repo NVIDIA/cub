@@ -94,11 +94,11 @@ struct BlockRleSweepPolicy
  */
 template <
     typename    BlockRleSweepPolicy,      ///< Parameterized BlockRleSweepPolicy tuning policy type
-    typename    InputIterator,            ///< Random-access input iterator type for data
-    typename    OffsetsOutputIterator,    ///< Random-access output iterator type for offset values
-    typename    LengthsOutputIterator,    ///< Random-access output iterator type for length values
+    typename    InputIteratorT,           ///< Random-access input iterator type for data
+    typename    OffsetsOutputIteratorT,   ///< Random-access output iterator type for offset values
+    typename    LengthsOutputIteratorT,   ///< Random-access output iterator type for length values
     typename    EqualityOp,               ///< T equality operator type
-    typename    Offset>                   ///< Signed integer type for global offsets
+    typename    OffsetT>                  ///< Signed integer type for global offsets
 struct BlockRleSweep
 {
     //---------------------------------------------------------------------
@@ -106,16 +106,16 @@ struct BlockRleSweep
     //---------------------------------------------------------------------
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Signed integer type for run lengths
-    typedef typename std::iterator_traits<LengthsOutputIterator>::value_type Length;
+    typedef typename std::iterator_traits<LengthsOutputIteratorT>::value_type LengthT;
 
     // Tuple type for scanning (pairs run-length and run-index)
-    typedef ItemOffsetPair<Length, Offset> LengthOffsetPair;
+    typedef ItemOffsetPair<LengthT, OffsetT> LengthOffsetPair;
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<Length, Offset> ScanTileState;
+    typedef ReduceByKeyScanTileState<LengthT, OffsetT> ScanTileState;
 
     // Constants
     enum
@@ -144,11 +144,11 @@ struct BlockRleSweep
     template <bool LAST_TILE>
     struct OobInequalityOp
     {
-        Offset          num_remaining;
+        OffsetT         num_remaining;
         EqualityOp      equality_op;
 
         __device__ __forceinline__ OobInequalityOp(
-            Offset      num_remaining,
+            OffsetT     num_remaining,
             EqualityOp  equality_op)
         :
             num_remaining(num_remaining),
@@ -167,14 +167,14 @@ struct BlockRleSweep
 
 
     // Cache-modified input iterator wrapper type for data
-    typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockRleSweepPolicy::LOAD_MODIFIER, T, Offset>,      // Wrap the native input pointer with CacheModifiedVLengthnputIterator
-            InputIterator>::Type                                                                     // Directly use the supplied input iterator type
-        WrappedInputIterator;
+    typedef typename If<IsPointer<InputIteratorT>::VALUE,
+            CacheModifiedInputIterator<BlockRleSweepPolicy::LOAD_MODIFIER, T, OffsetT>,      // Wrap the native input pointer with CacheModifiedVLengthnputIterator
+            InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
+        WrappedInputIteratorT;
 
     // Parameterized BlockLoad type for data
     typedef BlockLoad<
-            WrappedInputIterator,
+            WrappedInputIteratorT,
             BlockRleSweepPolicy::BLOCK_THREADS,
             BlockRleSweepPolicy::ITEMS_PER_THREAD,
             BlockRleSweepPolicy::LOAD_ALGORITHM>
@@ -201,8 +201,8 @@ struct BlockRleSweep
 
     typedef typename If<STORE_WARP_TIME_SLICING, typename WarpExchangePairs::TempStorage, NullType>::Type WarpExchangePairsStorage;
 
-    typedef WarpExchange<Offset, ITEMS_PER_THREAD>              WarpExchangeOffsets;
-    typedef WarpExchange<Length, ITEMS_PER_THREAD>              WarpExchangeLengths;
+    typedef WarpExchange<OffsetT, ITEMS_PER_THREAD>              WarpExchangeOffsets;
+    typedef WarpExchange<LengthT, ITEMS_PER_THREAD>              WarpExchangeLengths;
 
     // Shared memory type for this threadblock
     struct _TempStorage
@@ -230,7 +230,7 @@ struct BlockRleSweep
             };
         };
 
-        Offset              tile_idx;                   // Shared tile index
+        OffsetT             tile_idx;                   // Shared tile index
         LengthOffsetPair    tile_inclusive;             // Inclusive tile prefix
         LengthOffsetPair    tile_exclusive;             // Exclusive tile prefix
     };
@@ -245,13 +245,13 @@ struct BlockRleSweep
 
     _TempStorage                    &temp_storage;      ///< Reference to temp_storage
 
-    WrappedInputIterator            d_in;               ///< Pointer to input sequence of data items
-    OffsetsOutputIterator           d_offsets_out;      ///< Input run offsets
-    LengthsOutputIterator           d_lengths_out;      ///< Output run lengths
+    WrappedInputIteratorT           d_in;               ///< Pointer to input sequence of data items
+    OffsetsOutputIteratorT          d_offsets_out;      ///< Input run offsets
+    LengthsOutputIteratorT          d_lengths_out;      ///< Output run lengths
 
     EqualityOp                      equality_op;        ///< T equality operator
     ReduceBySegmentOp               scan_op;            ///< Reduce-length-by-flag scan operator
-    Offset                          num_items;          ///< Total number of input items
+    OffsetT                         num_items;          ///< Total number of input items
 
 
     //---------------------------------------------------------------------
@@ -262,11 +262,11 @@ struct BlockRleSweep
     __device__ __forceinline__
     BlockRleSweep(
         TempStorage                 &temp_storage,      ///< [in] Reference to temp_storage
-        InputIterator               d_in,               ///< [in] Pointer to input sequence of data items
-        OffsetsOutputIterator       d_offsets_out,      ///< [out] Pointer to output sequence of run offsets
-        LengthsOutputIterator       d_lengths_out,      ///< [out] Pointer to output sequence of run lengths
+        InputIteratorT              d_in,               ///< [in] Pointer to input sequence of data items
+        OffsetsOutputIteratorT      d_offsets_out,      ///< [out] Pointer to output sequence of run offsets
+        LengthsOutputIteratorT      d_lengths_out,      ///< [out] Pointer to output sequence of run lengths
         EqualityOp                  equality_op,        ///< [in] T equality operator
-        Offset                      num_items)          ///< [in] Total number of input items
+        OffsetT                     num_items)          ///< [in] Total number of input items
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
@@ -284,8 +284,8 @@ struct BlockRleSweep
 
     template <bool FIRST_TILE, bool LAST_TILE>
     __device__ __forceinline__ void InitializeSelections(
-        Offset              block_offset,
-        Offset              num_remaining,
+        OffsetT             block_offset,
+        OffsetT             num_remaining,
         T                   (&items)[ITEMS_PER_THREAD],
         LengthOffsetPair    (&lengths_and_num_runs)[ITEMS_PER_THREAD])
     {
@@ -412,10 +412,10 @@ struct BlockRleSweep
      */
     template <bool FIRST_TILE>
     __device__ __forceinline__ void ScatterTwoPhase(
-        Offset              tile_num_runs_exclusive_in_global,
-        Offset              warp_num_runs_aggregate,
-        Offset              warp_num_runs_exclusive_in_tile,
-        Offset              (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
+        OffsetT             tile_num_runs_exclusive_in_global,
+        OffsetT             warp_num_runs_aggregate,
+        OffsetT             warp_num_runs_exclusive_in_tile,
+        OffsetT             (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
         LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD],
         Int2Type<true>      is_warp_time_slice)
     {
@@ -446,7 +446,7 @@ struct BlockRleSweep
         {
             if ((ITEM * WARP_THREADS) < warp_num_runs_aggregate - lane_id)
             {
-                Offset item_offset =
+                OffsetT item_offset =
                     tile_num_runs_exclusive_in_global +
                     warp_num_runs_exclusive_in_tile +
                     (ITEM * WARP_THREADS) + lane_id;
@@ -469,10 +469,10 @@ struct BlockRleSweep
      */
     template <bool FIRST_TILE>
     __device__ __forceinline__ void ScatterTwoPhase(
-        Offset              tile_num_runs_exclusive_in_global,
-        Offset              warp_num_runs_aggregate,
-        Offset              warp_num_runs_exclusive_in_tile,
-        Offset              (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
+        OffsetT             tile_num_runs_exclusive_in_global,
+        OffsetT             warp_num_runs_aggregate,
+        OffsetT             warp_num_runs_exclusive_in_tile,
+        OffsetT             (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
         LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD],
         Int2Type<false>     is_warp_time_slice)
     {
@@ -480,8 +480,8 @@ struct BlockRleSweep
         int lane_id = LaneId();
 
         // Unzip
-        Offset run_offsets[ITEMS_PER_THREAD];
-        Length run_lengths[ITEMS_PER_THREAD];
+        OffsetT run_offsets[ITEMS_PER_THREAD];
+        LengthT run_lengths[ITEMS_PER_THREAD];
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -492,7 +492,7 @@ struct BlockRleSweep
 
         WarpExchangeOffsets(temp_storage.exchange_offsets[warp_id]).ScatterToStriped(run_offsets, thread_num_runs_exclusive_in_warp);
 
-        if (sizeof(Length) == sizeof(Offset))
+        if (sizeof(LengthT) == sizeof(OffsetT))
             __threadfence_block();
         else
             __syncthreads();
@@ -505,7 +505,7 @@ struct BlockRleSweep
         {
             if ((ITEM * WARP_THREADS) + lane_id < warp_num_runs_aggregate)
             {
-                Offset item_offset =
+                OffsetT item_offset =
                     tile_num_runs_exclusive_in_global +
                     warp_num_runs_exclusive_in_tile +
                     (ITEM * WARP_THREADS) + lane_id;
@@ -528,10 +528,10 @@ struct BlockRleSweep
      */
     template <bool FIRST_TILE>
     __device__ __forceinline__ void ScatterDirect(
-        Offset              tile_num_runs_exclusive_in_global,
-        Offset              warp_num_runs_aggregate,
-        Offset              warp_num_runs_exclusive_in_tile,
-        Offset              (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
+        OffsetT             tile_num_runs_exclusive_in_global,
+        OffsetT             warp_num_runs_aggregate,
+        OffsetT             warp_num_runs_exclusive_in_tile,
+        OffsetT             (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
         LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD])
     {
         #pragma unroll
@@ -539,7 +539,7 @@ struct BlockRleSweep
         {
             if (thread_num_runs_exclusive_in_warp[ITEM] < warp_num_runs_aggregate)
             {
-                Offset item_offset =
+                OffsetT item_offset =
                     tile_num_runs_exclusive_in_global +
                     warp_num_runs_exclusive_in_tile +
                     thread_num_runs_exclusive_in_warp[ITEM];
@@ -562,11 +562,11 @@ struct BlockRleSweep
      */
     template <bool FIRST_TILE>
     __device__ __forceinline__ void Scatter(
-        Offset              tile_num_runs_aggregate,
-        Offset              tile_num_runs_exclusive_in_global,
-        Offset              warp_num_runs_aggregate,
-        Offset              warp_num_runs_exclusive_in_tile,
-        Offset              (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
+        OffsetT             tile_num_runs_aggregate,
+        OffsetT             tile_num_runs_exclusive_in_global,
+        OffsetT             warp_num_runs_aggregate,
+        OffsetT             warp_num_runs_exclusive_in_tile,
+        OffsetT             (&thread_num_runs_exclusive_in_warp)[ITEMS_PER_THREAD],
         LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD])
     {
         if ((ITEMS_PER_THREAD == 1) || (tile_num_runs_aggregate < BLOCK_THREADS))
@@ -608,10 +608,10 @@ struct BlockRleSweep
     template <
         bool                LAST_TILE>
     __device__ __forceinline__ LengthOffsetPair ConsumeTile(
-        Offset              num_items,          ///< Total number of global input items
-        Offset              num_remaining,      ///< Number of global input items remaining (including this tile)
+        OffsetT             num_items,          ///< Total number of global input items
+        OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
-        Offset              block_offset,       ///< Tile offset
+        OffsetT             block_offset,       ///< Tile offset
         ScanTileState       &tile_status)       ///< Global list of tile status
     {
         if (tile_idx == 0)
@@ -659,7 +659,7 @@ struct BlockRleSweep
                 thread_exclusive_in_warp.value += warp_exclusive_in_tile.value;
 
             LengthOffsetPair    lengths_and_offsets[ITEMS_PER_THREAD];
-            Offset              thread_num_runs_exclusive_in_warp[ITEMS_PER_THREAD];
+            OffsetT             thread_num_runs_exclusive_in_warp[ITEMS_PER_THREAD];
             LengthOffsetPair    lengths_and_num_runs2[ITEMS_PER_THREAD];
 
             // Downsweep scan through lengths_and_num_runs
@@ -677,10 +677,10 @@ struct BlockRleSweep
                                                                 WARP_THREADS * ITEMS_PER_THREAD;            // discard
             }
 
-            Offset tile_num_runs_aggregate              = tile_aggregate.offset;
-            Offset tile_num_runs_exclusive_in_global    = 0;
-            Offset warp_num_runs_aggregate              = warp_aggregate.offset;
-            Offset warp_num_runs_exclusive_in_tile      = warp_exclusive_in_tile.offset;
+            OffsetT tile_num_runs_aggregate              = tile_aggregate.offset;
+            OffsetT tile_num_runs_exclusive_in_global    = 0;
+            OffsetT warp_num_runs_aggregate              = warp_aggregate.offset;
+            OffsetT warp_num_runs_exclusive_in_tile      = warp_exclusive_in_tile.offset;
 
             // Scatter
             Scatter<true>(
@@ -752,7 +752,7 @@ struct BlockRleSweep
             // Downsweep scan through lengths_and_num_runs
             LengthOffsetPair    lengths_and_num_runs2[ITEMS_PER_THREAD];
             LengthOffsetPair    lengths_and_offsets[ITEMS_PER_THREAD];
-            Offset              thread_num_runs_exclusive_in_warp[ITEMS_PER_THREAD];
+            OffsetT             thread_num_runs_exclusive_in_warp[ITEMS_PER_THREAD];
 
             ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs2, scan_op, thread_exclusive_in_warp);
 
@@ -767,10 +767,10 @@ struct BlockRleSweep
                                                                 WARP_THREADS * ITEMS_PER_THREAD;            // discard
             }
 
-            Offset tile_num_runs_aggregate              = tile_aggregate.offset;
-            Offset tile_num_runs_exclusive_in_global    = tile_exclusive_in_global.offset;
-            Offset warp_num_runs_aggregate              = warp_aggregate.offset;
-            Offset warp_num_runs_exclusive_in_tile      = warp_exclusive_in_tile.offset;
+            OffsetT tile_num_runs_aggregate              = tile_aggregate.offset;
+            OffsetT tile_num_runs_exclusive_in_global    = tile_exclusive_in_global.offset;
+            OffsetT warp_num_runs_aggregate              = warp_aggregate.offset;
+            OffsetT warp_num_runs_exclusive_in_tile      = warp_exclusive_in_tile.offset;
 
             // Scatter
             Scatter<false>(
@@ -815,8 +815,8 @@ struct BlockRleSweep
 
 #endif
 
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
-        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
+        OffsetT block_offset    = OffsetT(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
+        OffsetT num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (tile_idx < num_tiles - 1)
         {

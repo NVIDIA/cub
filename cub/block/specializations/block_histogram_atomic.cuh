@@ -61,11 +61,11 @@ struct BlockHistogramAtomic
     /// Composite data onto an existing histogram
     template <
         typename            T,
-        typename            HistoCounter,
+        typename            HistoCounterT,
         int                 ITEMS_PER_THREAD>
     __device__ __forceinline__ void Composite(
         T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-        HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
+        HistoCounterT        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
     {
         // Update histogram
         #pragma unroll

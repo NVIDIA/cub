@@ -63,7 +63,7 @@ namespace cub {
  * \par
  * DeviceRadixSort can sort all of the built-in C++ numeric primitive types, e.g.:
  * <tt>unsigned char</tt>, \p int, \p double, etc.  Although the direct radix sorting
- * method can only be applied to unsigned integral types, BlockRadixSort
+ * method can only be applied to unsigned integral types, DeviceRadixSort
  * is able to sort signed and floating-point types via simple bit-wise transformations
  * that ensure lexicographic key ordering.
  *
@@ -80,14 +80,118 @@ namespace cub {
  */
 struct DeviceRadixSort
 {
+
+    /******************************************************************//**
+     * \name Key-value pairs
+     *********************************************************************/
+    //@{
+
     /**
      * \brief Sorts key-value pairs into ascending order.
      *
      * \par
-     * - The sorting operation requires a pair of key buffers and a pair of value
-     *   buffers.  Each pair is wrapped in a DoubleBuffer structure whose member
-     *   DoubleBuffer::Current() references the active buffer.  The currently-active
-     *   buffer may be changed by the sorting operation.
+     * - The contents of the input data are not altered by the sorting operation
+     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par Performance
+     * The following charts illustrate saturated sorting performance across different
+     * CUDA architectures for uniform-random <tt>uint32,uint32</tt> and
+     * <tt>uint64,uint64</tt> pairs, respectively.
+     *
+     * \image html lsb_radix_sort_int32_pairs.png
+     * \image html lsb_radix_sort_int64_pairs.png
+     *
+     * \par Snippet
+     * The code snippet below illustrates the sorting of a device vector of \p int keys
+     * with associated vector of \p int values.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for sorting data
+     * int  num_items;          // e.g., 7
+     * int  *d_keys_in;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_keys_out;        // e.g., [        ...        ]
+     * int  *d_values_in;       // e.g., [0, 1, 2, 3, 4, 5, 6]
+     * int  *d_values_out;      // e.g., [        ...        ]
+     * ...
+     *
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes,
+     *     d_keys_in, d_keys_out, d_values_in, d_values_out, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run sorting operation
+     * cub::DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes,
+     *     d_keys_in, d_keys_out, d_values_in, d_values_out, num_items);
+     *
+     * // d_keys_out            <-- [0, 3, 5, 6, 7, 8, 9]
+     * // d_values_out          <-- [5, 4, 3, 1, 2, 0, 6]
+     *
+     * \endcode
+     *
+     * \tparam Key      <b>[inferred]</b> Key type
+     * \tparam Value    <b>[inferred]</b> Value type
+     */
+    template <
+        typename            Key,
+        typename            Value>
+    CUB_RUNTIME_FUNCTION
+    static cudaError_t SortPairs(
+        void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        Key                 *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
+        Key                 *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
+        Value               *d_values_in,                           ///< [in] Pointer to the corresponding input sequence of associated value items
+        Value               *d_values_out,                          ///< [out] Pointer to the correspondingly-reordered output sequence of associated value items
+        int                 num_items,                              ///< [in] Number of items to reduce
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int OffsetT;
+
+        DoubleBuffer<Key>       d_keys(d_keys_in, d_keys_out);
+        DoubleBuffer<Value>     d_values(d_values_in, d_values_out);
+
+        return DeviceRadixSortDispatch<false, true, Key, Value, OffsetT>::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys,
+            d_values,
+            num_items,
+            begin_bit,
+            end_bit,
+            stream,
+            debug_synchronous);
+    }
+
+
+    /**
+     * \brief Sorts key-value pairs into ascending order (small memory footprint).
+     *
+     * \par
+     * - The sorting operation is given a pair of key buffers and a corresponding
+     *   pair of associated value buffers.  Each pair is managed by a DoubleBuffer
+     *   structure that indicates which of the two buffers is "current" (and thus
+     *   contains the input data to be sorted).
+     * - The contents of both buffers within each pair may be altered by the sorting
+     *   operation.
+     * - Upon completion, the sorting operation will update the "current" indicator
+     *   within each DoubleBuffer wrapper to reference which of the two buffers
+     *   now contains the sorted output sequence (a function of the number of key bits
+     *   specified and the targeted device architecture).
+     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - \devicestorageP
      * - \devicestorage
      * - \cdp
      *
@@ -153,9 +257,9 @@ struct DeviceRadixSort
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int Offset;
+        typedef int OffsetT;
 
-        return DeviceRadixSortDispatch<false, false, Key, Value, Offset>::Dispatch(
+        return DeviceRadixSortDispatch<false, false, Key, Value, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -172,10 +276,103 @@ struct DeviceRadixSort
      * \brief Sorts key-value pairs into descending order.
      *
      * \par
-     * - The sorting operation requires a pair of key buffers and a pair of value
-     *   buffers.  Each pair is wrapped in a DoubleBuffer structure whose member
-     *   DoubleBuffer::Current() references the active buffer.  The currently-active
-     *   buffer may be changed by the sorting operation.
+     * - The contents of the input data are not altered by the sorting operation
+     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par Performance
+     * Performance is similar to DeviceRadixSort::SortPairs.
+     *
+     * \par Snippet
+     * The code snippet below illustrates the sorting of a device vector of \p int keys
+     * with associated vector of \p int values.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for sorting data
+     * int  num_items;          // e.g., 7
+     * int  *d_keys_in;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_keys_out;        // e.g., [        ...        ]
+     * int  *d_values_in;       // e.g., [0, 1, 2, 3, 4, 5, 6]
+     * int  *d_values_out;      // e.g., [        ...        ]
+     * ...
+     *
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes,
+     *     d_keys_in, d_keys_out, d_values_in, d_values_out, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run sorting operation
+     * cub::DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes,
+     *     d_keys_in, d_keys_out, d_values_in, d_values_out, num_items);
+     *
+     * // d_keys_out            <-- [9, 8, 7, 6, 5, 3, 0]
+     * // d_values_out          <-- [6, 0, 2, 1, 3, 4, 5]
+     *
+     * \endcode
+     *
+     * \tparam Key      <b>[inferred]</b> Key type
+     * \tparam Value    <b>[inferred]</b> Value type
+     */
+    template <
+        typename            Key,
+        typename            Value>
+    CUB_RUNTIME_FUNCTION
+    static cudaError_t SortPairsDescending(
+        void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        Key                 *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
+        Key                 *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
+        Value               *d_values_in,                           ///< [in] Pointer to the corresponding input sequence of associated value items
+        Value               *d_values_out,                          ///< [out] Pointer to the correspondingly-reordered output sequence of associated value items
+        int                 num_items,                              ///< [in] Number of items to reduce
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int OffsetT;
+
+        DoubleBuffer<Key>       d_keys(d_keys_in, d_keys_out);
+        DoubleBuffer<Value>     d_values(d_values_in, d_values_out);
+
+        return DeviceRadixSortDispatch<true, true, Key, Value, OffsetT>::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys,
+            d_values,
+            num_items,
+            begin_bit,
+            end_bit,
+            stream,
+            debug_synchronous);
+    }
+
+
+    /**
+     * \brief Sorts key-value pairs into descending order (small memory footprint).
+     *
+     * \par
+     * - The sorting operation is given a pair of key buffers and a corresponding
+     *   pair of associated value buffers.  Each pair is managed by a DoubleBuffer
+     *   structure that indicates which of the two buffers is "current" (and thus
+     *   contains the input data to be sorted).
+     * - The contents of both buffers within each pair may be altered by the sorting
+     *   operation.
+     * - Upon completion, the sorting operation will update the "current" indicator
+     *   within each DoubleBuffer wrapper to reference which of the two buffers
+     *   now contains the sorted output sequence (a function of the number of key bits
+     *   specified and the targeted device architecture).
+     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - \devicestorageP
      * - \devicestorage
      * - \cdp
      *
@@ -236,9 +433,95 @@ struct DeviceRadixSort
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int Offset;
+        typedef int OffsetT;
 
-        return DeviceRadixSortDispatch<true, false, Key, Value, Offset>::Dispatch(
+        return DeviceRadixSortDispatch<true, false, Key, Value, OffsetT>::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys,
+            d_values,
+            num_items,
+            begin_bit,
+            end_bit,
+            stream,
+            debug_synchronous);
+    }
+
+
+    //@}  end member group
+    /******************************************************************//**
+     * \name Keys-only
+     *********************************************************************/
+    //@{
+
+
+    /**
+     * \brief Sorts keys into ascending order.
+     *
+     * \par
+     * - The contents of the input data are not altered by the sorting operation
+     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par Performance
+     * The following charts illustrate saturated sorting performance across different
+     * CUDA architectures for uniform-random \p uint32 and \p uint64 keys, respectively.
+     *
+     * \image html lsb_radix_sort_int32_keys.png
+     * \image html lsb_radix_sort_int64_keys.png
+     *
+     * \par Snippet
+     * The code snippet below illustrates the sorting of a device vector of \p int keys.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for sorting data
+     * int  num_items;          // e.g., 7
+     * int  *d_keys_in;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_keys_out;        // e.g., [        ...        ]
+     * ...
+     *
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run sorting operation
+     * cub::DeviceRadixSort::SortKeys(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, num_items);
+     *
+     * // d_keys_out            <-- [0, 3, 5, 6, 7, 8, 9]
+     *
+     * \endcode
+     *
+     * \tparam Key      <b>[inferred]</b> Key type
+     */
+    template <typename Key>
+    CUB_RUNTIME_FUNCTION
+    static cudaError_t SortKeys(
+        void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        Key                 *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
+        Key                 *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
+        int                 num_items,                              ///< [in] Number of items to reduce
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int OffsetT;
+
+        // Null value type
+        DoubleBuffer<Key>       d_keys(d_keys_in, d_keys_out);
+        DoubleBuffer<NullType>  d_values;
+
+        return DeviceRadixSortDispatch<false, true, Key, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -252,13 +535,19 @@ struct DeviceRadixSort
 
 
     /**
-     * \brief Sorts keys into ascending order
+     * \brief Sorts keys into ascending order (small memory footprint)
      *
      * \par
-     * - The sorting operation requires a pair of key buffers.  The pair is
-     *   wrapped in a DoubleBuffer structure whose member DoubleBuffer::Current()
-     *   references the active buffer.  The currently-active buffer may be changed
-     *   by the sorting operation.
+     * - The sorting operation is given a pair of key buffers managed by a
+     *   DoubleBuffer structure that indicates which of the two buffers is
+     *   "current" (and thus contains the input data to be sorted).
+     * - The contents of both buffers may be altered by the sorting operation.
+     * - Upon completion, the sorting operation will update the "current" indicator
+     *   within the DoubleBuffer wrapper to reference which of the two buffers
+     *   now contains the sorted output sequence (a function of the number of key bits
+     *   specified and the targeted device architecture).
+     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - \devicestorageP
      * - \devicestorage
      * - \cdp
      *
@@ -314,12 +603,88 @@ struct DeviceRadixSort
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int Offset;
+        typedef int OffsetT;
 
         // Null value type
         DoubleBuffer<NullType> d_values;
 
-        return DeviceRadixSortDispatch<false, false, Key, NullType, Offset>::Dispatch(
+        return DeviceRadixSortDispatch<false, false, Key, NullType, OffsetT>::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys,
+            d_values,
+            num_items,
+            begin_bit,
+            end_bit,
+            stream,
+            debug_synchronous);
+    }
+
+    /**
+     * \brief Sorts keys into descending order.
+     *
+     * \par
+     * - The contents of the input data are not altered by the sorting operation
+     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
+     * - \devicestorage
+     * - \cdp
+     *
+     * \par Performance
+     * Performance is similar to DeviceRadixSort::SortKeys.
+     *
+     * \par Snippet
+     * The code snippet below illustrates the sorting of a device vector of \p int keys.
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     *
+     * // Declare, allocate, and initialize device pointers for sorting data
+     * int  num_items;          // e.g., 7
+     * int  *d_keys_in;         // e.g., [8, 6, 7, 5, 3, 0, 9]
+     * int  *d_keys_out;        // e.g., [        ...        ]
+     * ...
+     *
+     * // Create a DoubleBuffer to wrap the pair of device pointers
+     * cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
+     *
+     * // Determine temporary device storage requirements
+     * void     *d_temp_storage = NULL;
+     * size_t   temp_storage_bytes = 0;
+     * cub::DeviceRadixSort::SortKeysDescending(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, num_items);
+     *
+     * // Allocate temporary storage
+     * cudaMalloc(&d_temp_storage, temp_storage_bytes);
+     *
+     * // Run sorting operation
+     * cub::DeviceRadixSort::SortKeysDescending(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out, num_items);
+     *
+     * // d_keys_out            <-- [9, 8, 7, 6, 5, 3, 0]s
+     *
+     * \endcode
+     *
+     * \tparam Key      <b>[inferred]</b> Key type
+     */
+    template <typename Key>
+    CUB_RUNTIME_FUNCTION
+    static cudaError_t SortKeysDescending(
+        void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        Key                 *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
+        Key                 *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
+        int                 num_items,                              ///< [in] Number of items to reduce
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+    {
+        // Signed integer type for global offsets
+        typedef int OffsetT;
+
+        DoubleBuffer<Key>       d_keys(d_keys_in, d_keys_out);
+        DoubleBuffer<NullType>  d_values;
+
+        return DeviceRadixSortDispatch<true, false, Key, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -333,13 +698,19 @@ struct DeviceRadixSort
 
 
     /**
-     * \brief Sorts keys into ascending order
+     * \brief Sorts keys into descending order (small memory footprint).
      *
      * \par
-     * - The sorting operation requires a pair of key buffers.  The pair is
-     *   wrapped in a DoubleBuffer structure whose member DoubleBuffer::Current()
-     *   references the active buffer.  The currently-active buffer may be changed
-     *   by the sorting operation.
+     * - The sorting operation is given a pair of key buffers managed by a
+     *   DoubleBuffer structure that indicates which of the two buffers is
+     *   "current" (and thus contains the input data to be sorted).
+     * - The contents of both buffers may be altered by the sorting operation.
+     * - Upon completion, the sorting operation will update the "current" indicator
+     *   within the DoubleBuffer wrapper to reference which of the two buffers
+     *   now contains the sorted output sequence (a function of the number of key bits
+     *   specified and the targeted device architecture).
+     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - \devicestorageP
      * - \devicestorage
      * - \cdp
      *
@@ -391,12 +762,12 @@ struct DeviceRadixSort
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int Offset;
+        typedef int OffsetT;
 
         // Null value type
         DoubleBuffer<NullType> d_values;
 
-        return DeviceRadixSortDispatch<true, false, Key, NullType, Offset>::Dispatch(
+        return DeviceRadixSortDispatch<true, false, Key, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -407,6 +778,10 @@ struct DeviceRadixSort
             stream,
             debug_synchronous);
     }
+
+
+    //@}  end member group
+
 
 };
 

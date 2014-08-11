@@ -369,16 +369,6 @@ int CoutCast(signed char val) { return val; }
  * Test value initialization utilities
  ******************************************************************************/
 
-
-// Dispatch types
-enum Backend
-{
-    CUB,
-    THRUST,
-    CDP,
-};
-
-
 /**
  * Test problem generation options
  */
@@ -421,10 +411,10 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::NullTy
 
 
 /**
- * cub::ItemOffsetPair<Value, Offset> test initialization
+ * cub::ItemOffsetPair<Value, OffsetT>test initialization
  */
-template <typename Value, typename Offset>
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::ItemOffsetPair<Value, Offset> &value, int index = 0)
+template <typename Value, typename OffsetT>
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::ItemOffsetPair<Value, OffsetT>&value, int index = 0)
 {
     InitValue(gen_mode, value.value, index);
 
@@ -443,8 +433,8 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::ItemOf
 /**
  * ItemOffsetPair ostream operator
  */
-template <typename T, typename Offset>
-std::ostream& operator<<(std::ostream& os, const cub::ItemOffsetPair<T, Offset> &val)
+template <typename T, typename OffsetT>
+std::ostream& operator<<(std::ostream& os, const cub::ItemOffsetPair<T, OffsetT>&val)
 {
     os << '(' << val.value<< ',' << val.offset << ')';
     return os;
@@ -940,10 +930,10 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &va
 /**
  * Compares the equivalence of two arrays
  */
-template <typename S, typename T, typename Offset>
-int CompareResults(T* computed, S* reference, Offset len, bool verbose = true)
+template <typename S, typename T, typename OffsetT>
+int CompareResults(T* computed, S* reference, OffsetT len, bool verbose = true)
 {
-    for (Offset i = 0; i < len; i++)
+    for (OffsetT i = 0; i < len; i++)
     {
         if (computed[i] != reference[i])
         {
@@ -960,10 +950,10 @@ int CompareResults(T* computed, S* reference, Offset len, bool verbose = true)
 /**
  * Compares the equivalence of two arrays
  */
-template <typename Offset>
-int CompareResults(float* computed, float* reference, Offset len, bool verbose = true)
+template <typename OffsetT>
+int CompareResults(float* computed, float* reference, OffsetT len, bool verbose = true)
 {
-    for (Offset i = 0; i < len; i++)
+    for (OffsetT i = 0; i < len; i++)
     {
         if (computed[i] != reference[i])
         {
@@ -986,8 +976,8 @@ int CompareResults(float* computed, float* reference, Offset len, bool verbose =
 /**
  * Compares the equivalence of two arrays
  */
-template <typename Offset>
-int CompareResults(cub::NullType* computed, cub::NullType* reference, Offset len, bool verbose = true)
+template <typename OffsetT>
+int CompareResults(cub::NullType* computed, cub::NullType* reference, OffsetT len, bool verbose = true)
 {
     return 0;
 }
@@ -995,10 +985,10 @@ int CompareResults(cub::NullType* computed, cub::NullType* reference, Offset len
 /**
  * Compares the equivalence of two arrays
  */
-template <typename Offset>
-int CompareResults(double* computed, double* reference, Offset len, bool verbose = true)
+template <typename OffsetT>
+int CompareResults(double* computed, double* reference, OffsetT len, bool verbose = true)
 {
-    for (Offset i = 0; i < len; i++)
+    for (OffsetT i = 0; i < len; i++)
     {
         if (computed[i] != reference[i])
         {

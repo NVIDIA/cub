@@ -511,10 +511,10 @@ private:
     /**
      * Exchanges data items annotated by rank into <em>blocked</em> arrangement.  Specialized for no timeslicing.
      */
-    template <typename Offset>
+    template <typename OffsetT>
     __device__ __forceinline__ void ScatterToBlocked(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<false> time_slicing)
     {
         #pragma unroll
@@ -539,10 +539,10 @@ private:
     /**
      * Exchanges data items annotated by rank into <em>blocked</em> arrangement.  Specialized for warp-timeslicing.
      */
-    template <typename Offset>
+    template <typename OffsetT>
     __device__ __forceinline__ void ScatterToBlocked(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<true>  time_slicing)
     {
         T temp_items[ITEMS_PER_THREAD];
@@ -591,10 +591,10 @@ private:
     /**
      * Exchanges data items annotated by rank into <em>striped</em> arrangement.  Specialized for no timeslicing.
      */
-    template <typename Offset>
+    template <typename OffsetT>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<false> time_slicing)
     {
         #pragma unroll
@@ -620,10 +620,10 @@ private:
     /**
      * Exchanges data items annotated by rank into <em>striped</em> arrangement.  Specialized for warp-timeslicing.
      */
-    template <typename Offset>
+    template <typename OffsetT>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<true> time_slicing)
     {
         T temp_items[ITEMS_PER_THREAD];
@@ -911,12 +911,12 @@ public:
      * \par
      * - \smemreuse
      *
-     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
+     * \tparam OffsetT                              <b>[inferred]</b> Signed integer type for local offsets
      */
-    template <typename Offset>
+    template <typename OffsetT>
     __device__ __forceinline__ void ScatterToBlocked(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
         ScatterToBlocked(items, ranks, Int2Type<WARP_TIME_SLICING>());
     }
@@ -928,12 +928,12 @@ public:
      * \par
      * - \smemreuse
      *
-     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
+     * \tparam OffsetT                              <b>[inferred]</b> Signed integer type for local offsets
      */
-    template <typename Offset>
+    template <typename OffsetT>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],    ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD])    ///< [in] Corresponding scatter ranks
     {
         ScatterToStriped(items, ranks, Int2Type<WARP_TIME_SLICING>());
     }
@@ -945,12 +945,12 @@ public:
      * \par
      * - \smemreuse
      *
-     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
+     * \tparam OffsetT                              <b>[inferred]</b> Signed integer type for local offsets
      */
-    template <typename Offset>
+    template <typename OffsetT>
     __device__ __forceinline__ void ScatterToStripedGuarded(
         T               items[ITEMS_PER_THREAD],        ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD])        ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD])        ///< [in] Corresponding scatter ranks
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -978,13 +978,13 @@ public:
      * \par
      * - \smemreuse
      *
-     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
-     * \tparam ValidFlag                            <b>[inferred]</b> Flag type denoting which items are valid
+     * \tparam OffsetT                              <b>[inferred]</b> Signed integer type for local offsets
+     * \tparam ValidFlag                            <b>[inferred]</b> FlagT type denoting which items are valid
      */
-    template <typename Offset, typename ValidFlag>
+    template <typename OffsetT, typename ValidFlag>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],        ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD],        ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD],        ///< [in] Corresponding scatter ranks
         ValidFlag       is_valid[ITEMS_PER_THREAD])     ///< [in] Corresponding flag denoting item validity
     {
         #pragma unroll
@@ -1091,12 +1091,12 @@ public:
      * \par
      * - \smemreuse
      *
-     * \tparam Offset                               <b>[inferred]</b> Signed integer type for local offsets
+     * \tparam OffsetT                              <b>[inferred]</b> Signed integer type for local offsets
      */
-    template <typename Offset>
+    template <typename OffsetT>
     __device__ __forceinline__ void ScatterToStriped(
         T               items[ITEMS_PER_THREAD],        ///< [in-out] Items to exchange
-        Offset          ranks[ITEMS_PER_THREAD])        ///< [in] Corresponding scatter ranks
+        OffsetT         ranks[ITEMS_PER_THREAD])        ///< [in] Corresponding scatter ranks
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)

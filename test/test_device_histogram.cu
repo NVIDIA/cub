@@ -72,7 +72,7 @@ enum
 /**
  * Dispatch to NPP
  */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIterator, typename HistoCounter>
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename InputIteratorT, typename HistoCounter>
 cudaError_t Dispatch(
     Int2Type<NPP_HISTO> algorithm,
     Int2Type<false>     use_cdp,
@@ -83,7 +83,7 @@ cudaError_t Dispatch(
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
     char                *d_samples,
-    InputIterator       d_sample_itr,
+    InputIteratorT      d_sample_itr,
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
@@ -133,7 +133,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to shared sorting entrypoint
  */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIterator, typename HistoCounter>
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIteratorT, typename HistoCounter>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<DEVICE_HISTO_SORT> algorithm,
@@ -145,7 +145,7 @@ cudaError_t Dispatch(
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
     SampleT             *d_samples,
-    InputIterator       d_sample_itr,
+    InputIteratorT      d_sample_itr,
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
@@ -165,7 +165,7 @@ cudaError_t Dispatch(
  *
  * Dispatch to shared atomic entrypoint
  */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIterator, typename HistoCounter>
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIteratorT, typename HistoCounter>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<DEVICE_HISTO_SHARED_ATOMIC> algorithm,
@@ -177,7 +177,7 @@ cudaError_t Dispatch(
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
     SampleT             *d_samples,
-    InputIterator       d_sample_itr,
+    InputIteratorT      d_sample_itr,
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
@@ -195,7 +195,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to global atomic entrypoint
  */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIterator, typename HistoCounter>
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIteratorT, typename HistoCounter>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC> algorithm,
@@ -207,7 +207,7 @@ cudaError_t Dispatch(
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
     SampleT             *d_samples,
-    InputIterator       d_sample_itr,
+    InputIteratorT      d_sample_itr,
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
@@ -229,7 +229,7 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceScan
  */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIterator, typename HistoCounter, int ALGORITHM>
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIteratorT, typename HistoCounter, int ALGORITHM>
 __global__ void CnpDispatchKernel(
     Int2Type<ALGORITHM> algorithm,
     int                 timing_timing_iterations,
@@ -239,7 +239,7 @@ __global__ void CnpDispatchKernel(
     void                *d_temp_storage,
     size_t              temp_storage_bytes,
     SampleT             *d_samples,
-    InputIterator       d_sample_itr,
+    InputIteratorT      d_sample_itr,
     ArrayWrapper<HistoCounter*, ACTIVE_CHANNELS> d_out_histograms,
     int                 num_samples,
     bool                debug_synchronous)
@@ -256,7 +256,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIterator, typename HistoCounter, int ALGORITHM>
+template <int BINS, int CHANNELS, int ACTIVE_CHANNELS, typename SampleT, typename InputIteratorT, typename HistoCounter, int ALGORITHM>
 cudaError_t Dispatch(
     Int2Type<ALGORITHM> algorithm,
     Int2Type<true>      use_cdp,
@@ -267,7 +267,7 @@ cudaError_t Dispatch(
     void                *d_temp_storage,
     size_t              &temp_storage_bytes,
     SampleT             *d_samples,
-    InputIterator       d_sample_itr,
+    InputIteratorT      d_sample_itr,
     HistoCounter        *d_histograms[ACTIVE_CHANNELS],
     int                 num_samples,
     cudaStream_t        stream,
@@ -279,7 +279,7 @@ cudaError_t Dispatch(
         d_histo_wrapper.array[CHANNEL] = d_histograms[CHANNEL];
 
     // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_samples, d_sample_itr, d_histo_wrapper, num_samples, debug_synchronous);
+    CnpDispatchKernel<BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorT, HistoCounter, ALGORITHM><<<1,1>>>(algorithm, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_samples, d_sample_itr, d_histo_wrapper, num_samples, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));

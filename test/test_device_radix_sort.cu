@@ -57,6 +57,16 @@ int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
+// Dispatch types
+enum Backend
+{
+    CUB,        // CUB method using large temp storage
+    CUB_DB,     // CUB method using alternating double-buffer
+    THRUST,     // Thrust method
+    CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
+};
+
+
 //---------------------------------------------------------------------
 // Dispatch to different DeviceRadixSort entrypoints
 //---------------------------------------------------------------------
@@ -86,6 +96,37 @@ cudaError_t Dispatch(
     return DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, stream, debug_synchronous);
 }
 
+/**
+ * Dispatch to CUB_DB sorting entrypoint (specialized for ascending)
+ */
+template <typename Key, typename Value>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t Dispatch(
+    Int2Type<false>     is_descending,
+    Int2Type<CUB_DB>    dispatch_to,
+    int                 *d_selector,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    DoubleBuffer<Key>   &d_keys,
+    DoubleBuffer<Value> &d_values,
+    int                 num_items,
+    int                 begin_bit,
+    int                 end_bit,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    cudaError_t retval = DeviceRadixSort::SortPairs(d_temp_storage, temp_storage_bytes,
+        d_keys.Current(), d_keys.Alternate(),
+        d_values.Current(), d_values.Alternate(),
+        num_items, begin_bit, end_bit, stream, debug_synchronous);
+
+    d_keys.selector ^= 1;
+    d_values.selector ^= 1;
+    return retval;
+}
 
 /**
  * Dispatch to CUB sorting entrypoint (specialized for descending)
@@ -114,11 +155,43 @@ cudaError_t Dispatch(
 
 
 /**
+ * Dispatch to CUB_DB sorting entrypoint (specialized for descending)
+ */
+template <typename Key, typename Value>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t Dispatch(
+    Int2Type<true>      is_descending,
+    Int2Type<CUB_DB>       dispatch_to,
+    int                 *d_selector,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    DoubleBuffer<Key>   &d_keys,
+    DoubleBuffer<Value> &d_values,
+    int                 num_items,
+    int                 begin_bit,
+    int                 end_bit,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    cudaError_t retval = DeviceRadixSort::SortPairsDescending(d_temp_storage, temp_storage_bytes,
+        d_keys.Current(), d_keys.Alternate(),
+        d_values.Current(), d_values.Alternate(),
+        num_items, begin_bit, end_bit, stream, debug_synchronous);
+
+    d_keys.selector ^= 1;
+    d_values.selector ^= 1;
+    return retval;
+}
+
+/**
  * Dispatch keys-only to Thrust sorting entrypoint
  */
-template <int DESCENDING, typename Key>
+template <int IS_DESCENDING, typename Key>
 cudaError_t Dispatch(
-    Int2Type<DESCENDING>    is_descending,
+    Int2Type<IS_DESCENDING>    is_descending,
     Int2Type<THRUST>        dispatch_to,
     int                     *d_selector,
     size_t                  *d_temp_storage_bytes,
@@ -142,9 +215,9 @@ cudaError_t Dispatch(
     {
         thrust::device_ptr<Key> d_keys_wrapper(d_keys.Current());
 
-        if (DESCENDING) thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
+        if (IS_DESCENDING) thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
         thrust::sort(d_keys_wrapper, d_keys_wrapper + num_items);
-        if (DESCENDING) thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
+        if (IS_DESCENDING) thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
     }
 
     return cudaSuccess;
@@ -154,9 +227,9 @@ cudaError_t Dispatch(
 /**
  * Dispatch key-value pairs to Thrust sorting entrypoint
  */
-template <int DESCENDING, typename Key, typename Value>
+template <int IS_DESCENDING, typename Key, typename Value>
 cudaError_t Dispatch(
-    Int2Type<DESCENDING>    is_descending,
+    Int2Type<IS_DESCENDING>    is_descending,
     Int2Type<THRUST>        dispatch_to,
     int                     *d_selector,
     size_t                  *d_temp_storage_bytes,
@@ -181,14 +254,14 @@ cudaError_t Dispatch(
         thrust::device_ptr<Key>     d_keys_wrapper(d_keys.Current());
         thrust::device_ptr<Value>   d_values_wrapper(d_values.Current());
 
-        if (DESCENDING) {
+        if (IS_DESCENDING) {
             thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
             thrust::reverse(d_values_wrapper, d_values_wrapper + num_items);
         }
 
         thrust::sort_by_key(d_keys_wrapper, d_keys_wrapper + num_items, d_values_wrapper);
 
-        if (DESCENDING) {
+        if (IS_DESCENDING) {
             thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
             thrust::reverse(d_values_wrapper, d_values_wrapper + num_items);
         }
@@ -205,9 +278,9 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceRadixSort
  */
-template <int DESCENDING, typename Key, typename Value>
+template <int IS_DESCENDING, typename Key, typename Value>
 __global__ void CnpDispatchKernel(
-    Int2Type<DESCENDING>    is_descending,
+    Int2Type<IS_DESCENDING>    is_descending,
     int                     *d_selector,
     size_t                  *d_temp_storage_bytes,
     cudaError_t             *d_cdp_error,
@@ -234,9 +307,9 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <int DESCENDING, typename Key, typename Value>
+template <int IS_DESCENDING, typename Key, typename Value>
 cudaError_t Dispatch(
-    Int2Type<DESCENDING>    is_descending,
+    Int2Type<IS_DESCENDING>    is_descending,
     Int2Type<CDP>           dispatch_to,
     int                     *d_selector,
     size_t                  *d_temp_storage_bytes,
@@ -349,7 +422,7 @@ void InitializeKeyBits(
 /**
  * Initialize solution
  */
-template <bool DESCENDING, typename Key>
+template <bool IS_DESCENDING, typename Key>
 void InitializeSolution(
     Key     *h_keys,
     int     num_items,
@@ -381,9 +454,9 @@ void InitializeSolution(
     }
 
     printf("\nSorting reference solution on CPU..."); fflush(stdout);
-    if (DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
+    if (IS_DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
     std::stable_sort(h_pairs, h_pairs + num_items);
-    if (DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
+    if (IS_DESCENDING) std::reverse(h_pairs, h_pairs + num_items);
     printf(" Done.\n"); fflush(stdout);
 
     h_reference_ranks  = new int[num_items];
@@ -405,7 +478,7 @@ void InitializeSolution(
  */
 template <
     Backend     BACKEND,
-    bool        DESCENDING,
+    bool        IS_DESCENDING,
     typename    Key,
     typename    Value>
 void Test(
@@ -420,10 +493,10 @@ void Test(
     const bool KEYS_ONLY = Equals<Value, NullType>::VALUE;
 
     printf("%s %s cub::DeviceRadixSort %d items, %d-byte keys %d-byte values, descending %d, begin_bit %d, end_bit %d\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CUB_DB) ? "CUB_DB" : (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (KEYS_ONLY) ? "keys-only" : "key-value",
         num_items, (int) sizeof(Key), (KEYS_ONLY) ? 0 : (int) sizeof(Value),
-        DESCENDING, begin_bit, end_bit);
+        IS_DESCENDING, begin_bit, end_bit);
     fflush(stdout);
 
     if (g_verbose)
@@ -453,7 +526,7 @@ void Test(
     // Allocate temporary storage
     size_t  temp_storage_bytes  = 0;
     void    *d_temp_storage     = NULL;
-    CubDebugExit(Dispatch(Int2Type<DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Initialize/clear device arrays
@@ -466,7 +539,7 @@ void Test(
     }
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
+    CubDebugExit(Dispatch(Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, true));
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -501,7 +574,7 @@ void Test(
         }
 
         gpu_timer.Start();
-        CubDebugExit(Dispatch(Int2Type<DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
+        CubDebugExit(Dispatch(Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items, begin_bit, end_bit, 0, false));
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
     }
@@ -537,7 +610,7 @@ void Test(
 /**
  * Test backend
  */
-template <bool DESCENDING, typename Key, typename Value>
+template <bool IS_DESCENDING, typename Key, typename Value>
 void TestBackend(
     Key     *h_keys,
     int     num_items,
@@ -563,9 +636,11 @@ void TestBackend(
         }
     }
 
-    Test<CUB, DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
+//    Test<CUB, IS_DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
+    Test<CUB_DB, IS_DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
+
 #ifdef CUB_CDP
-    Test<CDP, DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
+    Test<CDP, IS_DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
 #endif
 
     if (h_values) delete[] h_values;
@@ -578,7 +653,7 @@ void TestBackend(
 /**
  * Test value type
  */
-template <bool DESCENDING, typename Key>
+template <bool IS_DESCENDING, typename Key>
 void TestValueTypes(
     Key     *h_keys,
     int     num_items,
@@ -589,21 +664,21 @@ void TestValueTypes(
 
     int *h_reference_ranks = NULL;
     Key *h_reference_keys = NULL;
-    InitializeSolution<DESCENDING>(h_keys, num_items, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
+    InitializeSolution<IS_DESCENDING>(h_keys, num_items, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
 
     // Test value types
 
-    TestBackend<DESCENDING, Key, NullType>              (h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    TestBackend<IS_DESCENDING, Key, NullType>              (h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
-    TestBackend<DESCENDING, Key, Key>                   (h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    TestBackend<IS_DESCENDING, Key, Key>                   (h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     if (!Equals<Key, unsigned int>::VALUE)
-        TestBackend<DESCENDING, Key, unsigned int>      (h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+        TestBackend<IS_DESCENDING, Key, unsigned int>      (h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     if (!Equals<Key, unsigned long long>::VALUE)
-        TestBackend<DESCENDING, Key, unsigned long long>(h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+        TestBackend<IS_DESCENDING, Key, unsigned long long>(h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
-    TestBackend<DESCENDING, Key, TestFoo>               (h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    TestBackend<IS_DESCENDING, Key, TestFoo>               (h_keys, num_items, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Cleanup
 
@@ -710,7 +785,7 @@ template <
     Backend     BACKEND,
     typename    Key,
     typename    Value,
-    bool        DESCENDING>
+    bool        IS_DESCENDING>
 void Test(
     int         num_items,
     GenMode     gen_mode,
@@ -731,7 +806,7 @@ void Test(
         end_bit = sizeof(Key) * 8;
 
     InitializeKeyBits(gen_mode, h_keys, num_items, entropy_reduction);
-    InitializeSolution<DESCENDING>(h_keys, num_items, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
+    InitializeSolution<IS_DESCENDING>(h_keys, num_items, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
 
     if (!KEYS_ONLY)
     {
@@ -747,7 +822,7 @@ void Test(
     if (h_reference_ranks) delete[] h_reference_ranks;
 
     printf("\nTesting bits [%d,%d) of %s keys with gen-mode %d\n", begin_bit, end_bit, type_string, gen_mode); fflush(stdout);
-    Test<BACKEND, DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
+    Test<BACKEND, IS_DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
 
     if (h_keys) delete[] h_keys;
     if (h_reference_keys) delete[] h_reference_keys;
@@ -835,6 +910,7 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
+/*
         TestGen<char>                 (num_items, CUB_TYPE_STRING(char));
         TestGen<signed char>          (num_items, CUB_TYPE_STRING(signed char));
         TestGen<unsigned char>        (num_items, CUB_TYPE_STRING(unsigned char));
@@ -843,8 +919,9 @@ int main(int argc, char** argv)
         TestGen<unsigned short>       (num_items, CUB_TYPE_STRING(unsigned short));
 
         TestGen<int>                  (num_items, CUB_TYPE_STRING(int));
+*/
         TestGen<unsigned int>         (num_items, CUB_TYPE_STRING(unsigned int));
-
+/*
         TestGen<long>                 (num_items, CUB_TYPE_STRING(long));
         TestGen<unsigned long>        (num_items, CUB_TYPE_STRING(unsigned long));
 
@@ -855,6 +932,7 @@ int main(int argc, char** argv)
 
         if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
             TestGen<double>               (num_items, CUB_TYPE_STRING(double));
+*/
     }
 
 #endif

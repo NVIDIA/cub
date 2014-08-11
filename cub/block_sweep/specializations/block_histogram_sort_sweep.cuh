@@ -50,13 +50,13 @@ namespace cub {
  * BlockHistogramSweepSort implements a stateful abstraction of CUDA thread blocks for histogramming multiple tiles as part of device-wide histogram using local sorting
  */
 template <
-    typename    BlockHistogramSweepPolicy,          ///< Tuning policy
+    typename    BlockHistogramSweepPolicy,      ///< Tuning policy
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIterator,                ///< The input iterator type \iterator.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
-    typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
-    typename    Offset>                          ///< Signed integer type for global offsets
+    typename    InputIteratorT,                 ///< The input iterator type \iterator.  Must have an an InputIteratorT::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+    typename    HistoCounterT,                  ///< Integer type for counting sample occurrences per histogram bin
+    typename    OffsetT>                        ///< Signed integer type for global offsets
 struct BlockHistogramSweepSort
 {
     //---------------------------------------------------------------------
@@ -64,7 +64,7 @@ struct BlockHistogramSweepSort
     //---------------------------------------------------------------------
 
     // Sample type
-    typedef typename std::iterator_traits<InputIterator>::value_type SampleT;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type SampleT;
 
     // Constants
     enum
@@ -143,13 +143,13 @@ struct BlockHistogramSweepSort
     _TempStorage &temp_storage;
 
     /// Histogram counters striped across threads
-    HistoCounter thread_counters[ACTIVE_CHANNELS][STRIPED_COUNTERS_PER_THREAD];
+    HistoCounterT thread_counters[ACTIVE_CHANNELS][STRIPED_COUNTERS_PER_THREAD];
 
     /// Reference to output histograms
-    HistoCounter* (&d_out_histograms)[ACTIVE_CHANNELS];
+    HistoCounterT* (&d_out_histograms)[ACTIVE_CHANNELS];
 
     /// Input data to reduce
-    InputIterator d_in;
+    InputIteratorT d_in;
 
 
     //---------------------------------------------------------------------
@@ -161,8 +161,8 @@ struct BlockHistogramSweepSort
      */
     __device__ __forceinline__ BlockHistogramSweepSort(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
-        InputIterator     d_in,                                           ///< Input data to reduce
-        HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
+        InputIteratorT    d_in,                                           ///< Input data to reduce
+        HistoCounterT*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
@@ -185,8 +185,8 @@ struct BlockHistogramSweepSort
      * Composite a tile of input items
      */
     __device__ __forceinline__ void Composite(
-        SampleT   (&items)[ITEMS_PER_THREAD],                     ///< Tile of samples
-        HistoCounter    thread_counters[STRIPED_COUNTERS_PER_THREAD])   ///< Histogram counters striped across threads
+        SampleT   (&items)[ITEMS_PER_THREAD],                           ///< Tile of samples
+        HistoCounterT    thread_counters[STRIPED_COUNTERS_PER_THREAD])  ///< Histogram counters striped across threads
     {
         // Sort bytes in blocked arrangement
         BlockRadixSortT(temp_storage.sort).Sort(items);
@@ -219,7 +219,7 @@ struct BlockHistogramSweepSort
         for (int COUNTER = 0; COUNTER < STRIPED_COUNTERS_PER_THREAD; ++COUNTER)
         {
             int          bin            = (COUNTER * BLOCK_THREADS) + threadIdx.x;
-            HistoCounter run_length     = temp_storage.run_end[bin] - temp_storage.run_begin[bin];
+            HistoCounterT run_length     = temp_storage.run_end[bin] - temp_storage.run_begin[bin];
 
             thread_counters[COUNTER] += run_length;
         }
@@ -232,7 +232,7 @@ struct BlockHistogramSweepSort
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTileChannel(
         int     channel,
-        Offset   block_offset,
+        OffsetT  block_offset,
         int     valid_items)
     {
         // Load items in striped fashion
@@ -293,7 +293,7 @@ struct BlockHistogramSweepSort
          */
         static __device__ __forceinline__ void ConsumeTileChannel(
             BlockHistogramSweepSort *cta,
-            Offset               block_offset,
+            OffsetT              block_offset,
             int                 valid_items)
         {
             __syncthreads();
@@ -311,7 +311,7 @@ struct BlockHistogramSweepSort
     template <bool FULL_TILE, int END>
     struct IterateChannels<FULL_TILE, END, END>
     {
-        static __device__ __forceinline__ void ConsumeTileChannel(BlockHistogramSweepSort *cta, Offset block_offset, int valid_items) {}
+        static __device__ __forceinline__ void ConsumeTileChannel(BlockHistogramSweepSort *cta, OffsetT block_offset, int valid_items) {}
     };
 
 
@@ -320,7 +320,7 @@ struct BlockHistogramSweepSort
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        Offset   block_offset,               ///< The offset the tile to consume
+        OffsetT  block_offset,               ///< The offset the tile to consume
         int     valid_items = TILE_ITEMS)   ///< The number of valid items in the tile
     {
         // First channel

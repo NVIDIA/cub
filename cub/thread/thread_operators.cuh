@@ -132,20 +132,17 @@ struct Max
 
 
 /**
- * \brief Arg max functor (keeps the value and offset of the first occurrence of the l item)
+ * \brief Arg max functor (keeps the value and offset of the first occurrence of the larger item)
  */
 struct ArgMax
 {
     /// Boolean max operator, preferring the item having the smaller offset in case of ties
-    template <typename T, typename Offset>
-    __host__ __device__ __forceinline__ ItemOffsetPair<T, Offset> operator()(
-        const ItemOffsetPair<T, Offset> &a,
-        const ItemOffsetPair<T, Offset> &b) const
+    template <typename T, typename OffsetT>
+    __host__ __device__ __forceinline__ ItemOffsetPair<T, OffsetT> operator()(
+        const ItemOffsetPair<T, OffsetT> &a,
+        const ItemOffsetPair<T, OffsetT> &b) const
     {
-        if (a.value == b.value)
-            return (b.offset < a.offset) ? b : a;
-
-        return (b.value > a.value) ? b : a;
+        return ((b.value > a.value) || ((a.value == b.value) && (b.offset < a.offset))) ? b : a;
     }
 };
 
@@ -170,15 +167,12 @@ struct Min
 struct ArgMin
 {
     /// Boolean min operator, preferring the item having the smaller offset in case of ties
-    template <typename T, typename Offset>
-    __host__ __device__ __forceinline__ ItemOffsetPair<T, Offset> operator()(
-        const ItemOffsetPair<T, Offset> &a,
-        const ItemOffsetPair<T, Offset> &b) const
+    template <typename T, typename OffsetT>
+    __host__ __device__ __forceinline__ ItemOffsetPair<T, OffsetT> operator()(
+        const ItemOffsetPair<T, OffsetT> &a,
+        const ItemOffsetPair<T, OffsetT> &b) const
     {
-        if (a.value == b.value)
-            return (b.offset < a.offset) ? b : a;
-
-        return (b.value < a.value) ? b : a;
+        return ((b.value < a.value) || ((a.value == b.value) && (b.offset < a.offset))) ? b : a;
     }
 };
 
@@ -216,7 +210,7 @@ struct Cast
  */
 template <
     typename ReductionOp,                           ///< Binary reduction operator to apply to values
-    typename ItemOffsetPair>                        ///< ItemOffsetPair pairing of T (value) and Offset (head flag)
+    typename ItemOffsetPair>                        ///< ItemOffsetPair pairing of T (value) and OffsetT (head flag)
 class ReduceBySegmentOp
 {
 private:

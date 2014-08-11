@@ -95,8 +95,8 @@ struct BlockReduceSweepPolicy
  */
 template <
     typename BlockReduceSweepPolicy,        ///< Parameterized BlockReduceSweepPolicy tuning policy type
-    typename InputIterator,                 ///< Random-access iterator type for input
-    typename Offset,                        ///< Signed integer type for global offsets
+    typename InputIteratorT,                ///< Random-access iterator type for input
+    typename OffsetT,                       ///< Signed integer type for global offsets
     typename ReductionOp>                   ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
 struct BlockReduceSweep
 {
@@ -106,16 +106,16 @@ struct BlockReduceSweep
     //---------------------------------------------------------------------
 
     // The value type of the input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Vector type of T for data movement
     typedef typename CubVector<T, BlockReduceSweepPolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
 
     // Input iterator wrapper type
-    typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, T, Offset>,  // Wrap the native input pointer with CacheModifiedInputIterator
-            InputIterator>::Type                                                            // Directly use the supplied input iterator type
-        WrappedInputIterator;
+    typedef typename If<IsPointer<InputIteratorT>::VALUE,
+            CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, T, OffsetT>,  // Wrap the native input pointer with CacheModifiedInputIterator
+            InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
+        WrappedInputIteratorT;
 
     // Constants
     enum
@@ -127,7 +127,7 @@ struct BlockReduceSweep
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
         CAN_VECTORIZE       = (VECTOR_LOAD_LENGTH > 1) &&
-                                (IsPointer<InputIterator>::VALUE) &&
+                                (IsPointer<InputIteratorT>::VALUE) &&
                                 Traits<T>::PRIMITIVE,
 
     };
@@ -151,8 +151,8 @@ struct BlockReduceSweep
 
     T                       thread_aggregate;   ///< Each thread's partial reduction
     _TempStorage&           temp_storage;       ///< Reference to temp_storage
-    InputIterator           d_in;               ///< Input data to reduce
-    WrappedInputIterator    d_wrapped_in;       ///< Wrapped input data to reduce
+    InputIteratorT          d_in;               ///< Input data to reduce
+    WrappedInputIteratorT   d_wrapped_in;       ///< Wrapped input data to reduce
     ReductionOp             reduction_op;       ///< Binary reduction operator
     int                     first_tile_size;    ///< Size of first tile consumed
     bool                    is_aligned;         ///< Whether or not input is vector-aligned
@@ -187,7 +187,7 @@ struct BlockReduceSweep
      */
     __device__ __forceinline__ BlockReduceSweep(
         TempStorage&            temp_storage,       ///< Reference to temp_storage
-        InputIterator           d_in,               ///< Input data to reduce
+        InputIteratorT          d_in,               ///< Input data to reduce
         ReductionOp             reduction_op)       ///< Binary reduction operator
     :
         temp_storage(temp_storage.Alias()),
@@ -202,9 +202,9 @@ struct BlockReduceSweep
     /**
      * Consume a full tile of input (specialized for cases where we cannot vectorize)
      */
-    template <typename _Offset>
+    template <typename _OffsetT>
     __device__ __forceinline__ T ConsumeFullTile(
-        _Offset             block_offset,            ///< The offset the tile to consume
+        _OffsetT            block_offset,            ///< The offset the tile to consume
         Int2Type<false>     can_vectorize)           ///< Whether or not we can vectorize loads
     {
         T items[ITEMS_PER_THREAD];
@@ -220,9 +220,9 @@ struct BlockReduceSweep
     /**
      * Consume a full tile of input (specialized for cases where we can vectorize)
      */
-    template <typename _Offset>
+    template <typename _OffsetT>
     __device__ __forceinline__ T ConsumeFullTile(
-        _Offset             block_offset,            ///< The offset the tile to consume
+        _OffsetT            block_offset,            ///< The offset the tile to consume
         Int2Type<true>      can_vectorize)           ///< Whether or not we can vectorize loads
     {
         if (!is_aligned)
@@ -240,7 +240,7 @@ struct BlockReduceSweep
             VectorT *vec_items = reinterpret_cast<VectorT*>(items);
 
             // Vector input iterator wrapper type
-            CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, VectorT, Offset> d_vec_in(
+            CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, VectorT, OffsetT> d_vec_in(
                 reinterpret_cast<VectorT*>(d_in + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH)));
 
             #pragma unroll
@@ -259,7 +259,7 @@ struct BlockReduceSweep
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        Offset  block_offset,                   ///< The offset the tile to consume
+        OffsetT block_offset,                   ///< The offset the tile to consume
         int     valid_items = TILE_ITEMS)       ///< The number of valid items in the tile
     {
         if (FULL_TILE)
@@ -307,8 +307,8 @@ struct BlockReduceSweep
      * \brief Reduce a contiguous segment of input tiles
      */
     __device__ __forceinline__ void ConsumeRange(
-        Offset  block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        Offset  block_end,                          ///< [in] Threadblock end offset (exclusive)
+        OffsetT block_offset,                       ///< [in] Threadblock begin offset (inclusive)
+        OffsetT block_end,                          ///< [in] Threadblock end offset (exclusive)
         T       &block_aggregate)                   ///< [out] Running total
     {
         // Consume subsequent full tiles of input
@@ -336,9 +336,9 @@ struct BlockReduceSweep
      * Reduce a contiguous segment of input tiles
      */
     __device__ __forceinline__ void ConsumeRange(
-        Offset                              num_items,          ///< [in] Total number of global input items
-        GridEvenShare<Offset>               &even_share,        ///< [in] GridEvenShare descriptor
-        GridQueue<Offset>                   &queue,             ///< [in,out] GridQueue descriptor
+        OffsetT                             num_items,          ///< [in] Total number of global input items
+        GridEvenShare<OffsetT>              &even_share,        ///< [in] GridEvenShare descriptor
+        GridQueue<OffsetT>                  &queue,             ///< [in,out] GridQueue descriptor
         T                                   &block_aggregate,   ///< [out] Running total
         Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
     {
@@ -359,15 +359,15 @@ struct BlockReduceSweep
      */
     __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
-        GridQueue<Offset>   queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        GridQueue<OffsetT>  queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         T                   &block_aggregate)   ///< [out] Running total
     {
         // Shared dequeue offset
-        __shared__ Offset dequeue_offset;
+        __shared__ OffsetT dequeue_offset;
 
         // We give each thread block at least one tile of input.
-        Offset block_offset = blockIdx.x * TILE_ITEMS;
-        Offset even_share_base = gridDim.x * TILE_ITEMS;
+        OffsetT block_offset = blockIdx.x * TILE_ITEMS;
+        OffsetT even_share_base = gridDim.x * TILE_ITEMS;
 
         if (block_offset + TILE_ITEMS <= num_items)
         {
@@ -413,9 +413,9 @@ struct BlockReduceSweep
      * Dequeue and reduce tiles of items as part of a inter-block scan
      */
     __device__ __forceinline__ void ConsumeRange(
-        Offset                          num_items,          ///< [in] Total number of global input items
-        GridEvenShare<Offset>           &even_share,        ///< [in] GridEvenShare descriptor
-        GridQueue<Offset>               &queue,             ///< [in,out] GridQueue descriptor
+        OffsetT                         num_items,          ///< [in] Total number of global input items
+        GridEvenShare<OffsetT>          &even_share,        ///< [in] GridEvenShare descriptor
+        GridQueue<OffsetT>              &queue,             ///< [in,out] GridQueue descriptor
         T                               &block_aggregate,   ///< [out] Running total
         Int2Type<GRID_MAPPING_DYNAMIC>  is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
     {
