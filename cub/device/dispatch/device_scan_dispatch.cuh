@@ -59,10 +59,10 @@ namespace cub {
  * Initialization kernel for tile status initialization (multi-block)
  */
 template <
-    typename            Offset,                 ///< Signed integer type for global offsets
+    typename            OffsetT,                ///< Signed integer type for global offsets
     typename            ScanTileState>          ///< Tile status interface type
 __global__ void DeviceScanInitKernel(
-    GridQueue<Offset>   grid_queue,             ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
+    GridQueue<OffsetT>  grid_queue,             ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
     ScanTileState       tile_status,            ///< [in] Tile status interface
     int                 num_tiles)              ///< [in] Number of tiles
 {
@@ -80,30 +80,30 @@ __global__ void DeviceScanInitKernel(
  */
 template <
     typename            BlockScanSweepPolicy,       ///< Parameterized BlockScanSweepPolicy tuning policy type
-    typename            InputIterator,              ///< Random-access input iterator type for reading scan inputs \iterator
-    typename            OutputIterator,             ///< Random-access output iterator type for writing scan outputs \iterator
+    typename            InputIteratorT,             ///< Random-access input iterator type for reading scan inputs \iterator
+    typename            OutputIteratorT,            ///< Random-access output iterator type for writing scan outputs \iterator
     typename            ScanTileState,              ///< Tile status interface type
     typename            ScanOp,                     ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename            Identity,                   ///< Identity value type (cub::NullType for inclusive scans)
-    typename            Offset>                     ///< Signed integer type for global offsets
+    typename            OffsetT>                    ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockScanSweepPolicy::BLOCK_THREADS))
 __global__ void DeviceScanSweepKernel(
-    InputIterator       d_in,                       ///< Input data
-    OutputIterator      d_out,                      ///< Output data
+    InputIteratorT      d_in,                       ///< Input data
+    OutputIteratorT     d_out,                      ///< Output data
     ScanTileState       tile_status,                ///< [in] Tile status interface
     ScanOp              scan_op,                    ///< Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     Identity            identity,                   ///< Identity element
-    Offset              num_items,                  ///< Total number of scan items for the entire problem
+    OffsetT             num_items,                  ///< Total number of scan items for the entire problem
     GridQueue<int>      queue)                      ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for scanning input tiles
     typedef BlockScanSweep<
         BlockScanSweepPolicy,
-        InputIterator,
-        OutputIterator,
+        InputIteratorT,
+        OutputIteratorT,
         ScanOp,
         Identity,
-        Offset> BlockScanSweepT;
+        OffsetT> BlockScanSweepT;
 
     // Shared memory for BlockScanSweep
     __shared__ typename BlockScanSweepT::TempStorage temp_storage;
@@ -126,11 +126,11 @@ __global__ void DeviceScanSweepKernel(
  * Utility class for dispatching the appropriately-tuned kernels for DeviceScan
  */
 template <
-    typename InputIterator,      ///< Random-access input iterator type for reading scan inputs \iterator
-    typename OutputIterator,     ///< Random-access output iterator type for writing scan outputs \iterator
+    typename InputIteratorT,     ///< Random-access input iterator type for reading scan inputs \iterator
+    typename OutputIteratorT,    ///< Random-access output iterator type for writing scan outputs \iterator
     typename ScanOp,             ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename Identity,           ///< Identity value type (cub::NullType for inclusive scans)
-    typename Offset>             ///< Signed integer type for global offsets
+    typename OffsetT>            ///< Signed integer type for global offsets
 struct DeviceScanDispatch
 {
     enum
@@ -139,7 +139,7 @@ struct DeviceScanDispatch
     };
 
     // Data type
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Tile status descriptor interface type
     typedef ScanTileState<T> ScanTileState;
@@ -373,11 +373,11 @@ struct DeviceScanDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
-        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of data items
+        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT             d_out,                          ///< [out] Pointer to the output sequence of data items
         ScanOp                      scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         Identity                    identity,                       ///< [in] Identity element
-        Offset                      num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
+        OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
@@ -512,11 +512,11 @@ struct DeviceScanDispatch
     static cudaError_t Dispatch(
         void            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator   d_in,                           ///< [in] Pointer to the input sequence of data items
-        OutputIterator  d_out,                          ///< [out] Pointer to the output sequence of data items
+        InputIteratorT  d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT d_out,                          ///< [out] Pointer to the output sequence of data items
         ScanOp          scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         Identity        identity,                       ///< [in] Identity element
-        Offset          num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
+        OffsetT         num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -547,8 +547,8 @@ struct DeviceScanDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<Offset, ScanTileState>,
-                DeviceScanSweepKernel<PtxRangeScanPolicy, InputIterator, OutputIterator, ScanTileState, ScanOp, Identity, Offset>,
+                DeviceScanInitKernel<OffsetT, ScanTileState>,
+                DeviceScanSweepKernel<PtxRangeScanPolicy, InputIteratorT, OutputIteratorT, ScanTileState, ScanOp, Identity, OffsetT>,
                 device_scan_sweep_config))) break;
         }
         while (0);

@@ -104,14 +104,14 @@ enum CacheStoreModifier
  * \endcode
  *
  * \tparam MODIFIER             <b>[inferred]</b> CacheStoreModifier enumeration
- * \tparam InputIterator        <b>[inferred]</b> Output iterator type \iterator
+ * \tparam InputIteratorT       <b>[inferred]</b> Output iterator type \iterator
  * \tparam T                    <b>[inferred]</b> Data type of output value
  */
 template <
     CacheStoreModifier  MODIFIER,
-    typename            OutputIterator,
+    typename            OutputIteratorT,
     typename            T>
-__device__ __forceinline__ void ThreadStore(OutputIterator itr, T val);
+__device__ __forceinline__ void ThreadStore(OutputIteratorT itr, T val);
 
 
 //@}  end member group
@@ -131,8 +131,8 @@ struct IterateThreadStore
         IterateThreadStore<COUNT + 1, MAX>::template Store<MODIFIER>(ptr, vals);
     }
 
-    template <typename OutputIterator, typename T>
-    static __device__ __forceinline__ void Dereference(OutputIterator ptr, T *vals)
+    template <typename OutputIteratorT, typename T>
+    static __device__ __forceinline__ void Dereference(OutputIteratorT ptr, T *vals)
     {
         ptr[COUNT] = vals[COUNT];
         IterateThreadStore<COUNT + 1, MAX>::Dereference(ptr, vals);
@@ -147,8 +147,8 @@ struct IterateThreadStore<MAX, MAX>
     template <CacheStoreModifier MODIFIER, typename T>
     static __device__ __forceinline__ void Store(T *ptr, T *vals) {}
 
-    template <typename OutputIterator, typename T>
-    static __device__ __forceinline__ void Dereference(OutputIterator ptr, T *vals) {}
+    template <typename OutputIteratorT, typename T>
+    static __device__ __forceinline__ void Dereference(OutputIteratorT ptr, T *vals) {}
 };
 
 
@@ -279,9 +279,9 @@ struct IterateThreadStore<MAX, MAX>
 /**
  * ThreadStore definition for STORE_DEFAULT modifier on iterator types
  */
-template <typename OutputIterator, typename T>
+template <typename OutputIteratorT, typename T>
 __device__ __forceinline__ void ThreadStore(
-    OutputIterator              itr,
+    OutputIteratorT             itr,
     T                           val,
     Int2Type<STORE_DEFAULT>     modifier,
     Int2Type<false>             is_pointer)
@@ -392,14 +392,14 @@ __device__ __forceinline__ void ThreadStore(
 /**
  * ThreadStore definition for generic modifiers
  */
-template <CacheStoreModifier MODIFIER, typename OutputIterator, typename T>
-__device__ __forceinline__ void ThreadStore(OutputIterator itr, T val)
+template <CacheStoreModifier MODIFIER, typename OutputIteratorT, typename T>
+__device__ __forceinline__ void ThreadStore(OutputIteratorT itr, T val)
 {
     ThreadStore(
         itr,
         val,
         Int2Type<MODIFIER>(),
-        Int2Type<IsPointer<OutputIterator>::VALUE>());
+        Int2Type<IsPointer<OutputIteratorT>::VALUE>());
 }
 
 

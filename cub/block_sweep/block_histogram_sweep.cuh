@@ -157,9 +157,9 @@ template <
     int         BINS,                           ///< Number of histogram bins per channel
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIterator,                  ///< Random-access input iterator type for reading samples.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
-    typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
-    typename    Offset>                         ///< Signed integer type for global offsets
+    typename    InputIteratorT,                 ///< Random-access input iterator type for reading samples.  Must have an an InputIteratorT::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+    typename    HistoCounterT,                  ///< Integer type for counting sample occurrences per histogram bin
+    typename    OffsetT>                        ///< Signed integer type for global offsets
 struct BlockHistogramSweep
 {
     //---------------------------------------------------------------------
@@ -170,9 +170,9 @@ struct BlockHistogramSweep
     static const DeviceHistogramAlgorithm HISTO_ALGORITHM = BlockHistogramSweepPolicy::HISTO_ALGORITHM;
 
     // Alternative internal implementation types
-    typedef BlockHistogramSweepSort<            BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramSweepSortT;
-    typedef BlockHistogramSweepSharedAtomic<    BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramSweepSharedAtomicT;
-    typedef BlockHistogramSweepGlobalAtomic<    BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIterator, HistoCounter, Offset>   BlockHistogramSweepGlobalAtomicT;
+    typedef BlockHistogramSweepSort<            BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorT, HistoCounterT, OffsetT>  BlockHistogramSweepSortT;
+    typedef BlockHistogramSweepSharedAtomic<    BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorT, HistoCounterT, OffsetT>  BlockHistogramSweepSharedAtomicT;
+    typedef BlockHistogramSweepGlobalAtomic<    BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorT, HistoCounterT, OffsetT>  BlockHistogramSweepGlobalAtomicT;
 
     // Internal block sweep histogram type
     typedef typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SORT),
@@ -207,8 +207,8 @@ struct BlockHistogramSweep
      */
     __device__ __forceinline__ BlockHistogramSweep(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
-        InputIterator     d_in,                                           ///< Input data to reduce
-        HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
+        InputIteratorT    	d_in,                                           ///< Input data to reduce
+        HistoCounterT*      (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
         internal_delegate(temp_storage, d_in, d_out_histograms)
     {}
@@ -218,8 +218,8 @@ struct BlockHistogramSweep
      * \brief Reduce a consecutive segment of input tiles
      */
     __device__ __forceinline__ void ConsumeRange(
-        Offset   block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        Offset   block_end)                          ///< [in] Threadblock end offset (exclusive)
+        OffsetT  block_offset,                       ///< [in] Threadblock begin offset (inclusive)
+        OffsetT  block_end)                          ///< [in] Threadblock end offset (exclusive)
     {
         // Consume subsequent full tiles of input
         while (block_offset + TILE_ITEMS <= block_end)
@@ -244,9 +244,9 @@ struct BlockHistogramSweep
      * Reduce a consecutive segment of input tiles
      */
     __device__ __forceinline__ void ConsumeRange(
-        Offset                              num_items,          ///< [in] Total number of global input items
-        GridEvenShare<Offset>               &even_share,        ///< [in] GridEvenShare descriptor
-        GridQueue<Offset>                   &queue,             ///< [in,out] GridQueue descriptor
+        OffsetT                             num_items,          ///< [in] Total number of global input items
+        GridEvenShare<OffsetT>              &even_share,        ///< [in] GridEvenShare descriptor
+        GridQueue<OffsetT>                  &queue,             ///< [in,out] GridQueue descriptor
         Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
     {
         even_share.BlockInit();
@@ -259,14 +259,14 @@ struct BlockHistogramSweep
      */
     __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
-        GridQueue<Offset>   queue)              ///< Queue descriptor for assigning tiles of work to thread blocks
+        GridQueue<OffsetT>  queue)              ///< Queue descriptor for assigning tiles of work to thread blocks
     {
         // Shared block offset
-        __shared__ Offset shared_block_offset;
+        __shared__ OffsetT shared_block_offset;
 
         // We give each thread block at least one tile of input.
-        Offset block_offset      = blockIdx.x * TILE_ITEMS;
-        Offset even_share_base   = gridDim.x * TILE_ITEMS;
+        OffsetT block_offset      = blockIdx.x * TILE_ITEMS;
+        OffsetT even_share_base   = gridDim.x * TILE_ITEMS;
 
         // Process full tiles of input
         while (block_offset + TILE_ITEMS <= num_items)
@@ -300,9 +300,9 @@ struct BlockHistogramSweep
      * Dequeue and reduce tiles of items as part of a inter-block scan
      */
     __device__ __forceinline__ void ConsumeRange(
-        Offset                          num_items,          ///< [in] Total number of global input items
-        GridEvenShare<Offset>           &even_share,        ///< [in] GridEvenShare descriptor
-        GridQueue<Offset>               &queue,             ///< [in,out] GridQueue descriptor
+        OffsetT                         num_items,          ///< [in] Total number of global input items
+        GridEvenShare<OffsetT>          &even_share,        ///< [in] GridEvenShare descriptor
+        GridQueue<OffsetT>              &queue,             ///< [in,out] GridQueue descriptor
         Int2Type<GRID_MAPPING_DYNAMIC>  is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
     {
         ConsumeRange(num_items, queue);

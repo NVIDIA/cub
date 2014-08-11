@@ -83,21 +83,21 @@ struct DeviceTest
         return WarpReduce(temp_storage).Reduce(data, reduction_op, valid_warp_threads);
     }
 
-    template <typename Flag>
+    template <typename FlagT>
     static __device__ __forceinline__ T HeadSegmentedReduce(
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
-        Flag                                &flag,
+        FlagT                                &flag,
         ReductionOp                         &reduction_op)
     {
         return WarpReduce(temp_storage).HeadSegmentedReduce(data, flag, reduction_op);
     }
 
-    template <typename Flag>
+    template <typename FlagT>
     static __device__ __forceinline__ T TailSegmentedReduce(
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
-        Flag                                &flag,
+        FlagT                                &flag,
         ReductionOp                         &reduction_op)
     {
         return WarpReduce(temp_storage).TailSegmentedReduce(data, flag, reduction_op);
@@ -131,21 +131,21 @@ struct DeviceTest<T, Sum, WarpReduce, true>
         return WarpReduce(temp_storage).Sum(data, valid_warp_threads);
     }
 
-    template <typename Flag>
+    template <typename FlagT>
     static __device__ __forceinline__ T HeadSegmentedReduce(
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
-        Flag                                &flag,
+        FlagT                                &flag,
         Sum                              &reduction_op)
     {
         return WarpReduce(temp_storage).HeadSegmentedSum(data, flag);
     }
 
-    template <typename Flag>
+    template <typename FlagT>
     static __device__ __forceinline__ T TailSegmentedReduce(
         typename WarpReduce::TempStorage    &temp_storage,
         T                                   &data,
-        Flag                                &flag,
+        FlagT                                &flag,
         Sum                              &reduction_op)
     {
         return WarpReduce(temp_storage).TailSegmentedSum(data, flag);
@@ -244,11 +244,11 @@ template <
     int         WARPS,
     int         LOGICAL_WARP_THREADS,
     typename    T,
-    typename    Flag,
+    typename    FlagT,
     typename    ReductionOp>
 __global__ void WarpHeadSegmentedReduceKernel(
     T           *d_in,
-    Flag        *d_head_flags,
+    FlagT        *d_head_flags,
     T           *d_out,
     ReductionOp reduction_op,
     clock_t     *d_elapsed)
@@ -261,7 +261,7 @@ __global__ void WarpHeadSegmentedReduceKernel(
 
     // Per-thread tile data
     T       input       = d_in[threadIdx.x];
-    Flag    head_flag   = d_head_flags[threadIdx.x];
+    FlagT    head_flag   = d_head_flags[threadIdx.x];
 
     // Record elapsed clocks
     clock_t start = clock();
@@ -288,11 +288,11 @@ template <
     int         WARPS,
     int         LOGICAL_WARP_THREADS,
     typename    T,
-    typename    Flag,
+    typename    FlagT,
     typename    ReductionOp>
 __global__ void WarpTailSegmentedReduceKernel(
     T           *d_in,
-    Flag        *d_tail_flags,
+    FlagT        *d_tail_flags,
     T           *d_out,
     ReductionOp reduction_op,
     clock_t     *d_elapsed)
@@ -305,8 +305,8 @@ __global__ void WarpTailSegmentedReduceKernel(
 
     // Per-thread tile data
     T       input       = d_in[threadIdx.x];
-    Flag    tail_flag   = d_tail_flags[threadIdx.x];
-    Flag    head_flag   = (threadIdx.x == 0) ?
+    FlagT    tail_flag   = d_tail_flags[threadIdx.x];
+    FlagT    head_flag   = (threadIdx.x == 0) ?
                             0 :
                             d_tail_flags[threadIdx.x - 1];
 

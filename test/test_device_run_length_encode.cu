@@ -59,7 +59,15 @@ int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
+// Dispatch types
+enum Backend
+{
+    CUB,        // CUB method
+    THRUST,     // Thrust method
+    CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
+};
 
+// Operation types
 enum RleMethod
 {
     RLE,                // Run length encode
@@ -77,12 +85,12 @@ enum RleMethod
  * Dispatch to run-length encode entrypoint
  */
 template <
-    typename                    InputIterator,
-    typename                    UniqueOutputIterator,
-    typename                    OffsetsOutputIterator,
-    typename                    LengthsOutputIterator,
+    typename                    InputIteratorT,
+    typename                    UniqueOutputIteratorT,
+    typename                    OffsetsOutputIteratorT,
+    typename                    LengthsOutputIteratorT,
     typename                    NumRunsIterator,
-    typename                    Offset>
+    typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<RLE>               method,
@@ -93,13 +101,13 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     UniqueOutputIterator        d_unique_out,
     OffsetsOutputIterator       d_offsets_out,
     LengthsOutputIterator       d_lengths_out,
     NumRunsIterator             d_num_runs,
     cub::Equality               equality_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -125,12 +133,12 @@ cudaError_t Dispatch(
  * Dispatch to non-trivial runs entrypoint
  */
 template <
-    typename                    InputIterator,
-    typename                    UniqueOutputIterator,
-    typename                    OffsetsOutputIterator,
-    typename                    LengthsOutputIterator,
+    typename                    InputIteratorT,
+    typename                    UniqueOutputIteratorT,
+    typename                    OffsetsOutputIteratorT,
+    typename                    LengthsOutputIteratorT,
     typename                    NumRunsIterator,
-    typename                    Offset>
+    typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<NON_TRIVIAL>       method,
@@ -141,13 +149,13 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     UniqueOutputIterator        d_unique_out,
     OffsetsOutputIterator       d_offsets_out,
     LengthsOutputIterator       d_lengths_out,
     NumRunsIterator             d_num_runs,
     cub::Equality               equality_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -178,12 +186,12 @@ cudaError_t Dispatch(
  * Dispatch to run-length encode entrypoint
  */
 template <
-    typename                    InputIterator,
-    typename                    UniqueOutputIterator,
-    typename                    OffsetsOutputIterator,
-    typename                    LengthsOutputIterator,
+    typename                    InputIteratorT,
+    typename                    UniqueOutputIteratorT,
+    typename                    OffsetsOutputIteratorT,
+    typename                    LengthsOutputIteratorT,
     typename                    NumRunsIterator,
-    typename                    Offset>
+    typename                    OffsetT>
 cudaError_t Dispatch(
     Int2Type<RLE>               method,
     Int2Type<THRUST>            dispatch_to,
@@ -193,18 +201,18 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     UniqueOutputIterator        d_unique_out,
     cub::NullType               d_offsets_out,
     LengthsOutputIterator       d_lengths_out,
     NumRunsIterator             d_num_runs,
     cub::Equality               equality_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
-    typedef typename std::iterator_traits<LengthsOutputIterator>::value_type Length;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    typedef typename std::iterator_traits<LengthsOutputIteratorT>::value_type LengthT;
 
     if (d_temp_storage == 0)
     {
@@ -214,13 +222,13 @@ cudaError_t Dispatch(
     {
         thrust::device_ptr<T>     d_in_wrapper(d_in);
         thrust::device_ptr<T>     d_unique_out_wrapper(d_unique_out);
-        thrust::device_ptr<Length>   d_lengths_out_wrapper(d_lengths_out);
+        thrust::device_ptr<LengthT>   d_lengths_out_wrapper(d_lengths_out);
 
-        thrust::pair<thrust::device_ptr<T>, thrust::device_ptr<Length> > d_out_ends;
+        thrust::pair<thrust::device_ptr<T>, thrust::device_ptr<LengthT> > d_out_ends;
 
-        Length one_val;
+        LengthT one_val;
         InitValue(INTEGER_SEED, one_val, 1);
-        thrust::constant_iterator<Length> constant_one(one_val);
+        thrust::constant_iterator<LengthT> constant_one(one_val);
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
@@ -232,8 +240,8 @@ cudaError_t Dispatch(
                 d_lengths_out_wrapper);
         }
 
-        Offset num_runs = d_out_ends.first - d_unique_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_runs, &num_runs, sizeof(Offset), cudaMemcpyHostToDevice));
+        OffsetT num_runs = d_out_ends.first - d_unique_out_wrapper;
+        CubDebugExit(cudaMemcpy(d_num_runs, &num_runs, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -250,13 +258,13 @@ cudaError_t Dispatch(
  */
 template <
     int                         RLE_METHOD,
-    typename                    InputIterator,
-    typename                    UniqueOutputIterator,
-    typename                    OffsetsOutputIterator,
-    typename                    LengthsOutputIterator,
+    typename                    InputIteratorT,
+    typename                    UniqueOutputIteratorT,
+    typename                    OffsetsOutputIteratorT,
+    typename                    LengthsOutputIteratorT,
     typename                    NumRunsIterator,
     typename                    EqualityOp,
-    typename                    Offset>
+    typename                    OffsetT>
 __global__ void CnpDispatchKernel(
     Int2Type<RLE_METHOD>            method,
     int                         timing_timing_iterations,
@@ -265,13 +273,13 @@ __global__ void CnpDispatchKernel(
 
     void                        *d_temp_storage,
     size_t                      temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     UniqueOutputIterator        d_unique_out,
     OffsetsOutputIterator       d_offsets_out,
     LengthsOutputIterator       d_lengths_out,
     NumRunsIterator             d_num_runs,
     cub::Equality               equality_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -292,13 +300,13 @@ __global__ void CnpDispatchKernel(
  */
 template <
     int                         RLE_METHOD,
-    typename                    InputIterator,
-    typename                    UniqueOutputIterator,
-    typename                    OffsetsOutputIterator,
-    typename                    LengthsOutputIterator,
+    typename                    InputIteratorT,
+    typename                    UniqueOutputIteratorT,
+    typename                    OffsetsOutputIteratorT,
+    typename                    LengthsOutputIteratorT,
     typename                    NumRunsIterator,
     typename                    EqualityOp,
-    typename                    Offset>
+    typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<RLE_METHOD>            method,
@@ -309,13 +317,13 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     UniqueOutputIterator        d_unique_out,
     OffsetsOutputIterator       d_offsets_out,
     LengthsOutputIterator       d_lengths_out,
     NumRunsIterator             d_num_runs,
     EqualityOp                  equality_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -397,22 +405,22 @@ void Initialize(
  */
 template <
     RleMethod       RLE_METHOD,
-    typename        InputIterator,
+    typename        InputIteratorT,
     typename        T,
-    typename        Offset,
-    typename        Length,
+    typename        OffsetT,
+    typename        LengthT,
     typename        EqualityOp>
 int Solve(
-    InputIterator   h_in,
+    InputIteratorT  h_in,
     T               *h_unique_reference,
-    Offset          *h_offsets_reference,
-    Length          *h_lengths_reference,
+    OffsetT         *h_offsets_reference,
+    LengthT          *h_lengths_reference,
     EqualityOp      equality_op,
     int             num_items)
 {
     // First item
     T       previous        = h_in[0];
-    Length  length          = 1;
+    LengthT  length          = 1;
     int     num_runs        = 0;
     int     run_begin       = 0;
 
@@ -457,30 +465,30 @@ int Solve(
 template <
     RleMethod           RLE_METHOD,
     Backend             BACKEND,
-    typename            DeviceInputIterator,
+    typename            DeviceInputIteratorT,
     typename            T,
-    typename            Offset,
-    typename            Length,
+    typename            OffsetT,
+    typename            LengthT,
     typename            EqualityOp>
 void Test(
-    DeviceInputIterator d_in,
+    DeviceInputIteratorT d_in,
     T                   *h_unique_reference,
-    Offset              *h_offsets_reference,
-    Length              *h_lengths_reference,
+    OffsetT             *h_offsets_reference,
+    LengthT              *h_lengths_reference,
     EqualityOp          equality_op,
     int                 num_runs,
     int                 num_items)
 {
     // Allocate device output arrays and number of segments
     T       *d_unique_out       = NULL;
-    Length  *d_offsets_out      = NULL;
-    Offset  *d_lengths_out      = NULL;
+    LengthT  *d_offsets_out      = NULL;
+    OffsetT *d_lengths_out      = NULL;
     int     *d_num_runs         = NULL;
     if (RLE_METHOD == RLE)
         CubDebugExit(g_allocator.DeviceAllocate((void**)&d_unique_out, sizeof(T) * num_items));
     if (RLE_METHOD == NON_TRIVIAL)
-        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_offsets_out, sizeof(Offset) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_lengths_out, sizeof(Length) * num_items));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_offsets_out, sizeof(OffsetT) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_lengths_out, sizeof(LengthT) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_runs, sizeof(int)));
 
     // Allocate CDP device arrays
@@ -499,8 +507,8 @@ void Test(
     if (RLE_METHOD == RLE)
         CubDebugExit(cudaMemset(d_unique_out,   0, sizeof(T) * num_items));
     if (RLE_METHOD == NON_TRIVIAL)
-        CubDebugExit(cudaMemset(d_offsets_out,  0, sizeof(Offset) * num_items));
-    CubDebugExit(cudaMemset(d_lengths_out,  0, sizeof(Length) * num_items));
+        CubDebugExit(cudaMemset(d_offsets_out,  0, sizeof(OffsetT) * num_items));
+    CubDebugExit(cudaMemset(d_lengths_out,  0, sizeof(LengthT) * num_items));
     CubDebugExit(cudaMemset(d_num_runs,     0, sizeof(int)));
 
     // Run warmup/correctness iteration
@@ -549,7 +557,7 @@ void Test(
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        int bytes_moved = (num_items * sizeof(T)) + (num_runs * (sizeof(Offset) + sizeof(Length)));
+        int bytes_moved = (num_items * sizeof(T)) + (num_runs * (sizeof(OffsetT) + sizeof(LengthT)));
         float gbandwidth = float(bytes_moved) / avg_millis / 1000.0 / 1000.0;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
@@ -580,8 +588,8 @@ template <
     RleMethod       RLE_METHOD,
     Backend         BACKEND,
     typename        T,
-    typename        Offset,
-    typename        Length>
+    typename        OffsetT,
+    typename        LengthT>
 void TestPointer(
     int             num_items,
     int             entropy_reduction,
@@ -593,8 +601,8 @@ void TestPointer(
     // Allocate host arrays
     T*      h_in                    = new T[num_items];
     T*      h_unique_reference      = new T[num_items];
-    Offset* h_offsets_reference     = new Offset[num_items];
-    Length* h_lengths_reference     = new Length[num_items];
+    OffsetT* h_offsets_reference     = new OffsetT[num_items];
+    LengthT* h_lengths_reference     = new LengthT[num_items];
 
     for (int i = 0; i < num_items; ++i)
         InitValue(INTEGER_SEED, h_offsets_reference[i], 1);
@@ -639,8 +647,8 @@ template <
     RleMethod       RLE_METHOD,
     Backend         BACKEND,
     typename        T,
-    typename        Offset,
-    typename        Length>
+    typename        OffsetT,
+    typename        LengthT>
 void TestIterator(
     int             num_items,
     int             entropy_reduction,
@@ -653,10 +661,10 @@ void TestIterator(
     // Allocate host arrays
     T* h_in                     = new T[num_items];
     T* h_unique_reference       = new T[num_items];
-    Offset* h_offsets_reference = new Offset[num_items];
-    Length* h_lengths_reference = new Length[num_items];
+    OffsetT* h_offsets_reference = new OffsetT[num_items];
+    LengthT* h_lengths_reference = new LengthT[num_items];
 
-    Length one_val;
+    LengthT one_val;
     InitValue(INTEGER_SEED, one_val, 1);
 
     // Initialize problem and solution
@@ -695,8 +703,8 @@ template <
     RleMethod       RLE_METHOD,
     Backend         BACKEND,
     typename        T,
-    typename        Offset,
-    typename        Length>
+    typename        OffsetT,
+    typename        LengthT>
 void TestIterator(
     int             num_items,
     int             entropy_reduction,
@@ -715,8 +723,8 @@ template <
     RleMethod       RLE_METHOD,
     Backend         BACKEND,
     typename        T,
-    typename        Offset,
-    typename        Length>
+    typename        OffsetT,
+    typename        LengthT>
 void Test(
     int             num_items,
     char*           key_type_string,
@@ -724,23 +732,23 @@ void Test(
     char*           length_type_string)
 {
     // One run
-    TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, -1, key_type_string, offset_type_string, length_type_string);
-    TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, -1, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+    TestPointer<RLE_METHOD, BACKEND, T, LengthT>(num_items, 0, -1, key_type_string, offset_type_string, length_type_string);
+    TestIterator<RLE_METHOD, BACKEND, T, LengthT>(num_items, 0, -1, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<LengthT>::PRIMITIVE>());
 
     // num_items runs
-    TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, 1, key_type_string, offset_type_string, length_type_string);
-    TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, 1, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+    TestPointer<RLE_METHOD, BACKEND, T, LengthT>(num_items, 0, 1, key_type_string, offset_type_string, length_type_string);
+    TestIterator<RLE_METHOD, BACKEND, T, LengthT>(num_items, 0, 1, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<LengthT>::PRIMITIVE>());
 
     // Evaluate different run lengths
     for (int max_segment = 3; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 3)
     {
         // Uniform selection run length
-        TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, length_type_string);
-        TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 0, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+        TestPointer<RLE_METHOD, BACKEND, T, LengthT>(num_items, 0, max_segment, key_type_string, offset_type_string, length_type_string);
+        TestIterator<RLE_METHOD, BACKEND, T, LengthT>(num_items, 0, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<LengthT>::PRIMITIVE>());
 
         // Reduced-entropy run length
-        TestPointer<RLE_METHOD, BACKEND, T, Length>(num_items, 4, max_segment, key_type_string, offset_type_string, length_type_string);
-        TestIterator<RLE_METHOD, BACKEND, T, Length>(num_items, 4, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<Length>::PRIMITIVE>());
+        TestPointer<RLE_METHOD, BACKEND, T, LengthT>(num_items, 4, max_segment, key_type_string, offset_type_string, length_type_string);
+        TestIterator<RLE_METHOD, BACKEND, T, LengthT>(num_items, 4, max_segment, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<LengthT>::PRIMITIVE>());
     }
 }
 
@@ -750,21 +758,21 @@ void Test(
  */
 template <
     typename        T,
-    typename        Offset,
-    typename        Length>
+    typename        OffsetT,
+    typename        LengthT>
 void TestDispatch(
     int             num_items,
     char*           key_type_string,
     char*           offset_type_string,
     char*           length_type_string)
 {
-    Test<RLE,           CUB, T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
+    Test<RLE,           CUB, T, OffsetT, LengthT>(num_items, key_type_string, offset_type_string, length_type_string);
 // Mooch
-//    Test<NON_TRIVIAL,   CUB, T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
+//    Test<NON_TRIVIAL,   CUB, T, OffsetT, LengthT>(num_items, key_type_string, offset_type_string, length_type_string);
 
 #ifdef CUB_CDP
-    Test<RLE,           CDP, T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
-    Test<NON_TRIVIAL,   CDP, T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
+    Test<RLE,           CDP, T, OffsetT, LengthT>(num_items, key_type_string, offset_type_string, length_type_string);
+    Test<NON_TRIVIAL,   CDP, T, OffsetT, LengthT>(num_items, key_type_string, offset_type_string, length_type_string);
 #endif
 }
 
@@ -774,8 +782,8 @@ void TestDispatch(
  */
 template <
     typename        T,
-    typename        Offset,
-    typename        Length>
+    typename        OffsetT,
+    typename        LengthT>
 void TestSize(
     int             num_items,
     char*           key_type_string,
@@ -784,14 +792,14 @@ void TestSize(
 {
     if (num_items < 0)
     {
-        TestDispatch<T, Offset, Length>(1,        key_type_string, offset_type_string, length_type_string);
-        TestDispatch<T, Offset, Length>(100,      key_type_string, offset_type_string, length_type_string);
-        TestDispatch<T, Offset, Length>(10000,    key_type_string, offset_type_string, length_type_string);
-        TestDispatch<T, Offset, Length>(1000000,  key_type_string, offset_type_string, length_type_string);
+        TestDispatch<T, OffsetT, LengthT>(1,        key_type_string, offset_type_string, length_type_string);
+        TestDispatch<T, OffsetT, LengthT>(100,      key_type_string, offset_type_string, length_type_string);
+        TestDispatch<T, OffsetT, LengthT>(10000,    key_type_string, offset_type_string, length_type_string);
+        TestDispatch<T, OffsetT, LengthT>(1000000,  key_type_string, offset_type_string, length_type_string);
     }
     else
     {
-        TestDispatch<T, Offset, Length>(num_items, key_type_string, offset_type_string, length_type_string);
+        TestDispatch<T, OffsetT, LengthT>(num_items, key_type_string, offset_type_string, length_type_string);
     }
 
 }

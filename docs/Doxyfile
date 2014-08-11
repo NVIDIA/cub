@@ -206,7 +206,11 @@ ALIASES                += ptxversion="The PTX compute capability for which to to
 ALIASES                += blockcollective{1}="Every thread in the block uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking one or more collective member functions."
 ALIASES                += warpcollective{1}="Every thread in the warp uses the \1 class by first specializing the \1 type, then instantiating an instance with parameters for communication, and finally invoking or more collective member functions."
 
-ALIASES                += devicestorage="This operation requires an allocation of temporary device storage.  When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
+ALIASES                += devicestorage="When \p d_temp_storage is NULL, no work is done and the required allocation size is returned in \p temp_storage_bytes."
+ALIASES                += devicestorageP="This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<tt>P</tt>), where \p P is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size \p N)."
+ALIASES                += devicestorageNP="This operation requires an allocation of temporary device storage that is <em>O</em>(<tt>N+P</tt>), where \p N is the length of the input and \p P is the number of streaming multiprocessors on the device."
+ALIASES                += devicestorageNCP="This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<tt>N/C + P</tt>), where \p N is the length of the input, \p C is the number of concurrent threads that can be actively scheduled on each streaming multiprocessor (typically several thousand), and \p P is the number of streaming multiprocessors on the device."
+
 ALIASES                += cdp_class{1}=" - <em>Dynamic parallelism</em>.  \1 methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported.  When calling these methods from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += cdp="When calling this method from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += iterator="(may be a simple pointer type)"

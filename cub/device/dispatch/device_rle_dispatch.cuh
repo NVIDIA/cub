@@ -64,33 +64,33 @@ namespace cub {
  */
 template <
     typename            BlockRleSweepPolicy,        ///< Parameterized BlockRleSweepPolicy tuning policy type
-    typename            InputIterator,              ///< Random-access input iterator type for reading input items \iterator
-    typename            OffsetsOutputIterator,      ///< Random-access output iterator type for writing run-offset values \iterator
-    typename            LengthsOutputIterator,      ///< Random-access output iterator type for writing run-length values \iterator
-    typename            NumRunsOutputIterator,      ///< Output iterator type for recording the number of runs encountered \iterator
+    typename            InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
+    typename            OffsetsOutputIteratorT,     ///< Random-access output iterator type for writing run-offset values \iterator
+    typename            LengthsOutputIteratorT,     ///< Random-access output iterator type for writing run-length values \iterator
+    typename            NumRunsOutputIteratorT,     ///< Output iterator type for recording the number of runs encountered \iterator
     typename            ScanTileState,              ///< Tile status interface type
     typename            EqualityOp,                 ///< T equality operator type
-    typename            Offset>                     ///< Signed integer type for global offsets
+    typename            OffsetT>                    ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockRleSweepPolicy::BLOCK_THREADS))
 __global__ void DeviceRleSweepKernel(
-    InputIterator               d_in,               ///< [in] Pointer to input sequence of data items
-    OffsetsOutputIterator       d_offsets_out,      ///< [out] Pointer to output sequence of run-offsets
-    LengthsOutputIterator       d_lengths_out,      ///< [out] Pointer to output sequence of run-lengths
-    NumRunsOutputIterator       d_num_runs_out,         ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+    InputIteratorT              d_in,               ///< [in] Pointer to input sequence of data items
+    OffsetsOutputIteratorT      d_offsets_out,      ///< [out] Pointer to output sequence of run-offsets
+    LengthsOutputIteratorT      d_lengths_out,      ///< [out] Pointer to output sequence of run-lengths
+    NumRunsOutputIteratorT      d_num_runs_out,     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
     ScanTileState               tile_status,        ///< [in] Tile status interface
     EqualityOp                  equality_op,        ///< [in] Equality operator for input items
-    Offset                      num_items,          ///< [in] Total number of input items (i.e., length of \p d_in)
+    OffsetT                     num_items,          ///< [in] Total number of input items (i.e., length of \p d_in)
     int                         num_tiles,          ///< [in] Total number of tiles for the entire problem
     GridQueue<int>              queue)              ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for selecting data from input tiles
     typedef BlockRleSweep<
         BlockRleSweepPolicy,
-        InputIterator,
-        OffsetsOutputIterator,
-        LengthsOutputIterator,
+        InputIteratorT,
+        OffsetsOutputIteratorT,
+        LengthsOutputIteratorT,
         EqualityOp,
-        Offset> BlockRleSweepT;
+        OffsetT> BlockRleSweepT;
 
     // Shared memory for BlockRleSweep
     __shared__ typename BlockRleSweepT::TempStorage temp_storage;
@@ -114,12 +114,12 @@ __global__ void DeviceRleSweepKernel(
  * Utility class for dispatching the appropriately-tuned kernels for DeviceRle
  */
 template <
-    typename            InputIterator,              ///< Random-access input iterator type for reading input items \iterator
-    typename            OffsetsOutputIterator,      ///< Random-access output iterator type for writing run-offset values \iterator
-    typename            LengthsOutputIterator,      ///< Random-access output iterator type for writing run-length values \iterator
-    typename            NumRunsOutputIterator,      ///< Output iterator type for recording the number of runs encountered \iterator
+    typename            InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
+    typename            OffsetsOutputIteratorT,     ///< Random-access output iterator type for writing run-offset values \iterator
+    typename            LengthsOutputIteratorT,     ///< Random-access output iterator type for writing run-length values \iterator
+    typename            NumRunsOutputIteratorT,     ///< Output iterator type for recording the number of runs encountered \iterator
     typename            EqualityOp,                 ///< T equality operator type
-    typename            Offset>                     ///< Signed integer type for global offsets
+    typename            OffsetT>                    ///< Signed integer type for global offsets
 struct DeviceRleDispatch
 {
     /******************************************************************************
@@ -127,10 +127,10 @@ struct DeviceRleDispatch
      ******************************************************************************/
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Signed integer type for run lengths
-    typedef typename std::iterator_traits<LengthsOutputIterator>::value_type Length;
+    typedef typename std::iterator_traits<LengthsOutputIteratorT>::value_type LengthT;
 
     enum
     {
@@ -138,7 +138,7 @@ struct DeviceRleDispatch
     };
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<Length, Offset> ScanTileState;
+    typedef ReduceByKeyScanTileState<LengthT, OffsetT> ScanTileState;
 
 
     /******************************************************************************
@@ -317,7 +317,6 @@ struct DeviceRleDispatch
         BlockLoadAlgorithm      load_policy;
         bool                    store_warp_time_slicing;
         BlockScanAlgorithm      scan_algorithm;
-        cudaSharedMemConfig     smem_config;
 
         template <typename BlockRleSweepPolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
@@ -328,19 +327,17 @@ struct DeviceRleDispatch
             load_policy                 = BlockRleSweepPolicy::LOAD_ALGORITHM;
             store_warp_time_slicing     = BlockRleSweepPolicy::STORE_WARP_TIME_SLICING;
             scan_algorithm              = BlockRleSweepPolicy::SCAN_ALGORITHM;
-            smem_config                 = cudaSharedMemBankSizeEightByte;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__
         void Print()
         {
-            printf("%d, %d, %d, %d, %d, %d",
+            printf("%d, %d, %d, %d, %d",
                 block_threads,
                 items_per_thread,
                 load_policy,
                 store_warp_time_slicing,
-                scan_algorithm,
-                smem_config);
+                scan_algorithm);
         }
     };
 
@@ -360,12 +357,12 @@ struct DeviceRleDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
-        OffsetsOutputIterator       d_offsets_out,                  ///< [out] Pointer to the output sequence of run-offsets
-        LengthsOutputIterator       d_lengths_out,                  ///< [out] Pointer to the output sequence of run-lengths
-        NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to the total number of runs encountered (i.e., length of \p d_offsets_out)
+        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
+        OffsetsOutputIteratorT      d_offsets_out,                  ///< [out] Pointer to the output sequence of run-offsets
+        LengthsOutputIteratorT      d_lengths_out,                  ///< [out] Pointer to the output sequence of run-lengths
+        NumRunsOutputIteratorT      d_num_runs_out,                 ///< [out] Pointer to the total number of runs encountered (i.e., length of \p d_offsets_out)
         EqualityOp                  equality_op,                    ///< [in] Equality operator for input items
-        Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
+        OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
@@ -456,20 +453,6 @@ struct DeviceRleDispatch
             if (debug_synchronous) CubLog("Invoking device_rle_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 rle_grid_size.x, rle_grid_size.y, rle_grid_size.z, device_rle_config.block_threads, (long long) stream, device_rle_config.items_per_thread, device_rle_kernel_sm_occupancy);
 
-#if (CUB_PTX_ARCH == 0)
-            // Get current smem bank configuration
-            cudaSharedMemConfig original_smem_config;
-            if (CubDebug(error = cudaDeviceGetSharedMemConfig(&original_smem_config))) break;
-            cudaSharedMemConfig current_smem_config = original_smem_config;
-
-            // Update smem config if necessary
-            if (current_smem_config != device_rle_config.smem_config)
-            {
-                if (CubDebug(error = cudaDeviceSetSharedMemConfig(device_rle_config.smem_config))) break;
-                current_smem_config = device_rle_config.smem_config;
-            }
-#endif
-
             // Invoke device_rle_sweep_kernel
             device_rle_sweep_kernel<<<rle_grid_size, device_rle_config.block_threads, 0, stream>>>(
                 d_in,
@@ -488,14 +471,6 @@ struct DeviceRleDispatch
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-#if (CUB_PTX_ARCH == 0)
-            // Reset smem config if necessary
-            if (current_smem_config != original_smem_config)
-            {
-                if (CubDebug(error = cudaDeviceSetSharedMemConfig(original_smem_config))) break;
-            }
-#endif
-
         }
         while (0);
 
@@ -512,12 +487,12 @@ struct DeviceRleDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Pointer to input sequence of data items
-        OffsetsOutputIterator       d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets
-        LengthsOutputIterator       d_lengths_out,                  ///< [out] Pointer to output sequence of run-lengths
-        NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+        InputIteratorT              d_in,                           ///< [in] Pointer to input sequence of data items
+        OffsetsOutputIteratorT      d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets
+        LengthsOutputIteratorT      d_lengths_out,                  ///< [out] Pointer to output sequence of run-lengths
+        NumRunsOutputIteratorT      d_num_runs_out,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
         EqualityOp                  equality_op,                    ///< [in] Equality operator for input items
-        Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
+        OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -549,8 +524,8 @@ struct DeviceRleDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<Offset, ScanTileState>,
-                DeviceRleSweepKernel<PtxRleSweepPolicy, InputIterator, OffsetsOutputIterator, LengthsOutputIterator, NumRunsOutputIterator, ScanTileState, EqualityOp, Offset>,
+                DeviceScanInitKernel<OffsetT, ScanTileState>,
+                DeviceRleSweepKernel<PtxRleSweepPolicy, InputIteratorT, OffsetsOutputIteratorT, LengthsOutputIteratorT, NumRunsOutputIteratorT, ScanTileState, EqualityOp, OffsetT>,
                 device_rle_config))) break;
         }
         while (0);

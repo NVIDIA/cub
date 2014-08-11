@@ -120,33 +120,33 @@ struct DeviceSelect
      *
      * \endcode
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam InputIteratorT       <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
      * \tparam FlagIterator         <b>[inferred]</b> Random-access input iterator type for reading selection flags \iterator
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
+     * \tparam OutputIteratorT      <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
+     * \tparam NumSelectedIteratorT  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
      */
     template <
-        typename                    InputIterator,
+        typename                    InputIteratorT,
         typename                    FlagIterator,
-        typename                    OutputIterator,
-        typename                    NumSelectedIterator>
+        typename                    OutputIteratorT,
+        typename                    NumSelectedIteratorT>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Flagged(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
+        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
         FlagIterator                d_flags,                        ///< [in] Pointer to the input sequence of selection flags
-        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected_out,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        OutputIteratorT             d_out,                          ///< [out] Pointer to the output sequence of selected data items
+        NumSelectedIteratorT         d_num_selected_out,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
         int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int                     Offset;         // Signed integer type for global offsets
+        typedef int                     OffsetT;         // Signed integer type for global offsets
         typedef NullType                SelectOp;       // Selection op (not used)
         typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, false>::Dispatch(
+        return DeviceSelectDispatch<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -227,33 +227,33 @@ struct DeviceSelect
      *
      * \endcode
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
+     * \tparam InputIteratorT       <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIteratorT      <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
+     * \tparam NumSelectedIteratorT  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
      * \tparam SelectOp             <b>[inferred]</b> Selection operator type having member <tt>bool operator()(const T &a)</tt>
      */
     template <
-        typename                    InputIterator,
-        typename                    OutputIterator,
-        typename                    NumSelectedIterator,
+        typename                    InputIteratorT,
+        typename                    OutputIteratorT,
+        typename                    NumSelectedIteratorT,
         typename                    SelectOp>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t If(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
-        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected_out,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT             d_out,                          ///< [out] Pointer to the output sequence of selected data items
+        NumSelectedIteratorT         d_num_selected_out,                 ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
         int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         SelectOp                    select_op,                      ///< [in] Unary selection operator
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int                     Offset;         // Signed integer type for global offsets
-        typedef NullType*               FlagIterator;   // Flag iterator type (not used)
+        typedef int                     OffsetT;         // Signed integer type for global offsets
+        typedef NullType*               FlagIterator;   // FlagT iterator type (not used)
         typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, false>::Dispatch(
+        return DeviceSelectDispatch<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -320,31 +320,31 @@ struct DeviceSelect
      *
      * \endcode
      *
-     * \tparam InputIterator        <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
-     * \tparam OutputIterator       <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
-     * \tparam NumSelectedIterator  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
+     * \tparam InputIteratorT       <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
+     * \tparam OutputIteratorT      <b>[inferred]</b> Random-access output iterator type for writing selected items \iterator
+     * \tparam NumSelectedIteratorT  <b>[inferred]</b> Output iterator type for recording the number of items selected \iterator
      */
     template <
-        typename                    InputIterator,
-        typename                    OutputIterator,
-        typename                    NumSelectedIterator>
+        typename                    InputIteratorT,
+        typename                    OutputIteratorT,
+        typename                    NumSelectedIteratorT>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Unique(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
-        OutputIterator              d_out,                          ///< [out] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected_out,             ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
+        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT             d_out,                          ///< [out] Pointer to the output sequence of selected data items
+        NumSelectedIteratorT         d_num_selected_out,             ///< [out] Pointer to the output total number of items selected (i.e., length of \p d_out)
         int                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        typedef int                     Offset;         // Signed integer type for global offsets
-        typedef NullType*               FlagIterator;   // Flag iterator type (not used)
+        typedef int                     OffsetT;         // Signed integer type for global offsets
+        typedef NullType*               FlagIterator;   // FlagT iterator type (not used)
         typedef NullType                SelectOp;       // Selection op (not used)
         typedef Equality                EqualityOp;     // Default == operator
 
-        return DeviceSelectDispatch<InputIterator, FlagIterator, OutputIterator, NumSelectedIterator, SelectOp, EqualityOp, Offset, false>::Dispatch(
+        return DeviceSelectDispatch<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

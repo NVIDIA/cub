@@ -146,7 +146,7 @@ private:
     struct ApplyOp
     {
         // Apply flag operator
-        static __device__ __forceinline__ bool Flag(FlagOp flag_op, const T &a, const T &b, int idx)
+        static __device__ __forceinline__ bool FlagT(FlagOp flag_op, const T &a, const T &b, int idx)
         {
             return flag_op(a, b, idx);
         }
@@ -157,7 +157,7 @@ private:
     struct ApplyOp<FlagOp, false>
     {
         // Apply flag operator
-        static __device__ __forceinline__ bool Flag(FlagOp flag_op, const T &a, const T &b, int idx)
+        static __device__ __forceinline__ bool FlagT(FlagOp flag_op, const T &a, const T &b, int idx)
         {
             return flag_op(a, b);
         }
@@ -178,7 +178,7 @@ private:
             T                       (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
             FlagOp                  flag_op)                            ///< [in] Binary boolean flag predicate
         {
-            flags[ITERATION] = ApplyOp<FlagOp>::Flag(
+            flags[ITERATION] = ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 input[ITERATION - 1],
                 input[ITERATION],
@@ -198,7 +198,7 @@ private:
             T                       (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
             FlagOp                  flag_op)                            ///< [in] Binary boolean flag predicate
         {
-            flags[ITERATION] = ApplyOp<FlagOp>::Flag(
+            flags[ITERATION] = ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 input[ITERATION],
                 input[ITERATION + 1],
@@ -355,7 +355,7 @@ public:
         // Set flag for first thread-item
         head_flags[0] = (linear_tid == 0) ?
             1 :                                 // First thread
-            ApplyOp<FlagOp>::Flag(
+            ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 temp_storage.last_items[linear_tid - 1],
                 input[0],
@@ -441,7 +441,7 @@ public:
             tile_predecessor_item :              // First thread
             temp_storage.last_items[linear_tid - 1];
 
-        head_flags[0] = ApplyOp<FlagOp>::Flag(
+        head_flags[0] = ApplyOp<FlagOp>::FlagT(
             flag_op,
             predecessor_item,
             input[0],
@@ -526,7 +526,7 @@ public:
         // Set flag for last thread-item
         tail_flags[ITEMS_PER_THREAD - 1] = (linear_tid == BLOCK_THREADS - 1) ?
             1 :                             // Last thread
-            ApplyOp<FlagOp>::Flag(
+            ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 input[ITEMS_PER_THREAD - 1],
                 temp_storage.first_items[linear_tid + 1],
@@ -613,7 +613,7 @@ public:
             tile_successor_item :              // Last thread
             temp_storage.first_items[linear_tid + 1];
 
-        tail_flags[ITEMS_PER_THREAD - 1] = ApplyOp<FlagOp>::Flag(
+        tail_flags[ITEMS_PER_THREAD - 1] = ApplyOp<FlagOp>::FlagT(
             flag_op,
             input[ITEMS_PER_THREAD - 1],
             successor_item,
@@ -710,7 +710,7 @@ public:
         // Set flag for first thread-item
         head_flags[0] = (linear_tid == 0) ?
             1 :                                 // First thread
-            ApplyOp<FlagOp>::Flag(
+            ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 temp_storage.last_items[linear_tid - 1],
                 input[0],
@@ -719,7 +719,7 @@ public:
         // Set flag for last thread-item
         tail_flags[ITEMS_PER_THREAD - 1] = (linear_tid == BLOCK_THREADS - 1) ?
             1 :                             // Last thread
-            ApplyOp<FlagOp>::Flag(
+            ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 input[ITEMS_PER_THREAD - 1],
                 temp_storage.first_items[linear_tid + 1],
@@ -818,7 +818,7 @@ public:
         // Set flag for first thread-item
         head_flags[0] = (linear_tid == 0) ?
             1 :                                 // First thread
-            ApplyOp<FlagOp>::Flag(
+            ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 temp_storage.last_items[linear_tid - 1],
                 input[0],
@@ -829,7 +829,7 @@ public:
             tile_successor_item :              // Last thread
             temp_storage.first_items[linear_tid + 1];
 
-        tail_flags[ITEMS_PER_THREAD - 1] = ApplyOp<FlagOp>::Flag(
+        tail_flags[ITEMS_PER_THREAD - 1] = ApplyOp<FlagOp>::FlagT(
             flag_op,
             input[ITEMS_PER_THREAD - 1],
             successor_item,
@@ -936,7 +936,7 @@ public:
             tile_predecessor_item :              // First thread
             temp_storage.last_items[linear_tid - 1];
 
-        head_flags[0] = ApplyOp<FlagOp>::Flag(
+        head_flags[0] = ApplyOp<FlagOp>::FlagT(
             flag_op,
             predecessor_item,
             input[0],
@@ -945,7 +945,7 @@ public:
         // Set flag for last thread-item
         tail_flags[ITEMS_PER_THREAD - 1] = (linear_tid == BLOCK_THREADS - 1) ?
             1 :                             // Last thread
-            ApplyOp<FlagOp>::Flag(
+            ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 input[ITEMS_PER_THREAD - 1],
                 temp_storage.first_items[linear_tid + 1],
@@ -1054,7 +1054,7 @@ public:
             tile_predecessor_item :              // First thread
             temp_storage.last_items[linear_tid - 1];
 
-        head_flags[0] = ApplyOp<FlagOp>::Flag(
+        head_flags[0] = ApplyOp<FlagOp>::FlagT(
             flag_op,
             predecessor_item,
             input[0],
@@ -1065,7 +1065,7 @@ public:
             tile_successor_item :              // Last thread
             temp_storage.first_items[linear_tid + 1];
 
-        tail_flags[ITEMS_PER_THREAD - 1] = ApplyOp<FlagOp>::Flag(
+        tail_flags[ITEMS_PER_THREAD - 1] = ApplyOp<FlagOp>::FlagT(
             flag_op,
             input[ITEMS_PER_THREAD - 1],
             successor_item,

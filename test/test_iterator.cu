@@ -63,6 +63,15 @@ using namespace cub;
 bool                    g_verbose = false;
 CachingDeviceAllocator  g_allocator(true);
 
+// Dispatch types
+enum Backend
+{
+    CUB,        // CUB method
+    THRUST,     // Thrust method
+    CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
+};
+
+
 template <typename T>
 struct TransformOp
 {
@@ -93,12 +102,12 @@ struct SelectOp
  * Test random access input iterator
  */
 template <
-    typename InputIterator,
+    typename InputIteratorT,
     typename T>
 __global__ void Kernel(
-    InputIterator     d_in,
+    InputIteratorT    d_in,
     T                 *d_out,
-    InputIterator     *d_itrs)
+    InputIteratorT    *d_itrs)
 {
     d_out[0] = *d_in;               // Value at offset 0
     d_out[1] = d_in[100];           // Value at offset 100
@@ -131,18 +140,18 @@ __global__ void Kernel(
  * Run iterator test on device
  */
 template <
-    typename        InputIterator,
+    typename        InputIteratorT,
     typename        T,
     int             TEST_VALUES>
 void Test(
-    InputIterator   d_in,
+    InputIteratorT  d_in,
     T               (&h_reference)[TEST_VALUES])
 {
     // Allocate device arrays
     T                 *d_out    = NULL;
-    InputIterator     *d_itrs   = NULL;
+    InputIteratorT    *d_itrs   = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,     sizeof(T) * TEST_VALUES));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_itrs,    sizeof(InputIterator) * 2));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_itrs,    sizeof(InputIteratorT) * 2));
 
     int compare;
 
@@ -158,7 +167,7 @@ void Test(
     AssertEquals(0, compare);
 
     // Check iterator at offset 21
-    InputIterator h_itr = d_in + 21;
+    InputIteratorTh_itr = d_in + 21;
     compare = CompareDeviceResults(&h_itr, d_itrs, 1, g_verbose, g_verbose);
     printf("\tIterators: %s\n", (compare) ? "FAIL" : "PASS");
     AssertEquals(0, compare);

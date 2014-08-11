@@ -79,7 +79,7 @@ struct BlockScanSweepPolicy
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;          ///< The BlockLoad algorithm to use
     static const CacheLoadModifier      LOAD_MODIFIER           = _LOAD_MODIFIER;           ///< Cache load modifier for reading input elements
     static const BlockStoreAlgorithm    STORE_ALGORITHM         = _STORE_ALGORITHM;         ///< The BlockStore algorithm to use
-    static const BlockScanAlgorithm     SCAN_ALGORITHM    = _SCAN_ALGORITHM;    ///< The BlockScan algorithm to use
+    static const BlockScanAlgorithm     SCAN_ALGORITHM          = _SCAN_ALGORITHM;          ///< The BlockScan algorithm to use
 };
 
 
@@ -94,11 +94,11 @@ struct BlockScanSweepPolicy
  */
 template <
     typename BlockScanSweepPolicy,      ///< Parameterized BlockScanSweepPolicy tuning policy type
-    typename InputIterator,             ///< Random-access input iterator type
-    typename OutputIterator,            ///< Random-access output iterator type
+    typename InputIteratorT,            ///< Random-access input iterator type
+    typename OutputIteratorT,           ///< Random-access output iterator type
     typename ScanOp,                    ///< Scan functor type
     typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
-    typename Offset>                    ///< Signed integer type for global offsets
+    typename OffsetT>                   ///< Signed integer type for global offsets
 struct BlockScanSweep
 {
     //---------------------------------------------------------------------
@@ -106,16 +106,16 @@ struct BlockScanSweep
     //---------------------------------------------------------------------
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Tile status descriptor interface type
     typedef ScanTileState<T> ScanTileState;
 
     // Input iterator wrapper type
-    typedef typename If<IsPointer<InputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockScanSweepPolicy::LOAD_MODIFIER, T, Offset>,    // Wrap the native input pointer with CacheModifiedInputIterator
-            InputIterator>::Type                                                            // Directly use the supplied input iterator type
-        WrappedInputIterator;
+    typedef typename If<IsPointer<InputIteratorT>::VALUE,
+            CacheModifiedInputIterator<BlockScanSweepPolicy::LOAD_MODIFIER, T, OffsetT>,    // Wrap the native input pointer with CacheModifiedInputIterator
+            InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
+        WrappedInputIteratorT;
 
     // Constants
     enum
@@ -132,7 +132,7 @@ struct BlockScanSweep
 
     // Parameterized BlockLoad type
     typedef BlockLoad<
-            WrappedInputIterator,
+            WrappedInputIteratorT,
             BlockScanSweepPolicy::BLOCK_THREADS,
             BlockScanSweepPolicy::ITEMS_PER_THREAD,
             BlockScanSweepPolicy::LOAD_ALGORITHM,
@@ -141,7 +141,7 @@ struct BlockScanSweep
 
     // Parameterized BlockStore type
     typedef BlockStore<
-            OutputIterator,
+            OutputIteratorT,
             BlockScanSweepPolicy::BLOCK_THREADS,
             BlockScanSweepPolicy::ITEMS_PER_THREAD,
             BlockScanSweepPolicy::STORE_ALGORITHM,
@@ -182,7 +182,7 @@ struct BlockScanSweep
             };
         };
 
-        Offset tile_idx;   // Shared tile index
+        OffsetT tile_idx;   // Shared tile index
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -194,8 +194,8 @@ struct BlockScanSweep
     //---------------------------------------------------------------------
 
     _TempStorage                &temp_storage;      ///< Reference to temp_storage
-    WrappedInputIterator        d_in;               ///< Input data
-    OutputIterator              d_out;              ///< Output data
+    WrappedInputIteratorT       d_in;               ///< Input data
+    OutputIteratorT             d_out;              ///< Output data
     ScanOp                      scan_op;            ///< Binary scan operator
     Identity                    identity;           ///< Identity element
 
@@ -297,8 +297,8 @@ struct BlockScanSweep
     __device__ __forceinline__
     BlockScanSweep(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
-        InputIterator               d_in,               ///< Input data
-        OutputIterator              d_out,              ///< Output data
+        InputIteratorT              d_in,               ///< Input data
+        OutputIteratorT             d_out,              ///< Output data
         ScanOp                      scan_op,            ///< Binary scan operator
         Identity                    identity)           ///< Identity element
     :
@@ -319,10 +319,10 @@ struct BlockScanSweep
      */
     template <bool LAST_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        Offset              num_items,          ///< Total number of input items
-        Offset              num_remaining,      ///< Total number of items remaining to be processed (including this tile)
+        OffsetT             num_items,          ///< Total number of input items
+        OffsetT             num_remaining,      ///< Total number of items remaining to be processed (including this tile)
         int                 tile_idx,           ///< Tile index
-        Offset              block_offset,       ///< Tile offset
+        OffsetT             block_offset,       ///< Tile offset
         ScanTileState       &tile_status)       ///< Global list of tile status
     {
         // Load items
@@ -377,8 +377,8 @@ struct BlockScanSweep
         // Blocks are launched in increasing order, so just assign one tile per block
 
         int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
-        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
+        OffsetT block_offset    = OffsetT(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
+        OffsetT num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (num_remaining > TILE_ITEMS)
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
@@ -395,8 +395,8 @@ struct BlockScanSweep
         __syncthreads();
 
         int     tile_idx        = temp_storage.tile_idx;
-        Offset  block_offset    = TILE_ITEMS * tile_idx;
-        Offset  num_remaining   = num_items - block_offset;
+        OffsetT block_offset    = TILE_ITEMS * tile_idx;
+        OffsetT num_remaining   = num_items - block_offset;
 
         while (num_remaining >= TILE_ITEMS)
         {
@@ -436,7 +436,7 @@ struct BlockScanSweep
         bool                FULL_TILE,
         bool                FIRST_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        Offset                      block_offset,               ///< Tile offset
+        OffsetT                     block_offset,               ///< Tile offset
         RunningPrefixCallbackOp     &prefix_op,                 ///< Running prefix operator
         int                         valid_items = TILE_ITEMS)   ///< Number of valid items in the tile
     {
@@ -477,8 +477,8 @@ struct BlockScanSweep
      * Scan a consecutive share of input tiles
      */
     __device__ __forceinline__ void ConsumeRange(
-        Offset   block_offset,      ///< [in] Threadblock begin offset (inclusive)
-        Offset   block_end)         ///< [in] Threadblock end offset (exclusive)
+        OffsetT  block_offset,      ///< [in] Threadblock begin offset (inclusive)
+        OffsetT  block_end)         ///< [in] Threadblock end offset (exclusive)
     {
         BlockScanRunningPrefixOp<T, ScanOp> prefix_op(scan_op);
 
@@ -515,8 +515,8 @@ struct BlockScanSweep
      * Scan a consecutive share of input tiles, seeded with the specified prefix value
      */
     __device__ __forceinline__ void ConsumeRange(
-        Offset  block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        Offset  block_end,                          ///< [in] Threadblock end offset (exclusive)
+        OffsetT block_offset,                       ///< [in] Threadblock begin offset (inclusive)
+        OffsetT block_end,                          ///< [in] Threadblock end offset (exclusive)
         T       prefix)                             ///< [in] The prefix to apply to the scan segment
     {
         BlockScanRunningPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);

@@ -75,7 +75,7 @@ struct BlockHistogramSort
             4,
             (PTX_ARCH >= 350) ? true : false,
             BLOCK_SCAN_WARP_SCANS,
-            (PTX_ARCH >= 350) ? cudaSharedMemBankSizeEightByte : cudaSharedMemBankSizeFourByte,
+            cudaSharedMemBankSizeFourByte,
             BLOCK_DIM_Y,
             BLOCK_DIM_Z,
             PTX_ARCH>
@@ -158,10 +158,10 @@ struct BlockHistogramSort
 
     // Composite data onto an existing histogram
     template <
-        typename            HistoCounter>
+        typename            HistoCounterT>
     __device__ __forceinline__ void Composite(
         T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-        HistoCounter        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
+        HistoCounterT       histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
     {
         enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
 
@@ -206,7 +206,7 @@ struct BlockHistogramSort
         for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
         {
             int thread_offset = histo_offset + linear_tid;
-            HistoCounter count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];
+            HistoCounterT count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];
             histogram[thread_offset] += count;
         }
 
@@ -214,7 +214,7 @@ struct BlockHistogramSort
         if ((BINS % BLOCK_THREADS != 0) && (histo_offset + linear_tid < BINS))
         {
             int thread_offset = histo_offset + linear_tid;
-            HistoCounter count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];
+            HistoCounterT count = temp_storage.run_end[thread_offset] - temp_storage.run_begin[thread_offset];
             histogram[thread_offset] += count;
         }
     }

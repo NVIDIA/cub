@@ -56,6 +56,13 @@ int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
+// Dispatch types
+enum Backend
+{
+    CUB,        // CUB method
+    THRUST,     // Thrust method
+    CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
+};
 
 
 //---------------------------------------------------------------------
@@ -66,7 +73,7 @@ CachingDeviceAllocator  g_allocator(true);
 /**
  * Dispatch to unique entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
@@ -76,10 +83,10 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    InputIteratorT              d_in,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -100,7 +107,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to unique entrypoint
  */
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __host__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
@@ -110,14 +117,14 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    InputIteratorT              d_in,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     if (d_temp_storage == 0)
     {
@@ -133,8 +140,8 @@ cudaError_t Dispatch(
             d_out_wrapper_end = thrust::unique_copy(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
         }
 
-        Offset num_selected = d_out_wrapper_end - d_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
+        OffsetT num_selected = d_out_wrapper_end - d_out_wrapper;
+        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
 
     }
 
@@ -150,7 +157,7 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceSelect
  */
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __global__ void CnpDispatchKernel(
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
@@ -158,10 +165,10 @@ __global__ void CnpDispatchKernel(
 
     void                        *d_temp_storage,
     size_t                      temp_storage_bytes,
-    InputIterator               d_in,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    InputIteratorT              d_in,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     bool                        debug_synchronous)
 {
 
@@ -178,7 +185,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
     int                         timing_timing_iterations,
@@ -187,10 +194,10 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    InputIteratorT              d_in,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -271,10 +278,10 @@ void Initialize(
  * Solve unique problem
  */
 template <
-    typename        InputIterator,
+    typename        InputIteratorT,
     typename        T>
 int Solve(
-    InputIterator   h_in,
+    InputIteratorT  h_in,
     T               *h_reference,
     int             num_items)
 {
@@ -304,10 +311,10 @@ int Solve(
  */
 template <
     Backend             BACKEND,
-    typename            DeviceInputIterator,
+    typename            DeviceInputIteratorT,
     typename            T>
 void Test(
-    DeviceInputIterator d_in,
+    DeviceInputIteratorT d_in,
     T                   *h_reference,
     int                 num_selected,
     int                 num_items,

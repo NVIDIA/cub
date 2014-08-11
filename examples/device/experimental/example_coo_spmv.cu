@@ -386,7 +386,7 @@ struct PersistentBlockSpmv
         // Barrier for smem reuse and coherence
         __syncthreads();
 
-        // Flag row heads by looking for discontinuities
+        // FlagT row heads by looking for discontinuities
         BlockDiscontinuity(temp_storage.discontinuity).FlagHeads(
             head_flags,                     // (Out) Head flags
             rows,                           // Original row ids
@@ -607,7 +607,7 @@ struct FinalizeSpmvBlock
             rows[ITEM] = partial_sums[ITEM].row;
         }
 
-        // Flag row heads by looking for discontinuities
+        // FlagT row heads by looking for discontinuities
         BlockDiscontinuity(temp_storage.discontinuity).FlagHeads(
             rows,                           // Original row ids
             head_flags,                     // (Out) Head flags

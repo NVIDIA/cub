@@ -59,39 +59,39 @@ namespace cub {
  */
 template <
     typename            BlockReduceSweepByKeyPolicy,            ///< Parameterized BlockReduceSweepByKeyPolicy tuning policy type
-    typename            KeysInputIterator,                      ///< Random-access input iterator type for keys
-    typename            UniqueOutputIterator,                   ///< Random-access output iterator type for keys
-    typename            ValuesInputIterator,                    ///< Random-access input iterator type for values
-    typename            AggregatesOutputIterator,               ///< Random-access output iterator type for values
-    typename            NumRunsOutputIterator,                  ///< Output iterator type for recording number of segments encountered
+    typename            KeysInputIteratorT,                     ///< Random-access input iterator type for keys
+    typename            UniqueOutputIteratorT,                  ///< Random-access output iterator type for keys
+    typename            ValuesInputIteratorT,                   ///< Random-access input iterator type for values
+    typename            AggregatesOutputIteratorT,              ///< Random-access output iterator type for values
+    typename            NumRunsOutputIteratorT,                 ///< Output iterator type for recording number of segments encountered
     typename            ScanTileState,                          ///< Tile status interface type
     typename            EqualityOp,                             ///< Key equality operator type
     typename            ReductionOp,                            ///< Value reduction operator type
-    typename            Offset>                                 ///< Signed integer type for global offsets
+    typename            OffsetT>                                ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockReduceSweepByKeyPolicy::BLOCK_THREADS))
 __global__ void DeviceReduceByKeySweepKernel(
-    KeysInputIterator           d_keys_in,                      ///< [in] Pointer to the input sequence of keys
-    UniqueOutputIterator        d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
-    ValuesInputIterator         d_values_in,                    ///< [in] Pointer to the input sequence of corresponding values
-    AggregatesOutputIterator    d_aggregates_out,               ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
-    NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
+    KeysInputIteratorT          d_keys_in,                      ///< [in] Pointer to the input sequence of keys
+    UniqueOutputIteratorT       d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
+    ValuesInputIteratorT        d_values_in,                    ///< [in] Pointer to the input sequence of corresponding values
+    AggregatesOutputIteratorT   d_aggregates_out,               ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
+    NumRunsOutputIteratorT      d_num_runs_out,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
     ScanTileState               tile_status,                    ///< [in] Tile status interface
     EqualityOp                  equality_op,                    ///< [in] Key equality operator
     ReductionOp                 reduction_op,                   ///< [in] Value reduction operator
-    Offset                      num_items,                      ///< [in] Total number of items to select from
+    OffsetT                     num_items,                      ///< [in] Total number of items to select from
     int                         num_tiles,                      ///< [in] Total number of tiles for the entire problem
     GridQueue<int>              queue)                          ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for reducing tiles of value segments
     typedef BlockReduceSweepByKey<
         BlockReduceSweepByKeyPolicy,
-        KeysInputIterator,
-        UniqueOutputIterator,
-        ValuesInputIterator,
-        AggregatesOutputIterator,
+        KeysInputIteratorT,
+        UniqueOutputIteratorT,
+        ValuesInputIteratorT,
+        AggregatesOutputIteratorT,
         EqualityOp,
         ReductionOp,
-        Offset> BlockReduceSweepByKeyT;
+        OffsetT>BlockReduceSweepByKeyT;
 
     // Shared memory for BlockReduceSweepByKey
     __shared__ typename BlockReduceSweepByKeyT::TempStorage temp_storage;
@@ -115,14 +115,14 @@ __global__ void DeviceReduceByKeySweepKernel(
  * Utility class for dispatching the appropriately-tuned kernels for DeviceReduceByKey
  */
 template <
-    typename    KeysInputIterator,               ///< Random-access input iterator type for keys
-    typename    UniqueOutputIterator,              ///< Random-access output iterator type for keys
-    typename    ValuesInputIterator,             ///< Random-access input iterator type for values
-    typename    AggregatesOutputIterator,            ///< Random-access output iterator type for values
-    typename    NumRunsOutputIterator,            ///< Output iterator type for recording number of segments encountered
+    typename    KeysInputIteratorT,              ///< Random-access input iterator type for keys
+    typename    UniqueOutputIteratorT,             ///< Random-access output iterator type for keys
+    typename    ValuesInputIteratorT,            ///< Random-access input iterator type for values
+    typename    AggregatesOutputIteratorT,           ///< Random-access output iterator type for values
+    typename    NumRunsOutputIteratorT,           ///< Output iterator type for recording number of segments encountered
     typename    EqualityOp,                     ///< Key equality operator type
     typename    ReductionOp,                    ///< Value reduction operator type
-    typename    Offset>                         ///< Signed integer type for global offsets
+    typename    OffsetT>                        ///< Signed integer type for global offsets
 struct DeviceReduceByKeyDispatch
 {
     /******************************************************************************
@@ -130,10 +130,10 @@ struct DeviceReduceByKeyDispatch
      ******************************************************************************/
 
     // Data type of key input iterator
-    typedef typename std::iterator_traits<KeysInputIterator>::value_type Key;
+    typedef typename std::iterator_traits<KeysInputIteratorT>::value_type Key;
 
     // Data type of value input iterator
-    typedef typename std::iterator_traits<ValuesInputIterator>::value_type Value;
+    typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type Value;
 
     enum
     {
@@ -143,7 +143,7 @@ struct DeviceReduceByKeyDispatch
     };
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<Value, Offset> ScanTileState;
+    typedef ReduceByKeyScanTileState<Value, OffsetT> ScanTileState;
 
 
     /******************************************************************************
@@ -322,7 +322,6 @@ struct DeviceReduceByKeyDispatch
         BlockLoadAlgorithm      load_policy;
         bool                    two_phase_scatter;
         BlockScanAlgorithm      scan_algorithm;
-        cudaSharedMemConfig     smem_config;
 
         template <typename BlockReduceSweepByKeyPolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
@@ -333,19 +332,17 @@ struct DeviceReduceByKeyDispatch
             load_policy                 = BlockReduceSweepByKeyPolicy::LOAD_ALGORITHM;
             two_phase_scatter           = BlockReduceSweepByKeyPolicy::TWO_PHASE_SCATTER;
             scan_algorithm              = BlockReduceSweepByKeyPolicy::SCAN_ALGORITHM;
-            smem_config                 = cudaSharedMemBankSizeEightByte;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__
         void Print()
         {
-            printf("%d, %d, %d, %d, %d, %d",
+            printf("%d, %d, %d, %d, %d",
                 block_threads,
                 items_per_thread,
                 load_policy,
                 two_phase_scatter,
-                scan_algorithm,
-                smem_config);
+                scan_algorithm);
         }
     };
 
@@ -365,14 +362,14 @@ struct DeviceReduceByKeyDispatch
     static cudaError_t Dispatch(
         void                            *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        KeysInputIterator               d_keys_in,                          ///< [in] Pointer to the input sequence of keys
-        UniqueOutputIterator            d_unique_out,                       ///< [out] Pointer to the output sequence of unique keys (one key per run)
-        ValuesInputIterator             d_values_in,                        ///< [in] Pointer to the input sequence of corresponding values
-        AggregatesOutputIterator        d_aggregates_out,                   ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
-        NumRunsOutputIterator           d_num_runs_out,                         ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
+        KeysInputIteratorT              d_keys_in,                          ///< [in] Pointer to the input sequence of keys
+        UniqueOutputIteratorT           d_unique_out,                       ///< [out] Pointer to the output sequence of unique keys (one key per run)
+        ValuesInputIteratorT            d_values_in,                        ///< [in] Pointer to the input sequence of corresponding values
+        AggregatesOutputIteratorT       d_aggregates_out,                   ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
+        NumRunsOutputIteratorT          d_num_runs_out,                         ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
         EqualityOp                      equality_op,                        ///< [in] Key equality operator
         ReductionOp                     reduction_op,                       ///< [in] Value reduction operator
-        Offset                          num_items,                          ///< [in] Total number of items to select from
+        OffsetT                         num_items,                          ///< [in] Total number of items to select from
         cudaStream_t                    stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                            debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                             ptx_version,                        ///< [in] PTX version of dispatch kernels
@@ -473,20 +470,6 @@ struct DeviceReduceByKeyDispatch
                     range_reduce_by_key_occupancy;         // Fill the device with threadblocks
             }
 
-#if (CUB_PTX_ARCH == 0)
-            // Get current smem bank configuration
-            cudaSharedMemConfig original_smem_config;
-            if (CubDebug(error = cudaDeviceGetSharedMemConfig(&original_smem_config))) break;
-            cudaSharedMemConfig current_smem_config = original_smem_config;
-
-            // Update smem config if necessary
-            if (current_smem_config != device_reduce_by_key_sweep_config.smem_config)
-            {
-                if (CubDebug(error = cudaDeviceSetSharedMemConfig(device_reduce_by_key_sweep_config.smem_config))) break;
-                current_smem_config = device_reduce_by_key_sweep_config.smem_config;
-            }
-#endif
-
             // Log range_reduce_by_key_kernel configuration
             if (debug_synchronous) CubLog("Invoking range_reduce_by_key_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 reduce_by_key_grid_size.x, reduce_by_key_grid_size.y, reduce_by_key_grid_size.z, device_reduce_by_key_sweep_config.block_threads, (long long) stream, device_reduce_by_key_sweep_config.items_per_thread, range_reduce_by_key_sm_occupancy);
@@ -511,14 +494,6 @@ struct DeviceReduceByKeyDispatch
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-#if (CUB_PTX_ARCH == 0)
-            // Reset smem config if necessary
-            if (current_smem_config != original_smem_config)
-            {
-                if (CubDebug(error = cudaDeviceSetSharedMemConfig(original_smem_config))) break;
-            }
-#endif
-
         }
         while (0);
 
@@ -535,14 +510,14 @@ struct DeviceReduceByKeyDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        KeysInputIterator           d_keys_in,                      ///< [in] Pointer to the input sequence of keys
-        UniqueOutputIterator        d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
-        ValuesInputIterator         d_values_in,                    ///< [in] Pointer to the input sequence of corresponding values
-        AggregatesOutputIterator    d_aggregates_out,               ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
-        NumRunsOutputIterator       d_num_runs_out,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
+        KeysInputIteratorT          d_keys_in,                      ///< [in] Pointer to the input sequence of keys
+        UniqueOutputIteratorT       d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
+        ValuesInputIteratorT        d_values_in,                    ///< [in] Pointer to the input sequence of corresponding values
+        AggregatesOutputIteratorT   d_aggregates_out,               ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
+        NumRunsOutputIteratorT      d_num_runs_out,                     ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
         EqualityOp                  equality_op,                    ///< [in] Key equality operator
         ReductionOp                 reduction_op,                   ///< [in] Value reduction operator
-        Offset                      num_items,                      ///< [in] Total number of items to select from
+        OffsetT                     num_items,                      ///< [in] Total number of items to select from
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -576,8 +551,8 @@ struct DeviceReduceByKeyDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<Offset, ScanTileState>,
-                DeviceReduceByKeySweepKernel<PtxReduceByKeyPolicy, KeysInputIterator, UniqueOutputIterator, ValuesInputIterator, AggregatesOutputIterator, NumRunsOutputIterator, ScanTileState, EqualityOp, ReductionOp, Offset>,
+                DeviceScanInitKernel<OffsetT, ScanTileState>,
+                DeviceReduceByKeySweepKernel<PtxReduceByKeyPolicy, KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, ScanTileState, EqualityOp, ReductionOp, OffsetT>,
                 device_reduce_by_key_sweep_config))) break;
         }
         while (0);

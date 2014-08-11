@@ -68,13 +68,13 @@ template <
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
     int                 WARP_TIME_SLICING,
-    typename            InputIterator,
-    typename            OutputIterator>
+    typename            InputIteratorT,
+    typename            OutputIteratorT>
 __launch_bounds__ (BLOCK_THREADS, 1)
 __global__ void Kernel(
-    InputIterator     d_in,
-    OutputIterator    d_out_unguarded,
-    OutputIterator    d_out_guarded,
+    InputIteratorT    d_in,
+    OutputIteratorT    d_out_unguarded,
+    OutputIteratorT    d_out_guarded,
     int               num_items)
 {
     enum
@@ -83,11 +83,11 @@ __global__ void Kernel(
     };
 
     // Data type of input/output iterators
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, WARP_TIME_SLICING> BlockLoad;
-    typedef BlockStore<OutputIterator, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, WARP_TIME_SLICING> BlockStore;
+    typedef BlockLoad<InputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, WARP_TIME_SLICING> BlockLoad;
+    typedef BlockStore<OutputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, WARP_TIME_SLICING> BlockStore;
 
     // Shared memory type for this threadblock
     union TempStorage
@@ -148,13 +148,13 @@ template <
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
     int                 WARP_TIME_SLICING,
-    typename            InputIterator,
-    typename            OutputIterator>
+    typename            InputIteratorT,
+    typename            OutputIteratorT>
 void TestKernel(
     T                   *h_in,
-    InputIterator       d_in,
-    OutputIterator      d_out_unguarded_itr,
-    OutputIterator      d_out_guarded_itr,
+    InputIteratorT      d_in,
+    OutputIteratorT      d_out_unguarded_itr,
+    OutputIteratorT      d_out_guarded_itr,
     T                   *d_out_unguarded_ptr,
     T                   *d_out_guarded_ptr,
     int                 grid_size,

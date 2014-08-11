@@ -59,6 +59,13 @@ int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
+// Dispatch types
+enum Backend
+{
+    CUB,        // CUB method
+    THRUST,     // Thrust method
+    CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
+};
 
 
 //---------------------------------------------------------------------
@@ -70,14 +77,14 @@ CachingDeviceAllocator  g_allocator(true);
  * Dispatch to reduce-by-key entrypoint
  */
 template <
-    typename                    KeyInputIterator,
-    typename                    KeyOutputIterator,
-    typename                    ValueInputIterator,
-    typename                    ValueOutputIterator,
+    typename                    KeyInputIteratorT,
+    typename                    KeyOutputIteratorT,
+    typename                    ValueInputIteratorT,
+    typename                    ValueOutputIteratorT,
     typename                    NumRunsIterator,
     typename                    EqualityOp,
     typename                    ReductionOp,
-    typename                    Offset>
+    typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
@@ -87,14 +94,14 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    KeyInputIterator            d_keys_in,
-    KeyOutputIterator           d_keys_out,
-    ValueInputIterator          d_values_in,
-    ValueOutputIterator         d_values_out,
+    KeyInputIteratorT           d_keys_in,
+    KeyOutputIteratorT          d_keys_out,
+    ValueInputIteratorT         d_values_in,
+    ValueOutputIteratorT        d_values_out,
     NumRunsIterator         d_num_runs,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -122,11 +129,11 @@ cudaError_t Dispatch(
  * Dispatch to run-length encode entrypoint
  */
 template <
-    typename                    KeyInputIterator,
-    typename                    KeyOutputIterator,
-    typename                    ValueOutputIterator,
+    typename                    KeyInputIteratorT,
+    typename                    KeyOutputIteratorT,
+    typename                    ValueOutputIteratorT,
     typename                    NumRunsIterator,
-    typename                    Offset>
+    typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
@@ -136,14 +143,14 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    KeyInputIterator            d_keys_in,
-    KeyOutputIterator           d_keys_out,
-    ConstantInputIterator<typename std::iterator_traits<ValueOutputIterator>::value_type, Offset> d_values_in,
-    ValueOutputIterator         d_values_out,
-    NumRunsIterator         d_num_runs,
+    KeyInputIteratorT           d_keys_in,
+    KeyOutputIteratorT          d_keys_out,
+    ConstantInputIterator<typename std::iterator_traits<ValueOutputIteratorT>::value_type, OffsetT> d_values_in,
+    ValueOutputIteratorT        d_values_out,
+    NumRunsIterator             d_num_runs,
     cub::Equality               equality_op,
     cub::Sum                    reduction_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -174,14 +181,14 @@ cudaError_t Dispatch(
  * Dispatch to reduce-by-key entrypoint
  */
 template <
-    typename                    KeyInputIterator,
-    typename                    KeyOutputIterator,
-    typename                    ValueInputIterator,
-    typename                    ValueOutputIterator,
+    typename                    KeyInputIteratorT,
+    typename                    KeyOutputIteratorT,
+    typename                    ValueInputIteratorT,
+    typename                    ValueOutputIteratorT,
     typename                    NumRunsIterator,
     typename                    EqualityOp,
     typename                    ReductionOp,
-    typename                    Offset>
+    typename                    OffsetT>
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
     int                         timing_timing_iterations,
@@ -190,19 +197,19 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    KeyInputIterator            d_keys_in,
-    KeyOutputIterator           d_keys_out,
-    ValueInputIterator          d_values_in,
-    ValueOutputIterator         d_values_out,
+    KeyInputIteratorT           d_keys_in,
+    KeyOutputIteratorT          d_keys_out,
+    ValueInputIteratorT         d_values_in,
+    ValueOutputIteratorT        d_values_out,
     NumRunsIterator         d_num_runs,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<KeyInputIterator>::value_type Key;
-    typedef typename std::iterator_traits<ValueInputIterator>::value_type Value;
+    typedef typename std::iterator_traits<KeyInputIteratorT>::value_type Key;
+    typedef typename std::iterator_traits<ValueInputIteratorT>::value_type Value;
 
     if (d_temp_storage == 0)
     {
@@ -228,8 +235,8 @@ cudaError_t Dispatch(
                 d_values_out_wrapper);
         }
 
-        Offset num_segments = d_out_ends.first - d_keys_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_runs, &num_segments, sizeof(Offset), cudaMemcpyHostToDevice));
+        OffsetT num_segments = d_out_ends.first - d_keys_out_wrapper;
+        CubDebugExit(cudaMemcpy(d_num_runs, &num_segments, sizeof(OffsetT), cudaMemcpyHostToDevice));
 
     }
 
@@ -241,11 +248,11 @@ cudaError_t Dispatch(
  * Dispatch to run-length encode entrypoint
  */
 template <
-    typename                    KeyInputIterator,
-    typename                    KeyOutputIterator,
-    typename                    ValueOutputIterator,
+    typename                    KeyInputIteratorT,
+    typename                    KeyOutputIteratorT,
+    typename                    ValueOutputIteratorT,
     typename                    NumRunsIterator,
-    typename                    Offset>
+    typename                    OffsetT>
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
     int                         timing_timing_iterations,
@@ -254,19 +261,19 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    KeyInputIterator            d_keys_in,
-    KeyOutputIterator           d_keys_out,
-    ConstantInputIterator<typename std::iterator_traits<ValueOutputIterator>::value_type, Offset> d_values_in,
-    ValueOutputIterator         d_values_out,
+    KeyInputIteratorT           d_keys_in,
+    KeyOutputIteratorT          d_keys_out,
+    ConstantInputIterator<typename std::iterator_traits<ValueOutputIteratorT>::value_type, OffsetT> d_values_in,
+    ValueOutputIteratorT        d_values_out,
     NumRunsIterator         d_num_runs,
     cub::Equality               equality_op,
     cub::Sum                    reduction_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<KeyInputIterator>::value_type Key;
-    typedef typename std::iterator_traits<ValueOutputIterator>::value_type Value;
+    typedef typename std::iterator_traits<KeyInputIteratorT>::value_type Key;
+    typedef typename std::iterator_traits<ValueOutputIteratorT>::value_type Value;
 
     if (d_temp_storage == 0)
     {
@@ -295,8 +302,8 @@ cudaError_t Dispatch(
                 d_values_out_wrapper);
         }
 
-        Offset num_segments = d_out_ends.first - d_keys_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_runs, &num_segments, sizeof(Offset), cudaMemcpyHostToDevice));
+        OffsetT num_segments = d_out_ends.first - d_keys_out_wrapper;
+        CubDebugExit(cudaMemcpy(d_num_runs, &num_segments, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -312,14 +319,14 @@ cudaError_t Dispatch(
  * Simple wrapper kernel to invoke DeviceSelect
  */
 template <
-    typename                    KeyInputIterator,
-    typename                    KeyOutputIterator,
-    typename                    ValueInputIterator,
-    typename                    ValueOutputIterator,
+    typename                    KeyInputIteratorT,
+    typename                    KeyOutputIteratorT,
+    typename                    ValueInputIteratorT,
+    typename                    ValueOutputIteratorT,
     typename                    NumRunsIterator,
     typename                    EqualityOp,
     typename                    ReductionOp,
-    typename                    Offset>
+    typename                    OffsetT>
 __global__ void CnpDispatchKernel(
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
@@ -327,14 +334,14 @@ __global__ void CnpDispatchKernel(
 
     void                        *d_temp_storage,
     size_t                      temp_storage_bytes,
-    KeyInputIterator            d_keys_in,
-    KeyOutputIterator           d_keys_out,
-    ValueInputIterator          d_values_in,
-    ValueOutputIterator         d_values_out,
+    KeyInputIteratorT           d_keys_in,
+    KeyOutputIteratorT          d_keys_out,
+    ValueInputIteratorT         d_values_in,
+    ValueOutputIteratorT        d_values_out,
     NumRunsIterator         d_num_runs,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -354,14 +361,14 @@ __global__ void CnpDispatchKernel(
  * Dispatch to CDP kernel
  */
 template <
-    typename                    KeyInputIterator,
-    typename                    KeyOutputIterator,
-    typename                    ValueInputIterator,
-    typename                    ValueOutputIterator,
+    typename                    KeyInputIteratorT,
+    typename                    KeyOutputIteratorT,
+    typename                    ValueInputIteratorT,
+    typename                    ValueOutputIteratorT,
     typename                    NumRunsIterator,
     typename                    EqualityOp,
     typename                    ReductionOp,
-    typename                    Offset>
+    typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
@@ -371,14 +378,14 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    KeyInputIterator            d_keys_in,
-    KeyOutputIterator           d_keys_out,
-    ValueInputIterator          d_values_in,
-    ValueOutputIterator         d_values_out,
-    NumRunsIterator         d_num_runs,
+    KeyInputIteratorT           d_keys_in,
+    KeyOutputIteratorT          d_keys_out,
+    ValueInputIteratorT         d_values_in,
+    ValueOutputIteratorT        d_values_out,
+    NumRunsIterator             d_num_runs,
     EqualityOp                  equality_op,
     ReductionOp                 reduction_op,
-    Offset                      num_items,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -449,16 +456,16 @@ void Initialize(
  * Solve problem.  Returns total number of segments identified
  */
 template <
-    typename        KeyInputIterator,
-    typename        ValueInputIterator,
+    typename        KeyInputIteratorT,
+    typename        ValueInputIteratorT,
     typename        Key,
     typename        Value,
     typename        EqualityOp,
     typename        ReductionOp>
 int Solve(
-    KeyInputIterator    h_keys_in,
+    KeyInputIteratorT   h_keys_in,
     Key                 *h_keys_reference,
-    ValueInputIterator  h_values_in,
+    ValueInputIteratorT h_values_in,
     Value               *h_values_reference,
     EqualityOp          equality_op,
     ReductionOp         reduction_op,
@@ -500,15 +507,15 @@ int Solve(
  */
 template <
     Backend             BACKEND,
-    typename            DeviceKeyInputIterator,
-    typename            DeviceValueInputIterator,
+    typename            DeviceKeyInputIteratorT,
+    typename            DeviceValueInputIteratorT,
     typename            Key,
     typename            Value,
     typename            EqualityOp,
     typename            ReductionOp>
 void Test(
-    DeviceKeyInputIterator      d_keys_in,
-    DeviceValueInputIterator    d_values_in,
+    DeviceKeyInputIteratorT     d_keys_in,
+    DeviceValueInputIteratorT   d_values_in,
     Key                         *h_keys_reference,
     Value                       *h_values_reference,
     EqualityOp                  equality_op,
@@ -518,7 +525,7 @@ void Test(
     char*                       key_type_string,
     char*                       value_type_string)
 {
-    const bool IS_RLE = Equals<DeviceValueInputIterator, ConstantInputIterator<Value, int> >::VALUE;
+    const bool IS_RLE = Equals<DeviceValueInputIteratorT, ConstantInputIterator<Value, int> >::VALUE;
 
     // Allocate device output arrays and number of segments
     Key     *d_keys_out             = NULL;

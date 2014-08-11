@@ -66,7 +66,7 @@ namespace cub {
  * \brief A random-access input wrapper for dereferencing array values using a PTX cache load modifier.
  *
  * \par Overview
- * - CacheModifiedInputIterator is a random-access input iterator that wraps a native
+ * - CacheModifiedInputIteratorTis a random-access input iterator that wraps a native
  *   device pointer of type <tt>ValueType*</tt>. \p ValueType references are
  *   made by reading \p ValueType values through loads modified by \p MODIFIER.
  * - Can be used to load any data type from memory using PTX cache load modifiers (e.g., "LOAD_LDG",
@@ -76,7 +76,7 @@ namespace cub {
  * - Compatible with Thrust API v1.7 or newer.
  *
  * \par Snippet
- * The code snippet below illustrates the use of \p CacheModifiedInputIterator to
+ * The code snippet below illustrates the use of \p CacheModifiedInputIteratorTto
  * dereference a device array of double using the "ldg" PTX load modifier
  * (i.e., load values through texture cache).
  * \par
@@ -98,19 +98,19 @@ namespace cub {
  *
  * \tparam CacheLoadModifier    The cub::CacheLoadModifier to use when accessing data
  * \tparam ValueType            The value type of this iterator
- * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam OffsetT              The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
     CacheLoadModifier   MODIFIER,
     typename            ValueType,
-    typename            Offset = ptrdiff_t>
+    typename            OffsetT = ptrdiff_t>
 class CacheModifiedInputIterator
 {
 public:
 
     // Required iterator traits
     typedef CacheModifiedInputIterator          self_type;              ///< My own type
-    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef OffsetT                             difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to

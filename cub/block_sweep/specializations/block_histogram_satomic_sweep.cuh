@@ -53,9 +53,9 @@ template <
     int         BINS,                           ///< Number of histogram bins
     int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
     int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIterator,                	///< The input iterator type \iterator.  Must have an an InputIterator::value_type that, when cast as an integer, falls in the range [0..BINS-1]
-    typename    HistoCounter,                   ///< Integer type for counting sample occurrences per histogram bin
-    typename    Offset>                          ///< Signed integer type for global offsets
+    typename    InputIteratorT,               	///< The input iterator type \iterator.  Must have an an InputIteratorT::value_type that, when cast as an integer, falls in the range [0..BINS-1]
+    typename    HistoCounterT,                  ///< Integer type for counting sample occurrences per histogram bin
+    typename    OffsetT>                        ///< Signed integer type for global offsets
 struct BlockHistogramSweepSharedAtomic
 {
     //---------------------------------------------------------------------
@@ -63,7 +63,7 @@ struct BlockHistogramSweepSharedAtomic
     //---------------------------------------------------------------------
 
     // Sample type
-    typedef typename std::iterator_traits<InputIterator>::value_type SampleT;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type SampleT;
 
     // Constants
     enum
@@ -77,7 +77,7 @@ struct BlockHistogramSweepSharedAtomic
     /// Shared memory type required by this thread block
     struct _TempStorage
     {
-        HistoCounter histograms[ACTIVE_CHANNELS][BINS + 1];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
+        HistoCounterT histograms[ACTIVE_CHANNELS][BINS + 1];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
     };
 
 
@@ -93,10 +93,10 @@ struct BlockHistogramSweepSharedAtomic
     _TempStorage &temp_storage;
 
     /// Reference to output histograms
-    HistoCounter* (&d_out_histograms)[ACTIVE_CHANNELS];
+    HistoCounterT* (&d_out_histograms)[ACTIVE_CHANNELS];
 
     /// Input data to reduce
-    InputIterator d_in;
+    InputIteratorT d_in;
 
 
     //---------------------------------------------------------------------
@@ -108,8 +108,8 @@ struct BlockHistogramSweepSharedAtomic
      */
     __device__ __forceinline__ BlockHistogramSweepSharedAtomic(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
-        InputIterator     d_in,                                           ///< Input data to reduce
-        HistoCounter*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
+        InputIteratorT      d_in,                                           ///< Input data to reduce
+        HistoCounterT*      (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
@@ -142,7 +142,7 @@ struct BlockHistogramSweepSharedAtomic
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        Offset   block_offset,               ///< The offset the tile to consume
+        OffsetT  block_offset,               ///< The offset the tile to consume
         int     valid_items = TILE_ITEMS)   ///< The number of valid items in the tile
     {
         if (FULL_TILE)
@@ -222,7 +222,7 @@ struct BlockHistogramSweepSharedAtomic
             #pragma unroll
             for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
             {
-                HistoCounter count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+                HistoCounterT count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
 
                 d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = count;
             }
@@ -230,7 +230,7 @@ struct BlockHistogramSweepSharedAtomic
             // Finish up with guarded initialization if necessary
             if ((BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < BINS))
             {
-                HistoCounter count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+                HistoCounterT count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
 
                 d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = count;
             }
