@@ -63,37 +63,37 @@ namespace cub {
  */
 template <
     typename            BlockSelectSweepPolicy,     ///< Parameterized BlockSelectSweepPolicy tuning policy type
-    typename            InputIterator,              ///< Random-access input iterator type for reading input items
-    typename            FlagsInputIterator,               ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename            SelectedOutputIterator,             ///< Random-access output iterator type for writing selected items
-    typename            NumSelectedIterator,        ///< Output iterator type for recording the number of items selected
+    typename            InputIteratorT,             ///< Random-access input iterator type for reading input items
+    typename            FlagsInputIteratorT,              ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename            SelectedOutputIteratorT,            ///< Random-access output iterator type for writing selected items
+    typename            NumSelectedIteratorT,        ///< Output iterator type for recording the number of items selected
     typename            ScanTileState,              ///< Tile status interface type
     typename            SelectOp,                   ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename            EqualityOp,                 ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
-    typename            Offset,                     ///< Signed integer type for global offsets
+    typename            OffsetT,                    ///< Signed integer type for global offsets
     bool                KEEP_REJECTS>               ///< Whether or not we push rejected items to the back of the output
 __launch_bounds__ (int(BlockSelectSweepPolicy::BLOCK_THREADS))
 __global__ void DeviceSelectSweepKernel(
-    InputIterator       d_in,                       ///< [in] Pointer to the input sequence of data items
-    FlagsInputIterator        d_flags,                    ///< [in] Pointer to the input sequence of selection flags
-    SelectedOutputIterator      d_selected_out,                      ///< [out] Pointer to the output sequence of selected data items
-    NumSelectedIterator d_num_selected_out,             ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+    InputIteratorT      d_in,                       ///< [in] Pointer to the input sequence of data items
+    FlagsInputIteratorT       d_flags,                    ///< [in] Pointer to the input sequence of selection flags
+    SelectedOutputIteratorT     d_selected_out,                      ///< [out] Pointer to the output sequence of selected data items
+    NumSelectedIteratorT d_num_selected_out,             ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
     ScanTileState       tile_status,                ///< [in] Tile status interface
     SelectOp            select_op,                  ///< [in] Selection operator
     EqualityOp          equality_op,                ///< [in] Equality operator
-    Offset              num_items,                  ///< [in] Total number of input items (i.e., length of \p d_in)
+    OffsetT             num_items,                  ///< [in] Total number of input items (i.e., length of \p d_in)
     int                 num_tiles,                  ///< [in] Total number of tiles for the entire problem
     GridQueue<int>      queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for selecting data from input tiles
     typedef BlockSelectSweep<
         BlockSelectSweepPolicy,
-        InputIterator,
-        FlagsInputIterator,
-        SelectedOutputIterator,
+        InputIteratorT,
+        FlagsInputIteratorT,
+        SelectedOutputIteratorT,
         SelectOp,
         EqualityOp,
-        Offset,
+        OffsetT,
         KEEP_REJECTS> BlockSelectSweepT;
 
     // Shared memory for BlockSelectSweep
@@ -118,13 +118,13 @@ __global__ void DeviceSelectSweepKernel(
  * Utility class for dispatching the appropriately-tuned kernels for DeviceSelect
  */
 template <
-    typename    InputIterator,                  ///< Random-access input iterator type for reading input items
-    typename    FlagsInputIterator,                   ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    SelectedOutputIterator,                 ///< Random-access output iterator type for writing selected items
-    typename    NumSelectedIterator,            ///< Output iterator type for recording the number of items selected
+    typename    InputIteratorT,                 ///< Random-access input iterator type for reading input items
+    typename    FlagsInputIteratorT,                  ///< Random-access input iterator type for reading selection flags (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    SelectedOutputIteratorT,                ///< Random-access output iterator type for writing selected items
+    typename    NumSelectedIteratorT,            ///< Output iterator type for recording the number of items selected
     typename    SelectOp,                       ///< Selection operator type (NullType if selection flags or discontinuity flagging is to be used for selection)
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selection flags is to be used for selection)
-    typename    Offset,                         ///< Signed integer type for global offsets
+    typename    OffsetT,                        ///< Signed integer type for global offsets
     bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
 struct DeviceSelectDispatch
 {
@@ -133,10 +133,10 @@ struct DeviceSelectDispatch
      ******************************************************************************/
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Data type of flag iterator
-    typedef typename std::iterator_traits<FlagsInputIterator>::value_type Flag;
+    typedef typename std::iterator_traits<FlagsInputIteratorT>::value_type FlagT;
 
     enum
     {
@@ -144,7 +144,7 @@ struct DeviceSelectDispatch
     };
 
     // Tile status descriptor interface type
-    typedef ScanTileState<Offset> ScanTileState;
+    typedef ScanTileState<OffsetT> ScanTileState;
 
 
     /******************************************************************************
@@ -363,13 +363,13 @@ struct DeviceSelectDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
-        FlagsInputIterator          d_flags,                        ///< [in] Pointer to the input sequence of selection flags
-        SelectedOutputIterator      d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected_out,                 ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
+        FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags
+        SelectedOutputIteratorT     d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
+        NumSelectedIteratorT         d_num_selected_out,                 ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
         SelectOp                    select_op,                      ///< [in] Selection operator
         EqualityOp                  equality_op,                    ///< [in] Equality operator
-        Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
+        OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
@@ -494,13 +494,13 @@ struct DeviceSelectDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                           ///< [in] Pointer to the input sequence of data items
-        FlagsInputIterator          d_flags,                        ///< [in] Pointer to the input sequence of selection flags
-        SelectedOutputIterator      d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
-        NumSelectedIterator         d_num_selected_out,                 ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
+        FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags
+        SelectedOutputIteratorT     d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
+        NumSelectedIteratorT         d_num_selected_out,                 ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
         SelectOp                    select_op,                      ///< [in] Selection operator
         EqualityOp                  equality_op,                    ///< [in] Equality operator
-        Offset                      num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
+        OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -533,8 +533,8 @@ struct DeviceSelectDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<Offset, ScanTileState>,
-                DeviceSelectSweepKernel<PtxRangeSelectPolicy, InputIterator, FlagsInputIterator, SelectedOutputIterator, NumSelectedIterator, ScanTileState, SelectOp, EqualityOp, Offset, KEEP_REJECTS>,
+                DeviceScanInitKernel<OffsetT, ScanTileState>,
+                DeviceSelectSweepKernel<PtxRangeSelectPolicy, InputIteratorT, FlagsInputIteratorT, SelectedOutputIteratorT, NumSelectedIteratorT, ScanTileState, SelectOp, EqualityOp, OffsetT, KEEP_REJECTS>,
                 device_select_sweep_config))) break;
         }
         while (0);

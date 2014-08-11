@@ -443,8 +443,8 @@ struct ScanTileState<T, false>
  */
 template <
     typename    Value,
-    typename    Offset,
-    bool        SINGLE_WORD = (Traits<Value>::PRIMITIVE) && (sizeof(Value) + sizeof(Offset) < 16)>
+    typename    OffsetT,
+    bool        SINGLE_WORD = (Traits<Value>::PRIMITIVE) && (sizeof(Value) + sizeof(OffsetT) < 16)>
 struct ReduceByKeyScanTileState;
 
 
@@ -454,11 +454,11 @@ struct ReduceByKeyScanTileState;
  */
 template <
     typename    Value,
-    typename    Offset>
-struct ReduceByKeyScanTileState<Value, Offset, false> :
-    ScanTileState<ItemOffsetPair<Value, Offset> >
+    typename    OffsetT>
+struct ReduceByKeyScanTileState<Value, OffsetT, false> :
+    ScanTileState<ItemOffsetPair<Value, OffsetT> >
 {
-    typedef ScanTileState<ItemOffsetPair<Value, Offset> > SuperClass;
+    typedef ScanTileState<ItemOffsetPair<Value, OffsetT> > SuperClass;
 
     /// Constructor
     __host__ __device__ __forceinline__
@@ -472,15 +472,15 @@ struct ReduceByKeyScanTileState<Value, Offset, false> :
  */
 template <
     typename Value,
-    typename Offset>
-struct ReduceByKeyScanTileState<Value, Offset, true>
+    typename OffsetT>
+struct ReduceByKeyScanTileState<Value, OffsetT, true>
 {
-    typedef ItemOffsetPair<Value, Offset> ReductionOffsetPair;
+    typedef ItemOffsetPair<Value, OffsetT>ReductionOffsetPair;
 
     // Constants
     enum
     {
-        PAIR_SIZE           = sizeof(Value) + sizeof(Offset),
+        PAIR_SIZE           = sizeof(Value) + sizeof(OffsetT),
         TXN_WORD_SIZE       = 1 << Log2<PAIR_SIZE + 1>::VALUE,
         STATUS_WORD_SIZE    = TXN_WORD_SIZE - PAIR_SIZE,
 
@@ -503,25 +503,25 @@ struct ReduceByKeyScanTileState<Value, Offset, true>
             long long,
             int>::Type>::Type TxnWord;
 
-    // Device word type (for when sizeof(Value) == sizeof(Offset))
+    // Device word type (for when sizeof(Value) == sizeof(OffsetT))
     struct TileDescriptorBigStatus
     {
-        Offset      offset;
+        OffsetT     offset;
         Value       value;
         StatusWord  status;
     };
 
-    // Device word type (for when sizeof(Value) != sizeof(Offset))
+    // Device word type (for when sizeof(Value) != sizeof(OffsetT))
     struct TileDescriptorLittleStatus
     {
         Value       value;
         StatusWord  status;
-        Offset      offset;
+        OffsetT     offset;
     };
 
     // Device word type
     typedef typename If<
-            (sizeof(Value) == sizeof(Offset)),
+            (sizeof(Value) == sizeof(OffsetT)),
             TileDescriptorBigStatus,
             TileDescriptorLittleStatus>::Type
         TileDescriptor;

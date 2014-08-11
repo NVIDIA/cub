@@ -502,20 +502,20 @@ struct Uninitialized
 /**
  * \brief An item value paired with a corresponding offset
  */
-template <typename _T, typename _Offset>
+template <typename _T, typename _OffsetT>
 struct ItemOffsetPair
 {
     typedef _T        T;                ///< Item data type
-    typedef _Offset   Offset;           ///< Integer offset data type
+    typedef _OffsetT  OffsetT;           ///< Integer offset data type
 
 #if (CUB_PTX_ARCH == 0)
     union
     {
-        Offset                              offset;     ///< Offset
+        OffsetT                             offset;     ///< OffsetT
         typename UnitWord<T>::DeviceWord    align0;     ///< Alignment/padding (for Win32 consistency between host/device)
     };
 #else
-    Offset                                  offset;     ///< Offset
+    OffsetT                                 offset;     ///< OffsetT
 #endif
 
     T                                       value;      ///< Item value
@@ -626,7 +626,7 @@ struct DoubleBuffer
     __host__ __device__ __forceinline__ T* Current() { return d_buffers[selector]; }
 
     /// \brief Return pointer to the currently invalid buffer
-    __host__ __device__ __forceinline__ T* Invalid() { return d_buffers[selector ^ 1]; }
+    __host__ __device__ __forceinline__ T* Alternate() { return d_buffers[selector ^ 1]; }
 
 };
 

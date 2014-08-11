@@ -261,21 +261,21 @@ struct WarpReduceShfl
     }
 
 
-    /// Reduction (specialized for ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<Value, Offset> types)
-    template <typename Value, typename Offset>
-    __device__ __forceinline__ ItemOffsetPair<Value, Offset> ReduceStep(
-        ItemOffsetPair<Value, Offset>                                   input,              ///< [in] Calling thread's input item.
-        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<Value, Offset> >     reduction_op,       ///< [in] Binary reduction operator
+    /// Reduction (specialized for ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<ValueT, OffsetT> types)
+    template <typename ValueT, typename OffsetT>
+    __device__ __forceinline__ ItemOffsetPair<ValueT, OffsetT> ReduceStep(
+        ItemOffsetPair<ValueT, OffsetT>                                 input,              ///< [in] Calling thread's input item.
+        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<ValueT, OffsetT> >   reduction_op,       ///< [in] Binary reduction operator
         int                                                             last_lane,          ///< [in] Index of last lane in segment
         int                                                             offset)             ///< [in] Up-offset to pull from
     {
-        ItemOffsetPair<Value, Offset> output;
+        ItemOffsetPair<ValueT, OffsetT> output;
 
-        output.value = ReduceStep(input.value, cub::Sum(), last_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_INTEGER>());
-        output.offset = ReduceStep(input.offset, cub::Sum(), last_lane, offset, Int2Type<IsInteger<Offset>::IS_SMALL_INTEGER>());
+        output.value = ReduceStep(input.value, cub::Sum(), last_lane, offset, Int2Type<IsInteger<ValueT>::IS_SMALL_INTEGER>());
+        output.offset = ReduceStep(input.offset, cub::Sum(), last_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_INTEGER>());
 
 //        int last_value_lane = (input.offset > 0) ? 0 : last_lane;
-//        output.value = ReduceStep(input.value, cub::Sum(), last_value_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_INTEGER>());
+//        output.value = ReduceStep(input.value, cub::Sum(), last_value_lane, offset, Int2Type<IsInteger<ValueT>::IS_SMALL_INTEGER>());
 
         if (input.offset > 0)
             output.value = input.value;
@@ -380,11 +380,11 @@ struct WarpReduceShfl
     /// Segmented reduction
     template <
         bool            HEAD_SEGMENTED,     ///< Whether flags indicate a segment-head or a segment-tail
-        typename        Flag,
+        typename        FlagT,
         typename        ReductionOp>
     __device__ __forceinline__ T SegmentedReduce(
         T               input,              ///< [in] Calling thread's input
-        Flag            flag,               ///< [in] Whether or not the current lane is a segment head/tail
+        FlagT            flag,               ///< [in] Whether or not the current lane is a segment head/tail
         ReductionOp     reduction_op)       ///< [in] Binary reduction operator
     {
         // Get the start flags for each thread in the warp.

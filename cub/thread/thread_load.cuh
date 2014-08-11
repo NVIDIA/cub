@@ -102,12 +102,12 @@ enum CacheLoadModifier
  * \endcode
  *
  * \tparam MODIFIER             <b>[inferred]</b> CacheLoadModifier enumeration
- * \tparam InputIterator        <b>[inferred]</b> Input iterator type \iterator
+ * \tparam InputIteratorT       <b>[inferred]</b> Input iterator type \iterator
  */
 template <
     CacheLoadModifier MODIFIER,
-    typename InputIterator>
-__device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr);
+    typename InputIteratorT>
+__device__ __forceinline__ typename std::iterator_traits<InputIteratorT>::value_type ThreadLoad(InputIteratorT itr);
 
 
 //@}  end member group
@@ -127,8 +127,8 @@ struct IterateThreadLoad
         IterateThreadLoad<COUNT + 1, MAX>::template Load<MODIFIER>(ptr, vals);
     }
 
-    template <typename InputIterator, typename T>
-    static __device__ __forceinline__ void Dereference(InputIterator ptr, T *vals)
+    template <typename InputIteratorT, typename T>
+    static __device__ __forceinline__ void Dereference(InputIteratorT ptr, T *vals)
     {
         vals[COUNT] = ptr[COUNT];
         IterateThreadLoad<COUNT + 1, MAX>::Dereference(ptr, vals);
@@ -143,8 +143,8 @@ struct IterateThreadLoad<MAX, MAX>
     template <CacheLoadModifier MODIFIER, typename T>
     static __device__ __forceinline__ void Load(T *ptr, T *vals) {}
 
-    template <typename InputIterator, typename T>
-    static __device__ __forceinline__ void Dereference(InputIterator ptr, T *vals) {}
+    template <typename InputIteratorT, typename T>
+    static __device__ __forceinline__ void Dereference(InputIteratorT ptr, T *vals) {}
 };
 
 
@@ -298,9 +298,9 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * ThreadLoad definition for LOAD_DEFAULT modifier on iterator types
  */
-template <typename InputIterator>
-__device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(
-    InputIterator           itr,
+template <typename InputIteratorT>
+__device__ __forceinline__ typename std::iterator_traits<InputIteratorT>::value_type ThreadLoad(
+    InputIteratorT          itr,
     Int2Type<LOAD_DEFAULT>  modifier,
     Int2Type<false>         is_pointer)
 {
@@ -422,14 +422,14 @@ __device__ __forceinline__ T ThreadLoad(
  */
 template <
     CacheLoadModifier MODIFIER,
-    typename InputIterator>
-__device__ __forceinline__ typename std::iterator_traits<InputIterator>::value_type ThreadLoad(InputIterator itr)
+    typename InputIteratorT>
+__device__ __forceinline__ typename std::iterator_traits<InputIteratorT>::value_type ThreadLoad(InputIteratorT itr)
 {
     // Apply tags for partial-specialization
     return ThreadLoad(
         itr,
         Int2Type<MODIFIER>(),
-        Int2Type<IsPointer<InputIterator>::VALUE>());
+        Int2Type<IsPointer<InputIteratorT>::VALUE>());
 }
 
 

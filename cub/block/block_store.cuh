@@ -65,15 +65,15 @@ namespace cub {
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ * \tparam OutputIteratorT      <b>[inferred]</b> The random-access iterator type for output \iterator.
  */
 template <
     typename            T,
     int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
+    typename            OutputIteratorT>
 __device__ __forceinline__ void StoreDirectBlocked(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
 {
     // Store directly in thread-blocked order
@@ -92,15 +92,15 @@ __device__ __forceinline__ void StoreDirectBlocked(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ * \tparam OutputIteratorT      <b>[inferred]</b> The random-access iterator type for output \iterator.
  */
 template <
     typename            T,
     int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
+    typename            OutputIteratorT>
 __device__ __forceinline__ void StoreDirectBlocked(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
     int                 valid_items)                ///< [in] Number of valid items to write
 {
@@ -192,16 +192,16 @@ __device__ __forceinline__ void StoreDirectBlockedVectorized(
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ * \tparam OutputIteratorT      <b>[inferred]</b> The random-access iterator type for output \iterator.
  */
 template <
     int                 BLOCK_THREADS,
     typename            T,
     int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
+    typename            OutputIteratorT>
 __device__ __forceinline__ void StoreDirectStriped(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
 {
     // Store directly in striped order
@@ -221,16 +221,16 @@ __device__ __forceinline__ void StoreDirectStriped(
  * \tparam BLOCK_THREADS        The thread block size in threads
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ * \tparam OutputIteratorT      <b>[inferred]</b> The random-access iterator type for output \iterator.
  */
 template <
     int                 BLOCK_THREADS,
     typename            T,
     int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
+    typename            OutputIteratorT>
 __device__ __forceinline__ void StoreDirectStriped(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
     int                 valid_items)                ///< [in] Number of valid items to write
 {
@@ -264,15 +264,15 @@ __device__ __forceinline__ void StoreDirectStriped(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ * \tparam OutputIteratorT      <b>[inferred]</b> The random-access iterator type for output \iterator.
  */
 template <
     typename            T,
     int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
+    typename            OutputIteratorT>
 __device__ __forceinline__ void StoreDirectWarpStriped(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
     int tid         = linear_tid & (CUB_PTX_WARP_THREADS - 1);
@@ -298,15 +298,15 @@ __device__ __forceinline__ void StoreDirectWarpStriped(
  *
  * \tparam T                    <b>[inferred]</b> The data type to store.
  * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
- * \tparam OutputIterator       <b>[inferred]</b> The random-access iterator type for output \iterator.
+ * \tparam OutputIteratorT      <b>[inferred]</b> The random-access iterator type for output \iterator.
  */
 template <
     typename            T,
     int                 ITEMS_PER_THREAD,
-    typename            OutputIterator>
+    typename            OutputIteratorT>
 __device__ __forceinline__ void StoreDirectWarpStriped(
     int                 linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+    OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
     T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
     int                 valid_items)                ///< [in] Number of valid items to write
 {
@@ -370,7 +370,7 @@ enum BlockStoreAlgorithm
      *   maximum vector store width (typically 4 items or 64B, whichever is lower).
      * - The following conditions will prevent vectorization and writing will fall back to cub::BLOCK_STORE_DIRECT:
      *   - \p ITEMS_PER_THREAD is odd
-     *   - The \p OutputIterator is not a simple pointer type
+     *   - The \p OutputIteratorT is not a simple pointer type
      *   - The block output offset is not quadword-aligned
      *   - The data type \p T is not a built-in primitive or CUDA vector type (e.g., \p short, \p int2, \p double, \p float2, etc.)
      */
@@ -421,7 +421,7 @@ enum BlockStoreAlgorithm
  * \ingroup BlockModule
  * \ingroup UtilIo
  *
- * \tparam OutputIterator       The input iterator type \iterator.
+ * \tparam OutputIteratorT      The input iterator type \iterator.
  * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStoreAlgorithm tuning policy enumeration.  default: cub::BLOCK_STORE_DIRECT.
@@ -484,7 +484,7 @@ enum BlockStoreAlgorithm
  *
  */
 template <
-    typename                OutputIterator,
+    typename                OutputIteratorT,
     int                     BLOCK_DIM_X,
     int                     ITEMS_PER_THREAD,
     BlockStoreAlgorithm     ALGORITHM           = BLOCK_STORE_DIRECT,
@@ -507,7 +507,7 @@ private:
     };
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<OutputIterator>::value_type T;
+    typedef typename std::iterator_traits<OutputIteratorT>::value_type T;
 
 
     /******************************************************************************
@@ -541,7 +541,7 @@ private:
 
         /// Store items into a linear segment of memory
         __device__ __forceinline__ void Store(
-            OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             StoreDirectBlocked(linear_tid, block_itr, items);
@@ -549,7 +549,7 @@ private:
 
         /// Store items into a linear segment of memory, guarded by range
         __device__ __forceinline__ void Store(
-            OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
             int                 valid_items)                ///< [in] Number of valid items to write
         {
@@ -587,9 +587,9 @@ private:
         }
 
         /// Store items into a linear segment of memory, specialized for opaque input iterators (skips vectorization)
-        template <typename _OutputIterator>
+        template <typename _OutputIteratorT>
         __device__ __forceinline__ void Store(
-            _OutputIterator     block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            _OutputIteratorT    block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             StoreDirectBlocked(linear_tid, block_itr, items);
@@ -597,7 +597,7 @@ private:
 
         /// Store items into a linear segment of memory, guarded by range
         __device__ __forceinline__ void Store(
-            OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
             int                 valid_items)                ///< [in] Number of valid items to write
         {
@@ -638,7 +638,7 @@ private:
 
         /// Store items into a linear segment of memory
         __device__ __forceinline__ void Store(
-            OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockExchange(temp_storage).BlockedToStriped(items);
@@ -647,7 +647,7 @@ private:
 
         /// Store items into a linear segment of memory, guarded by range
         __device__ __forceinline__ void Store(
-            OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIteratorT   block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
             int                 valid_items)                ///< [in] Number of valid items to write
         {
@@ -697,7 +697,7 @@ private:
 
         /// Store items into a linear segment of memory
         __device__ __forceinline__ void Store(
-            OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIteratorT   block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
         {
             BlockExchange(temp_storage).BlockedToWarpStriped(items);
@@ -706,7 +706,7 @@ private:
 
         /// Store items into a linear segment of memory, guarded by range
         __device__ __forceinline__ void Store(
-            OutputIterator    block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            OutputIteratorT   block_itr,                  ///< [in] The thread block's base output iterator for storing to
             T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
             int                 valid_items)                ///< [in] Number of valid items to write
         {
@@ -830,7 +830,7 @@ public:
      *
      */
     __device__ __forceinline__ void Store(
-        OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+        OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
         T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
     {
         InternalStore(temp_storage, linear_tid).Store(block_itr, items);
@@ -878,7 +878,7 @@ public:
      *
      */
     __device__ __forceinline__ void Store(
-        OutputIterator      block_itr,                  ///< [in] The thread block's base output iterator for storing to
+        OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
         T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
         int                 valid_items)                ///< [in] Number of valid items to write
     {

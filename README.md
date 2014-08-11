@@ -45,7 +45,7 @@ __global__ void BlockSortKernel(int *d_in, int *d_out)
          typename BlockStore::TempStorage      store; 
      } temp_storage; 
 
-     int block_offset = blockIdx.x * (128 * 16);	  // Offset for this block's ment
+     int block_offset = blockIdx.x * (128 * 16);	  // OffsetT for this block's ment
 
      // Obtain a segment of 2048 consecutive keys that are blocked across threads
      int thread_keys[16];

@@ -239,18 +239,18 @@ struct WarpScanShfl
     }
 
 
-    /// Inclusive prefix scan (specialized for ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<Value, Offset> types)
-    template <typename Value, typename Offset>
-    __device__ __forceinline__ ItemOffsetPair<Value, Offset> InclusiveScanStep(
-        ItemOffsetPair<Value, Offset>                               input,              ///< [in] Calling thread's input item.
-        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<Value, Offset> > scan_op,            ///< [in] Binary scan operator
-        int                                                         first_lane,         ///< [in] Index of first lane in segment
-        int                                                         offset)             ///< [in] Up-offset to pull from
+    /// Inclusive prefix scan (specialized for ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<Value, OffsetT> types)
+    template <typename Value, typename OffsetT>
+    __device__ __forceinline__ ItemOffsetPair<Value, OffsetT>InclusiveScanStep(
+        ItemOffsetPair<Value, OffsetT>                                  input,              ///< [in] Calling thread's input item.
+        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<Value, OffsetT> >    scan_op,            ///< [in] Binary scan operator
+        int                                                             first_lane,         ///< [in] Index of first lane in segment
+        int                                                             offset)             ///< [in] Up-offset to pull from
     {
-        ItemOffsetPair<Value, Offset> output;
+        ItemOffsetPair<Value, OffsetT> output;
 
         output.value = InclusiveScanStep(input.value, cub::Sum(), first_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_INTEGER>());
-        output.offset = InclusiveScanStep(input.offset, cub::Sum(), first_lane, offset, Int2Type<IsInteger<Offset>::IS_SMALL_INTEGER>());
+        output.offset = InclusiveScanStep(input.offset, cub::Sum(), first_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_INTEGER>());
 
         if (input.offset > 0)
             output.value = input.value;

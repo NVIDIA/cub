@@ -60,6 +60,13 @@ int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
+// Dispatch types
+enum Backend
+{
+    CUB,        // CUB method
+    THRUST,     // Thrust method
+    CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
+};
 
 
 //---------------------------------------------------------------------
@@ -70,7 +77,7 @@ CachingDeviceAllocator  g_allocator(true);
 /**
  * Dispatch to select flagged entrypoint
  */
-template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIteratorT, typename FlagIterator, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
@@ -81,11 +88,11 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     FlagIterator                d_flags,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -101,7 +108,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to partition flagged entrypoint
  */
-template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIteratorT, typename FlagIterator, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               dispatch_to,
@@ -112,11 +119,11 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     FlagIterator                d_flags,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -137,7 +144,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to select flagged entrypoint
  */
-template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIteratorT, typename FlagIterator, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __host__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
@@ -148,16 +155,16 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     FlagIterator                d_flags,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type    T;
-    typedef typename std::iterator_traits<FlagIterator>::value_type     Flag;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type    T;
+    typedef typename std::iterator_traits<FlagIterator>::value_type     FlagT;
 
 
     if (d_temp_storage == 0)
@@ -170,15 +177,15 @@ cudaError_t Dispatch(
 
         thrust::device_ptr<T>       d_in_wrapper(d_in);
         thrust::device_ptr<T>       d_out_wrapper(d_out);
-        thrust::device_ptr<Flag>    d_flags_wrapper(d_flags);
+        thrust::device_ptr<FlagT>    d_flags_wrapper(d_flags);
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
             d_out_wrapper_end = thrust::copy_if(d_in_wrapper, d_in_wrapper + num_items, d_flags_wrapper, d_out_wrapper, Cast<bool>());
         }
 
-        Offset num_selected = d_out_wrapper_end - d_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
+        OffsetT num_selected = d_out_wrapper_end - d_out_wrapper;
+        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -188,7 +195,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to partition entrypoint
  */
-template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset>
+template <typename InputIteratorT, typename FlagIterator, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __host__ __forceinline__
 cudaError_t Dispatch(
     Int2Type<THRUST>            dispatch_to,
@@ -199,16 +206,16 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     FlagIterator                d_flags,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIterator>::value_type    T;
-    typedef typename std::iterator_traits<FlagIterator>::value_type     Flag;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type    T;
+    typedef typename std::iterator_traits<FlagIterator>::value_type     FlagT;
 
     typedef thrust::reverse_iterator<thrust::device_ptr<T> > ReverseOutputIterator;
 
@@ -218,11 +225,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::pair<thrust::device_ptr<T>, ReverseOutputIterator> d_out_wrapper_end;
+        thrust::pair<thrust::device_ptr<T>, ReverseOutputIteratorT> d_out_wrapper_end;
 
         thrust::device_ptr<T>       d_in_wrapper(d_in);
         thrust::device_ptr<T>       d_out_wrapper(d_out);
-        thrust::device_ptr<Flag>    d_flags_wrapper(d_flags);
+        thrust::device_ptr<FlagT>    d_flags_wrapper(d_flags);
 
         ReverseOutputIterator d_out_unselected(d_out_wrapper + num_items);
 
@@ -237,8 +244,8 @@ cudaError_t Dispatch(
                 Cast<bool>());
         }
 
-        Offset num_selected = d_out_wrapper_end.first - d_out_wrapper;
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(Offset), cudaMemcpyHostToDevice));
+        OffsetT num_selected = d_out_wrapper_end.first - d_out_wrapper;
+        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -253,7 +260,7 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceSelect
  */
-template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset, typename PartitionTag>
+template <typename InputIteratorT, typename FlagIterator, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT, typename PartitionTag>
 __global__ void CnpDispatchKernel(
     PartitionTag                partition_tag,
     int                         timing_timing_iterations,
@@ -262,11 +269,11 @@ __global__ void CnpDispatchKernel(
 
     void                        *d_temp_storage,
     size_t                      temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     FlagIterator                d_flags,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     bool                        debug_synchronous)
 {
 
@@ -283,7 +290,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIterator, typename FlagIterator, typename OutputIterator, typename NumSelectedIterator, typename Offset, typename PartitionTag>
+template <typename InputIteratorT, typename FlagIterator, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT, typename PartitionTag>
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
     PartitionTag                partition_tag,
@@ -293,11 +300,11 @@ cudaError_t Dispatch(
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIterator               d_in,
+    InputIteratorT              d_in,
     FlagIterator                d_flags,
-    OutputIterator              d_out,
-    NumSelectedIterator         d_num_selected_out,
-    Offset                      num_items,
+    OutputIteratorT              d_out,
+    NumSelectedIteratorT         d_num_selected_out,
+    OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -352,12 +359,12 @@ void Initialize(
  * Solve selection problem (select if less than compare)
  */
 template <
-    typename        InputIterator,
-    typename        Flag,
+    typename        InputIteratorT,
+    typename        FlagT,
     typename        T>
 int Solve(
-    InputIterator   h_in,
-    Flag            *h_flags,
+    InputIteratorT  h_in,
+    FlagT            *h_flags,
     T               *h_reference,
     T               compare,
     int             num_items)
@@ -389,18 +396,18 @@ int Solve(
 template <
     Backend             BACKEND,
     bool                PARTITION,
-    typename            DeviceInputIterator,
+    typename            DeviceInputIteratorT,
     typename            DeviceFlagIterator,
     typename            T>
 void Test(
-    DeviceInputIterator d_in,
+    DeviceInputIteratorT d_in,
     DeviceFlagIterator  d_flags,
     T                   *h_reference,
     int                 num_selected,
     int                 num_items,
     char*               type_string)
 {
-    typedef typename std::iterator_traits<DeviceFlagIterator>::value_type Flag;
+    typedef typename std::iterator_traits<DeviceFlagIterator>::value_type FlagT;
 
     // Allocate device output array and num selected
     T       *d_out            = NULL;
@@ -456,7 +463,7 @@ void Test(
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
         int output_items = (PARTITION) ? num_items : num_selected;
-        float gbandwidth = float(((num_items + output_items) * sizeof(T)) + (num_items * sizeof(Flag))) / avg_millis / 1000.0 / 1000.0;
+        float gbandwidth = float(((num_items + output_items) * sizeof(T)) + (num_items * sizeof(FlagT))) / avg_millis / 1000.0 / 1000.0;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
     }
     printf("\n\n");
@@ -489,12 +496,12 @@ void TestPointer(
     float           select_ratio,
     char*           type_string)
 {
-    typedef char Flag;
+    typedef char FlagT;
 
     // Allocate host arrays
     T       *h_in        = new T[num_items];
     T       *h_reference = new T[num_items];
-    Flag    *h_flags     = new Flag[num_items];
+    FlagT    *h_flags     = new FlagT[num_items];
 
     // Initialize input
     Initialize(h_in, num_items);
@@ -519,14 +526,14 @@ void TestPointer(
 
     // Allocate problem device arrays
     T       *d_in = NULL;
-    Flag    *d_flags = NULL;
+    FlagT    *d_flags = NULL;
 
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_flags, sizeof(Flag) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_flags, sizeof(FlagT) * num_items));
 
     // Initialize device input
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(d_flags, h_flags, sizeof(Flag) * num_items, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_flags, h_flags, sizeof(FlagT) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
     Test<BACKEND, PARTITION>(d_in, d_flags, h_reference, num_selected, num_items, type_string);
@@ -551,11 +558,11 @@ void TestIterator(
     char*           type_string,
     Int2Type<true>  is_number)
 {
-    typedef char Flag;
+    typedef char FlagT;
 
     // Use a counting iterator as the input and a constant iterator as flags
     CountingInputIterator<T, int> h_in(0);
-    ConstantInputIterator<Flag, int> h_flags(1);
+    ConstantInputIterator<FlagT, int> h_flags(1);
 
     // Allocate host arrays
     T*  h_reference = new T[num_items];

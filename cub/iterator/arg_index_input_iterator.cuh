@@ -65,8 +65,8 @@ namespace cub {
  * \brief A random-access input wrapper for pairing dereferenced values with their corresponding indices (forming \p ItemOffsetPair tuples).
  *
  * \par Overview
- * - ArgIndexInputIterator wraps a random access input iterator \p itr of type \p InputIterator.
- *   Dereferencing an ArgIndexInputIterator at offset \p i produces a \p ItemOffsetPair value whose
+ * - ArgIndexInputIteratorTwraps a random access input iterator \p itr of type \p InputIteratorT.
+ *   Dereferencing an ArgIndexInputIteratorTat offset \p i produces a \p ItemOffsetPair value whose
  *   \p offset field is \p i and whose \p item field is <tt>itr[i]</tt>.
  * - Can be used with any data type.
  * - Can be constructed, manipulated, and exchanged within and between host and device
@@ -75,7 +75,7 @@ namespace cub {
  * - Compatible with Thrust API v1.7 or newer.
  *
  * \par Snippet
- * The code snippet below illustrates the use of \p ArgIndexInputIterator to
+ * The code snippet below illustrates the use of \p ArgIndexInputIteratorTto
  * dereference an array of doubles
  * \par
  * \code
@@ -102,25 +102,25 @@ namespace cub {
  *
  * \endcode
  *
- * \tparam InputIterator        The type of the wrapped input iterator
- * \tparam Offset               The difference type of this iterator (Default: \p ptrdiff_t)
+ * \tparam InputIteratorT       The type of the wrapped input iterator
+ * \tparam OffsetT              The difference type of this iterator (Default: \p ptrdiff_t)
  */
 template <
-    typename    InputIterator,
-    typename    Offset = ptrdiff_t>
+    typename    InputIteratorT,
+    typename    OffsetT = ptrdiff_t>
 class ArgIndexInputIterator
 {
 private:
 
     // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
 public:
 
 
     // Required iterator traits
     typedef ArgIndexInputIterator               self_type;              ///< My own type
-    typedef Offset                              difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef OffsetT                             difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ItemOffsetPair<T, difference_type>  value_type;             ///< The type of the element the iterator can point to
     typedef value_type*                         pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef value_type                          reference;              ///< The type of a reference to an element the iterator can point to
@@ -139,15 +139,15 @@ public:
 
 private:
 
-    InputIterator   itr;
+    InputIteratorT  itr;
     difference_type offset;
 
 public:
 
     /// Constructor
     __host__ __device__ __forceinline__ ArgIndexInputIterator(
-        InputIterator   itr,            ///< Input iterator to wrap
-        difference_type offset = 0)     ///< Offset (in items) from \p itr denoting the position of the iterator
+        InputIteratorT  itr,            ///< Input iterator to wrap
+        difference_type offset = 0)     ///< OffsetT (in items) from \p itr denoting the position of the iterator
     :
         itr(itr),
         offset(offset)

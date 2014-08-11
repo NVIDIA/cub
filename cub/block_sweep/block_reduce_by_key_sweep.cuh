@@ -91,13 +91,13 @@ struct BlockReduceSweepByKeyPolicy
  */
 template <
     typename    BlockReduceSweepByKeyPolicy,    ///< Parameterized BlockReduceSweepByKeyPolicy tuning policy type
-    typename    KeysInputIterator,               ///< Random-access input iterator type for keys
-    typename    UniqueOutputIterator,              ///< Random-access output iterator type for keys
-    typename    ValuesInputIterator,             ///< Random-access input iterator type for values
-    typename    AggregatesOutputIterator,            ///< Random-access output iterator type for values
-    typename    EqualityOp,                     ///< Key equality operator type
-    typename    ReductionOp,                    ///< Value reduction operator type
-    typename    Offset>                         ///< Signed integer type for global offsets
+    typename    KeysInputIteratorT,             ///< Random-access input iterator type for keys
+    typename    UniqueOutputIteratorT,          ///< Random-access output iterator type for keys
+    typename    ValuesInputIteratorT,           ///< Random-access input iterator type for values
+    typename    AggregatesOutputIteratorT,      ///< Random-access output iterator type for values
+    typename    EqualityOp,                     ///< KeyT equality operator type
+    typename    ReductionOp,                    ///< ValueT reduction operator type
+    typename    OffsetT>                        ///< Signed integer type for global offsets
 struct BlockReduceSweepByKey
 {
     //---------------------------------------------------------------------
@@ -105,16 +105,16 @@ struct BlockReduceSweepByKey
     //---------------------------------------------------------------------
 
     // Data type of key iterator
-    typedef typename std::iterator_traits<KeysInputIterator>::value_type Key;
+    typedef typename std::iterator_traits<KeysInputIteratorT>::value_type KeyT;
 
     // Data type of value iterator
-    typedef typename std::iterator_traits<ValuesInputIterator>::value_type Value;
+    typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type ValueT;
 
     // Tuple type for scanning (pairs accumulated segment-value with segment-index)
-    typedef ItemOffsetPair<Value, Offset> ReductionOffsetPair;
+    typedef ItemOffsetPair<ValueT, OffsetT> ReductionOffsetPair;
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<Value, Offset> ScanTileState;
+    typedef ReduceByKeyScanTileState<ValueT, OffsetT> ScanTileState;
 
     // Constants
     enum
@@ -126,34 +126,34 @@ struct BlockReduceSweepByKey
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
-        HAS_IDENTITY_ZERO       = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<Value>::PRIMITIVE),
+        HAS_IDENTITY_ZERO       = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),
 
         // Whether or not to sync after loading data
         SYNC_AFTER_LOAD         = (BlockReduceSweepByKeyPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
         // Whether or not this is run-length-encoding with a constant iterator as values
-        IS_RUN_LENGTH_ENCODE    = (Equals<ValuesInputIterator, ConstantInputIterator<Value, size_t> >::VALUE) || (Equals<ValuesInputIterator, ConstantInputIterator<Value, int> >::VALUE) || (Equals<ValuesInputIterator, ConstantInputIterator<Value, unsigned int> >::VALUE),
+        IS_RUN_LENGTH_ENCODE    = (Equals<ValuesInputIteratorT, ConstantInputIterator<ValueT, size_t> >::VALUE) || (Equals<ValuesInputIteratorT, ConstantInputIterator<ValueT, int> >::VALUE) || (Equals<ValuesInputIteratorT, ConstantInputIterator<ValueT, unsigned int> >::VALUE),
 
     };
 
     // Cache-modified input iterator wrapper type for keys
-    typedef typename If<IsPointer<KeysInputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockReduceSweepByKeyPolicy::LOAD_MODIFIER, Key, Offset>,   // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            KeysInputIterator>::Type                                                                 // Directly use the supplied input iterator type
-        WrappedKeysInputIterator;
+    typedef typename If<IsPointer<KeysInputIteratorT>::VALUE,
+            CacheModifiedInputIterator<BlockReduceSweepByKeyPolicy::LOAD_MODIFIER, KeyT, OffsetT>,   // Wrap the native input pointer with CacheModifiedValuesInputIterator
+            KeysInputIteratorT>::Type                                                                 // Directly use the supplied input iterator type
+        WrappedKeysInputIteratorT;
 
     // Cache-modified input iterator wrapper type for values
-    typedef typename If<IsPointer<ValuesInputIterator>::VALUE,
-            CacheModifiedInputIterator<BlockReduceSweepByKeyPolicy::LOAD_MODIFIER, Value, Offset>,  // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            ValuesInputIterator>::Type                                                                // Directly use the supplied input iterator type
-        WrappedValuesInputIterator;
+    typedef typename If<IsPointer<ValuesInputIteratorT>::VALUE,
+            CacheModifiedInputIterator<BlockReduceSweepByKeyPolicy::LOAD_MODIFIER, ValueT, OffsetT>,  // Wrap the native input pointer with CacheModifiedValuesInputIterator
+            ValuesInputIteratorT>::Type                                                                // Directly use the supplied input iterator type
+        WrappedValuesInputIteratorT;
 
     // Reduce-value-by-segment scan operator
     typedef ReduceBySegmentOp<ReductionOp, ReductionOffsetPair> ReduceBySegmentOp;
 
     // Parameterized BlockLoad type for keys
     typedef BlockLoad<
-            WrappedKeysInputIterator,
+            WrappedKeysInputIteratorT,
             BlockReduceSweepByKeyPolicy::BLOCK_THREADS,
             BlockReduceSweepByKeyPolicy::ITEMS_PER_THREAD,
             BlockReduceSweepByKeyPolicy::LOAD_ALGORITHM>
@@ -161,7 +161,7 @@ struct BlockReduceSweepByKey
 
     // Parameterized BlockLoad type for values
     typedef BlockLoad<
-            WrappedValuesInputIterator,
+            WrappedValuesInputIteratorT,
             BlockReduceSweepByKeyPolicy::BLOCK_THREADS,
             BlockReduceSweepByKeyPolicy::ITEMS_PER_THREAD,
             (IS_RUN_LENGTH_ENCODE) ?
@@ -171,20 +171,20 @@ struct BlockReduceSweepByKey
 
     // Parameterized BlockExchange type for locally compacting items as part of a two-phase scatter
     typedef BlockExchange<
-            Key,
+            KeyT,
             BLOCK_THREADS,
             ITEMS_PER_THREAD>
         BlockExchangeKeys;
 
     // Parameterized BlockExchange type for locally compacting items as part of a two-phase scatter
     typedef BlockExchange<
-            Value,
+            ValueT,
             BLOCK_THREADS,
             ITEMS_PER_THREAD>
         BlockExchangeValues;
 
     // Parameterized BlockDiscontinuity type for keys
-    typedef BlockDiscontinuity<Key, BLOCK_THREADS> BlockDiscontinuityKeys;
+    typedef BlockDiscontinuity<KeyT, BLOCK_THREADS> BlockDiscontinuityKeys;
 
     // Parameterized BlockScan type
     typedef BlockScan<
@@ -213,8 +213,8 @@ struct BlockReduceSweepByKey
                 typename BlockDiscontinuityKeys::TempStorage    discontinuity;  // Smem needed for discontinuity detection
                 typename BlockLoadKeys::TempStorage             load_keys;      // Smem needed for loading keys
 
-                Offset      tile_idx;               // Shared tile index
-                Offset      tile_num_flags_prefix;  // Exclusive tile prefix
+                OffsetT     tile_idx;               // Shared tile index
+                OffsetT     tile_num_flags_prefix;  // Exclusive tile prefix
             };
 
             // Smem needed for loading values
@@ -239,15 +239,15 @@ struct BlockReduceSweepByKey
 
     _TempStorage                    &temp_storage;      ///< Reference to temp_storage
 
-    WrappedKeysInputIterator        d_keys_in;          ///< Input keys
-    UniqueOutputIterator            d_unique_out;       ///< Unique output keys
+    WrappedKeysInputIteratorT       d_keys_in;          ///< Input keys
+    UniqueOutputIteratorT           d_unique_out;       ///< Unique output keys
 
-    WrappedValuesInputIterator      d_values_in;        ///< Input values
-    AggregatesOutputIterator        d_aggregates_out;   ///< Output value aggregates
+    WrappedValuesInputIteratorT     d_values_in;        ///< Input values
+    AggregatesOutputIteratorT       d_aggregates_out;   ///< Output value aggregates
 
-    InequalityWrapper<EqualityOp>   inequality_op;      ///< Key inequality operator
+    InequalityWrapper<EqualityOp>   inequality_op;      ///< KeyT inequality operator
     ReduceBySegmentOp               scan_op;            ///< Reduce-value-by-flag scan operator
-    Offset                          num_items;          ///< Total number of input items
+    OffsetT                         num_items;          ///< Total number of input items
 
 
     //---------------------------------------------------------------------
@@ -258,13 +258,13 @@ struct BlockReduceSweepByKey
     __device__ __forceinline__
     BlockReduceSweepByKey(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
-        KeysInputIterator           d_keys_in,          ///< Input keys
-        UniqueOutputIterator        d_unique_out,       ///< Unique output keys
-        ValuesInputIterator         d_values_in,        ///< Input values
-        AggregatesOutputIterator    d_aggregates_out,   ///< Output value aggregates
-        EqualityOp                  equality_op,        ///< Key equality operator
-        ReductionOp                 reduction_op,       ///< Value reduction operator
-        Offset                      num_items)          ///< Total number of input items
+        KeysInputIteratorT          d_keys_in,          ///< Input keys
+        UniqueOutputIteratorT       d_unique_out,       ///< Unique output keys
+        ValuesInputIteratorT        d_values_in,        ///< Input values
+        AggregatesOutputIteratorT   d_aggregates_out,   ///< Output value aggregates
+        EqualityOp                  equality_op,        ///< KeyT equality operator
+        ReductionOp                 reduction_op,       ///< ValueT reduction operator
+        OffsetT                     num_items)          ///< Total number of input items
     :
         temp_storage(temp_storage.Alias()),
         d_keys_in(d_keys_in),
@@ -345,9 +345,9 @@ struct BlockReduceSweepByKey
 
     template <bool LAST_TILE>
     __device__ __forceinline__ void ZipValuesAndFlags(
-        Offset          num_remaining,
-        Value           (&values)[ITEMS_PER_THREAD],
-        Offset          (&flags)[ITEMS_PER_THREAD],
+        OffsetT         num_remaining,
+        ValueT           (&values)[ITEMS_PER_THREAD],
+        OffsetT         (&flags)[ITEMS_PER_THREAD],
         ReductionOffsetPair (&values_and_segments)[ITEMS_PER_THREAD])
     {
         // Zip values and flags
@@ -355,7 +355,7 @@ struct BlockReduceSweepByKey
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             // Unset flags for out-of-bounds keys
-            if ((LAST_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM >= num_remaining))
+            if ((LAST_TILE) && (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM >= num_remaining))
                 flags[ITEM] = 0;
 
             values_and_segments[ITEM].value      = values[ITEM];
@@ -381,11 +381,11 @@ struct BlockReduceSweepByKey
      */
     template <bool LAST_TILE, bool FIRST_TILE, int ITEM>
     __device__ __forceinline__ void ScatterDirect(
-        Offset              num_remaining,
-        Key                 (&keys)[ITEMS_PER_THREAD],
+        OffsetT             num_remaining,
+        KeyT                 (&keys)[ITEMS_PER_THREAD],
         ReductionOffsetPair     (&values_and_segments)[ITEMS_PER_THREAD],
-        Offset              (&flags)[ITEMS_PER_THREAD],
-        Offset              tile_num_flags,
+        OffsetT             (&flags)[ITEMS_PER_THREAD],
+        OffsetT             tile_num_flags,
         Int2Type<ITEM>      iteration)
     {
         // Scatter key
@@ -395,7 +395,7 @@ struct BlockReduceSweepByKey
         }
 
         bool is_first_flag     = FIRST_TILE && (ITEM == 0) && (threadIdx.x == 0);
-        bool is_oob_value      = (LAST_TILE) && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining);
+        bool is_oob_value      = (LAST_TILE) && (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining);
 
         // Scatter value reduction
         if (((flags[ITEM] || is_oob_value)) && (!is_first_flag))
@@ -408,11 +408,11 @@ struct BlockReduceSweepByKey
 
     template <bool LAST_TILE, bool FIRST_TILE>
     __device__ __forceinline__ void ScatterDirect(
-        Offset                      num_remaining,
-        Key                         (&keys)[ITEMS_PER_THREAD],
+        OffsetT                     num_remaining,
+        KeyT                         (&keys)[ITEMS_PER_THREAD],
         ReductionOffsetPair             (&values_and_segments)[ITEMS_PER_THREAD],
-        Offset                      (&flags)[ITEMS_PER_THREAD],
-        Offset                      tile_num_flags,
+        OffsetT                     (&flags)[ITEMS_PER_THREAD],
+        OffsetT                     tile_num_flags,
         Int2Type<ITEMS_PER_THREAD>  iteration)
     {}
 
@@ -428,15 +428,15 @@ struct BlockReduceSweepByKey
      */
     template <bool LAST_TILE, bool FIRST_TILE>
     __device__ __forceinline__ void ScatterTwoPhase(
-        Offset          num_remaining,
-        Key             (&keys)[ITEMS_PER_THREAD],
+        OffsetT         num_remaining,
+        KeyT             (&keys)[ITEMS_PER_THREAD],
         ReductionOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
-        Offset          (&flags)[ITEMS_PER_THREAD],
-        Offset          tile_num_flags,
-        Offset          tile_num_flags_prefix)
+        OffsetT         (&flags)[ITEMS_PER_THREAD],
+        OffsetT         tile_num_flags,
+        OffsetT         tile_num_flags_prefix)
     {
         int     local_ranks[ITEMS_PER_THREAD];
-        Value   values[ITEMS_PER_THREAD];
+        ValueT   values[ITEMS_PER_THREAD];
 
         // Share exclusive tile prefix
         if (threadIdx.x == 0)
@@ -473,7 +473,7 @@ struct BlockReduceSweepByKey
             if (FIRST_TILE)
                 local_ranks[ITEM]--;
 
-            if (LAST_TILE && (Offset(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining))
+            if (LAST_TILE && (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining))
                 flags[ITEM] = 1;
         }
 
@@ -487,7 +487,7 @@ struct BlockReduceSweepByKey
         BlockExchangeValues(temp_storage.exchange_values).ScatterToStriped(values, local_ranks, flags);
 
         // Number to output
-        Offset exchange_count = tile_num_flags;
+        OffsetT exchange_count = tile_num_flags;
 
         if (LAST_TILE && (num_remaining < TILE_ITEMS))
             exchange_count++;
@@ -513,12 +513,12 @@ struct BlockReduceSweepByKey
      */
     template <bool LAST_TILE, bool FIRST_TILE>
     __device__ __forceinline__ void Scatter(
-        Offset          num_remaining,
-        Key             (&keys)[ITEMS_PER_THREAD],
+        OffsetT         num_remaining,
+        KeyT             (&keys)[ITEMS_PER_THREAD],
         ReductionOffsetPair (&values_and_segments)[ITEMS_PER_THREAD],
-        Offset          (&flags)[ITEMS_PER_THREAD],
-        Offset          tile_num_flags,
-        Offset          tile_num_flags_prefix)
+        OffsetT         (&flags)[ITEMS_PER_THREAD],
+        OffsetT         tile_num_flags,
+        OffsetT         tile_num_flags_prefix)
     {
         // Do a one-phase scatter if (a) two-phase is disabled or (b) the average number of selected items per thread is less than one
         if (TWO_PHASE_SCATTER && (tile_num_flags > BLOCK_THREADS))
@@ -554,15 +554,15 @@ struct BlockReduceSweepByKey
     template <
         bool                LAST_TILE>
     __device__ __forceinline__ ReductionOffsetPair ConsumeTile(
-        Offset              num_items,          ///< Total number of global input items
-        Offset              num_remaining,      ///< Number of global input items remaining (including this tile)
+        OffsetT             num_items,          ///< Total number of global input items
+        OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
-        Offset              block_offset,       ///< Tile offset
+        OffsetT             block_offset,       ///< Tile offset
         ScanTileState       &tile_status)       ///< Global list of tile status
     {
-        Key                 keys[ITEMS_PER_THREAD];                         // Tile keys
-        Value               values[ITEMS_PER_THREAD];                       // Tile values
-        Offset              flags[ITEMS_PER_THREAD];                        // Segment head flags
+        KeyT                keys[ITEMS_PER_THREAD];                         // Tile keys
+        ValueT              values[ITEMS_PER_THREAD];                       // Tile values
+        OffsetT             flags[ITEMS_PER_THREAD];                        // Segment head flags
         ReductionOffsetPair values_and_segments[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
         ReductionOffsetPair running_total;                                  // Running count of segments and current value aggregate (including this tile)
 
@@ -612,9 +612,9 @@ struct BlockReduceSweepByKey
         {
             // Not first tile
 
-            Key tile_predecessor_key = (threadIdx.x == 0) ?
+            KeyT tile_predecessor_key = (threadIdx.x == 0) ?
                 d_keys_in[block_offset - 1] :
-                ZeroInitialize<Key>();
+                ZeroInitialize<KeyT>();
 
             __syncthreads();
 
@@ -652,17 +652,17 @@ struct BlockReduceSweepByKey
      */
     template <typename NumRunsIterator>         ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRange(
-        int                     num_tiles,          ///< Total number of input tiles
-        GridQueue<int>          queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        ScanTileState           &tile_status,       ///< Global list of tile status
+        int                 num_tiles,          ///< Total number of input tiles
+        GridQueue<int>      queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        ScanTileState       &tile_status,       ///< Global list of tile status
         NumRunsIterator     d_num_runs_out)     ///< Output pointer for total number of segments identified
     {
 #if (CUB_PTX_ARCH <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
         int     tile_idx        = (blockIdx.y * 32 * 1024) + blockIdx.x;    // Current tile index
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
-        Offset  num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
+        OffsetT block_offset    = OffsetT(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
+        OffsetT num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
 
         if (num_remaining > TILE_ITEMS)
         {
@@ -696,8 +696,8 @@ struct BlockReduceSweepByKey
         __syncthreads();
 
         int     tile_idx        = temp_storage.tile_idx;
-        Offset  block_offset    = Offset(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
-        Offset  num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
+        OffsetT block_offset    = OffsetT(TILE_ITEMS) * tile_idx;    // Global offset for the current tile
+        OffsetT num_remaining   = num_items - block_offset;         // Remaining items (including this tile)
 
         while (num_remaining > TILE_ITEMS)
         {
@@ -711,7 +711,7 @@ struct BlockReduceSweepByKey
             __syncthreads();
 
             tile_idx        = temp_storage.tile_idx;
-            block_offset    = Offset(TILE_ITEMS) * tile_idx;
+            block_offset    = OffsetT(TILE_ITEMS) * tile_idx;
             num_remaining   = num_items - block_offset;
         }
 

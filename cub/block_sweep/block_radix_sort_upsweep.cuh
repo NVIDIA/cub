@@ -80,8 +80,8 @@ struct BlockRadixSortUpsweepPolicy
  */
 template <
     typename BlockRadixSortUpsweepPolicy,   ///< Parameterized BlockRadixSortUpsweepPolicy tuning policy type
-    typename Key,                           ///< Key type
-    typename Offset>                        ///< Signed integer type for global offsets
+    typename KeyT,                          ///< KeyT type
+    typename OffsetT>                       ///< Signed integer type for global offsets
 struct BlockRadixSortUpsweep
 {
 
@@ -89,7 +89,7 @@ struct BlockRadixSortUpsweep
     // Type definitions and constants
     //---------------------------------------------------------------------
 
-    typedef typename Traits<Key>::UnsignedBits UnsignedBits;
+    typedef typename Traits<KeyT>::UnsignedBits UnsignedBits;
 
     // Integer type for digit counters (to be packed into words of PackedCounters)
     typedef unsigned char DigitCounter;
@@ -135,7 +135,7 @@ struct BlockRadixSortUpsweep
 
 
     // Input iterator wrapper types
-    typedef CacheModifiedInputIterator<LOAD_MODIFIER, UnsignedBits, Offset>  KeysItr;
+    typedef CacheModifiedInputIterator<LOAD_MODIFIER, UnsignedBits, OffsetT> KeysItr;
 
     /**
      * Shared memory storage layout
@@ -146,7 +146,7 @@ struct BlockRadixSortUpsweep
         {
             DigitCounter    digit_counters[COUNTER_LANES][BLOCK_THREADS][PACKING_RATIO];
             PackedCounter   packed_counters[COUNTER_LANES][BLOCK_THREADS];
-            Offset          digit_partials[RADIX_DIGITS][WARP_THREADS + 1];
+            OffsetT         digit_partials[RADIX_DIGITS][WARP_THREADS + 1];
         };
     };
 
@@ -163,7 +163,7 @@ struct BlockRadixSortUpsweep
     _TempStorage    &temp_storage;
 
     // Thread-local counters for periodically aggregating composite-counter lanes
-    Offset          local_counts[LANES_PER_WARP][PACKING_RATIO];
+    OffsetT         local_counts[LANES_PER_WARP][PACKING_RATIO];
 
     // Input and output device pointers
     KeysItr         d_keys_in;
@@ -215,7 +215,7 @@ struct BlockRadixSortUpsweep
     __device__ __forceinline__ void Bucket(UnsignedBits key)
     {
         // Perform transform op
-        UnsignedBits converted_key = Traits<Key>::TwiddleIn(key);
+        UnsignedBits converted_key = Traits<KeyT>::TwiddleIn(key);
 
         // Extract current digit bits
         UnsignedBits digit = BFE(converted_key, current_bit, num_bits);
@@ -282,7 +282,7 @@ struct BlockRadixSortUpsweep
                     #pragma unroll
                     for (int UNPACKED_COUNTER = 0; UNPACKED_COUNTER < PACKING_RATIO; UNPACKED_COUNTER++)
                     {
-                        Offset counter = temp_storage.digit_counters[counter_lane][warp_tid + PACKED_COUNTER][UNPACKED_COUNTER];
+                        OffsetT counter = temp_storage.digit_counters[counter_lane][warp_tid + PACKED_COUNTER][UNPACKED_COUNTER];
                         local_counts[LANE][UNPACKED_COUNTER] += counter;
                     }
                 }
@@ -294,7 +294,7 @@ struct BlockRadixSortUpsweep
     /**
      * Places unpacked counters into smem for final digit reduction
      */
-    __device__ __forceinline__ void ReduceUnpackedCounts(Offset &bin_count)
+    __device__ __forceinline__ void ReduceUnpackedCounts(OffsetT &bin_count)
     {
         unsigned int warp_id = threadIdx.x >> LOG_WARP_THREADS;
         unsigned int warp_tid = threadIdx.x & (WARP_THREADS - 1);
@@ -332,7 +332,7 @@ struct BlockRadixSortUpsweep
     /**
      * Processes a single, full tile
      */
-    __device__ __forceinline__ void ProcessFullTile(Offset block_offset)
+    __device__ __forceinline__ void ProcessFullTile(OffsetT block_offset)
     {
         // Tile of keys
         UnsignedBits keys[KEYS_PER_THREAD];
@@ -351,8 +351,8 @@ struct BlockRadixSortUpsweep
      * Processes a single load (may have some threads masked off)
      */
     __device__ __forceinline__ void ProcessPartialTile(
-        Offset block_offset,
-        const Offset &block_end)
+        OffsetT block_offset,
+        const OffsetT &block_end)
     {
         // Process partial tile if necessary using single loads
         block_offset += threadIdx.x;
@@ -375,7 +375,7 @@ struct BlockRadixSortUpsweep
      */
     __device__ __forceinline__ BlockRadixSortUpsweep(
         TempStorage &temp_storage,
-        Key         *d_keys_in,
+        KeyT        *d_keys_in,
         int         current_bit,
         int         num_bits)
     :
@@ -390,9 +390,9 @@ struct BlockRadixSortUpsweep
      * Compute radix digit histograms from a segment of input tiles.
      */
     __device__ __forceinline__ void ProcessRegion(
-        Offset           block_offset,
-        const Offset     &block_end,
-        Offset           &bin_count)                ///< [out] The digit count for tid'th bin (output param, valid in the first RADIX_DIGITS threads)
+        OffsetT          block_offset,
+        const OffsetT    &block_end,
+        OffsetT          &bin_count)                ///< [out] The digit count for tid'th bin (output param, valid in the first RADIX_DIGITS threads)
     {
         // Reset digit counters in smem and unpacked counters in registers
         ResetDigitCounters();

@@ -598,7 +598,7 @@ for the current feature release.
 12/11/2013<br>
 <b>CUB v1.1.1</b>
 </td><td style="vertical-align:text-top;">
-  - Added cub::TexObjInputIterator, cub::TexRefInputIterator, cub::CacheModifiedInputIterator, and cub::CacheModifiedOutputIterator types for loading & storing arbitrary data types through the cache hierarchy.  Compatible with Thrust API. 
+  - Added cub::TexObjInputIteratorT, cub::TexRefInputIteratorT, cub::CacheModifiedInputIteratorT, and cub::CacheModifiedOutputIterator types for loading & storing arbitrary data types through the cache hierarchy.  Compatible with Thrust API. 
   - Added descending sorting to cub::DeviceRadixSort and cub::BlockRadixSort
   - Added min, max, arg-min, and arg-max to cub::DeviceReduce
   - Added cub::DeviceSelect (select-unique, select-if, and select-flagged)

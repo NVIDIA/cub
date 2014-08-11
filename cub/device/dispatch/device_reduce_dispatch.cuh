@@ -62,24 +62,24 @@ namespace cub {
  */
 template <
     typename                BlockReduceSweepPolicy,     ///< Parameterized BlockReduceSweepPolicy tuning policy type
-    typename                InputIterator,              ///< Random-access input iterator type for reading input items \iterator
-    typename                OutputIterator,             ///< Output iterator type for recording the reduced aggregate \iterator
-    typename                Offset,                     ///< Signed integer type for global offsets
+    typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
+    typename                OutputIteratorT,            ///< Output iterator type for recording the reduced aggregate \iterator
+    typename                OffsetT,                    ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceSweepPolicy::BLOCK_THREADS))
 __global__ void DeviceReduceSweepKernel(
-    InputIterator           d_in,                       ///< [in] Pointer to the input sequence of data items
-    OutputIterator          d_out,                      ///< [out] Pointer to the output aggregate
-    Offset                  num_items,                  ///< [in] Total number of input data items
-    GridEvenShare<Offset>   even_share,                 ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
-    GridQueue<Offset>       queue,                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
+    OutputIteratorT         d_out,                      ///< [out] Pointer to the output aggregate
+    OffsetT                 num_items,                  ///< [in] Total number of input data items
+    GridEvenShare<OffsetT>  even_share,                 ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
+    GridQueue<OffsetT>      queue,                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
     ReductionOp             reduction_op)               ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
 {
     // Data type
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockReduceSweep<BlockReduceSweepPolicy, InputIterator, Offset, ReductionOp> BlockReduceSweepT;
+    typedef BlockReduceSweep<BlockReduceSweepPolicy, InputIteratorT, OffsetT, ReductionOp> BlockReduceSweepT;
 
     // Block-wide aggregate
     T block_aggregate;
@@ -108,22 +108,22 @@ __global__ void DeviceReduceSweepKernel(
  */
 template <
     typename                BlockReduceSweepPolicy,     ///< Parameterized BlockReduceSweepPolicy tuning policy type
-    typename                InputIterator,              ///< Random-access input iterator type for reading input items \iterator
-    typename                OutputIterator,             ///< Output iterator type for recording the reduced aggregate \iterator
-    typename                Offset,                     ///< Signed integer type for global offsets
+    typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
+    typename                OutputIteratorT,            ///< Output iterator type for recording the reduced aggregate \iterator
+    typename                OffsetT,                    ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
 __launch_bounds__ (int(BlockReduceSweepPolicy::BLOCK_THREADS), 1)
 __global__ void SingleReduceSweepKernel(
-    InputIterator           d_in,                       ///< [in] Pointer to the input sequence of data items
-    OutputIterator          d_out,                      ///< [out] Pointer to the output aggregate
-    Offset                  num_items,                  ///< [in] Total number of input data items
+    InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
+    OutputIteratorT         d_out,                      ///< [out] Pointer to the output aggregate
+    OffsetT                 num_items,                  ///< [in] Total number of input data items
     ReductionOp             reduction_op)               ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
 {
     // Data type
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockReduceSweep<BlockReduceSweepPolicy, InputIterator, Offset, ReductionOp> BlockReduceSweepT;
+    typedef BlockReduceSweep<BlockReduceSweepPolicy, InputIteratorT, OffsetT, ReductionOp> BlockReduceSweepT;
 
     // Block-wide aggregate
     T block_aggregate;
@@ -133,8 +133,8 @@ __global__ void SingleReduceSweepKernel(
 
     // Consume input tiles
     BlockReduceSweepT(temp_storage, d_in, reduction_op).ConsumeRange(
-        Offset(0),
-        Offset(num_items),
+        OffsetT(0),
+        OffsetT(num_items),
         block_aggregate);
 
     // Output result
@@ -155,15 +155,23 @@ __global__ void SingleReduceSweepKernel(
  * Utility class for dispatching the appropriately-tuned kernels for DeviceReduce
  */
 template <
-    typename InputIterator,     ///< Random-access input iterator type for reading input items \iterator
-    typename OutputIterator,    ///< Output iterator type for recording the reduced aggregate \iterator
-    typename Offset,            ///< Signed integer type for global offsets
+    typename InputIteratorT,    ///< Random-access input iterator type for reading input items \iterator
+    typename OutputIteratorT,   ///< Output iterator type for recording the reduced aggregate \iterator
+    typename OffsetT,           ///< Signed integer type for global offsets
     typename ReductionOp>       ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
 struct DeviceReduceDispatch
 {
-    // Data type of input iterator
-    typedef typename std::iterator_traits<InputIterator>::value_type T;
+    /******************************************************************************
+     * Types and constants
+     ******************************************************************************/
 
+    // Data type of input iterator
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+
+    enum {
+        // Whether this is for ArgMin or ArgMax
+        IS_ARG_OP = Equals<ReductionOp, ArgMin>::VALUE || Equals<ReductionOp, ArgMax>::VALUE,
+    };
 
     /******************************************************************************
      * Tuning policies
@@ -173,40 +181,56 @@ struct DeviceReduceDispatch
     struct Policy350
     {
         // RangeReducePolicy1B (GTX Titan: 228.7 GB/s @ 192M 1B items)
+        enum {
+            SMALL_NOMINAL_ITEMS_PER_THREAD      = 24,
+            SMALL_ITEMS_PER_THREAD              = CUB_MIN(SMALL_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SMALL_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            SMALL_NOMINAL_VECTOR_LOAD_LENGTH    = 4,
+            SMALL_VECTOR_LOAD_LENGTH            = CUB_MIN(CUB_MIN(4, SMALL_ITEMS_PER_THREAD), CUB_MAX(1, (SMALL_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
-                24,                                 ///< Items per thread per tile of input
-                4,                                  ///< Number of items per vectorized load
+                SMALL_ITEMS_PER_THREAD,             ///< Items per thread per tile of input
+                SMALL_VECTOR_LOAD_LENGTH,           ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_LDG,                           ///< Cache load modifier
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
             RangeReducePolicy1B;
 
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 20,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-        };
-
         // RangeReducePolicy4B (GTX Titan: 255.1 GB/s @ 48M 4B items)
+        enum {
+            NOMINAL_ITEMS_PER_THREAD            = 20,
+            ITEMS_PER_THREAD                    = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            NOMINAL_VECTOR_LOAD_LENGTH          = 2,
+            VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
-                2,                                  ///< Number of items per vectorized load
+                VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_LDG,                           ///< Cache load modifier
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
             RangeReducePolicy4B;
 
         // RangeReducePolicy
-        typedef typename If<(sizeof(T) >= 4),
-            RangeReducePolicy4B,
-            RangeReducePolicy1B>::Type RangeReducePolicy;
+        typedef typename If<(sizeof(T) < 4),
+            RangeReducePolicy1B,
+            RangeReducePolicy4B>::Type RangeReducePolicy;
 
         // SingleTilePolicy
+        enum {
+            SINGLE_NOMINAL_ITEMS_PER_THREAD     = 8,
+            SINGLE_ITEMS_PER_THREAD             = CUB_MIN(SINGLE_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SINGLE_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 1,
+            SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
-                8,                                  ///< Items per thread per tile of input
-                1,                                  ///< Number of items per vectorized load
+                SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
+                SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
                 BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
@@ -216,26 +240,35 @@ struct DeviceReduceDispatch
     /// SM30
     struct Policy300
     {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 2,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-        };
-
         // RangeReducePolicy (GTX670: 154.0 @ 48M 4B items)
+        enum {
+            NOMINAL_ITEMS_PER_THREAD            = 2,
+            ITEMS_PER_THREAD                    = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            NOMINAL_VECTOR_LOAD_LENGTH          = 1,
+            VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
-                1,                                  ///< Number of items per vectorized load
+                VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
                 BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
             RangeReducePolicy;
 
         // SingleTilePolicy
+        enum {
+            SINGLE_NOMINAL_ITEMS_PER_THREAD     = 24,
+            SINGLE_ITEMS_PER_THREAD             = CUB_MIN(SINGLE_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SINGLE_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 4,
+            SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
-                24,                                 ///< Items per thread per tile of input
-                4,                                  ///< Number of items per vectorized load
+                SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
+                SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
                 BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
@@ -246,10 +279,17 @@ struct DeviceReduceDispatch
     struct Policy200
     {
         // RangeReducePolicy1B (GTX 580: 158.1 GB/s @ 192M 1B items)
+        enum {
+            SMALL_NOMINAL_ITEMS_PER_THREAD      = 24,
+            SMALL_ITEMS_PER_THREAD              = CUB_MIN(SMALL_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SMALL_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            SMALL_NOMINAL_VECTOR_LOAD_LENGTH    = 4,
+            SMALL_VECTOR_LOAD_LENGTH            = CUB_MIN(CUB_MIN(4, SMALL_ITEMS_PER_THREAD), CUB_MAX(1, (SMALL_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 192,                                ///< Threads per thread block
-                24,                                 ///< Items per thread per tile of input
-                4,                                  ///< Number of items per vectorized load
+                SMALL_ITEMS_PER_THREAD,             ///< Items per thread per tile of input
+                SMALL_VECTOR_LOAD_LENGTH,           ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 (sizeof(T) == 1) ?                  ///< How to map tiles of input onto thread blocks
@@ -257,18 +297,18 @@ struct DeviceReduceDispatch
                     GRID_MAPPING_DYNAMIC>
             RangeReducePolicy1B;
 
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 8,
-            NOMINAL_4B_VEC_ITEMS        = 4,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-            VEC_ITEMS                   = CUB_MIN(NOMINAL_4B_VEC_ITEMS, CUB_MAX(1, (NOMINAL_4B_VEC_ITEMS * 4 / sizeof(T)))),
-        };
-
         // RangeReducePolicy4B (GTX 580: 178.9 GB/s @ 48M 4B items)
+        enum {
+            NOMINAL_ITEMS_PER_THREAD            = 8,
+            ITEMS_PER_THREAD                    = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            NOMINAL_VECTOR_LOAD_LENGTH          = 4,
+            VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
-                VEC_ITEMS,                          ///< Number of items per vectorized load
+                VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
@@ -280,10 +320,17 @@ struct DeviceReduceDispatch
             RangeReducePolicy4B>::Type RangeReducePolicy;
 
         // SingleTilePolicy
+        enum {
+            SINGLE_NOMINAL_ITEMS_PER_THREAD     = 7,
+            SINGLE_ITEMS_PER_THREAD             = CUB_MIN(SINGLE_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SINGLE_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 1,
+            SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 192,                                ///< Threads per thread block
-                7,                                  ///< Items per thread per tile of input
-                1,                                  ///< Number of items per vectorized load
+                SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
+                SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
@@ -293,28 +340,35 @@ struct DeviceReduceDispatch
     /// SM13
     struct Policy130
     {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 8,
-            NOMINAL_4B_VEC_ITEMS        = 2,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-            VEC_ITEMS                   = CUB_MIN(NOMINAL_4B_VEC_ITEMS, CUB_MAX(1, (NOMINAL_4B_VEC_ITEMS * 4 / sizeof(T)))),
-        };
-
         // RangeReducePolicy
+        enum {
+            NOMINAL_ITEMS_PER_THREAD            = 8,
+            ITEMS_PER_THREAD                    = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            NOMINAL_VECTOR_LOAD_LENGTH          = 2,
+            VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
-                VEC_ITEMS,                          ///< Number of items per vectorized load
+                VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
             RangeReducePolicy;
 
         // SingleTilePolicy
+        enum {
+            SINGLE_NOMINAL_ITEMS_PER_THREAD     = 4,
+            SINGLE_ITEMS_PER_THREAD             = CUB_MIN(SINGLE_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SINGLE_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 2,
+            SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 32,                                 ///< Threads per thread block
-                4,                                  ///< Items per thread per tile of input
-                VEC_ITEMS,                          ///< Number of items per vectorized load
+                SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
+                SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
@@ -325,27 +379,35 @@ struct DeviceReduceDispatch
     struct Policy100
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 8,
-            NOMINAL_4B_VEC_ITEMS        = 2,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
-            VEC_ITEMS                   = CUB_MIN(NOMINAL_4B_VEC_ITEMS, CUB_MAX(1, (NOMINAL_4B_VEC_ITEMS * 4 / sizeof(T)))),
+            NOMINAL_ITEMS_PER_THREAD            = 8,
+            ITEMS_PER_THREAD                    = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            NOMINAL_VECTOR_LOAD_LENGTH          = 2,
+            VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
 
         // RangeReducePolicy
         typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
-                VEC_ITEMS,                          ///< Number of items per vectorized load
+                VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
             RangeReducePolicy;
 
         // SingleTilePolicy
+        enum {
+            SINGLE_NOMINAL_ITEMS_PER_THREAD     = 4,
+            SINGLE_ITEMS_PER_THREAD             = CUB_MIN(SINGLE_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SINGLE_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+
+            SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 4,
+            SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+        };
         typedef BlockReduceSweepPolicy<
                 32,                                 ///< Threads per thread block
-                4,                                  ///< Items per thread per tile of input
-                4,                                  ///< Number of items per vectorized load
+                SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
+                SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
@@ -483,22 +545,22 @@ struct DeviceReduceDispatch
     template <
         typename                    DeviceReduceSweepKernelPtr,         ///< Function type of cub::DeviceReduceSweepKernel
         typename                    SingleReducePartialsKernelPtr,      ///< Function type of cub::SingleReduceSweepKernel for consuming partial reductions (T*)
-        typename                    SingleReduceSweepKernelPtr,         ///< Function type of cub::SingleReduceSweepKernel for consuming input (InputIterator)
+        typename                    SingleReduceSweepKernelPtr,         ///< Function type of cub::SingleReduceSweepKernel for consuming input (InputIteratorT)
         typename                    FillAndResetDrainKernelPtr>         ///< Function type of cub::FillAndResetDrainKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void                            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                          &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator                   d_in,                           ///< [in] Pointer to the input sequence of data items
-        OutputIterator                  d_out,                          ///< [out] Pointer to the output aggregate
-        Offset                          num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
+        InputIteratorT                  d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT                 d_out,                          ///< [out] Pointer to the output aggregate
+        OffsetT                         num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         ReductionOp                     reduction_op,                   ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         cudaStream_t                    stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                            debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         FillAndResetDrainKernelPtr      prepare_drain_kernel,           ///< [in] Kernel function pointer to parameterization of cub::FillAndResetDrainKernel
         DeviceReduceSweepKernelPtr      device_reduce_sweep_kernel,     ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceSweepKernel
         SingleReducePartialsKernelPtr   single_reduce_partials_kernel,  ///< [in] Kernel function pointer to parameterization of cub::SingleReduceSweepKernel for consuming partial reductions (T*)
-        SingleReduceSweepKernelPtr      single_reduce_sweep_kernel,     ///< [in] Kernel function pointer to parameterization of cub::SingleReduceSweepKernel for consuming input (InputIterator)
+        SingleReduceSweepKernelPtr      single_reduce_sweep_kernel,     ///< [in] Kernel function pointer to parameterization of cub::SingleReduceSweepKernel for consuming input (InputIteratorT)
         KernelConfig                    device_reduce_sweep_config,     ///< [in] Dispatch parameters that match the policy that \p range_reduce_kernel_ptr was compiled for
         KernelConfig                    single_reduce_sweep_config)     ///< [in] Dispatch parameters that match the policy that \p single_reduce_sweep_kernel was compiled for
     {
@@ -574,7 +636,7 @@ struct DeviceReduceDispatch
 
                 // Even-share work distribution
                 int subscription_factor = range_reduce_sm_occupancy;     // Amount of CTAs to oversubscribe the device beyond actively-resident (heuristic)
-                GridEvenShare<Offset> even_share(
+                GridEvenShare<OffsetT> even_share(
                     num_items,
                     range_reduce_occupancy * subscription_factor,
                     tile_size);
@@ -619,7 +681,7 @@ struct DeviceReduceDispatch
                 T *d_block_reductions = (T*) allocations[0];
 
                 // Alias the allocation for the grid queue descriptor
-                GridQueue<Offset> queue(allocations[1]);
+                GridQueue<OffsetT>queue(allocations[1]);
 
                 // Prepare the dynamic queue descriptor if necessary
                 if (device_reduce_sweep_config.grid_mapping == GRID_MAPPING_DYNAMIC)
@@ -689,9 +751,9 @@ struct DeviceReduceDispatch
     static cudaError_t Dispatch(
         void                        *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIterator               d_in,                               ///< [in] Pointer to the input sequence of data items
-        OutputIterator              d_out,                              ///< [out] Pointer to the output aggregate
-        Offset                      num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
+        InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
+        OffsetT                     num_items,                          ///< [in] Total number of input items (i.e., length of \p d_in)
         ReductionOp                 reduction_op,                       ///< [in] Binary reduction functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
         cudaStream_t                stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
@@ -722,10 +784,10 @@ struct DeviceReduceDispatch
                 reduction_op,
                 stream,
                 debug_synchronous,
-                FillAndResetDrainKernel<Offset>,
-                DeviceReduceSweepKernel<PtxRangeReducePolicy, InputIterator, T*, Offset, ReductionOp>,
-                SingleReduceSweepKernel<PtxSingleTilePolicy, T*, OutputIterator, Offset, ReductionOp>,
-                SingleReduceSweepKernel<PtxSingleTilePolicy, InputIterator, OutputIterator, Offset, ReductionOp>,
+                FillAndResetDrainKernel<OffsetT>,
+                DeviceReduceSweepKernel<PtxRangeReducePolicy, InputIteratorT, T*, OffsetT, ReductionOp>,
+                SingleReduceSweepKernel<PtxSingleTilePolicy, T*, OutputIteratorT, OffsetT, ReductionOp>,
+                SingleReduceSweepKernel<PtxSingleTilePolicy, InputIteratorT, OutputIteratorT, OffsetT, ReductionOp>,
                 device_reduce_sweep_config,
                 single_reduce_sweep_config))) break;
         }
