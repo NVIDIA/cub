@@ -202,7 +202,7 @@ private:
                 flag_op,
                 input[ITERATION],
                 input[ITERATION + 1],
-                (linear_tid * ITEMS_PER_THREAD) + ITERATION);
+                (linear_tid * ITEMS_PER_THREAD) + ITERATION + 1);
 
             Iterate<ITERATION + 1, MAX_ITERATIONS>::FlagTails(linear_tid, flags, input, flag_op);
         }
@@ -530,7 +530,7 @@ public:
                 flag_op,
                 input[ITEMS_PER_THREAD - 1],
                 temp_storage.first_items[linear_tid + 1],
-                (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
+                (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set tail_flags for remaining items
         Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, tail_flags, input, flag_op);
@@ -617,7 +617,7 @@ public:
             flag_op,
             input[ITEMS_PER_THREAD - 1],
             successor_item,
-            (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
+            (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set tail_flags for remaining items
         Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, tail_flags, input, flag_op);
@@ -723,7 +723,7 @@ public:
                 flag_op,
                 input[ITEMS_PER_THREAD - 1],
                 temp_storage.first_items[linear_tid + 1],
-                (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
+                (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
         Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, flag_op);
@@ -833,7 +833,7 @@ public:
             flag_op,
             input[ITEMS_PER_THREAD - 1],
             successor_item,
-            (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
+            (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
         Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, flag_op);
@@ -949,7 +949,7 @@ public:
                 flag_op,
                 input[ITEMS_PER_THREAD - 1],
                 temp_storage.first_items[linear_tid + 1],
-                (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
+                (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
         Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, flag_op);
@@ -1069,7 +1069,7 @@ public:
             flag_op,
             input[ITEMS_PER_THREAD - 1],
             successor_item,
-            (linear_tid * ITEMS_PER_THREAD) + (ITEMS_PER_THREAD - 1));
+            (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
         Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, flag_op);

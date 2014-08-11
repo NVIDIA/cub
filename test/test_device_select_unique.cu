@@ -231,7 +231,7 @@ void Initialize(
     int         num_items,
     int         max_segment)
 {
-    unsigned int max_short = (unsigned int) -1;
+    unsigned int max_int = (unsigned int) -1;
 
     int key = 0;
     int i = 0;
@@ -250,7 +250,7 @@ void Initialize(
         else
         {
             RandomBits(repeat, entropy_reduction);
-            repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_short));
+            repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_int));
             repeat = CUB_MAX(1, repeat);
         }
 

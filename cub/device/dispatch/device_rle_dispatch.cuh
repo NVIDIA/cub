@@ -149,7 +149,7 @@ struct DeviceRleDispatch
     struct Policy350
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 15,
+            NOMINAL_4B_ITEMS_PER_THREAD = 1, // 15,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
