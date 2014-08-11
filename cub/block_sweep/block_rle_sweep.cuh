@@ -822,7 +822,7 @@ struct BlockRleSweep
             // Full tile
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
         }
-        else
+        else if (tile_idx == num_tiles - 1)
         {
             // Last tile
             LengthOffsetPair running_total = ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);

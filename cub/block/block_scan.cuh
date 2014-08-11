@@ -1195,9 +1195,9 @@ public:
      * \p block_aggregate will be assigned \p 510 in all threads after the first scan, assigned \p 1022 after the second
      * scan, etc.
      *
-     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
+     * \tparam ITEMS_PER_THREAD         <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+     * \tparam ScanOp                   <b>[inferred]</b> Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.) type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam BlockPrefixCallbackOp    <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
      */
     template <
         int             ITEMS_PER_THREAD,
@@ -1225,8 +1225,6 @@ public:
     //@}  end member group
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-#if 0
 
     /******************************************************************//**
      * \name Exclusive prefix scan operations (identityless, single datum per thread)
@@ -1306,8 +1304,6 @@ public:
 
 
     //@}  end member group
-
-#endif // #if 0
 
     /******************************************************************//**
      * \name Exclusive prefix scan operations (identityless, multiple data per thread)

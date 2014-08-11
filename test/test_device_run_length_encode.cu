@@ -777,13 +777,13 @@ void TestSize(
         TestDispatch<T, OffsetT, LengthT>(10000,    key_type_string, offset_type_string, length_type_string);
         TestDispatch<T, OffsetT, LengthT>(1000000,  key_type_string, offset_type_string, length_type_string);
 
+        // Randomly select problem size between 1:10,000,000
         unsigned int max_int = (unsigned int) -1;
         for (int i = 0; i < 25; ++i)
         {
-            // Select number of repeating occurrences for the current run
             unsigned int num_items;
             RandomBits(num_items);
-            num_items = (unsigned int) ((double(num_items) * double(1000000)) / double(max_int));
+            num_items = (unsigned int) ((double(num_items) * double(10000000)) / double(max_int));
             num_items = CUB_MAX(1, num_items);
             TestDispatch<T, OffsetT, LengthT>(num_items,  key_type_string, offset_type_string, length_type_string);
         }
