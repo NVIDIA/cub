@@ -548,7 +548,7 @@ struct BlockRleSweep
                 d_offsets_out[item_offset] = lengths_and_offsets[ITEM].offset;
 
                 // Scatter length if not the first (global) length
-                if ((!FIRST_TILE) || (ITEM != 0) || (threadIdx.x > 0))
+                if (item_offset >= 1)
                 {
                     d_lengths_out[item_offset - 1] = lengths_and_offsets[ITEM].value;
                 }
@@ -593,7 +593,6 @@ struct BlockRleSweep
                 lengths_and_offsets,
                 Int2Type<STORE_WARP_TIME_SLICING>());
         }
-
     }
 
 
@@ -834,7 +833,8 @@ struct BlockRleSweep
                 *d_num_runs_out = running_total.offset;
 
                 // The inclusive prefix contains accumulated length reduction for the last run
-                d_lengths_out[running_total.offset - 1] = running_total.value;
+                if (running_total.offset > 0)
+                    d_lengths_out[running_total.offset - 1] = running_total.value;
             }
         }
 

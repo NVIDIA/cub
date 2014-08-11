@@ -183,16 +183,16 @@ struct DeviceReduceDispatch
         // RangeReducePolicy1B (GTX Titan: 228.7 GB/s @ 192M 1B items)
         enum {
             SMALL_NOMINAL_ITEMS_PER_THREAD      = 24,
-            SMALL_ITEMS_PER_THREAD              = CUB_MIN(SMALL_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SMALL_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            SMALL_ITEMS_PER_THREAD              = CUB_MIN(SMALL_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SMALL_NOMINAL_ITEMS_PER_THREAD * 1 / sizeof(T)))),
 
             SMALL_NOMINAL_VECTOR_LOAD_LENGTH    = 4,
-            SMALL_VECTOR_LOAD_LENGTH            = CUB_MIN(CUB_MIN(4, SMALL_ITEMS_PER_THREAD), CUB_MAX(1, (SMALL_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+            SMALL_VECTOR_LOAD_LENGTH            = CUB_MIN(CUB_MIN(4, SMALL_ITEMS_PER_THREAD), CUB_MAX(1, (SMALL_NOMINAL_VECTOR_LOAD_LENGTH * 1 / sizeof(T)))),
         };
         typedef BlockReduceSweepPolicy<
                 128,                                ///< Threads per thread block
                 SMALL_ITEMS_PER_THREAD,             ///< Items per thread per tile of input
                 SMALL_VECTOR_LOAD_LENGTH,           ///< Number of items per vectorized load
-                BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
+                BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_LDG,                           ///< Cache load modifier
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
             RangeReducePolicy1B;
@@ -202,14 +202,14 @@ struct DeviceReduceDispatch
             NOMINAL_ITEMS_PER_THREAD            = 20,
             ITEMS_PER_THREAD                    = CUB_MIN(NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
 
-            NOMINAL_VECTOR_LOAD_LENGTH          = 2,
+            NOMINAL_VECTOR_LOAD_LENGTH          = 4,
             VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
         typedef BlockReduceSweepPolicy<
                 256,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
-                BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
+                BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_LDG,                           ///< Cache load modifier
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
             RangeReducePolicy4B;
@@ -281,10 +281,10 @@ struct DeviceReduceDispatch
         // RangeReducePolicy1B (GTX 580: 158.1 GB/s @ 192M 1B items)
         enum {
             SMALL_NOMINAL_ITEMS_PER_THREAD      = 24,
-            SMALL_ITEMS_PER_THREAD              = CUB_MIN(SMALL_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SMALL_NOMINAL_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            SMALL_ITEMS_PER_THREAD              = CUB_MIN(SMALL_NOMINAL_ITEMS_PER_THREAD, CUB_MAX(1, (SMALL_NOMINAL_ITEMS_PER_THREAD * 1 / sizeof(T)))),
 
             SMALL_NOMINAL_VECTOR_LOAD_LENGTH    = 4,
-            SMALL_VECTOR_LOAD_LENGTH            = CUB_MIN(CUB_MIN(4, SMALL_ITEMS_PER_THREAD), CUB_MAX(1, (SMALL_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
+            SMALL_VECTOR_LOAD_LENGTH            = CUB_MIN(CUB_MIN(4, SMALL_ITEMS_PER_THREAD), CUB_MAX(1, (SMALL_NOMINAL_VECTOR_LOAD_LENGTH * 1 / sizeof(T)))),
         };
         typedef BlockReduceSweepPolicy<
                 192,                                ///< Threads per thread block

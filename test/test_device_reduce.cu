@@ -909,12 +909,14 @@ int main(int argc, char** argv)
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
 
+    TestPointer<CUB, char>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(char));
+/*
     TestPointer<CUB, int>(          num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(int));
     TestPointer<CUB, int>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(int));
 
     TestPointer<CUB, short>(          num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(short));
     TestPointer<CUB, short>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(short));
-
+*/
 #elif defined(QUICK_TEST)
 
     // Compile/run quick tests

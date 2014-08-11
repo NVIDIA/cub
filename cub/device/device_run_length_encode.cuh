@@ -177,7 +177,7 @@ struct DeviceRunLengthEncode
             temp_storage_bytes,
             d_in,
             d_unique_out,
-            LengthsInputIterator(one_val),
+            LengthsInputIteratorT(one_val),
             d_counts_out,
             d_num_runs_out,
             EqualityOp(),
