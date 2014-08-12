@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt; Class Template Reference</title>
+<title>CUB: cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, OffsetT &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -103,25 +103,25 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#friends">Friends</a> &#124;
 <a href="classcub_1_1_cache_modified_input_iterator-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_iterator.html">Fancy iterators</a></div></div>  </div>
+<div class="title">cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, OffsetT &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_iterator.html">Fancy iterators</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
     CacheLoadModifier MODIFIER, 
     typename ValueType, 
-    typename Offset = ptrdiff_t&gt;<br/>
-class cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</h3>
+    typename OffsetT = ptrdiff_t&gt;<br/>
+class cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, OffsetT &gt;</h3>
 
 <p>A random-access input wrapper for dereferencing array values using a PTX cache load modifier. </p>
 <dl class="section user"><dt>Overview</dt><dd><ul>
-<li><a class="el" href="classcub_1_1_cache_modified_input_iterator.html" title="A random-access input wrapper for dereferencing array values using a PTX cache load modifier...">CacheModifiedInputIterator</a> is a random-access input iterator that wraps a native device pointer of type <code>ValueType*</code>. <code>ValueType</code> references are made by reading <code>ValueType</code> values through loads modified by <code>MODIFIER</code>.</li>
+<li>CacheModifiedInputIteratorTis a random-access input iterator that wraps a native device pointer of type <code>ValueType*</code>. <code>ValueType</code> references are made by reading <code>ValueType</code> values through loads modified by <code>MODIFIER</code>.</li>
 <li>Can be used to load any data type from memory using PTX cache load modifiers (e.g., "LOAD_LDG", "LOAD_CG", "LOAD_CA", "LOAD_CS", "LOAD_CV", etc.).</li>
 <li>Can be constructed, manipulated, and exchanged within and between host and device functions, but can only be dereferenced within device functions.</li>
 <li>Compatible with Thrust API v1.7 or newer.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the use of <code><a class="el" href="classcub_1_1_cache_modified_input_iterator.html" title="A random-access input wrapper for dereferencing array values using a PTX cache load modifier...">CacheModifiedInputIterator</a></code> to dereference a device array of double using the "ldg" PTX load modifier (i.e., load values through texture cache). </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the use of <code>CacheModifiedInputIteratorTto</code> dereference a device array of double using the "ldg" PTX load modifier (i.e., load values through texture cache). </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/iterator/cache_modified_input_iterator.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize a device array</span></div>
@@ -139,7 +139,7 @@ class cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</h3>
   <table class="tparams">
     <tr><td class="paramname">CacheLoadModifier</td><td>The <a class="el" href="group___util_io.html#gac5f2805ad56fdd0f2860a5421d76d9b9" title="Enumeration of cache modifiers for memory load operations. ">cub::CacheLoadModifier</a> to use when accessing data </td></tr>
     <tr><td class="paramname">ValueType</td><td>The value type of this iterator </td></tr>
-    <tr><td class="paramname">Offset</td><td>The difference type of this iterator (Default: <code>ptrdiff_t</code>) </td></tr>
+    <tr><td class="paramname">OffsetT</td><td>The difference type of this iterator (Default: <code>ptrdiff_t</code>) </td></tr>
   </table>
   </dd>
 </dl>
@@ -148,123 +148,123 @@ class cub::CacheModifiedInputIterator&lt; MODIFIER, ValueType, Offset &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:a96077dcb9702bfaf5b90a7f85a1f5585"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a96077dcb9702bfaf5b90a7f85a1f5585"></a>
-typedef <a class="el" href="classcub_1_1_cache_modified_input_iterator.html">CacheModifiedInputIterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a></td></tr>
-<tr class="memdesc:a96077dcb9702bfaf5b90a7f85a1f5585"><td class="mdescLeft">&#160;</td><td class="mdescRight">My own type. <br/></td></tr>
-<tr class="separator:a96077dcb9702bfaf5b90a7f85a1f5585"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a40d3ce9ea9c0e1160717fa46ad2f9417"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a40d3ce9ea9c0e1160717fa46ad2f9417"></a>
-typedef Offset&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a40d3ce9ea9c0e1160717fa46ad2f9417">difference_type</a></td></tr>
-<tr class="memdesc:a40d3ce9ea9c0e1160717fa46ad2f9417"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type to express the result of subtracting one iterator from another. <br/></td></tr>
-<tr class="separator:a40d3ce9ea9c0e1160717fa46ad2f9417"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aaaaa98e306495a1e4107144f97e35737"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aaaaa98e306495a1e4107144f97e35737"></a>
-typedef ValueType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#aaaaa98e306495a1e4107144f97e35737">value_type</a></td></tr>
-<tr class="memdesc:aaaaa98e306495a1e4107144f97e35737"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the element the iterator can point to. <br/></td></tr>
-<tr class="separator:aaaaa98e306495a1e4107144f97e35737"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0a786aa3646f1a882aa5259284295c9d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0a786aa3646f1a882aa5259284295c9d"></a>
-typedef ValueType *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a0a786aa3646f1a882aa5259284295c9d">pointer</a></td></tr>
-<tr class="memdesc:a0a786aa3646f1a882aa5259284295c9d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a pointer to an element the iterator can point to. <br/></td></tr>
-<tr class="separator:a0a786aa3646f1a882aa5259284295c9d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae998b04f8194ed055ae2287fd20b0677"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae998b04f8194ed055ae2287fd20b0677"></a>
-typedef ValueType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ae998b04f8194ed055ae2287fd20b0677">reference</a></td></tr>
-<tr class="memdesc:ae998b04f8194ed055ae2287fd20b0677"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
-<tr class="separator:ae998b04f8194ed055ae2287fd20b0677"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adee0046a87d6920f60f5732f7319a190"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="adee0046a87d6920f60f5732f7319a190"></a>
+<tr class="memitem:af26facb4f00568a940d5529047bd90d7"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af26facb4f00568a940d5529047bd90d7"></a>
+typedef <a class="el" href="classcub_1_1_cache_modified_input_iterator.html">CacheModifiedInputIterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a></td></tr>
+<tr class="memdesc:af26facb4f00568a940d5529047bd90d7"><td class="mdescLeft">&#160;</td><td class="mdescRight">My own type. <br/></td></tr>
+<tr class="separator:af26facb4f00568a940d5529047bd90d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a268f1e7a4b42a05c5b4d0bca2775c26e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a268f1e7a4b42a05c5b4d0bca2775c26e"></a>
+typedef OffsetT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a268f1e7a4b42a05c5b4d0bca2775c26e">difference_type</a></td></tr>
+<tr class="memdesc:a268f1e7a4b42a05c5b4d0bca2775c26e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type to express the result of subtracting one iterator from another. <br/></td></tr>
+<tr class="separator:a268f1e7a4b42a05c5b4d0bca2775c26e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a60689c564e2ade39722947eeaf40156a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a60689c564e2ade39722947eeaf40156a"></a>
+typedef ValueType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a60689c564e2ade39722947eeaf40156a">value_type</a></td></tr>
+<tr class="memdesc:a60689c564e2ade39722947eeaf40156a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the element the iterator can point to. <br/></td></tr>
+<tr class="separator:a60689c564e2ade39722947eeaf40156a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a861312ce25581fbef3f2a3c24735441a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a861312ce25581fbef3f2a3c24735441a"></a>
+typedef ValueType *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a861312ce25581fbef3f2a3c24735441a">pointer</a></td></tr>
+<tr class="memdesc:a861312ce25581fbef3f2a3c24735441a"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a pointer to an element the iterator can point to. <br/></td></tr>
+<tr class="separator:a861312ce25581fbef3f2a3c24735441a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afeb390b1ca6d494d9295beb9a65705fd"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afeb390b1ca6d494d9295beb9a65705fd"></a>
+typedef ValueType&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#afeb390b1ca6d494d9295beb9a65705fd">reference</a></td></tr>
+<tr class="memdesc:afeb390b1ca6d494d9295beb9a65705fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
+<tr class="separator:afeb390b1ca6d494d9295beb9a65705fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ada1fa84e98ba648e275d11e6e8fd4970"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ada1fa84e98ba648e275d11e6e8fd4970"></a>
 typedef <br class="typebreak"/>
-std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#adee0046a87d6920f60f5732f7319a190">iterator_category</a></td></tr>
-<tr class="memdesc:adee0046a87d6920f60f5732f7319a190"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
-<tr class="separator:adee0046a87d6920f60f5732f7319a190"><td class="memSeparator" colspan="2">&#160;</td></tr>
+std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ada1fa84e98ba648e275d11e6e8fd4970">iterator_category</a></td></tr>
+<tr class="memdesc:ada1fa84e98ba648e275d11e6e8fd4970"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
+<tr class="separator:ada1fa84e98ba648e275d11e6e8fd4970"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a9fa923d6cef33a63ccf11d2eb5b3b3c5"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a9fa923d6cef33a63ccf11d2eb5b3b3c5">CacheModifiedInputIterator</a> (ValueType *ptr)</td></tr>
-<tr class="memdesc:a9fa923d6cef33a63ccf11d2eb5b3b3c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a9fa923d6cef33a63ccf11d2eb5b3b3c5">More...</a><br/></td></tr>
-<tr class="separator:a9fa923d6cef33a63ccf11d2eb5b3b3c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac9df0ffb9e1c9037cea5630a55e19c76"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac9df0ffb9e1c9037cea5630a55e19c76"></a>
+<tr class="memitem:af4692067e215c8ce5d55fdddc2c57549"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af4692067e215c8ce5d55fdddc2c57549">CacheModifiedInputIterator</a> (ValueType *ptr)</td></tr>
+<tr class="memdesc:af4692067e215c8ce5d55fdddc2c57549"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#af4692067e215c8ce5d55fdddc2c57549">More...</a><br/></td></tr>
+<tr class="separator:af4692067e215c8ce5d55fdddc2c57549"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9162da65a4a6933def9c54db003ec80"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af9162da65a4a6933def9c54db003ec80"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ac9df0ffb9e1c9037cea5630a55e19c76">operator++</a> (int)</td></tr>
-<tr class="memdesc:ac9df0ffb9e1c9037cea5630a55e19c76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Postfix increment. <br/></td></tr>
-<tr class="separator:ac9df0ffb9e1c9037cea5630a55e19c76"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9fe3980e5b06c61f6d6d9956bc1dab57"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9fe3980e5b06c61f6d6d9956bc1dab57"></a>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af9162da65a4a6933def9c54db003ec80">operator++</a> (int)</td></tr>
+<tr class="memdesc:af9162da65a4a6933def9c54db003ec80"><td class="mdescLeft">&#160;</td><td class="mdescRight">Postfix increment. <br/></td></tr>
+<tr class="separator:af9162da65a4a6933def9c54db003ec80"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af9ff3b43966a75ccc868f3746953e865"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af9ff3b43966a75ccc868f3746953e865"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a9fe3980e5b06c61f6d6d9956bc1dab57">operator++</a> ()</td></tr>
-<tr class="memdesc:a9fe3980e5b06c61f6d6d9956bc1dab57"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prefix increment. <br/></td></tr>
-<tr class="separator:a9fe3980e5b06c61f6d6d9956bc1dab57"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a46c00dbdded93af9237e2525da07df23"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a46c00dbdded93af9237e2525da07df23"></a>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af9ff3b43966a75ccc868f3746953e865">operator++</a> ()</td></tr>
+<tr class="memdesc:af9ff3b43966a75ccc868f3746953e865"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prefix increment. <br/></td></tr>
+<tr class="separator:af9ff3b43966a75ccc868f3746953e865"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac260467df78b6ced4f81129e7b45c35a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac260467df78b6ced4f81129e7b45c35a"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ae998b04f8194ed055ae2287fd20b0677">reference</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a46c00dbdded93af9237e2525da07df23">operator*</a> () const </td></tr>
-<tr class="memdesc:a46c00dbdded93af9237e2525da07df23"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indirection. <br/></td></tr>
-<tr class="separator:a46c00dbdded93af9237e2525da07df23"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a336ebbe86565d962115d4c4f89e2b89e"><td class="memTemplParams" colspan="2"><a class="anchor" id="a336ebbe86565d962115d4c4f89e2b89e"></a>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#afeb390b1ca6d494d9295beb9a65705fd">reference</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ac260467df78b6ced4f81129e7b45c35a">operator*</a> () const </td></tr>
+<tr class="memdesc:ac260467df78b6ced4f81129e7b45c35a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indirection. <br/></td></tr>
+<tr class="separator:ac260467df78b6ced4f81129e7b45c35a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a455c2df363449c1b92628de54fb2bad5"><td class="memTemplParams" colspan="2"><a class="anchor" id="a455c2df363449c1b92628de54fb2bad5"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:a336ebbe86565d962115d4c4f89e2b89e"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a336ebbe86565d962115d4c4f89e2b89e">operator+</a> (Distance n) const </td></tr>
-<tr class="memdesc:a336ebbe86565d962115d4c4f89e2b89e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Addition. <br/></td></tr>
-<tr class="separator:a336ebbe86565d962115d4c4f89e2b89e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6a08f84dac17177cc1a915a343dc74cd"><td class="memTemplParams" colspan="2"><a class="anchor" id="a6a08f84dac17177cc1a915a343dc74cd"></a>
+<tr class="memitem:a455c2df363449c1b92628de54fb2bad5"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a455c2df363449c1b92628de54fb2bad5">operator+</a> (Distance n) const </td></tr>
+<tr class="memdesc:a455c2df363449c1b92628de54fb2bad5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Addition. <br/></td></tr>
+<tr class="separator:a455c2df363449c1b92628de54fb2bad5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41bc8a80a8eea119098e75d8ed8c6d57"><td class="memTemplParams" colspan="2"><a class="anchor" id="a41bc8a80a8eea119098e75d8ed8c6d57"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:a6a08f84dac17177cc1a915a343dc74cd"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a6a08f84dac17177cc1a915a343dc74cd">operator+=</a> (Distance n)</td></tr>
-<tr class="memdesc:a6a08f84dac17177cc1a915a343dc74cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Addition assignment. <br/></td></tr>
-<tr class="separator:a6a08f84dac17177cc1a915a343dc74cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0adc5136a59e9e832cf7d4640be7f899"><td class="memTemplParams" colspan="2"><a class="anchor" id="a0adc5136a59e9e832cf7d4640be7f899"></a>
+<tr class="memitem:a41bc8a80a8eea119098e75d8ed8c6d57"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a41bc8a80a8eea119098e75d8ed8c6d57">operator+=</a> (Distance n)</td></tr>
+<tr class="memdesc:a41bc8a80a8eea119098e75d8ed8c6d57"><td class="mdescLeft">&#160;</td><td class="mdescRight">Addition assignment. <br/></td></tr>
+<tr class="separator:a41bc8a80a8eea119098e75d8ed8c6d57"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2b2d556e2e9483245aaec4b9da110b60"><td class="memTemplParams" colspan="2"><a class="anchor" id="a2b2d556e2e9483245aaec4b9da110b60"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:a0adc5136a59e9e832cf7d4640be7f899"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a0adc5136a59e9e832cf7d4640be7f899">operator-</a> (Distance n) const </td></tr>
-<tr class="memdesc:a0adc5136a59e9e832cf7d4640be7f899"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtraction. <br/></td></tr>
-<tr class="separator:a0adc5136a59e9e832cf7d4640be7f899"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a994916b4437347efe62704fcc08d4458"><td class="memTemplParams" colspan="2"><a class="anchor" id="a994916b4437347efe62704fcc08d4458"></a>
+<tr class="memitem:a2b2d556e2e9483245aaec4b9da110b60"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a2b2d556e2e9483245aaec4b9da110b60">operator-</a> (Distance n) const </td></tr>
+<tr class="memdesc:a2b2d556e2e9483245aaec4b9da110b60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtraction. <br/></td></tr>
+<tr class="separator:a2b2d556e2e9483245aaec4b9da110b60"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8b91b2e6d55844ebcd3c8cd93e886880"><td class="memTemplParams" colspan="2"><a class="anchor" id="a8b91b2e6d55844ebcd3c8cd93e886880"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:a994916b4437347efe62704fcc08d4458"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a994916b4437347efe62704fcc08d4458">operator-=</a> (Distance n)</td></tr>
-<tr class="memdesc:a994916b4437347efe62704fcc08d4458"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtraction assignment. <br/></td></tr>
-<tr class="separator:a994916b4437347efe62704fcc08d4458"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad9f5854d8f1836d93ee238c7e1f89284"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad9f5854d8f1836d93ee238c7e1f89284"></a>
+<tr class="memitem:a8b91b2e6d55844ebcd3c8cd93e886880"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a8b91b2e6d55844ebcd3c8cd93e886880">operator-=</a> (Distance n)</td></tr>
+<tr class="memdesc:a8b91b2e6d55844ebcd3c8cd93e886880"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtraction assignment. <br/></td></tr>
+<tr class="separator:a8b91b2e6d55844ebcd3c8cd93e886880"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acd474cb5beebddd501b901554d501958"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="acd474cb5beebddd501b901554d501958"></a>
 __host__ __device__ <br class="typebreak"/>
 __forceinline__ <br class="typebreak"/>
-<a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a40d3ce9ea9c0e1160717fa46ad2f9417">difference_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ad9f5854d8f1836d93ee238c7e1f89284">operator-</a> (<a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a> other) const </td></tr>
-<tr class="memdesc:ad9f5854d8f1836d93ee238c7e1f89284"><td class="mdescLeft">&#160;</td><td class="mdescRight">Distance. <br/></td></tr>
-<tr class="separator:ad9f5854d8f1836d93ee238c7e1f89284"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adeddb184043173371fd4fa714bab5877"><td class="memTemplParams" colspan="2"><a class="anchor" id="adeddb184043173371fd4fa714bab5877"></a>
+<a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a268f1e7a4b42a05c5b4d0bca2775c26e">difference_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#acd474cb5beebddd501b901554d501958">operator-</a> (<a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a> other) const </td></tr>
+<tr class="memdesc:acd474cb5beebddd501b901554d501958"><td class="mdescLeft">&#160;</td><td class="mdescRight">Distance. <br/></td></tr>
+<tr class="separator:acd474cb5beebddd501b901554d501958"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a961ed365f1edfca7fce1c8e040c9e52b"><td class="memTemplParams" colspan="2"><a class="anchor" id="a961ed365f1edfca7fce1c8e040c9e52b"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:adeddb184043173371fd4fa714bab5877"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ae998b04f8194ed055ae2287fd20b0677">reference</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#adeddb184043173371fd4fa714bab5877">operator[]</a> (Distance n) const </td></tr>
-<tr class="memdesc:adeddb184043173371fd4fa714bab5877"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array subscript. <br/></td></tr>
-<tr class="separator:adeddb184043173371fd4fa714bab5877"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a75982cc7834f4a847fd47e89a2327f9f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a75982cc7834f4a847fd47e89a2327f9f"></a>
+<tr class="memitem:a961ed365f1edfca7fce1c8e040c9e52b"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#afeb390b1ca6d494d9295beb9a65705fd">reference</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a961ed365f1edfca7fce1c8e040c9e52b">operator[]</a> (Distance n) const </td></tr>
+<tr class="memdesc:a961ed365f1edfca7fce1c8e040c9e52b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array subscript. <br/></td></tr>
+<tr class="separator:a961ed365f1edfca7fce1c8e040c9e52b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7bb0e83728a3b1f15b2b07fb323b8324"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7bb0e83728a3b1f15b2b07fb323b8324"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a0a786aa3646f1a882aa5259284295c9d">pointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a75982cc7834f4a847fd47e89a2327f9f">operator-&gt;</a> ()</td></tr>
-<tr class="memdesc:a75982cc7834f4a847fd47e89a2327f9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Structure dereference. <br/></td></tr>
-<tr class="separator:a75982cc7834f4a847fd47e89a2327f9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae675299a0be31078f2f0b0176b398786"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae675299a0be31078f2f0b0176b398786"></a>
+__forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a861312ce25581fbef3f2a3c24735441a">pointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a7bb0e83728a3b1f15b2b07fb323b8324">operator-&gt;</a> ()</td></tr>
+<tr class="memdesc:a7bb0e83728a3b1f15b2b07fb323b8324"><td class="mdescLeft">&#160;</td><td class="mdescRight">Structure dereference. <br/></td></tr>
+<tr class="separator:a7bb0e83728a3b1f15b2b07fb323b8324"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8ec66485cd92af668d62850e34f09402"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8ec66485cd92af668d62850e34f09402"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#ae675299a0be31078f2f0b0176b398786">operator==</a> (const <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a> &amp;rhs)</td></tr>
-<tr class="memdesc:ae675299a0be31078f2f0b0176b398786"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equal to. <br/></td></tr>
-<tr class="separator:ae675299a0be31078f2f0b0176b398786"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af7c009b51683718e87e158bdb01e2037"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af7c009b51683718e87e158bdb01e2037"></a>
+__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a8ec66485cd92af668d62850e34f09402">operator==</a> (const <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a> &amp;rhs)</td></tr>
+<tr class="memdesc:a8ec66485cd92af668d62850e34f09402"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equal to. <br/></td></tr>
+<tr class="separator:a8ec66485cd92af668d62850e34f09402"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acbe543a259aa55230c8a7be052fe311c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="acbe543a259aa55230c8a7be052fe311c"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af7c009b51683718e87e158bdb01e2037">operator!=</a> (const <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a> &amp;rhs)</td></tr>
-<tr class="memdesc:af7c009b51683718e87e158bdb01e2037"><td class="mdescLeft">&#160;</td><td class="mdescRight">Not equal to. <br/></td></tr>
-<tr class="separator:af7c009b51683718e87e158bdb01e2037"><td class="memSeparator" colspan="2">&#160;</td></tr>
+__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#acbe543a259aa55230c8a7be052fe311c">operator!=</a> (const <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a> &amp;rhs)</td></tr>
+<tr class="memdesc:acbe543a259aa55230c8a7be052fe311c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Not equal to. <br/></td></tr>
+<tr class="separator:acbe543a259aa55230c8a7be052fe311c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a11b2073215294343bdc32f09c0bc5e80"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a11b2073215294343bdc32f09c0bc5e80"></a>
-std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">operator&lt;&lt;</a> (std::ostream &amp;os, const <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a96077dcb9702bfaf5b90a7f85a1f5585">self_type</a> &amp;itr)</td></tr>
+std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">operator&lt;&lt;</a> (std::ostream &amp;os, const <a class="el" href="classcub_1_1_cache_modified_input_iterator.html#af26facb4f00568a940d5529047bd90d7">self_type</a> &amp;itr)</td></tr>
 <tr class="memdesc:a11b2073215294343bdc32f09c0bc5e80"><td class="mdescLeft">&#160;</td><td class="mdescRight">ostream operator <br/></td></tr>
 <tr class="separator:a11b2073215294343bdc32f09c0bc5e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a9fa923d6cef33a63ccf11d2eb5b3b3c5"></a>
+<a class="anchor" id="af4692067e215c8ce5d55fdddc2c57549"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;CacheLoadModifier MODIFIER, typename ValueType, typename Offset = ptrdiff_t&gt; </div>
+template&lt;CacheLoadModifier MODIFIER, typename ValueType, typename OffsetT = ptrdiff_t&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ __forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html">cub::CacheModifiedInputIterator</a>&lt; MODIFIER, ValueType, Offset &gt;::<a class="el" href="classcub_1_1_cache_modified_input_iterator.html">CacheModifiedInputIterator</a> </td>
+          <td class="memname">__host__ __device__ __forceinline__ <a class="el" href="classcub_1_1_cache_modified_input_iterator.html">cub::CacheModifiedInputIterator</a>&lt; MODIFIER, ValueType, OffsetT &gt;::<a class="el" href="classcub_1_1_cache_modified_input_iterator.html">CacheModifiedInputIterator</a> </td>
           <td>(</td>
           <td class="paramtype">ValueType *&#160;</td>
           <td class="paramname"><em>ptr</em>)</td><td></td>
@@ -297,7 +297,7 @@ template&lt;CacheLoadModifier MODIFIER, typename ValueType, typename Offset = pt
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 8 2014 15:57:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Aug 12 2014 09:31:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

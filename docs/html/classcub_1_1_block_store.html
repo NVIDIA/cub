@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::BlockStore&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference</title>
+<title>CUB: cub::BlockStore&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -101,12 +101,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_store-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockStore&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a> &#124; <a class="el" href="group___util_io.html">Thread and thread block I/O</a></div></div>  </div>
+<div class="title">cub::BlockStore&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a> &#124; <a class="el" href="group___util_io.html">Thread and thread block I/O</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
-    typename OutputIterator, 
+    typename OutputIteratorT, 
     int BLOCK_DIM_X, 
     int ITEMS_PER_THREAD, 
     BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, 
@@ -114,7 +114,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     int BLOCK_DIM_Y = 1, 
     int BLOCK_DIM_Z = 1, 
     int PTX_ARCH = CUB_PTX_ARCH&gt;<br/>
-class cub::BlockStore&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</h3>
+class cub::BlockStore&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</h3>
 
 <p>The <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for writing a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> of items partitioned across a CUDA thread block to a linear segment of memory. </p>
 <div class="image">
@@ -123,7 +123,7 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORIT
 .</div></div>
  <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">OutputIterator</td><td>The input iterator type (may be a simple pointer type). </td></tr>
+    <tr><td class="paramname">OutputIteratorT</td><td>The input iterator type (may be a simple pointer type). </td></tr>
     <tr><td class="paramname">BLOCK_DIM_X</td><td>The thread block length in threads along the X dimension </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of consecutive items partitioned onto each thread. </td></tr>
     <tr><td class="paramname">ALGORITHM</td><td><b>[optional]</b> <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700" title="cub::BlockStoreAlgorithm enumerates alternative algorithms for cub::BlockStore to write a blocked arr...">cub::BlockStoreAlgorithm</a> tuning policy enumeration. default: <a class="el" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9b8dcc7b6b06bcfc24af4f499523b880">cub::BLOCK_STORE_DIRECT</a>. </td></tr>
@@ -153,7 +153,7 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORIT
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Specialize BlockStore for a 1D block of 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore&lt;int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_store.html#a8a7f0cab61faf9389c84af932afef987" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore&lt;int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_store.html#a516f12f5a4fdad8da16d4b15b14ded83" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockStore</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockStore::TempStorage temp_storage;</div>
@@ -164,7 +164,7 @@ class cub::BlockStore&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORIT
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store items to linear memory</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a8a7f0cab61faf9389c84af932afef987" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>(temp_storage).Store(d_data, thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a516f12f5a4fdad8da16d4b15b14ded83" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>(temp_storage).Store(d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. The output <code>d_data</code> will be <code>0, 1, 2, 3, 4, 5, ...</code>. </dd></dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_block_scan_8cu-example.html#_a1">example_block_scan.cu</a>.</dd>
@@ -180,33 +180,33 @@ Classes</h2></td></tr>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Collective constructors</div></td></tr>
-<tr class="memitem:a8a7f0cab61faf9389c84af932afef987"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8a7f0cab61faf9389c84af932afef987"></a>
-__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a8a7f0cab61faf9389c84af932afef987">BlockStore</a> ()</td></tr>
-<tr class="memdesc:a8a7f0cab61faf9389c84af932afef987"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. <br/></td></tr>
-<tr class="separator:a8a7f0cab61faf9389c84af932afef987"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2c02c72add23d782a5eb5cdb30c812b7"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a2c02c72add23d782a5eb5cdb30c812b7">BlockStore</a> (<a class="el" href="structcub_1_1_block_store_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
-<tr class="memdesc:a2c02c72add23d782a5eb5cdb30c812b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage.  <a href="#a2c02c72add23d782a5eb5cdb30c812b7">More...</a><br/></td></tr>
-<tr class="separator:a2c02c72add23d782a5eb5cdb30c812b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a516f12f5a4fdad8da16d4b15b14ded83"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a516f12f5a4fdad8da16d4b15b14ded83"></a>
+__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a516f12f5a4fdad8da16d4b15b14ded83">BlockStore</a> ()</td></tr>
+<tr class="memdesc:a516f12f5a4fdad8da16d4b15b14ded83"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using a private static allocation of shared memory as temporary storage. <br/></td></tr>
+<tr class="separator:a516f12f5a4fdad8da16d4b15b14ded83"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a82a3942c2e2e7752f1a76f3c182052d8"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a82a3942c2e2e7752f1a76f3c182052d8">BlockStore</a> (<a class="el" href="structcub_1_1_block_store_1_1_temp_storage.html">TempStorage</a> &amp;temp_storage)</td></tr>
+<tr class="memdesc:a82a3942c2e2e7752f1a76f3c182052d8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage.  <a href="#a82a3942c2e2e7752f1a76f3c182052d8">More...</a><br/></td></tr>
+<tr class="separator:a82a3942c2e2e7752f1a76f3c182052d8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Data movement</div></td></tr>
-<tr class="memitem:a6b0c884756320378c66add4972dfde66"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a6b0c884756320378c66add4972dfde66">Store</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a6b0c884756320378c66add4972dfde66"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store items into a linear segment of memory.  <a href="#a6b0c884756320378c66add4972dfde66">More...</a><br/></td></tr>
-<tr class="separator:a6b0c884756320378c66add4972dfde66"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1a90b0105ff2bef62b0693b57d1d9df4"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a1a90b0105ff2bef62b0693b57d1d9df4">Store</a> (OutputIterator block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
-<tr class="memdesc:a1a90b0105ff2bef62b0693b57d1d9df4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store items into a linear segment of memory, guarded by range.  <a href="#a1a90b0105ff2bef62b0693b57d1d9df4">More...</a><br/></td></tr>
-<tr class="separator:a1a90b0105ff2bef62b0693b57d1d9df4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a47e2c6e6ecced4b9485bc67e3fb7dcf6"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a47e2c6e6ecced4b9485bc67e3fb7dcf6">Store</a> (OutputIteratorT block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a47e2c6e6ecced4b9485bc67e3fb7dcf6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store items into a linear segment of memory.  <a href="#a47e2c6e6ecced4b9485bc67e3fb7dcf6">More...</a><br/></td></tr>
+<tr class="separator:a47e2c6e6ecced4b9485bc67e3fb7dcf6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a819fc533a4cca87caac68825ad3e7d43"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html#a819fc533a4cca87caac68825ad3e7d43">Store</a> (OutputIteratorT block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memdesc:a819fc533a4cca87caac68825ad3e7d43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store items into a linear segment of memory, guarded by range.  <a href="#a819fc533a4cca87caac68825ad3e7d43">More...</a><br/></td></tr>
+<tr class="separator:a819fc533a4cca87caac68825ad3e7d43"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="a2c02c72add23d782a5eb5cdb30c812b7"></a>
+<a class="anchor" id="a82a3942c2e2e7752f1a76f3c182052d8"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+template&lt;typename OutputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::<a class="el" href="classcub_1_1_block_store.html">BlockStore</a> </td>
+          <td class="memname">__device__ __forceinline__ <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::<a class="el" href="classcub_1_1_block_store.html">BlockStore</a> </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structcub_1_1_block_store_1_1_temp_storage.html">TempStorage</a> &amp;&#160;</td>
           <td class="paramname"><em>temp_storage</em>)</td><td></td>
@@ -233,19 +233,19 @@ template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a6b0c884756320378c66add4972dfde66"></a>
+<a class="anchor" id="a47e2c6e6ecced4b9485bc67e3fb7dcf6"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+template&lt;typename OutputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::Store </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::Store </td>
           <td>(</td>
-          <td class="paramtype">OutputIterator&#160;</td>
+          <td class="paramtype">OutputIteratorT&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -279,7 +279,7 @@ template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, ...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Specialize BlockStore for a 1D block of 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore&lt;int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_store.html#a8a7f0cab61faf9389c84af932afef987" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore&lt;int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_store.html#a516f12f5a4fdad8da16d4b15b14ded83" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockStore</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockStore::TempStorage temp_storage;</div>
@@ -290,7 +290,7 @@ template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store items to linear memory</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a8a7f0cab61faf9389c84af932afef987" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>(temp_storage).Store(d_data, thread_data);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a516f12f5a4fdad8da16d4b15b14ded83" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>(temp_storage).Store(d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. The output <code>d_data</code> will be <code>0, 1, 2, 3, 4, 5, ...</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -305,19 +305,19 @@ template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
 
 </div>
 </div>
-<a class="anchor" id="a1a90b0105ff2bef62b0693b57d1d9df4"></a>
+<a class="anchor" id="a819fc533a4cca87caac68825ad3e7d43"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+template&lt;typename OutputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockStoreAlgorithm ALGORITHM = BLOCK_STORE_DIRECT, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::Store </td>
+          <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_store.html">cub::BlockStore</a>&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::Store </td>
           <td>(</td>
-          <td class="paramtype">OutputIterator&#160;</td>
+          <td class="paramtype">OutputIteratorT&#160;</td>
           <td class="paramname"><em>block_itr</em>, </td>
         </tr>
         <tr>
@@ -357,7 +357,7 @@ template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
 <div class="line">__global__ <span class="keywordtype">void</span> ExampleKernel(<span class="keywordtype">int</span> *d_data, <span class="keywordtype">int</span> valid_items, ...)</div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Specialize BlockStore for a 1D block of 128 threads owning 4 integer items each</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore&lt;int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_store.html#a8a7f0cab61faf9389c84af932afef987" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>;</div>
+<div class="line">    <span class="keyword">typedef</span> <a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">cub::BlockStore&lt;int*, 128, 4, BLOCK_STORE_WARP_TRANSPOSE&gt;</a> <a class="code" href="classcub_1_1_block_store.html#a516f12f5a4fdad8da16d4b15b14ded83" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate shared memory for BlockStore</span></div>
 <div class="line">    __shared__ <span class="keyword">typename</span> BlockStore::TempStorage temp_storage;</div>
@@ -368,7 +368,7 @@ template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
 <div class="line"></div>
 <div class="line">    <span class="comment">// Store items to linear memory</span></div>
 <div class="line">    <span class="keywordtype">int</span> thread_data[4];</div>
-<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a8a7f0cab61faf9389c84af932afef987" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>(temp_storage).Store(d_data, thread_data, valid_items);</div>
+<div class="line">    <a class="code" href="classcub_1_1_block_store.html#a516f12f5a4fdad8da16d4b15b14ded83" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>(temp_storage).Store(d_data, thread_data, valid_items);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code> and <code>valid_items</code> is <code>5</code>. The output <code>d_data</code> will be <code>0, 1, 2, 3, 4, ?, ?, ?, ...</code>, with only the first two threads being unmasked to store portions of valid data. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -391,7 +391,7 @@ template&lt;typename OutputIterator , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 8 2014 15:57:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Aug 12 2014 09:31:55 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

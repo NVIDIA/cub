@@ -149,10 +149,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00075"></a><span class="lineno"><a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e">   75</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00075"></a><span class="lineno"><a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f">   75</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(</div>
 <div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD]) </div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;{</div>
 <div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="comment">// Load directly in thread-blocked order</span></div>
@@ -167,10 +167,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00102"></a><span class="lineno"><a class="code" href="group___util_io.html#gab559d1f55b83c3e5a82038075133530b">  102</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(</div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00102"></a><span class="lineno"><a class="code" href="group___util_io.html#gab38b25b8e636b99c89a373275d30b2be">  102</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00104"></a><span class="lineno">  104</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;    <span class="keywordtype">int</span>             valid_items)                </div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;{</div>
@@ -190,10 +190,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00134"></a><span class="lineno"><a class="code" href="group___util_io.html#ga4560d0cdbcf6c0dbdfbc3e54a784433c">  134</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00134"></a><span class="lineno"><a class="code" href="group___util_io.html#gaefce2553dd0c7334a41c864a6dbbecd3">  134</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;    <span class="keywordtype">int</span>             valid_items,                </div>
 <div class="line"><a name="l00139"></a><span class="lineno">  139</span>&#160;    T               oob_default)                </div>
@@ -204,7 +204,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        items[ITEM] = oob_default;</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;    }</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items);</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items);</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;}</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;</div>
@@ -262,10 +262,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    <span class="keywordtype">int</span>             BLOCK_THREADS,</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00234"></a><span class="lineno"><a class="code" href="group___util_io.html#ga0f49378d98015c6ddd561814718e0e31">  234</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga0f49378d98015c6ddd561814718e0e31" title="Load a linear segment of items into a striped arrangement across the thread block. ">LoadDirectStriped</a>(</div>
+<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00234"></a><span class="lineno"><a class="code" href="group___util_io.html#ga2f3e53c1e23e8eac41b3d06342b35297">  234</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga2f3e53c1e23e8eac41b3d06342b35297" title="Load a linear segment of items into a striped arrangement across the thread block. ">LoadDirectStriped</a>(</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD]) </div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;{</div>
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;<span class="preprocessor">    #pragma unroll</span></div>
@@ -280,10 +280,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    <span class="keywordtype">int</span>             BLOCK_THREADS,</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00262"></a><span class="lineno"><a class="code" href="group___util_io.html#ga6a11fa92401544f72a94812d0dfd94cc">  262</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga0f49378d98015c6ddd561814718e0e31" title="Load a linear segment of items into a striped arrangement across the thread block. ">LoadDirectStriped</a>(</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00262"></a><span class="lineno"><a class="code" href="group___util_io.html#ga5342244f72d05f40154a814a33645979">  262</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga2f3e53c1e23e8eac41b3d06342b35297" title="Load a linear segment of items into a striped arrangement across the thread block. ">LoadDirectStriped</a>(</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    <span class="keywordtype">int</span>             valid_items)                </div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;{</div>
@@ -304,10 +304,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    <span class="keywordtype">int</span>             BLOCK_THREADS,</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00296"></a><span class="lineno"><a class="code" href="group___util_io.html#gaba6530fd1ac7450941de8adc6842016d">  296</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga0f49378d98015c6ddd561814718e0e31" title="Load a linear segment of items into a striped arrangement across the thread block. ">LoadDirectStriped</a>(</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00296"></a><span class="lineno"><a class="code" href="group___util_io.html#ga7ac66bc9c4333336e46e96d8acad5156">  296</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga2f3e53c1e23e8eac41b3d06342b35297" title="Load a linear segment of items into a striped arrangement across the thread block. ">LoadDirectStriped</a>(</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <span class="keywordtype">int</span>             valid_items,                </div>
 <div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    T               oob_default)                </div>
@@ -329,10 +329,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00337"></a><span class="lineno"><a class="code" href="group___util_io.html#ga242d51f0cb8c5b2cf82b6af709366d11">  337</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga242d51f0cb8c5b2cf82b6af709366d11" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00337"></a><span class="lineno"><a class="code" href="group___util_io.html#ga30bb9c2f9f83dfb5039dd5e52b288182">  337</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga30bb9c2f9f83dfb5039dd5e52b288182" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD]) </div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;{</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <span class="keywordtype">int</span> tid         = linear_tid &amp; (CUB_PTX_WARP_THREADS - 1);</div>
@@ -351,10 +351,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00371"></a><span class="lineno"><a class="code" href="group___util_io.html#gaa90919bac0d2ae6a64aee4c57f2ba637">  371</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga242d51f0cb8c5b2cf82b6af709366d11" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(</div>
+<div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00371"></a><span class="lineno"><a class="code" href="group___util_io.html#ga4c3d6f2db017b2fa01f858a67afb5f3d">  371</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga30bb9c2f9f83dfb5039dd5e52b288182" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;    <span class="keywordtype">int</span>             valid_items)                </div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;{</div>
@@ -378,10 +378,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;<span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    <span class="keyword">typename</span>        T,</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    <span class="keywordtype">int</span>             ITEMS_PER_THREAD,</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    <span class="keyword">typename</span>        InputIterator&gt;</div>
-<div class="line"><a name="l00410"></a><span class="lineno"><a class="code" href="group___util_io.html#ga82346cdb6d0cbb0d81974f86ed97fa14">  410</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga242d51f0cb8c5b2cf82b6af709366d11" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    <span class="keyword">typename</span>        InputIteratorT&gt;</div>
+<div class="line"><a name="l00410"></a><span class="lineno"><a class="code" href="group___util_io.html#ga2888215029fd59d482219a7df7b901b3">  410</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga30bb9c2f9f83dfb5039dd5e52b288182" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;    <span class="keywordtype">int</span>             linear_tid,                 </div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;    T               (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;    <span class="keywordtype">int</span>             valid_items,               </div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;    T               oob_default)                </div>
@@ -392,7 +392,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;        items[ITEM] = oob_default;</div>
 <div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;    }</div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;</div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;    <a class="code" href="group___util_io.html#ga242d51f0cb8c5b2cf82b6af709366d11" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(linear_tid, block_itr, items, valid_items);</div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;    <a class="code" href="group___util_io.html#ga30bb9c2f9f83dfb5039dd5e52b288182" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(linear_tid, block_itr, items, valid_items);</div>
 <div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;}</div>
 <div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;</div>
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;</div>
@@ -418,7 +418,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;</div>
 <div class="line"><a name="l00584"></a><span class="lineno">  584</span>&#160;<span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;    <span class="keyword">typename</span>            InputIterator,</div>
+<div class="line"><a name="l00585"></a><span class="lineno">  585</span>&#160;    <span class="keyword">typename</span>            InputIteratorT,</div>
 <div class="line"><a name="l00586"></a><span class="lineno">  586</span>&#160;    <span class="keywordtype">int</span>                 BLOCK_DIM_X,</div>
 <div class="line"><a name="l00587"></a><span class="lineno">  587</span>&#160;    <span class="keywordtype">int</span>                 ITEMS_PER_THREAD,</div>
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;    <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401" title="cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment...">BlockLoadAlgorithm</a>  ALGORITHM           = <a class="code" href="namespacecub.html#a9d7e37497fdd99864c57adecda710401a2d4d8900d7e697e9dac4062e97d3d835">BLOCK_LOAD_DIRECT</a>,</div>
@@ -440,7 +440,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00606"></a><span class="lineno">  606</span>&#160;    };</div>
 <div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;</div>
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;    <span class="comment">// Data type of input iterator</span></div>
-<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIterator&gt;::value_type T;</div>
+<div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorT&gt;::value_type T;</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;</div>
 <div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;</div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;    <span class="comment">/******************************************************************************</span></div>
@@ -465,28 +465,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;            linear_tid(linear_tid)</div>
 <div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        {}</div>
 <div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;</div>
-<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD])     </div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;        {</div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items);</div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items);</div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;        }</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;</div>
-<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD],     </div>
 <div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;            <span class="keywordtype">int</span>             valid_items)                    </div>
 <div class="line"><a name="l00654"></a><span class="lineno">  654</span>&#160;        {</div>
-<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;            <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items);</div>
+<div class="line"><a name="l00655"></a><span class="lineno">  655</span>&#160;            <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items);</div>
 <div class="line"><a name="l00656"></a><span class="lineno">  656</span>&#160;        }</div>
 <div class="line"><a name="l00657"></a><span class="lineno">  657</span>&#160;</div>
-<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00659"></a><span class="lineno">  659</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00660"></a><span class="lineno">  660</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00661"></a><span class="lineno">  661</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD],     </div>
 <div class="line"><a name="l00662"></a><span class="lineno">  662</span>&#160;            <span class="keywordtype">int</span>             valid_items,                    </div>
 <div class="line"><a name="l00663"></a><span class="lineno">  663</span>&#160;            T               oob_default)                    </div>
 <div class="line"><a name="l00664"></a><span class="lineno">  664</span>&#160;        {</div>
-<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;            <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items, oob_default);</div>
+<div class="line"><a name="l00665"></a><span class="lineno">  665</span>&#160;            <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items, oob_default);</div>
 <div class="line"><a name="l00666"></a><span class="lineno">  666</span>&#160;        }</div>
 <div class="line"><a name="l00667"></a><span class="lineno">  667</span>&#160;</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;    };</div>
@@ -506,7 +506,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;            linear_tid(linear_tid)</div>
 <div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;        {}</div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;</div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;            T               *block_ptr,                     </div>
 <div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD])     </div>
 <div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;        {</div>
@@ -515,29 +515,29 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;</div>
 <div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;        <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;            <span class="keyword">typename</span> T,</div>
-<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;            <span class="keyword">typename</span> _InputIterator&gt;</div>
-<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;            _InputIterator    block_itr,                  </div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;            <span class="keyword">typename</span> _InputIteratorT&gt;</div>
+<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;            _InputIteratorT   block_itr,                  </div>
 <div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;            T                   (&amp;items)[ITEMS_PER_THREAD]) </div>
 <div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;        {</div>
-<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;            <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items);</div>
+<div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;            <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items);</div>
 <div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;        }</div>
 <div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;</div>
-<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD],     </div>
 <div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;            <span class="keywordtype">int</span>             valid_items)                    </div>
 <div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;        {</div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;            <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items);</div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;            <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items);</div>
 <div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;        }</div>
 <div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;</div>
-<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD],     </div>
 <div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;            <span class="keywordtype">int</span>             valid_items,                    </div>
 <div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;            T               oob_default)                    </div>
 <div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;        {</div>
-<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;            <a class="code" href="group___util_io.html#gae4f1e34abedfe682c429575045534e0e" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items, oob_default);</div>
+<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;            <a class="code" href="group___util_io.html#ga55ebe65a082d5b5f324a9f719f6c034f" title="Load a linear segment of items into a blocked arrangement across the thread block. ">LoadDirectBlocked</a>(linear_tid, block_itr, items, valid_items, oob_default);</div>
 <div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;        }</div>
 <div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;</div>
 <div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;    };</div>
@@ -565,16 +565,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;            linear_tid(linear_tid)</div>
 <div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;        {}</div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;</div>
-<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD])     </div>
 <div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;        {</div>
 <div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;            LoadDirectStriped&lt;BLOCK_THREADS&gt;(linear_tid, block_itr, items);</div>
 <div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).StripedToBlocked(items);</div>
 <div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;        }</div>
 <div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;</div>
-<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00774"></a><span class="lineno">  774</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD],     </div>
 <div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;            <span class="keywordtype">int</span>             valid_items)                    </div>
 <div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;        {</div>
@@ -582,8 +582,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00778"></a><span class="lineno">  778</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).StripedToBlocked(items);</div>
 <div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;        }</div>
 <div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;</div>
-<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD],     </div>
 <div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;            <span class="keywordtype">int</span>             valid_items,                    </div>
 <div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;            T               oob_default)                    </div>
@@ -625,31 +625,31 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;            linear_tid(linear_tid)</div>
 <div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;        {}</div>
 <div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;</div>
-<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD])     </div>
 <div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        {</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;            <a class="code" href="group___util_io.html#ga242d51f0cb8c5b2cf82b6af709366d11" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(linear_tid, block_itr, items);</div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;            <a class="code" href="group___util_io.html#ga30bb9c2f9f83dfb5039dd5e52b288182" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(linear_tid, block_itr, items);</div>
 <div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).WarpStripedToBlocked(items);</div>
 <div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;        }</div>
 <div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;</div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD],     </div>
 <div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;            <span class="keywordtype">int</span>             valid_items)                    </div>
 <div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;        {</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;            <a class="code" href="group___util_io.html#ga242d51f0cb8c5b2cf82b6af709366d11" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(linear_tid, block_itr, items, valid_items);</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;            <a class="code" href="group___util_io.html#ga30bb9c2f9f83dfb5039dd5e52b288182" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(linear_tid, block_itr, items, valid_items);</div>
 <div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).WarpStripedToBlocked(items);</div>
 <div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;        }</div>
 <div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;</div>
 <div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;            InputIterator   block_itr,                      </div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;            InputIteratorT  block_itr,                      </div>
 <div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;            T               (&amp;items)[ITEMS_PER_THREAD],     </div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;            <span class="keywordtype">int</span>             valid_items,                    </div>
 <div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;            T               oob_default)                    </div>
 <div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;        {</div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;            <a class="code" href="group___util_io.html#ga242d51f0cb8c5b2cf82b6af709366d11" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(linear_tid, block_itr, items, valid_items, oob_default);</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;            <a class="code" href="group___util_io.html#ga30bb9c2f9f83dfb5039dd5e52b288182" title="Load a linear segment of items into a warp-striped arrangement across the thread block. ">LoadDirectWarpStriped</a>(linear_tid, block_itr, items, valid_items, oob_default);</div>
 <div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;            BlockExchange(temp_storage).WarpStripedToBlocked(items);</div>
 <div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;        }</div>
 <div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;    };</div>
@@ -691,14 +691,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00905"></a><span class="lineno">  905</span>&#160;</div>
 <div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;    <span class="comment">/******************************************************************/</span></div>
 <div class="line"><a name="l00910"></a><span class="lineno">  910</span>&#160;</div>
-<div class="line"><a name="l00914"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#aa7bae805b2e333db6080aa9215fcaeb3">  914</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_load.html#aa7bae805b2e333db6080aa9215fcaeb3" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockLoad</a>()</div>
+<div class="line"><a name="l00914"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#af1c197c5193a9a7f16e30ce1e142640c">  914</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_load.html#af1c197c5193a9a7f16e30ce1e142640c" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockLoad</a>()</div>
 <div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;    :</div>
 <div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;        temp_storage(PrivateStorage()),</div>
 <div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;        linear_tid(<a class="code" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce" title="Returns the row-major linear thread identifier for a multidimensional threadblock. ">RowMajorTid</a>(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))</div>
 <div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;    {}</div>
 <div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;</div>
 <div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;</div>
-<div class="line"><a name="l00924"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#a2a7065d0d6a14ab27586d55271b7ae05">  924</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_load.html#a2a7065d0d6a14ab27586d55271b7ae05" title="Collective constructor using the specified memory allocation as temporary storage. ">BlockLoad</a>(</div>
+<div class="line"><a name="l00924"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#a9d0365ad16cdc50f5ffb3cb782faf85a">  924</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_load.html#a9d0365ad16cdc50f5ffb3cb782faf85a" title="Collective constructor using the specified memory allocation as temporary storage. ">BlockLoad</a>(</div>
 <div class="line"><a name="l00925"></a><span class="lineno">  925</span>&#160;        <a class="code" href="structcub_1_1_block_load_1_1_temp_storage.html" title="The operations exposed by BlockLoad require a temporary memory allocation of this nested type for thr...">TempStorage</a> &amp;temp_storage)             </div>
 <div class="line"><a name="l00926"></a><span class="lineno">  926</span>&#160;    :</div>
 <div class="line"><a name="l00927"></a><span class="lineno">  927</span>&#160;        temp_storage(temp_storage.Alias()),</div>
@@ -711,16 +711,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;    <span class="comment">/******************************************************************/</span></div>
 <div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;</div>
 <div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;</div>
-<div class="line"><a name="l00977"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3">  977</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a8c40ba9b72bf81a32bb3cb12809790e3" title="Load a linear segment of items from memory. ">Load</a>(</div>
-<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;        InputIterator   block_itr,                  </div>
+<div class="line"><a name="l00977"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8">  977</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a86326ceccc47686a15123d5e364f41f8" title="Load a linear segment of items from memory. ">Load</a>(</div>
+<div class="line"><a name="l00978"></a><span class="lineno">  978</span>&#160;        InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l00979"></a><span class="lineno">  979</span>&#160;        T               (&amp;items)[ITEMS_PER_THREAD]) </div>
 <div class="line"><a name="l00980"></a><span class="lineno">  980</span>&#160;    {</div>
 <div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;        InternalLoad(temp_storage, linear_tid).Load(block_itr, items);</div>
 <div class="line"><a name="l00982"></a><span class="lineno">  982</span>&#160;    }</div>
 <div class="line"><a name="l00983"></a><span class="lineno">  983</span>&#160;</div>
 <div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;</div>
-<div class="line"><a name="l01022"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#abe06c4b493bfcce616fe03d365ba1028"> 1022</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#abe06c4b493bfcce616fe03d365ba1028" title="Load a linear segment of items from memory, guarded by range. ">Load</a>(</div>
-<div class="line"><a name="l01023"></a><span class="lineno"> 1023</span>&#160;        InputIterator   block_itr,                  </div>
+<div class="line"><a name="l01022"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#a6450db3c26333c475b1a8a2f89142c5d"> 1022</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a6450db3c26333c475b1a8a2f89142c5d" title="Load a linear segment of items from memory, guarded by range. ">Load</a>(</div>
+<div class="line"><a name="l01023"></a><span class="lineno"> 1023</span>&#160;        InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l01024"></a><span class="lineno"> 1024</span>&#160;        T               (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;        <span class="keywordtype">int</span>             valid_items)                </div>
 <div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;    {</div>
@@ -728,8 +728,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;    }</div>
 <div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;</div>
 <div class="line"><a name="l01030"></a><span class="lineno"> 1030</span>&#160;</div>
-<div class="line"><a name="l01069"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#a9afb7b2921cd941c15b98d7f4cf5d0b4"> 1069</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#a9afb7b2921cd941c15b98d7f4cf5d0b4" title="Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-b...">Load</a>(</div>
-<div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;        InputIterator   block_itr,                  </div>
+<div class="line"><a name="l01069"></a><span class="lineno"><a class="code" href="classcub_1_1_block_load.html#ac6dc2a9ecbec5d3093a57132bf6b5610"> 1069</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_load.html#ac6dc2a9ecbec5d3093a57132bf6b5610" title="Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-b...">Load</a>(</div>
+<div class="line"><a name="l01070"></a><span class="lineno"> 1070</span>&#160;        InputIteratorT  block_itr,                  </div>
 <div class="line"><a name="l01071"></a><span class="lineno"> 1071</span>&#160;        T               (&amp;items)[ITEMS_PER_THREAD], </div>
 <div class="line"><a name="l01072"></a><span class="lineno"> 1072</span>&#160;        <span class="keywordtype">int</span>             valid_items,                </div>
 <div class="line"><a name="l01073"></a><span class="lineno"> 1073</span>&#160;        T               oob_default)                </div>
@@ -749,7 +749,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 8 2014 15:57:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Aug 12 2014 09:31:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

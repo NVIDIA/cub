@@ -201,22 +201,22 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memdesc:a852508850f7cc778c6f2036dcfb74ce5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Transposes data items from <em>blocked</em> arrangement to <em>warp-striped</em> arrangement.  <a href="#a852508850f7cc778c6f2036dcfb74ce5">More...</a><br/></td></tr>
 <tr class="separator:a852508850f7cc778c6f2036dcfb74ce5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Scatter exchanges</div></td></tr>
-<tr class="memitem:a756e7903c5369261fcf6139e5db52824"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
-<tr class="memitem:a756e7903c5369261fcf6139e5db52824"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a756e7903c5369261fcf6139e5db52824">ScatterToBlocked</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a756e7903c5369261fcf6139e5db52824"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>blocked</em> arrangement.  <a href="#a756e7903c5369261fcf6139e5db52824">More...</a><br/></td></tr>
-<tr class="separator:a756e7903c5369261fcf6139e5db52824"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2ba02edda6bfed9327cd4ee1748aa678"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
-<tr class="memitem:a2ba02edda6bfed9327cd4ee1748aa678"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a2ba02edda6bfed9327cd4ee1748aa678">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a2ba02edda6bfed9327cd4ee1748aa678"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement.  <a href="#a2ba02edda6bfed9327cd4ee1748aa678">More...</a><br/></td></tr>
-<tr class="separator:a2ba02edda6bfed9327cd4ee1748aa678"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0232bb6ad4bdfe1f1578e1ba8d175beb"><td class="memTemplParams" colspan="2">template&lt;typename Offset &gt; </td></tr>
-<tr class="memitem:a0232bb6ad4bdfe1f1578e1ba8d175beb"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a0232bb6ad4bdfe1f1578e1ba8d175beb">ScatterToStripedGuarded</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a0232bb6ad4bdfe1f1578e1ba8d175beb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement. Items with rank -1 are not exchanged.  <a href="#a0232bb6ad4bdfe1f1578e1ba8d175beb">More...</a><br/></td></tr>
-<tr class="separator:a0232bb6ad4bdfe1f1578e1ba8d175beb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a171c90da1f2d5572b22acf059e0b06ea"><td class="memTemplParams" colspan="2">template&lt;typename Offset , typename ValidFlag &gt; </td></tr>
-<tr class="memitem:a171c90da1f2d5572b22acf059e0b06ea"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a171c90da1f2d5572b22acf059e0b06ea">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], Offset ranks[ITEMS_PER_THREAD], ValidFlag is_valid[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:a171c90da1f2d5572b22acf059e0b06ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges valid data items annotated by rank into <em>striped</em> arrangement.  <a href="#a171c90da1f2d5572b22acf059e0b06ea">More...</a><br/></td></tr>
-<tr class="separator:a171c90da1f2d5572b22acf059e0b06ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad62a63919cb2f584a4956620cd28374b"><td class="memTemplParams" colspan="2">template&lt;typename OffsetT &gt; </td></tr>
+<tr class="memitem:ad62a63919cb2f584a4956620cd28374b"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#ad62a63919cb2f584a4956620cd28374b">ScatterToBlocked</a> (T items[ITEMS_PER_THREAD], OffsetT ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ad62a63919cb2f584a4956620cd28374b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>blocked</em> arrangement.  <a href="#ad62a63919cb2f584a4956620cd28374b">More...</a><br/></td></tr>
+<tr class="separator:ad62a63919cb2f584a4956620cd28374b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a024c9172cda50cd0e2ab364bbe9be63d"><td class="memTemplParams" colspan="2">template&lt;typename OffsetT &gt; </td></tr>
+<tr class="memitem:a024c9172cda50cd0e2ab364bbe9be63d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a024c9172cda50cd0e2ab364bbe9be63d">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], OffsetT ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a024c9172cda50cd0e2ab364bbe9be63d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement.  <a href="#a024c9172cda50cd0e2ab364bbe9be63d">More...</a><br/></td></tr>
+<tr class="separator:a024c9172cda50cd0e2ab364bbe9be63d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83cdc3266e21fb11d5c37ac79dc66598"><td class="memTemplParams" colspan="2">template&lt;typename OffsetT &gt; </td></tr>
+<tr class="memitem:a83cdc3266e21fb11d5c37ac79dc66598"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a83cdc3266e21fb11d5c37ac79dc66598">ScatterToStripedGuarded</a> (T items[ITEMS_PER_THREAD], OffsetT ranks[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a83cdc3266e21fb11d5c37ac79dc66598"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges data items annotated by rank into <em>striped</em> arrangement. Items with rank -1 are not exchanged.  <a href="#a83cdc3266e21fb11d5c37ac79dc66598">More...</a><br/></td></tr>
+<tr class="separator:a83cdc3266e21fb11d5c37ac79dc66598"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46a32397168592af2c1050c4061690c7"><td class="memTemplParams" colspan="2">template&lt;typename OffsetT , typename ValidFlag &gt; </td></tr>
+<tr class="memitem:a46a32397168592af2c1050c4061690c7"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_exchange.html#a46a32397168592af2c1050c4061690c7">ScatterToStriped</a> (T items[ITEMS_PER_THREAD], OffsetT ranks[ITEMS_PER_THREAD], ValidFlag is_valid[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:a46a32397168592af2c1050c4061690c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exchanges valid data items annotated by rank into <em>striped</em> arrangement.  <a href="#a46a32397168592af2c1050c4061690c7">More...</a><br/></td></tr>
+<tr class="separator:a46a32397168592af2c1050c4061690c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a8b0988bd9c987b3923af302e9e56b521"></a>
@@ -498,13 +498,13 @@ template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_S
 
 </div>
 </div>
-<a class="anchor" id="a756e7903c5369261fcf6139e5db52824"></a>
+<a class="anchor" id="ad62a63919cb2f584a4956620cd28374b"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename Offset &gt; </div>
+template&lt;typename OffsetT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -518,7 +518,7 @@ template&lt;typename Offset &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Offset&#160;</td>
+          <td class="paramtype">OffsetT&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
@@ -541,7 +541,7 @@ template&lt;typename Offset &gt; </div>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">Offset</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
+    <tr><td class="paramname">OffsetT</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
   </table>
   </dd>
 </dl>
@@ -557,13 +557,13 @@ template&lt;typename Offset &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a2ba02edda6bfed9327cd4ee1748aa678"></a>
+<a class="anchor" id="a024c9172cda50cd0e2ab364bbe9be63d"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename Offset &gt; </div>
+template&lt;typename OffsetT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -577,7 +577,7 @@ template&lt;typename Offset &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Offset&#160;</td>
+          <td class="paramtype">OffsetT&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
@@ -600,7 +600,7 @@ template&lt;typename Offset &gt; </div>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">Offset</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
+    <tr><td class="paramname">OffsetT</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
   </table>
   </dd>
 </dl>
@@ -616,13 +616,13 @@ template&lt;typename Offset &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a0232bb6ad4bdfe1f1578e1ba8d175beb"></a>
+<a class="anchor" id="a83cdc3266e21fb11d5c37ac79dc66598"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename Offset &gt; </div>
+template&lt;typename OffsetT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -636,7 +636,7 @@ template&lt;typename Offset &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Offset&#160;</td>
+          <td class="paramtype">OffsetT&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
@@ -659,7 +659,7 @@ template&lt;typename Offset &gt; </div>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">Offset</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
+    <tr><td class="paramname">OffsetT</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
   </table>
   </dd>
 </dl>
@@ -675,13 +675,13 @@ template&lt;typename Offset &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a171c90da1f2d5572b22acf059e0b06ea"></a>
+<a class="anchor" id="a46a32397168592af2c1050c4061690c7"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_SLICING = false, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename Offset , typename ValidFlag &gt; </div>
+template&lt;typename OffsetT , typename ValidFlag &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -695,7 +695,7 @@ template&lt;typename Offset , typename ValidFlag &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Offset&#160;</td>
+          <td class="paramtype">OffsetT&#160;</td>
           <td class="paramname"><em>ranks</em>[ITEMS_PER_THREAD], </td>
         </tr>
         <tr>
@@ -724,8 +724,8 @@ template&lt;typename Offset , typename ValidFlag &gt; </div>
 </dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">Offset</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
-    <tr><td class="paramname">ValidFlag</td><td><b>[inferred]</b> Flag type denoting which items are valid </td></tr>
+    <tr><td class="paramname">OffsetT</td><td><b>[inferred]</b> Signed integer type for local offsets </td></tr>
+    <tr><td class="paramname">ValidFlag</td><td><b>[inferred]</b> FlagT type denoting which items are valid </td></tr>
   </table>
   </dd>
 </dl>
@@ -749,7 +749,7 @@ template&lt;typename Offset , typename ValidFlag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 8 2014 15:57:53 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Aug 12 2014 09:31:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

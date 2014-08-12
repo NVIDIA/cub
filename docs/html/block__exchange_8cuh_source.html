@@ -513,10 +513,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;    }</div>
 <div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;</div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;</div>
-<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT&gt;</div>
 <div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ScatterToBlocked(</div>
 <div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;        T               items[ITEMS_PER_THREAD],    </div>
-<div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;        Offset          ranks[ITEMS_PER_THREAD],    </div>
+<div class="line"><a name="l00517"></a><span class="lineno">  517</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD],    </div>
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;        Int2Type&lt;false&gt; time_slicing)</div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;    {</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
@@ -538,10 +538,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;        }</div>
 <div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;    }</div>
 <div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;</div>
-<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT&gt;</div>
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ScatterToBlocked(</div>
 <div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;        T               items[ITEMS_PER_THREAD],    </div>
-<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        Offset          ranks[ITEMS_PER_THREAD],    </div>
+<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD],    </div>
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;        Int2Type&lt;true&gt;  time_slicing)</div>
 <div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;    {</div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;        T temp_items[ITEMS_PER_THREAD];</div>
@@ -587,10 +587,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00588"></a><span class="lineno">  588</span>&#160;    }</div>
 <div class="line"><a name="l00589"></a><span class="lineno">  589</span>&#160;</div>
 <div class="line"><a name="l00590"></a><span class="lineno">  590</span>&#160;</div>
-<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT&gt;</div>
 <div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ScatterToStriped(</div>
 <div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;        T               items[ITEMS_PER_THREAD],    </div>
-<div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;        Offset          ranks[ITEMS_PER_THREAD],    </div>
+<div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD],    </div>
 <div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;        Int2Type&lt;false&gt; time_slicing)</div>
 <div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;    {</div>
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
@@ -613,10 +613,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;    }</div>
 <div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;</div>
 <div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;</div>
-<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT&gt;</div>
 <div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ScatterToStriped(</div>
 <div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;        T               items[ITEMS_PER_THREAD],    </div>
-<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;        Offset          ranks[ITEMS_PER_THREAD],    </div>
+<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD],    </div>
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;        Int2Type&lt;true&gt; time_slicing)</div>
 <div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;    {</div>
 <div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;        T temp_items[ITEMS_PER_THREAD];</div>
@@ -726,28 +726,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00902"></a><span class="lineno">  902</span>&#160;    <span class="comment">/******************************************************************/</span></div>
 <div class="line"><a name="l00906"></a><span class="lineno">  906</span>&#160;</div>
 <div class="line"><a name="l00907"></a><span class="lineno">  907</span>&#160;</div>
-<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
-<div class="line"><a name="l00917"></a><span class="lineno"><a class="code" href="classcub_1_1_block_exchange.html#a756e7903c5369261fcf6139e5db52824">  917</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_exchange.html#a756e7903c5369261fcf6139e5db52824" title="Exchanges data items annotated by rank into blocked arrangement. ">ScatterToBlocked</a>(</div>
+<div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT&gt;</div>
+<div class="line"><a name="l00917"></a><span class="lineno"><a class="code" href="classcub_1_1_block_exchange.html#ad62a63919cb2f584a4956620cd28374b">  917</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_exchange.html#ad62a63919cb2f584a4956620cd28374b" title="Exchanges data items annotated by rank into blocked arrangement. ">ScatterToBlocked</a>(</div>
 <div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;        T               items[ITEMS_PER_THREAD],    </div>
-<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;        Offset          ranks[ITEMS_PER_THREAD])    </div>
+<div class="line"><a name="l00919"></a><span class="lineno">  919</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD])    </div>
 <div class="line"><a name="l00920"></a><span class="lineno">  920</span>&#160;    {</div>
 <div class="line"><a name="l00921"></a><span class="lineno">  921</span>&#160;        ScatterToBlocked(items, ranks, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;WARP_TIME_SLICING&gt;</a>());</div>
 <div class="line"><a name="l00922"></a><span class="lineno">  922</span>&#160;    }</div>
 <div class="line"><a name="l00923"></a><span class="lineno">  923</span>&#160;</div>
 <div class="line"><a name="l00924"></a><span class="lineno">  924</span>&#160;</div>
-<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
-<div class="line"><a name="l00934"></a><span class="lineno"><a class="code" href="classcub_1_1_block_exchange.html#a2ba02edda6bfed9327cd4ee1748aa678">  934</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_exchange.html#a2ba02edda6bfed9327cd4ee1748aa678" title="Exchanges data items annotated by rank into striped arrangement. ">ScatterToStriped</a>(</div>
+<div class="line"><a name="l00933"></a><span class="lineno">  933</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT&gt;</div>
+<div class="line"><a name="l00934"></a><span class="lineno"><a class="code" href="classcub_1_1_block_exchange.html#a024c9172cda50cd0e2ab364bbe9be63d">  934</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_exchange.html#a024c9172cda50cd0e2ab364bbe9be63d" title="Exchanges data items annotated by rank into striped arrangement. ">ScatterToStriped</a>(</div>
 <div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;        T               items[ITEMS_PER_THREAD],    </div>
-<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;        Offset          ranks[ITEMS_PER_THREAD])    </div>
+<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD])    </div>
 <div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;    {</div>
 <div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;        ScatterToStriped(items, ranks, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type&lt;WARP_TIME_SLICING&gt;</a>());</div>
 <div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;    }</div>
 <div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;</div>
 <div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;</div>
-<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
-<div class="line"><a name="l00951"></a><span class="lineno"><a class="code" href="classcub_1_1_block_exchange.html#a0232bb6ad4bdfe1f1578e1ba8d175beb">  951</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_exchange.html#a0232bb6ad4bdfe1f1578e1ba8d175beb" title="Exchanges data items annotated by rank into striped arrangement. Items with rank -1 are not exchanged...">ScatterToStripedGuarded</a>(</div>
+<div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT&gt;</div>
+<div class="line"><a name="l00951"></a><span class="lineno"><a class="code" href="classcub_1_1_block_exchange.html#a83cdc3266e21fb11d5c37ac79dc66598">  951</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_exchange.html#a83cdc3266e21fb11d5c37ac79dc66598" title="Exchanges data items annotated by rank into striped arrangement. Items with rank -1 are not exchanged...">ScatterToStripedGuarded</a>(</div>
 <div class="line"><a name="l00952"></a><span class="lineno">  952</span>&#160;        T               items[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;        Offset          ranks[ITEMS_PER_THREAD])        </div>
+<div class="line"><a name="l00953"></a><span class="lineno">  953</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD])        </div>
 <div class="line"><a name="l00954"></a><span class="lineno">  954</span>&#160;    {</div>
 <div class="line"><a name="l00955"></a><span class="lineno">  955</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
 <div class="line"><a name="l00956"></a><span class="lineno">  956</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> ITEM = 0; ITEM &lt; ITEMS_PER_THREAD; ITEM++)</div>
@@ -769,10 +769,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00972"></a><span class="lineno">  972</span>&#160;        }</div>
 <div class="line"><a name="l00973"></a><span class="lineno">  973</span>&#160;    }</div>
 <div class="line"><a name="l00974"></a><span class="lineno">  974</span>&#160;</div>
-<div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset, <span class="keyword">typename</span> Val<span class="keywordtype">id</span>Flag&gt;</div>
-<div class="line"><a name="l00985"></a><span class="lineno"><a class="code" href="classcub_1_1_block_exchange.html#a171c90da1f2d5572b22acf059e0b06ea">  985</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_exchange.html#a171c90da1f2d5572b22acf059e0b06ea" title="Exchanges valid data items annotated by rank into striped arrangement. ">ScatterToStriped</a>(</div>
+<div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT, <span class="keyword">typename</span> Val<span class="keywordtype">id</span>Flag&gt;</div>
+<div class="line"><a name="l00985"></a><span class="lineno"><a class="code" href="classcub_1_1_block_exchange.html#a46a32397168592af2c1050c4061690c7">  985</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_exchange.html#a46a32397168592af2c1050c4061690c7" title="Exchanges valid data items annotated by rank into striped arrangement. ">ScatterToStriped</a>(</div>
 <div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160;        T               items[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;        Offset          ranks[ITEMS_PER_THREAD],        </div>
+<div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD],        </div>
 <div class="line"><a name="l00988"></a><span class="lineno">  988</span>&#160;        ValidFlag       is_valid[ITEMS_PER_THREAD])     </div>
 <div class="line"><a name="l00989"></a><span class="lineno">  989</span>&#160;    {</div>
 <div class="line"><a name="l00990"></a><span class="lineno">  990</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
@@ -868,10 +868,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l01085"></a><span class="lineno"> 1085</span>&#160;<span class="comment">     * Interface</span></div>
 <div class="line"><a name="l01086"></a><span class="lineno"> 1086</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
 <div class="line"><a name="l01087"></a><span class="lineno"> 1087</span>&#160;</div>
-<div class="line"><a name="l01096"></a><span class="lineno"> 1096</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Offset&gt;</div>
+<div class="line"><a name="l01096"></a><span class="lineno"> 1096</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OffsetT&gt;</div>
 <div class="line"><a name="l01097"></a><span class="lineno"> 1097</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ScatterToStriped(</div>
 <div class="line"><a name="l01098"></a><span class="lineno"> 1098</span>&#160;        T               items[ITEMS_PER_THREAD],        </div>
-<div class="line"><a name="l01099"></a><span class="lineno"> 1099</span>&#160;        Offset          ranks[ITEMS_PER_THREAD])        </div>
+<div class="line"><a name="l01099"></a><span class="lineno"> 1099</span>&#160;        OffsetT         ranks[ITEMS_PER_THREAD])        </div>
 <div class="line"><a name="l01100"></a><span class="lineno"> 1100</span>&#160;    {</div>
 <div class="line"><a name="l01101"></a><span class="lineno"> 1101</span>&#160;<span class="preprocessor">        #pragma unroll</span></div>
 <div class="line"><a name="l01102"></a><span class="lineno"> 1102</span>&#160;<span class="preprocessor"></span>        <span class="keywordflow">for</span> (<span class="keywordtype">int</span> ITEM = 0; ITEM &lt; ITEMS_PER_THREAD; ITEM++)</div>
@@ -909,7 +909,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 8 2014 15:57:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Aug 12 2014 09:31:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
