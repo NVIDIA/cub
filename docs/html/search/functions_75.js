@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['unbindtexture',['UnbindTexture',['../classcub_1_1_tex_obj_input_iterator.html#ad915fda943cade6bb75919bebbb2668b',1,'cub::TexObjInputIterator::UnbindTexture()'],['../classcub_1_1_tex_ref_input_iterator.html#aae8811cd17853d1591fe366e018d7c18',1,'cub::TexRefInputIterator::UnbindTexture()']]],
-  ['unique',['Unique',['../structcub_1_1_device_select.html#a84a69dd65ecc13f96b4dc82bf1508589',1,'cub::DeviceSelect']]]
+  ['unbindtexture',['UnbindTexture',['../classcub_1_1_tex_obj_input_iterator.html#a35b98dd35b014a052f996ee37afe1b67',1,'cub::TexObjInputIterator::UnbindTexture()'],['../classcub_1_1_tex_ref_input_iterator.html#a5f451683e1f40e5f702251b707e87956',1,'cub::TexRefInputIterator::UnbindTexture()']]],
+  ['unique',['Unique',['../structcub_1_1_device_select.html#a5e9ea8f2581326391ea63e1808ba514d',1,'cub::DeviceSelect']]]
 ];

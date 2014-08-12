@@ -103,8 +103,8 @@ cudaError_t Dispatch(
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
@@ -134,8 +134,8 @@ cudaError_t Dispatch(
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
@@ -170,8 +170,8 @@ cudaError_t Dispatch(
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
@@ -217,16 +217,16 @@ cudaError_t Dispatch(
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type    T;
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
-    typedef thrust::reverse_iterator<thrust::device_ptr<T> > ReverseOutputIterator;
+    typedef thrust::reverse_iterator<thrust::device_ptr<T> > ReverseOutputIteratorT;
 
     if (d_temp_storage == 0)
     {
@@ -239,7 +239,7 @@ cudaError_t Dispatch(
         thrust::device_ptr<T>       d_in_wrapper(d_in);
         thrust::device_ptr<T>       d_out_wrapper(d_out);
 
-        ReverseOutputIterator d_out_unselected(d_out_wrapper + num_items);
+        ReverseOutputIteratorT d_out_unselected(d_out_wrapper + num_items);
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
@@ -277,8 +277,8 @@ __global__ void CnpDispatchKernel(
     void                        *d_temp_storage,
     size_t                      temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     SelectOp                    select_op,
     bool                        debug_synchronous)
@@ -308,8 +308,8 @@ cudaError_t Dispatch(
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     SelectOp                    select_op,
     cudaStream_t                stream,

@@ -167,9 +167,10 @@ struct BlockReduceRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp synchronous reduction (unguarded if active threads is a power-of-two)
-            partial = WarpReduce(temp_storage.warp_storage).template Sum<FULL_TILE, SEGMENT_LENGTH>(
+            partial = WarpReduce(temp_storage.warp_storage).template Reduce<FULL_TILE, SEGMENT_LENGTH>(
                 partial,
-                num_valid);
+                num_valid,
+                cub::Sum());
         }
         else
         {
@@ -187,9 +188,10 @@ struct BlockReduceRaking
 
                 partial = RakingReduction<FULL_TILE>(reduction_op, raking_segment, partial, num_valid, Int2Type<1>());
 
-                partial = WarpReduce(temp_storage.warp_storage).template Sum<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
+                partial = WarpReduce(temp_storage.warp_storage).template Reduce<FULL_TILE && RAKING_UNGUARDED, SEGMENT_LENGTH>(
                     partial,
-                    num_valid);
+                    num_valid,
+                    cub::Sum());
             }
         }
 
