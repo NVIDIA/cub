@@ -223,22 +223,22 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;</div>
 <div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        <span class="keyword">typename</span>            Flag&gt;</div>
-<div class="line"><a name="l00344"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_reduce.html#a11b16118606a582bf9ce011938873305">  344</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_warp_reduce.html#a11b16118606a582bf9ce011938873305" title="Computes a segmented sum in the calling warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes lane0). ">HeadSegmentedSum</a>(</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;        <span class="keyword">typename</span>            FlagT&gt;</div>
+<div class="line"><a name="l00344"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_reduce.html#a1d4c60ee63a232dceb983297f5d288ec">  344</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_warp_reduce.html#a1d4c60ee63a232dceb983297f5d288ec" title="Computes a segmented sum in the calling warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes lane0). ">HeadSegmentedSum</a>(</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        T                   input,              </div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        Flag                head_flag)          </div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        FlagT                head_flag)          </div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;    {</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_warp_reduce.html#a74291c266eaff04ad548f54af69756f8" title="Computes a segmented reduction in the calling warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes lane0). ">HeadSegmentedReduce</a>(input, head_flag, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
+<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_warp_reduce.html#a42d774e187ac8262f205d82936c3c54f" title="Computes a segmented reduction in the calling warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes lane0). ">HeadSegmentedReduce</a>(input, head_flag, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    }</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;        <span class="keyword">typename</span>            Flag&gt;</div>
-<div class="line"><a name="l00391"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_reduce.html#a57747500b876173a6dcb113109306258">  391</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_warp_reduce.html#a57747500b876173a6dcb113109306258" title="Computes a segmented sum in the calling warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes lane0). ">TailSegmentedSum</a>(</div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;        <span class="keyword">typename</span>            FlagT&gt;</div>
+<div class="line"><a name="l00391"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_reduce.html#a4c73c5bb3636224abb3fe3e1e5e05705">  391</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_warp_reduce.html#a4c73c5bb3636224abb3fe3e1e5e05705" title="Computes a segmented sum in the calling warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes lane0). ">TailSegmentedSum</a>(</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;        T                   input,              </div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;        Flag                tail_flag)          </div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;        FlagT                tail_flag)          </div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    {</div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_warp_reduce.html#a1503c473a73c5dcfb3db5c11c2da4daa" title="Computes a segmented reduction in the calling warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes lane0). ">TailSegmentedReduce</a>(input, tail_flag, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="classcub_1_1_warp_reduce.html#ab89e501348f1ae4ade9a21c4e88d2d6c" title="Computes a segmented reduction in the calling warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes lane0). ">TailSegmentedReduce</a>(input, tail_flag, <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>());</div>
 <div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    }</div>
 <div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;</div>
 <div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;</div>
@@ -265,10 +265,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;</div>
 <div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;        <span class="keyword">typename</span>            ReductionOp,</div>
-<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;        <span class="keyword">typename</span>            Flag&gt;</div>
-<div class="line"><a name="l00545"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_reduce.html#a74291c266eaff04ad548f54af69756f8">  545</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_warp_reduce.html#a74291c266eaff04ad548f54af69756f8" title="Computes a segmented reduction in the calling warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes lane0). ">HeadSegmentedReduce</a>(</div>
+<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;        <span class="keyword">typename</span>            FlagT&gt;</div>
+<div class="line"><a name="l00545"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_reduce.html#a42d774e187ac8262f205d82936c3c54f">  545</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_warp_reduce.html#a42d774e187ac8262f205d82936c3c54f" title="Computes a segmented reduction in the calling warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes lane0). ">HeadSegmentedReduce</a>(</div>
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;        T                   input,              </div>
-<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;        Flag                head_flag,          </div>
+<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;        FlagT                head_flag,          </div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;        ReductionOp         reduction_op)       </div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;    {</div>
 <div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;        <span class="keywordflow">return</span> InternalWarpReduce(temp_storage).template SegmentedReduce&lt;true&gt;(input, head_flag, reduction_op);</div>
@@ -277,10 +277,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;</div>
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;    <span class="keyword">template</span> &lt;</div>
 <div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;        <span class="keyword">typename</span>            ReductionOp,</div>
-<div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;        <span class="keyword">typename</span>            Flag&gt;</div>
-<div class="line"><a name="l00596"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_reduce.html#a1503c473a73c5dcfb3db5c11c2da4daa">  596</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_warp_reduce.html#a1503c473a73c5dcfb3db5c11c2da4daa" title="Computes a segmented reduction in the calling warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes lane0). ">TailSegmentedReduce</a>(</div>
+<div class="line"><a name="l00595"></a><span class="lineno">  595</span>&#160;        <span class="keyword">typename</span>            FlagT&gt;</div>
+<div class="line"><a name="l00596"></a><span class="lineno"><a class="code" href="classcub_1_1_warp_reduce.html#ab89e501348f1ae4ade9a21c4e88d2d6c">  596</a></span>&#160;    __device__ __forceinline__ T <a class="code" href="classcub_1_1_warp_reduce.html#ab89e501348f1ae4ade9a21c4e88d2d6c" title="Computes a segmented reduction in the calling warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes lane0). ">TailSegmentedReduce</a>(</div>
 <div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;        T                   input,              </div>
-<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;        Flag                tail_flag,          </div>
+<div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;        FlagT                tail_flag,          </div>
 <div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;        ReductionOp         reduction_op)       </div>
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;    {</div>
 <div class="line"><a name="l00601"></a><span class="lineno">  601</span>&#160;        <span class="keywordflow">return</span> InternalWarpReduce(temp_storage).template SegmentedReduce&lt;false&gt;(input, tail_flag, reduction_op);</div>
@@ -297,7 +297,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 8 2014 15:57:51 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Aug 12 2014 09:31:53 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

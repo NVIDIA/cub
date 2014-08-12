@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt; Class Template Reference</title>
+<title>CUB: cub::TexRefInputIterator&lt; T, UNIQUE_ID, OffsetT &gt; Class Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -103,28 +103,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#friends">Friends</a> &#124;
 <a href="classcub_1_1_tex_ref_input_iterator-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_iterator.html">Fancy iterators</a></div></div>  </div>
+<div class="title">cub::TexRefInputIterator&lt; T, UNIQUE_ID, OffsetT &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_iterator.html">Fancy iterators</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
     typename T, 
     int UNIQUE_ID, 
-    typename Offset = ptrdiff_t&gt;<br/>
-class cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</h3>
+    typename OffsetT = ptrdiff_t&gt;<br/>
+class cub::TexRefInputIterator&lt; T, UNIQUE_ID, OffsetT &gt;</h3>
 
 <p>A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. </p>
 <dl class="section user"><dt>Overview</dt><dd><ul>
-<li><a class="el" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">TexRefInputIterator</a> wraps a native device pointer of type <code>ValueType*</code>. References to elements are to be loaded through texture cache.</li>
+<li>TexRefInputIteratorTwraps a native device pointer of type <code>ValueType*</code>. References to elements are to be loaded through texture cache.</li>
 <li>Can be used to load any data type from memory through texture cache.</li>
 <li>Can be manipulated and exchanged within and between host and device functions, can only be constructed within host functions, and can only be dereferenced within device functions.</li>
-<li>The <code>UNIQUE_ID</code> template parameter is used to statically name the underlying texture reference. Only one <a class="el" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">TexRefInputIterator</a> instance can be bound at any given time for a specific combination of (1) data type <code>T</code>, (2) <code>UNIQUE_ID</code>, (3) host thread, and (4) compilation .o unit.</li>
-<li>With regard to nested/dynamic parallelism, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">TexRefInputIterator</a> iterators may only be created by the host thread and used by a top-level kernel (i.e. the one which is launched from the host).</li>
+<li>The <code>UNIQUE_ID</code> template parameter is used to statically name the underlying texture reference. Only one TexRefInputIteratorTinstance can be bound at any given time for a specific combination of (1) data type <code>T</code>, (2) <code>UNIQUE_ID</code>, (3) host thread, and (4) compilation .o unit.</li>
+<li>With regard to nested/dynamic parallelism, TexRefInputIteratorTiterators may only be created by the host thread and used by a top-level kernel (i.e. the one which is launched from the host).</li>
 <li>Compatible with Thrust API v1.7 or newer.</li>
 <li>Compatible with CUDA toolkit v5.5 or newer.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the use of <code><a class="el" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">TexRefInputIterator</a></code> to dereference a device array of doubles through texture cache. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the use of <code>TexRefInputIteratorTto</code> dereference a device array of doubles through texture cache. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/iterator/tex_ref_input_iterator.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize a device array</span></div>
@@ -133,7 +133,7 @@ class cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</h3>
 <div class="line"></div>
 <div class="line"><span class="comment">// Create an iterator wrapper</span></div>
 <div class="line"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">cub::TexRefInputIterator&lt;double, __LINE__&gt;</a> itr;</div>
-<div class="line">itr.<a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a7dde3698fbb46725a95cc648c9894d1e" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(d_in, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>) * num_items);</div>
+<div class="line">itr.<a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a1efd04d63301d3b48aad0c54b849fc93" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(d_in, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>) * num_items);</div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Within device code:</span></div>
@@ -148,7 +148,7 @@ class cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</h3>
   <table class="tparams">
     <tr><td class="paramname">T</td><td>The value type of this iterator </td></tr>
     <tr><td class="paramname">UNIQUE_ID</td><td>A globally-unique identifier (within the compilation unit) to name the underlying texture reference </td></tr>
-    <tr><td class="paramname">Offset</td><td>The difference type of this iterator (Default: <code>ptrdiff_t</code>) </td></tr>
+    <tr><td class="paramname">OffsetT</td><td>The difference type of this iterator (Default: <code>ptrdiff_t</code>) </td></tr>
   </table>
   </dd>
 </dl>
@@ -158,131 +158,131 @@ class cub::TexRefInputIterator&lt; T, UNIQUE_ID, Offset &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:ab5c4e8eb36ba823954c6bc365337682b"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab5c4e8eb36ba823954c6bc365337682b"></a>
-typedef <a class="el" href="classcub_1_1_tex_ref_input_iterator.html">TexRefInputIterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a></td></tr>
-<tr class="memdesc:ab5c4e8eb36ba823954c6bc365337682b"><td class="mdescLeft">&#160;</td><td class="mdescRight">My own type. <br/></td></tr>
-<tr class="separator:ab5c4e8eb36ba823954c6bc365337682b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa3b77636ad17c957fddd808e8bc42d76"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa3b77636ad17c957fddd808e8bc42d76"></a>
-typedef Offset&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aa3b77636ad17c957fddd808e8bc42d76">difference_type</a></td></tr>
-<tr class="memdesc:aa3b77636ad17c957fddd808e8bc42d76"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type to express the result of subtracting one iterator from another. <br/></td></tr>
-<tr class="separator:aa3b77636ad17c957fddd808e8bc42d76"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae4525990cb440826692f7e99abb41ee0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae4525990cb440826692f7e99abb41ee0"></a>
-typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ae4525990cb440826692f7e99abb41ee0">value_type</a></td></tr>
-<tr class="memdesc:ae4525990cb440826692f7e99abb41ee0"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the element the iterator can point to. <br/></td></tr>
-<tr class="separator:ae4525990cb440826692f7e99abb41ee0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab0dc5076b59f74875744d39ad619c9b4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ab0dc5076b59f74875744d39ad619c9b4"></a>
-typedef T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab0dc5076b59f74875744d39ad619c9b4">pointer</a></td></tr>
-<tr class="memdesc:ab0dc5076b59f74875744d39ad619c9b4"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a pointer to an element the iterator can point to. <br/></td></tr>
-<tr class="separator:ab0dc5076b59f74875744d39ad619c9b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac3b94734fdeaf30c22eb13b871c25392"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac3b94734fdeaf30c22eb13b871c25392"></a>
-typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac3b94734fdeaf30c22eb13b871c25392">reference</a></td></tr>
-<tr class="memdesc:ac3b94734fdeaf30c22eb13b871c25392"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
-<tr class="separator:ac3b94734fdeaf30c22eb13b871c25392"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:acee3e947b08418344a9aaaf7560a79be"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="acee3e947b08418344a9aaaf7560a79be"></a>
+<tr class="memitem:a03d63027c130152d31623eee579f8506"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a03d63027c130152d31623eee579f8506"></a>
+typedef <a class="el" href="classcub_1_1_tex_ref_input_iterator.html">TexRefInputIterator</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a></td></tr>
+<tr class="memdesc:a03d63027c130152d31623eee579f8506"><td class="mdescLeft">&#160;</td><td class="mdescRight">My own type. <br/></td></tr>
+<tr class="separator:a03d63027c130152d31623eee579f8506"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff1afce146f69adb655e2ff7366b869f"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aff1afce146f69adb655e2ff7366b869f"></a>
+typedef OffsetT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aff1afce146f69adb655e2ff7366b869f">difference_type</a></td></tr>
+<tr class="memdesc:aff1afce146f69adb655e2ff7366b869f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type to express the result of subtracting one iterator from another. <br/></td></tr>
+<tr class="separator:aff1afce146f69adb655e2ff7366b869f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1de28970e3874202646e11984a0d9026"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1de28970e3874202646e11984a0d9026"></a>
+typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a1de28970e3874202646e11984a0d9026">value_type</a></td></tr>
+<tr class="memdesc:a1de28970e3874202646e11984a0d9026"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the element the iterator can point to. <br/></td></tr>
+<tr class="separator:a1de28970e3874202646e11984a0d9026"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa7a4c0041356c680bdc36d19c5f25572"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa7a4c0041356c680bdc36d19c5f25572"></a>
+typedef T *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aa7a4c0041356c680bdc36d19c5f25572">pointer</a></td></tr>
+<tr class="memdesc:aa7a4c0041356c680bdc36d19c5f25572"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a pointer to an element the iterator can point to. <br/></td></tr>
+<tr class="separator:aa7a4c0041356c680bdc36d19c5f25572"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a83e2e07ed33bf1449526e0fcc1d579"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3a83e2e07ed33bf1449526e0fcc1d579"></a>
+typedef T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a3a83e2e07ed33bf1449526e0fcc1d579">reference</a></td></tr>
+<tr class="memdesc:a3a83e2e07ed33bf1449526e0fcc1d579"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
+<tr class="separator:a3a83e2e07ed33bf1449526e0fcc1d579"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c95fea4acb0f52261acc21a0daa9056"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1c95fea4acb0f52261acc21a0daa9056"></a>
 typedef <br class="typebreak"/>
-std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#acee3e947b08418344a9aaaf7560a79be">iterator_category</a></td></tr>
-<tr class="memdesc:acee3e947b08418344a9aaaf7560a79be"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
-<tr class="separator:acee3e947b08418344a9aaaf7560a79be"><td class="memSeparator" colspan="2">&#160;</td></tr>
+std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a1c95fea4acb0f52261acc21a0daa9056">iterator_category</a></td></tr>
+<tr class="memdesc:a1c95fea4acb0f52261acc21a0daa9056"><td class="mdescLeft">&#160;</td><td class="mdescRight">The iterator category. <br/></td></tr>
+<tr class="separator:a1c95fea4acb0f52261acc21a0daa9056"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a751909cc52b1f7f1d021784acdbdc065"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a751909cc52b1f7f1d021784acdbdc065"></a>
-__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a751909cc52b1f7f1d021784acdbdc065">TexRefInputIterator</a> ()</td></tr>
-<tr class="memdesc:a751909cc52b1f7f1d021784acdbdc065"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
-<tr class="separator:a751909cc52b1f7f1d021784acdbdc065"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7dde3698fbb46725a95cc648c9894d1e"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a7dde3698fbb46725a95cc648c9894d1e">BindTexture</a> (T *ptr, size_t bytes, size_t tex_offset=0)</td></tr>
-<tr class="memdesc:a7dde3698fbb46725a95cc648c9894d1e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Use this iterator to bind <code>ptr</code> with a texture reference.  <a href="#a7dde3698fbb46725a95cc648c9894d1e">More...</a><br/></td></tr>
-<tr class="separator:a7dde3698fbb46725a95cc648c9894d1e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae8811cd17853d1591fe366e018d7c18"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aae8811cd17853d1591fe366e018d7c18"></a>
-cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aae8811cd17853d1591fe366e018d7c18">UnbindTexture</a> ()</td></tr>
-<tr class="memdesc:aae8811cd17853d1591fe366e018d7c18"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbind this iterator from its texture reference. <br/></td></tr>
-<tr class="separator:aae8811cd17853d1591fe366e018d7c18"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a96afad2f440d00b949bc51934dc56bcb"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a96afad2f440d00b949bc51934dc56bcb"></a>
+<tr class="memitem:a95d51be203bcde1b4bbb4344faff9e97"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a95d51be203bcde1b4bbb4344faff9e97"></a>
+__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a95d51be203bcde1b4bbb4344faff9e97">TexRefInputIterator</a> ()</td></tr>
+<tr class="memdesc:a95d51be203bcde1b4bbb4344faff9e97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
+<tr class="separator:a95d51be203bcde1b4bbb4344faff9e97"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1efd04d63301d3b48aad0c54b849fc93"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a1efd04d63301d3b48aad0c54b849fc93">BindTexture</a> (T *ptr, size_t bytes, size_t tex_offset=0)</td></tr>
+<tr class="memdesc:a1efd04d63301d3b48aad0c54b849fc93"><td class="mdescLeft">&#160;</td><td class="mdescRight">Use this iterator to bind <code>ptr</code> with a texture reference.  <a href="#a1efd04d63301d3b48aad0c54b849fc93">More...</a><br/></td></tr>
+<tr class="separator:a1efd04d63301d3b48aad0c54b849fc93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f451683e1f40e5f702251b707e87956"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5f451683e1f40e5f702251b707e87956"></a>
+cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a5f451683e1f40e5f702251b707e87956">UnbindTexture</a> ()</td></tr>
+<tr class="memdesc:a5f451683e1f40e5f702251b707e87956"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbind this iterator from its texture reference. <br/></td></tr>
+<tr class="separator:a5f451683e1f40e5f702251b707e87956"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae2f075d6d0cc8972ee80b79d2e6b6ccb"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ae2f075d6d0cc8972ee80b79d2e6b6ccb"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a96afad2f440d00b949bc51934dc56bcb">operator++</a> (int)</td></tr>
-<tr class="memdesc:a96afad2f440d00b949bc51934dc56bcb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Postfix increment. <br/></td></tr>
-<tr class="separator:a96afad2f440d00b949bc51934dc56bcb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a61319ed586eeb4a9473e8cc4cb0181e4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a61319ed586eeb4a9473e8cc4cb0181e4"></a>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ae2f075d6d0cc8972ee80b79d2e6b6ccb">operator++</a> (int)</td></tr>
+<tr class="memdesc:ae2f075d6d0cc8972ee80b79d2e6b6ccb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Postfix increment. <br/></td></tr>
+<tr class="separator:ae2f075d6d0cc8972ee80b79d2e6b6ccb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac8253bc71e110c918216060061470348"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac8253bc71e110c918216060061470348"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a61319ed586eeb4a9473e8cc4cb0181e4">operator++</a> ()</td></tr>
-<tr class="memdesc:a61319ed586eeb4a9473e8cc4cb0181e4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prefix increment. <br/></td></tr>
-<tr class="separator:a61319ed586eeb4a9473e8cc4cb0181e4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60d31f82be0c86573366d1bea004cac0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a60d31f82be0c86573366d1bea004cac0"></a>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac8253bc71e110c918216060061470348">operator++</a> ()</td></tr>
+<tr class="memdesc:ac8253bc71e110c918216060061470348"><td class="mdescLeft">&#160;</td><td class="mdescRight">Prefix increment. <br/></td></tr>
+<tr class="separator:ac8253bc71e110c918216060061470348"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a78417e7a9f78ded354cc152997c2d7d1"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a78417e7a9f78ded354cc152997c2d7d1"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac3b94734fdeaf30c22eb13b871c25392">reference</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a60d31f82be0c86573366d1bea004cac0">operator*</a> () const </td></tr>
-<tr class="memdesc:a60d31f82be0c86573366d1bea004cac0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indirection. <br/></td></tr>
-<tr class="separator:a60d31f82be0c86573366d1bea004cac0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac72d1843a95908cef8a8b1ab9760bf0f"><td class="memTemplParams" colspan="2"><a class="anchor" id="ac72d1843a95908cef8a8b1ab9760bf0f"></a>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a3a83e2e07ed33bf1449526e0fcc1d579">reference</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a78417e7a9f78ded354cc152997c2d7d1">operator*</a> () const </td></tr>
+<tr class="memdesc:a78417e7a9f78ded354cc152997c2d7d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indirection. <br/></td></tr>
+<tr class="separator:a78417e7a9f78ded354cc152997c2d7d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85fcecba8f3d7b4941b3fa446cddb50a"><td class="memTemplParams" colspan="2"><a class="anchor" id="a85fcecba8f3d7b4941b3fa446cddb50a"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:ac72d1843a95908cef8a8b1ab9760bf0f"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac72d1843a95908cef8a8b1ab9760bf0f">operator+</a> (Distance n) const </td></tr>
-<tr class="memdesc:ac72d1843a95908cef8a8b1ab9760bf0f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Addition. <br/></td></tr>
-<tr class="separator:ac72d1843a95908cef8a8b1ab9760bf0f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2ba00b39ccd8d7e42f5f977fbcb52b20"><td class="memTemplParams" colspan="2"><a class="anchor" id="a2ba00b39ccd8d7e42f5f977fbcb52b20"></a>
+<tr class="memitem:a85fcecba8f3d7b4941b3fa446cddb50a"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a85fcecba8f3d7b4941b3fa446cddb50a">operator+</a> (Distance n) const </td></tr>
+<tr class="memdesc:a85fcecba8f3d7b4941b3fa446cddb50a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Addition. <br/></td></tr>
+<tr class="separator:a85fcecba8f3d7b4941b3fa446cddb50a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a379e3ea1d52e95b96c25bed66e12ce0e"><td class="memTemplParams" colspan="2"><a class="anchor" id="a379e3ea1d52e95b96c25bed66e12ce0e"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:a2ba00b39ccd8d7e42f5f977fbcb52b20"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a2ba00b39ccd8d7e42f5f977fbcb52b20">operator+=</a> (Distance n)</td></tr>
-<tr class="memdesc:a2ba00b39ccd8d7e42f5f977fbcb52b20"><td class="mdescLeft">&#160;</td><td class="mdescRight">Addition assignment. <br/></td></tr>
-<tr class="separator:a2ba00b39ccd8d7e42f5f977fbcb52b20"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a284412d7f09c61614d887d293d1ce3ec"><td class="memTemplParams" colspan="2"><a class="anchor" id="a284412d7f09c61614d887d293d1ce3ec"></a>
+<tr class="memitem:a379e3ea1d52e95b96c25bed66e12ce0e"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a379e3ea1d52e95b96c25bed66e12ce0e">operator+=</a> (Distance n)</td></tr>
+<tr class="memdesc:a379e3ea1d52e95b96c25bed66e12ce0e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Addition assignment. <br/></td></tr>
+<tr class="separator:a379e3ea1d52e95b96c25bed66e12ce0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a64841968b926b829e8eef247e111b57f"><td class="memTemplParams" colspan="2"><a class="anchor" id="a64841968b926b829e8eef247e111b57f"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:a284412d7f09c61614d887d293d1ce3ec"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a284412d7f09c61614d887d293d1ce3ec">operator-</a> (Distance n) const </td></tr>
-<tr class="memdesc:a284412d7f09c61614d887d293d1ce3ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtraction. <br/></td></tr>
-<tr class="separator:a284412d7f09c61614d887d293d1ce3ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a3cf24bc9c5d99a9c68112ae50b39c0fa"><td class="memTemplParams" colspan="2"><a class="anchor" id="a3cf24bc9c5d99a9c68112ae50b39c0fa"></a>
+<tr class="memitem:a64841968b926b829e8eef247e111b57f"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a64841968b926b829e8eef247e111b57f">operator-</a> (Distance n) const </td></tr>
+<tr class="memdesc:a64841968b926b829e8eef247e111b57f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtraction. <br/></td></tr>
+<tr class="separator:a64841968b926b829e8eef247e111b57f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a509d3555cb5bad94484da7fde61a3147"><td class="memTemplParams" colspan="2"><a class="anchor" id="a509d3555cb5bad94484da7fde61a3147"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:a3cf24bc9c5d99a9c68112ae50b39c0fa"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a3cf24bc9c5d99a9c68112ae50b39c0fa">operator-=</a> (Distance n)</td></tr>
-<tr class="memdesc:a3cf24bc9c5d99a9c68112ae50b39c0fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtraction assignment. <br/></td></tr>
-<tr class="separator:a3cf24bc9c5d99a9c68112ae50b39c0fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aae7509b690d01bbcfbc91610ab743753"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aae7509b690d01bbcfbc91610ab743753"></a>
+<tr class="memitem:a509d3555cb5bad94484da7fde61a3147"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a509d3555cb5bad94484da7fde61a3147">operator-=</a> (Distance n)</td></tr>
+<tr class="memdesc:a509d3555cb5bad94484da7fde61a3147"><td class="mdescLeft">&#160;</td><td class="mdescRight">Subtraction assignment. <br/></td></tr>
+<tr class="separator:a509d3555cb5bad94484da7fde61a3147"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8081970b5bc9de1a13cd0e9a75915f48"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8081970b5bc9de1a13cd0e9a75915f48"></a>
 __host__ __device__ <br class="typebreak"/>
 __forceinline__ <br class="typebreak"/>
-<a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aa3b77636ad17c957fddd808e8bc42d76">difference_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aae7509b690d01bbcfbc91610ab743753">operator-</a> (<a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a> other) const </td></tr>
-<tr class="memdesc:aae7509b690d01bbcfbc91610ab743753"><td class="mdescLeft">&#160;</td><td class="mdescRight">Distance. <br/></td></tr>
-<tr class="separator:aae7509b690d01bbcfbc91610ab743753"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab0d83dc6dfaf84feff1c6e09ded4c35b"><td class="memTemplParams" colspan="2"><a class="anchor" id="ab0d83dc6dfaf84feff1c6e09ded4c35b"></a>
+<a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aff1afce146f69adb655e2ff7366b869f">difference_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a8081970b5bc9de1a13cd0e9a75915f48">operator-</a> (<a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a> other) const </td></tr>
+<tr class="memdesc:a8081970b5bc9de1a13cd0e9a75915f48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Distance. <br/></td></tr>
+<tr class="separator:a8081970b5bc9de1a13cd0e9a75915f48"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a626335c517f746941c188f0e71784b2e"><td class="memTemplParams" colspan="2"><a class="anchor" id="a626335c517f746941c188f0e71784b2e"></a>
 template&lt;typename Distance &gt; </td></tr>
-<tr class="memitem:ab0d83dc6dfaf84feff1c6e09ded4c35b"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac3b94734fdeaf30c22eb13b871c25392">reference</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab0d83dc6dfaf84feff1c6e09ded4c35b">operator[]</a> (Distance n) const </td></tr>
-<tr class="memdesc:ab0d83dc6dfaf84feff1c6e09ded4c35b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array subscript. <br/></td></tr>
-<tr class="separator:ab0d83dc6dfaf84feff1c6e09ded4c35b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5d8ecad7184a7e22c55c89ebfdfcdccf"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5d8ecad7184a7e22c55c89ebfdfcdccf"></a>
+<tr class="memitem:a626335c517f746941c188f0e71784b2e"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a3a83e2e07ed33bf1449526e0fcc1d579">reference</a>&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a626335c517f746941c188f0e71784b2e">operator[]</a> (Distance n) const </td></tr>
+<tr class="memdesc:a626335c517f746941c188f0e71784b2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Array subscript. <br/></td></tr>
+<tr class="separator:a626335c517f746941c188f0e71784b2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6dc70a54c23f5d20c3b04a34b01309f9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6dc70a54c23f5d20c3b04a34b01309f9"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab0dc5076b59f74875744d39ad619c9b4">pointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a5d8ecad7184a7e22c55c89ebfdfcdccf">operator-&gt;</a> ()</td></tr>
-<tr class="memdesc:a5d8ecad7184a7e22c55c89ebfdfcdccf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Structure dereference. <br/></td></tr>
-<tr class="separator:a5d8ecad7184a7e22c55c89ebfdfcdccf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac36e960c97b9b22237f37e5b56fa5825"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac36e960c97b9b22237f37e5b56fa5825"></a>
+__forceinline__ <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#aa7a4c0041356c680bdc36d19c5f25572">pointer</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a6dc70a54c23f5d20c3b04a34b01309f9">operator-&gt;</a> ()</td></tr>
+<tr class="memdesc:a6dc70a54c23f5d20c3b04a34b01309f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Structure dereference. <br/></td></tr>
+<tr class="separator:a6dc70a54c23f5d20c3b04a34b01309f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a265939c1f71b392896a5fd07d1d189b9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a265939c1f71b392896a5fd07d1d189b9"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ac36e960c97b9b22237f37e5b56fa5825">operator==</a> (const <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a> &amp;rhs)</td></tr>
-<tr class="memdesc:ac36e960c97b9b22237f37e5b56fa5825"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equal to. <br/></td></tr>
-<tr class="separator:ac36e960c97b9b22237f37e5b56fa5825"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af8120f8bdda5b5fc718fa3ac7d17865c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af8120f8bdda5b5fc718fa3ac7d17865c"></a>
+__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a265939c1f71b392896a5fd07d1d189b9">operator==</a> (const <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a> &amp;rhs)</td></tr>
+<tr class="memdesc:a265939c1f71b392896a5fd07d1d189b9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Equal to. <br/></td></tr>
+<tr class="separator:a265939c1f71b392896a5fd07d1d189b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3be490820de8d3cc7968601fc0fe34ab"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3be490820de8d3cc7968601fc0fe34ab"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#af8120f8bdda5b5fc718fa3ac7d17865c">operator!=</a> (const <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a> &amp;rhs)</td></tr>
-<tr class="memdesc:af8120f8bdda5b5fc718fa3ac7d17865c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Not equal to. <br/></td></tr>
-<tr class="separator:af8120f8bdda5b5fc718fa3ac7d17865c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a3be490820de8d3cc7968601fc0fe34ab">operator!=</a> (const <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a> &amp;rhs)</td></tr>
+<tr class="memdesc:a3be490820de8d3cc7968601fc0fe34ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Not equal to. <br/></td></tr>
+<tr class="separator:a3be490820de8d3cc7968601fc0fe34ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
 <tr class="memitem:a11b2073215294343bdc32f09c0bc5e80"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a11b2073215294343bdc32f09c0bc5e80"></a>
-std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">operator&lt;&lt;</a> (std::ostream &amp;os, const <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#ab5c4e8eb36ba823954c6bc365337682b">self_type</a> &amp;itr)</td></tr>
+std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">operator&lt;&lt;</a> (std::ostream &amp;os, const <a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a03d63027c130152d31623eee579f8506">self_type</a> &amp;itr)</td></tr>
 <tr class="memdesc:a11b2073215294343bdc32f09c0bc5e80"><td class="mdescLeft">&#160;</td><td class="mdescRight">ostream operator <br/></td></tr>
 <tr class="separator:a11b2073215294343bdc32f09c0bc5e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a7dde3698fbb46725a95cc648c9894d1e"></a>
+<a class="anchor" id="a1efd04d63301d3b48aad0c54b849fc93"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename T, int UNIQUE_ID, typename Offset = ptrdiff_t&gt; </div>
+template&lt;typename T, int UNIQUE_ID, typename OffsetT = ptrdiff_t&gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">cudaError_t <a class="el" href="classcub_1_1_tex_ref_input_iterator.html">cub::TexRefInputIterator</a>&lt; T, UNIQUE_ID, Offset &gt;::BindTexture </td>
+          <td class="memname">cudaError_t <a class="el" href="classcub_1_1_tex_ref_input_iterator.html">cub::TexRefInputIterator</a>&lt; T, UNIQUE_ID, OffsetT &gt;::BindTexture </td>
           <td>(</td>
           <td class="paramtype">T *&#160;</td>
           <td class="paramname"><em>ptr</em>, </td>
@@ -317,7 +317,7 @@ template&lt;typename T, int UNIQUE_ID, typename Offset = ptrdiff_t&gt; </div>
   <table class="params">
     <tr><td class="paramname">ptr</td><td>Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment </td></tr>
     <tr><td class="paramname">bytes</td><td>Number of bytes in the range </td></tr>
-    <tr><td class="paramname">tex_offset</td><td>Offset (in items) from <code>ptr</code> denoting the position of the iterator </td></tr>
+    <tr><td class="paramname">tex_offset</td><td>OffsetT (in items) from <code>ptr</code> denoting the position of the iterator </td></tr>
   </table>
   </dd>
 </dl>
@@ -333,7 +333,7 @@ template&lt;typename T, int UNIQUE_ID, typename Offset = ptrdiff_t&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 8 2014 15:57:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Aug 12 2014 09:31:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -768,7 +768,7 @@ void TestSize(
 
         // Randomly select problem size between 1:10,000,000
         unsigned int max_int = (unsigned int) -1;
-        for (int i = 0; i < 25; ++i)
+        for (int i = 0; i < 10; ++i)
         {
             unsigned int num_items;
             RandomBits(num_items);

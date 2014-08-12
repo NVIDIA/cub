@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.3.1</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.3.2</b></em></a>
 
 </td><td>
 
@@ -394,8 +394,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>CUB releases are labeled using version identifiers having three fields: <code>&lt;epoch&gt;.&lt;feature&gt;.&lt;update&gt;</code>. The <em>epoch</em> field corresponds to support for a major change or update to the CUDA programming model. The <em>feature</em> field corresponds to a stable set of features, functionality, and interface. The <em>update</em> field corresponds to a bug-fix or performance update for that feature set. At the moment, we do not publicly provide non-stable releases such as development snapshots, beta releases or rolling releases. (Feel free to contact us if you would like access to such things.)</dd></dl>
 <dl class="section user"><dt></dt><dd>The following table enumerates prior feature releases as well as update versions for the current feature release. <table class="doxtable">
 <tr>
+<td style="white-space: nowrap; vertical-align:text-top;">07/28/2014<br/>
+ <a href="download_cub.html"><b>CUB v1.3.2</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li>Bug fixes:<ul>
+<li>Fix for bug in <a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides device-wide, parallel operations for computing a reduction across a sequence of...">cub::DeviceReduce</a> where reductions of small problems (small enough to only dispatch a single threadblock) would run in the default stream (stream zero) regardless of whether an alternate stream was specified.</li>
+</ul>
+</li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
+</ul>
+<p class="endtd"></p>
+</td></tr>
+<tr>
 <td style="white-space: nowrap; vertical-align:text-top;">05/23/2014<br/>
- <a href="download_cub.html"><b>CUB v1.3.1</b></a> </td><td style="vertical-align:text-top;"><ul>
+ <b>CUB v1.3.1</b> </td><td style="vertical-align:text-top;"><ul>
 <li>Bug fixes:<ul>
 <li>Workaround for a benign WAW race warning reported by cuda-memcheck in <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">cub::BlockScan</a> specialized for <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">cub::BLOCK_SCAN_WARP_SCANS</a> algorithm.</li>
 <li>Fix for bug in <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> where the algorithm may sort more key bits than the caller specified (up to the nearest radix digit).</li>
@@ -426,7 +437,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr>
 <td style="white-space: nowrap; vertical-align:text-top;">04/01/2014<br/>
  <b>CUB v1.2.3</b> </td><td style="vertical-align:text-top;"><ul>
-<li>Added device-wide reduce-by-key (<a class="el" href="structcub_1_1_device_reduce.html#a8da48212903662849abc5cea7813e236" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>, cub::DeviceReduce::RunLengthEncode)</li>
+<li>Added device-wide reduce-by-key (<a class="el" href="structcub_1_1_device_reduce.html#a3206c7c11b4d894ca176482e86215b02" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>, cub::DeviceReduce::RunLengthEncode)</li>
 <li>Added MS VC++ project solutions for device-wide and block-wide examples</li>
 <li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
@@ -435,7 +446,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr>
 <td style="white-space: nowrap; vertical-align:text-top;">12/11/2013<br/>
  <b>CUB v1.1.1</b> </td><td style="vertical-align:text-top;"><ul>
-<li>Added <a class="el" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">cub::TexObjInputIterator</a>, <a class="el" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">cub::TexRefInputIterator</a>, <a class="el" href="classcub_1_1_cache_modified_input_iterator.html" title="A random-access input wrapper for dereferencing array values using a PTX cache load modifier...">cub::CacheModifiedInputIterator</a>, and <a class="el" href="classcub_1_1_cache_modified_output_iterator.html" title="A random-access output wrapper for storing array values using a PTX cache-modifier. ">cub::CacheModifiedOutputIterator</a> types for loading &amp; storing arbitrary data types through the cache hierarchy. Compatible with Thrust API.</li>
+<li>Added cub::TexObjInputIteratorT, cub::TexRefInputIteratorT, cub::CacheModifiedInputIteratorT, and <a class="el" href="classcub_1_1_cache_modified_output_iterator.html" title="A random-access output wrapper for storing array values using a PTX cache-modifier. ">cub::CacheModifiedOutputIterator</a> types for loading &amp; storing arbitrary data types through the cache hierarchy. Compatible with Thrust API.</li>
 <li>Added descending sorting to <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> and <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">cub::BlockRadixSort</a></li>
 <li>Added min, max, arg-min, and arg-max to <a class="el" href="structcub_1_1_device_reduce.html" title="DeviceReduce provides device-wide, parallel operations for computing a reduction across a sequence of...">cub::DeviceReduce</a></li>
 <li>Added <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">cub::DeviceSelect</a> (select-unique, select-if, and select-flagged)</li>
@@ -506,7 +517,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Jul 8 2014 15:57:55 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Aug 12 2014 09:31:56 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
