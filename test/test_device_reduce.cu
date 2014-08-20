@@ -561,8 +561,11 @@ void TestPointer(
     T  h_reference;
 
     // Initialize problem and solution
+    printf("Initializing... "); fflush(stdout);
     Initialize(gen_mode, h_in, num_items);
+    printf("Solving... "); fflush(stdout);
     Solve(h_in, h_reference, reduction_op, num_items);
+    printf("Reference done\n"); fflush(stdout);
 
     // Allocate problem device arrays
     T *d_in = NULL;
@@ -603,7 +606,9 @@ void TestPointer(
     ItemOffsetPair<T, int> h_reference;
 
     // Initialize problem and solution
+    printf("Initializing... "); fflush(stdout);
     Initialize(gen_mode, h_in, num_items);
+    printf("Solving... "); fflush(stdout);
     Solve(h_in, h_reference.value, Min(), num_items);
     for (int i = 0; i < num_items; ++i)
     {
@@ -613,6 +618,7 @@ void TestPointer(
             break;
         }
     }
+    printf("Reference done\n"); fflush(stdout);
 
     // Allocate problem device arrays
     T *d_in = NULL;
@@ -653,7 +659,9 @@ void TestPointer(
     ItemOffsetPair<T, int> h_reference;
 
     // Initialize problem and solution
+    printf("Initializing... "); fflush(stdout);
     Initialize(gen_mode, h_in, num_items);
+    printf("Solving... "); fflush(stdout);
     Solve(h_in, h_reference.value, Max(), num_items);
     for (int i = 0; i < num_items; ++i)
     {
@@ -663,6 +671,7 @@ void TestPointer(
             break;
         }
     }
+    printf("Reference done\n"); fflush(stdout);
 
     // Allocate problem device arrays
     T *d_in = NULL;
@@ -704,7 +713,9 @@ void TestIterator(
     T  h_reference;
 
     // Initialize problem and solution
+    printf("Solving... "); fflush(stdout);
     Solve(h_in, h_reference, reduction_op, num_items);
+    printf("Reference done\n"); fflush(stdout);
 
     // Run test
     Test<BACKEND>(h_in, h_reference, num_items, reduction_op);
@@ -734,6 +745,7 @@ void TestIterator(
     ItemOffsetPair<T, int> h_reference;
 
     // Initialize problem and solution
+    printf("Solving... "); fflush(stdout);
     Solve(h_in, h_reference.value, Min(), num_items);
     for (int i = 0; i < num_items; ++i)
     {
@@ -743,6 +755,7 @@ void TestIterator(
             break;
         }
     }
+    printf("Reference done\n"); fflush(stdout);
 
     // Run test
     Test<BACKEND>(h_in, h_reference, num_items, reduction_op);
@@ -772,6 +785,7 @@ void TestIterator(
     ItemOffsetPair<T, int> h_reference;
 
     // Initialize problem and solution
+    printf("Solving... "); fflush(stdout);
     Solve(h_in, h_reference.value, Max(), num_items);
     for (int i = 0; i < num_items; ++i)
     {
@@ -781,6 +795,7 @@ void TestIterator(
             break;
         }
     }
+    printf("Reference done\n"); fflush(stdout);
 
     // Run test
     Test<BACKEND>(h_in, h_reference, num_items, reduction_op);
@@ -859,6 +874,17 @@ void Test(
         TestOp<T>(100,      type_string);
         TestOp<T>(10000,    type_string);
         TestOp<T>(1000000,  type_string);
+
+        // Randomly select problem size between 1:10,000,000
+        unsigned int max_int = (unsigned int) -1;
+        for (int i = 0; i < 10; ++i)
+        {
+            unsigned int num_items;
+            RandomBits(num_items);
+            num_items = (unsigned int) ((double(num_items) * double(10000000)) / double(max_int));
+            num_items = CUB_MAX(1, num_items);
+            TestOp<T>(num_items,  type_string);
+        }
     }
     else
     {
@@ -908,15 +934,14 @@ int main(int argc, char** argv)
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
-
-    TestPointer<CUB, char>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(char));
 /*
     TestPointer<CUB, int>(          num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(int));
     TestPointer<CUB, int>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(int));
 
-    TestPointer<CUB, short>(          num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(short));
-    TestPointer<CUB, short>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(short));
+    TestPointer<CUB, float>(        num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(float));
 */
+    TestPointer<CUB, float>(        num_items,     RANDOM, Sum(), CUB_TYPE_STRING(float));
+
 #elif defined(QUICK_TEST)
 
     // Compile/run quick tests
