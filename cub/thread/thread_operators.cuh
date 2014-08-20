@@ -142,7 +142,12 @@ struct ArgMax
         const ItemOffsetPair<T, OffsetT> &a,
         const ItemOffsetPair<T, OffsetT> &b) const
     {
-        return ((b.value > a.value) || ((a.value == b.value) && (b.offset < a.offset))) ? b : a;
+// Mooch BUG (device reduce argmax gk110 3.2 million random fp32)
+//        return ((b.value > a.value) || ((a.value == b.value) && (b.offset < a.offset))) ? b : a;
+
+        if ((b.value > a.value) || ((a.value == b.value) && (b.offset < a.offset)))
+            return b;
+        return a;
     }
 };
 
@@ -172,7 +177,12 @@ struct ArgMin
         const ItemOffsetPair<T, OffsetT> &a,
         const ItemOffsetPair<T, OffsetT> &b) const
     {
-        return ((b.value < a.value) || ((a.value == b.value) && (b.offset < a.offset))) ? b : a;
+// Mooch BUG (device reduce argmax gk110 3.2 million random fp32)
+//        return ((b.value < a.value) || ((a.value == b.value) && (b.offset < a.offset))) ? b : a;
+
+        if ((b.value < a.value) || ((a.value == b.value) && (b.offset < a.offset)))
+            return b;
+        return a;
     }
 };
 
