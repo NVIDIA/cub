@@ -28,14 +28,13 @@
 
 /**
  * \file
- * cub::BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles.
+ * cub::BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide histogram across a range of tiles.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "specializations/block_histogram_gatomic_sweep.cuh"
 #include "specializations/block_histogram_satomic_sweep.cuh"
 #include "specializations/block_histogram_sort_sweep.cuh"
 #include "../util_type.cuh"
@@ -52,74 +51,6 @@ namespace cub {
 
 
 /******************************************************************************
- * Algorithmic variants
- ******************************************************************************/
-
-
-/**
- * \brief DeviceHistogramAlgorithm enumerates alternative algorithms for BlockHistogramSweep.
- */
-enum DeviceHistogramAlgorithm
-{
-
-    /**
-     * \par Overview
-     * A two-kernel approach in which:
-     * -# Thread blocks in the first kernel aggregate their own privatized
-     *    histograms using block-wide sorting (see BlockHistogramAlgorithm::BLOCK_HISTO_SORT).
-     * -# A single thread block in the second kernel reduces them into the output histogram(s).
-     *
-     * \par Performance Considerations
-     * Delivers consistent throughput regardless of sample bin distribution.
-     *
-     * However, because histograms are privatized in shared memory, a large
-     * number of bins (e.g., thousands) may adversely affect occupancy and
-     * performance (or even the ability to launch).
-     */
-    DEVICE_HISTO_SORT,
-
-
-    /**
-     * \par Overview
-     * A two-kernel approach in which:
-     * -# Thread blocks in the first kernel aggregate their own privatized
-     *    histograms using shared-memory \p atomicAdd().
-     * -# A single thread block in the second kernel reduces them into the
-     *    output histogram(s).
-     *
-     * \par Performance Considerations
-     * Performance is strongly tied to the hardware implementation of atomic
-     * addition, and may be significantly degraded for non uniformly-random
-     * input distributions where many concurrent updates are likely to be
-     * made to the same bin counter.
-     *
-     * However, because histograms are privatized in shared memory, a large
-     * number of bins (e.g., thousands) may adversely affect occupancy and
-     * performance (or even the ability to launch).
-     */
-    DEVICE_HISTO_SHARED_ATOMIC,
-
-
-    /**
-     * \par Overview
-     * A single-kernel approach in which thread blocks update the output histogram(s) directly
-     * using global-memory \p atomicAdd().
-     *
-     * \par Performance Considerations
-     * Performance is strongly tied to the hardware implementation of atomic
-     * addition, and may be significantly degraded for non uniformly-random
-     * input distributions where many concurrent updates are likely to be
-     * made to the same bin counter.
-     *
-     * Performance is not significantly impacted when computing histograms having large
-     * numbers of bins (e.g., thousands).
-     */
-    DEVICE_HISTO_GLOBAL_ATOMIC,
-
-};
-
-
-/******************************************************************************
  * Tuning policy
  ******************************************************************************/
 
@@ -127,20 +58,15 @@ enum DeviceHistogramAlgorithm
  * Parameterizable tuning policy type for BlockHistogramSweep
  */
 template <
-    int                             _BLOCK_THREADS,         ///< Threads per thread block
-    int                             _ITEMS_PER_THREAD,      ///< Items per thread (per tile of input)
-    DeviceHistogramAlgorithm        _HISTO_ALGORITHM,       ///< Cooperative histogram algorithm to use
-    GridMappingStrategy             _GRID_MAPPING>          ///< How to map tiles of input onto thread blocks
+    int _BLOCK_THREADS,                             ///< Threads per thread block
+    int _PIXELS_PER_THREAD>                         ///< Pixels per thread (per tile of input)
 struct BlockHistogramSweepPolicy
 {
     enum
     {
-        BLOCK_THREADS       = _BLOCK_THREADS,               ///< Threads per thread block
-        ITEMS_PER_THREAD    = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
+        BLOCK_THREADS       = _BLOCK_THREADS,       ///< Threads per thread block
+        PIXELS_PER_THREAD   = _PIXELS_PER_THREAD,   ///< Pixels per thread (per tile of input)
     };
-
-    static const DeviceHistogramAlgorithm   HISTO_ALGORITHM     = _HISTO_ALGORITHM;     ///< Cooperative histogram algorithm to use
-    static const GridMappingStrategy        GRID_MAPPING        = _GRID_MAPPING;        ///< How to map tiles of input onto thread blocks
 };
 
 
@@ -150,40 +76,37 @@ struct BlockHistogramSweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles.
+ * \brief BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide histogram across a range of tiles.
  */
 template <
     typename    BlockHistogramSweepPolicy,      ///< Parameterized BlockHistogramSweepPolicy tuning policy type
-    int         BINS,                           ///< Number of histogram bins per channel
-    int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
-    int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIteratorT,                 ///< Random-access input iterator type for reading samples.  Must have an an InputIteratorT::value_type that, when cast as an integer, falls in the range [0..BINS-1]
-    typename    HistoCounterT,                  ///< Integer type for counting sample occurrences per histogram bin
-    typename    OffsetT>                        ///< Signed integer type for global offsets
+    int         MAX_PRIVATIZED_BINS,            ///< Number of histogram bins per channel (e.g., up to 256)
+    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
+    typename    InputIteratorT,                 ///< Random-access input iterator type for reading samples.
+    typename    CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
+    typename    SampleTransformOpT,             ///< Transform operator type for determining bin-ids from samples for each channel
+    typename    OffsetT,                        ///< Signed integer type for global offsets
+    int         PTX_ARCH = CUB_PTX_ARCH>        ///< PTX version
 struct BlockHistogramSweep
 {
     //---------------------------------------------------------------------
     // Types and constants
     //---------------------------------------------------------------------
 
-    // Histogram grid algorithm
-    static const DeviceHistogramAlgorithm HISTO_ALGORITHM = BlockHistogramSweepPolicy::HISTO_ALGORITHM;
-
     // Alternative internal implementation types
-    typedef BlockHistogramSweepSort<            BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorT, HistoCounterT, OffsetT>  BlockHistogramSweepSortT;
-    typedef BlockHistogramSweepSharedAtomic<    BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorT, HistoCounterT, OffsetT>  BlockHistogramSweepSharedAtomicT;
-    typedef BlockHistogramSweepGlobalAtomic<    BlockHistogramSweepPolicy, BINS, CHANNELS, ACTIVE_CHANNELS, InputIteratorT, HistoCounterT, OffsetT>  BlockHistogramSweepGlobalAtomicT;
+    typedef BlockHistogramSweepSort<            BlockHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, InputIteratorT, CounterT, SampleTransformOpT, OffsetT>  BlockHistogramSweepSortT;
+    typedef BlockHistogramSweepSharedAtomic<    BlockHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, InputIteratorT, CounterT, SampleTransformOpT, OffsetT>  BlockHistogramSweepSharedAtomicT;
 
     // Internal block sweep histogram type
-    typedef typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SORT),
-        BlockHistogramSweepSortT,
-        typename If<(HISTO_ALGORITHM == DEVICE_HISTO_SHARED_ATOMIC),
-            BlockHistogramSweepSharedAtomicT,
-            BlockHistogramSweepGlobalAtomicT>::Type>::Type InternalBlockDelegate;
+    typedef typename If<(PTX_ARCH < 200),
+        BlockHistogramSweepSortT,                                           // Use sort strategy for SM1x because it doesn't support (very well) shared atomics
+        BlockHistogramSweepSharedAtomicT>::Type InternalBlockDelegate;
 
     enum
     {
-        TILE_ITEMS = InternalBlockDelegate::TILE_ITEMS,
+        TILE_PIXELS     = InternalBlockDelegate::TILE_PIXELS,
+        TILE_SAMPLES    = TILE_PIXELS * NUM_CHANNELS,
     };
 
 
@@ -208,106 +131,37 @@ struct BlockHistogramSweep
     __device__ __forceinline__ BlockHistogramSweep(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorT    	d_in,                                           ///< Input data to reduce
-        HistoCounterT*      (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
+        CounterT*           (&d_out_histograms)[NUM_ACTIVE_CHANNELS],       ///< Reference to output histograms
+        SampleTransformOpT  (&transform_op)[NUM_ACTIVE_CHANNELS])           ///< Transform operators for determining bin-ids from samples, one for each channel
     :
-        internal_delegate(temp_storage, d_in, d_out_histograms)
+        internal_delegate(temp_storage, d_in, d_out_histograms, transform_op)
     {}
 
 
     /**
-     * \brief Reduce a consecutive segment of input tiles
+     * \brief Consume striped tiles
      */
-    __device__ __forceinline__ void ConsumeRange(
+    __device__ __forceinline__ void ConsumeStriped(
         OffsetT  block_offset,                       ///< [in] Threadblock begin offset (inclusive)
         OffsetT  block_end)                          ///< [in] Threadblock end offset (exclusive)
     {
         // Consume subsequent full tiles of input
-        while (block_offset + TILE_ITEMS <= block_end)
+        while (block_offset + TILE_SAMPLES <= block_end)
         {
             internal_delegate.ConsumeTile<true>(block_offset);
-            block_offset += TILE_ITEMS;
+            block_offset += TILE_SAMPLES;
         }
 
         // Consume a partially-full tile
         if (block_offset < block_end)
         {
-            int valid_items = block_end - block_offset;
-            internal_delegate.ConsumeTile<false>(block_offset, valid_items);
+            int valid_pixels = (block_end - block_offset) / NUM_CHANNELS;
+            internal_delegate.ConsumeTile<false>(block_offset, valid_pixels);
         }
 
         // Aggregate output
         internal_delegate.AggregateOutput();
     }
-
-
-    /**
-     * Reduce a consecutive segment of input tiles
-     */
-    __device__ __forceinline__ void ConsumeRange(
-        OffsetT                             num_items,          ///< [in] Total number of global input items
-        GridEvenShare<OffsetT>              &even_share,        ///< [in] GridEvenShare descriptor
-        GridQueue<OffsetT>                  &queue,             ///< [in,out] GridQueue descriptor
-        Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
-    {
-        even_share.BlockInit();
-        ConsumeRange(even_share.block_offset, even_share.block_end);
-    }
-
-
-    /**
-     * Dequeue and reduce tiles of items as part of a inter-block scan
-     */
-    __device__ __forceinline__ void ConsumeRange(
-        int                 num_items,          ///< Total number of input items
-        GridQueue<OffsetT>  queue)              ///< Queue descriptor for assigning tiles of work to thread blocks
-    {
-        // Shared block offset
-        __shared__ OffsetT shared_block_offset;
-
-        // We give each thread block at least one tile of input.
-        OffsetT block_offset      = blockIdx.x * TILE_ITEMS;
-        OffsetT even_share_base   = gridDim.x * TILE_ITEMS;
-
-        // Process full tiles of input
-        while (block_offset + TILE_ITEMS <= num_items)
-        {
-            internal_delegate.ConsumeTile<true>(block_offset);
-
-            // Dequeue up to TILE_ITEMS
-            if (threadIdx.x == 0)
-                shared_block_offset = queue.Drain(TILE_ITEMS) + even_share_base;
-
-            __syncthreads();
-
-            block_offset = shared_block_offset;
-
-            __syncthreads();
-        }
-
-        // Consume a partially-full tile
-        if (block_offset < num_items)
-        {
-            int valid_items = num_items - block_offset;
-            internal_delegate.ConsumeTile<false>(block_offset, valid_items);
-        }
-
-        // Aggregate output
-        internal_delegate.AggregateOutput();
-    }
-
-
-    /**
-     * Dequeue and reduce tiles of items as part of a inter-block scan
-     */
-    __device__ __forceinline__ void ConsumeRange(
-        OffsetT                         num_items,          ///< [in] Total number of global input items
-        GridEvenShare<OffsetT>          &even_share,        ///< [in] GridEvenShare descriptor
-        GridQueue<OffsetT>              &queue,             ///< [in,out] GridQueue descriptor
-        Int2Type<GRID_MAPPING_DYNAMIC>  is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
-    {
-        ConsumeRange(num_items, queue);
-    }
-
 
 };
 

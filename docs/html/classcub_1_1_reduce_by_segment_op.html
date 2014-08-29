@@ -114,7 +114,7 @@ class cub::ReduceBySegmentOp&lt; ReductionOp, ItemOffsetPair &gt;</h3>
 <p>Given two <a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ItemOffsetPair</a> inputs <code>a</code> and <code>b</code> and a binary associative combining operator <code><code>f(const T &amp;x, const T &amp;y)</code></code>, an instance of this functor returns a <a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ItemOffsetPair</a> whose <code>offset</code> field is <code>a.offset</code> + <code>a.offset</code>, and whose <code>value</code> field is either b.value if b.offset is non-zero, or f(a.value, b.value) otherwise.</p>
 <p><a class="el" href="classcub_1_1_reduce_by_segment_op.html" title="Reduce-by-segment functor. ">ReduceBySegmentOp</a> is an associative, non-commutative binary combining operator for input sequences of <a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ItemOffsetPair</a> pairings. Such sequences are typically used to represent a segmented set of values to be reduced and a corresponding set of {0,1}-valued integer "head flags" demarcating the first value of each segment.&lt; <a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> pairing of T (value) and OffsetT (head flag) </p>
 
-<p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00214">214</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
+<p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00224">224</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -171,7 +171,7 @@ template&lt;typename ReductionOp , typename ItemOffsetPair &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00227">227</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
+<p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00237">237</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
 
 </div>
 </div>
@@ -182,7 +182,7 @@ template&lt;typename ReductionOp , typename ItemOffsetPair &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 12 2014 09:31:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 29 2014 01:02:09 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

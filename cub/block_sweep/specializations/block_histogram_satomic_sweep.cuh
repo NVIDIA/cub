@@ -50,11 +50,12 @@ namespace cub {
  */
 template <
     typename    BlockHistogramSweepPolicy,		///< Tuning policy
-    int         BINS,                           ///< Number of histogram bins
-    int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
-    int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIteratorT,               	///< The input iterator type \iterator.  Must have an an InputIteratorT::value_type that, when cast as an integer, falls in the range [0..BINS-1]
-    typename    HistoCounterT,                  ///< Integer type for counting sample occurrences per histogram bin
+    int         MAX_PRIVATIZED_BINS,            ///< Number of histogram bins per channel (e.g., up to 256)
+    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
+    typename    InputIteratorT,               	///< The input iterator type. \iterator
+    typename    CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
+    typename    SampleTransformOpT,             ///< Transform operator type for determining bin-ids from samples for each channel
     typename    OffsetT>                        ///< Signed integer type for global offsets
 struct BlockHistogramSweepSharedAtomic
 {
@@ -68,18 +69,16 @@ struct BlockHistogramSweepSharedAtomic
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockHistogramSweepPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockHistogramSweepPolicy::ITEMS_PER_THREAD,
-        TILE_CHANNEL_ITEMS  = BLOCK_THREADS * ITEMS_PER_THREAD,
-        TILE_ITEMS          = TILE_CHANNEL_ITEMS * CHANNELS,
+        BLOCK_THREADS           = BlockHistogramSweepPolicy::BLOCK_THREADS,
+        PIXELS_PER_THREAD       = BlockHistogramSweepPolicy::PIXELS_PER_THREAD,
+        TILE_PIXELS             = BLOCK_THREADS * PIXELS_PER_THREAD,
     };
 
     /// Shared memory type required by this thread block
     struct _TempStorage
     {
-        HistoCounterT histograms[ACTIVE_CHANNELS][BINS + 1];  // One word of padding between channel histograms to prevent warps working on different histograms from hammering on the same bank
+        CounterT histograms[NUM_ACTIVE_CHANNELS][MAX_PRIVATIZED_BINS + 1];  // Accommodate out-of-bounds samples
     };
-
 
     /// Alias wrapper allowing storage to be unioned
     struct TempStorage : Uninitialized<_TempStorage> {};
@@ -93,7 +92,10 @@ struct BlockHistogramSweepSharedAtomic
     _TempStorage &temp_storage;
 
     /// Reference to output histograms
-    HistoCounterT* (&d_out_histograms)[ACTIVE_CHANNELS];
+    CounterT* (&d_out_histograms)[NUM_ACTIVE_CHANNELS];
+
+    /// Transform operators for determining bin-ids from samples, one for each channel
+    SampleTransformOpT (&transform_op)[NUM_ACTIVE_CHANNELS];
 
     /// Input data to reduce
     InputIteratorT d_in;
@@ -109,25 +111,28 @@ struct BlockHistogramSweepSharedAtomic
     __device__ __forceinline__ BlockHistogramSweepSharedAtomic(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         InputIteratorT      d_in,                                           ///< Input data to reduce
-        HistoCounterT*      (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
+        CounterT*           (&d_out_histograms)[NUM_ACTIVE_CHANNELS],       ///< Reference to output histograms
+        SampleTransformOpT  (&transform_op)[NUM_ACTIVE_CHANNELS])           ///< Transform operators for determining bin-ids from samples, one for each channel
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
-        d_out_histograms(d_out_histograms)
+        d_out_histograms(d_out_histograms),
+        transform_op(transform_op)
     {
         // Initialize histogram bin counts to zeros
         #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
             int histo_offset = 0;
 
             #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
+            for(; histo_offset + BLOCK_THREADS <= MAX_PRIVATIZED_BINS; histo_offset += BLOCK_THREADS)
             {
                 this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
+
             // Finish up with guarded initialization if necessary
-            if ((BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < BINS))
+            if ((MAX_PRIVATIZED_BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < MAX_PRIVATIZED_BINS))
             {
                 this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
             }
@@ -142,39 +147,34 @@ struct BlockHistogramSweepSharedAtomic
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        OffsetT  block_offset,               ///< The offset the tile to consume
-        int     valid_items = TILE_ITEMS)   ///< The number of valid items in the tile
+        OffsetT     block_offset,                       ///< The offset the tile to consume
+        int         valid_pixels = TILE_PIXELS)         ///< The number of valid pixels in the tile
     {
         if (FULL_TILE)
         {
             // Full tile of samples to read and composite
-            SampleT items[ITEMS_PER_THREAD][CHANNELS];
+            SampleT samples[PIXELS_PER_THREAD][NUM_ACTIVE_CHANNELS];
 
             #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; PIXEL++)
             {
                 #pragma unroll
-                for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
+                for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
                 {
-                    if (CHANNEL < ACTIVE_CHANNELS)
-                    {
-                        items[ITEM][CHANNEL] = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
-                    }
+                    samples[PIXEL][CHANNEL] = d_in[block_offset + (PIXEL * BLOCK_THREADS * NUM_CHANNELS) + (threadIdx.x * NUM_CHANNELS) + CHANNEL];
                 }
             }
 
             __threadfence_block();
 
             #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; PIXEL++)
             {
                 #pragma unroll
-                for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
+                for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
                 {
-                    if (CHANNEL < ACTIVE_CHANNELS)
-                    {
-                        atomicAdd(temp_storage.histograms[CHANNEL] + items[ITEM][CHANNEL], 1);
-                    }
+                    int bin = (int) transform_op[CHANNEL](samples[PIXEL][CHANNEL]);
+                    atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
                 }
             }
 
@@ -183,22 +183,20 @@ struct BlockHistogramSweepSharedAtomic
         else
         {
             // Only a partially-full tile of samples to read and composite
-            int bounds = valid_items - (threadIdx.x * CHANNELS);
-
             #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
             {
-                #pragma unroll
-                for (int CHANNEL = 0; CHANNEL < CHANNELS; ++CHANNEL)
+                if (PIXEL * BLOCK_THREADS < valid_pixels - threadIdx.x)
                 {
-                    if (((ACTIVE_CHANNELS == CHANNELS) || (CHANNEL < ACTIVE_CHANNELS)) && ((ITEM * BLOCK_THREADS * CHANNELS) + CHANNEL < bounds))
+                    #pragma unroll
+                    for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
                     {
-                        SampleT item = d_in[block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS) + CHANNEL];
-                        atomicAdd(temp_storage.histograms[CHANNEL] + item, 1);
+                        SampleT sample = d_in[block_offset + (PIXEL * BLOCK_THREADS * NUM_CHANNELS) + (threadIdx.x * NUM_CHANNELS) + CHANNEL];
+                        int bin = (int) transform_op[CHANNEL](sample);
+                        atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
                     }
                 }
             }
-
         }
     }
 
@@ -212,30 +210,34 @@ struct BlockHistogramSweepSharedAtomic
         __syncthreads();
 
         // Copy shared memory histograms to output
-        int channel_offset = (blockIdx.x * BINS);
+        int block_id = (blockIdx.y * gridDim.x) + blockIdx.x;
+        int channel_offset = (block_id * MAX_PRIVATIZED_BINS);
 
         #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
             int histo_offset = 0;
 
             #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= BINS; histo_offset += BLOCK_THREADS)
+            for(; histo_offset + BLOCK_THREADS <= MAX_PRIVATIZED_BINS; histo_offset += BLOCK_THREADS)
             {
-                HistoCounterT count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+                CounterT count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
 
                 d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = count;
             }
 
             // Finish up with guarded initialization if necessary
-            if ((BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < BINS))
+            if ((MAX_PRIVATIZED_BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < MAX_PRIVATIZED_BINS))
             {
-                HistoCounterT count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
+                CounterT count = temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x];
 
                 d_out_histograms[CHANNEL][channel_offset + histo_offset + threadIdx.x] = count;
             }
         }
     }
+
+
+
 };
 
 
