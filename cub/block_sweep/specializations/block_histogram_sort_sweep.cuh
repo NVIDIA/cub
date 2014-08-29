@@ -51,11 +51,12 @@ namespace cub {
  */
 template <
     typename    BlockHistogramSweepPolicy,      ///< Tuning policy
-    int         BINS,                           ///< Number of histogram bins per channel
-    int         CHANNELS,                       ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
-    int         ACTIVE_CHANNELS,                ///< Number of channels actively being histogrammed
-    typename    InputIteratorT,                 ///< The input iterator type \iterator.  Must have an an InputIteratorT::value_type that, when cast as an integer, falls in the range [0..BINS-1]
-    typename    HistoCounterT,                  ///< Integer type for counting sample occurrences per histogram bin
+    int         MAX_PRIVATIZED_BINS,            ///< Number of histogram bins per channel (e.g., up to 256)
+    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
+    typename    InputIteratorT,                 ///< The input iterator type. \iterator
+    typename    CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
+    typename    SampleTransformOpT,             ///< Transform operator type for determining bin-ids from samples for each channel
     typename    OffsetT>                        ///< Signed integer type for global offsets
 struct BlockHistogramSweepSort
 {
@@ -66,22 +67,23 @@ struct BlockHistogramSweepSort
     // Sample type
     typedef typename std::iterator_traits<InputIteratorT>::value_type SampleT;
 
+    // BinId type
+    typedef If<(sizeof(SampleT) > 1), unsigned short, unsigned char>::Type BinId;
+
     // Constants
     enum
     {
         BLOCK_THREADS               = BlockHistogramSweepPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD            = BlockHistogramSweepPolicy::ITEMS_PER_THREAD,
-        TILE_CHANNEL_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
-        TILE_ITEMS                  = TILE_CHANNEL_ITEMS * CHANNELS,
-
-        STRIPED_COUNTERS_PER_THREAD = (BINS + BLOCK_THREADS - 1) / BLOCK_THREADS,
+        PIXELS_PER_THREAD           = BlockHistogramSweepPolicy::PIXELS_PER_THREAD,
+        TILE_PIXELS                 = BLOCK_THREADS * PIXELS_PER_THREAD,
+        STRIPED_COUNTERS_PER_THREAD = (MAX_PRIVATIZED_BINS + BLOCK_THREADS - 1) / BLOCK_THREADS,
     };
 
     // Parameterize BlockRadixSort type for our thread block
-    typedef BlockRadixSort<SampleT, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
+    typedef BlockRadixSort<BinId, BLOCK_THREADS, PIXELS_PER_THREAD> BlockRadixSortT;
 
     // Parameterize BlockDiscontinuity type for our thread block
-    typedef BlockDiscontinuity<SampleT, BLOCK_THREADS> BlockDiscontinuityT;
+    typedef BlockDiscontinuity<BinId, BLOCK_THREADS> BlockDiscontinuityT;
 
     /// Shared memory type required by this thread block
     union _TempStorage
@@ -95,8 +97,8 @@ struct BlockHistogramSweepSort
             typename BlockDiscontinuityT::TempStorage flag;
 
             // Storage for noting begin/end offsets of bin runs in the tile of sorted bin values
-            int run_begin[BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD];
-            int run_end[BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD];
+            BinId run_begin[(BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD) + 1];     // Accommodate out-of-bounds samples
+            BinId run_end[(BLOCK_THREADS * STRIPED_COUNTERS_PER_THREAD) + 1];       // Accommodate out-of-bounds samples
         };
     };
 
@@ -143,10 +145,13 @@ struct BlockHistogramSweepSort
     _TempStorage &temp_storage;
 
     /// Histogram counters striped across threads
-    HistoCounterT thread_counters[ACTIVE_CHANNELS][STRIPED_COUNTERS_PER_THREAD];
+    CounterT thread_counters[NUM_ACTIVE_CHANNELS][STRIPED_COUNTERS_PER_THREAD];
 
     /// Reference to output histograms
-    HistoCounterT* (&d_out_histograms)[ACTIVE_CHANNELS];
+    CounterT* (&d_out_histograms)[NUM_ACTIVE_CHANNELS];
+
+    /// Transform operators for determining bin-ids from samples, one for each channel
+    SampleTransformOpT* (&transform_op)[NUM_ACTIVE_CHANNELS];
 
     /// Input data to reduce
     InputIteratorT d_in;
@@ -161,16 +166,18 @@ struct BlockHistogramSweepSort
      */
     __device__ __forceinline__ BlockHistogramSweepSort(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
-        InputIteratorT    d_in,                                           ///< Input data to reduce
-        HistoCounterT*       (&d_out_histograms)[ACTIVE_CHANNELS])           ///< Reference to output histograms
+        InputIteratorT      d_in,                                           ///< Input data to reduce
+        CounterT*           (&d_out_histograms)[NUM_ACTIVE_CHANNELS],       ///< Reference to output histograms
+        SampleTransformOpT  (&transform_op)[NUM_ACTIVE_CHANNELS])           ///< Transform operators for determining bin-ids from samples, one for each channel
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
-        d_out_histograms(d_out_histograms)
+        d_out_histograms(d_out_histograms),
+        transform_op(transform_op)
     {
         // Initialize histogram counters striped across threads
         #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
             #pragma unroll
             for (int COUNTER = 0; COUNTER < STRIPED_COUNTERS_PER_THREAD; ++COUNTER)
@@ -182,14 +189,14 @@ struct BlockHistogramSweepSort
 
 
     /**
-     * Composite a tile of input items
+     * Composite a tile of input bin_ids
      */
     __device__ __forceinline__ void Composite(
-        SampleT   (&items)[ITEMS_PER_THREAD],                           ///< Tile of samples
-        HistoCounterT    thread_counters[STRIPED_COUNTERS_PER_THREAD])  ///< Histogram counters striped across threads
+        BinId           bin_ids[PIXELS_PER_THREAD],                     ///< Tile of bin-ids
+        CounterT        thread_counters[STRIPED_COUNTERS_PER_THREAD])   ///< Histogram counters striped across threads
     {
         // Sort bytes in blocked arrangement
-        BlockRadixSortT(temp_storage.sort).Sort(items);
+        BlockRadixSortT(temp_storage.sort).Sort(bin_ids);
 
         __syncthreads();
 
@@ -197,19 +204,20 @@ struct BlockHistogramSweepSort
         #pragma unroll
         for (int COUNTER = 0; COUNTER < STRIPED_COUNTERS_PER_THREAD; ++COUNTER)
         {
-            temp_storage.run_begin[(COUNTER * BLOCK_THREADS) + threadIdx.x] = TILE_CHANNEL_ITEMS;
-            temp_storage.run_end[(COUNTER * BLOCK_THREADS) + threadIdx.x] = TILE_CHANNEL_ITEMS;
+            temp_storage.run_begin[(COUNTER * BLOCK_THREADS) + threadIdx.x] = TILE_PIXELS;
+            temp_storage.run_end[(COUNTER * BLOCK_THREADS) + threadIdx.x]   = TILE_PIXELS;
         }
 
         __syncthreads();
 
         // Note the begin/end run offsets of bin runs in the sorted tile
-        int flags[ITEMS_PER_THREAD];                // unused
+        int flags[PIXELS_PER_THREAD];                // unused
         DiscontinuityOp flag_op(temp_storage);
-        BlockDiscontinuityT(temp_storage.flag).FlagHeads(flags, items, flag_op);
+        BlockDiscontinuityT(temp_storage.flag).FlagHeads(flags, bin_ids, flag_op);
 
         // Update begin for first item
-        if (threadIdx.x == 0) temp_storage.run_begin[items[0]] = 0;
+        if (threadIdx.x == 0)
+            temp_storage.run_begin[bin_ids[0]] = 0;
 
         __syncthreads();
 
@@ -218,8 +226,8 @@ struct BlockHistogramSweepSort
         #pragma unroll
         for (int COUNTER = 0; COUNTER < STRIPED_COUNTERS_PER_THREAD; ++COUNTER)
         {
-            int          bin            = (COUNTER * BLOCK_THREADS) + threadIdx.x;
-            HistoCounterT run_length     = temp_storage.run_end[bin] - temp_storage.run_begin[bin];
+            BinId       bin            = (COUNTER * BLOCK_THREADS) + threadIdx.x;
+            CounterT    run_length     = temp_storage.run_end[bin] - temp_storage.run_begin[bin];
 
             thread_counters[COUNTER] += run_length;
         }
@@ -227,92 +235,79 @@ struct BlockHistogramSweepSort
 
 
     /**
-     * Process one channel within a tile.
+     * Process one channel within a tile.  Inductive step.
      */
-    template <bool FULL_TILE>
+    template <bool FULL_TILE, int CHANNEL>
     __device__ __forceinline__ void ConsumeTileChannel(
-        int     channel,
-        OffsetT  block_offset,
-        int     valid_items)
+        OffsetT             block_offset,
+        int                 valid_pixels,
+        Int2Type<CHANNEL>   channel)
     {
-        // Load items in striped fashion
+        __syncthreads();
+
+        // Load bin_ids in striped fashion
         if (FULL_TILE)
         {
             // Full tile of samples to read and composite
-            SampleT items[ITEMS_PER_THREAD];
+            BinId bin_ids[PIXELS_PER_THREAD];
 
             // Unguarded loads
             #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; PIXEL++)
             {
-                items[ITEM] = d_in[channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)];
+                SampleT sample = d_in[CHANNEL + block_offset + (PIXEL * BLOCK_THREADS * NUM_CHANNELS) + (threadIdx.x * NUM_CHANNELS)];
+                bin_ids[PIXEL] = (BinId) transform_op[CHANNEL](sample);
             }
 
             // Composite our histogram data
-            Composite(items, thread_counters[channel]);
+            Composite(bin_ids, thread_counters[CHANNEL]);
         }
         else
         {
             // Only a partially-full tile of samples to read and composite
-            SampleT items[ITEMS_PER_THREAD];
-
-            // Assign our tid as the bin for out-of-bounds items (to give an even distribution), and keep track of how oob items to subtract out later
-            int bounds = (valid_items - (threadIdx.x * CHANNELS));
+            BinId bin_ids[PIXELS_PER_THREAD];
 
             #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; PIXEL++)
             {
-                items[ITEM] = ((ITEM * BLOCK_THREADS * CHANNELS) < bounds) ?
-                    d_in[channel + block_offset + (ITEM * BLOCK_THREADS * CHANNELS) + (threadIdx.x * CHANNELS)] :
-                    0;
+                if (PIXEL * BLOCK_THREADS < valid_pixels - threadIdx.x)
+                {
+                    SampleT sample  = d_in[CHANNEL + block_offset + (PIXEL * BLOCK_THREADS * NUM_CHANNELS) + (threadIdx.x * NUM_CHANNELS)];
+                    bin_ids[PIXEL]   = (BinId) transform_op[CHANNEL](sample);
+                }
+                else
+                {
+                    bin_ids[PIXEL] = 0;
+                }
             }
 
             // Composite our histogram data
-            Composite(items, thread_counters[channel]);
+            Composite(bin_ids, thread_counters[CHANNEL]);
 
             __syncthreads();
 
-            // Correct the overcounting in the zero-bin from invalid (out-of-bounds) items
+            // Correct the overcounting in the zero-bin from invalid (out-of-bounds) bin_ids
             if (threadIdx.x == 0)
             {
-                int extra = (TILE_ITEMS - valid_items) / CHANNELS;
-                thread_counters[channel][0] -= extra;
+                int extra_zeros = TILE_PIXELS - valid_pixels;
+                thread_counters[CHANNEL][0] -= extra_zeros;
             }
         }
+
+        // Consume next channel
+        ConsumeTileChannel<FULL_TILE>(block_offset, valid_pixels, Int2Type<CHANNEL + 1>());
     }
 
 
     /**
-     * Template iteration over channels (to silence not-unrolled warnings for SM10-13).  Inductive step.
+     * Process one channel within a tile.  Base step.
      */
-    template <bool FULL_TILE, int CHANNEL, int END>
-    struct IterateChannels
-    {
-        /**
-         * Process one channel within a tile.
-         */
-        static __device__ __forceinline__ void ConsumeTileChannel(
-            BlockHistogramSweepSort *cta,
-            OffsetT              block_offset,
-            int                 valid_items)
-        {
-            __syncthreads();
-
-            cta->ConsumeTileChannel<FULL_TILE>(CHANNEL, block_offset, valid_items);
-
-            IterateChannels<FULL_TILE, CHANNEL + 1, END>::ConsumeTileChannel(cta, block_offset, valid_items);
-        }
-    };
-
-
-    /**
-     * Template iteration over channels (to silence not-unrolled warnings for SM10-13).  Base step.
-     */
-    template <bool FULL_TILE, int END>
-    struct IterateChannels<FULL_TILE, END, END>
-    {
-        static __device__ __forceinline__ void ConsumeTileChannel(BlockHistogramSweepSort *cta, OffsetT block_offset, int valid_items) {}
-    };
+    template <bool FULL_TILE, int CHANNEL>
+    __device__ __forceinline__ void ConsumeTileChannel(
+        OffsetT                         block_offset,
+        int                             valid_pixels,
+        Int2Type<NUM_ACTIVE_CHANNELS>   channel)
+    {}
 
 
     /**
@@ -320,14 +315,11 @@ struct BlockHistogramSweepSort
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        OffsetT  block_offset,               ///< The offset the tile to consume
-        int     valid_items = TILE_ITEMS)   ///< The number of valid items in the tile
+        OffsetT     block_offset,                       ///< The offset the tile to consume
+        int         valid_pixels = TILE_PIXELS)         ///< The number of valid pixels in the tile
     {
-        // First channel
-        ConsumeTileChannel<FULL_TILE>(0, block_offset, valid_items);
-
-        // Iterate through remaining channels
-        IterateChannels<FULL_TILE, 1, ACTIVE_CHANNELS>::ConsumeTileChannel(this, block_offset, valid_items);
+        // Iterate channels
+        ConsumeTileChannel<FULL_TILE>(block_offset, valid_pixels, Int2Type<0>());
     }
 
 
@@ -338,16 +330,17 @@ struct BlockHistogramSweepSort
     {
         // Copy counters striped across threads into the histogram output
         #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
-            int channel_offset  = (blockIdx.x * BINS);
+            int block_id = (blockIdx.y * gridDim.x) + blockIdx.x;
+            int channel_offset  = (block_id * MAX_PRIVATIZED_BINS);
 
             #pragma unroll
             for (int COUNTER = 0; COUNTER < STRIPED_COUNTERS_PER_THREAD; ++COUNTER)
             {
                 int bin = (COUNTER * BLOCK_THREADS) + threadIdx.x;
 
-                if ((STRIPED_COUNTERS_PER_THREAD * BLOCK_THREADS == BINS) || (bin < BINS))
+                if ((STRIPED_COUNTERS_PER_THREAD * BLOCK_THREADS == MAX_PRIVATIZED_BINS) || (bin < MAX_PRIVATIZED_BINS))
                 {
                     d_out_histograms[CHANNEL][channel_offset + bin] = thread_counters[CHANNEL][COUNTER];
                 }

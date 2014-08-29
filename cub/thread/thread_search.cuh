@@ -28,12 +28,12 @@
 
 /**
  * \file
- * The cub::BlockHistogramAtomic class provides atomic-based methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
+ * Thread utilities for sequential search
  */
 
 #pragma once
 
-#include "../../util_namespace.cuh"
+#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -43,40 +43,69 @@ namespace cub {
 
 
 /**
- * \brief The BlockHistogramAtomic class provides atomic-based methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
+ * \brief Returns the offset of the first value within \p input which does not compare less than \p val
  */
-template <int BINS>
-struct BlockHistogramAtomic
+template <
+    typename InputIteratorT,
+    typename OffsetT,
+    typename T>
+__device__ __forceinline__ OffsetT LowerBound(
+    InputIteratorT      input,              ///< [in] Input sequence
+    OffsetT             num_items,          ///< [in] Input sequence length
+    T                   val)                ///< [in] Search key
 {
-    /// Shared memory storage layout type
-    struct TempStorage {};
-
-
-    /// Constructor
-    __device__ __forceinline__ BlockHistogramAtomic(
-        TempStorage &temp_storage)
-    {}
-
-
-    /// Composite data onto an existing histogram
-    template <
-        typename            T,
-        typename            CounterT,     
-        int                 ITEMS_PER_THREAD>
-    __device__ __forceinline__ void Composite(
-        T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-        CounterT             histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
+    OffsetT retval = 0;
+    while (num_items > 0)
     {
-        // Update histogram
-        #pragma unroll
-        for (int i = 0; i < ITEMS_PER_THREAD; ++i)
+        OffsetT half = num_items >> 1;
+        if (input[retval + half] < val)
         {
-              atomicAdd(histogram + items[i], 1);
+            retval = half + 1;
+            num_items = num_items - (half + 1);
+        }
+        else
+        {
+            num_items = half;
         }
     }
 
-};
+    return retval;
+}
+
+
+/**
+ * \brief Returns the offset of the first value within \p input which compares greater than \p val
+ */
+template <
+    typename InputIteratorT,
+    typename OffsetT,
+    typename T>
+__device__ __forceinline__ OffsetT UpperBound(
+    InputIteratorT      input,              ///< [in] Input sequence
+    OffsetT             num_items,          ///< [in] Input sequence length
+    T                   val)                ///< [in] Search key
+{
+    OffsetT retval = 0;
+    while (num_items > 0)
+    {
+        OffsetT half = num_items >> 1;
+        if (val < input[retval + half])
+        {
+            num_items = half;
+        }
+        else
+        {
+            retval = half + 1;
+            num_items = num_items - (half + 1);
+        }
+    }
+
+    return retval;
+}
+
+
+
+
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
-

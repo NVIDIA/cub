@@ -241,8 +241,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    <span class="comment">/******************************************************************/</span></div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> HistoCounterT&gt;</div>
-<div class="line"><a name="l00291"></a><span class="lineno"><a class="code" href="classcub_1_1_block_histogram.html#a3e37f552f50ddefa01401176cf44370c">  291</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_histogram.html#a3e37f552f50ddefa01401176cf44370c" title="Initialize the shared histogram counters to zero. ">InitHistogram</a>(HistoCounterT histogram[BINS])</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> CounterT     &gt;</div>
+<div class="line"><a name="l00291"></a><span class="lineno"><a class="code" href="classcub_1_1_block_histogram.html#a080faf88a47e73e8bfa9964cd8f26feb">  291</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_histogram.html#a080faf88a47e73e8bfa9964cd8f26feb" title="Initialize the shared histogram counters to zero. ">InitHistogram</a>(CounterT      histogram[BINS])</div>
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    {</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        <span class="comment">// Initialize histogram bin counts to zeros</span></div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;        <span class="keywordtype">int</span> histo_offset = 0;</div>
@@ -261,13 +261,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        <span class="keyword">typename</span>            HistoCounterT&gt;</div>
-<div class="line"><a name="l00347"></a><span class="lineno"><a class="code" href="classcub_1_1_block_histogram.html#a9f0423c3836c816b7849a319b2ac62c6">  347</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_histogram.html#a9f0423c3836c816b7849a319b2ac62c6" title="Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input ...">Histogram</a>(</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;        <span class="keyword">typename</span>            CounterT     &gt;</div>
+<div class="line"><a name="l00347"></a><span class="lineno"><a class="code" href="classcub_1_1_block_histogram.html#a0e4be5c1f7a90fb1d6b4e2519d6be8d3">  347</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_histogram.html#a0e4be5c1f7a90fb1d6b4e2519d6be8d3" title="Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input ...">Histogram</a>(</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;        T                   (&amp;items)[ITEMS_PER_THREAD],     </div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        HistoCounterT        histogram[BINS])                </div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;        CounterT             histogram[BINS])                </div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;    {</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;        <span class="comment">// Initialize histogram bin counts to zeros</span></div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;        <a class="code" href="classcub_1_1_block_histogram.html#a3e37f552f50ddefa01401176cf44370c" title="Initialize the shared histogram counters to zero. ">InitHistogram</a>(histogram);</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;        <a class="code" href="classcub_1_1_block_histogram.html#a080faf88a47e73e8bfa9964cd8f26feb" title="Initialize the shared histogram counters to zero. ">InitHistogram</a>(histogram);</div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;</div>
 <div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        __syncthreads();</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;</div>
@@ -278,10 +278,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;        <span class="keyword">typename</span>            HistoCounterT&gt;</div>
-<div class="line"><a name="l00404"></a><span class="lineno"><a class="code" href="classcub_1_1_block_histogram.html#a7942dc7e0317e90ad78615433d74e7a9">  404</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_histogram.html#a7942dc7e0317e90ad78615433d74e7a9" title="Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of ...">Composite</a>(</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;        <span class="keyword">typename</span>            CounterT     &gt;</div>
+<div class="line"><a name="l00404"></a><span class="lineno"><a class="code" href="classcub_1_1_block_histogram.html#a90ef25b7af7ce819367eca662a47dd2d">  404</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_histogram.html#a90ef25b7af7ce819367eca662a47dd2d" title="Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of ...">Composite</a>(</div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;        T                   (&amp;items)[ITEMS_PER_THREAD],     </div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        HistoCounterT        histogram[BINS])                 </div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;        CounterT             histogram[BINS])                 </div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    {</div>
 <div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;        InternalBlockHistogram(temp_storage).Composite(items, histogram);</div>
 <div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;    }</div>
@@ -295,7 +295,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 12 2014 09:31:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 29 2014 01:02:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

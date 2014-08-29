@@ -194,18 +194,18 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memdesc:a875a03627d3fc144b616c2353569281c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage.  <a href="#a875a03627d3fc144b616c2353569281c">More...</a><br/></td></tr>
 <tr class="separator:a875a03627d3fc144b616c2353569281c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Histogram operations</div></td></tr>
-<tr class="memitem:a3e37f552f50ddefa01401176cf44370c"><td class="memTemplParams" colspan="2">template&lt;typename HistoCounterT &gt; </td></tr>
-<tr class="memitem:a3e37f552f50ddefa01401176cf44370c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a3e37f552f50ddefa01401176cf44370c">InitHistogram</a> (HistoCounterT histogram[BINS])</td></tr>
-<tr class="memdesc:a3e37f552f50ddefa01401176cf44370c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize the shared histogram counters to zero.  <a href="#a3e37f552f50ddefa01401176cf44370c">More...</a><br/></td></tr>
-<tr class="separator:a3e37f552f50ddefa01401176cf44370c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f0423c3836c816b7849a319b2ac62c6"><td class="memTemplParams" colspan="2">template&lt;typename HistoCounterT &gt; </td></tr>
-<tr class="memitem:a9f0423c3836c816b7849a319b2ac62c6"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a9f0423c3836c816b7849a319b2ac62c6">Histogram</a> (T(&amp;items)[ITEMS_PER_THREAD], HistoCounterT histogram[BINS])</td></tr>
-<tr class="memdesc:a9f0423c3836c816b7849a319b2ac62c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input elements.  <a href="#a9f0423c3836c816b7849a319b2ac62c6">More...</a><br/></td></tr>
-<tr class="separator:a9f0423c3836c816b7849a319b2ac62c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7942dc7e0317e90ad78615433d74e7a9"><td class="memTemplParams" colspan="2">template&lt;typename HistoCounterT &gt; </td></tr>
-<tr class="memitem:a7942dc7e0317e90ad78615433d74e7a9"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a7942dc7e0317e90ad78615433d74e7a9">Composite</a> (T(&amp;items)[ITEMS_PER_THREAD], HistoCounterT histogram[BINS])</td></tr>
-<tr class="memdesc:a7942dc7e0317e90ad78615433d74e7a9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of input elements.  <a href="#a7942dc7e0317e90ad78615433d74e7a9">More...</a><br/></td></tr>
-<tr class="separator:a7942dc7e0317e90ad78615433d74e7a9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a080faf88a47e73e8bfa9964cd8f26feb"><td class="memTemplParams" colspan="2">template&lt;typename CounterT &gt; </td></tr>
+<tr class="memitem:a080faf88a47e73e8bfa9964cd8f26feb"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a080faf88a47e73e8bfa9964cd8f26feb">InitHistogram</a> (CounterT histogram[BINS])</td></tr>
+<tr class="memdesc:a080faf88a47e73e8bfa9964cd8f26feb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initialize the shared histogram counters to zero.  <a href="#a080faf88a47e73e8bfa9964cd8f26feb">More...</a><br/></td></tr>
+<tr class="separator:a080faf88a47e73e8bfa9964cd8f26feb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="memTemplParams" colspan="2">template&lt;typename CounterT &gt; </td></tr>
+<tr class="memitem:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a0e4be5c1f7a90fb1d6b4e2519d6be8d3">Histogram</a> (T(&amp;items)[ITEMS_PER_THREAD], CounterT histogram[BINS])</td></tr>
+<tr class="memdesc:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input elements.  <a href="#a0e4be5c1f7a90fb1d6b4e2519d6be8d3">More...</a><br/></td></tr>
+<tr class="separator:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a90ef25b7af7ce819367eca662a47dd2d"><td class="memTemplParams" colspan="2">template&lt;typename CounterT &gt; </td></tr>
+<tr class="memitem:a90ef25b7af7ce819367eca662a47dd2d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a90ef25b7af7ce819367eca662a47dd2d">Composite</a> (T(&amp;items)[ITEMS_PER_THREAD], CounterT histogram[BINS])</td></tr>
+<tr class="memdesc:a90ef25b7af7ce819367eca662a47dd2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of input elements.  <a href="#a90ef25b7af7ce819367eca662a47dd2d">More...</a><br/></td></tr>
+<tr class="separator:a90ef25b7af7ce819367eca662a47dd2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="a875a03627d3fc144b616c2353569281c"></a>
@@ -245,13 +245,13 @@ template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, int BINS, BlockH
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a3e37f552f50ddefa01401176cf44370c"></a>
+<a class="anchor" id="a080faf88a47e73e8bfa9964cd8f26feb"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, int BINS, BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename HistoCounterT &gt; </div>
+template&lt;typename CounterT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -259,7 +259,7 @@ template&lt;typename HistoCounterT &gt; </div>
         <tr>
           <td class="memname">__device__ __forceinline__ void <a class="el" href="classcub_1_1_block_histogram.html">cub::BlockHistogram</a>&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::InitHistogram </td>
           <td>(</td>
-          <td class="paramtype">HistoCounterT&#160;</td>
+          <td class="paramtype">CounterT&#160;</td>
           <td class="paramname"><em>histogram</em>[BINS])</td><td></td>
           <td></td>
         </tr>
@@ -298,7 +298,7 @@ template&lt;typename HistoCounterT &gt; </div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">HistoCounterT</td><td><b>[inferred]</b> Histogram counter type </td></tr>
+    <tr><td class="paramname">CounterT</td><td><b>[inferred]</b> Histogram counter type </td></tr>
   </table>
   </dd>
 </dl>
@@ -307,13 +307,13 @@ template&lt;typename HistoCounterT &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a9f0423c3836c816b7849a319b2ac62c6"></a>
+<a class="anchor" id="a0e4be5c1f7a90fb1d6b4e2519d6be8d3"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, int BINS, BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename HistoCounterT &gt; </div>
+template&lt;typename CounterT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -327,7 +327,7 @@ template&lt;typename HistoCounterT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">HistoCounterT&#160;</td>
+          <td class="paramtype">CounterT&#160;</td>
           <td class="paramname"><em>histogram</em>[BINS]&#160;</td>
         </tr>
         <tr>
@@ -372,7 +372,7 @@ template&lt;typename HistoCounterT &gt; </div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">HistoCounterT</td><td><b>[inferred]</b> Histogram counter type </td></tr>
+    <tr><td class="paramname">CounterT</td><td><b>[inferred]</b> Histogram counter type </td></tr>
   </table>
   </dd>
 </dl>
@@ -388,13 +388,13 @@ template&lt;typename HistoCounterT &gt; </div>
 
 </div>
 </div>
-<a class="anchor" id="a7942dc7e0317e90ad78615433d74e7a9"></a>
+<a class="anchor" id="a90ef25b7af7ce819367eca662a47dd2d"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, int BINS, BlockHistogramAlgorithm ALGORITHM = BLOCK_HISTO_SORT, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename HistoCounterT &gt; </div>
+template&lt;typename CounterT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -408,7 +408,7 @@ template&lt;typename HistoCounterT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">HistoCounterT&#160;</td>
+          <td class="paramtype">CounterT&#160;</td>
           <td class="paramname"><em>histogram</em>[BINS]&#160;</td>
         </tr>
         <tr>
@@ -456,7 +456,7 @@ template&lt;typename HistoCounterT &gt; </div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">HistoCounterT</td><td><b>[inferred]</b> Histogram counter type </td></tr>
+    <tr><td class="paramname">CounterT</td><td><b>[inferred]</b> Histogram counter type </td></tr>
   </table>
   </dd>
 </dl>
@@ -479,7 +479,7 @@ template&lt;typename HistoCounterT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Aug 12 2014 09:31:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Aug 29 2014 01:02:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
