@@ -285,10 +285,10 @@ public:
      *
      * \endcode
      *
-     * \tparam HistoCounterT         <b>[inferred]</b> Histogram counter type
+     * \tparam CounterT              <b>[inferred]</b> Histogram counter type
      */
-    template <typename HistoCounterT>
-    __device__ __forceinline__ void InitHistogram(HistoCounterT histogram[BINS])
+    template <typename CounterT     >
+    __device__ __forceinline__ void InitHistogram(CounterT      histogram[BINS])
     {
         // Initialize histogram bin counts to zeros
         int histo_offset = 0;
@@ -340,13 +340,13 @@ public:
      *
      * \endcode
      *
-     * \tparam HistoCounterT         <b>[inferred]</b> Histogram counter type
+     * \tparam CounterT              <b>[inferred]</b> Histogram counter type
      */
     template <
-        typename            HistoCounterT>
+        typename            CounterT     >
     __device__ __forceinline__ void Histogram(
         T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-        HistoCounterT        histogram[BINS])                ///< [out] Reference to shared/global memory histogram
+        CounterT             histogram[BINS])                ///< [out] Reference to shared/global memory histogram
     {
         // Initialize histogram bin counts to zeros
         InitHistogram(histogram);
@@ -397,13 +397,13 @@ public:
      *
      * \endcode
      *
-     * \tparam HistoCounterT         <b>[inferred]</b> Histogram counter type
+     * \tparam CounterT              <b>[inferred]</b> Histogram counter type
      */
     template <
-        typename            HistoCounterT>
+        typename            CounterT     >
     __device__ __forceinline__ void Composite(
         T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-        HistoCounterT        histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
+        CounterT             histogram[BINS])                 ///< [out] Reference to shared/global memory histogram
     {
         InternalBlockHistogram(temp_storage).Composite(items, histogram);
     }

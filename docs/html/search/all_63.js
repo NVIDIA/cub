@@ -12,7 +12,7 @@ var searchData=
   ['cachingdeviceallocator',['CachingDeviceAllocator',['../structcub_1_1_caching_device_allocator.html',1,'cub']]],
   ['cast',['Cast',['../structcub_1_1_cast.html',1,'cub']]],
   ['category',['CATEGORY',['../structcub_1_1_base_traits.html#a25ff6477c84dc3bd5f4b5e70cd600f09',1,'cub::BaseTraits::CATEGORY()'],['../group___util_module.html#ga4733b6d40e923244502e6f5b200766ef',1,'cub::Category()']]],
-  ['composite',['Composite',['../classcub_1_1_block_histogram.html#a7942dc7e0317e90ad78615433d74e7a9',1,'cub::BlockHistogram']]],
+  ['composite',['Composite',['../classcub_1_1_block_histogram.html#a90ef25b7af7ce819367eca662a47dd2d',1,'cub::BlockHistogram']]],
   ['constant_5finput_5fiterator_2ecuh',['constant_input_iterator.cuh',['../constant__input__iterator_8cuh.html',1,'']]],
   ['constantinputiterator',['ConstantInputIterator',['../classcub_1_1_constant_input_iterator.html#a1237efdec602999d589afd3c898b7494',1,'cub::ConstantInputIterator']]],
   ['constantinputiterator',['ConstantInputIterator',['../classcub_1_1_constant_input_iterator.html',1,'cub']]],

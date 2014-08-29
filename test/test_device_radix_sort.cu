@@ -881,6 +881,7 @@ int main(int argc, char** argv)
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
     Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+    Test<CUB, unsigned long long, NullType, false> (num_items, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
 
 #elif defined(QUICK_TEST)
 
