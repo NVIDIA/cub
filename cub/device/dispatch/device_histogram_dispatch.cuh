@@ -57,39 +57,6 @@ namespace cub {
  * Histogram kernel entry points
  *****************************************************************************/
 
-/**
- * Histogram unzip entry point (multi-block). Unzips and compacts sample channels.
- */
-template <
-    typename                                        BlockUnzipChannelsSweepPolicyT, ///< Parameterized BlockHistogramSweepPolicy tuning policy type
-    int                                             NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
-    int                                             NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                                        SampleIteratorT,                 ///< The input iterator type. \iterator.
-    typename                                        SampleT,                        ///< Sample type
-    typename                                        OffsetT>                        ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockUnzipChannelsSweepPolicyT::BLOCK_THREADS))
-__global__ void DeviceHistogramUnzipKernel(
-    SampleIteratorT                                  d_in,               ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
-    ArrayWrapper<SampleT*, NUM_ACTIVE_CHANNELS>     d_out,              ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][gridDim.x][MAX_PRIVATIZED_BINS]</tt>
-    OffsetT                                         num_row_pixels,     ///< [in] The number of multi-channel pixels per row in the region of interest
-    OffsetT                                         num_rows,           ///< [in] The number of rows in the region of interest
-    OffsetT                                         row_pixel_stride)   ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
-{
-    // Thread block type for unzipping input tiles
-    typedef BlockUnzipChannelsSweep<BlockUnzipChannelsSweepPolicyT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, SampleT*, OffsetT> BlockUnzipChannelsSweepT;
-
-    // Consume input tiles
-    for (OffsetT row = blockIdx.y; row < num_rows; row += gridDim.y)
-    {
-        OffsetT block_offset_in     = row * row_pixel_stride * NUM_CHANNELS;
-        OffsetT block_end           = block_offset_in + num_row_pixels;
-        OffsetT block_offset_out    = row * num_row_pixels;
-
-        BlockHistogramSweepT(d_in, d_out.array).ConsumeRange(block_offset_in, block_end, block_offset_out);
-    }
-}
-
-
 
 /**
  * Histogram privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
@@ -166,41 +133,6 @@ __global__ void DeviceHistogramAggregateKernel(
 }
 
 
-
-/**
- * Histogram-even sorted-sample search kernel entry point.  Searches sorted samples for discontinuities
- */
-template <
-    int                                                 NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                                            SampleIteratorT,                 ///< The sample type
-    typename                                            CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
-    typename                                            SampleTransformOpT,             ///< Transform operator type for determining bin-ids from samples for each channel
-    typename                                            OffsetT>                        ///< Signed integer type for global offsets
-__global__ void DeviceHistogramSearchKernel(
-    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_bins_wrapper,           ///< [in] Number of histogram bins per channel
-    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>            d_histo_wrapper,            ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][num_bins.array[CHANNEL]]</tt>
-    SampleIteratorT                                         d_sorted_samples,           ///< [in] Sorted samples
-    ArrayWrapper<SampleTransformOpT, NUM_ACTIVE_CHANNELS>   transform_op_wrapper,       ///< [in] Transform operators for determining bin-ids from samples, one for each channel
-    OffsetT                                                 num_samples_per_channel)
-{
-    // Data type of input iterator (samples)
-    typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
-
-    int channel     = blockIdx.y;
-    int bin         = (blockIdx.x * gridDim.x) + threadIdx.x;
-
-    // Search for lower and upper bound
-    if (bin < num_bins_wrapper.array[channel])
-    {
-        SampleT lower_inclusive = transform_op_wrapper.array[channel].LowerInclusive(bin);
-        SampleT upper_exclusive = transform_op_wrapper.array[channel].LowerInclusive(bin);
-
-        OffsetT lower_bound = LowerBound(d_sorted_samples, num_samples_per_channel, lower_inclusive);
-        OffsetT upper_bound = UpperBound(d_sorted_samples, num_samples_per_channel, upper_exclusive);
-
-        d_histo_wrapper.array[channel][bin] = (CounterT)(upper_bound - lower_bound);
-    }
-}
 
 
 /******************************************************************************
@@ -505,226 +437,16 @@ struct DeviceHistogramDispatch
 
 
 
-    /******************************************************************************
-     * Utility
-     ******************************************************************************/
 
-    /**
-     * Sort samples (specialized for multi-channel)
-     */
-    template <
-        typename    SampleIteratorT,
-        int         _NUM_ACTIVE_CHANNELS>
-    CUB_RUNTIME_FUNCTION __forceinline__
-    static cudaError_t SortSamples(
-        void                *d_temp_storage,                            ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        SampleIteratorT      d_samples,                                  ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
-        int                 num_samples_per_channel,                                ///< [in] The number of samples per channel (e.g., the number of pixels).  The total number of samples is \p num_samples_per_channel_per_channel * \p NUM_CHANNELS.
-        SampleT*            (&d_sorted_channels)[_NUM_ACTIVE_CHANNELS], ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
-        cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous)                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-    {
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
-        cudaError error = cudaSuccess;
-        do
-        {
-            // Temporary storage allocation requirements
-            void* allocations[3]        = {NULL, NULL, NULL};                       // Double buffer in, double buffer out, temp
-            size_t allocation_sizes[3]  = {num_samples_per_channel * sizeof(SampleT), num_samples_per_channel * sizeof(SampleT), 0};
-
-            if (d_temp_storage == NULL)
-            {
-                // The caller is simply requesting the size of the storage allocation
-
-                // Get storage requirement for radix sort
-                DeviceRadixSort::SortKeys(d_temp_storage[1], allocation_sizes[1], d_samples, (SampleT*) allocations[0], num_samples_per_channel, 0, sizeof(SampleT) * 8, stream, debug_synchronous);
-
-                // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-                if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-                return cudaSuccess;
-            }
-
-            // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-
-            // Invoke sorting kernel
-            DeviceRadixSort::SortKeys(d_temp_storage[1], allocation_sizes[1], d_samples, (SampleT*) allocations[0], num_samples_per_channel, 0, sizeof(SampleT) * 8, stream, debug_synchronous);
-
-        }
-        while (0);
-
-        return error;
-
-#endif // CUB_RUNTIME_ENABLED
-    }
-
-
-    /**
-     * Sort samples (specialized for single-channel)
-     */
-    template <typename SampleIteratorT>
-    CUB_RUNTIME_FUNCTION __forceinline__
-    static cudaError_t SortSamples(
-        void                *d_temp_storage,                            ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        SampleIteratorT      d_samples,                                 ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
-        int                 num_samples_per_channel,                    ///< [in] The number of samples per channel (e.g., the number of pixels).  The total number of samples is \p num_samples_per_channel_per_channel * \p NUM_CHANNELS.
-        SampleT*            (&d_sorted_channels)[1],                    ///< [out] The pointers to the sorted, compacted channels
-        cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous)                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-    {
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
-        cudaError error = cudaSuccess;
-        do
-        {
-            // Temporary storage allocation requirements
-            void* allocations[2]        = {NULL, NULL};
-            size_t allocation_sizes[2]  = {num_samples_per_channel * sizeof(SampleT), 0};
-
-            if (d_temp_storage == NULL)
-            {
-                // The caller is simply requesting the size of the storage allocation
-
-                // Get storage requirement for radix sort
-                DeviceRadixSort::SortKeys(d_temp_storage[1], allocation_sizes[1], d_samples, (SampleT*) allocations[0], num_samples_per_channel, 0, sizeof(SampleT) * 8, stream, debug_synchronous);
-
-                // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-                if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-                return cudaSuccess;
-            }
-
-            // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-
-            // Invoke sorting kernel
-            DeviceRadixSort::SortKeys(d_temp_storage[1], allocation_sizes[1], d_samples, (SampleT*) allocations[0], num_samples_per_channel, 0, sizeof(SampleT) * 8, stream, debug_synchronous);
-
-        }
-        while (0);
-
-        return error;
-
-#endif // CUB_RUNTIME_ENABLED
-    }
 
 
     /******************************************************************************
      * Dispatch entrypoints
      ******************************************************************************/
 
-    /**
-     * Sort-based internal dispatch routine
-     */
-    template <
-        typename            SampleIteratorT,
-        typename            SampleTransformOpT,                     ///< Transform operator type for determining bin-ids from samples for each channel
-        typename            DeviceHistogramUnzipKernelT>       ///< Function type of cub::DeviceHistogramUnzipKernel
-    CUB_RUNTIME_FUNCTION __forceinline__
-    static cudaError_t SortingDispatch(
-        void                                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t                              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        SampleIteratorT                     d_samples,                              ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
-        CounterT                            *d_histogram[NUM_ACTIVE_CHANNELS],      ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
-        int                                 num_levels[NUM_ACTIVE_CHANNELS],        ///< [in] The number of bin level boundaries for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
-        int                                 max_bins,                               ///< [in] The maximum number of bins in any channel
-        SampleTransformOpT                  transform_op[NUM_ACTIVE_CHANNELS],      ///< [in] Transform operators for determining bin-ids from samples, one for each channel
-        int                                 num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
-        int                                 num_rows,                               ///< [in] The number of rows in the region of interest
-        int                                 row_pixel_stride,                       ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
-        DeviceHistogramUnzipKernelT         histogram_unzip_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
-        KernelConfig                        histogram_unzip_config,                 ///< [in] Dispatch parameters that match the policy that \p histogram_sweep_kernel was compiled for
-        cudaStream_t                        stream,                                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                                debug_synchronous)                      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-    {
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
-        cudaError error = cudaSuccess;
-        do
-        {
-/*
-            // Sort (and compact) samples
-            SampleT* d_sorted_channels[NUM_ACTIVE_CHANNELS];
-
-
-            if (d_temp_storage == NULL)
-            {
-                // The caller is simply requesting the size of the storage allocation
-                return cudaSuccess;
-            }
-
-            // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
-
-            // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
-            ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS> d_histo_wrapper;
-            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-                d_histo_wrapper.array[CHANNEL] = d_histogram[CHANNEL];
-
-            // Setup array wrapper for bin transformers (because we can't pass static arrays as kernel parameters)
-            ArrayWrapper<SampleTransformOpT, NUM_ACTIVE_CHANNELS> transform_op_wrapper;
-            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-                transform_op_wrapper.array[CHANNEL] = transform_op[CHANNEL];
-
-            // Setup array wrapper for num bins (because we can't pass static arrays as kernel parameters)
-            ArrayWrapper<int, NUM_ACTIVE_CHANNELS> num_bins_wrapper;
-            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-                num_bins_wrapper.array[CHANNEL] = num_levels[CHANNEL] - 1;
-
-            // Invoke sorting kernel
-            DeviceRadixSort::SortKeys(d_temp_storage[1], allocation_sizes[1], d_samples, (SampleT*) allocations[0], num_samples_per_channel, 0, sizeof(SampleT) * 8, stream, debug_synchronous);
-
-            // Determine grid sizing
-            int search_block_threads = 128;
-            int search_blocks = (max_bins + search_block_threads - 1) / search_block_threads;
-            dim3 grid_dims = {search_blocks, NUM_ACTIVE_CHANNELS, 1};
-
-            // Log DeviceHistogramSearchKernel configuration
-            if (debug_synchronous) CubLog("Invoking DeviceHistogramSearchKernel<<<{%d, %d, %d}, %d, 0, %lld>>>()\n",
-                grid_dims.x, grid_dims.y, grid_dims.z, search_block_threads, (long long) stream);
-
-            DeviceHistogramEvenSearchKernel<NUM_ACTIVE_CHANNELS><<<NUM_ACTIVE_CHANNELS, MAX_PRIVATIZED_BINS, 0, stream>>>(
-                num_bins_wrapper,
-                d_histo_wrapper,
-                (SampleT*) allocations[0],
-                transform_op_wrapper,
-                num_samples_per_channel)
-
-                histogram_sweep_grid_size);
-
-            // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
-
-            // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-*/
-        }
-        while (0);
-        return error;
-
-#endif // CUB_RUNTIME_ENABLED
-    }
-
 
     /**
-     * Privatization-based dispatch routine for HistogramEven
+     * Privatization-based dispatch routine
      */
     template <
         typename                            SampleIteratorT,
@@ -734,14 +456,14 @@ struct DeviceHistogramDispatch
     static cudaError_t PrivatizedDispatch(
         void                                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        SampleIteratorT                      d_samples,                             ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
+        SampleIteratorT                     d_samples,                              ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
         CounterT                            *d_histogram[NUM_ACTIVE_CHANNELS],      ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
         int                                 num_levels[NUM_ACTIVE_CHANNELS],        ///< [in] The number of bin level boundaries for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
         SampleTransformOpT                  transform_op[NUM_ACTIVE_CHANNELS],      ///< [in] Transform operators for determining bin-ids from samples, one for each channel
         int                                 num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
         int                                 num_rows,                               ///< [in] The number of rows in the region of interest
         int                                 row_pixel_stride,                       ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
-        DeviceHistogramSweepKernelT         histogram_sweep_kernel,          ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
+        DeviceHistogramSweepKernelT         histogram_sweep_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
         KernelConfig                        histogram_sweep_config,                 ///< [in] Dispatch parameters that match the policy that \p histogram_sweep_kernel was compiled for
         cudaStream_t                        stream,                                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                                debug_synchronous)                      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
