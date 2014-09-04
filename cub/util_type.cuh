@@ -852,6 +852,8 @@ public:
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+
+
 /******************************************************************************
  * Simple type traits utilities.
  *

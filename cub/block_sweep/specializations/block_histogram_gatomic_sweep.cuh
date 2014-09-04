@@ -50,7 +50,7 @@ namespace cub {
  */
 template <
     typename    BlockHistogramSweepPolicy,		///< Tuning policy
-    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data
     int         NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename    InputIteratorT,               	///< The input iterator type. \iterator
     typename    CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
