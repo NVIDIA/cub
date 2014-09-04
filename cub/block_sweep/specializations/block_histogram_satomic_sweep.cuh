@@ -50,8 +50,8 @@ namespace cub {
  */
 template <
     typename    BlockHistogramSweepPolicy,		///< Tuning policy
-    int         MAX_PRIVATIZED_BINS,            ///< Number of histogram bins per channel (e.g., up to 256)
-    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         MAX_PRIVATIZED_BINS,            ///< Maximum number of privatized shared-memory histogram bins of any channel.  Zero indicates privatized counters to be maintained in global memory.
+    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data
     int         NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename    InputIteratorT,               	///< The input iterator type. \iterator
     typename    CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
