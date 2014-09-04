@@ -105,19 +105,19 @@ struct BlockReduceSweep
     // Types and constants
     //---------------------------------------------------------------------
 
-    // The value type of the input iterator
+    /// The value type of the input iterator
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
-    // Vector type of T for data movement
+    /// Vector type of T for data movement
     typedef typename CubVector<T, BlockReduceSweepPolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
 
-    // Input iterator wrapper type
+    /// Input iterator wrapper type
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
             CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, T, OffsetT>,  // Wrap the native input pointer with CacheModifiedInputIterator
             InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIteratorT;
 
-    // Constants
+    /// Constants
     enum
     {
         BLOCK_THREADS       = BlockReduceSweepPolicy::BLOCK_THREADS,
@@ -133,7 +133,7 @@ struct BlockReduceSweep
     static const CacheLoadModifier    LOAD_MODIFIER   = BlockReduceSweepPolicy::LOAD_MODIFIER;
     static const BlockReduceAlgorithm BLOCK_ALGORITHM = BlockReduceSweepPolicy::BLOCK_ALGORITHM;
 
-    // Parameterized BlockReduce primitive
+    /// Parameterized BlockReduce primitive
     typedef BlockReduce<T, BLOCK_THREADS, BlockReduceSweepPolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     /// Shared memory type required by this thread block
@@ -157,7 +157,7 @@ struct BlockReduceSweep
 
 
     //---------------------------------------------------------------------
-    // Interface
+    // Utility
     //---------------------------------------------------------------------
 
 
@@ -179,6 +179,10 @@ struct BlockReduceSweep
         return false;
     }
 
+
+    //---------------------------------------------------------------------
+    // Interface
+    //---------------------------------------------------------------------
 
     /**
      * Constructor
@@ -353,7 +357,7 @@ struct BlockReduceSweep
     //---------------------------------------------------------------------
 
     /**
-     * Dequeue and reduce tiles of items as part of a inter-block scan
+     * Dequeue and reduce tiles of items as part of a inter-block reduction
      */
     __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
@@ -408,7 +412,7 @@ struct BlockReduceSweep
 
 
     /**
-     * Dequeue and reduce tiles of items as part of a inter-block scan
+     * Dequeue and reduce tiles of items as part of a inter-block reduction
      */
     __device__ __forceinline__ void ConsumeRange(
         OffsetT                         num_items,          ///< [in] Total number of global input items

@@ -80,7 +80,7 @@ struct BlockUnzipChannelsSweepPolicy
  */
 template <
     typename    BlockUnzipChannelsSweepPolicyT, ///< Parameterized BlockUnzipChannelsSweepPolicy tuning policy type
-    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of active channels being histogrammed)
+    int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data
     int         NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename    InputIteratorT,                 ///< Random-access input iterator type for reading samples.
     typename    OutputIteratorT,                ///< Random-access output iterator type
