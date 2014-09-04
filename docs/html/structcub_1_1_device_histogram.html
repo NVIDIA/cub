@@ -120,30 +120,197 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Evenly-segmented bin ranges</div></td></tr>
-<tr class="memitem:a9d4b6e9ef8e237bb5536a5e7f03df123"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
-<tr class="memitem:a9d4b6e9ef8e237bb5536a5e7f03df123"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a9d4b6e9ef8e237bb5536a5e7f03df123">HistogramEven</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT lower_level, LevelT upper_level, int num_row_samples, int num_rows=1, int row_sample_stride=num_row_samples, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a9d4b6e9ef8e237bb5536a5e7f03df123"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an intensity histogram from a sequence of data samples using equal-width bins.  <a href="#a9d4b6e9ef8e237bb5536a5e7f03df123">More...</a><br/></td></tr>
-<tr class="separator:a9d4b6e9ef8e237bb5536a5e7f03df123"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8da01dd469a36cd7486d4eecda305d4d"><td class="memTemplParams" colspan="2">template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
-<tr class="memitem:a8da01dd469a36cd7486d4eecda305d4d"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a8da01dd469a36cd7486d4eecda305d4d">MultiHistogramEven</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS], LevelT lower_level[NUM_ACTIVE_CHANNELS], LevelT upper_level[NUM_ACTIVE_CHANNELS], int num_row_pixels, int num_rows=1, int row_pixel_stride=num_row_pixels, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a8da01dd469a36cd7486d4eecda305d4d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes intensity histograms from a sequence of multi-channel "pixel" data samples using equal-width bins.  <a href="#a8da01dd469a36cd7486d4eecda305d4d">More...</a><br/></td></tr>
-<tr class="separator:a8da01dd469a36cd7486d4eecda305d4d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a46f205b24f67b42d9a929ca6b45ac269"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
+<tr class="memitem:a46f205b24f67b42d9a929ca6b45ac269"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a46f205b24f67b42d9a929ca6b45ac269">HistogramEven</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT lower_level, LevelT upper_level, int num_samples, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a46f205b24f67b42d9a929ca6b45ac269"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an intensity histogram from a sequence of data samples using equal-width bins.  <a href="#a46f205b24f67b42d9a929ca6b45ac269">More...</a><br/></td></tr>
+<tr class="separator:a46f205b24f67b42d9a929ca6b45ac269"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a341427aae2cf4f83cb725adbf896d0c0"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
+<tr class="memitem:a341427aae2cf4f83cb725adbf896d0c0"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a341427aae2cf4f83cb725adbf896d0c0">HistogramEven</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT lower_level, LevelT upper_level, int num_row_samples, int num_rows, int row_stride, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a341427aae2cf4f83cb725adbf896d0c0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an intensity histogram from a sequence of data samples using equal-width bins.  <a href="#a341427aae2cf4f83cb725adbf896d0c0">More...</a><br/></td></tr>
+<tr class="separator:a341427aae2cf4f83cb725adbf896d0c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4fc7e1ed4f63587ca17537bf93070d66"><td class="memTemplParams" colspan="2">template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
+<tr class="memitem:a4fc7e1ed4f63587ca17537bf93070d66"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a4fc7e1ed4f63587ca17537bf93070d66">MultiHistogramEven</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS], LevelT lower_level[NUM_ACTIVE_CHANNELS], LevelT upper_level[NUM_ACTIVE_CHANNELS], int num_pixels, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a4fc7e1ed4f63587ca17537bf93070d66"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes intensity histograms from a sequence of multi-channel "pixel" data samples using equal-width bins.  <a href="#a4fc7e1ed4f63587ca17537bf93070d66">More...</a><br/></td></tr>
+<tr class="separator:a4fc7e1ed4f63587ca17537bf93070d66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc1758c3b563e736223e16463af9a2ea"><td class="memTemplParams" colspan="2">template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
+<tr class="memitem:adc1758c3b563e736223e16463af9a2ea"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#adc1758c3b563e736223e16463af9a2ea">MultiHistogramEven</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS], LevelT lower_level[NUM_ACTIVE_CHANNELS], LevelT upper_level[NUM_ACTIVE_CHANNELS], int num_row_pixels, int num_rows, int row_stride, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:adc1758c3b563e736223e16463af9a2ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes intensity histograms from a sequence of multi-channel "pixel" data samples using equal-width bins.  <a href="#adc1758c3b563e736223e16463af9a2ea">More...</a><br/></td></tr>
+<tr class="separator:adc1758c3b563e736223e16463af9a2ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Custom bin ranges</div></td></tr>
-<tr class="memitem:a7a7dbcf6d4a4df094dda3b79ece2f6c1"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
-<tr class="memitem:a7a7dbcf6d4a4df094dda3b79ece2f6c1"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a7a7dbcf6d4a4df094dda3b79ece2f6c1">HistogramRange</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT *d_levels, int num_row_samples, int num_rows=1, int row_sample_stride=num_row_samples, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a7a7dbcf6d4a4df094dda3b79ece2f6c1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an intensity histogram from a sequence of data samples using the specified bin boundary levels.  <a href="#a7a7dbcf6d4a4df094dda3b79ece2f6c1">More...</a><br/></td></tr>
-<tr class="separator:a7a7dbcf6d4a4df094dda3b79ece2f6c1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa5c8f800c737b9a9f3a6aeccf0bc7b3a"><td class="memTemplParams" colspan="2">template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
-<tr class="memitem:aa5c8f800c737b9a9f3a6aeccf0bc7b3a"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#aa5c8f800c737b9a9f3a6aeccf0bc7b3a">MultiHistogramRange</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS], LevelT *d_levels[NUM_ACTIVE_CHANNELS], int num_row_pixels, int num_rows=1, int row_pixel_stride=num_row_pixels, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:aa5c8f800c737b9a9f3a6aeccf0bc7b3a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes intensity histograms from a sequence of multi-channel "pixel" data samples using the specified bin boundary levels.  <a href="#aa5c8f800c737b9a9f3a6aeccf0bc7b3a">More...</a><br/></td></tr>
-<tr class="separator:aa5c8f800c737b9a9f3a6aeccf0bc7b3a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6525e73269a7a5d161c1d4642c644450"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
+<tr class="memitem:a6525e73269a7a5d161c1d4642c644450"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a6525e73269a7a5d161c1d4642c644450">HistogramRange</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT *d_levels, int num_samples, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a6525e73269a7a5d161c1d4642c644450"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an intensity histogram from a sequence of data samples using the specified bin boundary levels.  <a href="#a6525e73269a7a5d161c1d4642c644450">More...</a><br/></td></tr>
+<tr class="separator:a6525e73269a7a5d161c1d4642c644450"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a751dbbe8851fd210b9ec0acc01bb66d6"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
+<tr class="memitem:a751dbbe8851fd210b9ec0acc01bb66d6"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a751dbbe8851fd210b9ec0acc01bb66d6">HistogramRange</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram, int num_levels, LevelT *d_levels, int num_row_samples, int num_rows, int row_stride, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a751dbbe8851fd210b9ec0acc01bb66d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes an intensity histogram from a sequence of data samples using the specified bin boundary levels.  <a href="#a751dbbe8851fd210b9ec0acc01bb66d6">More...</a><br/></td></tr>
+<tr class="separator:a751dbbe8851fd210b9ec0acc01bb66d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a19dc8df9eca7c976a877f561b3b2b3cb"><td class="memTemplParams" colspan="2">template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
+<tr class="memitem:a19dc8df9eca7c976a877f561b3b2b3cb"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a19dc8df9eca7c976a877f561b3b2b3cb">MultiHistogramRange</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS], LevelT *d_levels[NUM_ACTIVE_CHANNELS], int num_pixels, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a19dc8df9eca7c976a877f561b3b2b3cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes intensity histograms from a sequence of multi-channel "pixel" data samples using the specified bin boundary levels.  <a href="#a19dc8df9eca7c976a877f561b3b2b3cb">More...</a><br/></td></tr>
+<tr class="separator:a19dc8df9eca7c976a877f561b3b2b3cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3fa1d37034fa494be195a1e53176fe2e"><td class="memTemplParams" colspan="2">template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT , typename CounterT , typename LevelT &gt; </td></tr>
+<tr class="memitem:a3fa1d37034fa494be195a1e53176fe2e"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_histogram.html#a3fa1d37034fa494be195a1e53176fe2e">MultiHistogramRange</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_samples, CounterT *d_histogram[NUM_ACTIVE_CHANNELS], int num_levels[NUM_ACTIVE_CHANNELS], LevelT *d_levels[NUM_ACTIVE_CHANNELS], int num_row_pixels, int num_rows, int row_stride, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a3fa1d37034fa494be195a1e53176fe2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes intensity histograms from a sequence of multi-channel "pixel" data samples using the specified bin boundary levels.  <a href="#a3fa1d37034fa494be195a1e53176fe2e">More...</a><br/></td></tr>
+<tr class="separator:a3fa1d37034fa494be195a1e53176fe2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a9d4b6e9ef8e237bb5536a5e7f03df123"></a>
+<a class="anchor" id="a46f205b24f67b42d9a929ca6b45ac269"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceHistogram::HistogramEven </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">InputIteratorT&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CounterT *&#160;</td>
+          <td class="paramname"><em>d_histogram</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_levels</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">LevelT&#160;</td>
+          <td class="paramname"><em>lower_level</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">LevelT&#160;</td>
+          <td class="paramname"><em>upper_level</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes an intensity histogram from a sequence of data samples using equal-width bins. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
+<li>The number of histogram bins is <code>num_levels</code> - 1</li>
+<li>The range of values for all bins have the same width: (<code>upper_level</code> - <code>lower_level</code>) / (<code>num_levels</code> - 1)</li>
+<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of a six-bin histogram from a sequence of float samples</dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input samples and</span></div>
+<div class="line"><span class="comment">// output histogram</span></div>
+<div class="line"><span class="keywordtype">int</span>           num_samples;  <span class="comment">// e.g., 10</span></div>
+<div class="line"><span class="keywordtype">float</span>         *d_samples;   <span class="comment">// e.g., [2.2, 6.0, 7.1, 2.9, 3.5, 0.3, 2.9, 2.0, 6.1, 999.5]</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>  *d_histogram; <span class="comment">// e.g., [ , , , , , , , ]</span></div>
+<div class="line"><span class="keywordtype">int</span>           num_levels;   <span class="comment">// e.g., 7       (seven level boundaries for six bins)</span></div>
+<div class="line"><span class="keywordtype">float</span>         lower_level;  <span class="comment">// e.g., 0.0     (lower sample value boundary of lowest bin)</span></div>
+<div class="line"><span class="keywordtype">float</span>         upper_level;  <span class="comment">// e.g., 12.0    (upper sample value boundary of upper bin)</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
+<div class="line">void     *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
+<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a46f205b24f67b42d9a929ca6b45ac269" title="Computes an intensity histogram from a sequence of data samples using equal-width bins...">cub::DeviceHistogram::HistogramEven</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Compute histograms</span></div>
+<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a46f205b24f67b42d9a929ca6b45ac269" title="Computes an intensity histogram from a sequence of data samples using equal-width bins...">cub::DeviceHistogram::HistogramEven</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// d_histogram   &lt;-- [1, 0, 5, 0, 3, 0, 0, 0];</span></div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">CounterT</td><td><b>[inferred]</b> Integer type for histogram bin counters </td></tr>
+    <tr><td class="paramname">LevelT</td><td><b>[inferred]</b> Type for specifying boundaries (levels) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>The pointer to the input sequence of data samples. </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>The pointer to the histogram counter output array of length <code>num_levels</code> - 1. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_levels</td><td>The number of boundaries (levels) for delineating histogram samples. Implies that the number of bins is <code>num_levels</code> - 1. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">lower_level</td><td>The lower sample value bound (inclusive) for the lowest histogram bin. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">upper_level</td><td>The upper sample value bound (exclusive) for the highest histogram bin. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>The number of data samples per row in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00125">125</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a341427aae2cf4f83cb725adbf896d0c0"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -204,13 +371,13 @@ template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; <
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_rows</em> = <code>1</code>, </td>
+          <td class="paramname"><em>num_rows</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>row_sample_stride</em> = <code>num_row_samples</code>, </td>
+          <td class="paramname"><em>row_stride</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -239,7 +406,7 @@ template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; <
 
 <p>Computes an intensity histogram from a sequence of data samples using equal-width bins. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_sample_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
+<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
 <li>The number of histogram bins is <code>num_levels</code> - 1</li>
 <li>The range of values for all bins have the same width: (<code>upper_level</code> - <code>lower_level</code>) / (<code>num_levels</code> - 1)</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
@@ -262,15 +429,15 @@ template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; <
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a9d4b6e9ef8e237bb5536a5e7f03df123" title="Computes an intensity histogram from a sequence of data samples using equal-width bins...">cub::DeviceHistogram::HistogramEven</a>(d_temp_storage, temp_storage_bytes,</div>
-<div class="line">    d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a46f205b24f67b42d9a929ca6b45ac269" title="Computes an intensity histogram from a sequence of data samples using equal-width bins...">cub::DeviceHistogram::HistogramEven</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples, 1, num_samples);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Compute histograms</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a9d4b6e9ef8e237bb5536a5e7f03df123" title="Computes an intensity histogram from a sequence of data samples using equal-width bins...">cub::DeviceHistogram::HistogramEven</a>(d_temp_storage, temp_storage_bytes,</div>
-<div class="line">    d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a46f205b24f67b42d9a929ca6b45ac269" title="Computes an intensity histogram from a sequence of data samples using equal-width bins...">cub::DeviceHistogram::HistogramEven</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples, 1, num_samples);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_histogram   &lt;-- [1, 0, 5, 0, 3, 0, 0, 0];</span></div>
 </div><!-- fragment --></dd></dl>
@@ -292,19 +459,174 @@ template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; <
     <tr><td class="paramdir">[in]</td><td class="paramname">lower_level</td><td>The lower sample value bound (inclusive) for the lowest histogram bin. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">upper_level</td><td>The upper sample value bound (exclusive) for the highest histogram bin. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_row_samples</td><td>The number of data samples per row in the region of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_rows</td><td><b>[optional]</b> The number of rows in the region of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">row_sample_stride</td><td><b>[optional]</b> The number of data samples between starts of consecutive rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_rows</td><td>The number of rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">row_stride</td><td>The number of data samples between starts of consecutive rows in the region of interest </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00125">125</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00214">214</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a8da01dd469a36cd7486d4eecda305d4d"></a>
+<a class="anchor" id="a4fc7e1ed4f63587ca17537bf93070d66"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT , typename CounterT , typename LevelT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceHistogram::MultiHistogramEven </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">InputIteratorT&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CounterT *&#160;</td>
+          <td class="paramname"><em>d_histogram</em>[NUM_ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_levels</em>[NUM_ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">LevelT&#160;</td>
+          <td class="paramname"><em>lower_level</em>[NUM_ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">LevelT&#160;</td>
+          <td class="paramname"><em>upper_level</em>[NUM_ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_pixels</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes intensity histograms from a sequence of multi-channel "pixel" data samples using equal-width bins. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The input is comprised of data samples from <code>NUM_CHANNELS</code> independent channels that have been interleaved into a single sequence of "pixels" (e.g., an array of 1-byte samples where every four consecutive samples comprise an "RGBA" pixel).</li>
+<li>Of the <code>NUM_CHANNELS</code> specified, the function will only compute histograms for the first <code>NUM_ACTIVE_CHANNELS</code> (e.g., only RGB histograms from RGBA pixel samples).</li>
+<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
+<li>The number of histogram bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1.</li>
+<li>For channel<sub><em>i</em></sub>, the range of values for all histogram bins have the same width: (<code>upper_level[i]</code> - <code>lower_level[i]</code>) / (<code> num_levels[i]</code> - 1)</li>
+<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 256-bin RGB histograms from a quad-channel sequence of RGBA pixels (8 bits per channel per pixel)</dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input samples</span></div>
+<div class="line"><span class="comment">// and output histograms</span></div>
+<div class="line"><span class="keywordtype">int</span>              num_pixels;      <span class="comment">// e.g., 5</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>    *d_samples;      <span class="comment">// e.g., [(2, 6, 7, 5), (3, 0, 2, 1), (7, 0, 6, 2),</span></div>
+<div class="line">                                  <span class="comment">//        (0, 6, 7, 5), (3, 0, 2, 6)]</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>     *d_histogram[3]; <span class="comment">// e.g., three device pointers each allocated</span></div>
+<div class="line">                                  <span class="comment">//       with 256 integer counters</span></div>
+<div class="line"><span class="keywordtype">int</span>              num_levels[3];   <span class="comment">// e.g., {257, 257, 257};</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>     lower_level[3];  <span class="comment">// e.g., {0, 0, 0};</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>     upper_level[3];  <span class="comment">// e.g., {256, 256, 256};</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
+<div class="line">void     *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
+<div class="line">cub::DeviceHistogram::MultiHistogramEven&lt;4, 3&gt;(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histograms, num_levels, lower_level, upper_level, num_pixels);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Compute histograms</span></div>
+<div class="line">cub::DeviceHistogram::MultiHistogramEven&lt;4, 3&gt;(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histograms, num_levels, lower_level, upper_level, num_pixels);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// d_histogram   &lt;-- [ [1, 0, 1, 2, 0, 0, 0, 1, 0, 0, 0, ..., 0],</span></div>
+<div class="line"><span class="comment">//                     [0, 3, 0, 0, 0, 0, 2, 0, 0, 0, 0, ..., 0],</span></div>
+<div class="line"><span class="comment">//                     [0, 0, 2, 0, 0, 0, 1, 2, 0, 0, 0, ..., 0] ]</span></div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">NUM_CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
+    <tr><td class="paramname">NUM_ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
+    <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">CounterT</td><td><b>[inferred]</b> Integer type for histogram bin counters </td></tr>
+    <tr><td class="paramname">LevelT</td><td><b>[inferred]</b> Type for specifying boundaries (levels) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples). </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>The pointers to the histogram counter output arrays, one for each active channel. For channel<sub><em>i</em></sub>, the allocation length of <code>d_histograms[i]</code> should be <code>num_levels[i]</code> - 1. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_levels</td><td>The number of boundaries (levels) for delineating histogram samples in each active channel. Implies that the number of bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">lower_level</td><td>The lower sample value bound (inclusive) for the lowest histogram bin in each active channel. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">upper_level</td><td>The upper sample value bound (exclusive) for the highest histogram bin in each active channel. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_pixels</td><td>The number of multi-channel pixels per row in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00319">319</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="adc1758c3b563e736223e16463af9a2ea"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -365,13 +687,13 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT ,
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_rows</em> = <code>1</code>, </td>
+          <td class="paramname"><em>num_rows</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>row_pixel_stride</em> = <code>num_row_pixels</code>, </td>
+          <td class="paramname"><em>row_stride</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -402,7 +724,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT ,
 <dl class="section user"><dt></dt><dd><ul>
 <li>The input is comprised of data samples from <code>NUM_CHANNELS</code> independent channels that have been interleaved into a single sequence of "pixels" (e.g., an array of 1-byte samples where every four consecutive samples comprise an "RGBA" pixel).</li>
 <li>Of the <code>NUM_CHANNELS</code> specified, the function will only compute histograms for the first <code>NUM_ACTIVE_CHANNELS</code> (e.g., only RGB histograms from RGBA pixel samples).</li>
-<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_pixel_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
+<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
 <li>The number of histogram bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1.</li>
 <li>For channel<sub><em>i</em></sub>, the range of values for all histogram bins have the same width: (<code>upper_level[i]</code> - <code>lower_level[i]</code>) / (<code> num_levels[i]</code> - 1)</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
@@ -428,14 +750,14 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT ,
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
 <div class="line">cub::DeviceHistogram::MultiHistogramEven&lt;4, 3&gt;(d_temp_storage, temp_storage_bytes,</div>
-<div class="line">    d_samples, num_pixels, d_histograms, num_levels, lower_level, upper_level);</div>
+<div class="line">    d_samples, d_histograms, num_levels, lower_level, upper_level, num_pixels, 1, num_pixels);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Compute histograms</span></div>
 <div class="line">cub::DeviceHistogram::MultiHistogramEven&lt;4, 3&gt;(d_temp_storage, temp_storage_bytes,</div>
-<div class="line">    d_samples, num_pixels, d_histograms, num_levels, lower_level, upper_level);</div>
+<div class="line">    d_samples, d_histograms, num_levels, lower_level, upper_level, num_pixels, 1, num_pixels);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_histogram   &lt;-- [ [1, 0, 1, 2, 0, 0, 0, 1, 0, 0, 0, ..., 0],</span></div>
 <div class="line"><span class="comment">//                     [0, 3, 0, 0, 0, 0, 2, 0, 0, 0, 0, ..., 0],</span></div>
@@ -461,19 +783,158 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT ,
     <tr><td class="paramdir">[in]</td><td class="paramname">lower_level</td><td>The lower sample value bound (inclusive) for the lowest histogram bin in each active channel. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">upper_level</td><td>The upper sample value bound (exclusive) for the highest histogram bin in each active channel. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_row_pixels</td><td>The number of multi-channel pixels per row in the region of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_rows</td><td><b>[optional]</b> The number of rows in the region of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">row_pixel_stride</td><td><b>[optional]</b> The number of multi-channel pixels between starts of consecutive rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_rows</td><td>The number of rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">row_stride</td><td>The number of multi-channel pixels between starts of consecutive rows in the region of interest </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00231">231</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00424">424</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a7a7dbcf6d4a4df094dda3b79ece2f6c1"></a>
+<a class="anchor" id="a6525e73269a7a5d161c1d4642c644450"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceHistogram::HistogramRange </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">InputIteratorT&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CounterT *&#160;</td>
+          <td class="paramname"><em>d_histogram</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_levels</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">LevelT *&#160;</td>
+          <td class="paramname"><em>d_levels</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes an intensity histogram from a sequence of data samples using the specified bin boundary levels. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
+<li>The number of histogram bins is <code>num_levels</code> - 1</li>
+<li>The value range for bin<sub><em>i</em></sub> is [<code>level[i]</code>, <code>level[i+1]</code>)</li>
+<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of an six-bin histogram from a sequence of float samples</dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input samples and</span></div>
+<div class="line"><span class="comment">// output histogram</span></div>
+<div class="line"><span class="keywordtype">int</span>           num_samples;  <span class="comment">// e.g., 10</span></div>
+<div class="line"><span class="keywordtype">float</span>         *d_samples;   <span class="comment">// e.g., [2.2, 6.0, 7.1, 2.9, 3.5, 0.3, 2.9, 2.0, 6.1, 999.5]</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>  *d_histogram; <span class="comment">// e.g., [ , , , , , , , ]</span></div>
+<div class="line"><span class="keywordtype">int</span>           num_levels    <span class="comment">// e.g., 7 (seven level boundaries for six bins)</span></div>
+<div class="line"><span class="keywordtype">float</span>         *d_levels;    <span class="comment">// e.g., [0.0, 2.0, 4.0, 6.0, 8.0, 12.0, 16.0]</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
+<div class="line">void     *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
+<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a6525e73269a7a5d161c1d4642c644450" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">cub::DeviceHistogram::HistogramRange</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histogram, num_levels, d_levels, num_samples);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Compute histograms</span></div>
+<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a6525e73269a7a5d161c1d4642c644450" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">cub::DeviceHistogram::HistogramRange</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histogram, num_levels, d_levels, num_samples);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// d_histogram   &lt;-- [1, 0, 5, 0, 3, 0, 0, 0];</span></div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">CounterT</td><td><b>[inferred]</b> Integer type for histogram bin counters </td></tr>
+    <tr><td class="paramname">LevelT</td><td><b>[inferred]</b> Type for specifying boundaries (levels) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>The pointer to the input sequence of data samples. </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>The pointer to the histogram counter output array of length <code>num_levels</code> - 1. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_levels</td><td>The number of boundaries (levels) for delineating histogram samples. Implies that the number of bins is <code>num_levels</code> - 1. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_levels</td><td>The pointer to the array of boundaries (levels). Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_samples</td><td>The number of data samples per row in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00521">521</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a751dbbe8851fd210b9ec0acc01bb66d6"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -528,13 +989,13 @@ template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; <
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_rows</em> = <code>1</code>, </td>
+          <td class="paramname"><em>num_rows</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>row_sample_stride</em> = <code>num_row_samples</code>, </td>
+          <td class="paramname"><em>row_stride</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -563,7 +1024,7 @@ template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; <
 
 <p>Computes an intensity histogram from a sequence of data samples using the specified bin boundary levels. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_sample_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
+<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
 <li>The number of histogram bins is <code>num_levels</code> - 1</li>
 <li>The value range for bin<sub><em>i</em></sub> is [<code>level[i]</code>, <code>level[i+1]</code>)</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
@@ -585,15 +1046,15 @@ template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; <
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a7a7dbcf6d4a4df094dda3b79ece2f6c1" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">cub::DeviceHistogram::HistogramRange</a>(d_temp_storage, temp_storage_bytes,</div>
-<div class="line">    d_samples, d_histogram, num_levels, d_levels, num_samples);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a6525e73269a7a5d161c1d4642c644450" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">cub::DeviceHistogram::HistogramRange</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histogram, num_levels, d_levels, num_samples, 1, num_samples);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Compute histograms</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a7a7dbcf6d4a4df094dda3b79ece2f6c1" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">cub::DeviceHistogram::HistogramRange</a>(d_temp_storage, temp_storage_bytes,</div>
-<div class="line">    d_samples, d_histogram, num_levels, d_levels, num_samples);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_histogram.html#a6525e73269a7a5d161c1d4642c644450" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">cub::DeviceHistogram::HistogramRange</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histogram, num_levels, d_levels, num_samples, 1, num_samples);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_histogram   &lt;-- [1, 0, 5, 0, 3, 0, 0, 0];</span></div>
 </div><!-- fragment --></dd></dl>
@@ -614,19 +1075,19 @@ template&lt;typename InputIteratorT , typename CounterT , typename LevelT &gt; <
     <tr><td class="paramdir">[in]</td><td class="paramname">num_levels</td><td>The number of boundaries (levels) for delineating histogram samples. Implies that the number of bins is <code>num_levels</code> - 1. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_levels</td><td>The pointer to the array of boundaries (levels). Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_row_samples</td><td>The number of data samples per row in the region of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_rows</td><td><b>[optional]</b> The number of rows in the region of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">row_sample_stride</td><td><b>[optional]</b> The number of data samples between starts of consecutive rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_rows</td><td>The number of rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">row_stride</td><td>The number of data samples between starts of consecutive rows in the region of interest </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00328">328</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00606">606</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="aa5c8f800c737b9a9f3a6aeccf0bc7b3a"></a>
+<a class="anchor" id="a19dc8df9eca7c976a877f561b3b2b3cb"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -675,19 +1136,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT ,
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_row_pixels</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>num_rows</em> = <code>1</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>row_pixel_stride</em> = <code>num_row_pixels</code>, </td>
+          <td class="paramname"><em>num_pixels</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -718,7 +1167,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT ,
 <dl class="section user"><dt></dt><dd><ul>
 <li>The input is comprised of data samples from <code>NUM_CHANNELS</code> independent channels that have been interleaved into a single sequence of "pixels" (e.g., an array of 1-byte samples where every four consecutive samples comprise an "RGBA" pixel).</li>
 <li>Of the <code>NUM_CHANNELS</code> specified, the function will only compute histograms for the first <code>NUM_ACTIVE_CHANNELS</code> (e.g., RGB histograms from RGBA pixel samples).</li>
-<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_pixel_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
+<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
 <li>The number of histogram bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1.</li>
 <li>For channel<sub><em>i</em></sub>, the range of values for all histogram bins have the same width: (<code>upper_level[i]</code> - <code>lower_level[i]</code>) / (<code> num_levels[i]</code> - 1)</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
@@ -775,16 +1224,176 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT ,
     <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>The pointers to the histogram counter output arrays, one for each active channel. For channel<sub><em>i</em></sub>, the allocation length of <code>d_histograms[i]</code> should be <code>num_levels[i]</code> - 1. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_levels</td><td>The number of boundaries (levels) for delineating histogram samples in each active channel. Implies that the number of bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_levels</td><td>The pointers to the arrays of boundaries (levels), one for each active channel. Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_row_pixels</td><td>The number of multi-channel pixels per row in the region of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">num_rows</td><td><b>[optional]</b> The number of rows in the region of interest </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">row_pixel_stride</td><td><b>[optional]</b> The number of multi-channel pixels between starts of consecutive rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_pixels</td><td>The number of multi-channel pixels per row in the region of interest </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00431">431</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00708">708</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a3fa1d37034fa494be195a1e53176fe2e"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT , typename CounterT , typename LevelT &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static CUB_RUNTIME_FUNCTION cudaError_t cub::DeviceHistogram::MultiHistogramRange </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_temp_storage</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t &amp;&#160;</td>
+          <td class="paramname"><em>temp_storage_bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">InputIteratorT&#160;</td>
+          <td class="paramname"><em>d_samples</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">CounterT *&#160;</td>
+          <td class="paramname"><em>d_histogram</em>[NUM_ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_levels</em>[NUM_ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">LevelT *&#160;</td>
+          <td class="paramname"><em>d_levels</em>[NUM_ACTIVE_CHANNELS], </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_row_pixels</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>num_rows</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>row_stride</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>stream</em> = <code>0</code>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>debug_synchronous</em> = <code>false</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Computes intensity histograms from a sequence of multi-channel "pixel" data samples using the specified bin boundary levels. </p>
+<dl class="section user"><dt></dt><dd><ul>
+<li>The input is comprised of data samples from <code>NUM_CHANNELS</code> independent channels that have been interleaved into a single sequence of "pixels" (e.g., an array of 1-byte samples where every four consecutive samples comprise an "RGBA" pixel).</li>
+<li>Of the <code>NUM_CHANNELS</code> specified, the function will only compute histograms for the first <code>NUM_ACTIVE_CHANNELS</code> (e.g., RGB histograms from RGBA pixel samples).</li>
+<li>A two-dimensional "region of interest" within <code>d_samples</code> can be specified using the optional <code>num_rows</code> and <code>row_stride</code> parameters. Otherwise a contiguous one-dimensional sequence of samples is assumed.</li>
+<li>The number of histogram bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1.</li>
+<li>For channel<sub><em>i</em></sub>, the range of values for all histogram bins have the same width: (<code>upper_level[i]</code> - <code>lower_level[i]</code>) / (<code> num_levels[i]</code> - 1)</li>
+<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+</ul>
+</dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 4-bin RGB histograms from a quad-channel sequence of RGBA pixels (8 bits per channel per pixel)</dd></dl>
+<dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_histogram.cuh&gt;</span></div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input samples</span></div>
+<div class="line"><span class="comment">// and output histograms</span></div>
+<div class="line"><span class="keywordtype">int</span>            num_pixels;       <span class="comment">// e.g., 5</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>  *d_samples;       <span class="comment">// e.g., [(2, 6, 7, 5), (3, 0, 2, 1),</span></div>
+<div class="line">                                 <span class="comment">//        (7, 0, 6, 2), (0, 6, 7, 5), (3, 0, 2, 6)]</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>   *d_histogram[3];  <span class="comment">// e.g., [[ , , , ],[ , , , ],[ , , , ]];</span></div>
+<div class="line"><span class="keywordtype">int</span>            num_levels[3];    <span class="comment">// e.g., {5, 5, 5};</span></div>
+<div class="line"><span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>   *d_levels[3];     <span class="comment">// e.g., [ [0, 2, 4, 6, 8],</span></div>
+<div class="line">                                 <span class="comment">//         [0, 2, 4, 6, 8],</span></div>
+<div class="line">                                 <span class="comment">//         [0, 2, 4, 6, 8] ];</span></div>
+<div class="line">...</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
+<div class="line">void     *d_temp_storage = NULL;</div>
+<div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
+<div class="line">cub::DeviceHistogram::MultiHistogramRange&lt;4, 3&gt;(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histograms, num_levels, d_levels, num_pixels, 1, num_pixels);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Allocate temporary storage</span></div>
+<div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// Compute histograms</span></div>
+<div class="line">cub::DeviceHistogram::MultiHistogramRange&lt;4, 3&gt;(d_temp_storage, temp_storage_bytes,</div>
+<div class="line">    d_samples, d_histograms, num_levels, d_levels, num_pixels, 1, num_pixels);</div>
+<div class="line"></div>
+<div class="line"><span class="comment">// d_histogram   &lt;-- [ [1, 3, 0, 1],</span></div>
+<div class="line"><span class="comment">//                     [3, 0, 0, 2],</span></div>
+<div class="line"><span class="comment">//                     [0, 2, 0, 3] ]</span></div>
+</div><!-- fragment --></dd></dl>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">NUM_CHANNELS</td><td>Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed) </td></tr>
+    <tr><td class="paramname">NUM_ACTIVE_CHANNELS</td><td><b>[inferred]</b> Number of channels actively being histogrammed </td></tr>
+    <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input samples. (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">CounterT</td><td><b>[inferred]</b> Integer type for histogram bin counters </td></tr>
+    <tr><td class="paramname">LevelT</td><td><b>[inferred]</b> Type for specifying boundaries (levels) </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_samples</td><td>The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples). </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_histogram</td><td>The pointers to the histogram counter output arrays, one for each active channel. For channel<sub><em>i</em></sub>, the allocation length of <code>d_histograms[i]</code> should be <code>num_levels[i]</code> - 1. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_levels</td><td>The number of boundaries (levels) for delineating histogram samples in each active channel. Implies that the number of bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_levels</td><td>The pointers to the arrays of boundaries (levels), one for each active channel. Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_row_pixels</td><td>The number of multi-channel pixels per row in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">num_rows</td><td>The number of rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">row_stride</td><td>The number of multi-channel pixels between starts of consecutive rows in the region of interest </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00811">811</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -795,7 +1404,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename InputIteratorT ,
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Aug 29 2014 01:02:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 4 2014 17:43:51 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
