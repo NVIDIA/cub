@@ -128,7 +128,7 @@ struct BlockHistogramSweep
     typedef typename If<IsPointer<SampleIteratorT>::VALUE,
             CacheModifiedInputIterator<BlockHistogramSweepPolicy::LOAD_MODIFIER, SampleT, OffsetT>,     // Wrap the native input pointer with CacheModifiedInputIterator
             SampleIteratorT>::Type                                                                       // Directly use the supplied input iterator type
-        WrappedInputIteratorSampleT;
+        WrappedSampleIteratorT;
 
     /// Vector input iterator type
     typedef CacheModifiedInputIterator<BlockHistogramSweepPolicy::LOAD_MODIFIER, VectorT, OffsetT> InputIteratorVectorT;
@@ -157,7 +157,10 @@ struct BlockHistogramSweep
     SampleTransformOpT (&transform_op)[NUM_ACTIVE_CHANNELS];
 
     /// Input data to reduce
-    WrappedInputIteratorSampleT d_samples;
+    SampleIteratorT d_samples;
+
+    /// Cache-modified input data to reduce
+    WrappedSampleIteratorT d_wrapped_samples;
 
     /// The number of bins for each channel
     int (&num_bins)[NUM_ACTIVE_CHANNELS];
@@ -251,12 +254,13 @@ struct BlockHistogramSweep
         SampleTransformOpT  (&transform_op)[NUM_ACTIVE_CHANNELS],           ///< Transform operators for determining bin-ids from samples, one for each channel
         int                 (&num_bins)[NUM_ACTIVE_CHANNELS])             ///< The number of boundaries (levels) for delineating histogram samples, one for each channel
     :
-            temp_storage(temp_storage.Alias()),
-            d_samples(d_samples),
-            d_out_histograms(d_out_histograms),
-            transform_op(transform_op),
-            num_bins(num_bins),
-            can_vectorize(IsAligned(d_samples, Int2Type<IS_VECTOR_SUITABLE>()))
+        temp_storage(temp_storage.Alias()),
+        d_samples(d_samples),
+        d_wrapped_samples(d_samples),
+        d_out_histograms(d_out_histograms),
+        transform_op(transform_op),
+        num_bins(num_bins),
+        can_vectorize(IsAligned(d_samples, Int2Type<IS_VECTOR_SUITABLE>()))
     {
         InitBinCounters(Int2Type<USE_SHARED_MEM>());
 
@@ -314,7 +318,7 @@ struct BlockHistogramSweep
             #pragma unroll
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
             {
-                samples[PIXEL][CHANNEL] = d_samples[block_offset + pixel_offset + CHANNEL];
+                samples[PIXEL][CHANNEL] = d_wrapped_samples[block_offset + pixel_offset + CHANNEL];
             }
         }
 
@@ -336,19 +340,21 @@ struct BlockHistogramSweep
         OffsetT         block_offset,
         Int2Type<true>  is_vector_suitable)
     {
+/*
         if (!can_vectorize)
         {
             // Not aligned
             ConsumeFullTile(block_offset, Int2Type<false>());
         }
         else
-        {
+*/        {
             // Alias items as an array of VectorT and load it in striped fashion
             SampleT samples[PIXELS_PER_THREAD][NUM_CHANNELS];
             VectorT *vec_items = reinterpret_cast<VectorT*>(samples);
 
             // Vector input iterator wrapper at starting pixel
-            InputIteratorVectorT    d_vec_in(reinterpret_cast<VectorT*>(d_samples + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH)));
+            VectorT *ptr = reinterpret_cast<VectorT*>(d_samples + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH));
+            InputIteratorVectorT d_vec_in(ptr);
 
             if (NUM_CHANNELS > 1)
             {
@@ -393,7 +399,7 @@ struct BlockHistogramSweep
             #pragma unroll
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
             {
-                pixel[CHANNEL] = d_samples[block_offset + (pixel_idx * NUM_CHANNELS) + CHANNEL];
+                pixel[CHANNEL] = d_wrapped_samples[block_offset + (pixel_idx * NUM_CHANNELS) + CHANNEL];
             }
 
             AccumulatePixel(pixel, Int2Type<USE_SHARED_MEM>());
@@ -419,8 +425,7 @@ struct BlockHistogramSweep
             // Multi-channel: read striped pixels
 
             // Vector input iterator wrapper at starting pixel
-            InputIteratorVectorT d_vec_in(
-                reinterpret_cast<VectorT*>(d_samples + block_offset + (threadIdx.x * NUM_CHANNELS)));
+            InputIteratorVectorT d_vec_in(reinterpret_cast<VectorT*>(d_samples + block_offset + (threadIdx.x * NUM_CHANNELS)));
 
             for (int pixel_idx = threadIdx.x; pixel_idx < valid_pixels; pixel_idx += BLOCK_THREADS)
             {
@@ -429,7 +434,7 @@ struct BlockHistogramSweep
                 *vec_items = d_vec_in[pixel_idx];
 
                 // Accumulate pixel
-
+                AccumulatePixel(pixel, Int2Type<USE_SHARED_MEM>());
             }
         }
     }
@@ -448,14 +453,14 @@ struct BlockHistogramSweep
             ConsumeFullTile(block_offset, Int2Type<IS_VECTOR_SUITABLE>());
             block_offset += TILE_SAMPLES;
         }
-
+/*
         // Consume a partially-full tile
         if (block_offset < block_end)
         {
             int valid_pixels = (block_end - block_offset) / NUM_CHANNELS;
             ConsumePartialTile(block_offset, valid_pixels, Int2Type<IS_VECTOR_SUITABLE>());
         }
-
+*/
         // Aggregate output
     }
 
