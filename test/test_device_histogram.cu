@@ -264,7 +264,7 @@ struct SearchTransform
 
     // Functor for converting samples to bin-ids (num_levels is returned if sample is out of range)
     template <typename SampleT>
-    __device__ __forceinline__ int operator()(SampleT sample)
+    int operator()(SampleT sample)
     {
         int bin = std::upper_bound(levels, levels + num_levels, (LevelT) sample) - levels - 1;
         if (bin < 0)
@@ -286,7 +286,7 @@ struct ScaleTransform
     LevelT min;         // Min sample level (inclusive)
     LevelT scale;       // Bin scaling factor
 
-    __device__ __forceinline__ void Init(
+    void Init(
         int    num_levels,  // Number of levels in array
         LevelT max,         // Max sample level (exclusive)
         LevelT min,         // Min sample level (inclusive)
@@ -300,9 +300,9 @@ struct ScaleTransform
 
     // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)
     template <typename SampleT>
-    __device__ __forceinline__ int operator()(SampleT sample)
+    int operator()(SampleT sample)
     {
-        if ((sample < min) || (sample <= max))
+        if ((sample < min) || (sample >= max))
         {
             // Sample out of range
             return num_levels;
@@ -374,7 +374,7 @@ void Initialize(
                 if (g_verbose_input)
                 {
                     if (channel > 0) printf(", ");
-                    std::cout << h_samples[offset];
+                    std::cout << CoutCast(h_samples[offset]);
                 }
 
                 // Update sample bin
@@ -417,9 +417,9 @@ void Test(
         num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride,
         total_samples, (int) sizeof(SampleT), type_string,
         NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
-    std::cout << max_value << "\n";
+    std::cout << CoutCast(max_value) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
-        std::cout << "\t channel " << channel << " having " << num_levels[channel] - 1 << " bins [" << lower_level[channel] << ", " << upper_level[channel] << ")\n";
+        std::cout << "Channel " << channel << ": " << num_levels[channel] - 1 << " bins [" << lower_level[channel] << ", " << upper_level[channel] << ")\n";
     fflush(stdout);
 
     // Allocate and initialize host and device data
@@ -430,16 +430,22 @@ void Test(
 
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
-        h_histogram[channel] = new CounterT[num_levels[channel] - 1];
+        int bins = num_levels[channel] - 1;
+        h_histogram[channel] = new CounterT[bins];
 
         transform_op[channel].Init(
             num_levels[channel],
             upper_level[channel],
             lower_level[channel],
-            ((upper_level[channel] - lower_level[channel]) / (num_levels[channel] - 1)));
+            ((upper_level[channel] - lower_level[channel]) / bins));
     }
 
-    Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
+    printf("mooch1\n"); fflush(stdout);
+
+    Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
+
+    printf("mooch2\n"); fflush(stdout);
 
     // Allocate and initialize device data
 
@@ -471,6 +477,8 @@ void Test(
         num_row_pixels, num_rows, row_stride,
         0, true);
 
+    printf("mooch3\n"); fflush(stdout);
+
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Run warmup/correctness iteration
@@ -480,6 +488,8 @@ void Test(
         d_samples, d_histogram, num_levels, lower_level, upper_level,
         num_row_pixels, num_rows, row_stride,
         0, true);
+
+    printf("mooch4\n"); fflush(stdout);
 
     // Flush any stdout/stderr
     CubDebugExit(cudaPeekAtLastError());
@@ -677,13 +687,16 @@ void Test(
 int main(int argc, char** argv)
 {
     int num_samples = -1;
+    int entropy_reduction = 0;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
+    g_verbose_input = args.CheckCmdLineFlag("v2");
     args.GetCmdLineArgument("n", num_samples);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
+    args.GetCmdLineArgument("entropy", entropy_reduction);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -693,6 +706,7 @@ int main(int argc, char** argv)
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
             "[--repeat=<repetitions of entire test suite>]"
+            "[--entropy=<entropy-reduction factor (default 0)>]"
             "[--v] "
             "[--cdp]"
             "\n", argv[0]);
@@ -703,11 +717,10 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     unsigned char max_value = 255;
-    int entropy_reduction = 0;
     int num_levels[1] = {257};
     int lower_level[1] = {0};
     int upper_level[1] = {256};
-    int num_row_pixels = 512;
+    int num_row_pixels = num_samples;
     int num_rows = 1;
     int row_stride = num_row_pixels;
 
