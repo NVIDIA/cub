@@ -280,7 +280,7 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                512,
+                128,
                 (20 / NUM_ACTIVE_CHANNELS),
                 LOAD_LDG>
             HistogramSweepPolicy;
