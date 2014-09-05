@@ -85,7 +85,8 @@ template <
     typename    SampleIteratorT,                ///< Random-access input iterator type for reading samples.
     typename    CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
     typename    SampleTransformOpT,             ///< Transform operator type for determining bin-ids from samples for each channel
-    typename    OffsetT>                        ///< Signed integer type for global offsets
+    typename    OffsetT,                        ///< Signed integer type for global offsets
+    int         PTX_ARCH = CUB_PTX_ARCH>        ///< PTX compute capability
 struct BlockHistogramSweep
 {
     //---------------------------------------------------------------------
@@ -102,7 +103,7 @@ struct BlockHistogramSweep
         PIXELS_PER_THREAD       = BlockHistogramSweepPolicy::PIXELS_PER_THREAD,
         TILE_PIXELS             = PIXELS_PER_THREAD * BLOCK_THREADS,
         TILE_SAMPLES            = TILE_PIXELS * NUM_CHANNELS,
-        USE_SHARED_MEM          = MAX_PRIVATIZED_BINS > 0,
+        USE_SHARED_MEM          = ((MAX_PRIVATIZED_BINS > 0) && (PTX_ARCH >= 120)),
 
         VECTOR_LOAD_LENGTH      = (NUM_CHANNELS > 1) ?
                                     ((NUM_CHANNELS > 4) ?                   // Multi-channel: Use one vector per pixel if the number of samples-per-pixel less than or equal to four
@@ -200,18 +201,18 @@ struct BlockHistogramSweep
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
-            int histo_offset = 0;
+            int bin_base = 0;
 
             #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= MAX_PRIVATIZED_BINS; histo_offset += BLOCK_THREADS)
+            for (; bin_base + BLOCK_THREADS <= MAX_PRIVATIZED_BINS; bin_base += BLOCK_THREADS)
             {
-                this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
+                temp_storage.histograms[CHANNEL][bin_base + threadIdx.x] = 0;
             }
 
             // Finish up with guarded initialization if necessary
-            if ((MAX_PRIVATIZED_BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < MAX_PRIVATIZED_BINS))
+            if ((MAX_PRIVATIZED_BINS % BLOCK_THREADS != 0) && (bin_base + threadIdx.x < MAX_PRIVATIZED_BINS))
             {
-                this->temp_storage.histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
+                temp_storage.histograms[CHANNEL][bin_base + threadIdx.x] = 0;
             }
         }
     }
@@ -224,21 +225,206 @@ struct BlockHistogramSweep
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
-            int histo_offset = 0;
+            OffsetT block_offset = blockIdx.x * num_bins[CHANNEL];
 
-            #pragma unroll
-            for(; histo_offset + BLOCK_THREADS <= MAX_PRIVATIZED_BINS; histo_offset += BLOCK_THREADS)
+            for (int bin = threadIdx.x; bin < num_bins[CHANNEL]; bin += BLOCK_THREADS)
             {
-                d_out_histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
-            }
-
-            // Finish up with guarded initialization if necessary
-            if ((MAX_PRIVATIZED_BINS % BLOCK_THREADS != 0) && (histo_offset + threadIdx.x < MAX_PRIVATIZED_BINS))
-            {
-                d_out_histograms[CHANNEL][histo_offset + threadIdx.x] = 0;
+                d_out_histograms[CHANNEL][block_offset + bin] = 0;
             }
         }
     }
+
+
+    // Store privatized histogram to global memory.  Specialized for privatized shared-memory counters
+    __device__ __forceinline__ void StoreOutput(
+        Int2Type<true> use_shared_mem)
+    {
+        // Barrier to make sure all threads are done updating counters
+        __syncthreads();
+
+        // Copy bin counts
+        #pragma unroll
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+        {
+            OffsetT block_offset = blockIdx.x * num_bins[CHANNEL];
+            for (int bin = threadIdx.x; bin < num_bins[CHANNEL]; bin += BLOCK_THREADS)
+            {
+                d_out_histograms[CHANNEL][block_offset + bin] = temp_storage.histograms[CHANNEL][bin];
+            }
+        }
+    }
+
+    // Store privatized histogram to global memory.  Specialized for privatized global-memory counters
+    __device__ __forceinline__ void StoreOutput(
+        Int2Type<false> use_shared_mem)
+    {
+        // No work to be done
+    }
+
+    /**
+     * Accumulate pixel, specialized for gmem privatized histogram
+     */
+    __device__ __forceinline__ void AccumulatePixels(
+        SampleT             samples[PIXELS_PER_THREAD][NUM_CHANNELS],
+        bool                is_valid[PIXELS_PER_THREAD],
+        Int2Type<false>     use_shared_mem)
+    {
+        #pragma unroll
+        for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
+        {
+            #pragma unroll
+            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+            {
+                OffsetT block_offset = blockIdx.x * num_bins[CHANNEL];
+
+                int bin;
+                transform_op[CHANNEL](samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
+                if (is_valid[PIXEL])
+                    atomicAdd(d_out_histograms[CHANNEL] + block_offset + bin, 1);
+            }
+        }
+    }
+
+
+    /**
+     * Accumulate pixel, specialized for smem privatized histogram
+     */
+    __device__ __forceinline__ void AccumulatePixels(
+        SampleT             samples[PIXELS_PER_THREAD][NUM_CHANNELS],
+        bool                is_valid[PIXELS_PER_THREAD],
+        Int2Type<true>      use_shared_mem)
+    {
+        #pragma unroll
+        for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
+        {
+            #pragma unroll
+            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+            {
+                int bin;
+                transform_op[CHANNEL](samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
+                if (is_valid[PIXEL])
+                    atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
+            }
+        }
+    }
+
+
+    /**
+     * Load a full tile of data samples.  Specialized for non-pointer types (no vectorization)
+     */
+    template <bool IS_FULL_TILE>
+    __device__ __forceinline__ void ConsumeTile(
+        OffsetT         block_offset,
+        int             valid_pixels,
+        Int2Type<false> is_vector_suitable)
+    {
+        SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
+        bool        is_valid[PIXELS_PER_THREAD];
+
+        // Read striped pixels
+        #pragma unroll
+        for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
+        {
+            int pixel_idx = (PIXEL * BLOCK_THREADS) + threadIdx.x;
+            if ((is_valid[PIXEL] = (IS_FULL_TILE || (pixel_idx < valid_pixels))))
+            {
+                #pragma unroll
+                for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+                {
+                    samples[PIXEL][CHANNEL] = d_wrapped_samples[block_offset + (pixel_idx * NUM_CHANNELS) + CHANNEL];
+                }
+            }
+        }
+
+//        if (IS_FULL_TILE)
+//            __threadfence_block();
+
+        // Accumulate samples
+        AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
+    }
+
+
+    /**
+     * Load a full tile of data samples.  Specialized for pointer types (possible vectorization)
+     */
+    template <bool IS_FULL_TILE>
+    __device__ __forceinline__ void ConsumeTile(
+        OffsetT         block_offset,
+        int             valid_pixels,
+        Int2Type<true>  is_vector_suitable)
+    {
+        if (NUM_CHANNELS == 1)
+        {
+            // Single-channel
+
+            if (!IS_FULL_TILE || !can_vectorize)
+            {
+                // Not a full tile of single-channel samples, or not aligned.  Load un-vectorized
+                ConsumeTile<IS_FULL_TILE>(block_offset, valid_pixels, Int2Type<false>());
+            }
+            else
+            {
+                // Full tile
+                SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
+                bool        is_valid[PIXELS_PER_THREAD];
+
+                // Alias items as an array of VectorT and load it in striped fashion
+                VectorT *vec_items = reinterpret_cast<VectorT*>(samples);
+
+                // Vector input iterator wrapper at starting pixel
+                VectorT *ptr = reinterpret_cast<VectorT*>(d_samples + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH));
+                InputIteratorVectorT d_vec_in(ptr);
+
+                // Read striped vectors
+                #pragma unroll
+                for (int VECTOR = 0; VECTOR < (PIXELS_PER_THREAD / VECTOR_LOAD_LENGTH); ++VECTOR)
+                {
+                    vec_items[VECTOR] = d_vec_in[VECTOR * BLOCK_THREADS];
+                }
+
+//                __threadfence_block();
+
+                #pragma unroll
+                for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
+                    is_valid[PIXEL] = true;
+
+                // Accumulate samples
+                AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
+            }
+        }
+        else
+        {
+            // Multi-channel
+
+            SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
+            bool        is_valid[PIXELS_PER_THREAD];
+
+            // Alias items as an array of VectorT and load it in striped fashion
+            VectorT *vec_items = reinterpret_cast<VectorT*>(samples);
+
+            // Vector input iterator wrapper at starting pixel
+            VectorT *ptr = reinterpret_cast<VectorT*>(d_samples + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH));
+            InputIteratorVectorT d_vec_in(ptr);
+
+            // Read striped pixels
+            #pragma unroll
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
+            {
+                int pixel_idx = (PIXEL * BLOCK_THREADS) + threadIdx.x;
+                if ((is_valid[PIXEL] = (IS_FULL_TILE || (pixel_idx < valid_pixels))))
+                {
+                    vec_items[PIXEL] = d_vec_in[PIXEL * BLOCK_THREADS];
+                }
+            }
+
+//            if (IS_FULL_TILE)
+//                __threadfence_block();
+
+            // Accumulate samples
+            AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
+        }
+    }
+
 
     //---------------------------------------------------------------------
     // Interface
@@ -264,179 +450,8 @@ struct BlockHistogramSweep
     {
         InitBinCounters(Int2Type<USE_SHARED_MEM>());
 
+        // Barrier to make sure all counters are initialized
         __syncthreads();
-    }
-
-
-    /**
-     * Accumulate pixel, specialized for gmem privatized histogram
-     */
-    __device__ __forceinline__ void AccumulatePixel(
-        SampleT             pixel[NUM_CHANNELS],
-        Int2Type<false>     use_shared_mem)
-    {
-        #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-        {
-            int bin = transform_op[CHANNEL](pixel[CHANNEL]);
-            atomicAdd(d_out_histograms[CHANNEL] + bin, 1);
-        }
-    }
-
-
-    /**
-     * Accumulate pixel, specialized for smem privatized histogram
-     */
-    __device__ __forceinline__ void AccumulatePixel(
-        SampleT             pixel[NUM_CHANNELS],
-        Int2Type<true>      use_shared_mem)
-    {
-        #pragma unroll
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-        {
-            int bin = transform_op[CHANNEL](pixel[CHANNEL]);
-            atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
-        }
-    }
-
-
-    /**
-     * Load a full tile of data samples.  Specialized for non-pointer types (no vectorization)
-     */
-    __device__ __forceinline__ void ConsumeFullTile(
-        OffsetT         block_offset,
-        Int2Type<false> is_vector_suitable)
-    {
-        SampleT samples[PIXELS_PER_THREAD][NUM_CHANNELS];
-
-        // Read striped pixels
-        #pragma unroll
-        for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
-        {
-            OffsetT pixel_offset = (PIXEL * BLOCK_THREADS * NUM_CHANNELS) + (threadIdx.x * NUM_CHANNELS);
-
-            #pragma unroll
-            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            {
-                samples[PIXEL][CHANNEL] = d_wrapped_samples[block_offset + pixel_offset + CHANNEL];
-            }
-        }
-
-        __threadfence_block();
-
-        // Accumulate samples
-        #pragma unroll
-        for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
-        {
-            AccumulatePixel(samples[PIXEL], Int2Type<USE_SHARED_MEM>());
-        }
-    }
-
-
-    /**
-     * Load a full tile of data samples.  Specialized for pointer types (possible vectorization)
-     */
-    __device__ __forceinline__ void ConsumeFullTile(
-        OffsetT         block_offset,
-        Int2Type<true>  is_vector_suitable)
-    {
-/*
-        if (!can_vectorize)
-        {
-            // Not aligned
-            ConsumeFullTile(block_offset, Int2Type<false>());
-        }
-        else
-*/        {
-            // Alias items as an array of VectorT and load it in striped fashion
-            SampleT samples[PIXELS_PER_THREAD][NUM_CHANNELS];
-            VectorT *vec_items = reinterpret_cast<VectorT*>(samples);
-
-            // Vector input iterator wrapper at starting pixel
-            VectorT *ptr = reinterpret_cast<VectorT*>(d_samples + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH));
-            InputIteratorVectorT d_vec_in(ptr);
-
-            if (NUM_CHANNELS > 1)
-            {
-                // Multi-channel: Read striped pixels
-                #pragma unroll
-                for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
-                    vec_items[PIXEL] = d_vec_in[PIXEL * BLOCK_THREADS];
-            }
-            else
-            {
-                // Single-channel: read striped vectors
-                #pragma unroll
-                for (int VECTOR = 0; VECTOR < (PIXELS_PER_THREAD / VECTOR_LOAD_LENGTH); ++VECTOR)
-                    vec_items[VECTOR] = d_vec_in[VECTOR * BLOCK_THREADS];
-            }
-
-            __threadfence_block();
-
-            // Accumulate samples
-            #pragma unroll
-            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
-            {
-                AccumulatePixel(samples[PIXEL], Int2Type<USE_SHARED_MEM>());
-            }
-        }
-    }
-
-
-    /**
-     * Load a full tile of data samples.  Specialized for non-pointer types (no vectorization)
-     */
-    __device__ __forceinline__ void ConsumePartialTile(
-        OffsetT         block_offset,
-        int             valid_pixels,
-        Int2Type<false> is_vector_suitable)
-    {
-        // Read striped pixels
-        for (int pixel_idx = threadIdx.x; pixel_idx < valid_pixels; pixel_idx += BLOCK_THREADS)
-        {
-            SampleT pixel[NUM_ACTIVE_CHANNELS];
-
-            #pragma unroll
-            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            {
-                pixel[CHANNEL] = d_wrapped_samples[block_offset + (pixel_idx * NUM_CHANNELS) + CHANNEL];
-            }
-
-            AccumulatePixel(pixel, Int2Type<USE_SHARED_MEM>());
-        }
-    }
-
-
-    /**
-     * Load a full tile of data samples.  Specialized for pointer types (possible vectorization)
-     */
-    __device__ __forceinline__ void ConsumePartialTile(
-        OffsetT         block_offset,
-        int             valid_pixels,
-        Int2Type<true>  is_vector_suitable)
-    {
-        if ((NUM_CHANNELS == 1) || (!can_vectorize))
-        {
-            // Not aligned
-            ConsumePartialTile(block_offset, valid_pixels, Int2Type<false>());
-        }
-        else
-        {
-            // Multi-channel: read striped pixels
-
-            // Vector input iterator wrapper at starting pixel
-            InputIteratorVectorT d_vec_in(reinterpret_cast<VectorT*>(d_samples + block_offset + (threadIdx.x * NUM_CHANNELS)));
-
-            for (int pixel_idx = threadIdx.x; pixel_idx < valid_pixels; pixel_idx += BLOCK_THREADS)
-            {
-                SampleT pixel[NUM_ACTIVE_CHANNELS];
-                VectorT *vec_items = reinterpret_cast<VectorT*>(pixel);
-                *vec_items = d_vec_in[pixel_idx];
-
-                // Accumulate pixel
-                AccumulatePixel(pixel, Int2Type<USE_SHARED_MEM>());
-            }
-        }
     }
 
 
@@ -444,24 +459,27 @@ struct BlockHistogramSweep
      * \brief Consume striped tiles
      */
     __device__ __forceinline__ void ConsumeStriped(
-        OffsetT  block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        OffsetT  block_end)                          ///< [in] Threadblock end offset (exclusive)
+        OffsetT  row_offset,                       ///< [in] Row begin offset (inclusive)
+        OffsetT  row_end)                          ///< [in] Row end offset (exclusive)
     {
-        // Consume subsequent full tiles of input
-        while (block_offset + TILE_SAMPLES <= block_end)
+        for (
+            OffsetT block_offset = row_offset + (blockIdx.x * TILE_SAMPLES);
+            block_offset < row_end;
+            block_offset += gridDim.x * TILE_SAMPLES)
         {
-            ConsumeFullTile(block_offset, Int2Type<IS_VECTOR_SUITABLE>());
-            block_offset += TILE_SAMPLES;
+            if (block_offset + TILE_SAMPLES <= row_end)
+            {
+                ConsumeTile<true>(block_offset, TILE_SAMPLES, Int2Type<IS_VECTOR_SUITABLE>());
+            }
+            else
+            {
+                int valid_pixels = (row_end - block_offset) / NUM_CHANNELS;
+                ConsumeTile<false>(block_offset, valid_pixels, Int2Type<IS_VECTOR_SUITABLE>());
+            }
         }
-/*
-        // Consume a partially-full tile
-        if (block_offset < block_end)
-        {
-            int valid_pixels = (block_end - block_offset) / NUM_CHANNELS;
-            ConsumePartialTile(block_offset, valid_pixels, Int2Type<IS_VECTOR_SUITABLE>());
-        }
-*/
-        // Aggregate output
+
+        // Store output to global (if necessary)
+        StoreOutput(Int2Type<USE_SHARED_MEM>());
     }
 
 };
