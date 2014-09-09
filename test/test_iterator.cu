@@ -167,7 +167,7 @@ void Test(
     AssertEquals(0, compare);
 
     // Check iterator at offset 21
-    InputIteratorTh_itr = d_in + 21;
+    InputIteratorT h_itr = d_in + 21;
     compare = CompareDeviceResults(&h_itr, d_itrs, 1, g_verbose, g_verbose);
     printf("\tIterators: %s\n", (compare) ? "FAIL" : "PASS");
     AssertEquals(0, compare);
