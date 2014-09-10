@@ -581,8 +581,12 @@ __host__ __device__ __forceinline__ T ZeroInitialize()
 template <typename T, int COUNT>
 struct ArrayWrapper
 {
-    /// Static array of type \p T
+
+    /// Statically-sized array of type \p T
     T array[COUNT];
+
+    /// Constructor
+    __host__ __device__ __forceinline__ ArrayWrapper() {}
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
