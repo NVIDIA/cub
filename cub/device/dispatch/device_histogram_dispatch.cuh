@@ -100,7 +100,7 @@ __global__ void DeviceHistogramSweepKernel(
     for (OffsetT row = blockIdx.y; row < num_rows; row += gridDim.y)
     {
         OffsetT row_offset     = row * row_stride * NUM_CHANNELS;
-        OffsetT row_end        = row_offset + num_row_pixels;
+        OffsetT row_end        = row_offset + (num_row_pixels * NUM_CHANNELS);
 
         block_sweep.ConsumeStriped(row_offset, row_end);
     }
@@ -286,8 +286,8 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                96,
-                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / sizeof(SampleT)), 1),    // 20 8b samples per thread
+                160,
+                CUB_MAX((12 / NUM_ACTIVE_CHANNELS / sizeof(SampleT)), 1),    // 20 8b samples per thread
                 LOAD_LDG,
                 true>
             HistogramSweepPolicy;

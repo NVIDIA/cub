@@ -721,7 +721,7 @@ int main(int argc, char** argv)
 
     // Compile/run quick tests
     if (num_row_pixels < 0) num_row_pixels = 32000000;
-/*
+
     {
         // float [0,1.0] 256 bins
         float max_value = 1.0;
@@ -730,7 +730,7 @@ int main(int argc, char** argv)
         float upper_level[1] = {1.0};
         Test<CUB, 1, 1, float, int>(max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, "float");
     }
-*/
+
     {
         // Unsigned char 256 bins
         int max_value = 256;
@@ -738,6 +738,24 @@ int main(int argc, char** argv)
         int lower_level[1] = {0};
         int upper_level[1] = {256};
         Test<CUB, 1, 1, unsigned char, int>(max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, "unsigned char");
+    }
+
+    {
+        // 4/4 multichannel Unsigned char 256 bins
+        int max_value = 256;
+        int num_levels[4] = {257, 257, 257, 257};
+        int lower_level[4] = {0, 0, 0, 0};
+        int upper_level[4] = {256, 256, 256, 256};
+        Test<CUB, 4, 4, unsigned char, int>(max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, "unsigned char");
+    }
+
+    {
+        // 3/4 multichannel Unsigned char 256 bins
+        int max_value = 256;
+        int num_levels[3] = {257, 257, 257};
+        int lower_level[3] = {0, 0, 0};
+        int upper_level[3] = {256, 256, 256};
+        Test<CUB, 4, 3, unsigned char, int>(max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, "unsigned char");
     }
 
 /*
