@@ -489,9 +489,6 @@ struct BlockHistogramSweep
                 ConsumeTile<false>(block_row_offset, valid_pixels, Int2Type<IS_VECTOR_SUITABLE>());
             }
         }
-
-        // Store output to global (if necessary)
-        StoreOutput(Int2Type<USE_SHARED_MEM>());
     }
 
 
