@@ -93,6 +93,9 @@ __global__ void DeviceHistogramSweepKernel(
         transform_op_wrapper.array,
         num_bins_wrapper.array);
 
+    // Initialize counters
+    block_sweep.InitBinCounters();
+
     // Consume input tiles
     for (OffsetT row = blockIdx.y; row < num_rows; row += gridDim.y)
     {
@@ -101,6 +104,9 @@ __global__ void DeviceHistogramSweepKernel(
 
         block_sweep.ConsumeStriped(row_offset, row_end);
     }
+
+    // Store output to global (if necessary)
+    block_sweep.StoreOutput();
 }
 
 
@@ -280,9 +286,10 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                128,
-                (20 / NUM_ACTIVE_CHANNELS),
-                LOAD_LDG>
+                96,
+                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / sizeof(SampleT)), 1),    // 20 8b samples per thread
+                LOAD_LDG,
+                true>
             HistogramSweepPolicy;
     };
 
@@ -291,9 +298,10 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                128,
-                (20 / NUM_ACTIVE_CHANNELS),
-                LOAD_DEFAULT>
+                96,
+                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / sizeof(SampleT)), 1),    // 20 8b samples per thread
+                LOAD_DEFAULT,
+                true>
             HistogramSweepPolicy;
     };
 
@@ -302,9 +310,10 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                128,
-                (20 / NUM_ACTIVE_CHANNELS),
-                LOAD_DEFAULT>
+                96,
+                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / sizeof(SampleT)), 1),    // 20 8b samples per thread
+                LOAD_DEFAULT,
+                true>
             HistogramSweepPolicy;
     };
 
