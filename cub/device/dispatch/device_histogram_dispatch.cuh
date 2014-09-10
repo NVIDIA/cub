@@ -751,7 +751,6 @@ struct DeviceHistogramDispatch
                         lower_level[channel],
                         ((upper_level[channel] - lower_level[channel]) / (num_levels[channel] - 1)));
                 }
-/*
                 if (max_bins > MAX_PRIVATIZED_BINS)
                 {
                     // Too many bins to keep in shared memory.  Dispatch global-privatized approach
@@ -773,7 +772,6 @@ struct DeviceHistogramDispatch
                         debug_synchronous))) break;
                 }
                 else
-*/
                 {
                     // Dispatch shared-privatized approach
                     if (CubDebug(error = PrivatizedDispatch(
