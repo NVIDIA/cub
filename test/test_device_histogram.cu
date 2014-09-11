@@ -419,13 +419,10 @@ void Initialize(
                     std::cout << CoutCast(h_samples[offset]);
                 }
 
-                fflush(stdout);
 
                 // Update sample bin
                 int bin = transform_op[channel](h_samples[offset]);
-
-                printf("(bin %d)", bin); fflush(stdout);
-
+                if (g_verbose_input) printf(" (%d)", bin); fflush(stdout);
                 h_histogram[channel][bin]++;
             }
             if (g_verbose_input) printf("]");
@@ -664,9 +661,11 @@ void Test(
     CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleT) * total_samples, cudaMemcpyHostToDevice));
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
-        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_levels[channel], sizeof(LevelT) * (num_levels[channel])));
-        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_histogram[channel], sizeof(CounterT) * (num_levels[channel] - 1)));
-        CubDebugExit(cudaMemset(d_histogram[channel], 0, sizeof(CounterT) * (num_levels[channel] - 1)));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_levels[channel], sizeof(LevelT) * num_levels[channel]));
+        CubDebugExit(cudaMemcpy(d_levels[channel], levels[channel],         sizeof(LevelT) * num_levels[channel], cudaMemcpyHostToDevice));
+
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_histogram[channel],  sizeof(CounterT) * (num_levels[channel] - 1)));
+        CubDebugExit(cudaMemset(d_histogram[channel], 0,                        sizeof(CounterT) * (num_levels[channel] - 1)));
     }
 
     // Allocate CDP device arrays

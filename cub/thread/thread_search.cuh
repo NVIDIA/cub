@@ -60,7 +60,7 @@ __device__ __forceinline__ OffsetT LowerBound(
         OffsetT half = num_items >> 1;
         if (input[retval + half] < val)
         {
-            retval = half + 1;
+            retval = retval + (half + 1);
             num_items = num_items - (half + 1);
         }
         else
@@ -95,7 +95,7 @@ __device__ __forceinline__ OffsetT UpperBound(
         }
         else
         {
-            retval = half + 1;
+            retval = retval + (half + 1);
             num_items = num_items - (half + 1);
         }
     }
