@@ -217,8 +217,11 @@ struct DeviceHistogramDispatch
         // Functor for converting samples to bin-ids
         __host__ __device__ __forceinline__ void operator()(SampleT sample, int &bin, bool &valid)
         {
-            bin     = ((int) UpperBound(d_levels, num_levels, (LevelT) sample)) - 1;
-            valid   = (valid && (bin >= 0) && (bin < num_levels));
+            if (valid)
+            {
+                bin = ((int) UpperBound(d_levels, num_levels, (LevelT) sample)) - 1;
+                valid = (bin >= 0) && (bin < num_levels);
+            }
         }
     };
 
@@ -247,8 +250,11 @@ struct DeviceHistogramDispatch
         // Functor for converting samples to bin-ids
         __host__ __device__ __forceinline__ void operator()(SampleT sample, int &bin, bool &valid)
         {
-            bin     = (int) ((((LevelT) sample) - min) / scale);
-            valid   = (valid && (sample >= min) && (sample < max));
+            if (valid)
+            {
+                bin = (int) ((((LevelT) sample) - min) / scale);
+                valid = (sample >= min) && (sample < max);
+            }
         }
     };
 
