@@ -180,6 +180,47 @@ cudaError_t DispatchEven(
 }
 
 
+template <int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT, typename CounterT, typename LevelT>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t DispatchRange(
+    Int2Type<CUB>       dispatch_to,
+    int                 timing_timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void                *d_temp_storage,
+    size_t              &temp_storage_bytes,
+    SampleIteratorT     d_samples,                                  ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
+    CounterT            *d_histogram[NUM_ACTIVE_CHANNELS],          ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
+    int                 num_levels[NUM_ACTIVE_CHANNELS],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
+    LevelT              *d_levels[NUM_ACTIVE_CHANNELS],         ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
+    int                 num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
+    int                 num_rows,                                   ///< [in] The number of rows in the region of interest
+    int                 row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_timing_iterations; ++i)
+    {
+        error = DeviceHistogram::MultiHistogramRange<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_samples,
+            d_histogram,
+            num_levels,
+            d_levels,
+            num_row_pixels,
+            num_rows,
+            row_stride,
+            stream,
+            debug_synchronous);
+    }
+    return error;
+}
+
+
+
 
 //---------------------------------------------------------------------
 // CUDA nested-parallelism test kernel
@@ -329,7 +370,7 @@ void Sample(T &datum, LevelT max_value, int entropy_reduction)
 
 
 /**
- * Initialize histogram-even problem (and solution)
+ * Initialize histogram problem (and solution)
  */
 template <
     int             NUM_CHANNELS,
@@ -342,12 +383,12 @@ void Initialize(
     LevelT          max_value,
     int             entropy_reduction,
     SampleT         *h_samples,
-    int             num_levels[NUM_ACTIVE_CHANNELS],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
-    TransformOp     transform_op[NUM_ACTIVE_CHANNELS],           ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
-    CounterT        *h_histogram[NUM_ACTIVE_CHANNELS],          ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
-    int             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
-    int             num_rows,                                   ///< [in] The number of rows in the region of interest
-    int             row_stride)                           ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    int             num_levels[NUM_ACTIVE_CHANNELS],        ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
+    TransformOp     transform_op[NUM_ACTIVE_CHANNELS],      ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
+    CounterT        *h_histogram[NUM_ACTIVE_CHANNELS],      ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
+    int             num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
+    int             num_rows,                               ///< [in] The number of rows in the region of interest
+    int             row_stride)                             ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
 {
     // Init bins
     for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
@@ -549,6 +590,177 @@ void Test(
     AssertEquals(0, error);
 }
 
+
+
+
+
+/**
+ * Test histogram-range
+ */
+template <
+    Backend         BACKEND,
+    int             NUM_CHANNELS,
+    int             NUM_ACTIVE_CHANNELS,
+    typename        SampleT,
+    typename        CounterT,
+    typename        LevelT>
+void Test(
+    LevelT          max_value,
+    int             entropy_reduction,
+    int             num_levels[NUM_ACTIVE_CHANNELS],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
+    LevelT*         levels[NUM_ACTIVE_CHANNELS],                ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
+    int             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
+    int             num_rows,                                   ///< [in] The number of rows in the region of interest
+    int             row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    char*           type_string)
+{
+    int total_samples =  num_rows * row_stride * NUM_CHANNELS;
+
+    printf("%s cub::DeviceHistogram %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples, %d/%d channels, max sample ",
+        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
+        num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride,
+        total_samples, (int) sizeof(SampleT), type_string,
+        NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
+    std::cout << CoutCast(max_value) << "\n";
+    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+    {
+        printf("Channel %d: %d bins [", channel, num_levels[channel] - 1);
+        std::cout << levels[channel][0];
+        for (int level = 1; level < num_levels[channel]; ++level)
+            std::cout << ", " << levels[channel][level];
+        printf("]\n");
+    }
+    fflush(stdout);
+
+    // Allocate and initialize host and device data
+    SampleT*                    h_samples = new SampleT[total_samples];
+    CounterT*                   h_histogram[NUM_ACTIVE_CHANNELS];
+    SearchTransform<LevelT>     transform_op[NUM_ACTIVE_CHANNELS];
+
+    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+    {
+        transform_op[channel].levels = levels[channel];
+        transform_op[channel].num_levels = num_levels[channel];
+    }
+
+    Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
+
+    // Allocate and initialize device data
+
+    SampleT*        d_samples = NULL;
+    LevelT*         d_levels[NUM_ACTIVE_CHANNELS];
+    CounterT*       d_histogram[NUM_ACTIVE_CHANNELS];
+
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_samples, sizeof(SampleT) * total_samples));
+    CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleT) * total_samples, cudaMemcpyHostToDevice));
+    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+    {
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_levels[channel], sizeof(LevelT) * (num_levels[channel])));
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_histogram[channel], sizeof(CounterT) * (num_levels[channel] - 1)));
+        CubDebugExit(cudaMemset(d_histogram[channel], 0, sizeof(CounterT) * (num_levels[channel] - 1)));
+    }
+
+    // Allocate CDP device arrays
+    size_t          *d_temp_storage_bytes = NULL;
+    cudaError_t     *d_cdp_error = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes,  sizeof(size_t) * 1));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cdp_error,           sizeof(cudaError_t) * 1));
+
+    // Allocate temporary storage
+    void            *d_temp_storage = NULL;
+    size_t          temp_storage_bytes = 0;
+
+    DispatchRange<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error,
+        d_temp_storage, temp_storage_bytes,
+        d_samples, d_histogram, num_levels, d_levels,
+        num_row_pixels, num_rows, row_stride,
+        0, true);
+
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
+
+    // Run warmup/correctness iteration
+    DispatchRange<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error,
+        d_temp_storage, temp_storage_bytes,
+        d_samples, d_histogram, num_levels, d_levels,
+        num_row_pixels, num_rows, row_stride,
+        0, true);
+
+    // Flush any stdout/stderr
+    CubDebugExit(cudaPeekAtLastError());
+    CubDebugExit(cudaDeviceSynchronize());
+    fflush(stdout);
+    fflush(stderr);
+
+    // Check for correctness (and display results, if specified)
+    int error = 0;
+    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+    {
+        int channel_error = CompareDeviceResults(h_histogram[channel], d_histogram[channel], num_levels[channel] - 1, g_verbose, g_verbose);
+        printf("Channel %d %s", channel, channel_error ? "FAIL" : "PASS\n");
+        error |= channel_error;
+    }
+
+    // Performance
+    GpuTimer gpu_timer;
+    gpu_timer.Start();
+
+    DispatchRange<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
+        d_temp_storage, temp_storage_bytes,
+        d_samples, d_histogram, num_levels, d_levels,
+        num_row_pixels, num_rows, row_stride,
+        0, false);
+
+    gpu_timer.Stop();
+    float elapsed_millis = gpu_timer.ElapsedMillis();
+
+    // Display performance
+    if (g_timing_iterations > 0)
+    {
+        float avg_millis = elapsed_millis / g_timing_iterations;
+        float grate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
+        float gbandwidth = grate * sizeof(SampleT);
+        printf(", %.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
+            avg_millis,
+            grate,
+            grate * NUM_ACTIVE_CHANNELS / NUM_CHANNELS,
+            grate / NUM_CHANNELS,
+            gbandwidth);
+    }
+
+    printf("\n\n");
+
+    // Cleanup
+    if (h_samples) delete[] h_samples;
+
+    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+    {
+        if (h_histogram[channel])
+            delete[] h_histogram[channel];
+
+        if (d_histogram[channel])
+            CubDebugExit(g_allocator.DeviceFree(d_histogram[channel]));
+
+        if (d_levels[channel])
+            CubDebugExit(g_allocator.DeviceFree(d_levels[channel]));
+    }
+
+    if (d_samples) CubDebugExit(g_allocator.DeviceFree(d_samples));
+    if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
+    if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
+    if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
+
+    // Correctness asserts
+    AssertEquals(0, error);
+}
+
+
+
+
+
 #if 0
 
 /**
@@ -723,7 +935,31 @@ int main(int argc, char** argv)
     if (num_row_pixels < 0) num_row_pixels = 32000000;
 
     {
-        // float [0,1.0] 256 bins
+        // HistogramRange: unsigned char 256 bins
+        enum {
+            NUM_CHANNELS = 1,
+            NUM_ACTIVE_CHANNELS = 1,
+        };
+
+        int max_value = 256;
+        int num_levels[NUM_ACTIVE_CHANNELS] = {257};
+        int* levels[NUM_ACTIVE_CHANNELS];
+        for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+        {
+            levels[channel] = new int[num_levels[channel]];
+            for (int level = 0; level < num_levels[channel]; ++level)
+                levels[channel][level] = level;
+        }
+
+        Test<CUB, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, unsigned char, int>(max_value, entropy_reduction, num_levels, levels, num_row_pixels, num_rows, row_stride, "unsigned char");
+
+        for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+            delete[] levels[channel];
+    }
+
+/*
+    {
+        // HistogramEven: float [0,1.0] 256 bins
         float max_value = 1.0;
         int num_levels[1] = {257};
         float lower_level[1] = {0.0};
@@ -732,7 +968,7 @@ int main(int argc, char** argv)
     }
 
     {
-        // Unsigned char 256 bins
+        // HistogramEven: unsigned char 256 bins
         int max_value = 256;
         int num_levels[1] = {257};
         int lower_level[1] = {0};
@@ -741,7 +977,7 @@ int main(int argc, char** argv)
     }
 
     {
-        // 4/4 multichannel Unsigned char 256 bins
+        // HistogramEven: 4/4 multichannel Unsigned char 256 bins
         int max_value = 256;
         int num_levels[4] = {257, 257, 257, 257};
         int lower_level[4] = {0, 0, 0, 0};
@@ -750,7 +986,7 @@ int main(int argc, char** argv)
     }
 
     {
-        // 3/4 multichannel Unsigned char 256 bins
+        // HistogramEven: 3/4 multichannel Unsigned char 256 bins
         int max_value = 256;
         int num_levels[3] = {257, 257, 257};
         int lower_level[3] = {0, 0, 0};
@@ -758,9 +994,8 @@ int main(int argc, char** argv)
         Test<CUB, 4, 3, unsigned char, int>(max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, "unsigned char");
     }
 
-/*
     {
-        // Unsigned char 16 bins
+        // HistogramEven: unsigned char 16 bins
         int max_value = 256;
         int num_levels[1] = {17};
         int lower_level[1] = {0};
@@ -768,7 +1003,7 @@ int main(int argc, char** argv)
         Test<CUB, 1, 1, unsigned char, int>(max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, "unsigned char");
     }
     {
-        // Unsigned char 16 bins [64,192)
+        // HistogramEven: unsigned char 16 bins [64,192)
         int max_value = 256;
         int num_levels[1] = {16};
         int lower_level[1] = {64};
