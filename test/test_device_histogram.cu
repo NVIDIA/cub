@@ -419,8 +419,13 @@ void Initialize(
                     std::cout << CoutCast(h_samples[offset]);
                 }
 
+                fflush(stdout);
+
                 // Update sample bin
                 int bin = transform_op[channel](h_samples[offset]);
+
+                printf("(bin %d)", bin); fflush(stdout);
+
                 h_histogram[channel][bin]++;
             }
             if (g_verbose_input) printf("]");
@@ -641,6 +646,9 @@ void Test(
     {
         transform_op[channel].levels = levels[channel];
         transform_op[channel].num_levels = num_levels[channel];
+
+        int bins = num_levels[channel] - 1;
+        h_histogram[channel] = new CounterT[bins];
     }
 
     Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
