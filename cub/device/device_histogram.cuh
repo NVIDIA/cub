@@ -616,9 +616,9 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        CounterT*           d_histogram1[1]    = {d_histogram};
+        CounterT*           d_histogram1[1]     = {d_histogram};
         int                 num_levels1[1]      = {num_levels};
-        LevelT              d_levels1[1]        = {d_levels};
+        LevelT*             d_levels1[1]        = {d_levels};
 
         return MultiHistogramRange<1, 1>(
             d_temp_storage,
