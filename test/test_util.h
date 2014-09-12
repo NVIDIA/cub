@@ -53,6 +53,7 @@
 #include "cub/util_debug.cuh"
 #include "cub/util_device.cuh"
 #include "cub/util_type.cuh"
+#include "cub/util_macro.cuh"
 
 /******************************************************************************
  * Assertion macros
