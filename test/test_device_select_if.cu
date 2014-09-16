@@ -685,7 +685,7 @@ void ComparePointer(
     printf("-- Select ----------------------------\n");
     TestPointer<CUB, false, T>(num_items, select_ratio, type_string);
     TestPointer<THRUST, false, T>(num_items, select_ratio, type_string);
-/*
+/* mooch
     printf("-- Partition ----------------------------\n");
     TestPointer<CUB, true, T>(num_items, select_ratio, type_string);
     TestPointer<THRUST, true, T>(num_items, select_ratio, type_string);

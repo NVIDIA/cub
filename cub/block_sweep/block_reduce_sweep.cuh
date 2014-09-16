@@ -242,8 +242,9 @@ struct BlockReduceSweep
             VectorT *vec_items = reinterpret_cast<VectorT*>(items);
 
             // Vector input iterator wrapper type
+            T *d_in_unqualified = const_cast<T*>(d_in) + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
             CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, VectorT, OffsetT> d_vec_in(
-                reinterpret_cast<VectorT*>(d_in + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH)));
+                reinterpret_cast<VectorT*>(d_in_unqualified));
 
             #pragma unroll
             for (int i = 0; i < WORDS; ++i)
