@@ -63,51 +63,51 @@ CachingDeviceAllocator  g_allocator(true);
 
 
 /// Generic reduction (full, 1)
-template <typename BlockReduce, typename T, typename ReductionOp>
+template <typename BlockReduceT, typename T, typename ReductionOp>
 __device__ __forceinline__ T DeviceTest(
-    typename BlockReduce::TempStorage &temp_storage, T (&data)[1], ReductionOp &reduction_op)
+    BlockReduceT &block_reduce, T (&data)[1], ReductionOp &reduction_op)
 {
-    return BlockReduce(temp_storage).Reduce(data[0], reduction_op);
+    return block_reduce.Reduce(data[0], reduction_op);
 }
 
 /// Generic reduction (full, ITEMS_PER_THREAD)
-template <typename BlockReduce, typename T, int ITEMS_PER_THREAD, typename ReductionOp>
+template <typename BlockReduceT, typename T, int ITEMS_PER_THREAD, typename ReductionOp>
 __device__ __forceinline__ T DeviceTest(
-    typename BlockReduce::TempStorage &temp_storage, T (&data)[ITEMS_PER_THREAD], ReductionOp &reduction_op)
+    BlockReduceT &block_reduce, T (&data)[ITEMS_PER_THREAD], ReductionOp &reduction_op)
 {
-    return BlockReduce(temp_storage).Reduce(data, reduction_op);
+    return block_reduce.Reduce(data, reduction_op);
 }
 
 /// Generic reduction (partial, 1)
-template <typename BlockReduce, typename T, typename ReductionOp>
+template <typename BlockReduceT, typename T, typename ReductionOp>
 __device__ __forceinline__ T DeviceTest(
-    typename BlockReduce::TempStorage &temp_storage, T &data, ReductionOp &reduction_op, int valid_threads)
+    BlockReduceT &block_reduce, T &data, ReductionOp &reduction_op, int valid_threads)
 {
-    return BlockReduce(temp_storage).Reduce(data, reduction_op, valid_threads);
+    return block_reduce.Reduce(data, reduction_op, valid_threads);
 }
 
 /// Sum reduction (full, 1)
-template <typename BlockReduce, typename T>
+template <typename BlockReduceT, typename T>
 __device__ __forceinline__ T DeviceTest(
-    typename BlockReduce::TempStorage &temp_storage, T (&data)[1], Sum &reduction_op)
+    BlockReduceT &block_reduce, T (&data)[1], Sum &reduction_op)
 {
-    return BlockReduce(temp_storage).Sum(data[0]);
+    return block_reduce.Sum(data[0]);
 }
 
 /// Sum reduction (full, ITEMS_PER_THREAD)
-template <typename BlockReduce, typename T, int ITEMS_PER_THREAD>
+template <typename BlockReduceT, typename T, int ITEMS_PER_THREAD>
 __device__ __forceinline__ T DeviceTest(
-    typename BlockReduce::TempStorage &temp_storage, T (&data)[ITEMS_PER_THREAD], Sum &reduction_op)
+    BlockReduceT &block_reduce, T (&data)[ITEMS_PER_THREAD], Sum &reduction_op)
 {
-    return BlockReduce(temp_storage).Sum(data);
+    return block_reduce.Sum(data);
 }
 
 /// Sum reduction (partial, 1)
-template <typename BlockReduce, typename T>
+template <typename BlockReduceT, typename T>
 __device__ __forceinline__ T DeviceTest(
-    typename BlockReduce::TempStorage &temp_storage, T &data, Sum &reduction_op, int valid_threads)
+    BlockReduceT &block_reduce, T &data, Sum &reduction_op, int valid_threads)
 {
-    return BlockReduce(temp_storage).Sum(data, valid_threads);
+    return block_reduce.Sum(data, valid_threads);
 }
 
 
@@ -135,10 +135,10 @@ __global__ void FullTileReduceKernel(
     const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Cooperative threadblock reduction utility type (returns aggregate in thread 0)
-    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduce;
+    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduceT;
 
     // Allocate temp storage in shared memory
-    __shared__ typename BlockReduce::TempStorage temp_storage;
+    __shared__ typename BlockReduceT::TempStorage temp_storage;
 
     int linear_tid = RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
 
@@ -154,7 +154,8 @@ __global__ void FullTileReduceKernel(
     clock_t start = clock();
 
     // Cooperative reduce first tile
-    T block_aggregate = DeviceTest<BlockReduce>(temp_storage, data, reduction_op);
+    BlockReduceT block_reduce(temp_storage) ;
+    T block_aggregate = DeviceTest(block_reduce, data, reduction_op);
 
     // Stop cycle timer
 #if CUB_PTX_ARCH == 100
@@ -179,7 +180,7 @@ __global__ void FullTileReduceKernel(
         clock_t start = clock();
 
         // Cooperatively reduce the tile's aggregate
-        T tile_aggregate = DeviceTest<BlockReduce>(temp_storage, data, reduction_op);
+        T tile_aggregate = DeviceTest(block_reduce, data, reduction_op);
 
         // Stop cycle timer
     #if CUB_PTX_ARCH == 100
@@ -223,10 +224,10 @@ __global__ void PartialTileReduceKernel(
     clock_t                 *d_elapsed)
 {
     // Cooperative threadblock reduction utility type (returns aggregate only in thread-0)
-    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduce;
+    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduceT;
 
     // Allocate temp storage in shared memory
-    __shared__ typename BlockReduce::TempStorage temp_storage;
+    __shared__ typename BlockReduceT::TempStorage temp_storage;
 
     int linear_tid = RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
 
@@ -243,7 +244,8 @@ __global__ void PartialTileReduceKernel(
     clock_t start = clock();
 
     // Cooperatively reduce the tile's aggregate
-    T tile_aggregate = DeviceTest<BlockReduce>(temp_storage, partial, reduction_op, num_items);
+    BlockReduceT block_reduce(temp_storage) ;
+    T tile_aggregate = DeviceTest(block_reduce, partial, reduction_op, num_items);
 
     // Stop cycle timer
 #if CUB_PTX_ARCH == 100
