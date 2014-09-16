@@ -154,10 +154,11 @@ private:
 public:
 
     /// Constructor
+    template <typename QualifiedValueType>
     __host__ __device__ __forceinline__ CacheModifiedOutputIterator(
-        ValueType* ptr)     ///< Native pointer to wrap
+        QualifiedValueType* ptr)     ///< Native pointer to wrap
     :
-        ptr(ptr)
+        ptr(const_cast<typename RemoveQualifiers<QualifiedValueType>::Type *>(ptr))
     {}
 
     /// Postfix increment

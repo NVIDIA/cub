@@ -911,7 +911,6 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
-/*
         TestGen<char>                 (num_items, CUB_TYPE_STRING(char));
         TestGen<signed char>          (num_items, CUB_TYPE_STRING(signed char));
         TestGen<unsigned char>        (num_items, CUB_TYPE_STRING(unsigned char));
@@ -920,9 +919,8 @@ int main(int argc, char** argv)
         TestGen<unsigned short>       (num_items, CUB_TYPE_STRING(unsigned short));
 
         TestGen<int>                  (num_items, CUB_TYPE_STRING(int));
-*/
         TestGen<unsigned int>         (num_items, CUB_TYPE_STRING(unsigned int));
-/*
+
         TestGen<long>                 (num_items, CUB_TYPE_STRING(long));
         TestGen<unsigned long>        (num_items, CUB_TYPE_STRING(unsigned long));
 
@@ -933,7 +931,6 @@ int main(int argc, char** argv)
 
         if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
             TestGen<double>               (num_items, CUB_TYPE_STRING(double));
-*/
     }
 
 #endif

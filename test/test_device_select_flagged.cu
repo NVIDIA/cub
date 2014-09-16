@@ -215,9 +215,9 @@ cudaError_t Dispatch(
     bool                        debug_synchronous)
 {
     typedef typename std::iterator_traits<InputIteratorT>::value_type    T;
-    typedef typename std::iterator_traits<FlagIterator>::value_type     FlagT;
+    typedef typename std::iterator_traits<FlagIterator>::value_type         FlagT;
 
-    typedef thrust::reverse_iterator<thrust::device_ptr<T> > ReverseOutputIterator;
+    typedef thrust::reverse_iterator<thrust::device_ptr<T> > ReverseOutputIteratorT;
 
     if (d_temp_storage == 0)
     {
@@ -229,9 +229,8 @@ cudaError_t Dispatch(
 
         thrust::device_ptr<T>       d_in_wrapper(d_in);
         thrust::device_ptr<T>       d_out_wrapper(d_out);
-        thrust::device_ptr<FlagT>    d_flags_wrapper(d_flags);
-
-        ReverseOutputIterator d_out_unselected(d_out_wrapper + num_items);
+        thrust::device_ptr<FlagT>   d_flags_wrapper(d_flags);
+        ReverseOutputIteratorT      d_out_unselected(d_out_wrapper + num_items);
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
@@ -684,10 +683,11 @@ void ComparePointer(
     printf("-- Select ----------------------------\n");
     TestPointer<CUB, false, T>(num_items, select_ratio, type_string);
     TestPointer<THRUST, false, T>(num_items, select_ratio, type_string);
-
+/* mooch
     printf("-- Partition ----------------------------\n");
     TestPointer<CUB, true, T>(num_items, select_ratio, type_string);
     TestPointer<THRUST, true, T>(num_items, select_ratio, type_string);
+*/
 }
 
 

@@ -870,7 +870,7 @@ int main(int argc, char** argv)
         TestSize<unsigned short>(num_items, 0, CUB_TYPE_STRING(unsigned short));
         TestSize<unsigned int>(num_items, 0, CUB_TYPE_STRING(unsigned int));
         TestSize<unsigned long long>(num_items, 0, CUB_TYPE_STRING(unsigned long long));
-/*
+
         TestSize<uchar2>(num_items, make_uchar2(0, 0), CUB_TYPE_STRING(uchar2));
         TestSize<char2>(num_items, make_char2(0, 0), CUB_TYPE_STRING(char2));
         TestSize<ushort2>(num_items, make_ushort2(0, 0), CUB_TYPE_STRING(ushort2));
@@ -885,7 +885,6 @@ int main(int argc, char** argv)
 
         TestSize<TestFoo>(num_items, TestFoo::MakeTestFoo(1ll << 63, 1 << 31, short(1 << 15), char(1 << 7)), CUB_TYPE_STRING(TestFoo));
         TestSize<TestBar>(num_items, TestBar(1ll << 63, 1 << 31), CUB_TYPE_STRING(TestBar));
-*/
     }
 
 #endif

@@ -160,13 +160,15 @@ cudaError_t DispatchEven(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
+    typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
         error = DeviceHistogram::HistogramEven(
             d_temp_storage,
             temp_storage_bytes,
-            d_samples,
+            (const SampleT *) d_samples,
             d_histogram[0],
             num_levels[0],
             lower_level[0],
@@ -205,13 +207,15 @@ cudaError_t DispatchEven(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
+    typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
         error = DeviceHistogram::MultiHistogramEven<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
             d_temp_storage,
             temp_storage_bytes,
-            d_samples,
+            (const SampleT *) d_samples,
             d_histogram,
             num_levels,
             lower_level,
@@ -250,13 +254,15 @@ cudaError_t DispatchRange(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
+    typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
         error = DeviceHistogram::HistogramRange(
             d_temp_storage,
             temp_storage_bytes,
-            d_samples,
+            (const SampleT *) d_samples,
             d_histogram[0],
             num_levels[0],
             d_levels[0],
@@ -294,13 +300,15 @@ cudaError_t DispatchRange(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
+    typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
         error = DeviceHistogram::MultiHistogramRange<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
             d_temp_storage,
             temp_storage_bytes,
-            d_samples,
+            (const SampleT *) d_samples,
             d_histogram,
             num_levels,
             d_levels,
@@ -553,7 +561,7 @@ void Test(
 {
     int total_samples =  num_rows * row_stride * NUM_CHANNELS;
 
-    printf("%s cub::DeviceHistogram %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples, %d/%d channels, max sample ",
+    printf("\n----------------------------\n%s cub::DeviceHistogram %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
         num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride,
         total_samples, (int) sizeof(SampleT), type_string,
@@ -581,8 +589,10 @@ void Test(
             ((upper_level[channel] - lower_level[channel]) / bins));
     }
 
+    printf("Initializing... "); fflush(stdout);
     Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
         max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
+    printf("Done\n"); fflush(stdout);
 
     // Allocate and initialize device data
 
@@ -659,7 +669,7 @@ void Test(
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
         float gbandwidth = grate * sizeof(SampleT);
-        printf(", %.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
+        printf("\t%.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
             avg_millis,
             grate,
             grate * NUM_ACTIVE_CHANNELS / NUM_CHANNELS,
@@ -716,7 +726,7 @@ void Test(
 {
     int total_samples =  num_rows * row_stride * NUM_CHANNELS;
 
-    printf("%s cub::DeviceHistogram %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples, %d/%d channels, max sample ",
+    printf("\n----------------------------\n%s cub::DeviceHistogram %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
         num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride,
         total_samples, (int) sizeof(SampleT), type_string,
@@ -746,8 +756,10 @@ void Test(
         h_histogram[channel] = new CounterT[bins];
     }
 
+    printf("Initializing... "); fflush(stdout);
     Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
         max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
+    printf("Done\n"); fflush(stdout);
 
     // Allocate and initialize device data
     SampleT*        d_samples = NULL;
@@ -832,13 +844,15 @@ void Test(
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
         float gbandwidth = grate * sizeof(SampleT);
-        printf(", %.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
+        printf("\t%.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
             avg_millis,
             grate,
             grate * NUM_ACTIVE_CHANNELS / NUM_CHANNELS,
             grate / NUM_CHANNELS,
             gbandwidth);
     }
+
+    printf("\n\n");
 
     // Cleanup
     if (h_samples) delete[] h_samples;
@@ -1064,7 +1078,13 @@ int main(int argc, char** argv)
 #ifdef QUICKER_TEST
 
     // Compile/run quick tests
-    if (num_row_pixels < 0) num_row_pixels = 32000000;
+    if (num_row_pixels < 0)
+    {
+        num_row_pixels  = 1920 * 1080;
+        row_stride      = num_row_pixels;
+    }
+
+
 
     {
         // HistogramRange: unsigned char 256 bins

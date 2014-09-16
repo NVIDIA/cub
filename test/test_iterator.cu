@@ -286,7 +286,7 @@ void TestCounting(T base, char *type_string)
 /**
  * Test modified iterator
  */
-template <typename T>
+template <typename T, typename CastT>
 void TestModified(char *type_string)
 {
     printf("\nTesting cache-modified iterator on type %s\n", type_string); fflush(stdout);
@@ -319,13 +319,13 @@ void TestModified(char *type_string)
     h_reference[6] = h_data[11];         // Value at offset 11
     h_reference[7] = h_data[0];          // Value at offset 0;
 
-    Test(CacheModifiedInputIterator<LOAD_DEFAULT, T>(d_data), h_reference);
-    Test(CacheModifiedInputIterator<LOAD_CA, T>(d_data), h_reference);
-    Test(CacheModifiedInputIterator<LOAD_CG, T>(d_data), h_reference);
-    Test(CacheModifiedInputIterator<LOAD_CS, T>(d_data), h_reference);
-    Test(CacheModifiedInputIterator<LOAD_CV, T>(d_data), h_reference);
-    Test(CacheModifiedInputIterator<LOAD_LDG, T>(d_data), h_reference);
-    Test(CacheModifiedInputIterator<LOAD_VOLATILE, T>(d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_DEFAULT, T>((CastT*) d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_CA, T>((CastT*) d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_CG, T>((CastT*) d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_CS, T>((CastT*) d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_CV, T>((CastT*) d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_LDG, T>((CastT*) d_data), h_reference);
+    Test(CacheModifiedInputIterator<LOAD_VOLATILE, T>((CastT*) d_data), h_reference);
 
 #if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
 
@@ -336,8 +336,8 @@ void TestModified(char *type_string)
     T *d_copy = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
 
-    CacheModifiedInputIterator<LOAD_CG, T> d_in_itr(d_data);
-    CacheModifiedOutputIterator<STORE_CG, T> d_out_itr(d_copy);
+    CacheModifiedInputIterator<LOAD_CG, T> d_in_itr((CastT*) d_data);
+    CacheModifiedOutputIterator<STORE_CG, T> d_out_itr((CastT*) d_copy);
 
     thrust::copy_if(d_in_itr, d_in_itr + TEST_VALUES, d_out_itr, SelectOp());
 
@@ -358,7 +358,7 @@ void TestModified(char *type_string)
 /**
  * Test transform iterator
  */
-template <typename T>
+template <typename T, typename CastT>
 void TestTransform(char *type_string)
 {
     printf("\nTesting transform iterator on type %s\n", type_string); fflush(stdout);
@@ -393,7 +393,7 @@ void TestTransform(char *type_string)
     h_reference[6] = op(h_data[11]);         // Value at offset 11
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
-    TransformInputIterator<T, TransformOp<T>, T*> d_itr(d_data, op);
+    TransformInputIterator<T, TransformOp<T>, CastT*> d_itr((CastT*) d_data, op);
     Test(d_itr, h_reference);
 
 #if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
@@ -430,7 +430,7 @@ void TestTransform(char *type_string)
 /**
  * Test tex-obj texture iterator
  */
-template <typename T>
+template <typename T, typename CastT>
 void TestTexObj(char *type_string)
 {
     printf("\nTesting tex-obj iterator on type %s\n", type_string); fflush(stdout);
@@ -471,7 +471,7 @@ void TestTexObj(char *type_string)
 
     // Create and bind obj-based test iterator
     TexObjInputIterator<T> d_obj_itr;
-    CubDebugExit(d_obj_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
+    CubDebugExit(d_obj_itr.BindTexture((CastT*) d_data, sizeof(T) * TEST_VALUES));
 
     Test(d_obj_itr, h_reference);
 
@@ -510,7 +510,7 @@ void TestTexObj(char *type_string)
 /**
  * Test tex-ref texture iterator
  */
-template <typename T>
+template <typename T, typename CastT>
 void TestTexRef(char *type_string)
 {
     printf("\nTesting tex-ref iterator on type %s\n", type_string); fflush(stdout);
@@ -551,11 +551,11 @@ void TestTexRef(char *type_string)
 
     // Create and bind ref-based test iterator
     TexRefInputIterator<T, __LINE__> d_ref_itr;
-    CubDebugExit(d_ref_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
+    CubDebugExit(d_ref_itr.BindTexture((CastT*) d_data, sizeof(T) * TEST_VALUES));
 
     // Create and bind dummy iterator of same type to check with interferance
     TexRefInputIterator<T, __LINE__> d_ref_itr2;
-    CubDebugExit(d_ref_itr2.BindTexture(d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
+    CubDebugExit(d_ref_itr2.BindTexture((CastT*) d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
 
     Test(d_ref_itr, h_reference);
 
@@ -592,7 +592,7 @@ void TestTexRef(char *type_string)
 /**
  * Test texture transform iterator
  */
-template <typename T>
+template <typename T, typename CastT>
 void TestTexTransform(char *type_string)
 {
     printf("\nTesting tex-transform iterator on type %s\n", type_string); fflush(stdout);
@@ -631,7 +631,7 @@ void TestTexTransform(char *type_string)
     typedef TexRefInputIterator<T, __LINE__> TextureIterator;
 
     TextureIterator d_tex_itr;
-    CubDebugExit(d_tex_itr.BindTexture(d_data, sizeof(T) * TEST_VALUES));
+    CubDebugExit(d_tex_itr.BindTexture((CastT*) d_data, sizeof(T) * TEST_VALUES));
 
     // Create transform iterator
     TransformInputIterator<T, TransformOp<T>, TextureIterator> xform_itr(d_tex_itr, op);
@@ -677,29 +677,29 @@ void TestTexTransform(char *type_string)
 /**
  * Run non-integer tests
  */
-template <typename T>
-void TestInteger(Int2Type<false> is_integer, char *type_string)
+template <typename T, typename CastT>
+void Test(Int2Type<false> is_integer, char *type_string)
 {
-    TestModified<T>(type_string);
-    TestTransform<T>(type_string);
+    TestModified<T, CastT>(type_string);
+    TestTransform<T, CastT>(type_string);
 
 #if CUB_CDP
     // Test tex-obj iterators if CUDA dynamic parallelism enabled
-    TestTexObj<T>(type_string);
+    TestTexObj<T, CastT>(type_string);
 #endif  // CUB_CDP
 
 #if CUDA_VERSION >= 5050
     // Test tex-ref iterators for CUDA 5.5
-    TestTexRef<T>(type_string);
-    TestTexTransform<T>(type_string);
+    TestTexRef<T, CastT>(type_string);
+    TestTexTransform<T, CastT>(type_string);
 #endif  // CUDA_VERSION
 }
 
 /**
  * Run integer tests
  */
-template <typename T>
-void TestInteger(Int2Type<true> is_integer, char *type_string)
+template <typename T, typename CastT>
+void Test(Int2Type<true> is_integer, char *type_string)
 {
     TestConstant<T>(0, type_string);
     TestConstant<T>(99, type_string);
@@ -708,7 +708,7 @@ void TestInteger(Int2Type<true> is_integer, char *type_string)
     TestCounting<T>(99, type_string);
 
     // Run non-integer tests
-    TestInteger<T>(Int2Type<false>(), type_string);
+    Test<T, CastT>(Int2Type<false>(), type_string);
 }
 
 /**
@@ -720,7 +720,12 @@ void Test(char *type_string)
     enum {
         IS_INTEGER = (Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER)
     };
-    TestInteger<T>(Int2Type<IS_INTEGER>(), type_string);
+
+    // Test non-const type
+    Test<T, T>(Int2Type<IS_INTEGER>(), type_string);
+
+    // Test non-const type
+    Test<T, const T>(Int2Type<IS_INTEGER>(), type_string);
 }
 
 

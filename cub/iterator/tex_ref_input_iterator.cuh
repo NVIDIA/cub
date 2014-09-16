@@ -242,14 +242,15 @@ public:
     {}
 
     /// Use this iterator to bind \p ptr with a texture reference
+    template <typename QualifiedT>
     cudaError_t BindTexture(
-        T               *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
+        QualifiedT      *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
         size_t          bytes,                  ///< Number of bytes in the range
         size_t          tex_offset = 0)         ///< OffsetT (in items) from \p ptr denoting the position of the iterator
     {
-        this->ptr = ptr;
+        this->ptr = const_cast<typename RemoveQualifiers<QualifiedT>::Type *>(ptr);
         this->tex_offset = (difference_type) tex_offset;
-        return TexId::BindTexture(ptr);
+        return TexId::BindTexture(this->ptr);
     }
 
     /// Unbind this iterator from its texture reference
