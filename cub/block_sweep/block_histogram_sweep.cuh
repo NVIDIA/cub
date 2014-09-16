@@ -383,7 +383,8 @@ struct BlockHistogramSweep
                 VectorT *vec_items = reinterpret_cast<VectorT*>(samples);
 
                 // Vector input iterator wrapper at starting pixel
-                VectorT *ptr = reinterpret_cast<VectorT*>(d_samples + block_row_offset + (threadIdx.x * VECTOR_LOAD_LENGTH));
+                SampleT *d_samples_unqualified = const_cast<SampleT*>(d_samples) + block_row_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
+                VectorT *ptr = reinterpret_cast<VectorT*>(d_samples_unqualified);
                 InputIteratorVectorT d_vec_in(ptr);
 
                 // Read striped vectors
@@ -415,7 +416,8 @@ struct BlockHistogramSweep
             VectorT *vec_items = reinterpret_cast<VectorT*>(samples);
 
             // Vector input iterator wrapper at starting pixel
-            VectorT *ptr = reinterpret_cast<VectorT*>(d_samples + block_row_offset + (threadIdx.x * VECTOR_LOAD_LENGTH));
+            SampleT *d_samples_unqualified = const_cast<SampleT*>(d_samples) + block_row_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
+            VectorT *ptr = reinterpret_cast<VectorT*>(d_samples_unqualified);
             InputIteratorVectorT d_vec_in(ptr);
 
             // Read striped pixels

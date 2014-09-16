@@ -158,7 +158,7 @@ __device__ __forceinline__ void StoreDirectBlockedVectorized(
     typedef typename CubVector<T, VEC_SIZE>::Type Vector;
 
     // Alias global pointer
-    Vector *block_ptr_vectors = reinterpret_cast<Vector *>(block_ptr);
+    Vector *block_ptr_vectors = reinterpret_cast<Vector*>(const_cast<T*>(block_ptr));
 
     // Alias pointers (use "raw" array here which should get optimized away to prevent conservative PTXAS lmem spilling)
     Vector raw_vector[VECTORS_PER_THREAD];

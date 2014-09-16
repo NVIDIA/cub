@@ -934,13 +934,12 @@ int main(int argc, char** argv)
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
-/*
-    TestPointer<CUB, int>(          num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(int));
-    TestPointer<CUB, int>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(int));
 
-    TestPointer<CUB, float>(        num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(float));
-*/
+    TestPointer<CUB, int>(          num_items,     RANDOM, Sum(), CUB_TYPE_STRING(int));
+    TestPointer<CUB, int>(          num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(int));
+
     TestPointer<CUB, float>(        num_items,     RANDOM, Sum(), CUB_TYPE_STRING(float));
+    TestPointer<CUB, float>(        num_items,     RANDOM, ArgMax(), CUB_TYPE_STRING(float));
 
 #elif defined(QUICK_TEST)
 
