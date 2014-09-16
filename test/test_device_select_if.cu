@@ -442,10 +442,10 @@ void Test(
     int compare1 = (PARTITION) ?
         CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose) :
         CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
-    printf("\t Data %s ", compare1 ? "FAIL" : "PASS");
+    printf("\t Data %s\n", compare1 ? "FAIL" : "PASS");
 
     int compare2 = CompareDeviceResults(&num_selected, d_num_selected_out, 1, true, g_verbose);
-    printf("\t Count %s ", compare2 ? "FAIL" : "PASS");
+    printf("\t Count %s\n", compare2 ? "FAIL" : "PASS");
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -632,7 +632,9 @@ void TestMethod(
     char*           type_string)
 {
     Test<BACKEND, false, T>(num_items, type_string);
-    Test<BACKEND, true, T>(num_items, type_string);
+
+// mooch
+//    Test<BACKEND, true, T>(num_items, type_string);
 }
 
 
