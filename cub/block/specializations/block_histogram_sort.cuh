@@ -138,7 +138,7 @@ struct BlockHistogramSort
         {}
 
         // Discontinuity predicate
-        __device__ __forceinline__ bool operator()(const T &a, const T &b, unsigned int b_index)
+        __device__ __forceinline__ bool operator()(const T &a, const T &b, int b_index)
         {
             if (a != b)
             {
