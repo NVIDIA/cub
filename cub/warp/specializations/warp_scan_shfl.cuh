@@ -255,10 +255,6 @@ struct WarpScanShfl
         if (input.offset > 0)
             output.value = input.value;
 
-/*
-        int first_value_lane = (input.offset > 0) ? LOGICAL_WARP_THREADS - 1 : first_lane;
-        output.value = InclusiveScanStep(input.value, cub::Sum(), first_value_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_INTEGER>());
-*/
         return output;
     }
 
@@ -271,9 +267,9 @@ struct WarpScanShfl
         int             first_lane,         ///< [in] Index of first lane in segment
         int             offset)             ///< [in] Up-offset to pull from
     {
-        T output = input;
+        _T output = input;
 
-        T temp = ShuffleUp(output, offset);
+        _T temp = ShuffleUp(output, offset);
 
         // Perform scan op if from a valid peer
         if (lane_id >= offset)
