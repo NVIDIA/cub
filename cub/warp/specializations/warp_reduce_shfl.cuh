@@ -274,9 +274,6 @@ struct WarpReduceShfl
         output.value = ReduceStep(input.value, cub::Sum(), last_lane, offset, Int2Type<IsInteger<ValueT>::IS_SMALL_INTEGER>());
         output.offset = ReduceStep(input.offset, cub::Sum(), last_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_INTEGER>());
 
-//        int last_value_lane = (input.offset > 0) ? 0 : last_lane;
-//        output.value = ReduceStep(input.value, cub::Sum(), last_value_lane, offset, Int2Type<IsInteger<ValueT>::IS_SMALL_INTEGER>());
-
         if (input.offset > 0)
             output.value = input.value;
 
@@ -292,9 +289,9 @@ struct WarpReduceShfl
         int                 last_lane,          ///< [in] Index of last lane in segment
         int                 offset)             ///< [in] Up-offset to pull from
     {
-        T output = input;
+        _T output = input;
 
-        T temp = ShuffleDown(output, offset);
+        _T temp = ShuffleDown(output, offset);
 
         // Perform reduction op if valid
         if (offset <= last_lane - lane_id)
