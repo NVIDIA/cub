@@ -196,6 +196,7 @@ ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
     # Help the compiler/linker work with huge numbers of kernels on Windows
 	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
 	CC = cl
+	NPPI = -lnppi
 ifneq ($(force64), 1)
 	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/Win32/cudart.lib"
 else
