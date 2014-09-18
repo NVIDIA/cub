@@ -133,7 +133,7 @@ class cub::TexRefInputIterator&lt; T, UNIQUE_ID, OffsetT &gt;</h3>
 <div class="line"></div>
 <div class="line"><span class="comment">// Create an iterator wrapper</span></div>
 <div class="line"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">cub::TexRefInputIterator&lt;double, __LINE__&gt;</a> itr;</div>
-<div class="line">itr.<a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a1efd04d63301d3b48aad0c54b849fc93" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(d_in, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>) * num_items);</div>
+<div class="line">itr.<a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a2478415f3ecdad9ae266ea3be43634d1" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(d_in, <span class="keyword">sizeof</span>(<span class="keywordtype">double</span>) * num_items);</div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Within device code:</span></div>
@@ -190,9 +190,10 @@ Public Methods</h2></td></tr>
 __host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a95d51be203bcde1b4bbb4344faff9e97">TexRefInputIterator</a> ()</td></tr>
 <tr class="memdesc:a95d51be203bcde1b4bbb4344faff9e97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
 <tr class="separator:a95d51be203bcde1b4bbb4344faff9e97"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1efd04d63301d3b48aad0c54b849fc93"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a1efd04d63301d3b48aad0c54b849fc93">BindTexture</a> (T *ptr, size_t bytes, size_t tex_offset=0)</td></tr>
-<tr class="memdesc:a1efd04d63301d3b48aad0c54b849fc93"><td class="mdescLeft">&#160;</td><td class="mdescRight">Use this iterator to bind <code>ptr</code> with a texture reference.  <a href="#a1efd04d63301d3b48aad0c54b849fc93">More...</a><br/></td></tr>
-<tr class="separator:a1efd04d63301d3b48aad0c54b849fc93"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2478415f3ecdad9ae266ea3be43634d1"><td class="memTemplParams" colspan="2">template&lt;typename QualifiedT &gt; </td></tr>
+<tr class="memitem:a2478415f3ecdad9ae266ea3be43634d1"><td class="memTemplItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a2478415f3ecdad9ae266ea3be43634d1">BindTexture</a> (QualifiedT *ptr, size_t bytes, size_t tex_offset=0)</td></tr>
+<tr class="memdesc:a2478415f3ecdad9ae266ea3be43634d1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Use this iterator to bind <code>ptr</code> with a texture reference.  <a href="#a2478415f3ecdad9ae266ea3be43634d1">More...</a><br/></td></tr>
+<tr class="separator:a2478415f3ecdad9ae266ea3be43634d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5f451683e1f40e5f702251b707e87956"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a5f451683e1f40e5f702251b707e87956"></a>
 cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_tex_ref_input_iterator.html#a5f451683e1f40e5f702251b707e87956">UnbindTexture</a> ()</td></tr>
 <tr class="memdesc:a5f451683e1f40e5f702251b707e87956"><td class="mdescLeft">&#160;</td><td class="mdescRight">Unbind this iterator from its texture reference. <br/></td></tr>
@@ -272,11 +273,13 @@ std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="
 <tr class="separator:a11b2073215294343bdc32f09c0bc5e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a1efd04d63301d3b48aad0c54b849fc93"></a>
+<a class="anchor" id="a2478415f3ecdad9ae266ea3be43634d1"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T, int UNIQUE_ID, typename OffsetT = ptrdiff_t&gt; </div>
+<div class="memtemplate">
+template&lt;typename QualifiedT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -284,7 +287,7 @@ template&lt;typename T, int UNIQUE_ID, typename OffsetT = ptrdiff_t&gt; </div>
         <tr>
           <td class="memname">cudaError_t <a class="el" href="classcub_1_1_tex_ref_input_iterator.html">cub::TexRefInputIterator</a>&lt; T, UNIQUE_ID, OffsetT &gt;::BindTexture </td>
           <td>(</td>
-          <td class="paramtype">T *&#160;</td>
+          <td class="paramtype">QualifiedT *&#160;</td>
           <td class="paramname"><em>ptr</em>, </td>
         </tr>
         <tr>
@@ -322,7 +325,7 @@ template&lt;typename T, int UNIQUE_ID, typename OffsetT = ptrdiff_t&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="tex__ref__input__iterator_8cuh_source.html#l00245">245</a> of file <a class="el" href="tex__ref__input__iterator_8cuh_source.html">tex_ref_input_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="tex__ref__input__iterator_8cuh_source.html#l00246">246</a> of file <a class="el" href="tex__ref__input__iterator_8cuh_source.html">tex_ref_input_iterator.cuh</a>.</p>
 
 </div>
 </div>
@@ -333,7 +336,7 @@ template&lt;typename T, int UNIQUE_ID, typename OffsetT = ptrdiff_t&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Sep 4 2014 17:43:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 18 2014 10:32:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
