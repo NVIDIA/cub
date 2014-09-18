@@ -181,9 +181,10 @@ std::random_access_iterator_tag&#160;</td><td class="memItemRight" valign="botto
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:af45ea5de6f886f83438b3356802191d4"><td class="memItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_output_iterator.html#af45ea5de6f886f83438b3356802191d4">CacheModifiedOutputIterator</a> (ValueType *ptr)</td></tr>
-<tr class="memdesc:af45ea5de6f886f83438b3356802191d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#af45ea5de6f886f83438b3356802191d4">More...</a><br/></td></tr>
-<tr class="separator:af45ea5de6f886f83438b3356802191d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8d19a08f1fdc19bf71521beb5ccfd5c7"><td class="memTemplParams" colspan="2">template&lt;typename QualifiedValueType &gt; </td></tr>
+<tr class="memitem:a8d19a08f1fdc19bf71521beb5ccfd5c7"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ __forceinline__&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_output_iterator.html#a8d19a08f1fdc19bf71521beb5ccfd5c7">CacheModifiedOutputIterator</a> (QualifiedValueType *ptr)</td></tr>
+<tr class="memdesc:a8d19a08f1fdc19bf71521beb5ccfd5c7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor.  <a href="#a8d19a08f1fdc19bf71521beb5ccfd5c7">More...</a><br/></td></tr>
+<tr class="separator:a8d19a08f1fdc19bf71521beb5ccfd5c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afda2ee755eb80af44533c80020e00bac"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afda2ee755eb80af44533c80020e00bac"></a>
 __host__ __device__ <br class="typebreak"/>
 __forceinline__ <a class="el" href="classcub_1_1_cache_modified_output_iterator.html#abca48cb8f0172b355ba465ff3c6308c2">self_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_cache_modified_output_iterator.html#afda2ee755eb80af44533c80020e00bac">operator++</a> (int)</td></tr>
@@ -254,11 +255,13 @@ std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="
 <tr class="separator:a11b2073215294343bdc32f09c0bc5e80"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a class="anchor" id="af45ea5de6f886f83438b3356802191d4"></a>
+<a class="anchor" id="a8d19a08f1fdc19bf71521beb5ccfd5c7"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;CacheStoreModifier MODIFIER, typename ValueType, typename OffsetT = ptrdiff_t&gt; </div>
+<div class="memtemplate">
+template&lt;typename QualifiedValueType &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -266,7 +269,7 @@ template&lt;CacheStoreModifier MODIFIER, typename ValueType, typename OffsetT = 
         <tr>
           <td class="memname">__host__ __device__ __forceinline__ <a class="el" href="classcub_1_1_cache_modified_output_iterator.html">cub::CacheModifiedOutputIterator</a>&lt; MODIFIER, ValueType, OffsetT &gt;::<a class="el" href="classcub_1_1_cache_modified_output_iterator.html">CacheModifiedOutputIterator</a> </td>
           <td>(</td>
-          <td class="paramtype">ValueType *&#160;</td>
+          <td class="paramtype">QualifiedValueType *&#160;</td>
           <td class="paramname"><em>ptr</em>)</td><td></td>
           <td></td>
         </tr>
@@ -286,7 +289,7 @@ template&lt;CacheStoreModifier MODIFIER, typename ValueType, typename OffsetT = 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="cache__modified__output__iterator_8cuh_source.html#l00157">157</a> of file <a class="el" href="cache__modified__output__iterator_8cuh_source.html">cache_modified_output_iterator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="cache__modified__output__iterator_8cuh_source.html#l00158">158</a> of file <a class="el" href="cache__modified__output__iterator_8cuh_source.html">cache_modified_output_iterator.cuh</a>.</p>
 
 </div>
 </div>
@@ -297,7 +300,7 @@ template&lt;CacheStoreModifier MODIFIER, typename ValueType, typename OffsetT = 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Sep 4 2014 17:43:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Sep 18 2014 10:32:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

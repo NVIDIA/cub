@@ -215,6 +215,9 @@ ALIASES                += cdp_class{1}=" - <em>Dynamic parallelism</em>.  \1 met
 ALIASES                += cdp="When calling this method from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
 ALIASES                += iterator="(may be a simple pointer type)"
 
+ALIASES                += offset_size1="(Consider using 32-bit values as offsets/lengths/etc. For example, \p int will typically yeild better performance than \p size_t in 64-bit memory mode.)"
+ALIASES                += offset_size2="Careful consideration should be given to the size of integer types used for offsets and lengths.  Many (if not most) scenarios will only require 32-bit offsets (e.g., \p int).  64-bit offset types (e.g., \p size_t on 64-bit memory mode) can consume a significant amount of thread storage resources, adversely affecting processor occupancy and performance."
+
 ALIASES                += rowmajor="For multi-dimensional blocks, threads are linearly ranked in row-major order."
 ALIASES                += blocked="Assumes a [<em>blocked arrangement</em>](index.html#sec4sec3) of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items.  For multi-dimensional thread blocks, a row-major thread ordering is assumed."
 ALIASES                += striped="Assumes a [<em>striped arrangement</em>](index.html#sec4sec3) of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns items (<em>i</em>), (<em>i</em> + <em>block-threads</em>), ..., (<em>i</em> + (<em>block-threads</em>*(<em>items-per-thread</em>-1))).  For multi-dimensional thread blocks, a row-major thread ordering is assumed."
