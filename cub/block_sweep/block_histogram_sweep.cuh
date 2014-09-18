@@ -182,9 +182,19 @@ struct BlockHistogramSweep
     template <typename Iterator>
     static __device__ __forceinline__ bool IsAligned(
         Iterator        d_samples,
+        OffsetT         row_stride,
         Int2Type<true>  is_vector_suitable)
     {
-        return (size_t(d_samples) & (sizeof(VectorT) - 1)) == 0;
+        if (NUM_CHANNELS == 1)
+        {
+            // both row stride and starting pointer must be vector-aligned
+            return ((size_t(d_samples) | row_stride)  & (sizeof(VectorT) - 1)) == 0;
+        }
+        else
+        {
+            // only starting pointer needs to be vector aligned because stride is in whole pixels
+            return (size_t(d_samples)  & (sizeof(VectorT) - 1)) == 0;
+        }
     }
 
 
@@ -192,6 +202,7 @@ struct BlockHistogramSweep
     template <typename Iterator>
     static __device__ __forceinline__ bool IsAligned(
         Iterator        d_samples,
+        OffsetT         row_stride,
         Int2Type<false> is_vector_suitable)
     {
         return false;
@@ -272,6 +283,7 @@ struct BlockHistogramSweep
         // No work to be done
     }
 
+
     /**
      * Accumulate pixel, specialized for gmem privatized histogram
      */
@@ -289,8 +301,9 @@ struct BlockHistogramSweep
                 OffsetT block_histo_offset = ((blockIdx.y * gridDim.x) + blockIdx.x) * num_bins[CHANNEL];
 
                 int bin;
-                transform_op[CHANNEL](samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
-                if (is_valid[PIXEL])
+                bool valid_sample = is_valid[PIXEL];
+                transform_op[CHANNEL](samples[PIXEL][CHANNEL], bin, valid_sample);
+                if (valid_sample)
                     atomicAdd(d_out_histograms[CHANNEL] + block_histo_offset + bin, 1);
             }
         }
@@ -312,9 +325,12 @@ struct BlockHistogramSweep
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
             {
                 int bin;
-                transform_op[CHANNEL](samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
-                if (is_valid[PIXEL])
+                bool valid_sample = is_valid[PIXEL];
+                transform_op[CHANNEL](samples[PIXEL][CHANNEL], bin, valid_sample);
+                if (valid_sample)
+                {
                     atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
+                }
             }
         }
     }
@@ -450,9 +466,10 @@ struct BlockHistogramSweep
     __device__ __forceinline__ BlockHistogramSweep(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         SampleIteratorT    	d_samples,                                      ///< Input data to reduce
+        OffsetT             row_stride,                                     ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
         CounterT*           (&d_out_histograms)[NUM_ACTIVE_CHANNELS],       ///< Reference to output histograms
         SampleTransformOpT  (&transform_op)[NUM_ACTIVE_CHANNELS],           ///< Transform operators for determining bin-ids from samples, one for each channel
-        int                 (&num_bins)[NUM_ACTIVE_CHANNELS])             ///< The number of boundaries (levels) for delineating histogram samples, one for each channel
+        int                 (&num_bins)[NUM_ACTIVE_CHANNELS])               ///< The number of boundaries (levels) for delineating histogram samples, one for each channel
     :
         temp_storage(temp_storage.Alias()),
         d_samples(d_samples),
@@ -460,7 +477,7 @@ struct BlockHistogramSweep
         d_out_histograms(d_out_histograms),
         transform_op(transform_op),
         num_bins(num_bins),
-        can_vectorize(IsAligned(d_samples, Int2Type<IS_VECTOR_SUITABLE>()))
+        can_vectorize(IsAligned(d_samples, row_stride, Int2Type<IS_VECTOR_SUITABLE>()))
     {
         InitBinCounters(Int2Type<USE_SHARED_MEM>());
 
