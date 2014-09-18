@@ -128,6 +128,7 @@ ifneq ($(force64), 1)
 else
 	CPU_ARCH = -m64
 	CPU_ARCH_SUFFIX = x86_64
+    NPPI = -lnppi
 endif
 
 
@@ -525,7 +526,7 @@ test_device_histogram: bin/test_device_histogram_$(SUFFIX)
 
 bin/test_device_histogram_$(SUFFIX) : test_device_histogram.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_histogram_$(SUFFIX) test_device_histogram.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -lnppi -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_histogram_$(SUFFIX) test_device_histogram.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) $(NPPI) -O3
 
 
 #-------------------------------------------------------------------------------
