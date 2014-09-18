@@ -36,6 +36,7 @@
 
 #include <stdio.h>
 #include <iterator>
+#include <limits>
 
 #include "dispatch/device_histogram_dispatch.cuh"
 #include "../util_namespace.cuh"
@@ -334,10 +335,7 @@ struct DeviceHistogram
         cudaStream_t        stream                  = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous       = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        // Dispatch type
-        typedef DeviceHistogramDispatch<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT> DeviceHistogramDispatchT;
-
-        return DeviceHistogramDispatchT::DispatchEven(
+        return MultiHistogramEven<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
             d_temp_storage,
             temp_storage_bytes,
             d_samples,
@@ -440,22 +438,17 @@ struct DeviceHistogram
         cudaStream_t        stream                  = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous       = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        // Dispatch type
-        typedef DeviceHistogramDispatch<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT> DeviceHistogramDispatchT;
+        if ((sizeof(OffsetT) > 4) && (row_stride * num_row_pixels < std::numeric_limits<int>::max()))
+        {
+            // Down-convert OffsetT data type
+            return DeviceHistogramDispatch<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, int>::DispatchEven(
+                d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level,
+                (int) num_row_pixels, (int) num_rows, (int) row_stride, stream, debug_synchronous);
+        }
 
-        return DeviceHistogramDispatchT::DispatchEven(
-            d_temp_storage,
-            temp_storage_bytes,
-            d_samples,
-            d_histogram,
-            num_levels,
-            lower_level,
-            upper_level,
-            num_row_pixels,
-            num_rows,
-            row_stride,
-            stream,
-            debug_synchronous);
+        return DeviceHistogramDispatch<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT>::DispatchEven(
+            d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level,
+            upper_level, num_row_pixels, num_rows, row_stride, stream, debug_synchronous);
     }
 
 
@@ -724,10 +717,7 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        // Dispatch type
-        typedef DeviceHistogramDispatch<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT> DeviceHistogramDispatchT;
-
-        return DeviceHistogramDispatchT::DispatchRange(
+        return MultiHistogramRange<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
             d_temp_storage,
             temp_storage_bytes,
             d_samples,
@@ -828,21 +818,17 @@ struct DeviceHistogram
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        // Dispatch type
-        typedef DeviceHistogramDispatch<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT> DeviceHistogramDispatchT;
+        if ((sizeof(OffsetT) > 4) && (row_stride * num_row_pixels < std::numeric_limits<int>::max()))
+        {
+            // Down-convert OffsetT data type
+            return DeviceHistogramDispatch<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, int>::DispatchRange(
+                d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels,
+                (int) num_row_pixels, (int) num_rows, (int) row_stride, stream, debug_synchronous);
+        }
 
-        return DeviceHistogramDispatchT::DispatchRange(
-            d_temp_storage,
-            temp_storage_bytes,
-            d_samples,
-            d_histogram,
-            num_levels,
-            d_levels,
-            num_row_pixels,
-            num_rows,
-            row_stride,
-            stream,
-            debug_synchronous);
+        return DeviceHistogramDispatch<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT>::DispatchRange(
+            d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels,
+            num_row_pixels, num_rows, row_stride, stream, debug_synchronous);
     }
 
 
