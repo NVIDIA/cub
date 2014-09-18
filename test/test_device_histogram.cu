@@ -906,8 +906,6 @@ void TestEven(
     int max_bins = max_levels - 1;
     LevelT level_increment = max_value / max_bins;
 
-    printf("max_value %f max_bins %d level_increment: %f\n", max_value, max_bins, level_increment);
-
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
         int num_bins = num_levels[channel] - 1;
