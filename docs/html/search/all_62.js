@@ -5,7 +5,7 @@ var searchData=
   ['basetraits_3c_20not_5fa_5fnumber_2c_20false_2c_20false_2c_20t_20_3e',['BaseTraits&lt; NOT_A_NUMBER, false, false, T &gt;',['../structcub_1_1_base_traits.html',1,'cub']]],
   ['bfe',['BFE',['../group___util_ptx.html#gae6e3003e44d5f640aeea7d67414b3668',1,'cub']]],
   ['bfi',['BFI',['../group___util_ptx.html#ga4b1cabbd1372cf252aa63aaa6bc1d9df',1,'cub']]],
-  ['bindtexture',['BindTexture',['../classcub_1_1_tex_obj_input_iterator.html#a8277e8f0d70f3797ca2a6f68aa09d715',1,'cub::TexObjInputIterator::BindTexture()'],['../classcub_1_1_tex_ref_input_iterator.html#a1efd04d63301d3b48aad0c54b849fc93',1,'cub::TexRefInputIterator::BindTexture()']]],
+  ['bindtexture',['BindTexture',['../classcub_1_1_tex_obj_input_iterator.html#adf05337e92bbe57058cc3ccb622c51fe',1,'cub::TexObjInputIterator::BindTexture()'],['../classcub_1_1_tex_ref_input_iterator.html#a2478415f3ecdad9ae266ea3be43634d1',1,'cub::TexRefInputIterator::BindTexture()']]],
   ['block_5fdiscontinuity_2ecuh',['block_discontinuity.cuh',['../block__discontinuity_8cuh.html',1,'']]],
   ['block_5fexchange_2ecuh',['block_exchange.cuh',['../block__exchange_8cuh.html',1,'']]],
   ['block_5fhisto_5fatomic',['BLOCK_HISTO_ATOMIC',['../namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2abfc89fce43fcda396d18a4b2801025aa',1,'cub']]],
