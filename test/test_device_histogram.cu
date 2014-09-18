@@ -492,6 +492,8 @@ void Initialize(
     OffsetT         num_rows,                               ///< [in] The number of rows in the region of interest
     OffsetT         row_stride)                             ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
 {
+    printf("Initializing... "); fflush(stdout);
+
     // Init bins
     for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
     {
@@ -535,6 +537,7 @@ void Initialize(
         if (g_verbose_input) printf("\n\n");
     }
 
+    printf("Done\n"); fflush(stdout);
 }
 
 
@@ -562,10 +565,10 @@ void TestEven(
 {
     OffsetT total_samples =  num_rows * row_stride * NUM_CHANNELS;
 
-    printf("\n----------------------------\n%s cub::DeviceHistogram %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples, %d/%d channels, max sample ",
+    printf("\n----------------------------\n%s cub::DeviceHistogramEven %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples (entropy reduction %d), %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
         num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride,
-        total_samples, (int) sizeof(SampleT), type_string,
+        total_samples, (int) sizeof(SampleT), type_string, entropy_reduction,
         NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
     std::cout << CoutCast(max_value) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
@@ -590,10 +593,8 @@ void TestEven(
             ((upper_level[channel] - lower_level[channel]) / bins));
     }
 
-    printf("Initializing... "); fflush(stdout);
     Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
         max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
-    printf("Done\n"); fflush(stdout);
 
     // Allocate and initialize device data
 
@@ -646,7 +647,7 @@ void TestEven(
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
         int channel_error = CompareDeviceResults(h_histogram[channel], d_histogram[channel], num_levels[channel] - 1, g_verbose, g_verbose);
-        printf("Channel %d %s", channel, channel_error ? "FAIL" : "PASS\n");
+        printf("\tChannel %d %s", channel, channel_error ? "FAIL" : "PASS\n");
         error |= channel_error;
     }
 
@@ -728,10 +729,10 @@ void TestRange(
 {
     OffsetT total_samples =  num_rows * row_stride * NUM_CHANNELS;
 
-    printf("\n----------------------------\n%s cub::DeviceHistogram %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples, %d/%d channels, max sample ",
+    printf("\n----------------------------\n%s cub::DeviceHistogramRange %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples (entropy reduction %d), %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
         num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride,
-        total_samples, (int) sizeof(SampleT), type_string,
+        total_samples, (int) sizeof(SampleT), type_string, entropy_reduction,
         NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
     std::cout << CoutCast(max_value) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
@@ -758,10 +759,8 @@ void TestRange(
         h_histogram[channel] = new CounterT[bins];
     }
 
-    printf("Initializing... "); fflush(stdout);
     Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
         max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
-    printf("Done\n"); fflush(stdout);
 
     // Allocate and initialize device data
     SampleT*        d_samples = NULL;
@@ -820,7 +819,7 @@ void TestRange(
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
         int channel_error = CompareDeviceResults(h_histogram[channel], d_histogram[channel], num_levels[channel] - 1, g_verbose, g_verbose);
-        printf("Channel %d %s", channel, channel_error ? "FAIL" : "PASS\n");
+        printf("\tChannel %d %s", channel, channel_error ? "FAIL" : "PASS\n");
         fflush(stdout);
 
         error |= channel_error;
@@ -894,9 +893,10 @@ template <
 void TestEven(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
+    int             row_stride,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
-    int             row_stride,
+    int             max_levels,
     LevelT          max_value,
     char*           type_string)
 {
@@ -905,22 +905,18 @@ void TestEven(
     LevelT lower_level[NUM_ACTIVE_CHANNELS];
     LevelT upper_level[NUM_ACTIVE_CHANNELS];
 
-    // Full range
-    for (int level = 0; level < NUM_ACTIVE_CHANNELS; ++level)
+    int max_bins = max_levels - 1;
+    LevelT level_increment = max_value / max_bins;
+
+    printf("max_value %f max_bins %d level_increment: %f\n", max_value, max_bins, level_increment);
+
+    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
-        lower_level[level] = 0;
-        upper_level[level] = max_value;
+        int num_bins = num_levels[channel] - 1;
+        lower_level[channel] = (max_value - (num_bins * level_increment)) / 2;
+        upper_level[channel] = (max_value + (num_bins * level_increment)) / 2;
     }
 
-    TestEven<CUB, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT>(
-        max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, type_string);
-
-    // Mid-range
-    for (int level = 0; level < NUM_ACTIVE_CHANNELS; ++level)
-    {
-        lower_level[level] = (max_value / 4) * 1;
-        upper_level[level] = (max_value / 4) * 3;
-    }
     TestEven<CUB, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT>(
         max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, type_string);
 }
@@ -943,6 +939,7 @@ void TestRange(
     int             row_stride,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
+    int             max_levels,
     LevelT          max_value,
     char*           type_string)
 {
@@ -951,12 +948,15 @@ void TestRange(
         NUM_ACTIVE_CHANNELS = 1,
     };
 
+    int max_bins = max_levels - 1;
+    LevelT level_increment = max_value / max_bins;
+
     LevelT* levels[NUM_ACTIVE_CHANNELS];
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
         levels[channel] = new LevelT[num_levels[channel]];
         for (int level = 0; level < num_levels[channel]; ++level)
-            levels[channel][level] = level;
+            levels[channel][level] = level * level_increment;
     }
 
     TestRange<CUB, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
@@ -985,14 +985,16 @@ void Test(
     int             row_stride,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
+    int             max_levels,
     LevelT          max_value,
     char*           type_string)
 {
-    TestEven<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, OffsetT>(
-        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_value, type_string);
+    TestEven<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, type_string);
 
-    TestRange<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, OffsetT>(
-        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_value, type_string);
+    TestRange<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, type_string);
+
 }
 
 
@@ -1022,16 +1024,16 @@ void Test(
         num_levels[channel] = 257;
     }
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_value, type_string);
+        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, num_levels[0], max_value, type_string);
 
     // All different levels
     num_levels[0] = 129;
     for (int channel = 1; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
-        num_levels[channel] = (num_levels[channel] / 2) + 1;
+        num_levels[channel] = (num_levels[channel - 1] / 2) + 1;
     }
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_value, type_string);
+        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, num_levels[0], max_value, type_string);
 }
 
 
@@ -1061,6 +1063,7 @@ void Test(
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, row_stride, 5,   max_value, type_string);
+
 }
 
 
@@ -1080,11 +1083,13 @@ void Test(
     LevelT          max_value,
     char*           type_string)
 {
+
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, num_row_pixels, max_value, type_string);
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, num_row_pixels + 10, max_value, type_string);
+
 }
 
 
@@ -1103,7 +1108,8 @@ void Test(
     char*           type_string)
 {
     // 1080 image
-    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(OffsetT(1920), OffsetT(1080), type_string);
+    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+        OffsetT(1920), OffsetT(1080), max_value, type_string);
 
     for (OffsetT rows = 1; rows < 1000000; rows *= 100)
     {
@@ -1142,9 +1148,9 @@ void Test(
     LevelT          max_value,
     char*           type_string)
 {
-    Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(type_string, max_value);
-    Test<SampleT, 3, 4, CounterT, LevelT, OffsetT>(type_string, max_value);
-    Test<SampleT, 4, 4, CounterT, LevelT, OffsetT>(type_string, max_value);
+    Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_value, type_string);
+    Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_value, type_string);
+    Test<SampleT, 4, 4, CounterT, LevelT, OffsetT>(max_value, type_string);
 }
 
 
@@ -1312,51 +1318,17 @@ int main(int argc, char** argv)
     }
 
 
-
-/*
-    printf("SINGLE CHANNEL:\n\n");
-    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-    printf("\n");
-    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-    printf("\n");
-    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-    TestCnp<256, 1, 1, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples, CUB_TYPE_STRING(unsigned char));
-    printf("\n");
-
-    printf("3/4 CHANNEL (RGB/RGBA):\n\n");
-    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SORT>(),          UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-    printf("\n");
-    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_SHARED_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-    printf("\n");
-    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), RANDOM,  Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-    TestCnp<256, 4, 3, unsigned char, unsigned char, int>(Int2Type<DEVICE_HISTO_GLOBAL_ATOMIC>(), UNIFORM, Cast<unsigned char>(), num_samples * 4, CUB_TYPE_STRING(unsigned char));
-    printf("\n");
-*/
-
 #elif defined(QUICK_TEST)
+
+
 
 #else
 
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
-/*
-        // 256-bin tests
-        Test<256, unsigned char,    unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned char));
-        Test<256, unsigned short,   unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned short));
-        Test<256, unsigned int,     unsigned char, int>(Cast<unsigned char>(),              num_samples, CUB_TYPE_STRING(unsigned int));
-        Test<256, float,            unsigned char, int>(FloatScaleOp<unsigned char, 256>(), num_samples, CUB_TYPE_STRING(float));
-
-        // 512-bin tests
-        Test<512, unsigned char,    unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned char));
-        Test<512, unsigned short,   unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned short));
-        Test<512, unsigned int,     unsigned short, int>(Cast<unsigned short>(),              num_samples, CUB_TYPE_STRING(unsigned int));
-        Test<512, float,            unsigned short, int>(FloatScaleOp<unsigned short, 512>(), num_samples, CUB_TYPE_STRING(float));
-*/
+        Test <unsigned char, int, int, int>(    256, CUB_TYPE_STRING(unsigned char));
+        Test <float, int, float, int>(          1.0, CUB_TYPE_STRING(float));
     }
 
 #endif
