@@ -96,7 +96,7 @@ cudaError_t DispatchEven(
     LevelT              upper_level[1],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
     OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -121,7 +121,7 @@ cudaError_t DispatchEven(
             // compute the histogram
             nppiHistogramEven_8u_C1R(
                 d_samples,
-                row_stride * sizeof(SampleT) * 1,
+                row_stride_bytes,
                 oSizeROI,
                 d_histogram[0],
                 num_levels[0],
@@ -157,7 +157,7 @@ cudaError_t DispatchEven(
     LevelT              upper_level[3],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
     OffsetT             num_row_pixels,           ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT             num_rows,                 ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride,               ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT             row_stride_bytes,               ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -182,7 +182,7 @@ cudaError_t DispatchEven(
             // compute the histogram
             nppiHistogramEven_8u_AC4R(
                 d_samples,
-                row_stride * sizeof(SampleT) * 4,
+                row_stride_bytes,
                 oSizeROI,
                 d_histogram,
                 num_levels,
@@ -221,7 +221,7 @@ cudaError_t DispatchEven(
     LevelT              upper_level[1],                             ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
     OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -240,7 +240,7 @@ cudaError_t DispatchEven(
             upper_level[0],
             num_row_pixels,
             num_rows,
-            row_stride,
+            row_stride_bytes,
             stream,
             debug_synchronous);
     }
@@ -269,7 +269,7 @@ cudaError_t DispatchEven(
     LevelT              upper_level[NUM_ACTIVE_CHANNELS],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
     OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -288,7 +288,7 @@ cudaError_t DispatchEven(
             upper_level,
             num_row_pixels,
             num_rows,
-            row_stride,
+            row_stride_bytes,
             stream,
             debug_synchronous);
     }
@@ -317,7 +317,7 @@ cudaError_t DispatchRange(
     LevelT              *d_levels[1],                               ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
     OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -335,7 +335,7 @@ cudaError_t DispatchRange(
             d_levels[0],
             num_row_pixels,
             num_rows,
-            row_stride,
+            row_stride_bytes,
             stream,
             debug_synchronous);
     }
@@ -364,7 +364,7 @@ cudaError_t DispatchRange(
     LevelT              *d_levels[NUM_ACTIVE_CHANNELS],             ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
     OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -382,7 +382,7 @@ cudaError_t DispatchRange(
             d_levels,
             num_row_pixels,
             num_rows,
-            row_stride,
+            row_stride_bytes,
             stream,
             debug_synchronous);
     }
@@ -558,7 +558,7 @@ void Initialize(
     CounterT        *h_histogram[NUM_ACTIVE_CHANNELS],      ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
     OffsetT         num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT         num_rows,                               ///< [in] The number of rows in the region of interest
-    OffsetT         row_stride)                             ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT         row_stride_bytes)                             ///< [in] The number of bytes between starts of consecutive rows in the region of interest
 {
     printf("Initializing... "); fflush(stdout);
 
@@ -581,7 +581,7 @@ void Initialize(
             for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
             {
                 // Sample offset
-                OffsetT offset = (row * row_stride * NUM_CHANNELS) + (pixel * NUM_CHANNELS) + channel;
+                OffsetT offset = (row * (row_stride_bytes / sizeof(SampleT))) + (pixel * NUM_CHANNELS) + channel;
 
                 // Init sample value
                 Sample(h_samples[offset], max_value, entropy_reduction);
@@ -628,14 +628,14 @@ void TestEven(
     LevelT          upper_level[NUM_ACTIVE_CHANNELS],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
     OffsetT         num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT         num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT         row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT         row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     const char*     type_string)
 {
-    OffsetT total_samples =  num_rows * row_stride * NUM_CHANNELS;
+    OffsetT total_samples = num_rows * (row_stride_bytes / sizeof(SampleT));
 
-    printf("\n----------------------------\n%s cub::DeviceHistogramEven %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples (entropy reduction %d), %d/%d channels, max sample ",
+    printf("\n----------------------------\n%s cub::DeviceHistogramEven %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
-        num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride,
+        num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride_bytes,
         total_samples, (int) sizeof(SampleT), type_string, entropy_reduction,
         NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
     std::cout << CoutCast(max_value) << "\n";
@@ -662,7 +662,7 @@ void TestEven(
     }
 
     Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
-        max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
+        max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride_bytes);
 
     // Allocate and initialize device data
 
@@ -691,7 +691,7 @@ void TestEven(
         Int2Type<NUM_CHANNELS>(), Int2Type<NUM_ACTIVE_CHANNELS>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes,
         d_samples, d_histogram, num_levels, lower_level, upper_level,
-        num_row_pixels, num_rows, row_stride,
+        num_row_pixels, num_rows, row_stride_bytes,
         0, true);
 
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
@@ -701,7 +701,7 @@ void TestEven(
         Int2Type<NUM_CHANNELS>(), Int2Type<NUM_ACTIVE_CHANNELS>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes,
         d_samples, d_histogram, num_levels, lower_level, upper_level,
-        num_row_pixels, num_rows, row_stride,
+        num_row_pixels, num_rows, row_stride_bytes,
         0, true);
 
     // Flush any stdout/stderr
@@ -727,7 +727,7 @@ void TestEven(
         Int2Type<NUM_CHANNELS>(), Int2Type<NUM_ACTIVE_CHANNELS>(), Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes,
         d_samples, d_histogram, num_levels, lower_level, upper_level,
-        num_row_pixels, num_rows, row_stride,
+        num_row_pixels, num_rows, row_stride_bytes,
         0, false);
 
     gpu_timer.Stop();
@@ -792,14 +792,14 @@ void TestRange(
     LevelT*         levels[NUM_ACTIVE_CHANNELS],                ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
     OffsetT         num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT         num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT         row_stride,                                 ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT         row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     const char*     type_string)
 {
-    OffsetT total_samples =  num_rows * row_stride * NUM_CHANNELS;
+    OffsetT total_samples = num_rows * (row_stride_bytes / sizeof(SampleT));
 
-    printf("\n----------------------------\n%s cub::DeviceHistogramRange %d pixels (%d height, %d width, %d stride), %d %d-byte %s samples (entropy reduction %d), %d/%d channels, max sample ",
+    printf("\n----------------------------\n%s cub::DeviceHistogramRange %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
-        num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride,
+        num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride_bytes,
         total_samples, (int) sizeof(SampleT), type_string, entropy_reduction,
         NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
     std::cout << CoutCast(max_value) << "\n";
@@ -828,7 +828,7 @@ void TestRange(
     }
 
     Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
-        max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride);
+        max_value, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride_bytes);
 
     // Allocate and initialize device data
     SampleT*        d_samples = NULL;
@@ -863,7 +863,7 @@ void TestRange(
         Int2Type<NUM_CHANNELS>(), Int2Type<NUM_ACTIVE_CHANNELS>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes,
         d_samples, d_histogram, num_levels, d_levels,
-        num_row_pixels, num_rows, row_stride,
+        num_row_pixels, num_rows, row_stride_bytes,
         0, true);
 
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
@@ -873,7 +873,7 @@ void TestRange(
         Int2Type<NUM_CHANNELS>(), Int2Type<NUM_ACTIVE_CHANNELS>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes,
         d_samples, d_histogram, num_levels, d_levels,
-        num_row_pixels, num_rows, row_stride,
+        num_row_pixels, num_rows, row_stride_bytes,
         0, true);
 
     // Flush any stdout/stderr
@@ -901,7 +901,7 @@ void TestRange(
         Int2Type<NUM_CHANNELS>(), Int2Type<NUM_ACTIVE_CHANNELS>(), Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes,
         d_samples, d_histogram, num_levels, d_levels,
-        num_row_pixels, num_rows, row_stride,
+        num_row_pixels, num_rows, row_stride_bytes,
         0, false);
 
     gpu_timer.Stop();
@@ -962,7 +962,7 @@ template <
 void TestEven(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
-    int             row_stride,
+    int             row_stride_bytes,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     int             max_levels,
@@ -983,7 +983,7 @@ void TestEven(
     }
 
     TestEven<BACKEND, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
-        max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride, type_string);
+        max_value, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes, type_string);
 }
 
 
@@ -1002,7 +1002,7 @@ template <
 void TestRange(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
-    int             row_stride,
+    int             row_stride_bytes,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     int             max_levels,
@@ -1021,7 +1021,7 @@ void TestRange(
     }
 
     TestRange<BACKEND, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
-        max_value, entropy_reduction, num_levels, levels, num_row_pixels, num_rows, row_stride, type_string);
+        max_value, entropy_reduction, num_levels, levels, num_row_pixels, num_rows, row_stride_bytes, type_string);
 
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
         delete[] levels[channel];
@@ -1043,7 +1043,7 @@ template <
 void Test(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
-    int             row_stride,
+    int             row_stride_bytes,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     int             max_levels,
@@ -1051,10 +1051,10 @@ void Test(
     const char*     type_string)
 {
     TestEven<CUB, SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, type_string);
 
     TestRange<CUB, SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, type_string);
 
 }
 
@@ -1072,7 +1072,7 @@ template <
 void Test(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
-    OffsetT         row_stride,
+    OffsetT         row_stride_bytes,
     int             entropy_reduction,
     LevelT          max_value,
     const char*     type_string)
@@ -1085,7 +1085,7 @@ void Test(
         num_levels[channel] = 257;
     }
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, num_levels[0], max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, num_levels[0], max_value, type_string);
 
     // All different levels
     num_levels[0] = 129;
@@ -1094,7 +1094,7 @@ void Test(
         num_levels[channel] = (num_levels[channel - 1] / 2) + 1;
     }
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, num_levels[0], max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, num_levels[0], max_value, type_string);
 }
 
 
@@ -1112,18 +1112,18 @@ template <
 void Test(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
-    OffsetT         row_stride,
+    OffsetT         row_stride_bytes,
     LevelT          max_value,
     const char*     type_string)
 {
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, 0,   max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, 0,   max_value, type_string);
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, -1,  max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, -1,  max_value, type_string);
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride, 5,   max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, 5,   max_value, type_string);
 
 }
 
@@ -1144,13 +1144,13 @@ void Test(
     LevelT          max_value,
     const char*     type_string)
 {
+    OffsetT row_stride_bytes = num_row_pixels * NUM_CHANNELS * sizeof(SampleT);
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, num_row_pixels, max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, max_value, type_string);
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, num_row_pixels + 10, max_value, type_string);
-
+        num_row_pixels, num_rows, row_stride_bytes + (13 * sizeof(SampleT)), max_value, type_string);
 }
 
 
@@ -1211,6 +1211,7 @@ void Test(
 {
     Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_value, type_string);
     Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_value, type_string);
+    Test<SampleT, 3, 3, CounterT, LevelT, OffsetT>(max_value, type_string);
     Test<SampleT, 4, 4, CounterT, LevelT, OffsetT>(max_value, type_string);
 }
 
@@ -1238,10 +1239,10 @@ int main(int argc, char** argv)
     g_verbose_input = args.CheckCmdLineFlag("v2");
     args.GetCmdLineArgument("n", num_row_pixels);
 
-    int row_stride = num_row_pixels;
+    int row_stride_pixels = num_row_pixels;
 
     args.GetCmdLineArgument("rows", num_rows);
-    args.GetCmdLineArgument("stride", row_stride);
+    args.GetCmdLineArgument("stride", row_stride_pixels);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("entropy", entropy_reduction);
@@ -1272,8 +1273,8 @@ int main(int argc, char** argv)
 
     if (num_row_pixels < 0)
     {
-        num_row_pixels  = 1920 * 1080;
-        row_stride      = num_row_pixels;
+        num_row_pixels      = 1920 * 1080;
+        row_stride_pixels   = num_row_pixels;
     }
 
 #if defined(QUICKER_TEST)
@@ -1281,76 +1282,86 @@ int main(int argc, char** argv)
     // Compile/run quick tests
     {
         // HistogramEven: unsigned char 256 bins
-        typedef unsigned char   SampleT;
-        typedef int             LevelT;
+        typedef unsigned char       SampleT;
+        typedef int                 LevelT;
 
-        LevelT  max_value       = 256;
-        int     num_levels[1]   = {257};
-        int     max_levels      = 257;
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
+        LevelT  max_value           = 256;
+        int     num_levels[1]       = {257};
+        int     max_levels          = 257;
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
+
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
         if (compare_npp)
-            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
+            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
     }
 
     {
         // HistogramEven: 4/4 multichannel Unsigned char 256 bins
-        typedef unsigned char   SampleT;
-        typedef int             LevelT;
+        typedef unsigned char       SampleT;
+        typedef int                 LevelT;
 
-        LevelT  max_value       = 256;
-        int     num_levels[4]   = {257, 257, 257, 257};
-        int     max_levels      = 257;
-        TestEven<CUB, SampleT, 4, 4, int, LevelT, int>(num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
+        LevelT  max_value           = 256;
+        int     num_levels[4]       = {257, 257, 257, 257};
+        int     max_levels          = 257;
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
+
+        TestEven<CUB, SampleT, 4, 4, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
     }
 
     {
         // HistogramEven: 3/4 multichannel Unsigned char 256 bins
-        typedef unsigned char   SampleT;
-        typedef int             LevelT;
+        typedef unsigned char       SampleT;
+        typedef int                 LevelT;
 
-        LevelT  max_value       = 256;
-        int     num_levels[3]   = {257, 257, 257};
-        int     max_levels      = 257;
+        LevelT  max_value           = 256;
+        int     num_levels[3]       = {257, 257, 257};
+        int     max_levels          = 257;
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
 
-        TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
-
+        TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
         if (compare_npp)
-            TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
+            TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
     }
 
 #elif defined(QUICK_TEST)
 
     {
         // HistogramRange: unsigned char 256 bins
-        typedef unsigned char   SampleT;
-        typedef int             LevelT;
+        typedef unsigned char       SampleT;
+        typedef int                 LevelT;
 
-        LevelT  max_value       = 256;
-        int     num_levels[0]   = {257};
-        int     max_levels      = 257;
-        TestRange<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
+        LevelT  max_value           = 256;
+        int     num_levels[0]       = {257};
+        int     max_levels          = 257;
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
+
+        TestRange<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
     }
 
     {
         // HistogramRange: 3/4 channel, unsigned char, varied bins (256, 128, 64)
-        typedef unsigned char   SampleT;
-        typedef int             LevelT;
+        typedef unsigned char       SampleT;
+        typedef int                 LevelT;
 
-        LevelT  max_value       = 256;
-        int     num_levels[3]   = {257, 129, 65};
-        int     max_levels      = 257;
-        TestRange<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
+        LevelT  max_value           = 256;
+        int     num_levels[3]       = {257, 129, 65};
+        int     max_levels          = 257;
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
+
+        TestRange<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
     }
 
     {
         // HistogramEven: float [0,1.0] 256 bins
-        typedef float           SampleT;
-        typedef float           LevelT;
+        typedef float               SampleT;
+        typedef float               LevelT;
 
-        LevelT  max_value       = 1.0;
-        int     num_levels[1]   = {257};
-        int     max_levels      = 257;
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(float));
+        LevelT  max_value           = 1.0;
+        int     num_levels[1]       = {257};
+        int     max_levels          = 257;
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
+
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(float));
     }
 
 #else

@@ -182,13 +182,13 @@ struct BlockHistogramSweep
     template <typename Iterator>
     static __device__ __forceinline__ bool IsAligned(
         Iterator        d_samples,
-        OffsetT         row_stride,
+        OffsetT         row_stride_samples,
         Int2Type<true>  is_vector_suitable)
     {
         if (NUM_CHANNELS == 1)
         {
             // both row stride and starting pointer must be vector-aligned
-            return ((size_t(d_samples) | row_stride)  & (sizeof(VectorT) - 1)) == 0;
+            return ((size_t(d_samples) | (sizeof(SampleT) * row_stride_samples)) & (sizeof(VectorT) - 1)) == 0;
         }
         else
         {
@@ -202,7 +202,7 @@ struct BlockHistogramSweep
     template <typename Iterator>
     static __device__ __forceinline__ bool IsAligned(
         Iterator        d_samples,
-        OffsetT         row_stride,
+        OffsetT         row_stride_samples,
         Int2Type<false> is_vector_suitable)
     {
         return false;
@@ -466,7 +466,7 @@ struct BlockHistogramSweep
     __device__ __forceinline__ BlockHistogramSweep(
         TempStorage         &temp_storage,                                  ///< Reference to temp_storage
         SampleIteratorT    	d_samples,                                      ///< Input data to reduce
-        OffsetT             row_stride,                                     ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+        OffsetT             row_stride_samples,                             ///< The number of samples between starts of consecutive rows in the region of interest
         CounterT*           (&d_out_histograms)[NUM_ACTIVE_CHANNELS],       ///< Reference to output histograms
         SampleTransformOpT  (&transform_op)[NUM_ACTIVE_CHANNELS],           ///< Transform operators for determining bin-ids from samples, one for each channel
         int                 (&num_bins)[NUM_ACTIVE_CHANNELS])               ///< The number of boundaries (levels) for delineating histogram samples, one for each channel
@@ -477,7 +477,7 @@ struct BlockHistogramSweep
         d_out_histograms(d_out_histograms),
         transform_op(transform_op),
         num_bins(num_bins),
-        can_vectorize(IsAligned(d_samples, row_stride, Int2Type<IS_VECTOR_SUITABLE>()))
+        can_vectorize(IsAligned(d_samples, row_stride_samples, Int2Type<IS_VECTOR_SUITABLE>()))
     {
         InitBinCounters(Int2Type<USE_SHARED_MEM>());
 
