@@ -78,7 +78,7 @@ __global__ void DeviceHistogramSweepKernel(
     ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_bins_wrapper,       ///< [in] The number of bin level boundaries for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
     OffsetT                                                 num_row_pixels,         ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT                                                 num_rows,               ///< [in] The number of rows in the region of interest
-    OffsetT                                                 row_stride)             ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+    OffsetT                                                 row_stride_samples)     ///< [in] The number of samples between starts of consecutive rows in the region of interest
 {
     // Thread block type for compositing input tiles
     typedef BlockHistogramSweep<BlockHistogramSweepPolicyT, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, SampleTransformOpT, OffsetT> BlockHistogramSweepT;
@@ -89,7 +89,7 @@ __global__ void DeviceHistogramSweepKernel(
     BlockHistogramSweepT block_sweep(
         temp_storage,
         d_samples,
-        row_stride,
+        row_stride_samples,
         d_temp_histo_wrapper.array,
         transform_op_wrapper.array,
         num_bins_wrapper.array);
@@ -100,7 +100,7 @@ __global__ void DeviceHistogramSweepKernel(
     // Consume input tiles
     for (OffsetT row = blockIdx.y; row < num_rows; row += gridDim.y)
     {
-        OffsetT row_offset     = row * row_stride * NUM_CHANNELS;
+        OffsetT row_offset     = row * row_stride_samples;
         OffsetT row_end        = row_offset + (num_row_pixels * NUM_CHANNELS);
 
         block_sweep.ConsumeStriped(row_offset, row_end);
@@ -435,7 +435,7 @@ struct DeviceHistogramDispatch
         SampleTransformOpT                  transform_op[NUM_ACTIVE_CHANNELS],      ///< [in] Transform operators for determining bin-ids from samples, one for each channel
         OffsetT                             num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT                             num_rows,                               ///< [in] The number of rows in the region of interest
-        OffsetT                             row_stride,                             ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+        OffsetT                             row_stride_samples,                     ///< [in] The number of samples between starts of consecutive rows in the region of interest
         int                                 max_bins,                               ///< [in] The maximum number of bins in any channel
         DeviceHistogramSweepKernelT         histogram_sweep_kernel,                 ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
         DeviceHistogramAggregateKernelT     histogram_aggregate_kernel,             ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramAggregateKernel
@@ -477,14 +477,16 @@ struct DeviceHistogramDispatch
             int histogram_sweep_occupancy = histogram_sweep_sm_occupancy * sm_count;
 
             // Get grid dimensions, trying to keep total blocks ~histogram_sweep_occupancy
-            int pixels_per_tile  = histogram_sweep_config.block_threads * histogram_sweep_config.pixels_per_thread;
-            int tiles_per_row    = (num_row_pixels + pixels_per_tile - 1) / pixels_per_tile;
+            int pixels_per_tile                 = histogram_sweep_config.block_threads * histogram_sweep_config.pixels_per_thread;
+            int tiles_per_row                   = (num_row_pixels + pixels_per_tile - 1) / pixels_per_tile;
+            int blocks_per_row                  = CUB_MIN(histogram_sweep_occupancy, tiles_per_row);
+            int blocks_per_col                  = CUB_MIN(histogram_sweep_occupancy / blocks_per_row, num_rows);
+            int histogram_sweep_grid_blocks     = blocks_per_row * blocks_per_col;
 
             dim3 histogram_sweep_grid_dims;
-            histogram_sweep_grid_dims.x = CUB_MIN(histogram_sweep_occupancy, tiles_per_row);                                // blocks per image row
-            histogram_sweep_grid_dims.y = CUB_MIN(histogram_sweep_occupancy / histogram_sweep_grid_dims.x, num_rows);       // rows
+            histogram_sweep_grid_dims.x = (unsigned int) blocks_per_row;
+            histogram_sweep_grid_dims.y = (unsigned int) blocks_per_col;
             histogram_sweep_grid_dims.z = 1;
-            int histogram_sweep_grid_blocks = histogram_sweep_grid_dims.x * histogram_sweep_grid_dims.y;
 
             // Temporary storage allocation requirements
             void* allocations[1];
@@ -537,7 +539,7 @@ struct DeviceHistogramDispatch
                 num_bins_wrapper,
                 num_row_pixels,
                 num_rows,
-                row_stride);
+                row_stride_samples);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -588,7 +590,7 @@ struct DeviceHistogramDispatch
         LevelT              *d_levels[NUM_ACTIVE_CHANNELS],         ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
         OffsetT             num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                               ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride,                             ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+        OffsetT             row_stride_samples,                     ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous)                      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -639,7 +641,7 @@ struct DeviceHistogramDispatch
                     transform_op,
                     num_row_pixels,
                     num_rows,
-                    row_stride,
+                    row_stride_samples,
                     max_bins,
                     DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, 0, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, SearchTransform<LevelT*>, OffsetT>,
                     DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
@@ -659,7 +661,7 @@ struct DeviceHistogramDispatch
                     transform_op,
                     num_row_pixels,
                     num_rows,
-                    row_stride,
+                    row_stride_samples,
                     max_bins,
                     DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, SearchTransform<LevelT*>, OffsetT>,
                     DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
@@ -690,7 +692,7 @@ struct DeviceHistogramDispatch
         LevelT              upper_level[NUM_ACTIVE_CHANNELS],       ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
         OffsetT             num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT             num_rows,                               ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride,                             ///< [in] The number of multi-channel pixels between starts of consecutive rows in the region of interest
+        OffsetT             row_stride_samples,                     ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous)                      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -738,7 +740,7 @@ struct DeviceHistogramDispatch
                     transform_op,
                     num_row_pixels,
                     num_rows,
-                    row_stride,
+                    row_stride_samples,
                     max_bins,
                     DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleFreeTransform<SampleT>, OffsetT>,
                     DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
@@ -770,7 +772,7 @@ struct DeviceHistogramDispatch
                         transform_op,
                         num_row_pixels,
                         num_rows,
-                        row_stride,
+                        row_stride_samples,
                         max_bins,
                         DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, 0, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleTransform, OffsetT>,
                         DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
@@ -790,7 +792,7 @@ struct DeviceHistogramDispatch
                         transform_op,
                         num_row_pixels,
                         num_rows,
-                        row_stride,
+                        row_stride_samples,
                         max_bins,
                         DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleTransform, OffsetT>,
                         DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
