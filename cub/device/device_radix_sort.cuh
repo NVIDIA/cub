@@ -53,7 +53,7 @@ namespace cub {
  *
  * \par Overview
  * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
- * items into ascending order.  It relies upon a positional representation for
+ * items into ascending order. (~<em>2N </em>auxiliary storage required)  It relies upon a positional representation for
  * keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
  * characters, etc.) specified from least-significant to most-significant.  For a
  * given input sequence of keys and a set of rules specifying a total ordering
@@ -87,11 +87,11 @@ struct DeviceRadixSort
     //@{
 
     /**
-     * \brief Sorts key-value pairs into ascending order.
+     * \brief Sorts key-value pairs into ascending order. (~<em>2N </em>auxiliary storage required)
      *
      * \par
      * - The contents of the input data are not altered by the sorting operation
-     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
      * - \cdp
@@ -152,8 +152,8 @@ struct DeviceRadixSort
         Value               *d_values_in,                           ///< [in] Pointer to the corresponding input sequence of associated value items
         Value               *d_values_out,                          ///< [out] Pointer to the correspondingly-reordered output sequence of associated value items
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
-        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -177,7 +177,7 @@ struct DeviceRadixSort
 
 
     /**
-     * \brief Sorts key-value pairs into ascending order (small memory footprint).
+     * \brief Sorts key-value pairs into ascending order. (~<em>N </em>auxiliary storage required)
      *
      * \par
      * - The sorting operation is given a pair of key buffers and a corresponding
@@ -190,7 +190,7 @@ struct DeviceRadixSort
      *   within each DoubleBuffer wrapper to reference which of the two buffers
      *   now contains the sorted output sequence (a function of the number of key bits
      *   specified and the targeted device architecture).
-     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageP
      * - \devicestorage
      * - \cdp
@@ -251,8 +251,8 @@ struct DeviceRadixSort
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose "current" buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
-        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -273,11 +273,11 @@ struct DeviceRadixSort
 
 
     /**
-     * \brief Sorts key-value pairs into descending order.
+     * \brief Sorts key-value pairs into descending order. (~<em>2N</em> auxiliary storage required).
      *
      * \par
      * - The contents of the input data are not altered by the sorting operation
-     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
      * - \cdp
@@ -333,8 +333,8 @@ struct DeviceRadixSort
         Value               *d_values_in,                           ///< [in] Pointer to the corresponding input sequence of associated value items
         Value               *d_values_out,                          ///< [out] Pointer to the correspondingly-reordered output sequence of associated value items
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
-        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -358,7 +358,7 @@ struct DeviceRadixSort
 
 
     /**
-     * \brief Sorts key-value pairs into descending order (small memory footprint).
+     * \brief Sorts key-value pairs into descending order. (~<em>N </em>auxiliary storage required).
      *
      * \par
      * - The sorting operation is given a pair of key buffers and a corresponding
@@ -371,7 +371,7 @@ struct DeviceRadixSort
      *   within each DoubleBuffer wrapper to reference which of the two buffers
      *   now contains the sorted output sequence (a function of the number of key bits
      *   specified and the targeted device architecture).
-     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageP
      * - \devicestorage
      * - \cdp
@@ -427,8 +427,8 @@ struct DeviceRadixSort
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<Value> &d_values,                              ///< [in,out] Double-buffer of values whose "current" buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
-        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -456,11 +456,11 @@ struct DeviceRadixSort
 
 
     /**
-     * \brief Sorts keys into ascending order.
+     * \brief Sorts keys into ascending order. (~<em>2N </em>auxiliary storage required)
      *
      * \par
      * - The contents of the input data are not altered by the sorting operation
-     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
      * - \cdp
@@ -509,8 +509,8 @@ struct DeviceRadixSort
         Key                 *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
         Key                 *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
-        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -535,7 +535,7 @@ struct DeviceRadixSort
 
 
     /**
-     * \brief Sorts keys into ascending order (small memory footprint)
+     * \brief Sorts keys into ascending order. (~<em>N </em>auxiliary storage required).
      *
      * \par
      * - The sorting operation is given a pair of key buffers managed by a
@@ -546,7 +546,7 @@ struct DeviceRadixSort
      *   within the DoubleBuffer wrapper to reference which of the two buffers
      *   now contains the sorted output sequence (a function of the number of key bits
      *   specified and the targeted device architecture).
-     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageP
      * - \devicestorage
      * - \cdp
@@ -597,8 +597,8 @@ struct DeviceRadixSort
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
-        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -621,11 +621,11 @@ struct DeviceRadixSort
     }
 
     /**
-     * \brief Sorts keys into descending order.
+     * \brief Sorts keys into descending order. (~<em>2N</em> auxiliary storage required).
      *
      * \par
      * - The contents of the input data are not altered by the sorting operation
-     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
      * - \cdp
@@ -673,8 +673,8 @@ struct DeviceRadixSort
         Key                 *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
         Key                 *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
-        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -698,7 +698,7 @@ struct DeviceRadixSort
 
 
     /**
-     * \brief Sorts keys into descending order (small memory footprint).
+     * \brief Sorts keys into descending order. (~<em>N </em>auxiliary storage required).
      *
      * \par
      * - The sorting operation is given a pair of key buffers managed by a
@@ -709,7 +709,7 @@ struct DeviceRadixSort
      *   within the DoubleBuffer wrapper to reference which of the two buffers
      *   now contains the sorted output sequence (a function of the number of key bits
      *   specified and the targeted device architecture).
-     * - Specifying a reduced range of differentiating key bits will typically result in a corresponding performance improvement.
+     * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageP
      * - \devicestorage
      * - \cdp
@@ -756,8 +756,8 @@ struct DeviceRadixSort
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         DoubleBuffer<Key>   &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] Number of items to reduce
-        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The first (least-significant) bit index needed for key comparison
-        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The past-the-end (most-significant) bit index needed for key comparison
+        int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
+        int                 end_bit             = sizeof(Key) * 8,  ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
