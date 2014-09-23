@@ -1331,7 +1331,7 @@ int main(int argc, char** argv)
         typedef int                 LevelT;
 
         LevelT  max_value           = 256;
-        int     num_levels[0]       = {257};
+        int     num_levels[1]       = {257};
         int     max_levels          = 257;
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 

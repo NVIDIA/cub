@@ -185,16 +185,8 @@ struct BlockHistogramSweep
         OffsetT         row_stride_samples,
         Int2Type<true>  is_vector_suitable)
     {
-        if (NUM_CHANNELS == 1)
-        {
-            // both row stride and starting pointer must be vector-aligned
-            return ((size_t(d_samples) | (sizeof(SampleT) * row_stride_samples)) & (sizeof(VectorT) - 1)) == 0;
-        }
-        else
-        {
-            // only starting pointer needs to be vector aligned because stride is in whole pixels
-            return (size_t(d_samples)  & (sizeof(VectorT) - 1)) == 0;
-        }
+        // both row stride and starting pointer must be vector-aligned
+        return ((size_t(d_samples) | (sizeof(SampleT) * row_stride_samples)) & (sizeof(VectorT) - 1)) == 0;
     }
 
 
@@ -302,7 +294,7 @@ struct BlockHistogramSweep
 
                 int bin;
                 bool valid_sample = is_valid[PIXEL];
-                transform_op[CHANNEL](samples[PIXEL][CHANNEL], bin, valid_sample);
+                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicy::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
                 if (valid_sample)
                     atomicAdd(d_out_histograms[CHANNEL] + block_histo_offset + bin, 1);
             }
@@ -326,7 +318,7 @@ struct BlockHistogramSweep
             {
                 int bin;
                 bool valid_sample = is_valid[PIXEL];
-                transform_op[CHANNEL](samples[PIXEL][CHANNEL], bin, valid_sample);
+                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicy::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
                 if (valid_sample)
                 {
                     atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
@@ -380,51 +372,45 @@ struct BlockHistogramSweep
         int             valid_pixels,
         Int2Type<true>  is_vector_suitable)
     {
-        if (NUM_CHANNELS == 1)
+        if (((NUM_CHANNELS == 1) && (!IS_FULL_TILE)) || !can_vectorize)
         {
-            // Single-channel
+            // Not a full tile of single-channel samples, or not aligned.  Load un-vectorized
+            ConsumeTile<IS_FULL_TILE>(block_row_offset, valid_pixels, Int2Type<false>());
+        }
+        else if (NUM_CHANNELS == 1)
+        {
+            // Full single-channel tile
+            SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
+            bool        is_valid[PIXELS_PER_THREAD];
 
-            if (!IS_FULL_TILE || !can_vectorize)
+            // Alias items as an array of VectorT and load it in striped fashion
+            VectorT *vec_items = reinterpret_cast<VectorT*>(samples);
+
+            // Vector input iterator wrapper at starting pixel
+            SampleT *d_samples_unqualified = const_cast<SampleT*>(d_samples) + block_row_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
+            VectorT *ptr = reinterpret_cast<VectorT*>(d_samples_unqualified);
+            InputIteratorVectorT d_vec_in(ptr);
+
+            // Read striped vectors
+            #pragma unroll
+            for (int VECTOR = 0; VECTOR < (PIXELS_PER_THREAD / VECTOR_LOAD_LENGTH); ++VECTOR)
             {
-                // Not a full tile of single-channel samples, or not aligned.  Load un-vectorized
-                ConsumeTile<IS_FULL_TILE>(block_row_offset, valid_pixels, Int2Type<false>());
+                vec_items[VECTOR] = d_vec_in[VECTOR * BLOCK_THREADS];
             }
-            else
-            {
-                // Full tile
-                SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
-                bool        is_valid[PIXELS_PER_THREAD];
 
-                // Alias items as an array of VectorT and load it in striped fashion
-                VectorT *vec_items = reinterpret_cast<VectorT*>(samples);
+            if (LOAD_FENCE)
+                 __threadfence_block();
 
-                // Vector input iterator wrapper at starting pixel
-                SampleT *d_samples_unqualified = const_cast<SampleT*>(d_samples) + block_row_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
-                VectorT *ptr = reinterpret_cast<VectorT*>(d_samples_unqualified);
-                InputIteratorVectorT d_vec_in(ptr);
+            #pragma unroll
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
+                is_valid[PIXEL] = true;
 
-                // Read striped vectors
-                #pragma unroll
-                for (int VECTOR = 0; VECTOR < (PIXELS_PER_THREAD / VECTOR_LOAD_LENGTH); ++VECTOR)
-                {
-                    vec_items[VECTOR] = d_vec_in[VECTOR * BLOCK_THREADS];
-                }
-
-                if (LOAD_FENCE)
-                     __threadfence_block();
-
-                #pragma unroll
-                for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
-                    is_valid[PIXEL] = true;
-
-                // Accumulate samples
-                AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
-            }
+            // Accumulate samples
+            AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
         }
         else
         {
-            // Multi-channel
-
+            // Multi-channel tile
             SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
             bool        is_valid[PIXELS_PER_THREAD];
 
