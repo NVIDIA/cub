@@ -215,12 +215,21 @@ struct DeviceHistogramDispatch
             this->num_levels = num_levels;
         }
 
-        // Functor for converting samples to bin-ids
-        __host__ __device__ __forceinline__ void operator()(SampleT sample, int &bin, bool &valid)
+        // Method for converting samples to bin-ids
+        template <CacheLoadModifier LOAD_MODIFIER>
+        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool &valid)
         {
+            /// Level iterator wrapper type
+            typedef typename If<IsPointer<LevelIteratorT>::VALUE,
+                    CacheModifiedInputIterator<LOAD_MODIFIER, LevelT, OffsetT>,     // Wrap the native input pointer with CacheModifiedInputIterator
+                    LevelIteratorT>::Type                                           // Directly use the supplied input iterator type
+                WrappedLevelIteratorT;
+
+            WrappedLevelIteratorT wrapped_levels(d_levels);
+
             if (valid)
             {
-                bin = ((int) UpperBound(d_levels, num_levels, (LevelT) sample)) - 1;
+                bin = ((int) UpperBound(wrapped_levels, num_levels, (LevelT) sample)) - 1;
                 valid = (bin >= 0) && (bin < num_levels);
             }
         }
@@ -248,8 +257,9 @@ struct DeviceHistogramDispatch
             this->scale = scale;
         }
 
-        // Functor for converting samples to bin-ids
-        __host__ __device__ __forceinline__ void operator()(SampleT sample, int &bin, bool &valid)
+        // Method for converting samples to bin-ids
+        template <CacheLoadModifier LOAD_MODIFIER>
+        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool &valid)
         {
             if (valid)
             {
@@ -264,8 +274,9 @@ struct DeviceHistogramDispatch
     template <typename SampleT, int DUMMY = 0>
     struct ScaleFreeTransform
     {
-        // Functor for converting samples to bin-ids
-        __host__ __device__ __forceinline__ void operator()(SampleT sample, int &bin, bool &valid)
+        // Method for converting samples to bin-ids
+        template <CacheLoadModifier LOAD_MODIFIER>
+        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool &valid)
         {
             bin = ((int) sample) + 128;
         }
@@ -275,8 +286,9 @@ struct DeviceHistogramDispatch
     template <int DUMMY>
     struct ScaleFreeTransform<unsigned char, DUMMY>
     {
-        // Functor for converting samples to bin-ids
-        __host__ __device__ __forceinline__ void operator()(SampleT sample, int &bin, bool &valid)
+        // Method for converting samples to bin-ids
+        template <CacheLoadModifier LOAD_MODIFIER>
+        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool &valid)
         {
             bin = (int) sample;
         }
