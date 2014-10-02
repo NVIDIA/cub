@@ -203,21 +203,21 @@ struct DeviceHistogramDispatch
     template <typename LevelIteratorT>
     struct SearchTransform
     {
-        LevelIteratorT  d_levels;      // Pointer to levels array
-        int             num_levels;    // Number of levels in array
+        LevelIteratorT  d_levels;           // Pointer to levels array
+        unsigned int    num_levels;         // Number of levels in array
 
         // Initializer
         __host__ __device__ __forceinline__ void Init(
-            LevelIteratorT  d_levels,      // Pointer to levels array
-            int             num_levels)    // Number of levels in array
+            LevelIteratorT  d_levels,       // Pointer to levels array
+            int             num_levels)     // Number of levels in array
         {
             this->d_levels = d_levels;
-            this->num_levels = num_levels;
+            this->num_levels = (unsigned int) num_levels;
         }
 
         // Method for converting samples to bin-ids
         template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool &valid)
+        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, unsigned int &bin, bool &valid)
         {
             /// Level iterator wrapper type
             typedef typename If<IsPointer<LevelIteratorT>::VALUE,
@@ -227,10 +227,11 @@ struct DeviceHistogramDispatch
 
             WrappedLevelIteratorT wrapped_levels(d_levels);
 
+            unsigned int num_bins = num_levels - 1;
             if (valid)
             {
-                bin = ((int) UpperBound(wrapped_levels, num_levels, (LevelT) sample)) - 1;
-                valid = (bin >= 0) && (bin < num_levels);
+                bin = UpperBound(wrapped_levels, num_levels, (LevelT) sample) - 1;
+                valid = (bin < num_bins);
             }
         }
     };
@@ -239,33 +240,73 @@ struct DeviceHistogramDispatch
     // Scales samples to evenly-spaced bins
     struct ScaleTransform
     {
-        int    num_levels;  // Number of levels in array
+        int    num_bins;  // Number of levels in array
         LevelT max;         // Max sample level (exclusive)
         LevelT min;         // Min sample level (inclusive)
         LevelT scale;       // Bin scaling factor
 
         // Initializer
+        template <typename _LevelT>
         __host__ __device__ __forceinline__ void Init(
-            int    num_levels,  // Number of levels in array
-            LevelT max,         // Max sample level (exclusive)
-            LevelT min,         // Min sample level (inclusive)
-            LevelT scale)       // Bin scaling factor
+            int     num_levels,  // Number of levels in array
+            _LevelT max,         // Max sample level (exclusive)
+            _LevelT min,         // Min sample level (inclusive)
+            _LevelT scale)       // Bin scaling factor
         {
-            this->num_levels = num_levels;
+            this->num_bins = num_levels - 1;
             this->max = max;
             this->min = min;
             this->scale = scale;
         }
 
-        // Method for converting samples to bin-ids
-        template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool &valid)
+        // Initializer (float specialization)
+        __host__ __device__ __forceinline__ void Init(
+            int    num_levels,  // Number of levels in array
+            float   max,         // Max sample level (exclusive)
+            float   min,         // Min sample level (inclusive)
+            float   scale)       // Bin scaling factor
         {
-            if (valid)
-            {
-                bin = (int) ((((LevelT) sample) - min) / scale);
-                valid = (sample >= min) && (sample < max);
-            }
+            this->num_bins = num_levels - 1;
+            this->max = max;
+            this->min = min;
+            this->scale = 1.0 / scale;
+        }
+
+        // Initializer (double specialization)
+        __host__ __device__ __forceinline__ void Init(
+            int    num_levels,  // Number of levels in array
+            double max,         // Max sample level (exclusive)
+            double min,         // Min sample level (inclusive)
+            double scale)       // Bin scaling factor
+        {
+            this->num_bins = num_levels - 1;
+            this->max = max;
+            this->min = min;
+            this->scale = 1.0 / scale;
+        }
+
+        // Method for converting samples to bin-ids
+        template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
+        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, unsigned int &bin, bool &valid)
+        {
+            bin = (unsigned int) ((((LevelT) sample) - min) / scale);
+            valid = valid && (bin < num_bins);
+        }
+
+        // Method for converting samples to bin-ids (float specialization)
+        template <CacheLoadModifier LOAD_MODIFIER>
+        __host__ __device__ __forceinline__ void BinSelect(float sample, unsigned int &bin, bool &valid)
+        {
+            bin = (unsigned int) ((((LevelT) sample) - min) * scale);
+            valid = valid && (bin < num_bins);
+        }
+
+        // Method for converting samples to bin-ids (double specialization)
+        template <CacheLoadModifier LOAD_MODIFIER>
+        __host__ __device__ __forceinline__ void BinSelect(double sample, unsigned int &bin, bool &valid)
+        {
+            bin = (unsigned int) ((((LevelT) sample) - min) * scale);
+            valid = valid && (bin < num_bins);
         }
     };
 
@@ -276,9 +317,9 @@ struct DeviceHistogramDispatch
     {
         // Method for converting samples to bin-ids
         template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool &valid)
+        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, unsigned int &bin, bool &valid)
         {
-            bin = ((int) sample) + 128;
+            bin = ((unsigned int) sample) + 128;
         }
     };
 
@@ -288,9 +329,9 @@ struct DeviceHistogramDispatch
     {
         // Method for converting samples to bin-ids
         template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, int &bin, bool &valid)
+        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, unsigned int &bin, bool &valid)
         {
-            bin = (int) sample;
+            bin = (unsigned int) sample;
         }
     };
 
@@ -300,13 +341,17 @@ struct DeviceHistogramDispatch
      * Tuning policies
      ******************************************************************************/
 
+    enum {
+        T_SCALE = (sizeof(SampleT) < 2) ? 1 : (sizeof(SampleT) / 2),
+    };
+
     /// SM35
     struct Policy350
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
                 160,
-                CUB_MAX((12 / NUM_ACTIVE_CHANNELS / sizeof(SampleT)), 1),    // 20 8b samples per thread
+                CUB_MAX((12 / NUM_ACTIVE_CHANNELS / T_SCALE), 1),    // 20 8b samples per thread
                 LOAD_LDG,
                 true>
             HistogramSweepPolicy;
@@ -318,7 +363,7 @@ struct DeviceHistogramDispatch
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
                 96,
-                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / sizeof(SampleT)), 1),    // 20 8b samples per thread
+                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / T_SCALE), 1),    // 20 8b samples per thread
                 LOAD_DEFAULT,
                 true>
             HistogramSweepPolicy;
@@ -330,7 +375,7 @@ struct DeviceHistogramDispatch
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
                 96,
-                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / sizeof(SampleT)), 1),    // 20 8b samples per thread
+                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / T_SCALE), 1),    // 20 8b samples per thread
                 LOAD_DEFAULT,
                 true>
             HistogramSweepPolicy;
@@ -770,7 +815,7 @@ struct DeviceHistogramDispatch
                         num_levels[channel],
                         upper_level[channel],
                         lower_level[channel],
-                        ((upper_level[channel] - lower_level[channel]) / (num_levels[channel] - 1)));
+                        (LevelT) ((upper_level[channel] - lower_level[channel]) / (num_levels[channel] - 1)));
                 }
                 if (max_bins > MAX_PRIVATIZED_BINS)
                 {

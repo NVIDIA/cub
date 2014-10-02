@@ -929,7 +929,7 @@ int main(int argc, char** argv)
 
         TestGen<float>                (num_items, CUB_TYPE_STRING(float));
 
-        if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
             TestGen<double>               (num_items, CUB_TYPE_STRING(double));
     }
 

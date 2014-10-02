@@ -519,7 +519,7 @@ int main(int argc, char** argv)
     TestThreads<long>(2, 0.8);
     TestThreads<long2>(2, 0.8);
 
-    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+    if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
         TestThreads<double2>(2, 0.8);
     TestThreads<TestFoo>(2, 0.8);
     TestThreads<TestBar>(2, 0.8);

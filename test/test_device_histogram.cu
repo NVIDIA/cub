@@ -714,7 +714,7 @@ void TestEven(
     int error = 0;
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
-        int channel_error = CompareDeviceResults(h_histogram[channel], d_histogram[channel], num_levels[channel] - 1, g_verbose, g_verbose);
+        int channel_error = CompareDeviceResults(h_histogram[channel], d_histogram[channel], num_levels[channel] - 1, true, g_verbose);
         printf("\tChannel %d %s", channel, channel_error ? "FAIL" : "PASS\n");
         error |= channel_error;
     }
@@ -886,7 +886,7 @@ void TestRange(
     int error = 0;
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
-        int channel_error = CompareDeviceResults(h_histogram[channel], d_histogram[channel], num_levels[channel] - 1, g_verbose, g_verbose);
+        int channel_error = CompareDeviceResults(h_histogram[channel], d_histogram[channel], num_levels[channel] - 1, true, g_verbose);
         printf("\tChannel %d %s", channel, channel_error ? "FAIL" : "PASS\n");
         fflush(stdout);
 
@@ -1271,6 +1271,10 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
+    // Get ptx version
+    int ptx_version;
+    CubDebugExit(PtxVersion(ptx_version));
+
     if (num_row_pixels < 0)
     {
         num_row_pixels      = 1920 * 1080;
@@ -1352,6 +1356,19 @@ int main(int argc, char** argv)
     }
 
     {
+        // HistogramEven: short [0,512] 256 bins
+        typedef unsigned short      SampleT;
+        typedef unsigned short      LevelT;
+
+        LevelT  max_value           = 512;
+        int     num_levels[1]       = {257};
+        int     max_levels          = 257;
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
+
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned short));
+    }
+
+    {
         // HistogramEven: float [0,1.0] 256 bins
         typedef float               SampleT;
         typedef float               LevelT;
@@ -1362,6 +1379,20 @@ int main(int argc, char** argv)
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
         TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(float));
+    }
+
+    if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
+    {
+        // HistogramEven: double [0,1.0] 64 bins
+        typedef double              SampleT;
+        typedef double              LevelT;
+
+        LevelT  max_value           = 1.0;
+        int     num_levels[1]       = {65};
+        int     max_levels          = 65;
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
+
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(double));
     }
 
 #else

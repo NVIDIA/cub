@@ -914,7 +914,7 @@ int main(int argc, char** argv)
     TestPointer<CUB, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
     TestPointer<THRUST, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
 
-    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+    if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
     {
         printf("---- double ---- \n");
         TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
@@ -934,7 +934,7 @@ int main(int argc, char** argv)
         TestOp<int, long>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(long));
         TestOp<int, long long>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(long long));
         TestOp<int, float>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
-        if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
             TestOp<int, double>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
 
         TestOp<int, uchar2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uchar2));

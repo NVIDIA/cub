@@ -596,9 +596,9 @@ void Test()
     TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, long>();
     TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, long long>();
     TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, float>();
-    if (ptx_version > 100)
+    if (ptx_version > 120)
     {
-        // Don't check doubles on PTX100 because they're down-converted
+        // Don't check doubles on PTX120 or below because they're down-converted
         TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, double>();
     }
 
