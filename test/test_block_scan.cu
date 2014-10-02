@@ -796,7 +796,7 @@ void Test()
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<int>::min(), (int) 99, CUB_TYPE_STRING(Max<int>));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<long long>::min(), (long long) 99, CUB_TYPE_STRING(Max<long long>));
 
-    if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+    if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
         Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<double>::max() * -1, (double) 99, CUB_TYPE_STRING(Sum<double>));
 
     // vec-1
