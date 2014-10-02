@@ -788,7 +788,7 @@ int main(int argc, char** argv)
         Test<short>(CUB_TYPE_STRING(short));
         Test<int>(CUB_TYPE_STRING(int));
         Test<long long>(CUB_TYPE_STRING(long long));
-        if (ptx_version > 100)                          // Don't check doubles on PTX100 because they're down-converted
+        if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
             Test<double>(CUB_TYPE_STRING(double));
 
         // vector types
