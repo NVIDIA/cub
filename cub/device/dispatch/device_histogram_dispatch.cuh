@@ -289,8 +289,11 @@ struct DeviceHistogramDispatch
         template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
         __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, unsigned int &bin, bool &valid)
         {
-            bin = (unsigned int) ((((LevelT) sample) - min) / scale);
-            valid = valid && (bin < num_bins);
+            if (valid)
+            {
+                bin = (int) ((((LevelT) sample) - min) / scale);
+                valid = (sample >= min) && (sample < max);
+            }
         }
 
         // Method for converting samples to bin-ids (float specialization)
