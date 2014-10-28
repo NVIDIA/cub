@@ -36,6 +36,7 @@
 
 #include <stdio.h>
 #include <iterator>
+#include <limits>
 
 #include "../../block_sweep/block_histogram_sweep.cuh"
 #include "../device_radix_sort.cuh"
@@ -314,27 +315,18 @@ struct DeviceHistogramDispatch
     };
 
 
-    // Scale-free sample transform used for the the common-case of 8b samples and 256 evenly-spaced bins (specialized for int8)
-    template <typename SampleT, int DUMMY = 0>
+    // Scale-free sample transform (simply returns the sample as the bin id)
     struct ScaleFreeTransform
     {
         // Method for converting samples to bin-ids
         template <CacheLoadModifier LOAD_MODIFIER>
         __host__ __device__ __forceinline__ void BinSelect(SampleT sample, unsigned int &bin, bool &valid)
         {
-            bin = ((unsigned int) sample) + 128;
-        }
-    };
-
-    // Scale-free sample transform used for the the common-case of 8b samples and 256 evenly-spaced bins (specialized for unsigend int8)
-    template <int DUMMY>
-    struct ScaleFreeTransform<unsigned char, DUMMY>
-    {
-        // Method for converting samples to bin-ids
-        template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, unsigned int &bin, bool &valid)
-        {
             bin = (unsigned int) sample;
+            if (std::numeric_limits<SampleT>::is_integer && std::numeric_limits<SampleT>::is_signed)
+            {
+                bin += ((unsigned int) std::numeric_limits<SampleT>::max) + 1;
+            }
         }
     };
 
@@ -552,7 +544,7 @@ struct DeviceHistogramDispatch
             void* allocations[1];
             size_t allocation_sizes[1] =
             {
-                NUM_ACTIVE_CHANNELS * histogram_sweep_grid_blocks * sizeof(CounterT) * MAX_PRIVATIZED_BINS,     // bytes needed for privatized histograms
+                NUM_ACTIVE_CHANNELS * histogram_sweep_grid_blocks * sizeof(CounterT) * max_bins,     // bytes needed for privatized histograms
             };
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
@@ -680,7 +672,7 @@ struct DeviceHistogramDispatch
             // Minimum and maximum number of bins in any channel
             int max_bins = max_levels - 1;
 
-            // Initialize  the search-based sample-transforms
+            // Initialize the search-based sample-transforms
             SearchTransform<LevelT*> transform_op[NUM_ACTIVE_CHANNELS];
             for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
             {
@@ -789,7 +781,7 @@ struct DeviceHistogramDispatch
             if ((sizeof(SampleT) == 1) && (max_bins == 256) && (min_bins == 256))
             {
                 // Dispatch privatized approach for the common scenario (8-bit samples with 256 bins in every channel) using efficient scale-free transformer
-                ScaleFreeTransform<SampleT> transform_op[NUM_ACTIVE_CHANNELS];
+                ScaleFreeTransform transform_op[NUM_ACTIVE_CHANNELS];
 
                 if (CubDebug(error = PrivatizedDispatch(
                     d_temp_storage,
@@ -802,7 +794,7 @@ struct DeviceHistogramDispatch
                     num_rows,
                     row_stride_samples,
                     max_bins,
-                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleFreeTransform<SampleT>, OffsetT>,
+                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleFreeTransform, OffsetT>,
                     DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
                     histogram_sweep_config,
                     stream,
