@@ -1146,9 +1146,11 @@ void Test(
 {
     OffsetT row_stride_bytes = num_row_pixels * NUM_CHANNELS * sizeof(SampleT);
 
+    // No padding
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, row_stride_bytes, max_value, type_string);
 
+    // 13 samples padding
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, row_stride_bytes + (13 * sizeof(SampleT)), max_value, type_string);
 }
@@ -1172,6 +1174,11 @@ void Test(
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         OffsetT(1920), OffsetT(1080), max_value, type_string);
 
+    // 720 image
+    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+        OffsetT(1280), OffsetT(720), max_value, type_string);
+
+    // Sample different image sizes
     for (OffsetT rows = 1; rows < 1000000; rows *= 100)
     {
         for (OffsetT cols = 1; cols < (1000000 / rows); cols *= 100)
@@ -1181,7 +1188,7 @@ void Test(
         }
     }
 
-    // Randomly select problem size between 1:10,000,000
+    // Randomly select linear problem size between 1:10,000,000
     unsigned int max_int = (unsigned int) -1;
     for (int i = 0; i < 10; ++i)
     {
@@ -1403,10 +1410,10 @@ int main(int argc, char** argv)
         Test <unsigned char,    int, int,   int>(256, CUB_TYPE_STRING(unsigned char));
         Test <float,            int, float, int>(1.0, CUB_TYPE_STRING(float));
 
+		// Test down-conversion of size_t offsets to int
         if (sizeof(size_t) != sizeof(int))
         {
             Test <unsigned char,    int, int,   size_t>(256, CUB_TYPE_STRING(unsigned char));
-            Test <float,            int, float, size_t>(1.0, CUB_TYPE_STRING(float));
         }
     }
 

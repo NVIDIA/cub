@@ -63,26 +63,26 @@ namespace cub {
  * Histogram privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                            BlockHistogramSweepPolicyT, ///< Parameterized BlockHistogramSweepPolicy tuning policy type
-    int                                                 MAX_PRIVATIZED_BINS,        ///< Maximum number of histogram bins per channel (e.g., up to 256)
-    int                                                 NUM_CHANNELS,               ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
-    int                                                 NUM_ACTIVE_CHANNELS,        ///< Number of channels actively being histogrammed
-    typename                                            SampleIteratorT,            ///< The input iterator type. \iterator.
-    typename                                            CounterT,                   ///< Integer type for counting sample occurrences per histogram bin
-    typename                                            SampleTransformOpT,         ///< Transform operator type for determining bin-ids from samples for each channel
-    typename                                            OffsetT>                    ///< Signed integer type for global offsets
+    typename                                            BlockHistogramSweepPolicyT,     ///< Parameterized BlockHistogramSweepPolicy tuning policy type
+    int                                                 MAX_SMEM_BINS,                  ///< Maximum number of histogram bins per channel (e.g., up to 256)
+    int                                                 NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
+    int                                                 NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
+    typename                                            SampleIteratorT,                ///< The input iterator type. \iterator.
+    typename                                            CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
+    typename                                            SampleTransformOpT,             ///< Transform operator type for determining bin-ids from samples for each channel
+    typename                                            OffsetT>                        ///< Signed integer type for global offsets
 __launch_bounds__ (int(BlockHistogramSweepPolicyT::BLOCK_THREADS))
 __global__ void DeviceHistogramSweepKernel(
-    SampleIteratorT                                         d_samples,              ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
-    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>            d_temp_histo_wrapper,   ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][gridDim.x][MAX_PRIVATIZED_BINS]</tt>
-    ArrayWrapper<SampleTransformOpT, NUM_ACTIVE_CHANNELS>   transform_op_wrapper,   ///< [in] Transform operators for determining bin-ids from samples, one for each channel
-    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_bins_wrapper,       ///< [in] The number of bin level boundaries for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
-    OffsetT                                                 num_row_pixels,         ///< [in] The number of multi-channel pixels per row in the region of interest
-    OffsetT                                                 num_rows,               ///< [in] The number of rows in the region of interest
-    OffsetT                                                 row_stride_samples)     ///< [in] The number of samples between starts of consecutive rows in the region of interest
+    SampleIteratorT                                         d_samples,                  ///< [in] Array of sample data. The samples from different channels are assumed to be interleaved (e.g., an array of 32b pixels where each pixel consists of four RGBA 8b samples).
+    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>            d_privatized_histo_wrapper, ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][gridDim.x][MAX_SMEM_BINS]</tt>
+    ArrayWrapper<SampleTransformOpT, NUM_ACTIVE_CHANNELS>   transform_op_wrapper,       ///< [in] Transform operators for determining bin-ids from samples, one for each channel
+    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_bins_wrapper,           ///< [in] The number of bin level boundaries for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
+    OffsetT                                                 num_row_pixels,             ///< [in] The number of multi-channel pixels per row in the region of interest
+    OffsetT                                                 num_rows,                   ///< [in] The number of rows in the region of interest
+    OffsetT                                                 row_stride_samples)         ///< [in] The number of samples between starts of consecutive rows in the region of interest
 {
     // Thread block type for compositing input tiles
-    typedef BlockHistogramSweep<BlockHistogramSweepPolicyT, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, SampleTransformOpT, OffsetT> BlockHistogramSweepT;
+    typedef BlockHistogramSweep<BlockHistogramSweepPolicyT, MAX_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, SampleTransformOpT, OffsetT> BlockHistogramSweepT;
 
     // Shared memory for BlockHistogramSweep
     __shared__ typename BlockHistogramSweepT::TempStorage temp_storage;
@@ -91,7 +91,7 @@ __global__ void DeviceHistogramSweepKernel(
         temp_storage,
         d_samples,
         row_stride_samples,
-        d_temp_histo_wrapper.array,
+        d_privatized_histo_wrapper.array,
         transform_op_wrapper.array,
         num_bins_wrapper.array);
 
@@ -113,21 +113,23 @@ __global__ void DeviceHistogramSweepKernel(
 
 
 /**
- * Histogram aggregation kernel entry point (one block per channel).  Aggregates privatized threadblock histograms from a previous multi-block histogram pass.
+ * Histogram aggregation kernel entry point.  Aggregates privatized threadblock histograms from a previous multi-block histogram pass.
  */
 template <
-    int                                             NUM_ACTIVE_CHANNELS,        ///< Number of channels actively being histogrammed
-    typename                                        CounterT>                   ///< Integer type for counting sample occurrences per histogram bin
+    int                                                     NUM_ACTIVE_CHANNELS,        ///< Number of channels actively being histogrammed
+    typename                                                CounterT,                   ///< Integer type for counting sample occurrences per histogram bin
+    typename                                                SampleTransformOpT,         ///< Transform operator type for determining bin-ids from samples for each channel
+    typename                                                SampleT>                    ///< The sample type for the privatized histogram kernel
 __global__ void DeviceHistogramAggregateKernel(
-    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>          num_bins_wrapper,           ///< [in] Number of histogram bins per channel
-    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>    d_temp_histo_wrapper,       ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][gridDim.x][MAX_PRIVATIZED_BINS]</tt>
-    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>    d_histo_wrapper,            ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][num_bins.array[CHANNEL]]</tt>
-    int                                             num_threadblocks,           ///< [in] Number of threadblock histograms per channel in \p d_block_histograms
-    int                                             max_bins)                   ///< [in] Maximum number of bins in any channel
+    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_bins_wrapper,           ///< [in] Number of histogram bins per channel
+    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>            d_privatized_histo_wrapper, ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][gridDim.x][MAX_SMEM_BINS]</tt>
+    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>            d_out_histo_wrapper,        ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][num_bins.array[CHANNEL]]</tt>
+    int                                                     num_sweep_blocks,           ///< [in] Number of threadblock histograms per channel in \p d_block_histograms
+    int                                                     min_bins,                   ///< [in] Minimum number of bins in any channel
+    ArrayWrapper<SampleTransformOpT, NUM_ACTIVE_CHANNELS>   transform_op_wrapper)       ///< [in] Transform operators for determining bin-ids from samples, one for each channel
 {
-    // Accumulate threadblock-histograms from the channel
-    int         bin = (blockIdx.x * blockDim.x) + threadIdx.x;
-    CounterT    bin_aggregate[NUM_ACTIVE_CHANNELS];
+    unsigned int    bin = (blockIdx.x * blockDim.x) + threadIdx.x;
+    CounterT        bin_aggregate[NUM_ACTIVE_CHANNELS];
 
     #pragma unroll
     for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
@@ -135,32 +137,59 @@ __global__ void DeviceHistogramAggregateKernel(
         bin_aggregate[CHANNEL] = 0;
     }
 
-    // Read and accumulate the private histogram from each block
+    // Read and accumulate the privatized histogram from each block in the sweep kernel
 #if CUB_PTX_ARCH >= 200
     #pragma unroll 8
 #endif
-    for (int block = 0; block < num_threadblocks; ++block)
+    for (int block = 0; block < num_sweep_blocks; ++block)
     {
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
             int block_offset = block * num_bins_wrapper.array[CHANNEL];
-            if (bin < num_bins_wrapper.array[CHANNEL])
+
+            bool valid_bin = (sizeof(SampleT) > 1) ?
+                (bin < num_bins_wrapper.array[CHANNEL]) :
+                (bin < 256);
+
+            if (valid_bin)
             {
-                bin_aggregate[CHANNEL] += d_temp_histo_wrapper.array[CHANNEL][block_offset + bin];
+                bin_aggregate[CHANNEL] += d_privatized_histo_wrapper.array[CHANNEL][block_offset + bin];
             }
         }
     }
 
-    // Output
-    #pragma unroll
-    for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+    // Output to final bins
+    if ((sizeof(SampleT) > 1) || (!std::numeric_limits<SampleT>::is_signed && (min_bins == 256)))
     {
-        if (bin < num_bins_wrapper.array[CHANNEL])
+        // Simply output the bin counters (privatized histograms were pre-scaled or scale-free)
+        #pragma unroll
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
-            d_histo_wrapper.array[CHANNEL][bin] = bin_aggregate[CHANNEL];
+            if (bin < num_bins_wrapper.array[CHANNEL])
+            {
+                d_out_histo_wrapper.array[CHANNEL][bin] = bin_aggregate[CHANNEL];
+            }
         }
     }
+    else
+    {
+        // Privatized histograms of the entire 8b domain were made and need further scaling to final bin
+        #pragma unroll
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+        {
+            bool valid_sample = bin < 256;
+
+            // Get transformed output bin for this thread
+            unsigned int transform_bin;
+            transform_op_wrapper.array[CHANNEL].BinSelect<BlockHistogramSweepPolicy::LOAD_MODIFIER>((SampleT) ((unsigned char) bin), transform_bin, valid_sample);
+
+            // Update global histogram
+            if (valid_sample)
+                atomicAdd(d_out_histo_wrapper.array[CHANNEL] + transform_bin, bin_aggregate[CHANNEL]);
+        }
+    }
+
 }
 
 
@@ -192,7 +221,7 @@ struct DeviceHistogramDispatch
     enum
     {
         // Maximum number of bins for which we will use a privatized strategy
-        MAX_PRIVATIZED_BINS = 256
+        MAX_SMEM_BINS = 256
     };
 
 
@@ -212,13 +241,13 @@ struct DeviceHistogramDispatch
             LevelIteratorT  d_levels,       // Pointer to levels array
             int             num_levels)     // Number of levels in array
         {
-            this->d_levels = d_levels;
-            this->num_levels = (unsigned int) num_levels;
+            this->d_levels      = d_levels;
+            this->num_levels    = (unsigned int) num_levels;
         }
 
         // Method for converting samples to bin-ids
-        template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, unsigned int &bin, bool &valid)
+        template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
+        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, unsigned int &bin, bool &valid)
         {
             /// Level iterator wrapper type
             typedef typename If<IsPointer<LevelIteratorT>::VALUE,
@@ -241,7 +270,7 @@ struct DeviceHistogramDispatch
     // Scales samples to evenly-spaced bins
     struct ScaleTransform
     {
-        int    num_bins;  // Number of levels in array
+        int    num_bins;    // Number of levels in array
         LevelT max;         // Max sample level (exclusive)
         LevelT min;         // Min sample level (inclusive)
         LevelT scale;       // Bin scaling factor
@@ -315,18 +344,14 @@ struct DeviceHistogramDispatch
     };
 
 
-    // Scale-free sample transform (simply returns the sample as the bin id)
+    // Scale-free sample transform for 8b types (simply returns the sample cast as the bin id)
     struct ScaleFreeTransform
     {
         // Method for converting samples to bin-ids
-        template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(SampleT sample, unsigned int &bin, bool &valid)
+        template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
+        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, unsigned int &bin, bool &valid)
         {
-            bin = (unsigned int) sample;
-            if (std::numeric_limits<SampleT>::is_integer && std::numeric_limits<SampleT>::is_signed)
-            {
-                bin += ((unsigned int) std::numeric_limits<SampleT>::max) + 1;
-            }
+            bin = (unsigned int) ((unsigned char) sample);
         }
     };
 
@@ -559,14 +584,14 @@ struct DeviceHistogramDispatch
             CounterT *d_block_histograms = (CounterT*) allocations[0];
 
             // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
-            ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS> d_histo_wrapper;
+            ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS> d_out_histo_wrapper;
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-                d_histo_wrapper.array[CHANNEL] = d_histogram[CHANNEL];
+                d_out_histo_wrapper.array[CHANNEL] = d_histogram[CHANNEL];
 
             // Setup array wrapper for privatized per-block histogram channel output (because we can't pass static arrays as kernel parameters)
-            ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS> d_temp_histo_wrapper;
+            ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS> d_privatized_histo_wrapper;
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-                d_temp_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histogram_sweep_grid_blocks * MAX_PRIVATIZED_BINS);
+                d_privatized_histo_wrapper.array[CHANNEL] = d_block_histograms + (CHANNEL * histogram_sweep_grid_blocks * MAX_SMEM_BINS);
 
             // Setup array wrapper for bin transforms (because we can't pass static arrays as kernel parameters)
             ArrayWrapper<SampleTransformOpT, NUM_ACTIVE_CHANNELS> transform_op_wrapper;
@@ -586,7 +611,7 @@ struct DeviceHistogramDispatch
             // Invoke histogram_sweep_kernel
             histogram_sweep_kernel<<<histogram_sweep_grid_dims, histogram_sweep_config.block_threads, 0, stream>>>(
                 d_samples,
-                d_temp_histo_wrapper,
+                d_privatized_histo_wrapper,
                 transform_op_wrapper,
                 num_bins_wrapper,
                 num_row_pixels,
@@ -599,7 +624,7 @@ struct DeviceHistogramDispatch
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            int histogram_aggregate_block_threads   = MAX_PRIVATIZED_BINS;
+            int histogram_aggregate_block_threads   = MAX_SMEM_BINS;
             int histogram_aggregate_grid_dims       = (max_bins + histogram_aggregate_block_threads - 1) / histogram_aggregate_block_threads;           // number of blocks per histogram channel (one thread per counter)
 
             // Log DeviceHistogramEvenAggregateKernel configuration
@@ -609,8 +634,8 @@ struct DeviceHistogramDispatch
             // Invoke kernel to aggregate the privatized histograms
             histogram_aggregate_kernel<<<histogram_aggregate_grid_dims, histogram_aggregate_block_threads, 0, stream>>>(
                 num_bins_wrapper,
-                d_temp_histo_wrapper,
-                d_histo_wrapper,
+                d_privatized_histo_wrapper,
+                d_out_histo_wrapper,
                 histogram_sweep_grid_blocks,
                 max_bins);
 
@@ -681,7 +706,7 @@ struct DeviceHistogramDispatch
                     num_levels[channel]);
             }
 
-            if (max_bins > MAX_PRIVATIZED_BINS)
+            if (max_bins > MAX_SMEM_BINS)
             {
                 // Too many bins to keep in shared memory.
                 if (CubDebug(error = PrivatizedDispatch(
@@ -715,7 +740,7 @@ struct DeviceHistogramDispatch
                     num_rows,
                     row_stride_samples,
                     max_bins,
-                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, SearchTransform<LevelT*>, OffsetT>,
+                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, SearchTransform<LevelT*>, OffsetT>,
                     DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
                     histogram_sweep_config,
                     stream,
@@ -729,9 +754,8 @@ struct DeviceHistogramDispatch
     }
 
 
-
     /**
-     * Dispatch routine for HistogramEven
+     * Dispatch routine for HistogramEven, specialized for non-1byte types
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t DispatchEven(
@@ -746,7 +770,8 @@ struct DeviceHistogramDispatch
         OffsetT             num_rows,                               ///< [in] The number of rows in the region of interest
         OffsetT             row_stride_samples,                     ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous)                      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        bool                debug_synchronous,                      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        Int2Type<false>     is_byte_sample)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
         do
@@ -778,11 +803,20 @@ struct DeviceHistogramDispatch
             int max_bins = max_levels - 1;
             int min_bins = min_levels - 1;
 
-            if ((sizeof(SampleT) == 1) && (max_bins == 256) && (min_bins == 256))
+            // Use the default sample transformer for scaling samples
+            ScaleTransform transform_op[NUM_ACTIVE_CHANNELS];
+            for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
             {
-                // Dispatch privatized approach for the common scenario (8-bit samples with 256 bins in every channel) using efficient scale-free transformer
-                ScaleFreeTransform transform_op[NUM_ACTIVE_CHANNELS];
+                transform_op[channel].Init(
+                    num_levels[channel],
+                    upper_level[channel],
+                    lower_level[channel],
+                    (LevelT) ((upper_level[channel] - lower_level[channel]) / (num_levels[channel] - 1)));
+            }
 
+            if (max_bins > MAX_SMEM_BINS)
+            {
+                // Too many bins to keep in shared memory.  Dispatch global-privatized approach
                 if (CubDebug(error = PrivatizedDispatch(
                     d_temp_storage,
                     temp_storage_bytes,
@@ -794,7 +828,7 @@ struct DeviceHistogramDispatch
                     num_rows,
                     row_stride_samples,
                     max_bins,
-                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleFreeTransform, OffsetT>,
+                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, 0, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleTransform, OffsetT>,
                     DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
                     histogram_sweep_config,
                     stream,
@@ -802,57 +836,96 @@ struct DeviceHistogramDispatch
             }
             else
             {
-                // Use the default sample transformer for scaling samples
-                ScaleTransform transform_op[NUM_ACTIVE_CHANNELS];
-                for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
-                {
-                    transform_op[channel].Init(
-                        num_levels[channel],
-                        upper_level[channel],
-                        lower_level[channel],
-                        (LevelT) ((upper_level[channel] - lower_level[channel]) / (num_levels[channel] - 1)));
-                }
-                if (max_bins > MAX_PRIVATIZED_BINS)
-                {
-                    // Too many bins to keep in shared memory.  Dispatch global-privatized approach
-                    if (CubDebug(error = PrivatizedDispatch(
-                        d_temp_storage,
-                        temp_storage_bytes,
-                        d_samples,
-                        d_histogram,
-                        num_levels,
-                        transform_op,
-                        num_row_pixels,
-                        num_rows,
-                        row_stride_samples,
-                        max_bins,
-                        DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, 0, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleTransform, OffsetT>,
-                        DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
-                        histogram_sweep_config,
-                        stream,
-                        debug_synchronous))) break;
-                }
-                else
-                {
-                    // Dispatch shared-privatized approach
-                    if (CubDebug(error = PrivatizedDispatch(
-                        d_temp_storage,
-                        temp_storage_bytes,
-                        d_samples,
-                        d_histogram,
-                        num_levels,
-                        transform_op,
-                        num_row_pixels,
-                        num_rows,
-                        row_stride_samples,
-                        max_bins,
-                        DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_PRIVATIZED_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleTransform, OffsetT>,
-                        DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
-                        histogram_sweep_config,
-                        stream,
-                        debug_synchronous))) break;
-                }
+                // Dispatch shared-privatized approach
+                if (CubDebug(error = PrivatizedDispatch(
+                    d_temp_storage,
+                    temp_storage_bytes,
+                    d_samples,
+                    d_histogram,
+                    num_levels,
+                    transform_op,
+                    num_row_pixels,
+                    num_rows,
+                    row_stride_samples,
+                    max_bins,
+                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleTransform, OffsetT>,
+                    DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT>,
+                    histogram_sweep_config,
+                    stream,
+                    debug_synchronous))) break;
             }
+        }
+        while (0);
+
+        return error;
+    }
+
+
+    /**
+     * Dispatch routine for HistogramEven, specialized for 1-byte types (computes 256-bin privatized histograms and then reduces to user-specified levels)
+     */
+    CUB_RUNTIME_FUNCTION __forceinline__
+    static cudaError_t DispatchEven(
+        void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        SampleIteratorT     d_samples,                              ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
+        CounterT            *d_histogram[NUM_ACTIVE_CHANNELS],      ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
+        int                 num_levels[NUM_ACTIVE_CHANNELS],        ///< [in] The number of bin level boundaries for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
+        LevelT              lower_level[NUM_ACTIVE_CHANNELS],       ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
+        LevelT              upper_level[NUM_ACTIVE_CHANNELS],       ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
+        OffsetT             num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
+        OffsetT             num_rows,                               ///< [in] The number of rows in the region of interest
+        OffsetT             row_stride_samples,                     ///< [in] The number of samples between starts of consecutive rows in the region of interest
+        cudaStream_t        stream,                                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                debug_synchronous,                      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        Int2Type<true>      is_byte_sample)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
+    {
+        cudaError error = cudaSuccess;
+        do
+        {
+            // Get PTX version
+            int ptx_version;
+    #if (CUB_PTX_ARCH == 0)
+            if (CubDebug(error = PtxVersion(ptx_version))) break;
+    #else
+            ptx_version = CUB_PTX_ARCH;
+    #endif
+
+            // Get kernel kernel dispatch configurations
+            KernelConfig histogram_sweep_config;
+            InitConfigs(ptx_version, histogram_sweep_config);
+
+            // Sweep pass uses scale-free transform op
+            ScaleFreeTransform sweep_transform_op[NUM_ACTIVE_CHANNELS];
+
+            // Aggregation pass uses the scaling transform op
+            ScaleTransform aggregation_transform_op[NUM_ACTIVE_CHANNELS];
+            for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+            {
+                aggregation_transform_op[channel].Init(
+                    num_levels[channel],
+                    upper_level[channel],
+                    lower_level[channel],
+                    (LevelT) ((upper_level[channel] - lower_level[channel]) / (num_levels[channel] - 1)));
+            }
+
+            if (CubDebug(error = PrivatizedDispatch(
+                d_temp_storage,
+                temp_storage_bytes,
+                d_samples,
+                d_histogram,
+                num_levels,
+                sweep_transform_op,
+                aggregation_transform_op,
+                num_row_pixels,
+                num_rows,
+                row_stride_samples,
+                256,
+                DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, MAX_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, ScaleFreeTransform, OffsetT>,
+                DeviceHistogramAggregateKernel<NUM_ACTIVE_CHANNELS, CounterT, ScaleTransform, SampleT>,
+                histogram_sweep_config,
+                stream,
+                debug_synchronous))) break;
         }
         while (0);
 
