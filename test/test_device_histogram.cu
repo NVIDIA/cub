@@ -1305,7 +1305,7 @@ int main(int argc, char** argv)
         if (compare_npp)
             TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
     }
-
+/*
     {
         // HistogramEven: 4/4 multichannel Unsigned char 256 bins
         typedef unsigned char       SampleT;
@@ -1333,7 +1333,7 @@ int main(int argc, char** argv)
         if (compare_npp)
             TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, CUB_TYPE_STRING(unsigned char));
     }
-
+*/
 #elif defined(QUICK_TEST)
 
     {
