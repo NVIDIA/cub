@@ -209,18 +209,18 @@ struct BlockHistogramSweep
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
-            int bin_base = 0;
+            int block_histo_offset = 0;
 
             #pragma unroll
-            for (; bin_base + BLOCK_THREADS <= MAX_PRIVATIZED_BINS; bin_base += BLOCK_THREADS)
+            for (; block_histo_offset + BLOCK_THREADS <= MAX_PRIVATIZED_BINS; block_histo_offset += BLOCK_THREADS)
             {
-                temp_storage.histograms[CHANNEL][bin_base + threadIdx.x] = 0;
+                temp_storage.histograms[CHANNEL][block_histo_offset + threadIdx.x] = 0;
             }
 
             // Finish up with guarded initialization if necessary
-            if ((MAX_PRIVATIZED_BINS % BLOCK_THREADS != 0) && (bin_base + threadIdx.x < MAX_PRIVATIZED_BINS))
+            if ((MAX_PRIVATIZED_BINS % BLOCK_THREADS != 0) && (block_histo_offset + threadIdx.x < MAX_PRIVATIZED_BINS))
             {
-                temp_storage.histograms[CHANNEL][bin_base + threadIdx.x] = 0;
+                temp_storage.histograms[CHANNEL][block_histo_offset + threadIdx.x] = 0;
             }
         }
 
