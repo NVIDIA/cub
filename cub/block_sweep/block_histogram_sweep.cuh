@@ -80,7 +80,7 @@ struct BlockHistogramSweepPolicy
  * \brief BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide histogram across a range of tiles.
  */
 template <
-    typename    BlockHistogramSweepPolicy,      ///< Parameterized BlockHistogramSweepPolicy tuning policy type
+    typename    BlockHistogramSweepPolicyT,     ///< Parameterized BlockHistogramSweepPolicy tuning policy type
     int         MAX_PRIVATIZED_BINS,            ///< Maximum number of privatized shared-memory histogram bins of any channel.  Zero indicates privatized counters to be maintained in global memory.
     int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data
     int         NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
@@ -101,8 +101,8 @@ struct BlockHistogramSweep
     /// Constants
     enum
     {
-        BLOCK_THREADS           = BlockHistogramSweepPolicy::BLOCK_THREADS,
-        PIXELS_PER_THREAD       = BlockHistogramSweepPolicy::PIXELS_PER_THREAD,
+        BLOCK_THREADS           = BlockHistogramSweepPolicyT::BLOCK_THREADS,
+        PIXELS_PER_THREAD       = BlockHistogramSweepPolicyT::PIXELS_PER_THREAD,
         TILE_PIXELS             = PIXELS_PER_THREAD * BLOCK_THREADS,
         TILE_SAMPLES            = TILE_PIXELS * NUM_CHANNELS,
         USE_SHARED_MEM          = ((MAX_PRIVATIZED_BINS > 0) && (PTX_ARCH >= 120)),
@@ -124,7 +124,7 @@ struct BlockHistogramSweep
         VECTOR_LOADS = (PIXELS_PER_THREAD * NUM_CHANNELS) / VECTOR_LOAD_LENGTH,
 
         // Whether to prevent hoisting computation into loads
-        LOAD_FENCE = BlockHistogramSweepPolicy::LOAD_FENCE,
+        LOAD_FENCE = BlockHistogramSweepPolicyT::LOAD_FENCE,
     };
 
     /// Vector type of SampleT for aligned data movement
@@ -132,12 +132,12 @@ struct BlockHistogramSweep
 
     /// Input iterator wrapper type
     typedef typename If<IsPointer<SampleIteratorT>::VALUE,
-            CacheModifiedInputIterator<BlockHistogramSweepPolicy::LOAD_MODIFIER, SampleT, OffsetT>,     // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<BlockHistogramSweepPolicyT::LOAD_MODIFIER, SampleT, OffsetT>,     // Wrap the native input pointer with CacheModifiedInputIterator
             SampleIteratorT>::Type                                                                       // Directly use the supplied input iterator type
         WrappedSampleIteratorT;
 
     /// Vector input iterator type
-    typedef CacheModifiedInputIterator<BlockHistogramSweepPolicy::LOAD_MODIFIER, VectorT, OffsetT> InputIteratorVectorT;
+    typedef CacheModifiedInputIterator<BlockHistogramSweepPolicyT::LOAD_MODIFIER, VectorT, OffsetT> InputIteratorVectorT;
 
     /// Shared memory type required by this thread block
     struct _TempStorage
@@ -294,7 +294,7 @@ struct BlockHistogramSweep
 
                 unsigned int bin;
                 bool valid_sample = is_valid[PIXEL];
-                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicy::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
+                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
                 if (valid_sample)
                     atomicAdd(d_out_histograms[CHANNEL] + block_histo_offset + bin, 1);
             }
@@ -318,7 +318,7 @@ struct BlockHistogramSweep
             {
                 unsigned int bin;
                 bool valid_sample = is_valid[PIXEL];
-                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicy::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
+                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
                 if (valid_sample)
                 {
                     atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
