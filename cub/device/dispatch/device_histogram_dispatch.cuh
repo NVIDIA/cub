@@ -130,7 +130,7 @@ __global__ void DeviceHistogramAggregateKernel(
     int                                                     num_sweep_grid_blocks,          ///< [in] Number of threadblock histograms per channel in \p d_block_histograms
     ArrayWrapper<SampleTransformOpT, NUM_ACTIVE_CHANNELS>   transform_op_wrapper)           ///< [in] Transform operators for determining final bin-ids from privatized bin-ids, one for each channel
 {
-    unsigned int    privatized_bin = (blockIdx.x * blockDim.x) + threadIdx.x;
+    int             privatized_bin = (blockIdx.x * blockDim.x) + threadIdx.x;
     CounterT        bin_aggregate[NUM_ACTIVE_CHANNELS];
 
     #pragma unroll
@@ -170,7 +170,7 @@ __global__ void DeviceHistogramAggregateKernel(
         {
             // Get output bin for this privatized bin
             bool valid_sample = privatized_bin < num_privatized_bins_wrapper.array[CHANNEL];
-            unsigned int output_bin;
+            int output_bin;
             transform_op_wrapper.array[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>((SampleT) ((unsigned char) privatized_bin), output_bin, valid_sample);
 
             // Update global histogram
@@ -191,7 +191,7 @@ __global__ void DeviceHistogramInitKernel(
     ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_output_bins_wrapper,        ///< [in] Number of output histogram bins per channel
     ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>            d_out_histo_wrapper)            ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][num_bins.array[CHANNEL]]</tt>
 {
-    unsigned int output_bin = (blockIdx.x * blockDim.x) + threadIdx.x;
+    int output_bin = (blockIdx.x * blockDim.x) + threadIdx.x;
 
     #pragma unroll
     for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
@@ -241,21 +241,21 @@ struct DeviceHistogramDispatch
     template <typename LevelIteratorT>
     struct SearchTransform
     {
-        LevelIteratorT  d_levels;           // Pointer to levels array
-        unsigned int    num_output_levels;         // Number of levels in array
+        LevelIteratorT  d_levels;                   // Pointer to levels array
+        int             num_output_levels;          // Number of levels in array
 
         // Initializer
         __host__ __device__ __forceinline__ void Init(
-            LevelIteratorT  d_levels,       // Pointer to levels array
-            int             num_output_levels)     // Number of levels in array
+            LevelIteratorT  d_levels,               // Pointer to levels array
+            int             num_output_levels)      // Number of levels in array
         {
-            this->d_levels      = d_levels;
-            this->num_output_levels    = (unsigned int) num_output_levels;
+            this->d_levels          = d_levels;
+            this->num_output_levels = num_output_levels;
         }
 
         // Method for converting samples to bin-ids
         template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
-        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, unsigned int &bin, bool &valid)
+        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, int &bin, bool &valid)
         {
             /// Level iterator wrapper type
             typedef typename If<IsPointer<LevelIteratorT>::VALUE,
@@ -265,7 +265,7 @@ struct DeviceHistogramDispatch
 
             WrappedLevelIteratorT wrapped_levels(d_levels);
 
-            unsigned int num_bins = num_output_levels - 1;
+            int num_bins = num_output_levels - 1;
             if (valid)
             {
                 bin = UpperBound(wrapped_levels, num_output_levels, (LevelT) sample) - 1;
@@ -325,7 +325,7 @@ struct DeviceHistogramDispatch
 
         // Method for converting samples to bin-ids
         template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
-        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, unsigned int &bin, bool &valid)
+        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, int &bin, bool &valid)
         {
             if (valid)
             {
@@ -336,18 +336,24 @@ struct DeviceHistogramDispatch
 
         // Method for converting samples to bin-ids (float specialization)
         template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(float sample, unsigned int &bin, bool &valid)
+        __host__ __device__ __forceinline__ void BinSelect(float sample, int &bin, bool &valid)
         {
-            bin = (unsigned int) ((((LevelT) sample) - min) * scale);
-            valid = valid && (bin < num_bins);
+            if (valid)
+            {
+                bin = (int) ((((LevelT) sample) - min) * scale);
+                valid = (sample >= min) && (sample < max);
+            }
         }
 
         // Method for converting samples to bin-ids (double specialization)
         template <CacheLoadModifier LOAD_MODIFIER>
-        __host__ __device__ __forceinline__ void BinSelect(double sample, unsigned int &bin, bool &valid)
+        __host__ __device__ __forceinline__ void BinSelect(double sample, int &bin, bool &valid)
         {
-            bin = (unsigned int) ((((LevelT) sample) - min) * scale);
-            valid = valid && (bin < num_bins);
+            if (valid)
+            {
+                bin = (int) ((((LevelT) sample) - min) * scale);
+                valid = (sample >= min) && (sample < max);
+            }
         }
     };
 
@@ -357,9 +363,9 @@ struct DeviceHistogramDispatch
     {
         // Method for converting samples to bin-ids
         template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
-        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, unsigned int &bin, bool &valid)
+        __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, int &bin, bool &valid)
         {
-            bin = (unsigned int) ((unsigned char) sample);
+            bin = (int) ((unsigned char) sample);
         }
     };
 
@@ -378,8 +384,8 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                160,
-                CUB_MAX((12 / NUM_ACTIVE_CHANNELS / T_SCALE), 1),    // 20 8b samples per thread
+                256,
+                CUB_MAX((8 / NUM_ACTIVE_CHANNELS / T_SCALE), 1),    // 20 8b samples per thread
                 LOAD_LDG,
                 true>
             HistogramSweepPolicy;
@@ -402,8 +408,8 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                96,
-                CUB_MAX((20 / NUM_ACTIVE_CHANNELS / T_SCALE), 1),    // 20 8b samples per thread
+                128,
+                CUB_MAX((12 / NUM_ACTIVE_CHANNELS / T_SCALE), 1),    // 20 8b samples per thread
                 LOAD_DEFAULT,
                 true>
             HistogramSweepPolicy;
@@ -566,6 +572,13 @@ struct DeviceHistogramDispatch
 
             // Get device occupancy for histogram_sweep_kernel
             int histogram_sweep_occupancy = histogram_sweep_sm_occupancy * sm_count;
+
+            if (num_row_pixels * NUM_CHANNELS == row_stride_samples)
+            {
+                // Treat as a single linear array of samples
+                num_row_pixels *= num_rows;
+                num_rows = 1;
+            }
 
             // Get grid dimensions, trying to keep total blocks ~histogram_sweep_occupancy
             int pixels_per_tile                 = histogram_sweep_config.block_threads * histogram_sweep_config.pixels_per_thread;
