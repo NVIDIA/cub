@@ -292,11 +292,13 @@ struct BlockHistogramSweep
             {
                 OffsetT block_histo_offset = ((blockIdx.y * gridDim.x) + blockIdx.x) * num_bins[CHANNEL];
 
-                unsigned int bin;
+                int bin;
                 bool valid_sample = is_valid[PIXEL];
                 transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
                 if (valid_sample)
+                {
                     atomicAdd(d_out_histograms[CHANNEL] + block_histo_offset + bin, 1);
+                }
             }
         }
     }
@@ -316,7 +318,7 @@ struct BlockHistogramSweep
             #pragma unroll
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
             {
-                unsigned int bin;
+                int bin;
                 bool valid_sample = is_valid[PIXEL];
                 transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
                 if (valid_sample)

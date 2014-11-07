@@ -1055,7 +1055,6 @@ void Test(
 
     TestRange<CUB, SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_levels, max_value, type_string);
-
 }
 
 
@@ -1420,16 +1419,19 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
+/*
         Test <unsigned char,    int, int,   int>(256, CUB_TYPE_STRING(unsigned char));
         Test <signed char,      int, int,   int>(256, CUB_TYPE_STRING(signed char));
         Test <unsigned short,   int, int,   int>(256, CUB_TYPE_STRING(unsigned short));
+*/
         Test <float,            int, float, int>(1.0, CUB_TYPE_STRING(float));
-
+/*
 		// Test down-conversion of size_t offsets to int
         if (sizeof(size_t) != sizeof(int))
         {
             Test <unsigned char,    int, int,   size_t>(256, CUB_TYPE_STRING(unsigned char));
         }
+*/
     }
 
 #endif
