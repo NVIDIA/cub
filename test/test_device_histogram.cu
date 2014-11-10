@@ -1151,7 +1151,7 @@ void Test(
 
     // 13 samples padding
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes + (13 * sizeof(SampleT) * NUM_CHANNELS), max_value, type_string);
+        num_row_pixels, num_rows, row_stride_bytes + (13 * sizeof(SampleT)), max_value, type_string);
 }
 
 
