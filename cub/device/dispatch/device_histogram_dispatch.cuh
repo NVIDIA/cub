@@ -269,7 +269,7 @@ struct DeviceHistogramDispatch
             if (valid)
             {
                 bin = UpperBound(wrapped_levels, num_output_levels, (LevelT) sample) - 1;
-                valid = (bin < num_bins);
+                valid = (((unsigned int) bin) < num_bins);
             }
         }
     };
