@@ -30,18 +30,28 @@
 #
 # Makefile usage
 #
-# make <target> [sm=<XXX,...>] [cdp=<0|1>] [force64=<0|1>] [abi=<0|1>] [open64=<0|1>] [verbose=<0|1>] [keep=<0|1>]
+# make <target> [sm=<XXX,...>] [cdp=<0|1>] [force64=<0|1>] [abi=<0|1>] [open64=<0|1>] [verbose=<0|1>] [keep=<0|1>] [quicktest=<0|1>]
 #
 #-------------------------------------------------------------------------------
  
-include ../../common.mk 
- 
- 
+include ../common.mk 
+
 #-------------------------------------------------------------------------------
-# Includes
+# Commandline Options
 #-------------------------------------------------------------------------------
 
+
+
+#-------------------------------------------------------------------------------
+# Compiler and compilation platform
+#-------------------------------------------------------------------------------
+
+# Includes
 INC += -I$(CUB_DIR) -I$(CUB_DIR)test 
+
+# detect OS
+OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
+
 
 
 
@@ -49,18 +59,17 @@ INC += -I$(CUB_DIR) -I$(CUB_DIR)test
 # Dependency Lists
 #-------------------------------------------------------------------------------
 
-rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+exp_rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
+
+EXP_DEPS = 	$(call rwildcard, histogram/,*.cuh) \
+			$(call rwildcard, histogram/,*.h)
 
 DEPS =				$(CUB_DEPS) \
+					$(EXP_DEPS) \
 					$(CUB_DIR)test/Makefile \
 					$(CUB_DIR)test/test_util.h \
 					$(CUB_DIR)test/mersenne.h \
 		
-ALL = 	example_block_radix_sort \
-	 	example_block_reduce \
-	 	example_block_scan
-		
-
 
 #-------------------------------------------------------------------------------
 # make default
@@ -78,51 +87,14 @@ clean :
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
 
 
-#-------------------------------------------------------------------------------
-# make all
-#-------------------------------------------------------------------------------
-
-all : $(ALL)
 
 #-------------------------------------------------------------------------------
-# make run
+# make histogram_compare
 #-------------------------------------------------------------------------------
 
-run : 
-	for i in $(ALL); do ./bin/$${i}_$(BIN_SUFFIX) --device=$(device) || exit 1; done
+histogram_compare: bin/histogram_compare_$(BIN_SUFFIX)
 
-
-
-
-#-------------------------------------------------------------------------------
-# make example_block_reduce
-#-------------------------------------------------------------------------------
-
-example_block_reduce: bin/example_block_reduce_$(BIN_SUFFIX)
-
-bin/example_block_reduce_$(BIN_SUFFIX) : example_block_reduce.cu $(DEPS)
+bin/histogram_compare_$(BIN_SUFFIX) : histogram_compare.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_reduce_$(BIN_SUFFIX) example_block_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/histogram_compare_$(BIN_SUFFIX) histogram_compare.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
-
-#-------------------------------------------------------------------------------
-# make example_block_scan
-#-------------------------------------------------------------------------------
-
-example_block_scan: bin/example_block_scan_$(BIN_SUFFIX)
-
-bin/example_block_scan_$(BIN_SUFFIX) : example_block_scan.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_scan_$(BIN_SUFFIX) example_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
-
-
-#-------------------------------------------------------------------------------
-# make example_block_radix_sort
-#-------------------------------------------------------------------------------
-
-example_block_radix_sort: bin/example_block_radix_sort_$(BIN_SUFFIX)
-
-bin/example_block_radix_sort_$(BIN_SUFFIX) : example_block_radix_sort.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_block_radix_sort_$(BIN_SUFFIX) example_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
-	

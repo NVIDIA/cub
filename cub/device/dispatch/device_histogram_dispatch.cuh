@@ -661,7 +661,7 @@ struct DeviceHistogramDispatch
             int histogram_aggregate_block_threads   = MAX_SMEM_BINS;
             int histogram_aggregate_grid_dims       = (max_privatized_bins + histogram_aggregate_block_threads - 1) / histogram_aggregate_block_threads;           // number of blocks per histogram channel (one thread per counter)
 
-            // Invoke kernel to initialized the output histograms (only necessary when doing 1-byte samples)
+            // Invoke kernel to initialize the output histograms (only necessary when doing 1-byte samples)
             if (!skip_bin_conversion)
             {
                 // Log DeviceHistogramInitKernel configuration
