@@ -1,0 +1,8 @@
+,gmem atomics,smem atomics,no atomics,warp coalescing,cub atomics,cub sorting
+random,907,628,1826,3086,524,876,
+nature,644,955,1713,1954,972,853,
+operahouse,582,1226,1658,1259,1194,855,
+cityscape,688,1837,1669,1284,2048,848,
+cheetah,577,937,1680,1517,927,855,
+apples,627,915,1682,1717,852,869,
+black,1067,4974,1610,452,11462,737,

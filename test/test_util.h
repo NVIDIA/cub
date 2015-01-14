@@ -78,6 +78,7 @@ protected:
 
     std::vector<std::string> keys;
     std::vector<std::string> values;
+    std::vector<std::string> args;
 
 public:
 
@@ -100,12 +101,13 @@ public:
 
             if ((arg[0] != '-') || (arg[1] != '-'))
             {
+                args.push_back(arg);
                 continue;
             }
 
             string::size_type pos;
             string key, val;
-            if ((pos = arg.find( '=')) == string::npos) {
+            if ((pos = arg.find('=')) == string::npos) {
                 key = string(arg, 2, arg.length() - 2);
                 val = "";
             } else {
@@ -134,6 +136,29 @@ public:
         return false;
     }
 
+
+    /**
+     * Returns number of naked (non-flag and non-key-value) commandline parameters
+     */
+    template <typename T>
+    int NumNakedArgs()
+    {
+        return args.size();
+    }
+
+
+    /**
+     * Returns the commandline parameter for a given index (not including flags)
+     */
+    template <typename T>
+    void GetCmdLineArgument(int index, T &val)
+    {
+        using namespace std;
+        if (index < args.size()) {
+            istringstream str_stream(args[index]);
+            str_stream >> val;
+        }
+    }
 
     /**
      * Returns the value specified for a given commandline parameter --<flag>=<value>
