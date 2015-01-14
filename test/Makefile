@@ -26,85 +26,20 @@
 # *
 #******************************************************************************/
 
+
 #-------------------------------------------------------------------------------
 #
 # Makefile usage
 #
-# make <target> [sm=<XXX,...>] [cdp=<0|1>] [force64=<0|1>] [abi=<0|1>] [open64=<0|1>] [verbose=<0|1>] [keep=<0|1>] [quicktest=<0|1>]
+# make <target> [sm=<XXX,...>] [cdp=<0|1>] [force64=<0|1>] [abi=<0|1>] [open64=<0|1>] [verbose=<0|1>] [keep=<0|1>] [quicktest=<0|1>] [quickertest=<0|1>]
 #
 #-------------------------------------------------------------------------------
+
+include ../common.mk 
  
-
-
-
 #-------------------------------------------------------------------------------
 # Commandline Options
 #-------------------------------------------------------------------------------
-
-# Compute-capability to compile for, e.g., "sm=200,300,350" (SM20 by default).  
-COMMA = ,
-ifdef sm
-	SM_ARCH = $(subst $(COMMA),-,$(sm))
-else 
-    SM_ARCH = 200
-endif
-
-ifeq (520, $(findstring 520, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_52,code=\"sm_52,compute_52\" 
-    SM_DEF 		+= -DSM520
-    TEST_ARCH 	= 520
-endif
-ifeq (350, $(findstring 350, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_35,code=\"sm_35,compute_35\" 
-    SM_DEF 		+= -DSM350
-    TEST_ARCH 	= 350
-endif
-ifeq (300, $(findstring 300, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_30,code=\"sm_30,compute_30\"
-    SM_DEF 		+= -DSM300
-    TEST_ARCH 	= 300
-endif
-ifeq (210, $(findstring 210, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_20,code=\"sm_21,compute_20\"
-    SM_DEF 		+= -DSM210
-    TEST_ARCH 	= 210
-endif
-ifeq (200, $(findstring 200, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_20,code=\"sm_20,compute_20\"
-    SM_DEF 		+= -DSM200
-    TEST_ARCH 	= 200
-endif
-ifeq (130, $(findstring 130, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_13,code=\"sm_13,compute_13\" 
-    SM_DEF 		+= -DSM130
-    TEST_ARCH 	= 130
-endif
-ifeq (120, $(findstring 120, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_12,code=\"sm_12,compute_12\" 
-    SM_DEF 		+= -DSM120
-    TEST_ARCH 	= 120
-endif
-ifeq (110, $(findstring 110, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_11,code=\"sm_11,compute_11\" 
-    SM_DEF 		+= -DSM110
-    TEST_ARCH 	= 110
-endif
-ifeq (100, $(findstring 100, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_10,code=\"sm_10,compute_10\" 
-    SM_DEF 		+= -DSM100
-    TEST_ARCH 	= 100
-endif
-
-
-# CDP enable option (default: no)
-ifeq ($(cdp), 1)
-	DEFINES += -DCUB_CDP
-	CDP_SUFFIX = cdp
-    NVCCFLAGS += -rdc=true -lcudadevrt
-else
-	CDP_SUFFIX = nocdp
-endif
-
 
 # Testing mode option (quick/thorough)
 ifeq ($(quickertest), 1)
@@ -126,113 +61,15 @@ else
 endif
 
 
-# Device addressing mode option (32-bit device pointers by default) 
-ifneq ($(force64), 1)
-	CPU_ARCH = -m32
-	CPU_ARCH_SUFFIX = i386
-else
-	CPU_ARCH = -m64
-	CPU_ARCH_SUFFIX = x86_64
-    NPPI = -lnppi
-endif
-
-
-# CUDA ABI option (enabled by default) 
-ifneq ($(abi), 0)
-	ABI_SUFFIX = abi
-else 
-	NVCCFLAGS += -Xptxas -abi=no
-	ABI_SUFFIX = noabi
-endif
-
-
-# Middle-end compiler option (nvvm by default)
-ifeq ($(open64), 1)
-	NVCCFLAGS += -open64
-	PTX_SUFFIX = open64
-else 
-	PTX_SUFFIX = nvvm
-endif
-
-
-# Verbose toolchain output from nvcc option
-ifeq ($(verbose), 1)
-	NVCCFLAGS += -v
-endif
-
-
-# Keep intermediate compilation artifacts option
-ifeq ($(keep), 1)
-	NVCCFLAGS += -keep
-endif
-
-# Debug mode
-ifeq ($(debug), 1)
-	NVCCFLAGS += -G
-endif
-
-
 #-------------------------------------------------------------------------------
 # Compiler and compilation platform
 #-------------------------------------------------------------------------------
 
-NVCC = "$(shell which nvcc)"
-ifdef nvccver
-    NVCC_VERSION = $(nvccver)
-else
-    NVCC_VERSION = $(strip $(shell nvcc --version | grep release | sed 's/.*release //' |  sed 's/,.*//'))
-endif
-
-# detect OS
-OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
-
-
-#-------------------------------------------------------------------------------
-# Compiler Flags
-#-------------------------------------------------------------------------------
-
-# Default flags: verbose kernel properties (regs, smem, cmem, etc.); runtimes for compilation phases 
-NVCCFLAGS += $(SM_DEF) -Xptxas -v -Xcudafe -\# 
-
-ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
-    # For MSVC
-    # Disable excess x86 floating point precision that can lead to results being labeled incorrectly
-    NVCCFLAGS += -Xcompiler /fp:strict
-    # Help the compiler/linker work with huge numbers of kernels on Windows
-	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
-	CC = cl
-	NPPI = -lnppi
-ifneq ($(force64), 1)
-	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/Win32/cudart.lib"
-else
-	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/x64/cudart.lib"
-endif
-	CUDART = "$(shell cygpath -w $(CUDART_CYG))"
-else
-    # For g++
-    # Disable excess x86 floating point precision that can lead to results being labeled incorrectly
-    NVCCFLAGS += -Xcompiler -ffloat-store
-    CC = g++
-ifneq ($(force64), 1)
-    CUDART = "$(shell dirname $(NVCC))/../lib/libcudart_static.a"
-else
-    CUDART = "$(shell dirname $(NVCC))/../lib64/libcudart_static.a"
-endif
-endif
-
-
 # Includes
-INC += -I. -I.. 
-
-
-# Libs
-#LIBS += -lcudart
-
-# Define test arch
-DEFINES += -DTEST_ARCH=$(TEST_ARCH)
+INC += -I$(CUB_DIR) -I$(CUB_DIR)test 
 
 # Suffix to append to each binary
-SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CDP_SUFFIX)_$(TEST_SUFFIX)_$(CPU_ARCH_SUFFIX)
+SUFFIX = $(BIN_SUFFIX)_$(TEST_SUFFIX)
 
 
 
@@ -242,10 +79,10 @@ SUFFIX = sm$(SM_ARCH)_$(PTX_SUFFIX)_$(NVCC_VERSION)_$(ABI_SUFFIX)_$(CDP_SUFFIX)_
 
 rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
-DEPS =				./test_util.h \
-					./mersenne.h \
-					$(call rwildcard,../cub/,*.cuh)
-		
+DEPS =				$(CUB_DEPS) \
+					$(CUB_DIR)test/Makefile \
+					$(CUB_DIR)test/test_util.h \
+					$(CUB_DIR)test/mersenne.h \
 
 BLOCK_REDUCE = 		test_block_reduce_raking \
 	 				test_block_reduce_warp_reductions		
