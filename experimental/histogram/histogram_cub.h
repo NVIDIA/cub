@@ -37,7 +37,8 @@ double run_cub_histogram(
     PixelType *d_image,
     int width,
     int height,
-    unsigned int *d_hist)
+    unsigned int *d_hist, 
+    bool warmup)
 {
     enum {
         is_float = Equals<PixelType, float4>::VALUE,
@@ -73,7 +74,9 @@ double run_cub_histogram(
         num_levels,
         lower_level,
         upper_level,
-        width * height);
+        width * height, 
+        (cudaStream_t) 0,
+        warmup);
 
     cudaMalloc(&d_temp_storage, temp_storage_bytes);
 
@@ -89,7 +92,9 @@ double run_cub_histogram(
         num_levels,
         lower_level,
         upper_level,
-        width * height);
+        width * height, 
+        (cudaStream_t) 0,
+        warmup);
 
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
