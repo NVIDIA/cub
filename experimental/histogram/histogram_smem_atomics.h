@@ -61,9 +61,10 @@ __global__ void histogram_smem_atomics(
     for (int col = x; col < width; col += nx)
         for (int row = y; row < height; row += ny)
         {
-            unsigned int r = (unsigned int) (256 * in[row * width + col].x);
-            unsigned int g = (unsigned int) (256 * in[row * width + col].y);
-            unsigned int b = (unsigned int) (256 * in[row * width + col].z);
+            float4 pixel = in[row * width + col];
+            unsigned int r = (unsigned int) (256 * pixel.x);
+            unsigned int g = (unsigned int) (256 * pixel.y);
+            unsigned int b = (unsigned int) (256 * pixel.z);
             atomicAdd(&smem[NUM_BINS * 0 + r + 0], 1);
             atomicAdd(&smem[NUM_BINS * 1 + g + 1], 1);
             atomicAdd(&smem[NUM_BINS * 2 + b + 2], 1);
@@ -106,7 +107,8 @@ double run_smem_atomics(
     PixelType *d_image,
     int width,
     int height,
-    unsigned int *d_hist)
+    unsigned int *d_hist, 
+    bool warmup)
 {
     cudaDeviceProp props;
     cudaGetDeviceProperties(&props, 0);

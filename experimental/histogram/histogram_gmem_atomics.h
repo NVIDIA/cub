@@ -110,7 +110,8 @@ double run_gmem_atomics(
     PixelType *d_image,
     int width,
     int height,
-    unsigned int *d_hist)
+    unsigned int *d_hist, 
+    bool warmup)
 {
     cudaDeviceProp props;
     cudaGetDeviceProperties(&props, 0);
