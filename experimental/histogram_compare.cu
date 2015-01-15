@@ -160,22 +160,27 @@ void RunTest(
     int                                             timing_iterations,
     const char *                                    long_name,
     const char *                                    short_name,
-    double (*f)(PixelType*, int, int, unsigned int*))
+    double (*f)(PixelType*, int, int, unsigned int*, bool))
 {
     printf("%s ", long_name);
+
+    // Run single test to verify (and code cache)
+    (*f)(d_pixels, width, height, d_hist, true);
+
+    int compare = CompareDeviceResults(h_hist, d_hist, ACTIVE_CHANNELS * NUM_BINS, true, g_verbose);
+    printf("\t%s\n", compare ? "FAIL" : "PASS");
+
     double elapsed_time = 0;
     for (int i = 0; i < timing_iterations; i++)
     {
-        elapsed_time += (*f)(d_pixels, width, height, d_hist);
+        elapsed_time += (*f)(d_pixels, width, height, d_hist, false);
     }
     double avg_time = elapsed_time /= timing_iterations;    // average
     timings.push_back(std::pair<std::string, double>(short_name, avg_time));
 
     printf("Avg time %.3f ms (%d iterations)\n", avg_time, timing_iterations);
-
-    int compare = CompareDeviceResults(h_hist, d_hist, ACTIVE_CHANNELS * NUM_BINS, true, g_verbose);
-    printf("\t%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
+
 }
 
 
