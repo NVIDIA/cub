@@ -681,7 +681,7 @@ struct DeviceReduceDispatch
                 T *d_block_reductions = (T*) allocations[0];
 
                 // Alias the allocation for the grid queue descriptor
-                GridQueue<OffsetT>queue(allocations[1]);
+                GridQueue<OffsetT> queue(allocations[1]);
 
                 // Prepare the dynamic queue descriptor if necessary
                 if (device_reduce_sweep_config.grid_mapping == GRID_MAPPING_DYNAMIC)
