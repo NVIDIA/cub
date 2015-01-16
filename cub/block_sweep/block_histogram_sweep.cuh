@@ -260,19 +260,71 @@ struct BlockHistogramSweep
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
-            OffsetT block_histo_offset = ((blockIdx.y * gridDim.x) + blockIdx.x) * num_bins[CHANNEL];
+//            OffsetT block_histo_offset = ((blockIdx.y * gridDim.x) + blockIdx.x) * num_bins[CHANNEL];
             for (int bin = threadIdx.x; bin < num_bins[CHANNEL]; bin += BLOCK_THREADS)
             {
-                d_out_histograms[CHANNEL][block_histo_offset + bin] = temp_storage.histograms[CHANNEL][bin];
+//                d_out_histograms[CHANNEL][block_histo_offset + bin] = temp_storage.histograms[CHANNEL][bin];
+                atomicAdd(&d_out_histograms[CHANNEL][bin], temp_storage.histograms[CHANNEL][bin]);
             }
         }
     }
+
 
     // Store privatized histogram to global memory.  Specialized for privatized global-memory counters
     __device__ __forceinline__ void StoreOutput(
         Int2Type<false> use_shared_mem)
     {
         // No work to be done
+    }
+
+
+    /**
+     * Accumulate pixels
+     */
+    __device__ __forceinline__ void AccumulatePixels(
+        SampleT             samples[PIXELS_PER_THREAD][NUM_CHANNELS],
+        bool                is_valid[PIXELS_PER_THREAD],
+        CounterT*           histograms[NUM_ACTIVE_CHANNELS])
+    {
+        #pragma unroll
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+        {
+            // Bin pixels
+            int bins[PIXELS_PER_THREAD];
+
+            // Bin current pixel
+            transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>(
+                samples[0][CHANNEL],
+                bins[0],
+                is_valid[0]);
+
+            int accumulator = 1;
+
+            #pragma unroll
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD - 1; ++PIXEL)
+            {
+                // Bin next pixel
+                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>(
+                    samples[PIXEL + 1][CHANNEL],
+                    bins[PIXEL + 1],
+                    is_valid[PIXEL + 1]);
+
+                if (bins[PIXEL] == bins[PIXEL + 1])
+                {
+                    accumulator++;
+                }
+                else
+                {
+                    if (bins[PIXEL] >= 0)
+                        atomicAdd(histograms[CHANNEL] + bins[PIXEL], accumulator);
+                    accumulator = 1;
+                }
+            }
+
+            // Last pixel
+            if (bins[PIXELS_PER_THREAD - 1] >= 0)
+                atomicAdd(histograms[CHANNEL] + bins[PIXELS_PER_THREAD - 1], accumulator);
+        }
     }
 
 
@@ -284,23 +336,7 @@ struct BlockHistogramSweep
         bool                is_valid[PIXELS_PER_THREAD],
         Int2Type<false>     use_shared_mem)
     {
-        #pragma unroll
-        for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
-        {
-            #pragma unroll
-            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            {
-                OffsetT block_histo_offset = ((blockIdx.y * gridDim.x) + blockIdx.x) * num_bins[CHANNEL];
-
-                int bin;
-                bool valid_sample = is_valid[PIXEL];
-                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
-                if (valid_sample)
-                {
-                    atomicAdd(d_out_histograms[CHANNEL] + block_histo_offset + bin, 1);
-                }
-            }
-        }
+        AccumulatePixels(samples, is_valid, d_out_histograms);
     }
 
 
@@ -312,21 +348,11 @@ struct BlockHistogramSweep
         bool                is_valid[PIXELS_PER_THREAD],
         Int2Type<true>      use_shared_mem)
     {
-        #pragma unroll
-        for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
-        {
-            #pragma unroll
-            for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            {
-                int bin;
-                bool valid_sample = is_valid[PIXEL];
-                transform_op[CHANNEL].BinSelect<BlockHistogramSweepPolicyT::LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, valid_sample);
-                if (valid_sample)
-                {
-                    atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
-                }
-            }
-        }
+        CounterT*           histograms[NUM_ACTIVE_CHANNELS];
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+            histograms[CHANNEL] = temp_storage.histograms[CHANNEL];
+
+        AccumulatePixels(samples, is_valid, histograms);
     }
 
 
@@ -358,7 +384,7 @@ struct BlockHistogramSweep
         }
 
         if (LOAD_FENCE)
-            __threadfence_block();
+            __syncthreads();
 
         // Accumulate samples
         AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
@@ -374,6 +400,7 @@ struct BlockHistogramSweep
         int             valid_pixels,
         Int2Type<true>  is_vector_suitable)
     {
+/*
         if (((NUM_CHANNELS == 1) && (!IS_FULL_TILE)) || !can_vectorize)
         {
             // Not a full tile of single-channel samples, or not aligned.  Load un-vectorized
@@ -401,7 +428,7 @@ struct BlockHistogramSweep
             }
 
             if (LOAD_FENCE)
-                 __threadfence_block();
+                 __syncthreads();
 
             #pragma unroll
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
@@ -411,6 +438,7 @@ struct BlockHistogramSweep
             AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
         }
         else
+*/
         {
             // Multi-channel tile
             SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
@@ -436,7 +464,7 @@ struct BlockHistogramSweep
             }
 
             if (LOAD_FENCE)
-                 __threadfence_block();
+                 __syncthreads();
 
             // Accumulate samples
             AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
