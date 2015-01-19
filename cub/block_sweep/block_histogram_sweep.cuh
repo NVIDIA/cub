@@ -37,6 +37,7 @@
 
 #include "../util_type.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -499,6 +500,55 @@ struct BlockHistogramSweep
 
         // Barrier to make sure all counters are initialized
         __syncthreads();
+    }
+
+
+    /**
+     * \brief Consume striped tiles
+     */
+    __device__ __forceinline__ void ConsumeStriped(
+        GridQueue<OffsetT>  queue,
+        OffsetT             num_pixels)
+    {
+        // Shared dequeue offset
+        __shared__ OffsetT dequeue_offset;
+
+        // We give each thread block at least one tile of input.
+        OffsetT block_offset = blockIdx.x * TILE_PIXELS;
+        OffsetT even_share_base = gridDim.x * TILE_PIXELS;
+
+        if (block_offset + TILE_PIXELS <= num_pixels)
+        {
+            // Consume full tile of input
+            ConsumeTile<true>(block_offset * NUM_CHANNELS, TILE_SAMPLES, Int2Type<IS_VECTOR_SUITABLE>());
+
+            // Dequeue more tiles
+            while (true)
+            {
+                 // Dequeue a tile of items
+                if (threadIdx.x == 0)
+                    dequeue_offset = queue.Drain(TILE_PIXELS) + even_share_base;
+
+                __syncthreads();
+
+                // Grab tile offset and check if we're done with full tiles
+                block_offset = dequeue_offset;
+
+                __syncthreads();
+
+                if (block_offset + TILE_PIXELS > num_pixels)
+                    break;
+
+                // Consume a full tile
+                ConsumeTile<true>(block_offset * NUM_CHANNELS, TILE_SAMPLES, Int2Type<IS_VECTOR_SUITABLE>());
+            }
+        }
+
+        if (block_offset < num_pixels)
+        {
+            int valid_pixels = num_pixels - block_offset;
+            ConsumeTile<false>(block_offset * NUM_CHANNELS, valid_pixels, Int2Type<IS_VECTOR_SUITABLE>());
+        }
     }
 
 
