@@ -87,6 +87,8 @@ template <
     int         NUM_BINS>
 void histogram_gold(uchar4 *image, int width, int height, unsigned int* hist)
 {
+    memset(hist, 0, ACTIVE_CHANNELS * NUM_BINS * sizeof(unsigned int));
+
     for (int i = 0; i < width; i++)
     {
         for (int j = 0; j < height; j++)
@@ -224,23 +226,14 @@ void RunTests(
     RunTest<ACTIVE_CHANNELS, NUM_BINS>(timings, d_pixels, width, height, d_hist, h_hist, timing_iterations,
         "CUB", "CUB", run_cub_histogram<ACTIVE_CHANNELS, NUM_BINS, PixelType>);
 
-/*
-    run_experiment(timings, d_pixels, width, height, d_hist,
-        h_hist, "Shared memory atomics", "smem atomics", run_smem_atomics);
-    run_experiment(timings, d_pixels, width, height, d_hist,
-        h_hist, "No atomics (NPP)", "no atomics",
-        run_no_atomics);
-    run_experiment(timings, d_pixels, width, height, d_hist,
-        h_hist, "Warp coalescing", "warp coalescing", run_smem_warp_coalescing);
-    run_experiment(timings, d_pixels, width, height, d_hist,
-        h_hist, "CUB histogram atomics", "cub", run_cub);
-*/
-
     // Report timings
     std::sort(timings.begin(), timings.end(), less_than_value());
     printf("Timings (ms):\n");
     for (int i = 0; i < timings.size(); i++)
-        printf("  %.3f %s\n", timings[i].second, timings[i].first.c_str());
+    {
+        double bandwidth = height * width * sizeof(PixelType) / timings[i].second / 1000 / 1000;
+        printf("  %.3f %s (%.3f GB/s)\n", timings[i].second, timings[i].first.c_str(), bandwidth);
+    }
 
     // Free data
     CubDebugExit(g_allocator.DeviceFree(d_pixels));
@@ -292,12 +285,12 @@ int main(int argc, char **argv)
     if (filename.find(".tga") != std::string::npos)
     {
         // Parse targa file
-        printf("Targa (uchar4):\n");
         uchar4* byte_pixels = NULL;
         ReadTga(byte_pixels, width, height, filename.c_str());
 
         // uchar4 tests
-//        RunTests<ACTIVE_CHANNELS, NUM_BINS>(byte_pixels, width, height, timing_iterations);
+        printf("Targa (uchar4):\n");
+        RunTests<ACTIVE_CHANNELS, NUM_BINS>(byte_pixels, width, height, timing_iterations);
 
         // Convert uchar4 to float4 pixels
         float4* float_pixels = NULL;
@@ -315,11 +308,12 @@ int main(int argc, char **argv)
         }
 
         // float4 tests
+        printf("\n\nTarga (float4):\n");
         RunTests<ACTIVE_CHANNELS, NUM_BINS>(float_pixels, width, height, timing_iterations);
 
         // Free pixel data
-        free(byte_pixels);
         free(float_pixels);
+        free(byte_pixels);
     }
     else if (filename.find(".bin") != std::string::npos)
     {

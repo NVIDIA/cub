@@ -61,13 +61,28 @@ __global__ void histogram_smem_atomics(
     for (int col = x; col < width; col += nx)
         for (int row = y; row < height; row += ny)
         {
-            float4 pixel = in[row * width + col];
-            unsigned int r = (unsigned int) (256 * pixel.x);
-            unsigned int g = (unsigned int) (256 * pixel.y);
-            unsigned int b = (unsigned int) (256 * pixel.z);
-            atomicAdd(&smem[NUM_BINS * 0 + r + 0], 1);
-            atomicAdd(&smem[NUM_BINS * 1 + g + 1], 1);
-            atomicAdd(&smem[NUM_BINS * 2 + b + 2], 1);
+            PixelType pixel = in[row * width + col];
+
+            if (sizeof(PixelType) == 16)
+            {
+                pixel.x *= float(256);
+                pixel.y *= float(256);
+                pixel.z *= float(256);
+                pixel.w *= float(256);
+            }
+            unsigned int r = (unsigned int) (pixel.x);
+            unsigned int g = (unsigned int) (pixel.y);
+            unsigned int b = (unsigned int) (pixel.z);
+            unsigned int a = (unsigned int) (pixel.w);
+
+            if (ACTIVE_CHANNELS > 0)
+                atomicAdd(&smem[NUM_BINS * 0 + r + 0], 1);
+            if (ACTIVE_CHANNELS > 1)
+                atomicAdd(&smem[NUM_BINS * 1 + g + 1], 1);
+            if (ACTIVE_CHANNELS > 2)
+                atomicAdd(&smem[NUM_BINS * 2 + b + 2], 1);
+            if (ACTIVE_CHANNELS > 3)
+                atomicAdd(&smem[NUM_BINS * 3 + a + 3], 1);
         }
     __syncthreads();
 
