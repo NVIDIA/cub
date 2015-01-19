@@ -66,10 +66,18 @@ __global__ void histogram_gmem_atomics(
         {
             PixelType pixel = in[row * width + col];
 
-            unsigned int r = (unsigned int) (256 * pixel.x);
-            unsigned int g = (unsigned int) (256 * pixel.y);
-            unsigned int b = (unsigned int) (256 * pixel.z);
-            unsigned int a = (unsigned int) (256 * pixel.w);
+            if (sizeof(PixelType) == 16)
+            {
+                pixel.x *= float(256);
+                pixel.y *= float(256);
+                pixel.z *= float(256);
+                pixel.w *= float(256);
+            }
+
+            unsigned int r = (unsigned int) (pixel.x);
+            unsigned int g = (unsigned int) (pixel.y);
+            unsigned int b = (unsigned int) (pixel.z);
+            unsigned int a = (unsigned int) (pixel.w);
 
             if (ACTIVE_CHANNELS > 0)
                 atomicAdd(&gmem[NUM_BINS * 0 + r], 1);
