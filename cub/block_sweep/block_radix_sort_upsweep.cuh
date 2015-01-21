@@ -134,7 +134,7 @@ struct BlockRadixSortUpsweep
     };
 
 
-    // Input iterator wrapper types
+    // Input iterator wrapper type (for applying cache modifier)s
     typedef CacheModifiedInputIterator<LOAD_MODIFIER, UnsignedBits, OffsetT> KeysItr;
 
     /**

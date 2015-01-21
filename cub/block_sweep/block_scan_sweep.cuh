@@ -111,7 +111,7 @@ struct BlockScanSweep
     // Tile status descriptor interface type
     typedef ScanTileState<T> ScanTileState;
 
-    // Input iterator wrapper type
+    // Input iterator wrapper type (for applying cache modifier)
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
             CacheModifiedInputIterator<BlockScanSweepPolicy::LOAD_MODIFIER, T, OffsetT>,    // Wrap the native input pointer with CacheModifiedInputIterator
             InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
@@ -135,8 +135,7 @@ struct BlockScanSweep
             WrappedInputIteratorT,
             BlockScanSweepPolicy::BLOCK_THREADS,
             BlockScanSweepPolicy::ITEMS_PER_THREAD,
-            BlockScanSweepPolicy::LOAD_ALGORITHM,
-            BlockScanSweepPolicy::LOAD_WARP_TIME_SLICING>
+            BlockScanSweepPolicy::LOAD_ALGORITHM>
         BlockLoadT;
 
     // Parameterized BlockStore type
@@ -144,8 +143,7 @@ struct BlockScanSweep
             OutputIteratorT,
             BlockScanSweepPolicy::BLOCK_THREADS,
             BlockScanSweepPolicy::ITEMS_PER_THREAD,
-            BlockScanSweepPolicy::STORE_ALGORITHM,
-            BlockScanSweepPolicy::STORE_WARP_TIME_SLICING>
+            BlockScanSweepPolicy::STORE_ALGORITHM>
         BlockStoreT;
 
     // Parameterized BlockScan type

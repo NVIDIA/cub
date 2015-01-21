@@ -156,7 +156,7 @@ struct BlockRadixSortDownsweep
         STORE_TXN_THREADS       = 1 << LOG_STORE_TXN_THREADS,
     };
 
-    // Input iterator wrapper types
+    // Input iterator wrapper type (for applying cache modifier)s
     typedef CacheModifiedInputIterator<LOAD_MODIFIER, UnsignedBits, OffsetT>    KeysItr;
     typedef CacheModifiedInputIterator<LOAD_MODIFIER, ValueT, OffsetT>          ValuesItr;
 

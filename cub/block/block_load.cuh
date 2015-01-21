@@ -148,6 +148,61 @@ __device__ __forceinline__ void LoadDirectBlocked(
 }
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+/**
+ * Internal implementation for load vectorization
+ */
+template <
+    CacheLoadModifier   MODIFIER,
+    typename            T,
+    int                 ITEMS_PER_THREAD>
+__device__ __forceinline__ void InternalLoadDirectBlockedVectorized(
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    T               *block_ptr,                 ///< [in] Input pointer for loading from
+    T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
+{
+    enum
+    {
+        // Maximum CUDA vector size is 4 elements
+        MAX_VEC_SIZE = CUB_MIN(4, ITEMS_PER_THREAD),
+
+        // Vector size must be a power of two and an even divisor of the items per thread
+        VEC_SIZE = (PowerOfTwo<MAX_VEC_SIZE>::VALUE && (ITEMS_PER_THREAD % MAX_VEC_SIZE == 0)) ?
+            MAX_VEC_SIZE :
+            1,
+
+        VECTORS_PER_THREAD = ITEMS_PER_THREAD / VEC_SIZE,
+    };
+
+    // Vector type
+    typedef typename CubVector<T, VEC_SIZE>::Type Vector;
+
+    // Vector items
+    Vector vec_items[VECTORS_PER_THREAD];
+
+    // Aliased input ptr
+    T*          block_ptr_unqualified   = const_cast<T*>(block_ptr) + (linear_tid * VEC_SIZE * VECTORS_PER_THREAD);
+    Vector*     ptr                     = reinterpret_cast<Vector*>(block_ptr_unqualified);
+
+    // Load directly in thread-blocked order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < VECTORS_PER_THREAD; ITEM++)
+    {
+        vec_items[ITEM] = ThreadLoad<MODIFIER>(ptr + ITEM);
+    }
+
+    // Copy
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        items[ITEM] = reinterpret_cast<T*>(vec_items)[ITEM];
+    }
+}
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
 /**
  * \brief Load a linear segment of items into a blocked arrangement across the thread block.
  *
@@ -170,44 +225,8 @@ __device__ __forceinline__ void LoadDirectBlockedVectorized(
     T               *block_ptr,                 ///< [in] Input pointer for loading from
     T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
-    enum
-    {
-        // Maximum CUDA vector size is 4 elements
-        MAX_VEC_SIZE = CUB_MIN(4, ITEMS_PER_THREAD),
-
-        // Vector size must be a power of two and an even divisor of the items per thread
-        VEC_SIZE = ((((MAX_VEC_SIZE - 1) & MAX_VEC_SIZE) == 0) && ((ITEMS_PER_THREAD % MAX_VEC_SIZE) == 0)) ?
-            MAX_VEC_SIZE :
-            1,
-
-        VECTORS_PER_THREAD = ITEMS_PER_THREAD / VEC_SIZE,
-    };
-
-    // Vector type
-    typedef typename CubVector<T, VEC_SIZE>::Type Vector;
-
-    // Vector items
-    Vector vec_items[VECTORS_PER_THREAD];
-
-    // Aliased input ptr
-    T *block_ptr_unqualified = const_cast<T*>(block_ptr) + (linear_tid * VEC_SIZE * VECTORS_PER_THREAD);
-    Vector *ptr = reinterpret_cast<Vector*>(block_ptr_unqualified);
-
-    // Load directly in thread-blocked order
-    #pragma unroll
-    for (int ITEM = 0; ITEM < VECTORS_PER_THREAD; ITEM++)
-    {
-        vec_items[ITEM] = ptr[ITEM];
-    }
-
-    // Copy
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        items[ITEM] = reinterpret_cast<T*>(vec_items)[ITEM];
-    }
+    LoadDirectBlockedVectorized<LOAD_DEFAULT>(linear_tid, block_ptr, items);
 }
-
 
 
 //@}  end member group
@@ -438,6 +457,10 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
 /**
  * \brief cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment of data from memory into a blocked arrangement across a CUDA thread block.
  */
+
+/**
+ * \brief cub::BlockLoadAlgorithm enumerates alternative algorithms for cub::BlockLoad to read a linear segment of data from memory into a blocked arrangement across a CUDA thread block.
+ */
 enum BlockLoadAlgorithm
 {
     /**
@@ -512,10 +535,33 @@ enum BlockLoadAlgorithm
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) remains high regardless
      *   of items loaded per thread.
-     * - The local reordering incurs slightly longer latencies and throughput than the
+     * - The local reordering incurs slightly larger latencies than the
      *   direct cub::BLOCK_LOAD_DIRECT and cub::BLOCK_LOAD_VECTORIZE alternatives.
+     * - Provisions more shared storage, but incurs smaller latencies than the
+     *   BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED alternative.
      */
     BLOCK_LOAD_WARP_TRANSPOSE,
+
+
+    /**
+     * \par Overview
+     *
+     * Like \p BLOCK_LOAD_WARP_TRANSPOSE, a [<em>warp-striped arrangement</em>](index.html#sec5sec3)
+     * of data is read directly from memory and then is locally transposed into a
+     * [<em>blocked arrangement</em>](index.html#sec5sec3). To reduce the shared memory
+     * requirement, only one warp's worth of shared memory is provisioned and is
+     * subsequently time-sliced among warps.
+     *
+     * \par Usage Considerations
+     * - BLOCK_THREADS must be a multiple of WARP_THREADS
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) remains high regardless
+     *   of items loaded per thread.
+     * - Provisions less shared memory temporary storage, but incurs larger
+     *   latencies than the BLOCK_LOAD_WARP_TRANSPOSE alternative.
+     */
+    BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED,
 };
 
 
@@ -549,6 +595,9 @@ enum BlockLoadAlgorithm
  *   -# <b>cub::BLOCK_LOAD_WARP_TRANSPOSE</b>.  A [<em>warp-striped arrangement</em>](index.html#sec5sec3)
  *      of data is read directly from memory and is then locally transposed into a
  *      [<em>blocked arrangement</em>](index.html#sec5sec3).  [More...](\ref cub::BlockLoadAlgorithm)
+ *   -# <b>cub::BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED,</b>.  A [<em>warp-striped arrangement</em>](index.html#sec5sec3)
+ *      of data is read directly from memory and is then locally transposed into a
+ *      [<em>blocked arrangement</em>](index.html#sec5sec3) one warp at a time.  [More...](\ref cub::BlockLoadAlgorithm)
  * - \rowmajor
  *
  * \par A Simple Example
@@ -587,7 +636,6 @@ template <
     int                 BLOCK_DIM_X,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  ALGORITHM           = BLOCK_LOAD_DIRECT,
-    bool                WARP_TIME_SLICING   = false,
     int                 BLOCK_DIM_Y         = 1,
     int                 BLOCK_DIM_Z         = 1,
     int                 PTX_ARCH            = CUB_PTX_ARCH>
@@ -694,7 +742,19 @@ private:
             T               *block_ptr,                     ///< [in] The thread block's base input iterator for loading from
             T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
         {
-            LoadDirectBlockedVectorized(linear_tid, block_ptr, items);
+            InternalLoadDirectBlockedVectorized<LOAD_DEFAULT>(linear_tid, block_ptr, items);
+        }
+
+        /// Load a linear segment of items from memory, specialized for native pointer types (attempts vectorization)
+        template <
+            CacheLoadModifier   MODIFIER,
+            typename            ValueType,
+            typename            OffsetT>
+        __device__ __forceinline__ void Load(
+            CacheModifiedInputIterator<MODIFIER, ValueType, OffsetT>    block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            T                                                           (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load
+        {
+            InternalLoadDirectBlockedVectorized<MODIFIER>(linear_tid, block_itr.ptr, items);
         }
 
         /// Load a linear segment of items from memory, specialized for opaque input iterators (skips vectorization)
@@ -737,7 +797,7 @@ private:
     struct LoadInternal<BLOCK_LOAD_TRANSPOSE, DUMMY>
     {
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage _TempStorage;
@@ -808,7 +868,78 @@ private:
         CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), "BLOCK_THREADS must be a multiple of WARP_THREADS");
 
         // BlockExchange utility type for keys
-        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
+
+        /// Shared memory storage layout type
+        typedef typename BlockExchange::TempStorage _TempStorage;
+
+        /// Alias wrapper allowing storage to be unioned
+        struct TempStorage : Uninitialized<_TempStorage> {};
+
+        /// Thread reference to shared storage
+        _TempStorage &temp_storage;
+
+        /// Linear thread-id
+        int linear_tid;
+
+        /// Constructor
+        __device__ __forceinline__ LoadInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            temp_storage(temp_storage.Alias()),
+            linear_tid(linear_tid)
+        {}
+
+        /// Load a linear segment of items from memory
+        __device__ __forceinline__ void Load(
+            InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            T               (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+        {
+            LoadDirectWarpStriped(linear_tid, block_itr, items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items);
+        }
+
+        /// Load a linear segment of items from memory, guarded by range
+        __device__ __forceinline__ void Load(
+            InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
+            int             valid_items)                    ///< [in] Number of valid items to load
+        {
+            LoadDirectWarpStriped(linear_tid, block_itr, items, valid_items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items);
+        }
+
+
+        /// Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements
+        __device__ __forceinline__ void Load(
+            InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            T               (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
+            int             valid_items,                    ///< [in] Number of valid items to load
+            T               oob_default)                    ///< [in] Default value to assign out-of-bound items
+        {
+            LoadDirectWarpStriped(linear_tid, block_itr, items, valid_items, oob_default);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items);
+        }
+    };
+
+
+    /**
+     * BLOCK_LOAD_WARP_TRANSPOSE specialization of load helper
+     */
+    template <int DUMMY>
+    struct LoadInternal<BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED, DUMMY>
+    {
+        enum
+        {
+            WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH)
+        };
+
+        // Assert BLOCK_THREADS must be a multiple of WARP_THREADS
+        CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), "BLOCK_THREADS must be a multiple of WARP_THREADS");
+
+        // BlockExchange utility type for keys
+        typedef BlockExchange<T, BLOCK_DIM_X, ITEMS_PER_THREAD, true, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
 
         /// Shared memory storage layout type
         typedef typename BlockExchange::TempStorage _TempStorage;
