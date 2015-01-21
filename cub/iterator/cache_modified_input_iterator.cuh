@@ -128,11 +128,9 @@ public:
 #endif  // THRUST_VERSION
 
 
-private:
+public:
 
     ValueType* ptr;
-
-public:
 
     /// Constructor
     template <typename QualifiedValueType>

@@ -166,7 +166,7 @@ struct BlockRleSweep
     };
 
 
-    // Cache-modified input iterator wrapper type for data
+    // Cache-modified Input iterator wrapper type (for applying cache modifier) for data
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
             CacheModifiedInputIterator<BlockRleSweepPolicy::LOAD_MODIFIER, T, OffsetT>,      // Wrap the native input pointer with CacheModifiedVLengthnputIterator
             InputIteratorT>::Type                                                            // Directly use the supplied input iterator type

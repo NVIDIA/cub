@@ -150,7 +150,7 @@ struct BlockSelectSweep
                                         USE_DISCONTINUITY
     };
 
-    // Input iterator wrapper type
+    // Input iterator wrapper type (for applying cache modifier)
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
             CacheModifiedInputIterator<BlockSelectSweepPolicy::LOAD_MODIFIER, T, OffsetT>,      // Wrap the native input pointer with CacheModifiedInputIterator
             InputIteratorT>::Type                                                                // Directly use the supplied input iterator type

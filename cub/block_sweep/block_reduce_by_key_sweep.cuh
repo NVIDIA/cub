@@ -136,13 +136,13 @@ struct BlockReduceSweepByKey
 
     };
 
-    // Cache-modified input iterator wrapper type for keys
+    // Cache-modified Input iterator wrapper type (for applying cache modifier) for keys
     typedef typename If<IsPointer<KeysInputIteratorT>::VALUE,
             CacheModifiedInputIterator<BlockReduceSweepByKeyPolicy::LOAD_MODIFIER, KeyT, OffsetT>,   // Wrap the native input pointer with CacheModifiedValuesInputIterator
             KeysInputIteratorT>::Type                                                                 // Directly use the supplied input iterator type
         WrappedKeysInputIteratorT;
 
-    // Cache-modified input iterator wrapper type for values
+    // Cache-modified Input iterator wrapper type (for applying cache modifier) for values
     typedef typename If<IsPointer<ValuesInputIteratorT>::VALUE,
             CacheModifiedInputIterator<BlockReduceSweepByKeyPolicy::LOAD_MODIFIER, ValueT, OffsetT>,  // Wrap the native input pointer with CacheModifiedValuesInputIterator
             ValuesInputIteratorT>::Type                                                                // Directly use the supplied input iterator type
