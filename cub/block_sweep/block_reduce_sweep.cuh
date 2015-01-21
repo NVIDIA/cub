@@ -111,7 +111,7 @@ struct BlockReduceSweep
     /// Vector type of T for data movement
     typedef typename CubVector<T, BlockReduceSweepPolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
 
-    /// Input iterator wrapper type
+    /// Input iterator wrapper type (for applying cache modifier)
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
             CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, T, OffsetT>,  // Wrap the native input pointer with CacheModifiedInputIterator
             InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
@@ -241,7 +241,7 @@ struct BlockReduceSweep
 
             VectorT *vec_items = reinterpret_cast<VectorT*>(items);
 
-            // Vector input iterator wrapper type
+            // Vector Input iterator wrapper type (for applying cache modifier)
             T *d_in_unqualified = const_cast<T*>(d_in) + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
             CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, VectorT, OffsetT> d_vec_in(
                 reinterpret_cast<VectorT*>(d_in_unqualified));
