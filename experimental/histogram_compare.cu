@@ -35,12 +35,6 @@
 #include "histogram/histogram_smem_atomics.h"
 #include "histogram/histogram_cub.h"
 
-/*
-#include "histogram/histogram_smem_write.h"
-#include "histogram/histogram_no_atomics.h"
-#include "histogram/histogram_smem_warp_coalescing.h"
-*/
-
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_scan.cuh>
 #include <test/test_util.h>
@@ -272,7 +266,7 @@ int main(int argc, char **argv)
             "[--device=<device-id>] "
             "[--v] "
             "[--i=<timing iterations>] "
-            "--file=<filename.[tga|bin]> "
+            "--file=<.tga filename> "
             "[--height=<binfile height>] "
             "[--width=<binfile width>] "
             "\n", argv[0]);
@@ -282,48 +276,36 @@ int main(int argc, char **argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    if (filename.find(".tga") != std::string::npos)
+    // Parse targa file
+    uchar4* byte_pixels = NULL;
+    ReadTga(byte_pixels, width, height, filename.c_str());
+/*
+    // uchar4 tests
+    printf("Targa (uchar4):\n");
+    RunTests<ACTIVE_CHANNELS, NUM_BINS>(byte_pixels, width, height, timing_iterations);
+*/
+    // Convert uchar4 to float4 pixels
+    float4* float_pixels = NULL;
+    if ((float_pixels = (float4*) malloc(width * height * sizeof(float4))) == NULL)
     {
-        // Parse targa file
-        uchar4* byte_pixels = NULL;
-        ReadTga(byte_pixels, width, height, filename.c_str());
-
-        // uchar4 tests
-        printf("Targa (uchar4):\n");
-        RunTests<ACTIVE_CHANNELS, NUM_BINS>(byte_pixels, width, height, timing_iterations);
-
-        // Convert uchar4 to float4 pixels
-        float4* float_pixels = NULL;
-        if ((float_pixels = (float4*) malloc(width * height * sizeof(float4))) == NULL)
-        {
-            fprintf(stderr, "malloc of image failed\n");
-            exit(-1);
-        }
-        for (int i = 0; i < width * height; ++i)
-        {
-            float_pixels[i].x = ((float) byte_pixels[i].x) / NUM_BINS;
-            float_pixels[i].y = ((float) byte_pixels[i].y) / NUM_BINS;
-            float_pixels[i].z = ((float) byte_pixels[i].z) / NUM_BINS;
-            float_pixels[i].w = ((float) byte_pixels[i].w) / NUM_BINS;
-        }
-
-        // float4 tests
-        printf("\n\nTarga (float4):\n");
-        RunTests<ACTIVE_CHANNELS, NUM_BINS>(float_pixels, width, height, timing_iterations);
-
-        // Free pixel data
-        free(float_pixels);
-        free(byte_pixels);
+        fprintf(stderr, "malloc of image failed\n");
+        exit(-1);
     }
-    else if (filename.find(".bin") != std::string::npos)
+    for (int i = 0; i < width * height; ++i)
     {
-        // Parse float4 binary file
-        printf("Bin (float4):\n");
-        float4* float_pixels = NULL;
-        ReadBin(float_pixels, width, height, filename.c_str());
-        RunTests<ACTIVE_CHANNELS, NUM_BINS>(float_pixels, width, height, timing_iterations);
-        free(float_pixels);
+        float_pixels[i].x = ((float) byte_pixels[i].x) / NUM_BINS;
+        float_pixels[i].y = ((float) byte_pixels[i].y) / NUM_BINS;
+        float_pixels[i].z = ((float) byte_pixels[i].z) / NUM_BINS;
+        float_pixels[i].w = ((float) byte_pixels[i].w) / NUM_BINS;
     }
+
+    // float4 tests
+    printf("\n\nTarga (float4):\n");
+    RunTests<ACTIVE_CHANNELS, NUM_BINS>(float_pixels, width, height, timing_iterations);
+
+    // Free pixel data
+    free(float_pixels);
+    free(byte_pixels);
 
     CubDebugExit(cudaDeviceSynchronize());
     printf("\n\n");
