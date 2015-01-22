@@ -38,14 +38,17 @@ double run_cub_histogram(
     int width,
     int height,
     unsigned int *d_hist, 
-    bool warmup)
+    bool is_warmup)
 {
     enum {
         is_float = Equals<PixelType, float4>::VALUE,
     };
 
-    typedef typename If<is_float, float, unsigned char>::Type    SampleT;    // Sample type
-    typedef typename If<is_float, float, unsigned int>::Type     LevelT;     // Level type
+// mooch
+//    typedef typename If<is_float, float, unsigned char>::Type    SampleT;    // Sample type
+//    typedef typename If<is_float, float, unsigned int>::Type     LevelT;     // Level type
+    typedef float LevelT;
+    typedef float SampleT;
 
     // Setup data structures
     unsigned int*       d_histogram[ACTIVE_CHANNELS];
@@ -65,18 +68,20 @@ double run_cub_histogram(
     size_t temp_storage_bytes = 0;
     void *d_temp_storage = NULL;
 
+    SampleT* d_image_samples = (SampleT*) d_image;
+
     // Get amount of temporary storage needed
     DeviceHistogram::MultiHistogramEven<4, ACTIVE_CHANNELS>(
         d_temp_storage,
         temp_storage_bytes,
-        (SampleT*) d_image,
+        d_image_samples,
         d_histogram,
         num_levels,
         lower_level,
         upper_level,
         width * height, 
         (cudaStream_t) 0,
-        warmup);
+        is_warmup);
 
     cudaMalloc(&d_temp_storage, temp_storage_bytes);
 
@@ -87,14 +92,14 @@ double run_cub_histogram(
     DeviceHistogram::MultiHistogramEven<4, ACTIVE_CHANNELS>(
         d_temp_storage,
         temp_storage_bytes,
-        (SampleT*) d_image,
+        d_image_samples,
         d_histogram,
         num_levels,
         lower_level,
         upper_level,
         width * height, 
         (cudaStream_t) 0,
-        warmup);
+        is_warmup);
 
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
