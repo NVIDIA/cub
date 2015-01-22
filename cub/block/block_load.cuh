@@ -36,6 +36,7 @@
 #include <iterator>
 
 #include "block_exchange.cuh"
+#include "../iterator/cache_modified_input_iterator.cuh"
 #include "../util_ptx.cuh"
 #include "../util_macro.cuh"
 #include "../util_type.cuh"
