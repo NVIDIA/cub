@@ -523,30 +523,26 @@ struct BlockHistogramSweep
         int                 tiles_per_row,
         GridQueue<int>      tile_queue)
     {
-        // Get first tile index
-        if (threadIdx.x == 0)
-            temp_storage.tile_offset = tile_queue.Drain(TILE_SAMPLES);
-
-        __syncthreads();
-
-        OffsetT tile_offset     = temp_storage.tile_offset;
-        OffsetT num_remaining   = row_end - tile_offset;
+        OffsetT tile_offset = blockIdx.x * TILE_SAMPLES;
+        OffsetT num_remaining = row_end - tile_offset;
+        OffsetT even_share_base = gridDim.x * TILE_SAMPLES;
 
         while (num_remaining >= TILE_SAMPLES)
         {
             // Consume full tile
             ConsumeTile<IS_ALIGNED, true>(tile_offset, TILE_SAMPLES);
 
+            __syncthreads();
+
             // Get next tile
             if (threadIdx.x == 0)
-                temp_storage.tile_offset = tile_queue.Drain(TILE_SAMPLES);
+                temp_storage.tile_offset = tile_queue.Drain(TILE_SAMPLES) + even_share_base;
 
             __syncthreads();
 
             tile_offset     = temp_storage.tile_offset;
             num_remaining   = row_end - tile_offset;
 
-            __syncthreads();
         }
 
         // Consume the last (and potentially partially-full) tile
@@ -579,10 +575,10 @@ struct BlockHistogramSweep
 
     // Return a native pixel pointer (specialized for CacheModifiedInputIterator types)
     template <
-        CacheLoadModifier   MODIFIER,
-        typename            ValueT,
-        typename            OffsetT>
-    __device__ __forceinline__ SampleT* NativePointer(CacheModifiedInputIterator<MODIFIER, ValueT, OffsetT> itr)
+        CacheLoadModifier   _MODIFIER,
+        typename            _ValueT,
+        typename            _OffsetT>
+    __device__ __forceinline__ SampleT* NativePointer(CacheModifiedInputIterator<_MODIFIER, _ValueT, _OffsetT> itr)
     {
         return itr.ptr;
     }
