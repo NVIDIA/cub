@@ -58,20 +58,21 @@ template <
     int                     _PIXELS_PER_THREAD,                     ///< Pixels per thread (per tile of input)
     BlockLoadAlgorithm      _LOAD_ALGORITHM,                        ///< The BlockLoad algorithm to use
     CacheLoadModifier       _LOAD_MODIFIER,                         ///< Cache load modifier for reading input elements
-    bool                    _RLE_COMPRESS>                          ///< Whether to perform localized RLE to compress samples before histogramming
-struct BlockHistogramSweepPolicy
+    bool                    _RLE_COMPRESS,                          ///< Whether to perform localized RLE to compress samples before histogramming
+    bool                    _PREFER_PRIVATIZED_SMEM>                ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
+    struct BlockHistogramSweepPolicy
 {
     enum
     {
-        BLOCK_THREADS       = _BLOCK_THREADS,                       ///< Threads per thread block
-        PIXELS_PER_THREAD   = _PIXELS_PER_THREAD,                   ///< Pixels per thread (per tile of input)
-        RLE_COMPRESS        = _RLE_COMPRESS,                        ///< Whether to perform localized RLE to compress samples before histogramming
+        BLOCK_THREADS           = _BLOCK_THREADS,                   ///< Threads per thread block
+        PIXELS_PER_THREAD       = _PIXELS_PER_THREAD,               ///< Pixels per thread (per tile of input)
+        RLE_COMPRESS            = _RLE_COMPRESS,                    ///< Whether to perform localized RLE to compress samples before histogramming
+        PREFER_PRIVATIZED_SMEM  = _PREFER_PRIVATIZED_SMEM,          ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;          ///< The BlockLoad algorithm to use
     static const CacheLoadModifier      LOAD_MODIFIER           = _LOAD_MODIFIER;           ///< Cache load modifier for reading input elements
 };
-
 
 
 /******************************************************************************
@@ -115,8 +116,9 @@ struct BlockHistogramSweep
         SAMPLES_PER_THREAD      = PIXELS_PER_THREAD * NUM_CHANNELS,
         TILE_SAMPLES            = SAMPLES_PER_THREAD * BLOCK_THREADS,
 
+        PREFER_PRIVATIZED_SMEM  = BlockHistogramSweepPolicyT::PREFER_PRIVATIZED_SMEM,
         RLE_COMPRESS            = BlockHistogramSweepPolicyT::RLE_COMPRESS,
-        USE_SHARED_MEM          = ((PRIVATIZED_SMEM_BINS > 0) && (PTX_ARCH >= 120)),
+        USE_SHARED_MEM          = PREFER_PRIVATIZED_SMEM && (PRIVATIZED_SMEM_BINS > 0),
 
     };
 
@@ -187,8 +189,9 @@ struct BlockHistogramSweep
     /// Reference to final output histograms (gmem)
     CounterT* (&d_output_histograms)[NUM_ACTIVE_CHANNELS];
 
-    /// Reference to block-private temporary histograms (gmem)
-    CounterT* (&d_privatized_histograms)[NUM_ACTIVE_CHANNELS];
+    /// Block-private temporary histograms
+    CounterT* s_privatized_histograms[NUM_ACTIVE_CHANNELS];
+    CounterT* d_privatized_histograms[NUM_ACTIVE_CHANNELS];
 
     /// The transform operator for determining output bin-ids from privatized counter indices, one for each channel
     OutputDecodeOpT (&output_decode_op)[NUM_ACTIVE_CHANNELS];
@@ -222,24 +225,14 @@ struct BlockHistogramSweep
     // Initialize privatized bin counters.  Specialized for privatized shared-memory counters
     __device__ __forceinline__ void InitBinCounters(Int2Type<true> use_shared_mem)
     {
-        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
-
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            privatized_histograms[CHANNEL] = temp_storage.histograms[CHANNEL];
-
-        InitBinCounters(privatized_histograms);
+        InitBinCounters(s_privatized_histograms);
     }
 
 
     // Initialize privatized bin counters.  Specialized for privatized global-memory counters
     __device__ __forceinline__ void InitBinCounters(Int2Type<false> use_shared_mem)
     {
-        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
-
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            privatized_histograms[CHANNEL] = d_privatized_histograms[CHANNEL] + (blockIdx.x * num_privatized_bins[CHANNEL]);
-
-        InitBinCounters(privatized_histograms);
+        InitBinCounters(d_privatized_histograms);
     }
 
 
@@ -259,14 +252,15 @@ struct BlockHistogramSweep
         {
             for (int privatized_bin = threadIdx.x; privatized_bin < num_privatized_bins[CHANNEL]; privatized_bin += BLOCK_THREADS)
             {
-                CounterT count = privatized_histograms[CHANNEL][privatized_bin];
+                int         output_bin;
+                CounterT    count       = privatized_histograms[CHANNEL][privatized_bin];
+                bool        is_valid    = count > 0;
+                output_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>((SampleT) privatized_bin, output_bin, is_valid);
 
-                // Determine output bin from privatized counter index
-                int output_bin;
-                output_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>((SampleT) privatized_bin, output_bin, true);
-
-                if (output_bin > 0)
+                if (output_bin >= 0)
+                {
                     atomicAdd(&d_output_histograms[CHANNEL][output_bin], count);
+                }
             }
         }
     }
@@ -275,24 +269,14 @@ struct BlockHistogramSweep
     // Update final output histograms from privatized histograms.  Specialized for privatized shared-memory counters
     __device__ __forceinline__ void StoreOutput(Int2Type<true> use_shared_mem)
     {
-        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
-
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            privatized_histograms[CHANNEL] = temp_storage.histograms[CHANNEL];
-
-        StoreOutput(privatized_histograms);
+        StoreOutput(s_privatized_histograms);
     }
 
 
     // Update final output histograms from privatized histograms.  Specialized for privatized global-memory counters
     __device__ __forceinline__ void StoreOutput(Int2Type<false> use_shared_mem)
     {
-        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
-
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            privatized_histograms[CHANNEL] = d_privatized_histograms[CHANNEL] + (blockIdx.x * num_privatized_bins[CHANNEL]);
-
-        StoreOutput(privatized_histograms);
+        StoreOutput(d_privatized_histograms);
     }
 
 
@@ -376,12 +360,7 @@ struct BlockHistogramSweep
         bool                is_valid[PIXELS_PER_THREAD],
         Int2Type<true>      use_shared_mem)
     {
-        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
-
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            privatized_histograms[CHANNEL] = temp_storage.histograms[CHANNEL];
-
-        AccumulatePixels(samples, is_valid, privatized_histograms, Int2Type<RLE_COMPRESS>());
+        AccumulatePixels(samples, is_valid, s_privatized_histograms, Int2Type<RLE_COMPRESS>());
     }
 
 
@@ -393,12 +372,7 @@ struct BlockHistogramSweep
         bool                is_valid[PIXELS_PER_THREAD],
         Int2Type<false>     use_shared_mem)
     {
-        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
-
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            privatized_histograms[CHANNEL] = d_privatized_histograms[CHANNEL] + (blockIdx.x * num_privatized_bins[CHANNEL]);
-
-        AccumulatePixels(samples, is_valid, privatized_histograms, Int2Type<RLE_COMPRESS>());
+        AccumulatePixels(samples, is_valid, d_privatized_histograms, Int2Type<RLE_COMPRESS>());
     }
 
 
@@ -422,7 +396,7 @@ struct BlockHistogramSweep
         SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
         bool        is_valid[PIXELS_PER_THREAD];
 
-        typedef PixelT AliasedSamples[SAMPLES_PER_THREAD];
+        typedef SampleT AliasedSamples[SAMPLES_PER_THREAD];
         typedef PixelT AliasedPixels[PIXELS_PER_THREAD];
 
         WrappedPixelIteratorT d_wrapped_pixels((PixelT*) (d_native_samples + block_offset));
@@ -432,14 +406,13 @@ struct BlockHistogramSweep
         if (IS_FULL_TILE)
         {
             // Full tile
-//            if (IS_ALIGNED)
+            if (IS_ALIGNED)
             {
                 // Load using a wrapped pixel iterator
                 BlockLoadPixelT(temp_storage.pixel_load).Load(
                     d_wrapped_pixels,
                     reinterpret_cast<AliasedPixels&>(samples));
             }
-/*
             else
             {
                 // Load using a wrapped sample iterator
@@ -447,12 +420,11 @@ struct BlockHistogramSweep
                     d_wrapped_samples + block_offset,
                     reinterpret_cast<AliasedSamples&>(samples));
             }
-*/
         }
         else
         {
             // Partial tile
-//            if (IS_ALIGNED)
+            if (IS_ALIGNED)
             {
                 // Load using a wrapped pixel iterator
                 BlockLoadPixelT(temp_storage.pixel_load).Load(
@@ -460,16 +432,14 @@ struct BlockHistogramSweep
                     reinterpret_cast<AliasedPixels&>(samples),
                     valid_pixels);
             }
-/*
             else
             {
                 // Load using a wrapped sample iterator
-                BlockLoadSampleT(temp_storage.pixel_load).Load(
+                BlockLoadSampleT(temp_storage.sample_load).Load(
                     d_wrapped_samples + block_offset,
                     reinterpret_cast<AliasedSamples&>(samples),
                     valid_samples);
             }
-*/
         }
 
         // Set valid flags
@@ -489,6 +459,20 @@ struct BlockHistogramSweep
         OffsetT  row_end,
         SampleT* d_native_samples)
     {
+        OffsetT block_offset = row_offset + (blockIdx.x * TILE_SAMPLES);
+        while (block_offset + TILE_SAMPLES <= row_end)
+        {
+            ConsumeTile<IS_ALIGNED, true>(block_offset, TILE_SAMPLES, d_native_samples);
+            block_offset += gridDim.x * TILE_SAMPLES;
+        }
+
+        if (block_offset < row_end)
+        {
+            int valid_samples = row_end - block_offset;
+            ConsumeTile<IS_ALIGNED, false>(block_offset, valid_samples, d_native_samples);
+        }
+
+/*
         for (
             OffsetT block_offset = row_offset + (blockIdx.x * TILE_SAMPLES);
             block_offset < row_end;
@@ -501,6 +485,8 @@ struct BlockHistogramSweep
             else
                 ConsumeTile<IS_ALIGNED, false>(block_offset, valid_samples, d_native_samples);
         }
+*/
+
     }
 
 
@@ -520,8 +506,7 @@ struct BlockHistogramSweep
             ConsumeRowTiles<IS_ALIGNED>(row_offset, row_end, d_native_samples);
         }
 */
-
-        ConsumeRowTiles<IS_ALIGNED>(0, row_stride_samples * NUM_CHANNELS, d_native_samples);
+        ConsumeRowTiles<IS_ALIGNED>(0, num_row_pixels * NUM_CHANNELS, d_native_samples);
     }
 
 
@@ -570,10 +555,17 @@ struct BlockHistogramSweep
         num_output_bins(num_output_bins),
         num_privatized_bins(num_privatized_bins),
         d_output_histograms(d_output_histograms),
-        d_privatized_histograms(d_privatized_histograms),
         privatized_decode_op(privatized_decode_op),
         output_decode_op(output_decode_op)
-    {}
+    {
+        int blockId = (blockIdx.y * gridDim.x) + blockIdx.x;
+
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+        {
+            this->s_privatized_histograms[CHANNEL] = this->temp_storage.histograms[CHANNEL];
+            this->d_privatized_histograms[CHANNEL] = d_privatized_histograms[CHANNEL] + (blockId * num_privatized_bins[CHANNEL]);
+        }
+    }
 
 
     /**
@@ -588,21 +580,21 @@ struct BlockHistogramSweep
         SampleT* d_native_samples = NativePointer(d_wrapped_samples);
 
         // Whether all row starting offsets are quad-aligned (in single-channel)
-//        bool quad_aligned_rows   = (NUM_CHANNELS == 1) && ((OffsetT(d_native_samples) | row_stride_samples) & ((int(sizeof(SampleT)) * 4) - 1) == 0);
-
         // Whether all row starting offsets are pixel-aligned (in multi-channel)
-//        bool pixel_aligned_rows  = (NUM_CHANNELS > 1)  && ((OffsetT(d_native_samples) | row_stride_samples) & (AlignBytes<PixelT>::ALIGN_BYTES - 1) == 0);         // pixel-aligned
+        int     offsets             = int(d_native_samples) | (int(row_stride_samples) * int(sizeof(SampleT)));
+        int     quad_mask           = sizeof(SampleT) * 4 - 1;
+        int     pixel_mask          = AlignBytes<PixelT>::ALIGN_BYTES - 1;
+
+        bool    quad_aligned_rows   = (NUM_CHANNELS == 1) && ((offsets & quad_mask) == 0);
+        bool    pixel_aligned_rows  = (NUM_CHANNELS > 1) && ((offsets & pixel_mask) == 0);
 
         // Whether rows are aligned and can be vectorized
-/*
-Mooch
         if ((d_native_samples != NULL) && (quad_aligned_rows || pixel_aligned_rows))
             ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
         else
             ConsumeRows<false>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
-*/
 
-        ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
+//        ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
 
     }
 

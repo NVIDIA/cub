@@ -316,18 +316,36 @@ struct DeviceHistogramDispatch
     // Tuning policies
     //---------------------------------------------------------------------
 
+    /// SM11
+    struct Policy110
+    {
+        // HistogramSweepPolicy
+        typedef BlockHistogramSweepPolicy<
+                512,
+                2,
+                (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
+                LOAD_DEFAULT,
+                true,
+                false>
+            HistogramSweepPolicy;
+    };
+
     /// SM20
     struct Policy200
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
                 256,
-                8,
+                1,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_DEFAULT,
+                true,
                 true>
             HistogramSweepPolicy;
     };
+
+    /// SM30
+    struct Policy300 : Policy110 {};
 
     /// SM35
     struct Policy350
@@ -338,12 +356,13 @@ struct DeviceHistogramDispatch
                 8,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
-                true>
+                true,
+                false>
             HistogramSweepPolicy;
     };
 
-    /// SM52
-    struct Policy520
+    /// SM50
+    struct Policy500
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
@@ -351,6 +370,7 @@ struct DeviceHistogramDispatch
                 8,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
+                true,
                 true>
             HistogramSweepPolicy;
     };
@@ -361,14 +381,20 @@ struct DeviceHistogramDispatch
     // Tuning policies of current PTX compiler pass
     //---------------------------------------------------------------------
 
-#if (CUB_PTX_ARCH >= 520)
-    typedef Policy520 PtxPolicy;
+#if (CUB_PTX_ARCH >= 500)
+    typedef Policy500 PtxPolicy;
 
 #elif (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
 
-#else
+#elif (CUB_PTX_ARCH >= 300)
+    typedef Policy300 PtxPolicy;
+
+#elif (CUB_PTX_ARCH >= 200)
     typedef Policy200 PtxPolicy;
+
+#else
+    typedef Policy110 PtxPolicy;
 
 #endif
 
@@ -385,29 +411,42 @@ struct DeviceHistogramDispatch
      */
     template <typename KernelConfig>
     CUB_RUNTIME_FUNCTION __forceinline__
-    static void InitConfigs(
+    static cudaError_t InitConfigs(
         int             ptx_version,
         KernelConfig    &histogram_sweep_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        histogram_sweep_config.template Init<PtxHistogramSweepPolicy>();
+        return histogram_sweep_config.template Init<PtxHistogramSweepPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-        if (ptx_version >= 520)
+        if (ptx_version >= 500)
         {
-            histogram_sweep_config.template Init<typename Policy520::HistogramSweepPolicy>();
+            return histogram_sweep_config.template Init<typename Policy500::HistogramSweepPolicy>();
         }
         else if (ptx_version >= 350)
         {
-            histogram_sweep_config.template Init<typename Policy350::HistogramSweepPolicy>();
+            return histogram_sweep_config.template Init<typename Policy350::HistogramSweepPolicy>();
+        }
+        else if (ptx_version >= 300)
+        {
+            return histogram_sweep_config.template Init<typename Policy300::HistogramSweepPolicy>();
+        }
+        else if (ptx_version >= 200)
+        {
+            return histogram_sweep_config.template Init<typename Policy200::HistogramSweepPolicy>();
+        }
+        else if (ptx_version >= 110)
+        {
+            return histogram_sweep_config.template Init<typename Policy110::HistogramSweepPolicy>();
         }
         else
         {
-            histogram_sweep_config.template Init<typename Policy200::HistogramSweepPolicy>();
+            // No global atomic support
+            return cudaErrorNotSupported;
         }
 
     #endif
@@ -424,10 +463,12 @@ struct DeviceHistogramDispatch
 
         template <typename BlockPolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
-        void Init()
+        cudaError_t Init()
         {
             block_threads               = BlockPolicy::BLOCK_THREADS;
             pixels_per_thread           = BlockPolicy::PIXELS_PER_THREAD;
+
+            return cudaSuccess;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__
@@ -504,6 +545,9 @@ struct DeviceHistogramDispatch
             // Get device occupancy for histogram_sweep_kernel
             int histogram_sweep_occupancy = histogram_sweep_sm_occupancy * sm_count;
 
+            // Oversubscribe
+//            histogram_sweep_occupancy = histogram_sweep_occupancy * 8 - 1;
+
             if (num_row_pixels * NUM_CHANNELS == row_stride_samples)
             {
                 // Treat as a single linear array of samples
@@ -519,7 +563,7 @@ struct DeviceHistogramDispatch
             int num_sweep_grid_blocks           = blocks_per_row * blocks_per_col;
 
             dim3 sweep_grid_dims;
-            sweep_grid_dims.x = (unsigned int) blocks_per_row * 8 - 2;
+            sweep_grid_dims.x = (unsigned int) blocks_per_row;
             sweep_grid_dims.y = (unsigned int) blocks_per_col;
             sweep_grid_dims.z = 1;
 
@@ -645,7 +689,8 @@ struct DeviceHistogramDispatch
 
             // Get kernel dispatch configurations
             KernelConfig histogram_sweep_config;
-            InitConfigs(ptx_version, histogram_sweep_config);
+            if (CubDebug(error = InitConfigs(ptx_version, histogram_sweep_config)))
+                break;
 
             // Use the search transform op for converting samples to privatized bins
             typedef SearchTransform<LevelT*> PrivatizedDecodeOpT;
@@ -728,18 +773,18 @@ struct DeviceHistogramDispatch
      */
     CUB_RUNTIME_FUNCTION
     static cudaError_t DispatchRange(
-        void                *d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        SampleIteratorT     d_samples,                              ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
-        CounterT            *d_output_histograms[NUM_ACTIVE_CHANNELS],      ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.
-        int                 num_output_levels[NUM_ACTIVE_CHANNELS], ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_output_levels[i]</tt> - 1.
-        LevelT              *d_levels[NUM_ACTIVE_CHANNELS],         ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
-        OffsetT             num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
-        OffsetT             num_rows,                               ///< [in] The number of rows in the region of interest
-        OffsetT             row_stride_samples,                     ///< [in] The number of samples between starts of consecutive rows in the region of interest
-        cudaStream_t        stream,                                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous,                      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-        Int2Type<true>      is_byte_sample)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
+        void                *d_temp_storage,                            ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t              &temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        SampleIteratorT     d_samples,                                  ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
+        CounterT            *d_output_histograms[NUM_ACTIVE_CHANNELS],  ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.
+        int                 num_output_levels[NUM_ACTIVE_CHANNELS],     ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_output_levels[i]</tt> - 1.
+        LevelT              *d_levels[NUM_ACTIVE_CHANNELS],             ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
+        OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
+        OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
+        OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
+        cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        Int2Type<true>      is_byte_sample)                             ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
         do
@@ -754,7 +799,8 @@ struct DeviceHistogramDispatch
 
             // Get kernel dispatch configurations
             KernelConfig histogram_sweep_config;
-            InitConfigs(ptx_version, histogram_sweep_config);
+            if (CubDebug(error = InitConfigs(ptx_version, histogram_sweep_config)))
+                break;
 
             // Use the pass-thru transform op for converting samples to privatized bins
             typedef PassThruTransform PrivatizedDecodeOpT;
@@ -836,7 +882,8 @@ struct DeviceHistogramDispatch
 
             // Get kernel dispatch configurations
             KernelConfig histogram_sweep_config;
-            InitConfigs(ptx_version, histogram_sweep_config);
+            if (CubDebug(error = InitConfigs(ptx_version, histogram_sweep_config)))
+                break;
 
             // Use the scale transform op for converting samples to privatized bins
             typedef ScaleTransform PrivatizedDecodeOpT;
@@ -949,7 +996,8 @@ struct DeviceHistogramDispatch
 
             // Get kernel dispatch configurations
             KernelConfig histogram_sweep_config;
-            InitConfigs(ptx_version, histogram_sweep_config);
+            if (CubDebug(error = InitConfigs(ptx_version, histogram_sweep_config)))
+                break;
 
             // Use the pass-thru transform op for converting samples to privatized bins
             typedef PassThruTransform PrivatizedDecodeOpT;

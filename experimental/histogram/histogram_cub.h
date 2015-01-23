@@ -44,11 +44,8 @@ double run_cub_histogram(
         is_float = Equals<PixelType, float4>::VALUE,
     };
 
-// mooch
-//    typedef typename If<is_float, float, unsigned char>::Type    SampleT;    // Sample type
-//    typedef typename If<is_float, float, unsigned int>::Type     LevelT;     // Level type
-    typedef float LevelT;
-    typedef float SampleT;
+    typedef typename If<is_float, float, unsigned char>::Type    SampleT;    // Sample type
+    typedef typename If<is_float, float, unsigned int>::Type     LevelT;     // Level type
 
     // Setup data structures
     unsigned int*       d_histogram[ACTIVE_CHANNELS];
