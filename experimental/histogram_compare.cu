@@ -279,11 +279,11 @@ int main(int argc, char **argv)
     // Parse targa file
     uchar4* byte_pixels = NULL;
     ReadTga(byte_pixels, width, height, filename.c_str());
-/*
+
     // uchar4 tests
     printf("Targa (uchar4):\n");
     RunTests<ACTIVE_CHANNELS, NUM_BINS>(byte_pixels, width, height, timing_iterations);
-*/
+
     // Convert uchar4 to float4 pixels
     float4* float_pixels = NULL;
     if ((float_pixels = (float4*) malloc(width * height * sizeof(float4))) == NULL)
