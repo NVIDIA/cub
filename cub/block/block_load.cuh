@@ -163,34 +163,36 @@ __device__ __forceinline__ void InternalLoadDirectBlockedVectorized(
     T               *block_ptr,                 ///< [in] Input pointer for loading from
     T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
+    // Biggest memory access word that T is a whole multiple of
+    typedef typename UnitWord<T>::DeviceWord DeviceWord;
+
     enum
     {
-        // Maximum CUDA vector size is 4 elements
-        MAX_VEC_SIZE = CUB_MIN(4, ITEMS_PER_THREAD),
+        TOTAL_WORDS = sizeof(items) / sizeof(DeviceWord),
 
-        // Vector size must be a power of two and an even divisor of the items per thread
-        VEC_SIZE = (PowerOfTwo<MAX_VEC_SIZE>::VALUE && (ITEMS_PER_THREAD % MAX_VEC_SIZE == 0)) ?
-            MAX_VEC_SIZE :
-            1,
+        VECTOR_SIZE = (TOTAL_WORDS % 4 == 0) ?
+            4 :
+            (TOTAL_WORDS % 2 == 0) ?
+                2 :
+                1,
 
-        VECTORS_PER_THREAD = ITEMS_PER_THREAD / VEC_SIZE,
+        VECTORS_PER_THREAD = ITEMS_PER_THREAD / VECTOR_SIZE,
     };
 
     // Vector type
-    typedef typename CubVector<T, VEC_SIZE>::Type Vector;
+    typedef typename CubVector<DeviceWord, VECTOR_SIZE>::Type Vector;
 
     // Vector items
     Vector vec_items[VECTORS_PER_THREAD];
 
     // Aliased input ptr
-    T*          block_ptr_unqualified   = const_cast<T*>(block_ptr) + (linear_tid * VEC_SIZE * VECTORS_PER_THREAD);
-    Vector*     ptr                     = reinterpret_cast<Vector*>(block_ptr_unqualified);
+    Vector* vec_ptr = reinterpret_cast<Vector*>(block_ptr) + (threadIdx.x * VECTORS_PER_THREAD);
 
     // Load directly in thread-blocked order
     #pragma unroll
     for (int ITEM = 0; ITEM < VECTORS_PER_THREAD; ITEM++)
     {
-        vec_items[ITEM] = ThreadLoad<MODIFIER>(ptr + ITEM);
+        vec_items[ITEM] = ThreadLoad<MODIFIER>(vec_ptr + ITEM);
     }
 
     // Copy

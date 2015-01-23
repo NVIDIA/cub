@@ -94,7 +94,7 @@ __global__ void DeviceScanSweepKernel(
     ScanOp              scan_op,                    ///< Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
     Identity            identity,                   ///< Identity element
     OffsetT             num_items,                  ///< Total number of scan items for the entire problem
-    GridQueue<int>      queue)                      ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    GridQueue<OffsetT>  queue)                      ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for scanning input tiles
     typedef BlockScanSweep<

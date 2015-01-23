@@ -44,6 +44,7 @@
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 #include "../../thread/thread_search.cuh"
+#include "../../grid/grid_queue.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -66,9 +67,13 @@ template <
     typename                                        CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
     typename                                        OffsetT>                        ///< Signed integer type for global offsets
 __global__ void DeviceHistogramInitKernel(
-    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>          num_output_bins_wrapper,        ///< [in] Number of output histogram bins per channel
-    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>    d_output_histograms_wrapper)    ///< [out] Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][num_bins.array[CHANNEL]]</tt>
+    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>          num_output_bins_wrapper,        ///< Number of output histogram bins per channel
+    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>    d_output_histograms_wrapper,    ///< Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][num_bins.array[CHANNEL]]</tt>
+    GridQueue<int>                                  tile_queue)                     ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
+    if ((threadIdx.x == 0) && (blockIdx.x == 0))
+        tile_queue.ResetDrain();
+
     int output_bin = (blockIdx.x * blockDim.x) + threadIdx.x;
 
     #pragma unroll
@@ -104,7 +109,9 @@ __global__ void DeviceHistogramSweepKernel(
     ArrayWrapper<PrivatizedDecodeOpT, NUM_ACTIVE_CHANNELS>  privatized_decode_op_wrapper,       ///< The transform operator for determining privatized counter indices from samples, one for each channel
     OffsetT                                                 num_row_pixels,                     ///< The number of multi-channel pixels per row in the region of interest
     OffsetT                                                 num_rows,                           ///< The number of rows in the region of interest
-    OffsetT                                                 row_stride_samples)                 ///< The number of samples between starts of consecutive rows in the region of interest
+    OffsetT                                                 row_stride_samples,                 ///< The number of samples between starts of consecutive rows in the region of interest
+    int                                                     tiles_per_row,                      ///< Number of image tiles per row
+    GridQueue<int>                                          tile_queue)                         ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for compositing input tiles
     typedef BlockHistogramSweep<
@@ -136,7 +143,12 @@ __global__ void DeviceHistogramSweepKernel(
     block_sweep.InitBinCounters();
 
     // Consume input tiles
-    block_sweep.ConsumeTiles(num_row_pixels, num_rows, row_stride_samples);
+    block_sweep.ConsumeTiles(
+        num_row_pixels,
+        num_rows,
+        row_stride_samples,
+        tiles_per_row,
+        tile_queue);
 
     // Store output to global (if necessary)
     block_sweep.StoreOutput();
@@ -326,7 +338,7 @@ struct DeviceHistogramDispatch
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_DEFAULT,
                 true,
-                false>
+                GMEM>
             HistogramSweepPolicy;
     };
 
@@ -340,7 +352,7 @@ struct DeviceHistogramDispatch
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_DEFAULT,
                 true,
-                true>
+                SMEM>
             HistogramSweepPolicy;
     };
 
@@ -352,12 +364,12 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                256,
-                8,
+                128,
+                7,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
-                false>
+                BLEND>
             HistogramSweepPolicy;
     };
 
@@ -371,7 +383,7 @@ struct DeviceHistogramDispatch
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
-                true>
+                SMEM>
             HistogramSweepPolicy;
     };
 
@@ -546,13 +558,14 @@ struct DeviceHistogramDispatch
             int histogram_sweep_occupancy = histogram_sweep_sm_occupancy * sm_count;
 
             // Oversubscribe
-//            histogram_sweep_occupancy = histogram_sweep_occupancy * 8 - 1;
+//            histogram_sweep_occupancy = histogram_sweep_occupancy * 6;
 
             if (num_row_pixels * NUM_CHANNELS == row_stride_samples)
             {
                 // Treat as a single linear array of samples
-                num_row_pixels *= num_rows;
-                num_rows = 1;
+                num_row_pixels      *= num_rows;
+                num_rows            = 1;
+                row_stride_samples  = num_row_pixels * NUM_CHANNELS;
             }
 
             // Get grid dimensions, trying to keep total blocks ~histogram_sweep_occupancy
@@ -568,11 +581,14 @@ struct DeviceHistogramDispatch
             sweep_grid_dims.z = 1;
 
             // Temporary storage allocation requirements
-            void* allocations[NUM_ACTIVE_CHANNELS];
-            size_t allocation_sizes[NUM_ACTIVE_CHANNELS];
+            const int   NUM_ALLOCATIONS = NUM_ACTIVE_CHANNELS + 1;
+            void*       allocations[NUM_ALLOCATIONS];
+            size_t      allocation_sizes[NUM_ALLOCATIONS];
 
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
                 allocation_sizes[CHANNEL] = num_sweep_grid_blocks * (num_privatized_levels[CHANNEL] - 1) * sizeof(CounterT);
+
+            allocation_sizes[NUM_ALLOCATIONS - 1] = GridQueue<int>::AllocationSize();
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
@@ -581,6 +597,9 @@ struct DeviceHistogramDispatch
                 // Return if the caller is simply requesting the size of the storage allocation
                 return cudaSuccess;
             }
+
+            // Construct the grid queue descriptor
+            GridQueue<int> tile_queue(allocations[NUM_ALLOCATIONS - 1]);
 
             // Setup array wrapper for histogram channel output (because we can't pass static arrays as kernel parameters)
             ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS> d_output_histograms_wrapper;
@@ -622,7 +641,8 @@ struct DeviceHistogramDispatch
             // Invoke histogram_init_kernel
             histogram_init_kernel<<<histogram_init_grid_dims, histogram_init_block_threads, 0, stream>>>(
                 num_output_bins_wrapper,
-                d_output_histograms_wrapper);
+                d_output_histograms_wrapper,
+                tile_queue);
 
             // Log histogram_sweep_kernel configuration
             if (debug_synchronous) CubLog("Invoking histogram_sweep_kernel<<<{%d, %d, %d}, %d, 0, %lld>>>(), %d pixels per thread, %d SM occupancy\n",
@@ -640,7 +660,9 @@ struct DeviceHistogramDispatch
                 privatized_decode_op_wrapper,
                 num_row_pixels,
                 num_rows,
-                row_stride_samples);
+                row_stride_samples,
+                tiles_per_row,
+                tile_queue);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -713,7 +735,6 @@ struct DeviceHistogramDispatch
             // Dispatch
             if (max_num_output_bins > MAX_PRIVATIZED_SMEM_BINS)
             {
-/*
                 // Too many bins to keep in shared memory.
                 const int PRIVATIZED_SMEM_BINS = 0;
 
@@ -735,7 +756,6 @@ struct DeviceHistogramDispatch
                     histogram_sweep_config,
                     stream,
                     debug_synchronous))) break;
-*/
             }
             else
             {
@@ -909,7 +929,6 @@ struct DeviceHistogramDispatch
 
             if (max_num_output_bins > MAX_PRIVATIZED_SMEM_BINS)
             {
-/*
                 // Dispatch shared-privatized approach
                 const int PRIVATIZED_SMEM_BINS = 0;
 
@@ -931,7 +950,6 @@ struct DeviceHistogramDispatch
                     histogram_sweep_config,
                     stream,
                     debug_synchronous))) break;
-*/
             }
             else
             {

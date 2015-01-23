@@ -143,19 +143,19 @@ public:
         d_counters[DRAIN] = 0;
         return cudaSuccess;
 #else
-        return FillAndResetDrain(0, stream);
+        return CubDebug(cudaMemsetAsync(d_counters + DRAIN, 0, sizeof(OffsetT), stream));
 #endif
     }
 
 
     /// This operation resets the fill counter.  To be called by the host or by a kernel prior to that which will be filling.
-    __host__ __device__ __forceinline__ cudaError_t ResetFill()
+    __host__ __device__ __forceinline__ cudaError_t ResetFill(cudaStream_t stream = 0)
     {
 #if (CUB_PTX_ARCH > 0)
         d_counters[FILL] = 0;
         return cudaSuccess;
 #else
-        return CubDebug(cudaMemset(d_counters + FILL, 0, sizeof(OffsetT)));
+        return CubDebug(cudaMemsetAsync(d_counters + FILL, 0, sizeof(OffsetT), stream));
 #endif
     }
 
@@ -174,14 +174,14 @@ public:
     }
 
 
-    /// Drain num_items.  Returns offset from which to read items.
+    /// Drain \p num_items from the queue.  Returns offset from which to read items.  To be called from CUDA kernel.
     __device__ __forceinline__ OffsetT Drain(OffsetT num_items)
     {
         return atomicAdd(d_counters + DRAIN, num_items);
     }
 
 
-    /// Fill num_items.  Returns offset from which to write items.
+    /// Fill \p num_items into the queue.  Returns offset from which to write items.    To be called from CUDA kernel.
     __device__ __forceinline__ OffsetT Fill(OffsetT num_items)
     {
         return atomicAdd(d_counters + FILL, num_items);
