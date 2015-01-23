@@ -157,7 +157,7 @@ cudaError_t DispatchEven(
     LevelT              upper_level[3],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
     OffsetT             num_row_pixels,           ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT             num_rows,                 ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride_bytes,               ///< [in] The number of bytes between starts of consecutive rows in the region of interest
+    OffsetT             row_stride_bytes,         ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -731,7 +731,7 @@ void TestEven(
 
     // Allocate temporary storage with "canary" zones
     int 	canary_bytes 	= 256;
-    char 	canary_token 	= 9;
+    char 	canary_token 	= 8;
     char* 	canary_zone 	= new char[canary_bytes];
 
     memset(canary_zone, canary_token, canary_bytes);
@@ -749,7 +749,7 @@ void TestEven(
     // Check canary zones
     int error = CompareDeviceResults(canary_zone, (char *) d_temp_storage, canary_bytes, true, g_verbose);
     AssertEquals(0, error);
-    error = CompareDeviceResults(canary_zone, ((char *) d_temp_storage) + temp_storage_bytes, canary_bytes, true, g_verbose);
+    error = CompareDeviceResults(canary_zone, ((char *) d_temp_storage) + canary_bytes + temp_storage_bytes, canary_bytes, true, g_verbose);
     AssertEquals(0, error);
 
     // Flush any stdout/stderr
@@ -933,7 +933,7 @@ void TestRange(
     // Check canary zones
     int error = CompareDeviceResults(canary_zone, (char *) d_temp_storage, canary_bytes, true, g_verbose);
     AssertEquals(0, error);
-    error = CompareDeviceResults(canary_zone, ((char *) d_temp_storage) + temp_storage_bytes, canary_bytes, true, g_verbose);
+    error = CompareDeviceResults(canary_zone, ((char *) d_temp_storage) + canary_bytes + temp_storage_bytes, canary_bytes, true, g_verbose);
     AssertEquals(0, error);
 
     // Flush any stdout/stderr
@@ -1371,7 +1371,7 @@ int main(int argc, char** argv)
         if (compare_npp)
             TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
     }
-
+/*
     {
         // HistogramEven: 4/4 multichannel Unsigned char 256 bins
         typedef unsigned char       SampleT;
@@ -1383,7 +1383,7 @@ int main(int argc, char** argv)
 
         TestEven<CUB, SampleT, 4, 4, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
     }
-
+*/
     {
         // HistogramEven: 3/4 multichannel Unsigned char 256 bins
         typedef unsigned char       SampleT;
@@ -1397,7 +1397,7 @@ int main(int argc, char** argv)
         if (compare_npp)
             TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
     }
-
+/*
     {
         // HistogramEven: short [0,1024] 256 bins
         typedef unsigned short      SampleT;
@@ -1421,6 +1421,20 @@ int main(int argc, char** argv)
 
         TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(float));
     }
+*/
+
+    {
+        // HistogramEven: 3/4 multichannel float [0,1.0] 256 bins
+        typedef float               SampleT;
+        typedef float               LevelT;
+
+         LevelT  max_level           = 1.0;
+         int     num_levels[3]       = {257, 257, 257};
+         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
+
+         TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(float));
+    }
+
 
 #elif defined(QUICK_TEST)
 
