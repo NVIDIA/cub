@@ -36,6 +36,8 @@
 #include <iterator>
 
 #include "../util_type.cuh"
+#include "../block/block_load.cuh"
+#include "../grid/grid_queue.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
 #include "../util_namespace.cuh"
 
@@ -51,15 +53,26 @@ namespace cub {
  ******************************************************************************/
 
 /**
+ *
+ */
+enum BlockHistogramMemoryPreference
+{
+    GMEM,
+    SMEM,
+    BLEND
+};
+
+
+/**
  * Parameterizable tuning policy type for BlockHistogramSweep
  */
 template <
-    int                     _BLOCK_THREADS,                         ///< Threads per thread block
-    int                     _PIXELS_PER_THREAD,                     ///< Pixels per thread (per tile of input)
-    BlockLoadAlgorithm      _LOAD_ALGORITHM,                        ///< The BlockLoad algorithm to use
-    CacheLoadModifier       _LOAD_MODIFIER,                         ///< Cache load modifier for reading input elements
-    bool                    _RLE_COMPRESS,                          ///< Whether to perform localized RLE to compress samples before histogramming
-    bool                    _PREFER_PRIVATIZED_SMEM>                ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
+    int                             _BLOCK_THREADS,                 ///< Threads per thread block
+    int                             _PIXELS_PER_THREAD,             ///< Pixels per thread (per tile of input)
+    BlockLoadAlgorithm              _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
+    CacheLoadModifier               _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
+    bool                            _RLE_COMPRESS,                  ///< Whether to perform localized RLE to compress samples before histogramming
+    BlockHistogramMemoryPreference  _MEM_PREFERENCE>                ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
     struct BlockHistogramSweepPolicy
 {
     enum
@@ -67,7 +80,7 @@ template <
         BLOCK_THREADS           = _BLOCK_THREADS,                   ///< Threads per thread block
         PIXELS_PER_THREAD       = _PIXELS_PER_THREAD,               ///< Pixels per thread (per tile of input)
         RLE_COMPRESS            = _RLE_COMPRESS,                    ///< Whether to perform localized RLE to compress samples before histogramming
-        PREFER_PRIVATIZED_SMEM  = _PREFER_PRIVATIZED_SMEM,          ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
+        MEM_PREFERENCE          = _MEM_PREFERENCE,                  ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;          ///< The BlockLoad algorithm to use
@@ -116,10 +129,11 @@ struct BlockHistogramSweep
         SAMPLES_PER_THREAD      = PIXELS_PER_THREAD * NUM_CHANNELS,
         TILE_SAMPLES            = SAMPLES_PER_THREAD * BLOCK_THREADS,
 
-        PREFER_PRIVATIZED_SMEM  = BlockHistogramSweepPolicyT::PREFER_PRIVATIZED_SMEM,
         RLE_COMPRESS            = BlockHistogramSweepPolicyT::RLE_COMPRESS,
-        USE_SHARED_MEM          = PREFER_PRIVATIZED_SMEM && (PRIVATIZED_SMEM_BINS > 0),
 
+        MEM_PREFERENCE          = (PRIVATIZED_SMEM_BINS > 0) ?
+                                        BlockHistogramSweepPolicyT::MEM_PREFERENCE :
+                                        GMEM
     };
 
     /// Cache load modifier for reading input elements
@@ -158,6 +172,8 @@ struct BlockHistogramSweep
     {
         CounterT histograms[NUM_ACTIVE_CHANNELS][PRIVATIZED_SMEM_BINS + 1];     // Smem needed for block-privatized smem histogram (with 1 word of padding)
 
+        OffsetT tile_offset;
+
         union
         {
             typename BlockLoadSampleT::TempStorage sample_load;                 // Smem needed for loading a tile of samples
@@ -180,18 +196,20 @@ struct BlockHistogramSweep
     /// Sample input iterator (with cache modifier applied, if possible)
     WrappedSampleIteratorT d_wrapped_samples;
 
+    /// Native pointer for input samples (possibly NULL if unavailable)
+    SampleT* d_native_samples;
+
     /// The number of output bins for each channel
     int (&num_output_bins)[NUM_ACTIVE_CHANNELS];
 
     /// The number of privatized bins for each channel
     int (&num_privatized_bins)[NUM_ACTIVE_CHANNELS];
 
+    /// Reference to gmem privatized histograms for each channel
+    CounterT* d_privatized_histograms[NUM_ACTIVE_CHANNELS];
+
     /// Reference to final output histograms (gmem)
     CounterT* (&d_output_histograms)[NUM_ACTIVE_CHANNELS];
-
-    /// Block-private temporary histograms
-    CounterT* s_privatized_histograms[NUM_ACTIVE_CHANNELS];
-    CounterT* d_privatized_histograms[NUM_ACTIVE_CHANNELS];
 
     /// The transform operator for determining output bin-ids from privatized counter indices, one for each channel
     OutputDecodeOpT (&output_decode_op)[NUM_ACTIVE_CHANNELS];
@@ -223,14 +241,19 @@ struct BlockHistogramSweep
 
 
     // Initialize privatized bin counters.  Specialized for privatized shared-memory counters
-    __device__ __forceinline__ void InitBinCounters(Int2Type<true> use_shared_mem)
+    __device__ __forceinline__ void InitSmemBinCounters()
     {
-        InitBinCounters(s_privatized_histograms);
+        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
+
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+            privatized_histograms[CHANNEL] = temp_storage.histograms[CHANNEL];
+
+        InitBinCounters(privatized_histograms);
     }
 
 
     // Initialize privatized bin counters.  Specialized for privatized global-memory counters
-    __device__ __forceinline__ void InitBinCounters(Int2Type<false> use_shared_mem)
+    __device__ __forceinline__ void InitGmemBinCounters()
     {
         InitBinCounters(d_privatized_histograms);
     }
@@ -267,14 +290,18 @@ struct BlockHistogramSweep
 
 
     // Update final output histograms from privatized histograms.  Specialized for privatized shared-memory counters
-    __device__ __forceinline__ void StoreOutput(Int2Type<true> use_shared_mem)
+    __device__ __forceinline__ void StoreSmemOutput()
     {
-        StoreOutput(s_privatized_histograms);
+        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+            privatized_histograms[CHANNEL] = temp_storage.histograms[CHANNEL];
+
+        StoreOutput(privatized_histograms);
     }
 
 
     // Update final output histograms from privatized histograms.  Specialized for privatized global-memory counters
-    __device__ __forceinline__ void StoreOutput(Int2Type<false> use_shared_mem)
+    __device__ __forceinline__ void StoreGmemOutput()
     {
         StoreOutput(d_privatized_histograms);
     }
@@ -346,7 +373,7 @@ struct BlockHistogramSweep
                 int bin;
                 privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
                 if (bin >= 0)
-                    atomicAdd(privatized_histograms[CHANNEL] + bin, 1);
+                    atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
             }
         }
     }
@@ -355,22 +382,25 @@ struct BlockHistogramSweep
     /**
      * Accumulate pixel, specialized for smem privatized histogram
      */
-    __device__ __forceinline__ void AccumulatePixels(
+    __device__ __forceinline__ void AccumulateSmemPixels(
         SampleT             samples[PIXELS_PER_THREAD][NUM_CHANNELS],
-        bool                is_valid[PIXELS_PER_THREAD],
-        Int2Type<true>      use_shared_mem)
+        bool                is_valid[PIXELS_PER_THREAD])
     {
-        AccumulatePixels(samples, is_valid, s_privatized_histograms, Int2Type<RLE_COMPRESS>());
+        CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS];
+
+        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
+            privatized_histograms[CHANNEL] = temp_storage.histograms[CHANNEL];
+
+        AccumulatePixels(samples, is_valid, privatized_histograms, Int2Type<RLE_COMPRESS>());
     }
 
 
     /**
      * Accumulate pixel, specialized for gmem privatized histogram
      */
-    __device__ __forceinline__ void AccumulatePixels(
+    __device__ __forceinline__ void AccumulateGmemPixels(
         SampleT             samples[PIXELS_PER_THREAD][NUM_CHANNELS],
-        bool                is_valid[PIXELS_PER_THREAD],
-        Int2Type<false>     use_shared_mem)
+        bool                is_valid[PIXELS_PER_THREAD])
     {
         AccumulatePixels(samples, is_valid, d_privatized_histograms, Int2Type<RLE_COMPRESS>());
     }
@@ -381,134 +411,167 @@ struct BlockHistogramSweep
     // Tile processing
     //---------------------------------------------------------------------
 
-
-    /**
-     * Load a full tile of data samples.
-     */
-    template <
-        bool IS_ALIGNED,        // Whether the tile offset is aligned (quad-aligned for single-channel, pixel-aligned for multi-channel)
-        bool IS_FULL_TILE>      // Whether the tile is full
-    __device__ __forceinline__ void ConsumeTile(
+    // Load full, aligned tile using pixel iterator
+    __device__ __forceinline__ void LoadTile(
         OffsetT         block_offset,
         int             valid_samples,
-        SampleT*        d_native_samples)
+        SampleT         (&samples)[PIXELS_PER_THREAD][NUM_CHANNELS],
+        Int2Type<true>  is_full_tile,
+        Int2Type<true>  is_aligned)
     {
-        SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
-        bool        is_valid[PIXELS_PER_THREAD];
+        typedef PixelT AliasedPixels[PIXELS_PER_THREAD];
 
+        WrappedPixelIteratorT d_wrapped_pixels((PixelT*) (d_native_samples + block_offset));
+
+        // Load using a wrapped pixel iterator
+        BlockLoadPixelT(temp_storage.pixel_load).Load(
+            d_wrapped_pixels,
+            reinterpret_cast<AliasedPixels&>(samples));
+    }
+
+    // Load full, mis-aligned tile using sample iterator
+    __device__ __forceinline__ void LoadTile(
+        OffsetT         block_offset,
+        int             valid_samples,
+        SampleT         (&samples)[PIXELS_PER_THREAD][NUM_CHANNELS],
+        Int2Type<true>  is_full_tile,
+        Int2Type<false> is_aligned)
+    {
         typedef SampleT AliasedSamples[SAMPLES_PER_THREAD];
+
+        // Load using sample iterator
+        BlockLoadSampleT(temp_storage.sample_load).Load(
+            d_wrapped_samples + block_offset,
+            reinterpret_cast<AliasedSamples&>(samples));
+    }
+
+    // Load partially-full, aligned tile using pixel iterator
+    __device__ __forceinline__ void LoadTile(
+        OffsetT         block_offset,
+        int             valid_samples,
+        SampleT         (&samples)[PIXELS_PER_THREAD][NUM_CHANNELS],
+        Int2Type<false> is_full_tile,
+        Int2Type<true>  is_aligned)
+    {
         typedef PixelT AliasedPixels[PIXELS_PER_THREAD];
 
         WrappedPixelIteratorT d_wrapped_pixels((PixelT*) (d_native_samples + block_offset));
 
         int valid_pixels = valid_samples / NUM_CHANNELS;
 
-        if (IS_FULL_TILE)
-        {
-            // Full tile
-            if (IS_ALIGNED)
-            {
-                // Load using a wrapped pixel iterator
-                BlockLoadPixelT(temp_storage.pixel_load).Load(
-                    d_wrapped_pixels,
-                    reinterpret_cast<AliasedPixels&>(samples));
-            }
-            else
-            {
-                // Load using a wrapped sample iterator
-                BlockLoadSampleT(temp_storage.sample_load).Load(
-                    d_wrapped_samples + block_offset,
-                    reinterpret_cast<AliasedSamples&>(samples));
-            }
-        }
-        else
-        {
-            // Partial tile
-            if (IS_ALIGNED)
-            {
-                // Load using a wrapped pixel iterator
-                BlockLoadPixelT(temp_storage.pixel_load).Load(
-                    d_wrapped_pixels,
-                    reinterpret_cast<AliasedPixels&>(samples),
-                    valid_pixels);
-            }
-            else
-            {
-                // Load using a wrapped sample iterator
-                BlockLoadSampleT(temp_storage.sample_load).Load(
-                    d_wrapped_samples + block_offset,
-                    reinterpret_cast<AliasedSamples&>(samples),
-                    valid_samples);
-            }
-        }
+        // Load using a wrapped pixel iterator
+        BlockLoadPixelT(temp_storage.pixel_load).Load(
+            d_wrapped_pixels,
+            reinterpret_cast<AliasedPixels&>(samples),
+            valid_pixels);
+
+    }
+
+    // Load partially-full, mis-aligned tile using sample iterator
+    __device__ __forceinline__ void LoadTile(
+        OffsetT         block_offset,
+        int             valid_samples,
+        SampleT         (&samples)[PIXELS_PER_THREAD][NUM_CHANNELS],
+        Int2Type<false> is_full_tile,
+        Int2Type<false> is_aligned)
+    {
+        typedef SampleT AliasedSamples[SAMPLES_PER_THREAD];
+
+        BlockLoadSampleT(temp_storage.sample_load).Load(
+            d_wrapped_samples + block_offset,
+            reinterpret_cast<AliasedSamples&>(samples),
+            valid_samples);
+    }
+
+    // Consume a tile of data samples
+    template <
+        bool IS_ALIGNED,        // Whether the tile offset is aligned (quad-aligned for single-channel, pixel-aligned for multi-channel)
+        bool IS_FULL_TILE>      // Whether the tile is full
+    __device__ __forceinline__ void ConsumeTile(OffsetT block_offset, int valid_samples)
+    {
+        SampleT     samples[PIXELS_PER_THREAD][NUM_CHANNELS];
+        bool        is_valid[PIXELS_PER_THREAD];
+
+        // Load tile
+        LoadTile(
+            block_offset,
+            valid_samples,
+            samples,
+            Int2Type<IS_FULL_TILE>(),
+            Int2Type<IS_ALIGNED>());
 
         // Set valid flags
         #pragma unroll
         for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
-            is_valid[PIXEL] = IS_FULL_TILE || ((threadIdx.x * PIXELS_PER_THREAD) + PIXEL < valid_pixels);
+            is_valid[PIXEL] = IS_FULL_TILE || (((threadIdx.x * PIXELS_PER_THREAD + PIXEL) * NUM_CHANNELS) < valid_samples);
 
         // Accumulate samples
-        AccumulatePixels(samples, is_valid, Int2Type<USE_SHARED_MEM>());
+        if (prefer_smem)
+            AccumulateSmemPixels(samples, is_valid);
+        else
+            AccumulateGmemPixels(samples, is_valid);
+
+
     }
 
 
     // Consume row tiles (striped across thread blocks)
     template <bool IS_ALIGNED>
     __device__ __forceinline__ void ConsumeRowTiles(
-        OffsetT  row_offset,
-        OffsetT  row_end,
-        SampleT* d_native_samples)
+        OffsetT             row_offset,
+        OffsetT             row_end,
+        int                 tiles_per_row,
+        GridQueue<int>      tile_queue)
     {
-        OffsetT block_offset = row_offset + (blockIdx.x * TILE_SAMPLES);
-        while (block_offset + TILE_SAMPLES <= row_end)
+        // Get first tile index
+        if (threadIdx.x == 0)
+            temp_storage.tile_offset = tile_queue.Drain(TILE_SAMPLES);
+
+        __syncthreads();
+
+        OffsetT tile_offset     = temp_storage.tile_offset;
+        OffsetT num_remaining   = row_end - tile_offset;
+
+        while (num_remaining >= TILE_SAMPLES)
         {
-            ConsumeTile<IS_ALIGNED, true>(block_offset, TILE_SAMPLES, d_native_samples);
-            block_offset += gridDim.x * TILE_SAMPLES;
+            // Consume full tile
+            ConsumeTile<IS_ALIGNED, true>(tile_offset, TILE_SAMPLES);
+
+            // Get next tile
+            if (threadIdx.x == 0)
+                temp_storage.tile_offset = tile_queue.Drain(TILE_SAMPLES);
+
+            __syncthreads();
+
+            tile_offset     = temp_storage.tile_offset;
+            num_remaining   = row_end - tile_offset;
+
+            __syncthreads();
         }
 
-        if (block_offset < row_end)
+        // Consume the last (and potentially partially-full) tile
+        if (num_remaining > 0)
         {
-            int valid_samples = row_end - block_offset;
-            ConsumeTile<IS_ALIGNED, false>(block_offset, valid_samples, d_native_samples);
+            ConsumeTile<IS_ALIGNED, false>(tile_offset, num_remaining);
         }
-
-/*
-        for (
-            OffsetT block_offset = row_offset + (blockIdx.x * TILE_SAMPLES);
-            block_offset < row_end;
-            block_offset += gridDim.x * TILE_SAMPLES)
-        {
-            int valid_samples = row_end - block_offset;
-
-            if (valid_samples >= TILE_SAMPLES)
-                ConsumeTile<IS_ALIGNED, true>(block_offset, TILE_SAMPLES, d_native_samples);
-            else
-                ConsumeTile<IS_ALIGNED, false>(block_offset, valid_samples, d_native_samples);
-        }
-*/
-
     }
 
-
+/*
     // Consume rows
     template <bool IS_ALIGNED>
     __device__ __forceinline__ void ConsumeRows(
         OffsetT     num_row_pixels,
         OffsetT     num_rows,
-        OffsetT     row_stride_samples,
-        SampleT*    d_native_samples)
+        OffsetT     row_stride_samples)
     {
-/* mooch
         for (int row = blockIdx.y; row < num_rows; row += gridDim.y)
         {
             OffsetT row_offset     = row * row_stride_samples;
             OffsetT row_end        = row_offset + (num_row_pixels * NUM_CHANNELS);
-            ConsumeRowTiles<IS_ALIGNED>(row_offset, row_end, d_native_samples);
+            ConsumeRowTiles<IS_ALIGNED>(row_offset, row_end);
         }
-*/
-        ConsumeRowTiles<IS_ALIGNED>(0, num_row_pixels * NUM_CHANNELS, d_native_samples);
     }
-
+*/
 
     //---------------------------------------------------------------------
     // Parameter extraction
@@ -537,12 +600,14 @@ struct BlockHistogramSweep
     // Interface
     //---------------------------------------------------------------------
 
+    bool prefer_smem;
+
     /**
      * Constructor
      */
     __device__ __forceinline__ BlockHistogramSweep(
         TempStorage         &temp_storage,                                      ///< Reference to temp_storage
-        SampleIteratorT    	d_samples,                                          ///< Input data to reduce
+        SampleIteratorT     d_samples,                                          ///< Input data to reduce
         int                 (&num_output_bins)[NUM_ACTIVE_CHANNELS],            ///< The number bins per final output histogram
         int                 (&num_privatized_bins)[NUM_ACTIVE_CHANNELS],        ///< The number bins per privatized histogram
         CounterT*           (&d_output_histograms)[NUM_ACTIVE_CHANNELS],        ///< Reference to final output histograms
@@ -556,15 +621,18 @@ struct BlockHistogramSweep
         num_privatized_bins(num_privatized_bins),
         d_output_histograms(d_output_histograms),
         privatized_decode_op(privatized_decode_op),
-        output_decode_op(output_decode_op)
+        output_decode_op(output_decode_op),
+        d_native_samples(NativePointer(d_wrapped_samples)),
+        prefer_smem((MEM_PREFERENCE == SMEM) ?
+            true :                              // prefer smem privatized histograms
+            (MEM_PREFERENCE == GMEM) ?
+                false :                         // prefer gmem privatized histograms
+                blockIdx.x & 1)                 // prefer blended privatized histograms
     {
         int blockId = (blockIdx.y * gridDim.x) + blockIdx.x;
 
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-        {
-            this->s_privatized_histograms[CHANNEL] = this->temp_storage.histograms[CHANNEL];
             this->d_privatized_histograms[CHANNEL] = d_privatized_histograms[CHANNEL] + (blockId * num_privatized_bins[CHANNEL]);
-        }
     }
 
 
@@ -572,12 +640,13 @@ struct BlockHistogramSweep
      * Consume image
      */
     __device__ __forceinline__ void ConsumeTiles(
-        OffsetT                                                 num_row_pixels,                     ///< The number of multi-channel pixels per row in the region of interest
-        OffsetT                                                 num_rows,                           ///< The number of rows in the region of interest
-        OffsetT                                                 row_stride_samples)                 ///< The number of samples between starts of consecutive rows in the region of interest
+        OffsetT             num_row_pixels,             ///< The number of multi-channel pixels per row in the region of interest
+        OffsetT             num_rows,                   ///< The number of rows in the region of interest
+        OffsetT             row_stride_samples,         ///< The number of samples between starts of consecutive rows in the region of interest
+        int                 tiles_per_row,              ///< Number of image tiles per row
+        GridQueue<int>      tile_queue)                 ///< Queue descriptor for assigning tiles of work to thread blocks
     {
-        // Get native pointer for input samples (possibly NULL if unavailable)
-        SampleT* d_native_samples = NativePointer(d_wrapped_samples);
+/*
 
         // Whether all row starting offsets are quad-aligned (in single-channel)
         // Whether all row starting offsets are pixel-aligned (in multi-channel)
@@ -593,8 +662,11 @@ struct BlockHistogramSweep
             ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
         else
             ConsumeRows<false>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
+*/
 
-//        ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
+//        ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples);
+
+        ConsumeRowTiles<true>(0, num_row_pixels * NUM_CHANNELS, tiles_per_row, tile_queue);
 
     }
 
@@ -604,7 +676,11 @@ struct BlockHistogramSweep
      */
     __device__ __forceinline__ void InitBinCounters()
     {
-        InitBinCounters(Int2Type<USE_SHARED_MEM>());
+//        InitBinCounters(Int2Type<USE_SHARED_MEM>());
+        if (prefer_smem)
+            InitSmemBinCounters();
+        else
+            InitGmemBinCounters();
     }
 
 
@@ -613,7 +689,13 @@ struct BlockHistogramSweep
      */
     __device__ __forceinline__ void StoreOutput()
     {
-        StoreOutput(Int2Type<USE_SHARED_MEM>());
+//        StoreOutput(Int2Type<USE_SHARED_MEM>());
+        if (prefer_smem)
+            StoreSmemOutput();
+        else
+            StoreGmemOutput();
+
+
     }
 
 
