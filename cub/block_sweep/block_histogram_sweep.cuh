@@ -72,8 +72,9 @@ template <
     BlockLoadAlgorithm              _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
     CacheLoadModifier               _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                            _RLE_COMPRESS,                  ///< Whether to perform localized RLE to compress samples before histogramming
-    BlockHistogramMemoryPreference  _MEM_PREFERENCE>                ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
-    struct BlockHistogramSweepPolicy
+    BlockHistogramMemoryPreference  _MEM_PREFERENCE,                ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
+    bool                            _WORK_STEALING>                 ///< Whether to dequeue tiles from a global work queue
+struct BlockHistogramSweepPolicy
 {
     enum
     {
@@ -81,6 +82,7 @@ template <
         PIXELS_PER_THREAD       = _PIXELS_PER_THREAD,               ///< Pixels per thread (per tile of input)
         RLE_COMPRESS            = _RLE_COMPRESS,                    ///< Whether to perform localized RLE to compress samples before histogramming
         MEM_PREFERENCE          = _MEM_PREFERENCE,                  ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
+        WORK_STEALING           = _WORK_STEALING,                   ///< Whether to dequeue tiles from a global work queue
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;          ///< The BlockLoad algorithm to use
@@ -133,7 +135,9 @@ struct BlockHistogramSweep
 
         MEM_PREFERENCE          = (PRIVATIZED_SMEM_BINS > 0) ?
                                         BlockHistogramSweepPolicyT::MEM_PREFERENCE :
-                                        GMEM
+                                        GMEM,
+
+        WORK_STEALING           = BlockHistogramSweepPolicyT::WORK_STEALING,
     };
 
     /// Cache load modifier for reading input elements
@@ -277,6 +281,7 @@ struct BlockHistogramSweep
             {
                 int         output_bin;
                 CounterT    count       = privatized_histograms[CHANNEL][privatized_bin];
+
                 bool        is_valid    = count > 0;
                 output_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>((SampleT) privatized_bin, output_bin, is_valid);
 
@@ -373,7 +378,7 @@ struct BlockHistogramSweep
                 int bin;
                 privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
                 if (bin >= 0)
-                    atomicAdd(temp_storage.histograms[CHANNEL] + bin, 1);
+                    atomicAdd(privatized_histograms[CHANNEL] + bin, 1);
             }
         }
     }
@@ -515,13 +520,14 @@ struct BlockHistogramSweep
     }
 
 
-    // Consume row tiles (striped across thread blocks)
+    // Consume row tiles.  Specialized for work-stealing from queue
     template <bool IS_ALIGNED>
-    __device__ __forceinline__ void ConsumeRowTiles(
+    __device__ __forceinline__ void ConsumeTiles(
         OffsetT             row_offset,
         OffsetT             row_end,
         int                 tiles_per_row,
-        GridQueue<int>      tile_queue)
+        GridQueue<int>      tile_queue,
+        Int2Type<true>      is_work_stealing)
     {
         OffsetT tile_offset = blockIdx.x * TILE_SAMPLES;
         OffsetT num_remaining = row_end - tile_offset;
@@ -552,22 +558,30 @@ struct BlockHistogramSweep
         }
     }
 
-/*
-    // Consume rows
+
+    // Consume row tiles.  Specialized for even-share (striped across thread blocks)
     template <bool IS_ALIGNED>
-    __device__ __forceinline__ void ConsumeRows(
-        OffsetT     num_row_pixels,
-        OffsetT     num_rows,
-        OffsetT     row_stride_samples)
+    __device__ __forceinline__ void ConsumeTiles(
+        OffsetT             row_offset,
+        OffsetT             row_end,
+        int                 tiles_per_row,
+        GridQueue<int>      tile_queue,
+        Int2Type<false>     is_work_stealing)
     {
-        for (int row = blockIdx.y; row < num_rows; row += gridDim.y)
+        OffsetT tile_offset = row_offset + (blockIdx.x * TILE_SAMPLES);
+        while (tile_offset + TILE_SAMPLES <= row_end)
         {
-            OffsetT row_offset     = row * row_stride_samples;
-            OffsetT row_end        = row_offset + (num_row_pixels * NUM_CHANNELS);
-            ConsumeRowTiles<IS_ALIGNED>(row_offset, row_end);
+            ConsumeTile<IS_ALIGNED, true>(tile_offset, TILE_SAMPLES);
+            tile_offset += gridDim.x * TILE_SAMPLES;
+        }
+
+        if (tile_offset < row_end)
+        {
+            int valid_samples = row_end - tile_offset;
+            ConsumeTile<IS_ALIGNED, false>(tile_offset, valid_samples);
         }
     }
-*/
+
 
     //---------------------------------------------------------------------
     // Parameter extraction
@@ -662,8 +676,12 @@ struct BlockHistogramSweep
 
 //        ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples);
 
-        ConsumeRowTiles<true>(0, num_row_pixels * NUM_CHANNELS, tiles_per_row, tile_queue);
-
+        ConsumeTiles<true>(
+            0,
+            num_row_pixels * NUM_CHANNELS,
+            tiles_per_row,
+            tile_queue,
+            Int2Type<WORK_STEALING>());
     }
 
 
@@ -672,7 +690,6 @@ struct BlockHistogramSweep
      */
     __device__ __forceinline__ void InitBinCounters()
     {
-//        InitBinCounters(Int2Type<USE_SHARED_MEM>());
         if (prefer_smem)
             InitSmemBinCounters();
         else
@@ -685,13 +702,10 @@ struct BlockHistogramSweep
      */
     __device__ __forceinline__ void StoreOutput()
     {
-//        StoreOutput(Int2Type<USE_SHARED_MEM>());
         if (prefer_smem)
             StoreSmemOutput();
         else
             StoreGmemOutput();
-
-
     }
 
 
