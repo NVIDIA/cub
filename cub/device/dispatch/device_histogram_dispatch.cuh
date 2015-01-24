@@ -338,7 +338,8 @@ struct DeviceHistogramDispatch
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_DEFAULT,
                 true,
-                GMEM>
+                GMEM,
+                false>
             HistogramSweepPolicy;
     };
 
@@ -352,7 +353,8 @@ struct DeviceHistogramDispatch
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_DEFAULT,
                 true,
-                SMEM>
+                SMEM,
+                false>
             HistogramSweepPolicy;
     };
 
@@ -369,7 +371,8 @@ struct DeviceHistogramDispatch
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
-                BLEND>
+                BLEND,
+                true>
             HistogramSweepPolicy;
     };
 
@@ -383,7 +386,8 @@ struct DeviceHistogramDispatch
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
-                SMEM>
+                SMEM,
+                true>
             HistogramSweepPolicy;
     };
 
