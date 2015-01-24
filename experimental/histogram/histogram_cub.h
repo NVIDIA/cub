@@ -30,6 +30,7 @@
 using namespace cub;
 
 template <
+    int         NUM_CHANNELS,
     int         ACTIVE_CHANNELS,
     int         NUM_BINS,
     typename    PixelType>
@@ -45,7 +46,7 @@ double run_cub_histogram(
     };
 
     typedef typename If<is_float, float, unsigned char>::Type    SampleT;    // Sample type
-    typedef typename If<is_float, float, unsigned int>::Type     LevelT;     // Level type
+    typedef typename If<is_float, float, unsigned int>::Type     LevelT;     // Level type (uint32 for uchar)
 
     // Setup data structures
     unsigned int*       d_histogram[ACTIVE_CHANNELS];
@@ -68,7 +69,7 @@ double run_cub_histogram(
     SampleT* d_image_samples = (SampleT*) d_image;
 
     // Get amount of temporary storage needed
-    DeviceHistogram::MultiHistogramEven<4, ACTIVE_CHANNELS>(
+    DeviceHistogram::MultiHistogramEven<NUM_CHANNELS, ACTIVE_CHANNELS>(
         d_temp_storage,
         temp_storage_bytes,
         d_image_samples,
@@ -86,7 +87,7 @@ double run_cub_histogram(
     gpu_timer.Start();
 
     // Compute histogram
-    DeviceHistogram::MultiHistogramEven<4, ACTIVE_CHANNELS>(
+    DeviceHistogram::MultiHistogramEven<NUM_CHANNELS, ACTIVE_CHANNELS>(
         d_temp_storage,
         temp_storage_bytes,
         d_image_samples,
