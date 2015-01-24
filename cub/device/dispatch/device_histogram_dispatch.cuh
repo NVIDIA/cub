@@ -367,7 +367,7 @@ struct DeviceHistogramDispatch
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
                 128,
-                7,
+                (NUM_CHANNELS == 1) ? 8 : 7,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,

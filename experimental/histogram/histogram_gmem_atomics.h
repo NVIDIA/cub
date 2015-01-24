@@ -27,88 +27,109 @@
 
 #include <test/test_util.h>
 
-#define NUM_PARTS       1024
-
-template <
-    int         ACTIVE_CHANNELS,
-    int         NUM_BINS,
-    typename    PixelType>
-__global__ void histogram_gmem_atomics(
-    const PixelType *in,
-    int width,
-    int height,
-    unsigned int *out)
+namespace histogram_gmem_atomics
 {
-    // global position and size
-    int x = blockIdx.x * blockDim.x + threadIdx.x;
-    int y = blockIdx.y * blockDim.y + threadIdx.y;
-    int nx = blockDim.x * gridDim.x;
-    int ny = blockDim.y * gridDim.y;
-
-    // threads in workgroup
-    int t = threadIdx.x + threadIdx.y * blockDim.x; // thread index in workgroup, linear in 0..nt-1
-    int nt = blockDim.x * blockDim.y; // total threads in workgroup
-
-    // group index in 0..ngroups-1
-    int g = blockIdx.x + blockIdx.y * gridDim.x;
-
-    // initialize smem
-    unsigned int *gmem = out + g * NUM_PARTS;
-    for (int i = t; i < ACTIVE_CHANNELS * NUM_BINS; i += nt)
-        gmem[i] = 0;
-    __syncthreads();
-
-    // process pixels
-    // updates our group's partial histogram in smem
-    for (int col = x; col < width; col += nx)
+    // Decode float4 pixel into bins
+    template <int NUM_BINS, int ACTIVE_CHANNELS>
+    __device__ __forceinline__ void DecodePixel(float4 pixel, unsigned int (&bins)[ACTIVE_CHANNELS])
     {
-        for (int row = y; row < height; row += ny)
+        float* samples = reinterpret_cast<float*>(&pixel);
+
+        #pragma unroll
+        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+            bins[CHANNEL] = (unsigned int) (samples[CHANNEL] * float(NUM_BINS));
+    }
+
+    // Decode uchar4 pixel into bins
+    template <int NUM_BINS, int ACTIVE_CHANNELS>
+    __device__ __forceinline__ void DecodePixel(uchar4 pixel, unsigned int (&bins)[ACTIVE_CHANNELS])
+    {
+        unsigned char* samples = reinterpret_cast<unsigned char*>(&pixel);
+
+        #pragma unroll
+        for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+            bins[CHANNEL] = (unsigned int) (samples[CHANNEL]);
+    }
+
+    // Decode uchar1 pixel into bins
+    template <int NUM_BINS, int ACTIVE_CHANNELS>
+    __device__ __forceinline__ void DecodePixel(uchar1 pixel, unsigned int (&bins)[ACTIVE_CHANNELS])
+    {
+        bins[0] = (unsigned int) pixel.x;
+    }
+
+    // First-pass histogram kernel (binning into privatized counters)
+    template <
+        int         NUM_PARTS,
+        int         ACTIVE_CHANNELS,
+        int         NUM_BINS,
+        typename    PixelType>
+    __global__ void histogram_gmem_atomics(
+        const PixelType *in,
+        int width,
+        int height,
+        unsigned int *out)
+    {
+        // global position and size
+        int x = blockIdx.x * blockDim.x + threadIdx.x;
+        int y = blockIdx.y * blockDim.y + threadIdx.y;
+        int nx = blockDim.x * gridDim.x;
+        int ny = blockDim.y * gridDim.y;
+
+        // threads in workgroup
+        int t = threadIdx.x + threadIdx.y * blockDim.x; // thread index in workgroup, linear in 0..nt-1
+        int nt = blockDim.x * blockDim.y; // total threads in workgroup
+
+        // group index in 0..ngroups-1
+        int g = blockIdx.x + blockIdx.y * gridDim.x;
+
+        // initialize smem
+        unsigned int *gmem = out + g * NUM_PARTS;
+        for (int i = t; i < ACTIVE_CHANNELS * NUM_BINS; i += nt)
+            gmem[i] = 0;
+        __syncthreads();
+
+        // process pixels (updates our group's partial histogram in gmem)
+        for (int col = x; col < width; col += nx)
         {
-            PixelType pixel = in[row * width + col];
-
-            if (sizeof(PixelType) == 16)
+            for (int row = y; row < height; row += ny)
             {
-                pixel.x *= float(256);
-                pixel.y *= float(256);
-                pixel.z *= float(256);
-                pixel.w *= float(256);
+                PixelType pixel = in[row * width + col];
+
+                unsigned int bins[ACTIVE_CHANNELS];
+                DecodePixel<NUM_BINS>(pixel, bins);
+
+                #pragma unroll
+                for (int CHANNEL = 0; CHANNEL < ACTIVE_CHANNELS; ++CHANNEL)
+                    atomicAdd(&gmem[(NUM_BINS * CHANNEL) + bins[CHANNEL]], 1);
             }
-
-            unsigned int r = (unsigned int) (pixel.x);
-            unsigned int g = (unsigned int) (pixel.y);
-            unsigned int b = (unsigned int) (pixel.z);
-            unsigned int a = (unsigned int) (pixel.w);
-
-            if (ACTIVE_CHANNELS > 0)
-                atomicAdd(&gmem[NUM_BINS * 0 + r], 1);
-            if (ACTIVE_CHANNELS > 1)
-                atomicAdd(&gmem[NUM_BINS * 1 + g], 1);
-            if (ACTIVE_CHANNELS > 2)
-                atomicAdd(&gmem[NUM_BINS * 2 + b], 1);
-            if (ACTIVE_CHANNELS > 3)
-                atomicAdd(&gmem[NUM_BINS * 3 + a], 1);
         }
     }
-}
 
-template <
-    int         ACTIVE_CHANNELS,
-    int         NUM_BINS>
-__global__ void histogram_gmem_accum(
-    const unsigned int *in,
-    int n,
-    unsigned int *out)
-{
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    if (i > ACTIVE_CHANNELS * NUM_BINS)
-        return; // out of range
+    // Second pass histogram kernel (accumulation)
+    template <
+        int         NUM_PARTS,
+        int         ACTIVE_CHANNELS,
+        int         NUM_BINS>
+    __global__ void histogram_gmem_accum(
+        const unsigned int *in,
+        int n,
+        unsigned int *out)
+    {
+        int i = blockIdx.x * blockDim.x + threadIdx.x;
+        if (i > ACTIVE_CHANNELS * NUM_BINS)
+            return; // out of range
 
-    unsigned int total = 0;
-    for (int j = 0; j < n; j++)
-        total += in[i + NUM_PARTS * j];
+        unsigned int total = 0;
+        for (int j = 0; j < n; j++)
+            total += in[i + NUM_PARTS * j];
 
-    out[i] = total;
-}
+        out[i] = total;
+    }
+
+
+}   // namespace histogram_gmem_atomics
+
 
 template <
     int         ACTIVE_CHANNELS,
@@ -118,9 +139,14 @@ double run_gmem_atomics(
     PixelType *d_image,
     int width,
     int height,
-    unsigned int *d_hist, 
+    unsigned int *d_hist,
     bool warmup)
 {
+    enum
+    {
+        NUM_PARTS = 1024
+    };
+
     cudaDeviceProp props;
     cudaGetDeviceProperties(&props, 0);
 
@@ -138,8 +164,16 @@ double run_gmem_atomics(
     GpuTimer gpu_timer;
     gpu_timer.Start();
 
-    histogram_gmem_atomics<ACTIVE_CHANNELS, NUM_BINS><<<grid, block>>>(d_image, width, height, d_part_hist);
-    histogram_gmem_accum<ACTIVE_CHANNELS, NUM_BINS><<<grid2, block2>>>(d_part_hist, total_blocks, d_hist);
+    histogram_gmem_atomics::histogram_gmem_atomics<NUM_PARTS, ACTIVE_CHANNELS, NUM_BINS><<<grid, block>>>(
+        d_image,
+        width,
+        height,
+        d_part_hist);
+
+    histogram_gmem_atomics::histogram_gmem_accum<NUM_PARTS, ACTIVE_CHANNELS, NUM_BINS><<<grid2, block2>>>(
+        d_part_hist,
+        total_blocks,
+        d_hist);
 
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
