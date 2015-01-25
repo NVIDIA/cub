@@ -284,27 +284,36 @@ struct DeviceHistogramDispatch
         template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
         __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, int &bin, bool valid)
         {
-            bin = valid && (sample >= min) && (sample < max) ?
-                (int) ((((LevelT) sample) - min) / scale) :
-                -1;
+            LevelT level_sample = (LevelT) sample;
+
+            bin = (int) ((level_sample - min) / scale);
+
+            if ((!valid) || (level_sample < min) || (level_sample >= max))
+                bin = -1;
         }
 
         // Method for converting samples to bin-ids (float specialization)
         template <CacheLoadModifier LOAD_MODIFIER>
         __host__ __device__ __forceinline__ void BinSelect(float sample, int &bin, bool valid)
         {
-            bin = valid && (sample >= min) && (sample < max) ?
-                (int) ((((LevelT) sample) - min) * scale) :
-                -1;
+            LevelT level_sample = (LevelT) sample;
+
+            bin = (int) ((level_sample - min) * scale);
+
+            if ((!valid) || (level_sample < min) || (level_sample >= max))
+                bin = -1;
         }
 
         // Method for converting samples to bin-ids (double specialization)
         template <CacheLoadModifier LOAD_MODIFIER>
         __host__ __device__ __forceinline__ void BinSelect(double sample, int &bin, bool valid)
         {
-            bin = valid && (sample >= min) && (sample < max) ?
-                (int) ((((LevelT) sample) - min) * scale) :
-                -1;
+            LevelT level_sample = (LevelT) sample;
+
+            bin = (int) ((level_sample - min) * scale);
+
+            if ((!valid) || (level_sample < min) || (level_sample >= max))
+                bin = -1;
         }
     };
 
@@ -348,9 +357,9 @@ struct DeviceHistogramDispatch
     {
         // HistogramSweepPolicy
         typedef BlockHistogramSweepPolicy<
-                256,
-                1,
-                (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
+                (NUM_CHANNELS == 1) ? 256 : 128,
+                (NUM_CHANNELS == 1) ? 8 : 3,
+                (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
                 SMEM,
@@ -562,7 +571,7 @@ struct DeviceHistogramDispatch
             int histogram_sweep_occupancy = histogram_sweep_sm_occupancy * sm_count;
 
             // Oversubscribe
-//            histogram_sweep_occupancy = histogram_sweep_occupancy * 6;
+//            histogram_sweep_occupancy = histogram_sweep_occupancy * 2 - 1;
 
             if (num_row_pixels * NUM_CHANNELS == row_stride_samples)
             {
