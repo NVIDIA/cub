@@ -379,17 +379,16 @@ void RunTest(
     int compare = CompareDeviceResults(h_hist, d_hist, ACTIVE_CHANNELS * NUM_BINS, true, g_verbose);
     printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
 
-    double elapsed_time = 0;
+    double elapsed_ms = 0;
     for (int i = 0; i < timing_iterations; i++)
     {
-        elapsed_time += (*f)(d_pixels, width, height, d_hist, false);
+        elapsed_ms += (*f)(d_pixels, width, height, d_hist, false);
     }
-    double avg_time = elapsed_time /= timing_iterations;    // average
-    timings.push_back(std::pair<std::string, double>(short_name, avg_time));
+    double avg_us = (elapsed_ms / timing_iterations) * 1000;    // average in us
+    timings.push_back(std::pair<std::string, double>(short_name, avg_us));
 
-    printf("Avg time %.3f ms (%d iterations)\n", avg_time, timing_iterations); fflush(stdout);
+    printf("Avg time %.3f us (%d iterations)\n", avg_us, timing_iterations); fflush(stdout);
     AssertEquals(0, compare);
-
 }
 
 
@@ -436,7 +435,7 @@ void TestMethods(
 
     // Report timings
     std::sort(timings.begin(), timings.end(), less_than_value());
-    printf("Timings (ms):\n");
+    printf("Timings (us):\n");
     for (int i = 0; i < timings.size(); i++)
     {
         double bandwidth = height * width * sizeof(PixelType) / timings[i].second / 1000 / 1000;
