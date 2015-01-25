@@ -277,11 +277,13 @@ struct BlockHistogramSweep
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
-            for (int privatized_bin = threadIdx.x; privatized_bin < num_privatized_bins[CHANNEL]; privatized_bin += BLOCK_THREADS)
+            int channel_bins = num_privatized_bins[CHANNEL];
+            for (int privatized_bin = threadIdx.x; 
+                    privatized_bin < channel_bins;  
+                    privatized_bin += BLOCK_THREADS)
             {
                 int         output_bin;
                 CounterT    count       = privatized_histograms[CHANNEL][privatized_bin];
-
                 bool        is_valid    = count > 0;
                 output_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>((SampleT) privatized_bin, output_bin, is_valid);
 
@@ -289,6 +291,7 @@ struct BlockHistogramSweep
                 {
                     atomicAdd(&d_output_histograms[CHANNEL][output_bin], count);
                 }
+
             }
         }
     }
@@ -323,41 +326,42 @@ struct BlockHistogramSweep
         CounterT*           privatized_histograms[NUM_ACTIVE_CHANNELS],
         Int2Type<true>      is_rle_compress)
     {
+
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
             // Bin pixels
             int bins[PIXELS_PER_THREAD];
 
-            // Bin current pixel
-            privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(
-                samples[0][CHANNEL],
-                bins[0],
-                is_valid[0]);
-
+            #pragma unroll
+            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
+                privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bins[PIXEL], is_valid[PIXEL]);
+            
             CounterT accumulator = 1;
 
             #pragma unroll
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD - 1; ++PIXEL)
             {
-                // Bin next pixel
-                privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>( samples[PIXEL + 1][CHANNEL], bins[PIXEL + 1], is_valid[PIXEL + 1]);
-
-                if (bins[PIXEL] == bins[PIXEL + 1])
+                
+                if (bins[PIXEL] < 0)
                 {
-                    accumulator++;
-                }
+                     accumulator = 1;
+                } 
+                else if (bins[PIXEL] == bins[PIXEL + 1])
+                {   
+                     accumulator++;
+                } 
                 else
                 {
-                    if (bins[PIXEL] >= 0)
-                        atomicAdd(privatized_histograms[CHANNEL] + bins[PIXEL], accumulator);
-                    accumulator = 1;
+                     atomicAdd(privatized_histograms[CHANNEL] + bins[PIXEL], accumulator);
+                     accumulator = 1;
                 }
             }
 
             // Last pixel
             if (bins[PIXELS_PER_THREAD - 1] >= 0)
                 atomicAdd(privatized_histograms[CHANNEL] + bins[PIXELS_PER_THREAD - 1], accumulator);
+
         }
     }
 
@@ -550,10 +554,10 @@ struct BlockHistogramSweep
             num_remaining   = row_end - tile_offset;
 
         }
-
-        // Consume the last (and potentially partially-full) tile
+        
         if (num_remaining > 0)
         {
+            // Consume the last (and potentially partially-full) tile
             ConsumeTile<IS_ALIGNED, false>(tile_offset, num_remaining);
         }
     }
