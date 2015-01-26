@@ -108,8 +108,7 @@ ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
 endif
 
 # 32/64-bit (32-bit device pointers by default) 
-ifneq ($(force64), 1)
-	# 
+ifeq ($(force32), 1)
 	CPU_ARCH = -m32
 	CPU_ARCH_SUFFIX = i386
 else
