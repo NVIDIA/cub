@@ -102,8 +102,8 @@ else
 endif
 
 
-# [force64=<0|1>] Device addressing mode option (32-bit device pointers by default) 
-ifneq ($(force64), 1)
+# [force32=<0|1>] Device addressing mode option (64-bit device pointers by default) 
+ifeq ($(force32), 1)
 	CPU_ARCH = -m32
 	CPU_ARCH_SUFFIX = i386
 else
@@ -175,7 +175,7 @@ ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
 	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
 	CC = cl
 	NPPI = -lnppi
-ifneq ($(force64), 1)
+ifneq ($(force32), 1)
 	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/Win32/cudart.lib"
 else
 	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/x64/cudart.lib"
@@ -186,7 +186,7 @@ else
     # Disable excess x86 floating point precision that can lead to results being labeled incorrectly
     NVCCFLAGS += -Xcompiler -ffloat-store
     CC = g++
-ifneq ($(force64), 1)
+ifneq ($(force32), 1)
     CUDART = "$(shell dirname $(NVCC))/../lib/libcudart_static.a"
 else
     CUDART = "$(shell dirname $(NVCC))/../lib64/libcudart_static.a"

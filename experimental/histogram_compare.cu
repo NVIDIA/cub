@@ -50,6 +50,7 @@ using namespace cub;
 #define CUB_STDERR
 
 bool                    g_verbose = false;  // Whether to display input/output to console
+bool                    g_report = false;   // Whether to display a full report in CSV format
 CachingDeviceAllocator  g_allocator(true);  // Caching allocator for device memory
 
 struct less_than_value
@@ -371,13 +372,13 @@ void RunTest(
     const char *                                    short_name,
     double (*f)(PixelType*, int, int, unsigned int*, bool))
 {
-    printf("%s ", long_name); fflush(stdout);
+    if (!g_report) printf("%s ", long_name); fflush(stdout);
 
     // Run single test to verify (and code cache)
-    (*f)(d_pixels, width, height, d_hist, true);
+    (*f)(d_pixels, width, height, d_hist, !g_report);
 
     int compare = CompareDeviceResults(h_hist, d_hist, ACTIVE_CHANNELS * NUM_BINS, true, g_verbose);
-    printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    if (!g_report) printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
 
     double elapsed_ms = 0;
     for (int i = 0; i < timing_iterations; i++)
@@ -387,7 +388,15 @@ void RunTest(
     double avg_us = (elapsed_ms / timing_iterations) * 1000;    // average in us
     timings.push_back(std::pair<std::string, double>(short_name, avg_us));
 
-    printf("Avg time %.3f us (%d iterations)\n", avg_us, timing_iterations); fflush(stdout);
+    if (!g_report)
+    {
+        printf("Avg time %.3f us (%d iterations)\n", avg_us, timing_iterations); fflush(stdout);
+    }
+    else
+    {
+        printf("%.3f, ", avg_us); fflush(stdout);
+    }
+
     AssertEquals(0, compare);
 }
 
@@ -404,13 +413,16 @@ void TestMethods(
     PixelType*  h_pixels,
     int         height,
     int         width,
-    int         timing_iterations)
+    int         timing_iterations,
+    double      bandwidth_GBs)
 {
     // Copy data to gpu
     PixelType* d_pixels;
     size_t pixel_bytes = width * height * sizeof(PixelType);
     CubDebugExit(g_allocator.DeviceAllocate((void**) &d_pixels, pixel_bytes));
     CubDebugExit(cudaMemcpy(d_pixels, h_pixels, pixel_bytes, cudaMemcpyHostToDevice));
+
+    if (g_report) printf("%.3f, ", double(pixel_bytes) / bandwidth_GBs / 1000);
 
     // Allocate results arrays on cpu/gpu
     unsigned int *h_hist;
@@ -427,21 +439,24 @@ void TestMethods(
 
     // Run experiments
     RunTest<ACTIVE_CHANNELS, NUM_BINS>(timings, d_pixels, width, height, d_hist, h_hist, timing_iterations,
-        "Global memory atomics", "gmem atomics", run_gmem_atomics<ACTIVE_CHANNELS, NUM_BINS, PixelType>);
+        "CUB", "CUB", run_cub_histogram<NUM_CHANNELS, ACTIVE_CHANNELS, NUM_BINS, PixelType>);
     RunTest<ACTIVE_CHANNELS, NUM_BINS>(timings, d_pixels, width, height, d_hist, h_hist, timing_iterations,
         "Shared memory atomics", "smem atomics", run_smem_atomics<ACTIVE_CHANNELS, NUM_BINS, PixelType>);
     RunTest<ACTIVE_CHANNELS, NUM_BINS>(timings, d_pixels, width, height, d_hist, h_hist, timing_iterations,
-        "CUB", "CUB", run_cub_histogram<NUM_CHANNELS, ACTIVE_CHANNELS, NUM_BINS, PixelType>);
+        "Global memory atomics", "gmem atomics", run_gmem_atomics<ACTIVE_CHANNELS, NUM_BINS, PixelType>);
 
     // Report timings
-    std::sort(timings.begin(), timings.end(), less_than_value());
-    printf("Timings (us):\n");
-    for (int i = 0; i < timings.size(); i++)
+    if (!g_report)
     {
-        double bandwidth = height * width * sizeof(PixelType) / timings[i].second / 1000 / 1000;
-        printf("\t %.3f %s (%.3f GB/s)\n", timings[i].second, timings[i].first.c_str(), bandwidth);
+        std::sort(timings.begin(), timings.end(), less_than_value());
+        printf("Timings (us):\n");
+        for (int i = 0; i < timings.size(); i++)
+        {
+            double bandwidth = height * width * sizeof(PixelType) / timings[i].second / 1000;
+            printf("\t %.3f %s (%.3f GB/s, %.3f%% peak)\n", timings[i].second, timings[i].first.c_str(), bandwidth, bandwidth / bandwidth_GBs * 100);
+        }
+        printf("\n");
     }
-    printf("\n");
 
     // Free data
     CubDebugExit(g_allocator.DeviceFree(d_pixels));
@@ -457,12 +472,13 @@ void TestGenres(
     uchar4*     uchar4_pixels,
     int         height,
     int         width,
-    int         timing_iterations)
+    int         timing_iterations,
+    double      bandwidth_GBs)
 {
     int num_pixels = width * height;
 
     {
-        printf("1 channel uchar1 tests (256-bin):\n\n"); fflush(stdout);
+        if (!g_report) printf("1 channel uchar1 tests (256-bin):\n\n"); fflush(stdout);
 
         size_t      image_bytes     = num_pixels * sizeof(uchar1);
         uchar1*     uchar1_pixels   = (uchar1*) malloc(image_bytes);
@@ -476,17 +492,19 @@ void TestGenres(
                   (unsigned int) uchar4_pixels[i].z) / 3);
         }
 
-        TestMethods<1, 1, 256>(uchar1_pixels, width, height, timing_iterations);
+        TestMethods<1, 1, 256>(uchar1_pixels, width, height, timing_iterations, bandwidth_GBs);
         free(uchar1_pixels);
+        if (g_report) printf(", ");
     }
 
     {
-        printf("3/4 channel uchar4 tests (256-bin):\n\n"); fflush(stdout);
-        TestMethods<4, 3, 256>(uchar4_pixels, width, height, timing_iterations);
+        if (!g_report) printf("3/4 channel uchar4 tests (256-bin):\n\n"); fflush(stdout);
+        TestMethods<4, 3, 256>(uchar4_pixels, width, height, timing_iterations, bandwidth_GBs);
+        if (g_report) printf(", ");
     }
 
     {
-        printf("3/4 channel float4 tests (256-bin):\n\n"); fflush(stdout);
+        if (!g_report) printf("3/4 channel float4 tests (256-bin):\n\n"); fflush(stdout);
         size_t      image_bytes     = num_pixels * sizeof(float4);
         float4*     float4_pixels   = (float4*) malloc(image_bytes);
 
@@ -498,8 +516,9 @@ void TestGenres(
             float4_pixels[i].z = float(uchar4_pixels[i].z) / 256;
             float4_pixels[i].w = float(uchar4_pixels[i].w) / 256;
         }
-        TestMethods<4, 3, 256>(float4_pixels, width, height, timing_iterations);
+        TestMethods<4, 3, 256>(float4_pixels, width, height, timing_iterations, bandwidth_GBs);
         free(float4_pixels);
+        if (g_report) printf("\n");
     }
 }
 
@@ -535,6 +554,7 @@ int main(int argc, char **argv)
     int                 width               = 1920;
 
     g_verbose = args.CheckCmdLineFlag("v");
+    g_report = args.CheckCmdLineFlag("report");
     args.GetCmdLineArgument("i", timing_iterations);
     args.GetCmdLineArgument("file", filename);
     args.GetCmdLineArgument("height", height);
@@ -544,22 +564,69 @@ int main(int argc, char **argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    uchar4* uchar4_pixels = NULL;
+    // Get GPU device bandwidth (GB/s)
+    int device_ordinal, bus_width, mem_clock_khz;
+    CubDebugExit(cudaGetDevice(&device_ordinal));
+    CubDebugExit(cudaDeviceGetAttribute(&bus_width, cudaDevAttrGlobalMemoryBusWidth, device_ordinal));
+    CubDebugExit(cudaDeviceGetAttribute(&mem_clock_khz, cudaDevAttrMemoryClockRate, device_ordinal));
+    double bandwidth_GBs = double(bus_width) * mem_clock_khz * 2 / 8 / 1000 / 1000;
 
-    if (!filename.empty())
+    // Run test(s)
+    uchar4* uchar4_pixels = NULL;
+    if (!g_report)
     {
-        // Parse targa file
-        ReadTga(uchar4_pixels, width, height, filename.c_str());
-        printf("File %s: width(%d) height(%d)\n\n", filename.c_str(), width, height); fflush(stdout);
+        if (!filename.empty())
+        {
+            // Parse targa file
+            ReadTga(uchar4_pixels, width, height, filename.c_str());
+            printf("File %s: width(%d) height(%d)\n\n", filename.c_str(), width, height); fflush(stdout);
+        }
+        else
+        {
+            // Generate image
+            GenerateRandomImage(uchar4_pixels, width, height, entropy_reduction);
+            printf("Random image: entropy-reduction(%d) width(%d) height(%d)\n\n", entropy_reduction, width, height); fflush(stdout);
+        }
+
+        TestGenres(uchar4_pixels, height, width, timing_iterations, bandwidth_GBs);
     }
     else
     {
-        // Generate image
-        GenerateRandomImage(uchar4_pixels, width, height, entropy_reduction);
-        printf("Random image: entropy-reduction(%d) width(%d) height(%d)\n\n", entropy_reduction, width, height); fflush(stdout);
+        // Run test suite
+        printf("Test, MIN, RLE CUB, SMEM, GMEM, , MIN, RLE_CUB, SMEM, GMEM, , MIN, RLE_CUB, SMEM, GMEM\n");
+
+        // Entropy reduction tests
+        for (entropy_reduction = 0; entropy_reduction < 5; ++entropy_reduction)
+        {
+            printf("entropy reduction %d, ", entropy_reduction);
+            GenerateRandomImage(uchar4_pixels, width, height, entropy_reduction);
+            TestGenres(uchar4_pixels, height, width, timing_iterations, bandwidth_GBs);
+        }
+        printf("entropy reduction -1, ");
+        GenerateRandomImage(uchar4_pixels, width, height, -1);
+        TestGenres(uchar4_pixels, height, width, timing_iterations, bandwidth_GBs);
+        printf("\n");
+
+        // File image tests
+        std::vector<std::string> file_tests;
+        file_tests.push_back("animals");
+        file_tests.push_back("apples");
+        file_tests.push_back("sunset");
+        file_tests.push_back("cheetah");
+        file_tests.push_back("nature");
+        file_tests.push_back("operahouse");
+        file_tests.push_back("austin");
+        file_tests.push_back("cityscape");
+
+        for (int i = 0; i < file_tests.size(); ++i)
+        {
+            printf("%s, ", file_tests[i].c_str());
+            std::string filename = std::string("histogram/benchmark/") + file_tests[i] + ".tga";
+            ReadTga(uchar4_pixels, width, height, filename.c_str());
+            TestGenres(uchar4_pixels, height, width, timing_iterations, bandwidth_GBs);
+        }
     }
 
-    TestGenres(uchar4_pixels, height, width, timing_iterations);
     free(uchar4_pixels);
 
     CubDebugExit(cudaDeviceSynchronize());
