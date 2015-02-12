@@ -61,8 +61,8 @@ OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
 
 exp_rwildcard=$(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2) $(filter $(subst *,%,$2),$d))
 
-EXP_DEPS = 	$(call rwildcard, histogram/,*.cuh) \
-			$(call rwildcard, histogram/,*.h)
+EXP_DEPS = 	$(call rwildcard, ./,*.cuh) \
+			$(call rwildcard, ./,*.h)
 
 DEPS =				$(CUB_DEPS) \
 					$(EXP_DEPS) \
@@ -97,4 +97,17 @@ histogram_compare: bin/histogram_compare_$(BIN_SUFFIX)
 bin/histogram_compare_$(BIN_SUFFIX) : histogram_compare.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/histogram_compare_$(BIN_SUFFIX) histogram_compare.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	
+
+
+#-------------------------------------------------------------------------------
+# make spmv_compare
+#-------------------------------------------------------------------------------
+
+spmv_compare: bin/spmv_compare_$(BIN_SUFFIX)
+
+bin/spmv_compare_$(BIN_SUFFIX) : spmv_compare.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/spmv_compare_$(BIN_SUFFIX) spmv_compare.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	
 

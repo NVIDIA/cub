@@ -37,7 +37,6 @@
 #include "histogram/histogram_cub.h"
 
 #include <cub/util_allocator.cuh>
-#include <cub/device/device_scan.cuh>
 #include <test/test_util.h>
 
 using namespace cub;
