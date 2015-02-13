@@ -443,13 +443,13 @@ struct CooMatrix
 /**
  * CSR sparse format matrix
  */
-template<typename VertexT, typename ValueT, typename SizeT>
+template<typename VertexT, typename ValueT, typename OffsetT>
 struct CsrMatrix
 {
     int         num_rows;
     int         num_cols;
     int         num_nonzeros;
-    SizeT*      row_offsets;
+    OffsetT*      row_offsets;
     VertexT*    column_indices;
     ValueT*     values;
 
@@ -479,12 +479,12 @@ struct CsrMatrix
         num_cols        = coo_matrix.num_cols;
         num_nonzeros    = coo_matrix.num_nonzeros;
 
-        row_offsets     = new SizeT[num_rows + 1];
+        row_offsets     = new OffsetT[num_rows + 1];
         column_indices  = new VertexT[num_nonzeros];
         values          = new ValueT[num_nonzeros];
 
         VertexT prev_row = -1;
-        for (SizeT current_edge = 0; current_edge < num_nonzeros; current_edge++)
+        for (OffsetT current_edge = 0; current_edge < num_nonzeros; current_edge++)
         {
             VertexT current_row = coo_matrix.coo_tuples[current_edge].row;
 
@@ -523,9 +523,9 @@ struct CsrMatrix
 
         // Scan
         int max_log_length = -1;
-        for (SizeT row = 0; row < num_rows; row++)
+        for (OffsetT row = 0; row < num_rows; row++)
         {
-            SizeT length = row_offsets[row + 1] - row_offsets[row];
+            OffsetT length = row_offsets[row + 1] - row_offsets[row];
 
             int log_length = -1;
             while (length > 0)
@@ -545,7 +545,6 @@ struct CsrMatrix
         {
             printf("\tDegree 1e%d: \t%d (%.2f%%)\n", i, log_counts[i + 1], (float) log_counts[i + 1] * 100.0 / num_cols);
         }
-        printf("\n");
         fflush(stdout);
     }
 
@@ -556,10 +555,10 @@ struct CsrMatrix
     void Display()
     {
         cout << "Input Matrix:\n";
-        for (SizeT row = 0; row < num_rows; row++)
+        for (OffsetT row = 0; row < num_rows; row++)
         {
             cout << row << ": ";
-            for (SizeT current_edge = row_offsets[row]; current_edge < row_offsets[row + 1]; current_edge++)
+            for (OffsetT current_edge = row_offsets[row]; current_edge < row_offsets[row + 1]; current_edge++)
             {
                 cout << column_indices[current_edge] << " (" << values[current_edge] << "), ";
             }

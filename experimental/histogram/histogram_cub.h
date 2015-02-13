@@ -25,7 +25,7 @@
  *
  ******************************************************************************/
 
-#include <cub/cub.cuh>
+#include <cub/device/device_histogram.cuh>
 
 using namespace cub;
 
