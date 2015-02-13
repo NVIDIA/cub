@@ -208,6 +208,7 @@ struct CooMatrix
                 }
 
                 coo_tuples[current_edge] = CooTuple(row - 1, col - 1, val);    // Convert indices to zero-based
+
                 current_edge++;
             }
         }

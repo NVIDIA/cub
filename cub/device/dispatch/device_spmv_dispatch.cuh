@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequence of samples data residing within global memory.
+ * cub::DeviceSpmv provides device-wide parallel operations for performing sparse-matrix * vector multiplication (SpMV).
  */
 
 #pragma once
@@ -38,7 +38,9 @@
 #include <iterator>
 #include <limits>
 
-#include "../../block_sweep/block_histogram_sweep.cuh"
+#include "../../block_sweep/block_spmv_sweep.cuh"
+#include "../device_radix_sort.cuh"
+#include "../../iterator/tex_ref_input_iterator.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 #include "../../thread/thread_search.cuh"
@@ -52,68 +54,35 @@ CUB_NS_PREFIX
 namespace cub {
 
 
-
 /******************************************************************************
- * Histogram kernel entry points
+ * SpMV kernel entry points
  *****************************************************************************/
 
-/**
- * Histogram initialization kernel entry point
- */
-template <
-    int                                             NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                                        CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
-    typename                                        OffsetT>                        ///< Signed integer type for global offsets
-__global__ void DeviceHistogramInitKernel(
-    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>          num_output_bins_wrapper,        ///< Number of output histogram bins per channel
-    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>    d_output_histograms_wrapper,    ///< Histogram counter data having logical dimensions <tt>CounterT[NUM_ACTIVE_CHANNELS][num_bins.array[CHANNEL]]</tt>
-    GridQueue<int>                                  tile_queue)                     ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
-{
-    if ((threadIdx.x == 0) && (blockIdx.x == 0))
-        tile_queue.ResetDrain();
-
-    int output_bin = (blockIdx.x * blockDim.x) + threadIdx.x;
-
-    #pragma unroll
-    for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-    {
-        if (output_bin < num_output_bins_wrapper.array[CHANNEL])
-            d_output_histograms_wrapper.array[CHANNEL][output_bin] = 0;
-    }
-}
-
 
 /**
- * Histogram privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
+ * Spmv privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                            BlockHistogramSweepPolicyT,     ///< Parameterized BlockHistogramSweepPolicy tuning policy type
-    int                                                 PRIVATIZED_SMEM_BINS,           ///< Maximum number of histogram bins per channel (e.g., up to 256)
-    int                                                 NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
-    int                                                 NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
-    typename                                            SampleIteratorT,                ///< The input iterator type. \iterator.
-    typename                                            CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
-    typename                                            PrivatizedDecodeOpT,            ///< The transform operator type for determining privatized counter indices from samples, one for each channel
-    typename                                            OutputDecodeOpT,                ///< The transform operator type for determining output bin-ids from privatized counter indices, one for each channel
-    typename                                            OffsetT>                        ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockHistogramSweepPolicyT::BLOCK_THREADS))
-__global__ void DeviceHistogramSweepKernel(
-    SampleIteratorT                                         d_samples,                          ///< Input data to reduce
-    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_output_bins_wrapper,            ///< The number bins per final output histogram
-    ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_privatized_bins_wrapper,        ///< The number bins per privatized histogram
-    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>            d_output_histograms_wrapper,        ///< Reference to final output histograms
-    ArrayWrapper<CounterT*, NUM_ACTIVE_CHANNELS>            d_privatized_histograms_wrapper,    ///< Reference to privatized histograms
-    ArrayWrapper<OutputDecodeOpT, NUM_ACTIVE_CHANNELS>      output_decode_op_wrapper,           ///< The transform operator for determining output bin-ids from privatized counter indices, one for each channel
-    ArrayWrapper<PrivatizedDecodeOpT, NUM_ACTIVE_CHANNELS>  privatized_decode_op_wrapper,       ///< The transform operator for determining privatized counter indices from samples, one for each channel
-    OffsetT                                                 num_row_pixels,                     ///< The number of multi-channel pixels per row in the region of interest
-    OffsetT                                                 num_rows,                           ///< The number of rows in the region of interest
-    OffsetT                                                 row_stride_samples,                 ///< The number of samples between starts of consecutive rows in the region of interest
-    int                                                     tiles_per_row,                      ///< Number of image tiles per row
-    GridQueue<int>                                          tile_queue)                         ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    typename    BlockSpmvSweepPolicyT,      ///< Parameterized BlockSpmvSweepPolicy tuning policy type
+    typename    VertexT,                    ///< Integer type for vertex identifiers
+    typename    ValueT,                     ///< Matrix and vector value type
+    typename    OffsetT>                    ///< Signed integer type for sequence offsets
+__launch_bounds__ (int(BlockSpmvSweepPolicyT::BLOCK_THREADS))
+__global__ void DeviceSpmvSweepKernel(
+    ValueT*     d_matrix_values,            ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
+    OffsetT*    d_matrix_row_offsets,       ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
+    VertexT*    d_matrix_column_indices,    ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
+    ValueT*     d_vector_x,                 ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
+    ValueT*     d_vector_y,                 ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
+    VertexT*    d_block_carryout_rows,      ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
+    ValueT*     d_block_runout_values,      ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
+    int         num_rows,                   ///< [in] number of rows of matrix <b>A</b>.
+    int         num_cols,                   ///< [in] number of columns of matrix <b>A</b>.
+    int         num_nonzeros)               ///< [in] number of nonzero elements of matrix <b>A</b>.
 {
     // Thread block type for compositing input tiles
-    typedef BlockHistogramSweep<
-            BlockHistogramSweepPolicyT,
+    typedef BlockSpmvSweep<
+            BlockSpmvSweepPolicyT,
             PRIVATIZED_SMEM_BINS,
             NUM_CHANNELS,
             NUM_ACTIVE_CHANNELS,
@@ -122,12 +91,12 @@ __global__ void DeviceHistogramSweepKernel(
             PrivatizedDecodeOpT,
             OutputDecodeOpT,
             OffsetT>
-        BlockHistogramSweepT;
+        BlockSpmvSweepT;
 
-    // Shared memory for BlockHistogramSweep
-    __shared__ typename BlockHistogramSweepT::TempStorage temp_storage;
+    // Shared memory for BlockSpmvSweep
+    __shared__ typename BlockSpmvSweepT::TempStorage temp_storage;
 
-    BlockHistogramSweepT block_sweep(
+    BlockSpmvSweepT block_sweep(
         temp_storage,
         d_samples,
         num_output_bins_wrapper.array,
@@ -162,7 +131,7 @@ __global__ void DeviceHistogramSweepKernel(
  ******************************************************************************/
 
 /**
- * Utility class for dispatching the appropriately-tuned kernels for DeviceHistogram
+ * Utility class for dispatching the appropriately-tuned kernels for DeviceSpmv
  */
 template <
     int         NUM_CHANNELS,               ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
@@ -171,7 +140,7 @@ template <
     typename    CounterT,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    LevelT,                     ///< Type for specifying bin level boundaries
     typename    OffsetT>                    ///< Signed integer type for global offsets
-struct DeviceHistogramDispatch
+struct DeviceSpmvDispatch
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -338,8 +307,8 @@ struct DeviceHistogramDispatch
     /// SM11
     struct Policy110
     {
-        // HistogramSweepPolicy
-        typedef BlockHistogramSweepPolicy<
+        // SpmvSweepPolicy
+        typedef BlockSpmvSweepPolicy<
                 512,
                 2,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
@@ -347,14 +316,14 @@ struct DeviceHistogramDispatch
                 true,
                 GMEM,
                 false>
-            HistogramSweepPolicy;
+            SpmvSweepPolicy;
     };
 
     /// SM20
     struct Policy200
     {
-        // HistogramSweepPolicy
-        typedef BlockHistogramSweepPolicy<
+        // SpmvSweepPolicy
+        typedef BlockSpmvSweepPolicy<
                 (NUM_CHANNELS == 1) ? 256 : 128,
                 (NUM_CHANNELS == 1) ? 8 : 3,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_WARP_TRANSPOSE,
@@ -362,7 +331,7 @@ struct DeviceHistogramDispatch
                 true,
                 SMEM,
                 false>
-            HistogramSweepPolicy;
+            SpmvSweepPolicy;
     };
 
     /// SM30
@@ -371,8 +340,8 @@ struct DeviceHistogramDispatch
     /// SM35
     struct Policy350
     {
-        // HistogramSweepPolicy
-        typedef BlockHistogramSweepPolicy<
+        // SpmvSweepPolicy
+        typedef BlockSpmvSweepPolicy<
                 128,
                 (NUM_CHANNELS == 1) ? 8 : 7,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
@@ -380,14 +349,14 @@ struct DeviceHistogramDispatch
                 true,
                 BLEND,
                 true>
-            HistogramSweepPolicy;
+            SpmvSweepPolicy;
     };
 
     /// SM50
     struct Policy500
     {
-        // HistogramSweepPolicy
-        typedef BlockHistogramSweepPolicy<
+        // SpmvSweepPolicy
+        typedef BlockSpmvSweepPolicy<
                 256,
                 8,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
@@ -395,7 +364,7 @@ struct DeviceHistogramDispatch
                 true,
                 SMEM,
                 true>
-            HistogramSweepPolicy;
+            SpmvSweepPolicy;
     };
 
 
@@ -422,7 +391,7 @@ struct DeviceHistogramDispatch
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxHistogramSweepPolicy : PtxPolicy::HistogramSweepPolicy {};
+    struct PtxSpmvSweepPolicy : PtxPolicy::SpmvSweepPolicy {};
 
 
     //---------------------------------------------------------------------
@@ -441,30 +410,30 @@ struct DeviceHistogramDispatch
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        return histogram_sweep_config.template Init<PtxHistogramSweepPolicy>();
+        return histogram_sweep_config.template Init<PtxSpmvSweepPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 500)
         {
-            return histogram_sweep_config.template Init<typename Policy500::HistogramSweepPolicy>();
+            return histogram_sweep_config.template Init<typename Policy500::SpmvSweepPolicy>();
         }
         else if (ptx_version >= 350)
         {
-            return histogram_sweep_config.template Init<typename Policy350::HistogramSweepPolicy>();
+            return histogram_sweep_config.template Init<typename Policy350::SpmvSweepPolicy>();
         }
         else if (ptx_version >= 300)
         {
-            return histogram_sweep_config.template Init<typename Policy300::HistogramSweepPolicy>();
+            return histogram_sweep_config.template Init<typename Policy300::SpmvSweepPolicy>();
         }
         else if (ptx_version >= 200)
         {
-            return histogram_sweep_config.template Init<typename Policy200::HistogramSweepPolicy>();
+            return histogram_sweep_config.template Init<typename Policy200::SpmvSweepPolicy>();
         }
         else if (ptx_version >= 110)
         {
-            return histogram_sweep_config.template Init<typename Policy110::HistogramSweepPolicy>();
+            return histogram_sweep_config.template Init<typename Policy110::SpmvSweepPolicy>();
         }
         else
         {
@@ -513,8 +482,8 @@ struct DeviceHistogramDispatch
     template <
         typename                            PrivatizedDecodeOpT,                            ///< The transform operator type for determining privatized counter indices from samples, one for each channel
         typename                            OutputDecodeOpT,                                ///< The transform operator type for determining output bin-ids from privatized counter indices, one for each channel
-        typename                            DeviceHistogramInitKernelT,                     ///< Function type of cub::DeviceHistogramInitKernel
-        typename                            DeviceHistogramSweepKernelT>                    ///< Function type of cub::DeviceHistogramSweepKernel
+        typename                            DeviceSpmvInitKernelT,                     ///< Function type of cub::DeviceSpmvInitKernel
+        typename                            DeviceSpmvSweepKernelT>                    ///< Function type of cub::DeviceSpmvSweepKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t PrivatizedDispatch(
         void*                               d_temp_storage,                                 ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -529,8 +498,8 @@ struct DeviceHistogramDispatch
         OffsetT                             num_row_pixels,                                 ///< [in] The number of multi-channel pixels per row in the region of interest
         OffsetT                             num_rows,                                       ///< [in] The number of rows in the region of interest
         OffsetT                             row_stride_samples,                             ///< [in] The number of samples between starts of consecutive rows in the region of interest
-        DeviceHistogramInitKernelT          histogram_init_kernel,                          ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramInitKernel
-        DeviceHistogramSweepKernelT         histogram_sweep_kernel,                         ///< [in] Kernel function pointer to parameterization of cub::DeviceHistogramSweepKernel
+        DeviceSpmvInitKernelT          histogram_init_kernel,                          ///< [in] Kernel function pointer to parameterization of cub::DeviceSpmvInitKernel
+        DeviceSpmvSweepKernelT         histogram_sweep_kernel,                         ///< [in] Kernel function pointer to parameterization of cub::DeviceSpmvSweepKernel
         KernelConfig                        histogram_sweep_config,                         ///< [in] Dispatch parameters that match the policy that \p histogram_sweep_kernel was compiled for
         cudaStream_t                        stream,                                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                                debug_synchronous)                              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -645,8 +614,8 @@ struct DeviceHistogramDispatch
             int histogram_init_block_threads    = 256;
             int histogram_init_grid_dims        = (max_num_output_bins + histogram_init_block_threads - 1) / histogram_init_block_threads;
 
-            // Log DeviceHistogramInitKernel configuration
-            if (debug_synchronous) CubLog("Invoking DeviceHistogramInitKernel<<<%d, %d, 0, %lld>>>()\n",
+            // Log DeviceSpmvInitKernel configuration
+            if (debug_synchronous) CubLog("Invoking DeviceSpmvInitKernel<<<%d, %d, 0, %lld>>>()\n",
                 histogram_init_grid_dims, histogram_init_block_threads, (long long) stream);
 
             // Invoke histogram_init_kernel
@@ -692,7 +661,7 @@ struct DeviceHistogramDispatch
 
 
     /**
-     * Dispatch routine for HistogramRange, specialized for sample types larger than 8bit
+     * Dispatch routine for SpmvRange, specialized for sample types larger than 8bit
      */
     CUB_RUNTIME_FUNCTION
     static cudaError_t DispatchRange(
@@ -762,8 +731,8 @@ struct DeviceHistogramDispatch
                     num_row_pixels,
                     num_rows,
                     row_stride_samples,
-                    DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
-                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
+                    DeviceSpmvInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
+                    DeviceSpmvSweepKernel<PtxSpmvSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                     histogram_sweep_config,
                     stream,
                     debug_synchronous))) break;
@@ -786,8 +755,8 @@ struct DeviceHistogramDispatch
                     num_row_pixels,
                     num_rows,
                     row_stride_samples,
-                    DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
-                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
+                    DeviceSpmvInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
+                    DeviceSpmvSweepKernel<PtxSpmvSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                     histogram_sweep_config,
                     stream,
                     debug_synchronous))) break;
@@ -800,7 +769,7 @@ struct DeviceHistogramDispatch
 
 
     /**
-     * Dispatch routine for HistogramRange, specialized for 8-bit sample types (computes 256-bin privatized histograms and then reduces to user-specified levels)
+     * Dispatch routine for SpmvRange, specialized for 8-bit sample types (computes 256-bin privatized histograms and then reduces to user-specified levels)
      */
     CUB_RUNTIME_FUNCTION
     static cudaError_t DispatchRange(
@@ -869,8 +838,8 @@ struct DeviceHistogramDispatch
                 num_row_pixels,
                 num_rows,
                 row_stride_samples,
-                DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
-                DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
+                DeviceSpmvInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
+                DeviceSpmvSweepKernel<PtxSpmvSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                 histogram_sweep_config,
                 stream,
                 debug_synchronous))) break;
@@ -882,7 +851,7 @@ struct DeviceHistogramDispatch
 
 
     /**
-     * Dispatch routine for HistogramEven, specialized for sample types larger than 8-bit
+     * Dispatch routine for SpmvEven, specialized for sample types larger than 8-bit
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t DispatchEven(
@@ -956,8 +925,8 @@ struct DeviceHistogramDispatch
                     num_row_pixels,
                     num_rows,
                     row_stride_samples,
-                    DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
-                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
+                    DeviceSpmvInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
+                    DeviceSpmvSweepKernel<PtxSpmvSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                     histogram_sweep_config,
                     stream,
                     debug_synchronous))) break;
@@ -980,8 +949,8 @@ struct DeviceHistogramDispatch
                     num_row_pixels,
                     num_rows,
                     row_stride_samples,
-                    DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
-                    DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
+                    DeviceSpmvInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
+                    DeviceSpmvSweepKernel<PtxSpmvSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                     histogram_sweep_config,
                     stream,
                     debug_synchronous))) break;
@@ -994,7 +963,7 @@ struct DeviceHistogramDispatch
 
 
     /**
-     * Dispatch routine for HistogramEven, specialized for 8-bit sample types (computes 256-bin privatized histograms and then reduces to user-specified levels)
+     * Dispatch routine for SpmvEven, specialized for 8-bit sample types (computes 256-bin privatized histograms and then reduces to user-specified levels)
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t DispatchEven(
@@ -1067,8 +1036,8 @@ struct DeviceHistogramDispatch
                 num_row_pixels,
                 num_rows,
                 row_stride_samples,
-                DeviceHistogramInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
-                DeviceHistogramSweepKernel<PtxHistogramSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
+                DeviceSpmvInitKernel<NUM_ACTIVE_CHANNELS, CounterT, OffsetT>,
+                DeviceSpmvSweepKernel<PtxSpmvSweepPolicy, PRIVATIZED_SMEM_BINS, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, PrivatizedDecodeOpT, OutputDecodeOpT, OffsetT>,
                 histogram_sweep_config,
                 stream,
                 debug_synchronous))) break;
