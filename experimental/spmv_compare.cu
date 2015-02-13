@@ -71,7 +71,7 @@ void SpmvGold(
     ValueT*                                 vector_x,
     ValueT*                                 vector_y)
 {
-    for (SizeT row = 0; row < matrix_a.num_vertices; ++row)
+    for (SizeT row = 0; row < matrix_a.num_rows; ++row)
     {
         vector_y[row] = 0;
         for (
@@ -139,7 +139,7 @@ float CusparseSpmv(
     }
 
     cusparseDestroyMatDescr(desc);
-    return elapsed_millis;
+    return elapsed_millis / timing_iterations;
 }
 
 
@@ -193,57 +193,8 @@ float CusparseSpmv(
     }
 
     cusparseDestroyMatDescr(desc);
-    return elapsed_millis;
+    return elapsed_millis / timing_iterations;
 }
-
-
-/**
- * Run a specific histogram implementation
- */
-template <
-    int         ACTIVE_CHANNELS,
-    int         NUM_BINS,
-    typename    PixelType>
-void RunTest(
-    std::vector<std::pair<std::string, double> >&   timings,
-    PixelType*                                      d_pixels,
-    const int                                       width,
-    const int                                       height,
-    unsigned int *                                  d_hist,
-    unsigned int *                                  h_hist,
-    int                                             timing_iterations,
-    const char *                                    long_name,
-    const char *                                    short_name,
-    double (*f)(PixelType*, int, int, unsigned int*, bool))
-{
-    if (!g_report) printf("%s ", long_name); fflush(stdout);
-
-    // Run single test to verify (and code cache)
-    (*f)(d_pixels, width, height, d_hist, !g_report);
-
-    int compare = CompareDeviceResults(h_hist, d_hist, ACTIVE_CHANNELS * NUM_BINS, true, g_verbose);
-    if (!g_report) printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
-
-    double elapsed_ms = 0;
-    for (int i = 0; i < timing_iterations; i++)
-    {
-        elapsed_ms += (*f)(d_pixels, width, height, d_hist, false);
-    }
-    double avg_us = (elapsed_ms / timing_iterations) * 1000;    // average in us
-    timings.push_back(std::pair<std::string, double>(short_name, avg_us));
-
-    if (!g_report)
-    {
-        printf("Avg time %.3f us (%d iterations)\n", avg_us, timing_iterations); fflush(stdout);
-    }
-    else
-    {
-        printf("%.3f, ", avg_us); fflush(stdout);
-    }
-
-    AssertEquals(0, compare);
-}
-
 
 
 /**
@@ -259,14 +210,18 @@ void RunTests(
     int                 grid3d,
     int                 wheel,
     int                 timing_iterations,
-    float               bandwidth_GBs)
+    float               bandwidth_GBs,
+    cusparseHandle_t    cusparse)
 {
+    // Initialize matrix in COO form
     CooMatrix<VertexT, ValueT> coo_matrix;
 
     if (!mtx_filename.empty())
     {
         // Parse matrix market file
+        cout << "Reading matrix market file " << mtx_filename << "... "; fflush(stdout);
         coo_matrix.InitMarket(mtx_filename);
+        cout << "done.\n"; fflush(stdout);
     }
     else if (grid2d > 0)
     {
@@ -294,6 +249,67 @@ void RunTests(
 
     // Display matrix info
     csr_matrix.DisplayHistogram();
+
+    // Allocate input and output vectors
+    ValueT* vector_x = new ValueT[csr_matrix.num_cols];
+    ValueT* vector_y = new ValueT[csr_matrix.num_rows];
+
+    for (int col = 0; col < csr_matrix.num_cols; ++col)
+        vector_x[col] = 1.0;
+
+    // Compute reference answer
+    SpmvGold(csr_matrix, vector_x, vector_y);
+
+    // Allocate and initialize GPU problem
+    ValueT*             d_matrix_values;
+    SizeT*              d_matrix_row_offsets;
+    VertexT*            d_matrix_column_indices;
+    ValueT*             d_vector_x;
+    ValueT*             d_vector_y;
+
+    g_allocator.DeviceAllocate((void **) &d_matrix_values,          sizeof(ValueT) * csr_matrix.num_nonzeros);
+    g_allocator.DeviceAllocate((void **) &d_matrix_row_offsets,     sizeof(SizeT) * (csr_matrix.num_rows + 1));
+    g_allocator.DeviceAllocate((void **) &d_matrix_column_indices,  sizeof(VertexT) * csr_matrix.num_nonzeros);
+    g_allocator.DeviceAllocate((void **) &d_vector_x,               sizeof(ValueT) * csr_matrix.num_cols);
+    g_allocator.DeviceAllocate((void **) &d_vector_y,               sizeof(ValueT) * csr_matrix.num_rows);
+
+    CubDebugExit(cudaMemcpy(d_matrix_values,            csr_matrix.values,          sizeof(ValueT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_matrix_row_offsets,       csr_matrix.row_offsets,     sizeof(SizeT) * (csr_matrix.num_rows + 1), cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_matrix_column_indices,    csr_matrix.column_indices,  sizeof(VertexT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_vector_x,                 vector_x,                   sizeof(ValueT) * csr_matrix.num_cols, cudaMemcpyHostToDevice));
+
+    double avg_millis, nz_throughput, effective_bandwidth;
+    int compare = 0;
+    size_t total_bytes = (csr_matrix.num_nonzeros * (sizeof(ValueT) * 2 + sizeof(VertexT))) +
+        (csr_matrix.num_rows) * (sizeof(SizeT) + sizeof(ValueT));
+
+    // Run problem on cuSparse
+
+    CubDebugExit(cudaMemset(d_vector_y, 0, sizeof(ValueT) * csr_matrix.num_rows));
+
+    avg_millis = CusparseSpmv(csr_matrix.num_rows, csr_matrix.num_cols,
+        csr_matrix.num_nonzeros, d_matrix_values, d_matrix_row_offsets,
+        d_matrix_column_indices, d_vector_x, d_vector_y, timing_iterations,
+        cusparse);
+
+    nz_throughput       = double(csr_matrix.num_nonzeros) / avg_millis / 1.0e6;
+    effective_bandwidth = double(total_bytes) / avg_millis / 1.0e6;
+
+    printf("%s fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
+        "cuSparse",
+        sizeof(ValueT) * 8,
+        avg_millis,
+        2 * nz_throughput,
+        effective_bandwidth,
+        effective_bandwidth / bandwidth_GBs * 100);
+
+    compare = CompareDeviceResults(vector_y, d_vector_y, csr_matrix.num_rows, true, g_verbose);
+    printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    AssertEquals(0, compare);
+
+    // Cleanup
+    delete[] vector_x;
+    delete[] vector_y;
 }
 
 
@@ -343,6 +359,10 @@ int main(int argc, char **argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
+    // Initalize cuSparse
+    cusparseHandle_t cusparse;
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreate(&cusparse));
+
     // Get GPU device bandwidth (GB/s)
     int device_ordinal, bus_width, mem_clock_khz;
     CubDebugExit(cudaGetDevice(&device_ordinal));
@@ -353,11 +373,11 @@ int main(int argc, char **argv)
     // Run test(s)
     if (fp64)
     {
-        RunTests<int, double, int>(mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs);
+        RunTests<int, double, int>(mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
     }
     else
     {
-        RunTests<int, float, int>(mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs);
+        RunTests<int, float, int>(mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
     }
 
     CubDebugExit(cudaDeviceSynchronize());
