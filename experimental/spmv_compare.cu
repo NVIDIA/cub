@@ -54,8 +54,9 @@ using namespace cub;
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-bool                    g_verbose = false;  // Whether to display input/output to console
-CachingDeviceAllocator  g_allocator(true);  // Caching allocator for device memory
+bool                    g_verbose   = false;      // Whether to display output to console
+bool                    g_verbose2  = false;     // Whether to display input to console
+CachingDeviceAllocator  g_allocator(true);      // Caching allocator for device memory
 
 
 //---------------------------------------------------------------------
@@ -68,7 +69,7 @@ template <
     typename ValueT,
     typename OffsetT>
 void SpmvGold(
-    CsrMatrix<VertexT, ValueT, OffsetT>&      matrix_a,
+    CsrMatrix<VertexT, ValueT, OffsetT>&    matrix_a,
     ValueT*                                 vector_x,
     ValueT*                                 vector_y)
 {
@@ -76,11 +77,11 @@ void SpmvGold(
     {
         vector_y[row] = 0;
         for (
-            OffsetT column = matrix_a.row_offsets[row];
-            column < matrix_a.row_offsets[row + 1];
-            ++column)
+            OffsetT offset = matrix_a.row_offsets[row];
+            offset < matrix_a.row_offsets[row + 1];
+            ++offset)
         {
-            vector_y[row] += matrix_a.values[column] * vector_x[matrix_a.column_indices[column]];
+            vector_y[row] += matrix_a.values[offset] * vector_x[matrix_a.column_indices[offset]];
         }
     }
 }
@@ -315,6 +316,8 @@ void RunTests(
 
     // Display matrix info
     csr_matrix.DisplayHistogram();
+    if (g_verbose2) csr_matrix.Display();
+    printf("\n");
 
     // Allocate input and output vectors
     ValueT* vector_x = new ValueT[csr_matrix.num_cols];
@@ -444,6 +447,7 @@ int main(int argc, char **argv)
     int                 timing_iterations   = 100;
 
     g_verbose = args.CheckCmdLineFlag("v");
+    g_verbose2 = args.CheckCmdLineFlag("v2");
     fp64 = args.CheckCmdLineFlag("fp64");
     args.GetCmdLineArgument("i", timing_iterations);
     args.GetCmdLineArgument("mtx", mtx_filename);
