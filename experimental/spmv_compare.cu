@@ -40,6 +40,7 @@
 
 #include "matrix.h"
 
+#include <cub/device/device_spmv.cuh>
 #include <cub/util_allocator.cuh>
 #include <test/test_util.h>
 
@@ -65,17 +66,17 @@ CachingDeviceAllocator  g_allocator(true);  // Caching allocator for device memo
 template <
     typename VertexT,
     typename ValueT,
-    typename SizeT>
+    typename OffsetT>
 void SpmvGold(
-    CsrMatrix<VertexT, ValueT, SizeT>&      matrix_a,
+    CsrMatrix<VertexT, ValueT, OffsetT>&      matrix_a,
     ValueT*                                 vector_x,
     ValueT*                                 vector_y)
 {
-    for (SizeT row = 0; row < matrix_a.num_rows; ++row)
+    for (OffsetT row = 0; row < matrix_a.num_rows; ++row)
     {
         vector_y[row] = 0;
         for (
-            SizeT column = matrix_a.row_offsets[row];
+            OffsetT column = matrix_a.row_offsets[row];
             column < matrix_a.row_offsets[row + 1];
             ++column)
         {
@@ -86,7 +87,7 @@ void SpmvGold(
 
 
 //---------------------------------------------------------------------
-// Test GPU SpMV execution
+// GPU SpMV execution
 //---------------------------------------------------------------------
 
 /**
@@ -94,16 +95,16 @@ void SpmvGold(
  */
 template <
     typename VertexT,
-    typename SizeT>
+    typename OffsetT>
 float CusparseSpmv(
-    int                 num_rows,
-    int                 num_cols,
-    int                 num_nonzeros,
     float*              d_matrix_values,
-    SizeT*              d_matrix_row_offsets,
+    OffsetT*            d_matrix_row_offsets,
     VertexT*            d_matrix_column_indices,
     float*              d_vector_x,
     float*              d_vector_y,
+    int                 num_rows,
+    int                 num_cols,
+    int                 num_nonzeros,
     int                 timing_iterations,
     cusparseHandle_t    cusparse)
 {
@@ -112,6 +113,14 @@ float CusparseSpmv(
     float alpha             = 1.0;
     float beta              = 0.0;
 
+    // Warmup
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseScsrmv(
+        cusparse, CUSPARSE_OPERATION_NON_TRANSPOSE,
+        num_rows, num_cols, num_nonzeros, &alpha, desc,
+        d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices,
+        d_vector_x, &beta, d_vector_y));
+
+    // Timing
     float elapsed_millis    = 0.0;
     GpuTimer gpu_timer;
 
@@ -119,20 +128,11 @@ float CusparseSpmv(
     {
         gpu_timer.Start();
 
-        cusparseStatus_t status = cusparseScsrmv(
-            cusparse,
-            CUSPARSE_OPERATION_NON_TRANSPOSE,
-            num_rows,
-            num_cols,
-            num_nonzeros,
-            &alpha,
-            desc,
-            d_matrix_values,
-            d_matrix_row_offsets,
-            d_matrix_column_indices,
-            d_vector_x,
-            &beta,
-            d_vector_y);
+        cusparseScsrmv(
+            cusparse, CUSPARSE_OPERATION_NON_TRANSPOSE,
+            num_rows, num_cols, num_nonzeros, &alpha, desc,
+            d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices,
+            d_vector_x, &beta, d_vector_y);
 
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
@@ -148,16 +148,16 @@ float CusparseSpmv(
  */
 template <
     typename VertexT,
-    typename SizeT>
+    typename OffsetT>
 float CusparseSpmv(
-    int                 num_rows,
-    int                 num_cols,
-    int                 num_nonzeros,
     double*             d_matrix_values,
-    SizeT*              d_matrix_row_offsets,
+    OffsetT*            d_matrix_row_offsets,
     VertexT*            d_matrix_column_indices,
     double*             d_vector_x,
     double*             d_vector_y,
+    int                 num_rows,
+    int                 num_cols,
+    int                 num_nonzeros,
     int                 timing_iterations,
     cusparseHandle_t    cusparse)
 {
@@ -166,6 +166,14 @@ float CusparseSpmv(
     double alpha            = 1.0;
     double beta             = 0.0;
 
+    // Warmup
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDcsrmv(
+        cusparse, CUSPARSE_OPERATION_NON_TRANSPOSE,
+        num_rows, num_cols, num_nonzeros, &alpha, desc,
+        d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices,
+        d_vector_x, &beta, d_vector_y));
+
+    // Timing
     float elapsed_millis    = 0.0;
     GpuTimer gpu_timer;
 
@@ -173,20 +181,11 @@ float CusparseSpmv(
     {
         gpu_timer.Start();
 
-        cusparseStatus_t status = cusparseDcsrmv(
-            cusparse,
-            CUSPARSE_OPERATION_NON_TRANSPOSE,
-            num_rows,
-            num_cols,
-            num_nonzeros,
-            &alpha,
-            desc,
-            d_matrix_values,
-            d_matrix_row_offsets,
-            d_matrix_column_indices,
-            d_vector_x,
-            &beta,
-            d_vector_y);
+        cusparseDcsrmv(
+            cusparse, CUSPARSE_OPERATION_NON_TRANSPOSE,
+            num_rows, num_cols, num_nonzeros, &alpha, desc,
+            d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices,
+            d_vector_x, &beta, d_vector_y);
 
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
@@ -198,12 +197,79 @@ float CusparseSpmv(
 
 
 /**
+ * Run CUB SpMV
+ */
+template <
+    typename VertexT,
+    typename ValueT,
+    typename OffsetT>
+float CubSpmv(
+    ValueT*             d_matrix_values,
+    OffsetT*            d_matrix_row_offsets,
+    VertexT*            d_matrix_column_indices,
+    ValueT*             d_vector_x,
+    ValueT*             d_vector_y,
+    int                 num_rows,
+    int                 num_cols,
+    int                 num_nonzeros,
+    int                 timing_iterations)
+{
+    // Allocate temporary storage
+    size_t temp_storage_bytes = 0;
+    void *d_temp_storage = NULL;
+
+    // Get amount of temporary storage needed
+    CubDebugExit(DeviceSpmv::CsrMV(
+        d_temp_storage, temp_storage_bytes,
+        d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices,
+        d_vector_x, d_vector_y,
+        num_rows, num_cols, num_nonzeros,
+        (cudaStream_t) 0, false));
+
+    // Allocate
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
+
+    // Warmup
+    CubDebugExit(DeviceSpmv::CsrMV(
+        d_temp_storage, temp_storage_bytes,
+        d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices,
+        d_vector_x, d_vector_y,
+        num_rows, num_cols, num_nonzeros,
+        (cudaStream_t) 0, true));
+
+    // Timing
+    GpuTimer gpu_timer;
+    float elapsed_millis = 0.0;
+
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        gpu_timer.Start();
+
+        CubDebugExit(DeviceSpmv::CsrMV(
+            d_temp_storage, temp_storage_bytes,
+            d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices,
+            d_vector_x, d_vector_y,
+            num_rows, num_cols, num_nonzeros,
+            (cudaStream_t) 0, false));
+
+        gpu_timer.Stop();
+        elapsed_millis += gpu_timer.ElapsedMillis();
+    }
+
+    return elapsed_millis / timing_iterations;
+}
+
+//---------------------------------------------------------------------
+// Test generation
+//---------------------------------------------------------------------
+
+/**
  * Run tests
  */
 template <
     typename VertexT,
     typename ValueT,
-    typename SizeT>
+    typename OffsetT>
 void RunTests(
     std::string         &mtx_filename,
     int                 grid2d,
@@ -244,7 +310,7 @@ void RunTests(
         exit(1);
     }
 
-    CsrMatrix<VertexT, ValueT, SizeT> csr_matrix;
+    CsrMatrix<VertexT, ValueT, OffsetT> csr_matrix;
     csr_matrix.FromCoo(coo_matrix);
 
     // Display matrix info
@@ -262,40 +328,40 @@ void RunTests(
 
     // Allocate and initialize GPU problem
     ValueT*             d_matrix_values;
-    SizeT*              d_matrix_row_offsets;
+    OffsetT*            d_matrix_row_offsets;
     VertexT*            d_matrix_column_indices;
     ValueT*             d_vector_x;
     ValueT*             d_vector_y;
 
     g_allocator.DeviceAllocate((void **) &d_matrix_values,          sizeof(ValueT) * csr_matrix.num_nonzeros);
-    g_allocator.DeviceAllocate((void **) &d_matrix_row_offsets,     sizeof(SizeT) * (csr_matrix.num_rows + 1));
+    g_allocator.DeviceAllocate((void **) &d_matrix_row_offsets,     sizeof(OffsetT) * (csr_matrix.num_rows + 1));
     g_allocator.DeviceAllocate((void **) &d_matrix_column_indices,  sizeof(VertexT) * csr_matrix.num_nonzeros);
     g_allocator.DeviceAllocate((void **) &d_vector_x,               sizeof(ValueT) * csr_matrix.num_cols);
     g_allocator.DeviceAllocate((void **) &d_vector_y,               sizeof(ValueT) * csr_matrix.num_rows);
 
     CubDebugExit(cudaMemcpy(d_matrix_values,            csr_matrix.values,          sizeof(ValueT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(d_matrix_row_offsets,       csr_matrix.row_offsets,     sizeof(SizeT) * (csr_matrix.num_rows + 1), cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_matrix_row_offsets,       csr_matrix.row_offsets,     sizeof(OffsetT) * (csr_matrix.num_rows + 1), cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemcpy(d_matrix_column_indices,    csr_matrix.column_indices,  sizeof(VertexT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemcpy(d_vector_x,                 vector_x,                   sizeof(ValueT) * csr_matrix.num_cols, cudaMemcpyHostToDevice));
 
     double avg_millis, nz_throughput, effective_bandwidth;
     int compare = 0;
     size_t total_bytes = (csr_matrix.num_nonzeros * (sizeof(ValueT) * 2 + sizeof(VertexT))) +
-        (csr_matrix.num_rows) * (sizeof(SizeT) + sizeof(ValueT));
+        (csr_matrix.num_rows) * (sizeof(OffsetT) + sizeof(ValueT));
 
     // Run problem on cuSparse
 
     CubDebugExit(cudaMemset(d_vector_y, 0, sizeof(ValueT) * csr_matrix.num_rows));
 
-    avg_millis = CusparseSpmv(csr_matrix.num_rows, csr_matrix.num_cols,
-        csr_matrix.num_nonzeros, d_matrix_values, d_matrix_row_offsets,
-        d_matrix_column_indices, d_vector_x, d_vector_y, timing_iterations,
-        cusparse);
+    avg_millis = CusparseSpmv(
+        d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices, d_vector_x, d_vector_y,
+        csr_matrix.num_rows, csr_matrix.num_cols, csr_matrix.num_nonzeros,
+        timing_iterations, cusparse);
 
     nz_throughput       = double(csr_matrix.num_nonzeros) / avg_millis / 1.0e6;
     effective_bandwidth = double(total_bytes) / avg_millis / 1.0e6;
 
-    printf("%s fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
+    printf("\n\n%s fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
         "cuSparse",
         sizeof(ValueT) * 8,
         avg_millis,
@@ -307,9 +373,38 @@ void RunTests(
     printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     AssertEquals(0, compare);
 
+    // Run problem on CUB
+
+    CubDebugExit(cudaMemset(d_vector_y, 0, sizeof(ValueT) * csr_matrix.num_rows));
+
+    avg_millis = CubSpmv(
+        d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices, d_vector_x, d_vector_y,
+        csr_matrix.num_rows, csr_matrix.num_cols, csr_matrix.num_nonzeros,
+        timing_iterations);
+
+    nz_throughput       = double(csr_matrix.num_nonzeros) / avg_millis / 1.0e6;
+    effective_bandwidth = double(total_bytes) / avg_millis / 1.0e6;
+
+    printf("\n\n%s fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
+        "CUB",
+        sizeof(ValueT) * 8,
+        avg_millis,
+        2 * nz_throughput,
+        effective_bandwidth,
+        effective_bandwidth / bandwidth_GBs * 100);
+
+    compare = CompareDeviceResults(vector_y, d_vector_y, csr_matrix.num_rows, true, g_verbose);
+    printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    AssertEquals(0, compare);
+
     // Cleanup
-    delete[] vector_x;
-    delete[] vector_y;
+    if (vector_x) delete[] vector_x;
+    if (vector_y) delete[] vector_y;
+    if (d_matrix_values)            g_allocator.DeviceFree(d_matrix_values);
+    if (d_matrix_row_offsets)       g_allocator.DeviceFree(d_matrix_row_offsets);
+    if (d_matrix_column_indices)    g_allocator.DeviceFree(d_matrix_column_indices);
+    if (d_vector_x)                 g_allocator.DeviceFree(d_vector_x);
+    if (d_vector_y)                 g_allocator.DeviceFree(d_vector_y);
 }
 
 
