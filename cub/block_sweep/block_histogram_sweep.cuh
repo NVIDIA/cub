@@ -221,6 +221,9 @@ struct BlockHistogramSweep
     /// The transform operator for determining privatized counter indices from samples, one for each channel
     PrivatizedDecodeOpT (&privatized_decode_op)[NUM_ACTIVE_CHANNELS];
 
+    /// Whether to prefer privatized smem counters vs privatized global counters
+    bool prefer_smem;
+
 
     //---------------------------------------------------------------------
     // Initialize privatized bin counters
@@ -614,7 +617,6 @@ struct BlockHistogramSweep
     // Interface
     //---------------------------------------------------------------------
 
-    bool prefer_smem;
 
     /**
      * Constructor
