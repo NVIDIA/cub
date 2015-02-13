@@ -195,7 +195,7 @@ struct CooMatrix
 
                 int row, col;
                 ValueT val;
-                int nparsed = sscanf(line, "%d %d %f", &col, &row, &val);
+                int nparsed = sscanf(line, "%d %d %f", &row, &col, &val);
                 if (nparsed == 2)
                 {
                     // No value specified
@@ -446,9 +446,9 @@ struct CooMatrix
 template<typename VertexT, typename ValueT, typename SizeT>
 struct CsrMatrix
 {
-    int         num_rows;              // rows
-    int         num_cols;              // columns
-    int         num_nonzeros;            // number of non-zeros
+    int         num_rows;
+    int         num_cols;
+    int         num_nonzeros;
     SizeT*      row_offsets;
     VertexT*    column_indices;
     ValueT*     values;
@@ -475,9 +475,9 @@ struct CsrMatrix
      */
     void FromCoo(const CooMatrix<VertexT, ValueT> &coo_matrix)
     {
-        num_rows           = coo_matrix.num_rows;
-        num_cols           = coo_matrix.num_cols;
-        num_nonzeros       = coo_matrix.num_nonzeros;
+        num_rows        = coo_matrix.num_rows;
+        num_cols        = coo_matrix.num_cols;
+        num_nonzeros    = coo_matrix.num_nonzeros;
 
         row_offsets     = new SizeT[num_rows + 1];
         column_indices  = new VertexT[num_nonzeros];
@@ -515,8 +515,8 @@ struct CsrMatrix
         fflush(stdout);
 
         // Initialize
-        int log_counts[32];
-        for (int i = 0; i < 32; i++)
+        int log_counts[9];
+        for (int i = 0; i < 9; i++)
         {
             log_counts[i] = 0;
         }
@@ -530,7 +530,7 @@ struct CsrMatrix
             int log_length = -1;
             while (length > 0)
             {
-                length >>= 1;
+                length /= 10;
                 log_length++;
             }
             if (log_length > max_log_length)
@@ -543,7 +543,7 @@ struct CsrMatrix
         printf("CSR matrix (%d rows, %d columns, %d non-zeros):\n", (int) num_rows, (int) num_cols, (int) num_nonzeros);
         for (int i = -1; i < max_log_length + 1; i++)
         {
-            printf("\tDegree 2^%i: %d (%.2f%%)\n", i, log_counts[i + 1], (float) log_counts[i + 1] * 100.0 / num_cols);
+            printf("\tDegree 1e%d: \t%d (%.2f%%)\n", i, log_counts[i + 1], (float) log_counts[i + 1] * 100.0 / num_cols);
         }
         printf("\n");
         fflush(stdout);
