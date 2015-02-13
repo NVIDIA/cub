@@ -39,8 +39,6 @@
 #include <limits>
 
 #include "../../block_sweep/block_spmv_sweep.cuh"
-#include "../device_radix_sort.cuh"
-#include "../../iterator/tex_ref_input_iterator.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 #include "../../thread/thread_search.cuh"
@@ -83,13 +81,8 @@ __global__ void DeviceSpmvSweepKernel(
     // Thread block type for compositing input tiles
     typedef BlockSpmvSweep<
             BlockSpmvSweepPolicyT,
-            PRIVATIZED_SMEM_BINS,
-            NUM_CHANNELS,
-            NUM_ACTIVE_CHANNELS,
-            SampleIteratorT,
-            CounterT,
-            PrivatizedDecodeOpT,
-            OutputDecodeOpT,
+            VertexT,
+            ValueT,
             OffsetT>
         BlockSpmvSweepT;
 
@@ -106,19 +99,13 @@ __global__ void DeviceSpmvSweepKernel(
         output_decode_op_wrapper.array,
         privatized_decode_op_wrapper.array);
 
-    // Initialize counters
-    block_sweep.InitBinCounters();
-
-    // Consume input tiles
+    // Consume input
     block_sweep.ConsumeTiles(
         num_row_pixels,
         num_rows,
         row_stride_samples,
         tiles_per_row,
         tile_queue);
-
-    // Store output to global (if necessary)
-    block_sweep.StoreOutput();
 }
 
 
