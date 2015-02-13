@@ -108,6 +108,6 @@ spmv_compare: bin/spmv_compare_$(BIN_SUFFIX)
 
 bin/spmv_compare_$(BIN_SUFFIX) : spmv_compare.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/spmv_compare_$(BIN_SUFFIX) spmv_compare.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/spmv_compare_$(BIN_SUFFIX) spmv_compare.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -lcusparse -O3
 	
 
