@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockSelectSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide select.
+ * cub::AgentSelectIf implements a stateful abstraction of CUDA thread blocks for participating in device-wide select.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "block_scan_prefix_operators.cuh"
+#include "single_pass_scan_operators.cuh"
 #include "../block/block_load.cuh"
 #include "../block/block_store.cuh"
 #include "../block/block_scan.cuh"
@@ -57,7 +57,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockSelectSweep
+ * Parameterizable tuning policy type for AgentSelectIf
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -66,7 +66,7 @@ template <
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockSelectSweepPolicy
+struct AgentSelectIfPolicy
 {
     enum
     {
@@ -88,14 +88,14 @@ struct BlockSelectSweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockSelectSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles
+ * \brief AgentSelectIf implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles
  *
  * Performs functor-based selection if SelectOp functor type != NullType
  * Otherwise performs flag-based selection if FlagsInputIterator's value type != NullType
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename    BlockSelectSweepPolicy,         ///< Parameterized BlockSelectSweepPolicy tuning policy type
+    typename    AgentSelectIfPolicy,         ///< Parameterized AgentSelectIfPolicy tuning policy type
     typename    InputIteratorT,                 ///< Random-access input iterator type for selection items
     typename    FlagsInputIteratorT,                  ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
     typename    SelectedOutputIteratorT,                ///< Random-access input iterator type for selected items
@@ -103,7 +103,7 @@ template <
     typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
     typename    OffsetT,                        ///< Signed integer type for global offsets
     bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
-struct BlockSelectSweep
+struct AgentSelectIf
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -125,7 +125,7 @@ struct BlockSelectSweep
         USE_SELECT_FLAGS,
         USE_DISCONTINUITY,
 
-        BLOCK_THREADS           = BlockSelectSweepPolicy::BLOCK_THREADS,
+        BLOCK_THREADS           = AgentSelectIfPolicy::BLOCK_THREADS,
 
         /// Number of warp threads
         WARP_THREADS            = CUB_WARP_THREADS(PTX_ARCH),
@@ -133,14 +133,14 @@ struct BlockSelectSweep
         /// Number of active warps
         WARPS                   = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
-        ITEMS_PER_THREAD        = BlockSelectSweepPolicy::ITEMS_PER_THREAD,
+        ITEMS_PER_THREAD        = AgentSelectIfPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         /// Whether or not to sync after loading data
-        SYNC_AFTER_LOAD         = (BlockSelectSweepPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        SYNC_AFTER_LOAD         = (AgentSelectIfPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
         /// Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
-        STORE_WARP_TIME_SLICING = BlockSelectSweepPolicy::STORE_WARP_TIME_SLICING,
+        STORE_WARP_TIME_SLICING = AgentSelectIfPolicy::STORE_WARP_TIME_SLICING,
         ACTIVE_EXCHANGE_WARPS   = (STORE_WARP_TIME_SLICING) ? 1 : WARPS,
 
         SELECT_METHOD           = (!Equals<SelectOp, NullType>::VALUE) ?
@@ -152,30 +152,30 @@ struct BlockSelectSweep
 
     // Input iterator wrapper type (for applying cache modifier)
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
-            CacheModifiedInputIterator<BlockSelectSweepPolicy::LOAD_MODIFIER, T, OffsetT>,      // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<AgentSelectIfPolicy::LOAD_MODIFIER, T, OffsetT>,      // Wrap the native input pointer with CacheModifiedInputIterator
             InputIteratorT>::Type                                                                // Directly use the supplied input iterator type
         WrappedInputIteratorT;
 
     // FlagT iterator wrapper type
     typedef typename If<IsPointer<FlagsInputIteratorT>::VALUE,
-            CacheModifiedInputIterator<BlockSelectSweepPolicy::LOAD_MODIFIER, FlagT, OffsetT>,   // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<AgentSelectIfPolicy::LOAD_MODIFIER, FlagT, OffsetT>,   // Wrap the native input pointer with CacheModifiedInputIterator
             FlagsInputIteratorT>::Type                                                                 // Directly use the supplied input iterator type
         WrappedFlagsInputIteratorT;
 
     // Parameterized BlockLoad type for input items
     typedef BlockLoad<
             WrappedInputIteratorT,
-            BlockSelectSweepPolicy::BLOCK_THREADS,
-            BlockSelectSweepPolicy::ITEMS_PER_THREAD,
-            BlockSelectSweepPolicy::LOAD_ALGORITHM>
+            AgentSelectIfPolicy::BLOCK_THREADS,
+            AgentSelectIfPolicy::ITEMS_PER_THREAD,
+            AgentSelectIfPolicy::LOAD_ALGORITHM>
         BlockLoadT;
 
     // Parameterized BlockLoad type for flags
     typedef BlockLoad<
             WrappedFlagsInputIteratorT,
-            BlockSelectSweepPolicy::BLOCK_THREADS,
-            BlockSelectSweepPolicy::ITEMS_PER_THREAD,
-            BlockSelectSweepPolicy::LOAD_ALGORITHM>
+            AgentSelectIfPolicy::BLOCK_THREADS,
+            AgentSelectIfPolicy::ITEMS_PER_THREAD,
+            AgentSelectIfPolicy::LOAD_ALGORITHM>
         BlockLoadFlags;
 
     // Parameterized BlockDiscontinuity type for input items
@@ -249,7 +249,7 @@ struct BlockSelectSweep
 
     // Constructor
     __device__ __forceinline__
-    BlockSelectSweep(
+    AgentSelectIf(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIteratorT              d_in,               ///< Input data
         FlagsInputIteratorT         d_flags,            ///< Input flags

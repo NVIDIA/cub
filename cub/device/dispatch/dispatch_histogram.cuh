@@ -38,7 +38,7 @@
 #include <iterator>
 #include <limits>
 
-#include "../../block_sweep/block_histogram_sweep.cuh"
+#include "../../agent/agent_histogram.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 #include "../../thread/thread_search.cuh"
@@ -87,7 +87,7 @@ __global__ void DeviceHistogramInitKernel(
  * Histogram privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename                                            BlockHistogramSweepPolicyT,     ///< Parameterized BlockHistogramSweepPolicy tuning policy type
+    typename                                            AgentHistogramPolicyT,     ///< Parameterized AgentHistogramPolicy tuning policy type
     int                                                 PRIVATIZED_SMEM_BINS,           ///< Maximum number of histogram bins per channel (e.g., up to 256)
     int                                                 NUM_CHANNELS,                   ///< Number of channels interleaved in the input data (may be greater than the number of channels being actively histogrammed)
     int                                                 NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
@@ -96,7 +96,7 @@ template <
     typename                                            PrivatizedDecodeOpT,            ///< The transform operator type for determining privatized counter indices from samples, one for each channel
     typename                                            OutputDecodeOpT,                ///< The transform operator type for determining output bin-ids from privatized counter indices, one for each channel
     typename                                            OffsetT>                        ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockHistogramSweepPolicyT::BLOCK_THREADS))
+__launch_bounds__ (int(AgentHistogramPolicyT::BLOCK_THREADS))
 __global__ void DeviceHistogramSweepKernel(
     SampleIteratorT                                         d_samples,                          ///< Input data to reduce
     ArrayWrapper<int, NUM_ACTIVE_CHANNELS>                  num_output_bins_wrapper,            ///< The number bins per final output histogram
@@ -112,8 +112,8 @@ __global__ void DeviceHistogramSweepKernel(
     GridQueue<int>                                          tile_queue)                         ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for compositing input tiles
-    typedef BlockHistogramSweep<
-            BlockHistogramSweepPolicyT,
+    typedef AgentHistogram<
+            AgentHistogramPolicyT,
             PRIVATIZED_SMEM_BINS,
             NUM_CHANNELS,
             NUM_ACTIVE_CHANNELS,
@@ -122,12 +122,12 @@ __global__ void DeviceHistogramSweepKernel(
             PrivatizedDecodeOpT,
             OutputDecodeOpT,
             OffsetT>
-        BlockHistogramSweepT;
+        AgentHistogramT;
 
-    // Shared memory for BlockHistogramSweep
-    __shared__ typename BlockHistogramSweepT::TempStorage temp_storage;
+    // Shared memory for AgentHistogram
+    __shared__ typename AgentHistogramT::TempStorage temp_storage;
 
-    BlockHistogramSweepT block_sweep(
+    AgentHistogramT agent(
         temp_storage,
         d_samples,
         num_output_bins_wrapper.array,
@@ -138,10 +138,10 @@ __global__ void DeviceHistogramSweepKernel(
         privatized_decode_op_wrapper.array);
 
     // Initialize counters
-    block_sweep.InitBinCounters();
+    agent.InitBinCounters();
 
     // Consume input tiles
-    block_sweep.ConsumeTiles(
+    agent.ConsumeTiles(
         num_row_pixels,
         num_rows,
         row_stride_samples,
@@ -149,7 +149,7 @@ __global__ void DeviceHistogramSweepKernel(
         tile_queue);
 
     // Store output to global (if necessary)
-    block_sweep.StoreOutput();
+    agent.StoreOutput();
 }
 
 
@@ -171,7 +171,7 @@ template <
     typename    CounterT,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    LevelT,                     ///< Type for specifying bin level boundaries
     typename    OffsetT>                    ///< Signed integer type for global offsets
-struct DeviceHistogramDispatch
+struct DipatchHistogram
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -339,7 +339,7 @@ struct DeviceHistogramDispatch
     struct Policy110
     {
         // HistogramSweepPolicy
-        typedef BlockHistogramSweepPolicy<
+        typedef AgentHistogramPolicy<
                 512,
                 2,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
@@ -354,7 +354,7 @@ struct DeviceHistogramDispatch
     struct Policy200
     {
         // HistogramSweepPolicy
-        typedef BlockHistogramSweepPolicy<
+        typedef AgentHistogramPolicy<
                 (NUM_CHANNELS == 1) ? 256 : 128,
                 (NUM_CHANNELS == 1) ? 8 : 3,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_WARP_TRANSPOSE,
@@ -372,7 +372,7 @@ struct DeviceHistogramDispatch
     struct Policy350
     {
         // HistogramSweepPolicy
-        typedef BlockHistogramSweepPolicy<
+        typedef AgentHistogramPolicy<
                 128,
                 (NUM_CHANNELS == 1) ? 8 : 7,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
@@ -387,7 +387,7 @@ struct DeviceHistogramDispatch
     struct Policy500
     {
         // HistogramSweepPolicy
-        typedef BlockHistogramSweepPolicy<
+        typedef AgentHistogramPolicy<
                 256,
                 8,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,

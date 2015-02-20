@@ -38,7 +38,7 @@
 #include <iterator>
 #include <limits>
 
-#include "dispatch/device_histogram_dispatch.cuh"
+#include "dispatch/dispatch_spmv.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)

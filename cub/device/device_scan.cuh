@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "dispatch/device_scan_dispatch.cuh"
+#include "dispatch/dispatch_scan.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -145,7 +145,7 @@ struct DeviceScan
         // Scan data type
         typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
-        return DeviceScanDispatch<InputIteratorT, OutputIteratorT, Sum, T, OffsetT>::Dispatch(
+        return DispatchScan<InputIteratorT, OutputIteratorT, Sum, T, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -232,7 +232,7 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DeviceScanDispatch<InputIteratorT, OutputIteratorT, ScanOp, Identity, OffsetT>::Dispatch(
+        return DispatchScan<InputIteratorT, OutputIteratorT, ScanOp, Identity, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -309,7 +309,7 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DeviceScanDispatch<InputIteratorT, OutputIteratorT, Sum, NullType, OffsetT>::Dispatch(
+        return DispatchScan<InputIteratorT, OutputIteratorT, Sum, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -393,7 +393,7 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DeviceScanDispatch<InputIteratorT, OutputIteratorT, ScanOp, NullType, OffsetT>::Dispatch(
+        return DispatchScan<InputIteratorT, OutputIteratorT, ScanOp, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "device_scan_dispatch.cuh"
-#include "../../block_sweep/block_rle_sweep.cuh"
+#include "../../agent/agent_rle.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_device.cuh"
@@ -63,7 +63,7 @@ namespace cub {
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename            BlockRleSweepPolicy,        ///< Parameterized BlockRleSweepPolicy tuning policy type
+    typename            AgentRlePolicy,        ///< Parameterized AgentRlePolicy tuning policy type
     typename            InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
     typename            OffsetsOutputIteratorT,     ///< Random-access output iterator type for writing run-offset values \iterator
     typename            LengthsOutputIteratorT,     ///< Random-access output iterator type for writing run-length values \iterator
@@ -71,7 +71,7 @@ template <
     typename            ScanTileState,              ///< Tile status interface type
     typename            EqualityOp,                 ///< T equality operator type
     typename            OffsetT>                    ///< Signed integer type for global offsets
-__launch_bounds__ (int(BlockRleSweepPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(AgentRlePolicy::BLOCK_THREADS))
 __global__ void DeviceRleSweepKernel(
     InputIteratorT              d_in,               ///< [in] Pointer to input sequence of data items
     OffsetsOutputIteratorT      d_offsets_out,      ///< [out] Pointer to output sequence of run-offsets
@@ -84,19 +84,19 @@ __global__ void DeviceRleSweepKernel(
     GridQueue<int>              queue)              ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for selecting data from input tiles
-    typedef BlockRleSweep<
-        BlockRleSweepPolicy,
+    typedef AgentRle<
+        AgentRlePolicy,
         InputIteratorT,
         OffsetsOutputIteratorT,
         LengthsOutputIteratorT,
         EqualityOp,
-        OffsetT> BlockRleSweepT;
+        OffsetT> AgentRleT;
 
-    // Shared memory for BlockRleSweep
-    __shared__ typename BlockRleSweepT::TempStorage temp_storage;
+    // Shared memory for AgentRle
+    __shared__ typename AgentRleT::TempStorage temp_storage;
 
     // Process tiles
-    BlockRleSweepT(temp_storage, d_in, d_offsets_out, d_lengths_out, equality_op, num_items).ConsumeRange(
+    AgentRleT(temp_storage, d_in, d_offsets_out, d_lengths_out, equality_op, num_items).ConsumeRange(
         num_tiles,
         queue,
         tile_status,
@@ -153,7 +153,7 @@ struct DeviceRleDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRleSweepPolicy<
+        typedef AgentRlePolicy<
                 96,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
@@ -171,7 +171,7 @@ struct DeviceRleDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRleSweepPolicy<
+        typedef AgentRlePolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -189,7 +189,7 @@ struct DeviceRleDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRleSweepPolicy<
+        typedef AgentRlePolicy<
                 128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -207,7 +207,7 @@ struct DeviceRleDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRleSweepPolicy<
+        typedef AgentRlePolicy<
                 64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -225,7 +225,7 @@ struct DeviceRleDispatch
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        typedef BlockRleSweepPolicy<
+        typedef AgentRlePolicy<
                 256,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
@@ -308,7 +308,7 @@ struct DeviceRleDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within BlockRleSweepPolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within AgentRlePolicy.
      */
     struct KernelConfig
     {
@@ -318,15 +318,15 @@ struct DeviceRleDispatch
         bool                    store_warp_time_slicing;
         BlockScanAlgorithm      scan_algorithm;
 
-        template <typename BlockRleSweepPolicy>
+        template <typename AgentRlePolicy>
         CUB_RUNTIME_FUNCTION __forceinline__
         void Init()
         {
-            block_threads               = BlockRleSweepPolicy::BLOCK_THREADS;
-            items_per_thread            = BlockRleSweepPolicy::ITEMS_PER_THREAD;
-            load_policy                 = BlockRleSweepPolicy::LOAD_ALGORITHM;
-            store_warp_time_slicing     = BlockRleSweepPolicy::STORE_WARP_TIME_SLICING;
-            scan_algorithm              = BlockRleSweepPolicy::SCAN_ALGORITHM;
+            block_threads               = AgentRlePolicy::BLOCK_THREADS;
+            items_per_thread            = AgentRlePolicy::ITEMS_PER_THREAD;
+            load_policy                 = AgentRlePolicy::LOAD_ALGORITHM;
+            store_warp_time_slicing     = AgentRlePolicy::STORE_WARP_TIME_SLICING;
+            scan_algorithm              = AgentRlePolicy::SCAN_ALGORITHM;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__

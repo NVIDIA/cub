@@ -28,7 +28,7 @@
 
 /**
  * \file
- * BlockRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a range of tiles.
+ * AgentRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a range of tiles.
  */
 
 #pragma once
@@ -51,14 +51,14 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRadixSortUpsweep
+ * Parameterizable tuning policy type for AgentRadixSortUpsweep
  */
 template <
     int                 _BLOCK_THREADS,     ///< Threads per thread block
     int                 _ITEMS_PER_THREAD,  ///< Items per thread (per tile of input)
     CacheLoadModifier   _LOAD_MODIFIER,     ///< Cache load modifier for reading keys
     int                 _RADIX_BITS>        ///< The number of radix bits, i.e., log2(bins)
-struct BlockRadixSortUpsweepPolicy
+struct AgentRadixSortUpsweepPolicy
 {
     enum
     {
@@ -76,13 +76,13 @@ struct BlockRadixSortUpsweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a range of tiles.
+ * \brief AgentRadixSortUpsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort upsweep across a range of tiles.
  */
 template <
-    typename BlockRadixSortUpsweepPolicy,   ///< Parameterized BlockRadixSortUpsweepPolicy tuning policy type
+    typename AgentRadixSortUpsweepPolicy,   ///< Parameterized AgentRadixSortUpsweepPolicy tuning policy type
     typename KeyT,                          ///< KeyT type
     typename OffsetT>                       ///< Signed integer type for global offsets
-struct BlockRadixSortUpsweep
+struct AgentRadixSortUpsweep
 {
 
     //---------------------------------------------------------------------
@@ -97,13 +97,13 @@ struct BlockRadixSortUpsweep
     // Integer type for packing DigitCounters into columns of shared memory banks
     typedef unsigned int PackedCounter;
 
-    static const CacheLoadModifier LOAD_MODIFIER = BlockRadixSortUpsweepPolicy::LOAD_MODIFIER;
+    static const CacheLoadModifier LOAD_MODIFIER = AgentRadixSortUpsweepPolicy::LOAD_MODIFIER;
 
     enum
     {
-        RADIX_BITS              = BlockRadixSortUpsweepPolicy::RADIX_BITS,
-        BLOCK_THREADS           = BlockRadixSortUpsweepPolicy::BLOCK_THREADS,
-        KEYS_PER_THREAD         = BlockRadixSortUpsweepPolicy::ITEMS_PER_THREAD,
+        RADIX_BITS              = AgentRadixSortUpsweepPolicy::RADIX_BITS,
+        BLOCK_THREADS           = AgentRadixSortUpsweepPolicy::BLOCK_THREADS,
+        KEYS_PER_THREAD         = AgentRadixSortUpsweepPolicy::ITEMS_PER_THREAD,
 
         RADIX_DIGITS            = 1 << RADIX_BITS,
 
@@ -186,7 +186,7 @@ struct BlockRadixSortUpsweep
     {
         // BucketKeys
         static __device__ __forceinline__ void BucketKeys(
-            BlockRadixSortUpsweep     &cta,
+            AgentRadixSortUpsweep     &cta,
             UnsignedBits                    keys[KEYS_PER_THREAD])
         {
             cta.Bucket(keys[COUNT]);
@@ -201,7 +201,7 @@ struct BlockRadixSortUpsweep
     struct Iterate<MAX, MAX>
     {
         // BucketKeys
-        static __device__ __forceinline__ void BucketKeys(BlockRadixSortUpsweep &cta, UnsignedBits keys[KEYS_PER_THREAD]) {}
+        static __device__ __forceinline__ void BucketKeys(AgentRadixSortUpsweep &cta, UnsignedBits keys[KEYS_PER_THREAD]) {}
     };
 
 
@@ -373,7 +373,7 @@ struct BlockRadixSortUpsweep
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockRadixSortUpsweep(
+    __device__ __forceinline__ AgentRadixSortUpsweep(
         TempStorage &temp_storage,
         KeyT        *d_keys_in,
         int         current_bit,

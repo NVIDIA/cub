@@ -38,7 +38,7 @@
 #include <iterator>
 #include <limits>
 
-#include "../../block_sweep/block_spmv_sweep.cuh"
+#include "../../agent/agent_spmv.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 #include "../../thread/thread_search.cuh"
@@ -61,11 +61,11 @@ namespace cub {
  * Spmv privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
 template <
-    typename    BlockSpmvSweepPolicyT,      ///< Parameterized BlockSpmvSweepPolicy tuning policy type
+    typename    AgentSpmvPolicyT,      ///< Parameterized AgentSpmvPolicy tuning policy type
     typename    VertexT,                    ///< Integer type for vertex identifiers
     typename    ValueT,                     ///< Matrix and vector value type
     typename    OffsetT>                    ///< Signed integer type for sequence offsets
-__launch_bounds__ (int(BlockSpmvSweepPolicyT::BLOCK_THREADS))
+__launch_bounds__ (int(AgentSpmvPolicyT::BLOCK_THREADS))
 __global__ void DeviceSpmvSweepKernel(
     ValueT*     d_matrix_values,            ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
     OffsetT*    d_matrix_row_offsets,       ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
@@ -79,17 +79,17 @@ __global__ void DeviceSpmvSweepKernel(
     int         num_nonzeros)               ///< [in] number of nonzero elements of matrix <b>A</b>.
 {
     // Thread block type for compositing input tiles
-    typedef BlockSpmvSweep<
-            BlockSpmvSweepPolicyT,
+    typedef AgentSpmv<
+            AgentSpmvPolicyT,
             VertexT,
             ValueT,
             OffsetT>
-        BlockSpmvSweepT;
+        AgentSpmvT;
 
-    // Shared memory for BlockSpmvSweep
-    __shared__ typename BlockSpmvSweepT::TempStorage temp_storage;
+    // Shared memory for AgentSpmv
+    __shared__ typename AgentSpmvT::TempStorage temp_storage;
 
-    BlockSpmvSweepT block_sweep(
+    AgentSpmvT agent(
         temp_storage,
         d_samples,
         num_output_bins_wrapper.array,
@@ -100,7 +100,7 @@ __global__ void DeviceSpmvSweepKernel(
         privatized_decode_op_wrapper.array);
 
     // Consume input
-    block_sweep.ConsumeTiles(
+    agent.ConsumeTiles(
         num_row_pixels,
         num_rows,
         row_stride_samples,
@@ -295,7 +295,7 @@ struct DeviceSpmvDispatch
     struct Policy110
     {
         // SpmvSweepPolicy
-        typedef BlockSpmvSweepPolicy<
+        typedef AgentSpmvPolicy<
                 512,
                 2,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
@@ -310,7 +310,7 @@ struct DeviceSpmvDispatch
     struct Policy200
     {
         // SpmvSweepPolicy
-        typedef BlockSpmvSweepPolicy<
+        typedef AgentSpmvPolicy<
                 (NUM_CHANNELS == 1) ? 256 : 128,
                 (NUM_CHANNELS == 1) ? 8 : 3,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_WARP_TRANSPOSE,
@@ -328,7 +328,7 @@ struct DeviceSpmvDispatch
     struct Policy350
     {
         // SpmvSweepPolicy
-        typedef BlockSpmvSweepPolicy<
+        typedef AgentSpmvPolicy<
                 128,
                 (NUM_CHANNELS == 1) ? 8 : 7,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
@@ -343,7 +343,7 @@ struct DeviceSpmvDispatch
     struct Policy500
     {
         // SpmvSweepPolicy
-        typedef BlockSpmvSweepPolicy<
+        typedef AgentSpmvPolicy<
                 256,
                 8,
                 (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,

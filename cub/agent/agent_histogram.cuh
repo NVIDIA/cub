@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide histogram across a range of tiles.
+ * cub::AgentHistogram implements a stateful abstraction of CUDA thread blocks for participating in device-wide histogram across a range of tiles.
  */
 
 #pragma once
@@ -64,7 +64,7 @@ enum BlockHistogramMemoryPreference
 
 
 /**
- * Parameterizable tuning policy type for BlockHistogramSweep
+ * Parameterizable tuning policy type for AgentHistogram
  */
 template <
     int                             _BLOCK_THREADS,                 ///< Threads per thread block
@@ -74,7 +74,7 @@ template <
     bool                            _RLE_COMPRESS,                  ///< Whether to perform localized RLE to compress samples before histogramming
     BlockHistogramMemoryPreference  _MEM_PREFERENCE,                ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
     bool                            _WORK_STEALING>                 ///< Whether to dequeue tiles from a global work queue
-struct BlockHistogramSweepPolicy
+struct AgentHistogramPolicy
 {
     enum
     {
@@ -95,10 +95,10 @@ struct BlockHistogramSweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockHistogramSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide histogram across a range of tiles.
+ * \brief AgentHistogram implements a stateful abstraction of CUDA thread blocks for participating in device-wide histogram across a range of tiles.
  */
 template <
-    typename    BlockHistogramSweepPolicyT,     ///< Parameterized BlockHistogramSweepPolicy tuning policy type
+    typename    AgentHistogramPolicyT,     ///< Parameterized AgentHistogramPolicy tuning policy type
     int         PRIVATIZED_SMEM_BINS,           ///< Number of privatized shared-memory histogram bins of any channel.  Zero indicates privatized counters to be maintained in global memory.
     int         NUM_CHANNELS,                   ///< Number of channels interleaved in the input data.  Supports up to four channels.
     int         NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
@@ -108,7 +108,7 @@ template <
     typename    OutputDecodeOpT,                ///< The transform operator type for determining output bin-ids from privatized counter indices, one for each channel
     typename    OffsetT,                        ///< Signed integer type for global offsets
     int         PTX_ARCH = CUB_PTX_ARCH>        ///< PTX compute capability
-struct BlockHistogramSweep
+struct AgentHistogram
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -123,25 +123,25 @@ struct BlockHistogramSweep
     /// Constants
     enum
     {
-        BLOCK_THREADS           = BlockHistogramSweepPolicyT::BLOCK_THREADS,
+        BLOCK_THREADS           = AgentHistogramPolicyT::BLOCK_THREADS,
 
-        PIXELS_PER_THREAD       = BlockHistogramSweepPolicyT::PIXELS_PER_THREAD,
+        PIXELS_PER_THREAD       = AgentHistogramPolicyT::PIXELS_PER_THREAD,
         TILE_PIXELS             = PIXELS_PER_THREAD * BLOCK_THREADS,
 
         SAMPLES_PER_THREAD      = PIXELS_PER_THREAD * NUM_CHANNELS,
         TILE_SAMPLES            = SAMPLES_PER_THREAD * BLOCK_THREADS,
 
-        RLE_COMPRESS            = BlockHistogramSweepPolicyT::RLE_COMPRESS,
+        RLE_COMPRESS            = AgentHistogramPolicyT::RLE_COMPRESS,
 
         MEM_PREFERENCE          = (PRIVATIZED_SMEM_BINS > 0) ?
-                                        BlockHistogramSweepPolicyT::MEM_PREFERENCE :
+                                        AgentHistogramPolicyT::MEM_PREFERENCE :
                                         GMEM,
 
-        WORK_STEALING           = BlockHistogramSweepPolicyT::WORK_STEALING,
+        WORK_STEALING           = AgentHistogramPolicyT::WORK_STEALING,
     };
 
     /// Cache load modifier for reading input elements
-    static const CacheLoadModifier LOAD_MODIFIER = BlockHistogramSweepPolicyT::LOAD_MODIFIER;
+    static const CacheLoadModifier LOAD_MODIFIER = AgentHistogramPolicyT::LOAD_MODIFIER;
 
 
     /// Input iterator wrapper type (for applying cache modifier)
@@ -159,7 +159,7 @@ struct BlockHistogramSweep
             WrappedSampleIteratorT,
             BLOCK_THREADS,
             SAMPLES_PER_THREAD,
-            BlockHistogramSweepPolicyT::LOAD_ALGORITHM>
+            AgentHistogramPolicyT::LOAD_ALGORITHM>
         BlockLoadSampleT;
 
     /// Parameterized BlockLoad type for pixels
@@ -167,7 +167,7 @@ struct BlockHistogramSweep
             WrappedPixelIteratorT,
             BLOCK_THREADS,
             PIXELS_PER_THREAD,
-            BlockHistogramSweepPolicyT::LOAD_ALGORITHM>
+            AgentHistogramPolicyT::LOAD_ALGORITHM>
         BlockLoadPixelT;
 
 
@@ -621,7 +621,7 @@ struct BlockHistogramSweep
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockHistogramSweep(
+    __device__ __forceinline__ AgentHistogram(
         TempStorage         &temp_storage,                                      ///< Reference to temp_storage
         SampleIteratorT     d_samples,                                          ///< Input data to reduce
         int                 (&num_output_bins)[NUM_ACTIVE_CHANNELS],            ///< The number bins per final output histogram

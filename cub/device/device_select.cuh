@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "dispatch/device_select_dispatch.cuh"
+#include "dispatch/dispatch_select_if.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -146,7 +146,7 @@ struct DeviceSelect
         typedef NullType                SelectOp;       // Selection op (not used)
         typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        return DeviceSelectDispatch<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
+        return DispatchSelectIf<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -253,7 +253,7 @@ struct DeviceSelect
         typedef NullType*               FlagIterator;   // FlagT iterator type (not used)
         typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        return DeviceSelectDispatch<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
+        return DispatchSelectIf<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -344,7 +344,7 @@ struct DeviceSelect
         typedef NullType                SelectOp;       // Selection op (not used)
         typedef Equality                EqualityOp;     // Default == operator
 
-        return DeviceSelectDispatch<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
+        return DispatchSelectIf<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
