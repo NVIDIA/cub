@@ -470,8 +470,7 @@ enum BlockLoadAlgorithm
      * \par Overview
      *
      * A [<em>blocked arrangement</em>](index.html#sec5sec3) of data is read
-     * directly from memory.  The thread block reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub>
-     * reads the <em>i</em><sup>th</sup> segment of consecutive elements.
+     * directly from memory.
      *
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) decreases as the
@@ -482,12 +481,10 @@ enum BlockLoadAlgorithm
     /**
      * \par Overview
      *
-     * A [<em>blocked arrangement</em>](index.html#sec5sec3) of data is read directly
+     * A [<em>blocked arrangement</em>](index.html#sec5sec3) of data is read
      * from memory using CUDA's built-in vectorized loads as a coalescing optimization.
-     * The thread block reads items in a parallel "raking" fashion: thread<sub><em>i</em></sub> uses vector loads to
-     * read the <em>i</em><sup>th</sup> segment of consecutive elements.
-     *
-     * For example, <tt>ld.global.v4.s32</tt> instructions will be generated when \p T = \p int and \p ITEMS_PER_THREAD > 4.
+     * For example, <tt>ld.global.v4.s32</tt> instructions will be generated
+     * when \p T = \p int and \p ITEMS_PER_THREAD % 4 == 0.
      *
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) remains high until the the
@@ -505,12 +502,8 @@ enum BlockLoadAlgorithm
      * \par Overview
      *
      * A [<em>striped arrangement</em>](index.html#sec5sec3) of data is read
-     * directly from memory and then is locally transposed into a
-     * [<em>blocked arrangement</em>](index.html#sec5sec3). The thread block
-     * reads items in a parallel "strip-mining" fashion:
-     * thread<sub><em>i</em></sub> reads items having stride \p BLOCK_THREADS
-     * between them. cub::BlockExchange is then used to locally reorder the items
-     * into a [<em>blocked arrangement</em>](index.html#sec5sec3).
+     * efficiently from memory and then locally transposed into a
+     * [<em>blocked arrangement</em>](index.html#sec5sec3).
      *
      * \par Performance Considerations
      * - The utilization of memory transactions (coalescing) remains high regardless
@@ -524,12 +517,8 @@ enum BlockLoadAlgorithm
     /**
      * \par Overview
      *
-     * A [<em>warp-striped arrangement</em>](index.html#sec5sec3) of data is read
-     * directly from memory and then is locally transposed into a
-     * [<em>blocked arrangement</em>](index.html#sec5sec3). Each warp reads its own
-     * contiguous segment in a parallel "strip-mining" fashion: lane<sub><em>i</em></sub>
-     * reads items having stride \p WARP_THREADS between them. cub::BlockExchange
-     * is then used to locally reorder the items into a
+     * A [<em>warp-striped arrangement</em>](index.html#sec5sec3) of data is
+     * read efficiently from memory and then locally transposed into a
      * [<em>blocked arrangement</em>](index.html#sec5sec3).
      *
      * \par Usage Considerations

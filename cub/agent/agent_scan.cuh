@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockScanSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
+ * cub::AgentScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "block_scan_prefix_operators.cuh"
+#include "single_pass_scan_operators.cuh"
 #include "../block/block_load.cuh"
 #include "../block/block_store.cuh"
 #include "../block/block_scan.cuh"
@@ -55,25 +55,21 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockScanSweep
+ * Parameterizable tuning policy type for AgentScan
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
     int                         _ITEMS_PER_THREAD,              ///< Items per thread (per tile of input)
     BlockLoadAlgorithm          _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
-    bool                        _LOAD_WARP_TIME_SLICING,        ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage)
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     BlockStoreAlgorithm         _STORE_ALGORITHM,               ///< The BlockStore algorithm to use
-    bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockScanSweepPolicy
+struct AgentScanPolicy
 {
     enum
     {
         BLOCK_THREADS           = _BLOCK_THREADS,               ///< Threads per thread block
         ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
-        LOAD_WARP_TIME_SLICING  = _LOAD_WARP_TIME_SLICING,      ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage)
-        STORE_WARP_TIME_SLICING = _STORE_WARP_TIME_SLICING,     ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;          ///< The BlockLoad algorithm to use
@@ -90,16 +86,16 @@ struct BlockScanSweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockScanSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
+ * \brief AgentScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
  */
 template <
-    typename BlockScanSweepPolicy,      ///< Parameterized BlockScanSweepPolicy tuning policy type
+    typename AgentScanPolicy,      ///< Parameterized AgentScanPolicy tuning policy type
     typename InputIteratorT,            ///< Random-access input iterator type
     typename OutputIteratorT,           ///< Random-access output iterator type
     typename ScanOp,                    ///< Scan functor type
     typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
     typename OffsetT>                   ///< Signed integer type for global offsets
-struct BlockScanSweep
+struct AgentScan
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -113,7 +109,7 @@ struct BlockScanSweep
 
     // Input iterator wrapper type (for applying cache modifier)
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
-            CacheModifiedInputIterator<BlockScanSweepPolicy::LOAD_MODIFIER, T, OffsetT>,    // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<AgentScanPolicy::LOAD_MODIFIER, T, OffsetT>,    // Wrap the native input pointer with CacheModifiedInputIterator
             InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIteratorT;
 
@@ -121,36 +117,36 @@ struct BlockScanSweep
     enum
     {
         INCLUSIVE           = Equals<Identity, NullType>::VALUE,            // Inclusive scan if no identity type is provided
-        BLOCK_THREADS       = BlockScanSweepPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockScanSweepPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS       = AgentScanPolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = AgentScanPolicy::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Whether or not to sync after loading data
-        SYNC_AFTER_LOAD     = (BlockScanSweepPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        SYNC_AFTER_LOAD     = (AgentScanPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
     };
 
     // Parameterized BlockLoad type
     typedef BlockLoad<
             WrappedInputIteratorT,
-            BlockScanSweepPolicy::BLOCK_THREADS,
-            BlockScanSweepPolicy::ITEMS_PER_THREAD,
-            BlockScanSweepPolicy::LOAD_ALGORITHM>
+            AgentScanPolicy::BLOCK_THREADS,
+            AgentScanPolicy::ITEMS_PER_THREAD,
+            AgentScanPolicy::LOAD_ALGORITHM>
         BlockLoadT;
 
     // Parameterized BlockStore type
     typedef BlockStore<
             OutputIteratorT,
-            BlockScanSweepPolicy::BLOCK_THREADS,
-            BlockScanSweepPolicy::ITEMS_PER_THREAD,
-            BlockScanSweepPolicy::STORE_ALGORITHM>
+            AgentScanPolicy::BLOCK_THREADS,
+            AgentScanPolicy::ITEMS_PER_THREAD,
+            AgentScanPolicy::STORE_ALGORITHM>
         BlockStoreT;
 
     // Parameterized BlockScan type
     typedef BlockScan<
             T,
-            BlockScanSweepPolicy::BLOCK_THREADS,
-            BlockScanSweepPolicy::SCAN_ALGORITHM>
+            AgentScanPolicy::BLOCK_THREADS,
+            AgentScanPolicy::SCAN_ALGORITHM>
         BlockScanT;
 
     // Callback type for obtaining tile prefix during block scan
@@ -293,7 +289,7 @@ struct BlockScanSweep
 
     // Constructor
     __device__ __forceinline__
-    BlockScanSweep(
+    AgentScan(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIteratorT              d_in,               ///< Input data
         OutputIteratorT             d_out,              ///< Output data

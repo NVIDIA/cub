@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockReduceSweepByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
+ * cub::AgentReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "block_scan_prefix_operators.cuh"
+#include "single_pass_scan_operators.cuh"
 #include "../block/block_load.cuh"
 #include "../block/block_store.cuh"
 #include "../block/block_scan.cuh"
@@ -58,7 +58,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockReduceSweepByKey
+ * Parameterizable tuning policy type for AgentReduceByKey
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -67,7 +67,7 @@ template <
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                        _TWO_PHASE_SCATTER,             ///< Whether or not to coalesce output values in shared memory before scattering them to global
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockReduceSweepByKeyPolicy
+struct AgentReduceByKeyPolicy
 {
     enum
     {
@@ -87,10 +87,10 @@ struct BlockReduceSweepByKeyPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockReduceSweepByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key across a range of tiles
+ * \brief AgentReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key across a range of tiles
  */
 template <
-    typename    BlockReduceSweepByKeyPolicy,    ///< Parameterized BlockReduceSweepByKeyPolicy tuning policy type
+    typename    AgentReduceByKeyPolicy,    ///< Parameterized AgentReduceByKeyPolicy tuning policy type
     typename    KeysInputIteratorT,             ///< Random-access input iterator type for keys
     typename    UniqueOutputIteratorT,          ///< Random-access output iterator type for keys
     typename    ValuesInputIteratorT,           ///< Random-access input iterator type for values
@@ -98,7 +98,7 @@ template <
     typename    EqualityOp,                     ///< KeyT equality operator type
     typename    ReductionOp,                    ///< ValueT reduction operator type
     typename    OffsetT>                        ///< Signed integer type for global offsets
-struct BlockReduceSweepByKey
+struct AgentReduceByKey
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -119,17 +119,17 @@ struct BlockReduceSweepByKey
     // Constants
     enum
     {
-        BLOCK_THREADS       = BlockReduceSweepByKeyPolicy::BLOCK_THREADS,
+        BLOCK_THREADS       = AgentReduceByKeyPolicy::BLOCK_THREADS,
         WARPS               = BLOCK_THREADS / CUB_PTX_WARP_THREADS,
-        ITEMS_PER_THREAD    = BlockReduceSweepByKeyPolicy::ITEMS_PER_THREAD,
-        TWO_PHASE_SCATTER   = (BlockReduceSweepByKeyPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
+        ITEMS_PER_THREAD    = AgentReduceByKeyPolicy::ITEMS_PER_THREAD,
+        TWO_PHASE_SCATTER   = (AgentReduceByKeyPolicy::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
         HAS_IDENTITY_ZERO       = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),
 
         // Whether or not to sync after loading data
-        SYNC_AFTER_LOAD         = (BlockReduceSweepByKeyPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        SYNC_AFTER_LOAD         = (AgentReduceByKeyPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
         // Whether or not this is run-length-encoding with a constant iterator as values
         IS_RUN_LENGTH_ENCODE    = (Equals<ValuesInputIteratorT, ConstantInputIterator<ValueT, size_t> >::VALUE) || (Equals<ValuesInputIteratorT, ConstantInputIterator<ValueT, int> >::VALUE) || (Equals<ValuesInputIteratorT, ConstantInputIterator<ValueT, unsigned int> >::VALUE),
@@ -138,13 +138,13 @@ struct BlockReduceSweepByKey
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for keys
     typedef typename If<IsPointer<KeysInputIteratorT>::VALUE,
-            CacheModifiedInputIterator<BlockReduceSweepByKeyPolicy::LOAD_MODIFIER, KeyT, OffsetT>,   // Wrap the native input pointer with CacheModifiedValuesInputIterator
+            CacheModifiedInputIterator<AgentReduceByKeyPolicy::LOAD_MODIFIER, KeyT, OffsetT>,   // Wrap the native input pointer with CacheModifiedValuesInputIterator
             KeysInputIteratorT>::Type                                                                 // Directly use the supplied input iterator type
         WrappedKeysInputIteratorT;
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for values
     typedef typename If<IsPointer<ValuesInputIteratorT>::VALUE,
-            CacheModifiedInputIterator<BlockReduceSweepByKeyPolicy::LOAD_MODIFIER, ValueT, OffsetT>,  // Wrap the native input pointer with CacheModifiedValuesInputIterator
+            CacheModifiedInputIterator<AgentReduceByKeyPolicy::LOAD_MODIFIER, ValueT, OffsetT>,  // Wrap the native input pointer with CacheModifiedValuesInputIterator
             ValuesInputIteratorT>::Type                                                                // Directly use the supplied input iterator type
         WrappedValuesInputIteratorT;
 
@@ -154,19 +154,19 @@ struct BlockReduceSweepByKey
     // Parameterized BlockLoad type for keys
     typedef BlockLoad<
             WrappedKeysInputIteratorT,
-            BlockReduceSweepByKeyPolicy::BLOCK_THREADS,
-            BlockReduceSweepByKeyPolicy::ITEMS_PER_THREAD,
-            BlockReduceSweepByKeyPolicy::LOAD_ALGORITHM>
+            AgentReduceByKeyPolicy::BLOCK_THREADS,
+            AgentReduceByKeyPolicy::ITEMS_PER_THREAD,
+            AgentReduceByKeyPolicy::LOAD_ALGORITHM>
         BlockLoadKeys;
 
     // Parameterized BlockLoad type for values
     typedef BlockLoad<
             WrappedValuesInputIteratorT,
-            BlockReduceSweepByKeyPolicy::BLOCK_THREADS,
-            BlockReduceSweepByKeyPolicy::ITEMS_PER_THREAD,
+            AgentReduceByKeyPolicy::BLOCK_THREADS,
+            AgentReduceByKeyPolicy::ITEMS_PER_THREAD,
             (IS_RUN_LENGTH_ENCODE) ?
                 BLOCK_LOAD_DIRECT :
-                (BlockLoadAlgorithm) BlockReduceSweepByKeyPolicy::LOAD_ALGORITHM>
+                (BlockLoadAlgorithm) AgentReduceByKeyPolicy::LOAD_ALGORITHM>
         BlockLoadValues;
 
     // Parameterized BlockExchange type for locally compacting items as part of a two-phase scatter
@@ -189,8 +189,8 @@ struct BlockReduceSweepByKey
     // Parameterized BlockScan type
     typedef BlockScan<
             ReductionOffsetPair,
-            BlockReduceSweepByKeyPolicy::BLOCK_THREADS,
-            BlockReduceSweepByKeyPolicy::SCAN_ALGORITHM>
+            AgentReduceByKeyPolicy::BLOCK_THREADS,
+            AgentReduceByKeyPolicy::SCAN_ALGORITHM>
         BlockScanAllocations;
 
     // Callback type for obtaining tile prefix during block scan
@@ -256,7 +256,7 @@ struct BlockReduceSweepByKey
 
     // Constructor
     __device__ __forceinline__
-    BlockReduceSweepByKey(
+    AgentReduceByKey(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         KeysInputIteratorT          d_keys_in,          ///< Input keys
         UniqueOutputIteratorT       d_unique_out,       ///< Unique output keys

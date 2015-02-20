@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "dispatch/device_select_dispatch.cuh"
+#include "dispatch/dispatch_select_if.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -139,7 +139,7 @@ struct DevicePartition
         typedef NullType                SelectOp;       // Selection op (not used)
         typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        return DeviceSelectDispatch<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, true>::Dispatch(
+        return DispatchSelectIf<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, true>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -248,7 +248,7 @@ struct DevicePartition
         typedef NullType*               FlagIterator;   // FlagT iterator type (not used)
         typedef NullType                EqualityOp;     // Equality operator (not used)
 
-        return DeviceSelectDispatch<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, true>::Dispatch(
+        return DispatchSelectIf<InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, true>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

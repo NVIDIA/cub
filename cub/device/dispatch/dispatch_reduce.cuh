@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "../../block_sweep/block_reduce_sweep.cuh"
+#include "../../agent/agent_reduce.cuh"
 #include "../../iterator/constant_input_iterator.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_even_share.cuh"
@@ -61,12 +61,12 @@ namespace cub {
  * Reduce region kernel entry point (multi-block).  Computes privatized reductions, one per thread block.
  */
 template <
-    typename                BlockReduceSweepPolicy,     ///< Parameterized BlockReduceSweepPolicy tuning policy type
+    typename                AgentReducePolicy,     ///< Parameterized AgentReducePolicy tuning policy type
     typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
     typename                OutputIteratorT,            ///< Output iterator type for recording the reduced aggregate \iterator
     typename                OffsetT,                    ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (int(BlockReduceSweepPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(AgentReducePolicy::BLOCK_THREADS))
 __global__ void DeviceReduceSweepKernel(
     InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
     OutputIteratorT         d_out,                      ///< [out] Pointer to the output aggregate
@@ -79,21 +79,21 @@ __global__ void DeviceReduceSweepKernel(
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockReduceSweep<BlockReduceSweepPolicy, InputIteratorT, OffsetT, ReductionOp> BlockReduceSweepT;
+    typedef AgentReduce<AgentReducePolicy, InputIteratorT, OffsetT, ReductionOp> AgentReduceT;
 
     // Block-wide aggregate
     T block_aggregate;
 
     // Shared memory storage
-    __shared__ typename BlockReduceSweepT::TempStorage temp_storage;
+    __shared__ typename AgentReduceT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockReduceSweepT(temp_storage, d_in, reduction_op).ConsumeRange(
+    AgentReduceT(temp_storage, d_in, reduction_op).ConsumeRange(
         num_items,
         even_share,
         queue,
         block_aggregate,
-        Int2Type<BlockReduceSweepPolicy::GRID_MAPPING>());
+        Int2Type<AgentReducePolicy::GRID_MAPPING>());
 
     // Output result
     if (threadIdx.x == 0)
@@ -107,12 +107,12 @@ __global__ void DeviceReduceSweepKernel(
  * Reduce a single tile kernel entry point (single-block).  Can be used to aggregate privatized threadblock reductions from a previous multi-block reduction pass.
  */
 template <
-    typename                BlockReduceSweepPolicy,     ///< Parameterized BlockReduceSweepPolicy tuning policy type
+    typename                AgentReducePolicy,     ///< Parameterized AgentReducePolicy tuning policy type
     typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
     typename                OutputIteratorT,            ///< Output iterator type for recording the reduced aggregate \iterator
     typename                OffsetT,                    ///< Signed integer type for global offsets
     typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-__launch_bounds__ (int(BlockReduceSweepPolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(AgentReducePolicy::BLOCK_THREADS), 1)
 __global__ void SingleReduceSweepKernel(
     InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
     OutputIteratorT         d_out,                      ///< [out] Pointer to the output aggregate
@@ -123,16 +123,16 @@ __global__ void SingleReduceSweepKernel(
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Thread block type for reducing input tiles
-    typedef BlockReduceSweep<BlockReduceSweepPolicy, InputIteratorT, OffsetT, ReductionOp> BlockReduceSweepT;
+    typedef AgentReduce<AgentReducePolicy, InputIteratorT, OffsetT, ReductionOp> AgentReduceT;
 
     // Block-wide aggregate
     T block_aggregate;
 
     // Shared memory storage
-    __shared__ typename BlockReduceSweepT::TempStorage temp_storage;
+    __shared__ typename AgentReduceT::TempStorage temp_storage;
 
     // Consume input tiles
-    BlockReduceSweepT(temp_storage, d_in, reduction_op).ConsumeRange(
+    AgentReduceT(temp_storage, d_in, reduction_op).ConsumeRange(
         OffsetT(0),
         OffsetT(num_items),
         block_aggregate);
@@ -159,7 +159,7 @@ template <
     typename OutputIteratorT,   ///< Output iterator type for recording the reduced aggregate \iterator
     typename OffsetT,           ///< Signed integer type for global offsets
     typename ReductionOp>       ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-struct DeviceReduceDispatch
+struct DispatchReduce
 {
     /******************************************************************************
      * Types and constants
@@ -188,7 +188,7 @@ struct DeviceReduceDispatch
             SMALL_NOMINAL_VECTOR_LOAD_LENGTH    = 4,
             SMALL_VECTOR_LOAD_LENGTH            = CUB_MIN(CUB_MIN(4, SMALL_ITEMS_PER_THREAD), CUB_MAX(1, (SMALL_NOMINAL_VECTOR_LOAD_LENGTH * 1 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 128,                                ///< Threads per thread block
                 SMALL_ITEMS_PER_THREAD,             ///< Items per thread per tile of input
                 SMALL_VECTOR_LOAD_LENGTH,           ///< Number of items per vectorized load
@@ -205,7 +205,7 @@ struct DeviceReduceDispatch
             NOMINAL_VECTOR_LOAD_LENGTH          = 4,
             VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 256,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
@@ -227,7 +227,7 @@ struct DeviceReduceDispatch
             SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 1,
             SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 256,                                ///< Threads per thread block
                 SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
                 SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
@@ -248,7 +248,7 @@ struct DeviceReduceDispatch
             NOMINAL_VECTOR_LOAD_LENGTH          = 1,
             VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 256,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
@@ -265,7 +265,7 @@ struct DeviceReduceDispatch
             SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 4,
             SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 256,                                ///< Threads per thread block
                 SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
                 SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
@@ -286,7 +286,7 @@ struct DeviceReduceDispatch
             SMALL_NOMINAL_VECTOR_LOAD_LENGTH    = 4,
             SMALL_VECTOR_LOAD_LENGTH            = CUB_MIN(CUB_MIN(4, SMALL_ITEMS_PER_THREAD), CUB_MAX(1, (SMALL_NOMINAL_VECTOR_LOAD_LENGTH * 1 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 192,                                ///< Threads per thread block
                 SMALL_ITEMS_PER_THREAD,             ///< Items per thread per tile of input
                 SMALL_VECTOR_LOAD_LENGTH,           ///< Number of items per vectorized load
@@ -305,7 +305,7 @@ struct DeviceReduceDispatch
             NOMINAL_VECTOR_LOAD_LENGTH          = 4,
             VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
@@ -327,7 +327,7 @@ struct DeviceReduceDispatch
             SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 1,
             SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 192,                                ///< Threads per thread block
                 SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
                 SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
@@ -348,7 +348,7 @@ struct DeviceReduceDispatch
             NOMINAL_VECTOR_LOAD_LENGTH          = 2,
             VECTOR_LOAD_LENGTH                  = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
@@ -365,7 +365,7 @@ struct DeviceReduceDispatch
             SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 2,
             SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 32,                                 ///< Threads per thread block
                 SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
                 SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
@@ -387,7 +387,7 @@ struct DeviceReduceDispatch
         };
 
         // RangeReducePolicy
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 128,                                ///< Threads per thread block
                 ITEMS_PER_THREAD,                   ///< Items per thread per tile of input
                 VECTOR_LOAD_LENGTH,                 ///< Number of items per vectorized load
@@ -404,7 +404,7 @@ struct DeviceReduceDispatch
             SINGLE_NOMINAL_VECTOR_LOAD_LENGTH   = 4,
             SINGLE_VECTOR_LOAD_LENGTH           = CUB_MIN(CUB_MIN(4, ITEMS_PER_THREAD), CUB_MAX(1, (SINGLE_NOMINAL_VECTOR_LOAD_LENGTH * 4 / sizeof(T)))),
         };
-        typedef BlockReduceSweepPolicy<
+        typedef AgentReducePolicy<
                 32,                                 ///< Threads per thread block
                 SINGLE_ITEMS_PER_THREAD,            ///< Items per thread per tile of input
                 SINGLE_VECTOR_LOAD_LENGTH,          ///< Number of items per vectorized load
