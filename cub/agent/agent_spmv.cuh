@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockSpmvSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide SpMV.
+ * cub::AgentSpmv implements a stateful abstraction of CUDA thread blocks for participating in device-wide SpMV.
  */
 
 #pragma once
@@ -53,7 +53,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockSpmvSweep
+ * Parameterizable tuning policy type for AgentSpmv
  */
 template <
     int                             _BLOCK_THREADS,                         ///< Threads per thread block
@@ -62,7 +62,7 @@ template <
     CacheLoadModifier               _MATRIX_COLUMN_INDICES_LOAD_MODIFIER,   ///< Cache load modifier for reading CSR column-indices
     CacheLoadModifier               _MATRIX_VALUES_LOAD_MODIFIER,           ///< Cache load modifier for reading CSR values
     CacheLoadModifier               _VECTOR_VALUES_LOAD_MODIFIER>           ///< Cache load modifier for reading vector values
-struct BlockSpmvSweepPolicy
+struct AgentSpmvPolicy
 {
     enum
     {
@@ -82,15 +82,15 @@ struct BlockSpmvSweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockSpmvSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide SpMV.
+ * \brief AgentSpmv implements a stateful abstraction of CUDA thread blocks for participating in device-wide SpMV.
  */
 template <
-    typename    BlockSpmvSweepPolicyT,      ///< Parameterized BlockSpmvSweepPolicy tuning policy type
+    typename    AgentSpmvPolicyT,      ///< Parameterized AgentSpmvPolicy tuning policy type
     typename    VertexT,                    ///< Integer type for vertex identifiers
     typename    ValueT,                     ///< Matrix and vector value type
     typename    OffsetT,                    ///< Signed integer type for sequence offsets
     int         PTX_ARCH = CUB_PTX_ARCH>    ///< PTX compute capability
-struct BlockSpmvSweep
+struct AgentSpmv
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -99,33 +99,33 @@ struct BlockSpmvSweep
     /// Constants
     enum
     {
-        BLOCK_THREADS           = BlockSpmvSweepPolicyT::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = BlockSpmvSweepPolicyT::ITEMS_PER_THREAD,
+        BLOCK_THREADS           = AgentSpmvPolicyT::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = AgentSpmvPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     /// Input iterator wrapper types (for applying cache modifiers)
 
     typedef CacheModifiedInputIterator<
-            BlockSpmvSweepPolicyT::MATRIX_ROW_OFFSETS_LOAD_MODIFIER,
+            AgentSpmvPolicyT::MATRIX_ROW_OFFSETS_LOAD_MODIFIER,
             OffsetT,
             OffsetT>
         MatrixValueIteratorT;
 
     typedef CacheModifiedInputIterator<
-            BlockSpmvSweepPolicyT::MATRIX_COLUMN_INDICES_LOAD_MODIFIER,
+            AgentSpmvPolicyT::MATRIX_COLUMN_INDICES_LOAD_MODIFIER,
             VertexT,
             OffsetT>
         MatrixRowOffsetsIteratorT;
 
     typedef CacheModifiedInputIterator<
-            BlockSpmvSweepPolicyT::MATRIX_VALUES_LOAD_MODIFIER,
+            AgentSpmvPolicyT::MATRIX_VALUES_LOAD_MODIFIER,
             ValueT,
             OffsetT>
         MatrixColumnIndicesIteratorT;
 
     typedef CacheModifiedInputIterator<
-            BlockSpmvSweepPolicyT::VECTOR_VALUES_LOAD_MODIFIER,
+            AgentSpmvPolicyT::VECTOR_VALUES_LOAD_MODIFIER,
             ValueT,
             OffsetT>
         VectorValueIteratorT;
@@ -177,7 +177,7 @@ struct BlockSpmvSweep
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockSpmvSweep(
+    __device__ __forceinline__ AgentSpmv(
         TempStorage &temp_storage,              ///< Reference to temp_storage
         ValueT*     d_matrix_values,            ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
         OffsetT*    d_matrix_row_offsets,       ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)

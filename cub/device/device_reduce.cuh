@@ -37,8 +37,8 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "dispatch/device_reduce_dispatch.cuh"
-#include "dispatch/device_reduce_by_key_dispatch.cuh"
+#include "dispatch/dispatch_reduce.cuh"
+#include "dispatch/dispatch_reduce_by_key.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -153,9 +153,9 @@ struct DeviceReduce
         typedef int OffsetT;
 
         // Dispatch type
-        typedef DeviceReduceDispatch<InputIteratorT, OutputIteratorT, OffsetT, ReductionOp> DeviceReduceDispatch;
+        typedef DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, ReductionOp> DispatchReduce;
 
-        return DeviceReduceDispatch::Dispatch(
+        return DispatchReduce::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -229,9 +229,9 @@ struct DeviceReduce
         typedef int OffsetT;
 
         // Dispatch type
-        typedef DeviceReduceDispatch<InputIteratorT, OutputIteratorT, OffsetT, cub::Sum> DeviceReduceDispatch;
+        typedef DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Sum> DispatchReduce;
 
-        return DeviceReduceDispatch::Dispatch(
+        return DispatchReduce::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -301,9 +301,9 @@ struct DeviceReduce
         typedef int OffsetT;
 
         // Dispatch type
-        typedef DeviceReduceDispatch<InputIteratorT, OutputIteratorT, OffsetT, cub::Min> DeviceReduceDispatch;
+        typedef DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Min> DispatchReduce;
 
-        return DeviceReduceDispatch::Dispatch(
+        return DispatchReduce::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -382,9 +382,9 @@ struct DeviceReduce
         ArgIndexInputIteratorT d_argmin_in(d_in, 0);
 
         // Dispatch type
-        typedef DeviceReduceDispatch<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin> DeviceReduceDispatch;
+        typedef DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin> DispatchReduce;
 
-        return DeviceReduceDispatch::Dispatch(
+        return DispatchReduce::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_argmin_in,
@@ -454,9 +454,9 @@ struct DeviceReduce
         typedef int OffsetT;
 
         // Dispatch type
-        typedef DeviceReduceDispatch<InputIteratorT, OutputIteratorT, OffsetT, cub::Max> DeviceReduceDispatch;
+        typedef DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Max> DispatchReduce;
 
-        return DeviceReduceDispatch::Dispatch(
+        return DispatchReduce::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -535,9 +535,9 @@ struct DeviceReduce
         ArgIndexInputIteratorT d_argmax_in(d_in, 0);
 
         // Dispatch type
-        typedef DeviceReduceDispatch<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax> DeviceReduceDispatch;
+        typedef DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax> DispatchReduce;
 
-        return DeviceReduceDispatch::Dispatch(
+        return DispatchReduce::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_argmax_in,
@@ -657,7 +657,7 @@ struct DeviceReduce
         typedef NullType            SelectOp;       // Selection op (not used)
         typedef Equality            EqualityOp;     // Default == operator
 
-        return DeviceReduceByKeyDispatch<KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, EqualityOp, ReductionOp, OffsetT>::Dispatch(
+        return DispatchReduceByKey<KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, EqualityOp, ReductionOp, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys_in,

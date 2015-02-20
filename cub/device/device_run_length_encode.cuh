@@ -37,8 +37,8 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "dispatch/device_rle_dispatch.cuh"
-#include "dispatch/device_reduce_by_key_dispatch.cuh"
+#include "dispatch/dispatch_rle.cuh"
+#include "dispatch/dispatch_reduce_by_key.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -172,7 +172,7 @@ struct DeviceRunLengthEncode
         Value one_val;
         one_val = 1;
 
-        return DeviceReduceByKeyDispatch<InputIteratorT, UniqueOutputIteratorT, LengthsInputIteratorT, LengthsOutputIteratorT, NumRunsOutputIteratorT, EqualityOp, ReductionOp, OffsetT>::Dispatch(
+        return DispatchReduceByKey<InputIteratorT, UniqueOutputIteratorT, LengthsInputIteratorT, LengthsOutputIteratorT, NumRunsOutputIteratorT, EqualityOp, ReductionOp, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

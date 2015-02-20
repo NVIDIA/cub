@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockReduceSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a range of tiles.
+ * cub::AgentReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a range of tiles.
  */
 
 #pragma once
@@ -57,7 +57,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockReduceSweep
+ * Parameterizable tuning policy type for AgentReduce
  */
 template <
     int                     _BLOCK_THREADS,         ///< Threads per thread block
@@ -66,7 +66,7 @@ template <
     BlockReduceAlgorithm    _BLOCK_ALGORITHM,       ///< Cooperative block-wide reduction algorithm to use
     CacheLoadModifier       _LOAD_MODIFIER,         ///< Cache load modifier for reading input elements
     GridMappingStrategy     _GRID_MAPPING>          ///< How to map tiles of input onto thread blocks
-struct BlockReduceSweepPolicy
+struct AgentReducePolicy
 {
     enum
     {
@@ -87,18 +87,18 @@ struct BlockReduceSweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockReduceSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a range of tiles.
+ * \brief AgentReduce implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduction across a range of tiles.
  *
  * Each thread reduces only the values it loads. If \p FIRST_TILE, this
  * partial reduction is stored into \p thread_aggregate.  Otherwise it is
  * accumulated into \p thread_aggregate.
  */
 template <
-    typename BlockReduceSweepPolicy,        ///< Parameterized BlockReduceSweepPolicy tuning policy type
+    typename AgentReducePolicy,        ///< Parameterized AgentReducePolicy tuning policy type
     typename InputIteratorT,                ///< Random-access iterator type for input
     typename OffsetT,                       ///< Signed integer type for global offsets
     typename ReductionOp>                   ///< Binary reduction operator type having member <tt>T operator()(const T &a, const T &b)</tt>
-struct BlockReduceSweep
+struct AgentReduce
 {
 
     //---------------------------------------------------------------------
@@ -109,20 +109,20 @@ struct BlockReduceSweep
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     /// Vector type of T for data movement
-    typedef typename CubVector<T, BlockReduceSweepPolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
+    typedef typename CubVector<T, AgentReducePolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
 
     /// Input iterator wrapper type (for applying cache modifier)
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
-            CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, T, OffsetT>,  // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<AgentReducePolicy::LOAD_MODIFIER, T, OffsetT>,  // Wrap the native input pointer with CacheModifiedInputIterator
             InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIteratorT;
 
     /// Constants
     enum
     {
-        BLOCK_THREADS       = BlockReduceSweepPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = BlockReduceSweepPolicy::ITEMS_PER_THREAD,
-        VECTOR_LOAD_LENGTH  = CUB_MIN(ITEMS_PER_THREAD, BlockReduceSweepPolicy::VECTOR_LOAD_LENGTH),
+        BLOCK_THREADS       = AgentReducePolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = AgentReducePolicy::ITEMS_PER_THREAD,
+        VECTOR_LOAD_LENGTH  = CUB_MIN(ITEMS_PER_THREAD, AgentReducePolicy::VECTOR_LOAD_LENGTH),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
@@ -130,11 +130,11 @@ struct BlockReduceSweep
 
     };
 
-    static const CacheLoadModifier    LOAD_MODIFIER   = BlockReduceSweepPolicy::LOAD_MODIFIER;
-    static const BlockReduceAlgorithm BLOCK_ALGORITHM = BlockReduceSweepPolicy::BLOCK_ALGORITHM;
+    static const CacheLoadModifier    LOAD_MODIFIER   = AgentReducePolicy::LOAD_MODIFIER;
+    static const BlockReduceAlgorithm BLOCK_ALGORITHM = AgentReducePolicy::BLOCK_ALGORITHM;
 
     /// Parameterized BlockReduce primitive
-    typedef BlockReduce<T, BLOCK_THREADS, BlockReduceSweepPolicy::BLOCK_ALGORITHM> BlockReduceT;
+    typedef BlockReduce<T, BLOCK_THREADS, AgentReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     /// Shared memory type required by this thread block
     typedef typename BlockReduceT::TempStorage _TempStorage;
@@ -187,7 +187,7 @@ struct BlockReduceSweep
     /**
      * Constructor
      */
-    __device__ __forceinline__ BlockReduceSweep(
+    __device__ __forceinline__ AgentReduce(
         TempStorage&            temp_storage,       ///< Reference to temp_storage
         InputIteratorT          d_in,               ///< Input data to reduce
         ReductionOp             reduction_op)       ///< Binary reduction operator
@@ -243,7 +243,7 @@ struct BlockReduceSweep
 
             // Vector Input iterator wrapper type (for applying cache modifier)
             T *d_in_unqualified = const_cast<T*>(d_in) + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
-            CacheModifiedInputIterator<BlockReduceSweepPolicy::LOAD_MODIFIER, VectorT, OffsetT> d_vec_in(
+            CacheModifiedInputIterator<AgentReducePolicy::LOAD_MODIFIER, VectorT, OffsetT> d_vec_in(
                 reinterpret_cast<VectorT*>(d_in_unqualified));
 
             #pragma unroll

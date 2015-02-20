@@ -28,14 +28,14 @@
 
 /**
  * \file
- * cub::BlockRleSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide run-length-encode.
+ * cub::AgentRle implements a stateful abstraction of CUDA thread blocks for participating in device-wide run-length-encode.
  */
 
 #pragma once
 
 #include <iterator>
 
-#include "block_scan_prefix_operators.cuh"
+#include "single_pass_scan_operators.cuh"
 #include "../block/block_load.cuh"
 #include "../block/block_store.cuh"
 #include "../block/block_scan.cuh"
@@ -58,7 +58,7 @@ namespace cub {
  ******************************************************************************/
 
 /**
- * Parameterizable tuning policy type for BlockRleSweep
+ * Parameterizable tuning policy type for AgentRle
  */
 template <
     int                         _BLOCK_THREADS,                 ///< Threads per thread block
@@ -67,7 +67,7 @@ template <
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
     bool                        _STORE_WARP_TIME_SLICING,       ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
-struct BlockRleSweepPolicy
+struct AgentRlePolicy
 {
     enum
     {
@@ -90,16 +90,16 @@ struct BlockRleSweepPolicy
  ******************************************************************************/
 
 /**
- * \brief BlockRleSweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide run-length-encode across a range of tiles
+ * \brief AgentRle implements a stateful abstraction of CUDA thread blocks for participating in device-wide run-length-encode across a range of tiles
  */
 template <
-    typename    BlockRleSweepPolicy,      ///< Parameterized BlockRleSweepPolicy tuning policy type
+    typename    AgentRlePolicy,      ///< Parameterized AgentRlePolicy tuning policy type
     typename    InputIteratorT,           ///< Random-access input iterator type for data
     typename    OffsetsOutputIteratorT,   ///< Random-access output iterator type for offset values
     typename    LengthsOutputIteratorT,   ///< Random-access output iterator type for length values
     typename    EqualityOp,               ///< T equality operator type
     typename    OffsetT>                  ///< Signed integer type for global offsets
-struct BlockRleSweep
+struct AgentRle
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -121,17 +121,17 @@ struct BlockRleSweep
     enum
     {
         WARP_THREADS            = CUB_WARP_THREADS(PTX_ARCH),
-        BLOCK_THREADS           = BlockRleSweepPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = BlockRleSweepPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS           = AgentRlePolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = AgentRlePolicy::ITEMS_PER_THREAD,
         WARP_ITEMS              = WARP_THREADS * ITEMS_PER_THREAD,
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
         WARPS                   = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
         /// Whether or not to sync after loading data
-        SYNC_AFTER_LOAD         = (BlockRleSweepPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        SYNC_AFTER_LOAD         = (AgentRlePolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
 
         /// Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any store-related data transpositions (versus each warp having its own storage)
-        STORE_WARP_TIME_SLICING = BlockRleSweepPolicy::STORE_WARP_TIME_SLICING,
+        STORE_WARP_TIME_SLICING = AgentRlePolicy::STORE_WARP_TIME_SLICING,
         ACTIVE_EXCHANGE_WARPS   = (STORE_WARP_TIME_SLICING) ? 1 : WARPS,
     };
 
@@ -168,16 +168,16 @@ struct BlockRleSweep
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for data
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
-            CacheModifiedInputIterator<BlockRleSweepPolicy::LOAD_MODIFIER, T, OffsetT>,      // Wrap the native input pointer with CacheModifiedVLengthnputIterator
+            CacheModifiedInputIterator<AgentRlePolicy::LOAD_MODIFIER, T, OffsetT>,      // Wrap the native input pointer with CacheModifiedVLengthnputIterator
             InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIteratorT;
 
     // Parameterized BlockLoad type for data
     typedef BlockLoad<
             WrappedInputIteratorT,
-            BlockRleSweepPolicy::BLOCK_THREADS,
-            BlockRleSweepPolicy::ITEMS_PER_THREAD,
-            BlockRleSweepPolicy::LOAD_ALGORITHM>
+            AgentRlePolicy::BLOCK_THREADS,
+            AgentRlePolicy::ITEMS_PER_THREAD,
+            AgentRlePolicy::LOAD_ALGORITHM>
         BlockLoadT;
 
     // Parameterized BlockDiscontinuity type for data
@@ -260,7 +260,7 @@ struct BlockRleSweep
 
     // Constructor
     __device__ __forceinline__
-    BlockRleSweep(
+    AgentRle(
         TempStorage                 &temp_storage,      ///< [in] Reference to temp_storage
         InputIteratorT              d_in,               ///< [in] Pointer to input sequence of data items
         OffsetsOutputIteratorT      d_offsets_out,      ///< [out] Pointer to output sequence of run offsets
