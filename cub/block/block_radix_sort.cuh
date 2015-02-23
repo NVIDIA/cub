@@ -332,6 +332,10 @@ private:
         }
     }
 
+public:
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
     /// Sort blocked -> striped arrangement
     template <int DESCENDING, int KEYS_ONLY>
     __device__ __forceinline__ void SortBlockedToStriped(
@@ -394,9 +398,7 @@ private:
         }
     }
 
-
-
-public:
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
     /// \smemstorage{BlockScan}
     struct TempStorage : Uninitialized<_TempStorage> {};

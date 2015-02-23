@@ -367,7 +367,6 @@ struct AgentScan
         GridQueue<int>      queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
         ScanTileState       &tile_status)       ///< Global list of tile status
     {
-#if (CUB_PTX_ARCH <= 130)
         // Blocks are launched in increasing order, so just assign one tile per block
 
         int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
@@ -378,44 +377,6 @@ struct AgentScan
             ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
         else if (num_remaining > 0)
             ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-
-#else
-        // Blocks may not be launched in increasing order, so work-steal tiles
-
-        // Get first tile index
-        if (threadIdx.x == 0)
-            temp_storage.tile_idx = queue.Drain(1);
-
-        __syncthreads();
-
-        int     tile_idx        = temp_storage.tile_idx;
-        OffsetT block_offset    = TILE_ITEMS * tile_idx;
-        OffsetT num_remaining   = num_items - block_offset;
-
-        while (num_remaining >= TILE_ITEMS)
-        {
-            // Consume full tile
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-
-            // Get next tile
-            if (threadIdx.x == 0)
-                temp_storage.tile_idx = queue.Drain(1);
-
-            __syncthreads();
-
-            tile_idx        = temp_storage.tile_idx;
-            block_offset    = TILE_ITEMS * tile_idx;
-            num_remaining   = num_items - block_offset;
-        }
-
-        // Consume the last (and potentially partially-full) tile
-        if (num_remaining > 0)
-        {
-            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
-        }
-
-#endif
-
     }
 
 

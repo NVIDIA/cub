@@ -149,6 +149,24 @@ struct DispatchScan
      * Tuning policies
      ******************************************************************************/
 
+    /// SM520
+    struct Policy520
+    {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 16,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
+        // GTX980: 20.5B items/s @ 48M 32-bit T
+        typedef AgentScanPolicy<
+                256,
+                ITEMS_PER_THREAD,
+                BLOCK_LOAD_DIRECT, LOAD_LDG,
+                BLOCK_STORE_WARP_TRANSPOSE,
+                BLOCK_SCAN_RAKING_MEMOIZE>
+            RangeScanPolicy;
+    };
+
     /// SM35
     struct Policy350
     {
@@ -246,7 +264,10 @@ struct DispatchScan
      * Tuning policies of current PTX compiler pass
      ******************************************************************************/
 
-#if (CUB_PTX_ARCH >= 350)
+#if (CUB_PTX_ARCH >= 520)
+    typedef Policy520 PtxPolicy;
+
+#elif (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
 
 #elif (CUB_PTX_ARCH >= 300)
@@ -288,7 +309,11 @@ struct DispatchScan
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-        if (ptx_version >= 350)
+        if (ptx_version >= 520)
+        {
+            device_scan_sweep_config.template Init<typename Policy520::RangeScanPolicy>();
+        }
+        else if (ptx_version >= 350)
         {
             device_scan_sweep_config.template Init<typename Policy350::RangeScanPolicy>();
         }
@@ -446,26 +471,15 @@ struct DispatchScan
                 device_scan_sweep_kernel,
                 device_scan_sweep_config.block_threads))) break;
 
+            // Get max x-dimension of grid
+            int max_dim_x;
+            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
+
             // Get grid size for scanning tiles
             dim3 scan_grid_size;
-            if (ptx_version <= 130)
-            {
-                // Blocks are launched in order, so just assign one block per tile
-                int max_dim_x = 32 * 1024;
-                scan_grid_size.z = 1;
-                scan_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
-                scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
-            }
-            else
-            {
-                // Blocks may not be launched in order, so use atomics
-                int range_scan_occupancy = range_scan_sm_occupancy * sm_count;        // Whole-device occupancy for device_scan_sweep_kernel
-                scan_grid_size.z = 1;
-                scan_grid_size.y = 1;
-                scan_grid_size.x = (num_tiles < range_scan_occupancy) ?
-                    num_tiles :                     // Not enough to fill the device with threadblocks
-                    range_scan_occupancy;          // Fill the device with threadblocks
-            }
+            scan_grid_size.z = 1;
+            scan_grid_size.y = ((unsigned int) num_tiles + max_dim_x - 1) / max_dim_x;
+            scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
             // Log device_scan_sweep_kernel configuration
             if (debug_synchronous) CubLog("Invoking device_scan_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
