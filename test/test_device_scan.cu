@@ -54,6 +54,7 @@ using namespace cub;
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
+double                  g_bandwidth_GBs;
 CachingDeviceAllocator  g_allocator(true);
 
 // Dispatch types
@@ -569,7 +570,7 @@ void Test(
         float avg_millis = elapsed_millis / g_timing_iterations;
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
         float gbandwidth = grate * sizeof(T) * 2;
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
+        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, grate, gbandwidth, gbandwidth / g_bandwidth_GBs * 100.0);
     }
 
     printf("\n\n");
@@ -828,6 +829,13 @@ int main(int argc, char** argv)
     // Get device SM version
     int sm_version;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
+
+    // Get GPU device bandwidth (GB/s)
+    int bus_width, mem_clock_khz;
+    CubDebugExit(cudaDeviceGetAttribute(&bus_width, cudaDevAttrGlobalMemoryBusWidth, device_ordinal));
+    CubDebugExit(cudaDeviceGetAttribute(&mem_clock_khz, cudaDevAttrMemoryClockRate, device_ordinal));
+    g_bandwidth_GBs = double(bus_width) * mem_clock_khz * 2 / 8 / 1000 / 1000;
+
 
 #ifdef QUICKER_TEST
 
