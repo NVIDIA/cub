@@ -571,6 +571,9 @@ struct AgentRadixSortDownsweep
         GatherScatterValues<FULL_TILE>(values, relative_bin_offsets, ranks, block_offset, valid_items);
     }
 
+    //---------------------------------------------------------------------
+    // Copy shortcut
+    //---------------------------------------------------------------------
 
     /**
      * Copy tiles within the range of input
@@ -728,6 +731,7 @@ struct AgentRadixSortDownsweep
             }
         }
     }
+
 };
 
 
