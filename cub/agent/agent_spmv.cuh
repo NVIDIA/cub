@@ -191,86 +191,17 @@ struct AgentSpmv
         int         num_nonzeros)               ///< [in] number of nonzero elements of matrix <b>A</b>.
     :
         temp_storage(temp_storage.Alias()),
-        d_wrapped_samples(d_samples),
-        num_output_bins(num_output_bins),
-        num_privatized_bins(num_privatized_bins),
-        d_output_histograms(d_output_histograms),
-        privatized_decode_op(privatized_decode_op),
-        output_decode_op(output_decode_op),
-        d_native_samples(NativePointer(d_wrapped_samples)),
-        prefer_smem((MEM_PREFERENCE == SMEM) ?
-            true :                              // prefer smem privatized histograms
-            (MEM_PREFERENCE == GMEM) ?
-                false :                         // prefer gmem privatized histograms
-                blockIdx.x & 1)                 // prefer blended privatized histograms
+        d_matrix_values(d_matrix_values),
+        d_matrix_row_offsets(d_matrix_row_offsets),
+        d_matrix_column_indices(d_matrix_column_indices),
+        d_vector_x(d_vector_x),
+        d_vector_y(d_vector_y),
+        d_block_carryout_rows(d_block_carryout_rows),
+        d_block_runout_values(d_block_runout_values),
+        num_rows(num_rows),
+        num_cols(num_cols),
+        num_nonzeros(num_nonzeros)
     {
-        int blockId = (blockIdx.y * gridDim.x) + blockIdx.x;
-
-        for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-            this->d_privatized_histograms[CHANNEL] = d_privatized_histograms[CHANNEL] + (blockId * num_privatized_bins[CHANNEL]);
-    }
-
-
-    /**
-     * Consume image
-     */
-    __device__ __forceinline__ void ConsumeTiles(
-        OffsetT             num_row_pixels,             ///< The number of multi-channel pixels per row in the region of interest
-        OffsetT             num_rows,                   ///< The number of rows in the region of interest
-        OffsetT             row_stride_samples,         ///< The number of samples between starts of consecutive rows in the region of interest
-        int                 tiles_per_row,              ///< Number of image tiles per row
-        GridQueue<int>      tile_queue)                 ///< Queue descriptor for assigning tiles of work to thread blocks
-    {
-/*
-
-        // Whether all row starting offsets are quad-aligned (in single-channel)
-        // Whether all row starting offsets are pixel-aligned (in multi-channel)
-        int     offsets             = int(d_native_samples) | (int(row_stride_samples) * int(sizeof(SampleT)));
-        int     quad_mask           = sizeof(SampleT) * 4 - 1;
-        int     pixel_mask          = AlignBytes<PixelT>::ALIGN_BYTES - 1;
-
-        bool    quad_aligned_rows   = (NUM_CHANNELS == 1) && ((offsets & quad_mask) == 0);
-        bool    pixel_aligned_rows  = (NUM_CHANNELS > 1) && ((offsets & pixel_mask) == 0);
-
-        // Whether rows are aligned and can be vectorized
-        if ((d_native_samples != NULL) && (quad_aligned_rows || pixel_aligned_rows))
-            ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
-        else
-            ConsumeRows<false>(num_row_pixels, num_rows, row_stride_samples, d_native_samples);
-*/
-
-//        ConsumeRows<true>(num_row_pixels, num_rows, row_stride_samples);
-
-        ConsumeTiles<true>(
-            0,
-            num_row_pixels * NUM_CHANNELS,
-            tiles_per_row,
-            tile_queue,
-            Int2Type<WORK_STEALING>());
-    }
-
-
-    /**
-     * Initialize privatized bin counters.  Specialized for privatized shared-memory counters
-     */
-    __device__ __forceinline__ void InitBinCounters()
-    {
-        if (prefer_smem)
-            InitSmemBinCounters();
-        else
-            InitGmemBinCounters();
-    }
-
-
-    /**
-     * Store privatized histogram to global memory.  Specialized for privatized shared-memory counters
-     */
-    __device__ __forceinline__ void StoreOutput()
-    {
-        if (prefer_smem)
-            StoreSmemOutput();
-        else
-            StoreGmemOutput();
     }
 
 
