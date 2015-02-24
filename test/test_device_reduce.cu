@@ -547,7 +547,7 @@ void TestPointer(
     int         num_items,
     GenMode     gen_mode,
     ReductionOp reduction_op,
-    char*       type_string)
+    const char* type_string)
 {
     printf("\n\nPointer %s cub::DeviceReduce::%s %d items, %s %d-byte elements, gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
@@ -593,7 +593,7 @@ void TestPointer(
     int         num_items,
     GenMode     gen_mode,
     ArgMin      reduction_op,
-    char*       type_string)
+    const char* type_string)
 {
     printf("\n\nPointer %s cub::DeviceReduce::%s %d items, %s %d-byte elements, gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
@@ -646,7 +646,7 @@ void TestPointer(
     int         num_items,
     GenMode     gen_mode,
     ArgMax      reduction_op,
-    char*       type_string)
+    const char* type_string)
 {
     printf("\n\nPointer %s cub::DeviceReduce::%s %d items, %s %d-byte elements, gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
@@ -699,7 +699,7 @@ template <
 void TestIterator(
     int         num_items,
     ReductionOp reduction_op,
-    char*       type_string)
+    const char* type_string)
 {
     printf("\n\nIterator %s cub::DeviceReduce::%s %d items, %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
@@ -731,7 +731,7 @@ template <
 void TestIterator(
     int         num_items,
     ArgMin      reduction_op,
-    char*       type_string)
+    const char* type_string)
 {
     printf("\n\nIterator %s cub::DeviceReduce::%s %d items, %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
@@ -771,7 +771,7 @@ template <
 void TestIterator(
     int         num_items,
     ArgMax      reduction_op,
-    char*       type_string)
+    const char* type_string)
 {
     printf("\n\nIterator %s cub::DeviceReduce::%s %d items, %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
@@ -812,7 +812,7 @@ template <
 void Test(
     int             num_items,
     ReductionOp     reduction_op,
-    char*           type_string)
+    const char*     type_string)
 {
 
     TestPointer<BACKEND, T>(num_items, UNIFORM, reduction_op, type_string);
@@ -832,7 +832,7 @@ template <
 void Test(
     int         num_items,
     ReductionOp reduction_op,
-    char*       type_string)
+    const char* type_string)
 {
     Test<CUB, T>(num_items, reduction_op, type_string);
 #ifdef CUB_CDP
@@ -848,7 +848,7 @@ template <
     typename        T>
 void TestOp(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     Test<T>(num_items, CustomMax(), type_string);
     Test<T>(num_items, Sum(), type_string);
@@ -866,7 +866,7 @@ template <
     typename        T>
 void Test(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     if (num_items < 0)
     {

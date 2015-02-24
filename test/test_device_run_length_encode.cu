@@ -594,9 +594,9 @@ void TestPointer(
     int             num_items,
     int             entropy_reduction,
     int             max_segment,
-    char*           key_type_string,
-    char*           offset_type_string,
-    char*           length_type_string)
+    const char*     key_type_string,
+    const char*     offset_type_string,
+    const char*     length_type_string)
 {
     // Allocate host arrays
     T*      h_in                    = new T[num_items];
@@ -651,9 +651,9 @@ template <
     typename        LengthT>
 void TestIterator(
     int             num_items,
-    char*           key_type_string,
-    char*           offset_type_string,
-    char*           length_type_string,
+    const char*     key_type_string,
+    const char*     offset_type_string,
+    const char*     length_type_string,
     Int2Type<true>  is_primitive)
 {
     // Allocate host arrays
@@ -694,9 +694,9 @@ template <
     typename        LengthT>
 void TestIterator(
     int             num_items,
-    char*           key_type_string,
-    char*           offset_type_string,
-    char*           length_type_string,
+    const char*     key_type_string,
+    const char*     offset_type_string,
+    const char*     length_type_string,
     Int2Type<false> is_primitive)
 {}
 
@@ -712,9 +712,9 @@ template <
     typename        LengthT>
 void Test(
     int             num_items,
-    char*           key_type_string,
-    char*           offset_type_string,
-    char*           length_type_string)
+    const char*     key_type_string,
+    const char*     offset_type_string,
+    const char*     length_type_string)
 {
     // Test iterator (one run)
     TestIterator<RLE_METHOD, BACKEND, T, OffsetT, LengthT>(num_items, key_type_string, offset_type_string, length_type_string, Int2Type<Traits<T>::PRIMITIVE>());
@@ -743,9 +743,9 @@ template <
     typename        LengthT>
 void TestDispatch(
     int             num_items,
-    char*           key_type_string,
-    char*           offset_type_string,
-    char*           length_type_string)
+    const char*     key_type_string,
+    const char*     offset_type_string,
+    const char*     length_type_string)
 {
     Test<RLE,           CUB, T, OffsetT, LengthT>(num_items, key_type_string, offset_type_string, length_type_string);
     Test<NON_TRIVIAL,   CUB, T, OffsetT, LengthT>(num_items, key_type_string, offset_type_string, length_type_string);
@@ -766,9 +766,9 @@ template <
     typename        LengthT>
 void TestSize(
     int             num_items,
-    char*           key_type_string,
-    char*           offset_type_string,
-    char*           length_type_string)
+    const char*     key_type_string,
+    const char*     offset_type_string,
+    const char*     length_type_string)
 {
     if (num_items < 0)
     {

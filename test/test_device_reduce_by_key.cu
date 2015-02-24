@@ -522,8 +522,8 @@ void Test(
     ReductionOp                 reduction_op,
     int                         num_segments,
     int                         num_items,
-    char*                       key_type_string,
-    char*                       value_type_string)
+    const char*                 key_type_string,
+    const char*                 value_type_string)
 {
     const bool IS_RLE = Equals<DeviceValueInputIteratorT, ConstantInputIterator<ValueT, int> >::VALUE;
 
@@ -619,8 +619,8 @@ void TestPointer(
     int             entropy_reduction,
     int             max_segment,
     ReductionOp     reduction_op,
-    char*           key_type_string,
-    char*           value_type_string)
+    const char*     key_type_string,
+    const char*     value_type_string)
 {
     // Allocate host arrays
     KeyT* h_keys_in        = new KeyT[num_items];
@@ -681,8 +681,8 @@ void TestIterator(
     int             entropy_reduction,
     int             max_segment,
     ReductionOp     reduction_op,
-    char*           key_type_string,
-    char*           value_type_string,
+    const char*     key_type_string,
+    const char*     value_type_string,
     Int2Type<true>  is_primitive)
 {
     // Allocate host arrays
@@ -737,8 +737,8 @@ void TestIterator(
     int             entropy_reduction,
     int             max_segment,
     ReductionOp     reduction_op,
-    char*           key_type_string,
-    char*           value_type_string,
+    const char*     key_type_string,
+    const char*     value_type_string,
     Int2Type<false> is_primitive)
 {}
 
@@ -754,8 +754,8 @@ template <
 void Test(
     int             num_items,
     ReductionOp     reduction_op,
-    char*           key_type_string,
-    char*           value_type_string)
+    const char*     key_type_string,
+    const char*     value_type_string)
 {
     // Evaluate different max-segment lengths
     for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
@@ -788,8 +788,8 @@ template <
 void TestDispatch(
     int             num_items,
     ReductionOp     reduction_op,
-    char*           key_type_string,
-    char*           value_type_string)
+    const char*     key_type_string,
+    const char*     value_type_string)
 {
     Test<CUB, KeyT, ValueT>(num_items, reduction_op, key_type_string, value_type_string);
 #ifdef CUB_CDP
@@ -808,8 +808,8 @@ template <
 void TestSize(
     int             num_items,
     ReductionOp     reduction_op,
-    char*           key_type_string,
-    char*           value_type_string)
+    const char*     key_type_string,
+    const char*     value_type_string)
 {
     if (num_items < 0)
     {
@@ -831,8 +831,8 @@ template <
     typename        ValueT>
 void TestOp(
     int             num_items,
-    char*           key_type_string,
-    char*           value_type_string)
+    const char*     key_type_string,
+    const char*     value_type_string)
 {
     TestSize<KeyT, ValueT>(num_items, cub::Sum(), key_type_string, value_type_string);
     TestSize<KeyT, ValueT>(num_items, cub::Max(), key_type_string, value_type_string);
