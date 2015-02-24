@@ -404,7 +404,7 @@ void Test(
     T                   *h_reference,
     int                 num_selected,
     int                 num_items,
-    char*               type_string)
+    const char*         type_string)
 {
     typedef typename std::iterator_traits<DeviceFlagIterator>::value_type FlagT;
 
@@ -493,7 +493,7 @@ template <
 void TestPointer(
     int             num_items,
     float           select_ratio,
-    char*           type_string)
+    const char*     type_string)
 {
     typedef char FlagT;
 
@@ -554,7 +554,7 @@ template <
     typename        T>
 void TestIterator(
     int             num_items,
-    char*           type_string,
+    const char*     type_string,
     Int2Type<true>  is_number)
 {
     typedef char FlagT;
@@ -593,7 +593,7 @@ template <
     typename        T>
 void TestIterator(
     int             num_items,
-    char*           type_string,
+    const char*     type_string,
     Int2Type<false> is_number)
 {}
 
@@ -607,7 +607,7 @@ template <
     typename        T>
 void Test(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     for (float select_ratio = 0; select_ratio <= 1.0; select_ratio += 0.2)
     {
@@ -626,7 +626,7 @@ template <
     typename        T>
 void TestMethod(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     Test<BACKEND, false, T>(num_items, type_string);
 
@@ -642,7 +642,7 @@ template <
     typename        T>
 void TestOp(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     TestMethod<CUB, T>(num_items, type_string);
 #ifdef CUB_CDP
@@ -657,7 +657,7 @@ void TestOp(
 template <typename T>
 void Test(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     if (num_items < 0)
     {
@@ -680,7 +680,7 @@ template <typename T>
 void ComparePointer(
     int             num_items,
     float           select_ratio,
-    char*           type_string)
+    const char*     type_string)
 {
     printf("-- Select ----------------------------\n");
     TestPointer<CUB, false, T>(num_items, select_ratio, type_string);

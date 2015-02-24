@@ -318,7 +318,7 @@ void Test(
     T                   *h_reference,
     int                 num_selected,
     int                 num_items,
-    char*               type_string)
+    const char*         type_string)
 {
     // Allocate device output array and num selected
     T       *d_out            = NULL;
@@ -399,7 +399,7 @@ void TestPointer(
     int             num_items,
     int             entropy_reduction,
     int             max_segment,
-    char*           type_string)
+    const char*     type_string)
 {
     // Allocate host arrays
     T*  h_in        = new T[num_items];
@@ -442,7 +442,7 @@ template <
     typename        T>
 void TestIterator(
     int             num_items,
-    char*           type_string,
+    const char*     type_string,
     Int2Type<true>  is_number)
 {
     // Use a counting iterator as the input
@@ -477,7 +477,7 @@ template <
     typename        T>
 void TestIterator(
     int             num_items,
-    char*           type_string,
+    const char*     type_string,
     Int2Type<false> is_number)
 {}
 
@@ -490,7 +490,7 @@ template <
     typename        T>
 void Test(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned int) -1); max_segment *= 11)
     {
@@ -511,7 +511,7 @@ template <
     typename        T>
 void TestOp(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     Test<CUB, T>(num_items, type_string);
 #ifdef CUB_CDP
@@ -526,7 +526,7 @@ void TestOp(
 template <typename T>
 void Test(
     int             num_items,
-    char*           type_string)
+    const char*     type_string)
 {
     if (num_items < 0)
     {

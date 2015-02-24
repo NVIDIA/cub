@@ -193,10 +193,6 @@ __global__ void DeviceRadixSortSingleKernel(
     // Appropriate unsigned-bits representation of KeyT
     typedef typename Traits<KeyT>::UnsignedBits UnsignedBits;
 
-    // Min and max key value
-    const KeyT MIN_KEY = (KeyT) Traits<KeyT>::MIN_KEY;
-    const KeyT MAX_KEY = (KeyT) Traits<KeyT>::MAX_KEY;
-
     // Constants
     enum
     {
@@ -246,10 +242,11 @@ __global__ void DeviceRadixSortSingleKernel(
     ValueT          values[ITEMS_PER_THREAD];
 
     // Assign default (min/max) value to all keys
+    UnsignedBits default_key = (DESCENDING) ? Traits<KeyT>::MIN_KEY : Traits<KeyT>::MAX_KEY;
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
-        keys[ITEM] = (DESCENDING) ? MIN_KEY : MAX_KEY;
+        keys[ITEM] = reinterpret_cast<KeyT&>(default_key);
     }
 
     // Load keys

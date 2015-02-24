@@ -525,7 +525,7 @@ void Test(
     int                 num_items,
     ScanOp              scan_op,
     IdentityT           identity,
-    char*               type_string)
+    const char*         type_string)
 {
     // Allocate device output array
     T *d_out = NULL;
@@ -599,7 +599,7 @@ void TestPointer(
     GenMode         gen_mode,
     ScanOp          scan_op,
     IdentityT       identity,
-    char*           type_string)
+    const char*     type_string)
 {
     printf("\nPointer %s %s cub::DeviceScan::%s %d items, %s %d-byte elements, gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
@@ -648,7 +648,7 @@ void TestIterator(
     int             num_items,
     ScanOp          scan_op,
     IdentityT       identity,
-    char*           type_string)
+    const char*     type_string)
 {
     printf("\nIterator %s %s cub::DeviceScan::%s %d items, %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
@@ -689,7 +689,7 @@ void Test(
     int             num_items,
     ScanOp          scan_op,
     Identity        identity,
-    char*           type_string)
+    const char*     type_string)
 {
     TestPointer<BACKEND, T>(num_items, UNIFORM, scan_op, identity, type_string);
     TestPointer<BACKEND, T>(num_items, RANDOM, scan_op, identity, type_string);
@@ -709,7 +709,7 @@ void Test(
     int             num_items,
     ScanOp          scan_op,
     IdentityT       identity,
-    char*           type_string)
+    const char*     type_string)
 {
     Test<CUB, T>(num_items, scan_op, identity, type_string);
 #ifdef CUB_CDP
@@ -730,7 +730,7 @@ void TestVariant(
     int             num_items,
     ScanOp          scan_op,
     T               identity,
-    char*           type_string)
+    const char*     type_string)
 {
     Test<T>(num_items, scan_op, identity, type_string);     // exclusive
     Test<T>(num_items, scan_op, NullType(), type_string);   // inclusive
@@ -744,7 +744,7 @@ template <typename T>
 void TestOp(
     int             num_items,
     T               max_identity,
-    char*           type_string)
+    const char*     type_string)
 {
     TestVariant(num_items, Sum(), T(), type_string);
     TestVariant(num_items, Max(), max_identity, type_string);
@@ -758,7 +758,7 @@ template <typename T>
 void TestSize(
     int             num_items,
     T               max_identity,
-    char*           type_string)
+    const char*     type_string)
 {
     if (num_items < 0)
     {
