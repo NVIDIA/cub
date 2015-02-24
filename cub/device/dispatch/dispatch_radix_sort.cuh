@@ -194,8 +194,8 @@ __global__ void DeviceRadixSortSingleKernel(
     typedef typename Traits<KeyT>::UnsignedBits UnsignedBits;
 
     // Min and max key value
-    const UnsignedBits MIN_KEY = Traits<KeyT>::MIN_KEY;
-    const UnsignedBits MAX_KEY = Traits<KeyT>::MAX_KEY;
+    const KeyT MIN_KEY = Traits<KeyT>::MIN_KEY;
+    const KeyT MAX_KEY = Traits<KeyT>::MAX_KEY;
 
     // Constants
     enum
@@ -219,7 +219,7 @@ __global__ void DeviceRadixSortSingleKernel(
 
     // BlockLoad type (keys)
     typedef BlockLoad<
-        KeyT*,
+        UnsignedBits*,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         AgentRadixSortDownsweepPolicy::LOAD_ALGORITHM> BlockLoadKeys;
@@ -242,8 +242,8 @@ __global__ void DeviceRadixSortSingleKernel(
     } temp_storage;
 
     // Keys and values for the block
-    KeyT     keys[ITEMS_PER_THREAD];
-    ValueT   values[ITEMS_PER_THREAD];
+    UnsignedBits    keys[ITEMS_PER_THREAD];
+    ValueT          values[ITEMS_PER_THREAD];
 
     // Assign default (min/max) value to all keys
     #pragma unroll
