@@ -82,12 +82,10 @@ struct DeviceSpmv
      *
      * \endcode
      *
-     * \tparam VertexT      <b>[inferred]</b> Integer type for vertex identifiers
      * \tparam ValueT       <b>[inferred]</b> Matrix and vector value type
      * \tparam OffsetT      <b>[inferred]</b> Signed integer type for sequence offsets, list lengths, pointer differences, etc.  \offset_size1
      */
     template <
-        typename            VertexT,
         typename            ValueT,
         typename            OffsetT>
     CUB_RUNTIME_FUNCTION
@@ -96,7 +94,7 @@ struct DeviceSpmv
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         ValueT*             d_matrix_values,                    ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
         OffsetT*            d_matrix_row_offsets,               ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
-        VertexT*            d_matrix_column_indices,            ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
+        OffsetT*            d_matrix_column_indices,            ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
         ValueT*             d_vector_x,                         ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
         ValueT*             d_vector_y,                         ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
         int                 num_rows,                           ///< [in] number of rows of matrix <b>A</b>.
@@ -105,13 +103,20 @@ struct DeviceSpmv
         cudaStream_t        stream                  = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous       = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-        if (!d_temp_storage)
-            temp_storage_bytes = 0;
-
-        return cudaSuccess;
+        return DispatchSpmv<ValueT, OffsetT>::Dispatch(
+            d_temp_storage,
+            temp_storage_bytes,
+            d_matrix_values,
+            d_matrix_row_offsets,
+            d_matrix_column_indices,
+            d_vector_x,
+            d_vector_y,
+            num_rows,
+            num_cols,
+            num_nonzeros,
+            stream,
+            debug_synchronous);
     }
-
-
 
     //@}  end member group
 };

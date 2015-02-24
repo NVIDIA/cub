@@ -914,6 +914,13 @@ struct DispatchRadixSort
 
             if (num_items <= single_config.tile_size)
             {
+                // Return if the caller is simply requesting the size of the storage allocation
+                if (d_temp_storage == NULL)
+                {
+                    temp_storage_bytes = 0;
+                    return cudaSuccess;
+                }
+
                 // Sort entire problem locally within a single thread block
                 num_passes = 0;
 
