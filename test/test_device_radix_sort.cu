@@ -750,7 +750,7 @@ void TestSizes(
 template <typename Key>
 void TestGen(
     int             max_items,
-    char*           type_string)
+    const char*     type_string)
 {
     if (max_items < 0)
     {
