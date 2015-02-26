@@ -43,6 +43,49 @@ namespace cub {
 
 
 /**
+ * Computes the begin offsets into A and B for the specific diagonal
+ */
+template <
+    typename AIteratorT,
+    typename BIteratorT,
+    typename OffsetT,
+    typename CoordinateT>
+__device__ __forceinline__ void MergePathSearch(
+    OffsetT         diagonal,
+    AIteratorT      a,
+    BIteratorT      b,
+    OffsetT         a_len,
+    OffsetT         b_len,
+    CoordinateT&    path_coordinate)
+{
+    /// The value type of the input iterator
+    typedef typename std::iterator_traits<AIteratorT>::value_type T;
+
+    int split_min = CUB_MAX(diagonal - b_len, 0);
+    int split_max = CUB_MIN(diagonal, a_len);
+
+    while (split_min < split_max)
+    {
+        int split_pivot = (split_min + split_max) >> 1;
+        if (a[split_pivot] <= b[diagonal - split_pivot - 1])
+        {
+            // Move candidate split range up A, down B
+            split_min = split_pivot + 1;
+        }
+        else
+        {
+            // Move candidate split range up B, down A
+            split_max = split_pivot;
+        }
+    }
+
+    path_coordinate.x = split_min;
+    path_coordinate.y = diagonal - split_min;
+}
+
+
+
+/**
  * \brief Returns the offset of the first value within \p input which does not compare less than \p val
  */
 template <

@@ -180,7 +180,7 @@ template <
     typename                KeyT,                                   ///< Key type
     typename                ValueT,                                 ///< Value type
     typename                OffsetT>                                ///< Signed integer type for global offsets
-__launch_bounds__ (int(AgentRadixSortDownsweepPolicy::BLOCK_THREADS))
+__launch_bounds__ (int(AgentRadixSortDownsweepPolicy::BLOCK_THREADS), 1)
 __global__ void DeviceRadixSortSingleKernel(
     KeyT                    *d_keys_in,                             ///< [in] Input keys ping buffer
     KeyT                    *d_keys_out,                            ///< [in] Output keys pong buffer
@@ -229,7 +229,7 @@ __global__ void DeviceRadixSortSingleKernel(
 
 
     // Shared memory storage
-    __shared__ struct
+    __shared__ union
     {
         typename BlockRadixSortT::TempStorage       sort;
         typename BlockLoadKeys::TempStorage         load_keys;
@@ -252,10 +252,14 @@ __global__ void DeviceRadixSortSingleKernel(
     // Load keys
     BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in, keys, num_items);
 
+    __syncthreads();
+
     // Load values
     if (!KEYS_ONLY)
     {
         BlockLoadValues(temp_storage.load_values).Load(d_values_in, values, num_items);
+
+        __syncthreads();
     }
 
     // Sort tile
@@ -331,7 +335,7 @@ struct DispatchRadixSort
         typedef AgentRadixSortDownsweepPolicy <256, CUB_MAX(1, 16 / SCALE_FACTOR_4B),  BLOCK_LOAD_DIRECT, LOAD_LDG, true, BLOCK_SCAN_RAKING_MEMOIZE, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, PRIMARY_RADIX_BITS> DownsweepPolicy;
         typedef AgentRadixSortDownsweepPolicy <256, CUB_MAX(1, 16 / SCALE_FACTOR_4B),  BLOCK_LOAD_DIRECT, LOAD_LDG, true, BLOCK_SCAN_RAKING_MEMOIZE, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, ALT_RADIX_BITS> AltDownsweepPolicy;
 
-        typedef DownsweepPolicy SinglePolicy;
+        typedef AgentRadixSortDownsweepPolicy <256, CUB_MAX(1, 19 / SCALE_FACTOR_4B),  BLOCK_LOAD_DIRECT, LOAD_LDG, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, cudaSharedMemBankSizeFourByte, PRIMARY_RADIX_BITS> SinglePolicy;
     };
 
 
@@ -1119,7 +1123,7 @@ struct DispatchRadixSort
             RadixSortScanBinsKernel<PtxScanPolicy, OffsetT>,
             DeviceRadixSortDownsweepKernel<PtxDownsweepPolicy, DESCENDING, Key, Value, OffsetT>,
             DeviceRadixSortDownsweepKernel<PtxAltDownsweepPolicy, DESCENDING, Key, Value, OffsetT>,
-            DeviceRadixSortSingleKernel<PtxDownsweepPolicy, DESCENDING, Key, Value, OffsetT>);
+            DeviceRadixSortSingleKernel<PtxSinglePolicy, DESCENDING, Key, Value, OffsetT>);
     }
 
 };
