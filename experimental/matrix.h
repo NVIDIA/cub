@@ -51,7 +51,7 @@ using namespace std;
  * COO matrix type.  A COO matrix is just a vector of edge tuples.  Tuples are sorted
  * first by row, then by column.
  */
-template<typename VertexT, typename ValueT>
+template<typename OffsetT, typename ValueT>
 struct CooMatrix
 {
     //---------------------------------------------------------------------
@@ -61,13 +61,13 @@ struct CooMatrix
     // COO edge tuple
     struct CooTuple
     {
-        VertexT            row;
-        VertexT            col;
+        OffsetT            row;
+        OffsetT            col;
         ValueT             val;
 
         CooTuple() {}
-        CooTuple(VertexT row, VertexT col) : row(row), col(col) {}
-        CooTuple(VertexT row, VertexT col, ValueT val) : row(row), col(col), val(val) {}
+        CooTuple(OffsetT row, OffsetT col) : row(row), col(col) {}
+        CooTuple(OffsetT row, OffsetT col, ValueT val) : row(row), col(col), val(val) {}
 
         /**
          * Comparator for sorting COO sparse format num_nonzeros
@@ -229,7 +229,7 @@ struct CooMatrix
     /**
      * Builds a wheel COO sparse matrix having spokes spokes.
      */
-    int InitWheel(VertexT spokes, ValueT default_value = 1.0)
+    int InitWheel(OffsetT spokes, ValueT default_value = 1.0)
     {
         if (coo_tuples)
         {
@@ -242,16 +242,16 @@ struct CooMatrix
 
         // Add spoke num_nonzeros
         int current_edge = 0;
-        for (VertexT i = 0; i < spokes; i++)
+        for (OffsetT i = 0; i < spokes; i++)
         {
             coo_tuples[current_edge] = CooTuple(0, i + 1, default_value);
             current_edge++;
         }
 
         // Add rim
-        for (VertexT i = 0; i < spokes; i++)
+        for (OffsetT i = 0; i < spokes; i++)
         {
-            VertexT dest = (i + 1) % spokes;
+            OffsetT dest = (i + 1) % spokes;
             coo_tuples[current_edge] = CooTuple(i + 1, dest + 1, default_value);
             current_edge++;
         }
@@ -269,7 +269,7 @@ struct CooMatrix
      *
      * Returns 0 on success, 1 on failure.
      */
-    int InitGrid2d(VertexT width, bool self_loop, ValueT default_value = 1.0)
+    int InitGrid2d(OffsetT width, bool self_loop, ValueT default_value = 1.0)
     {
         if (coo_tuples)
         {
@@ -290,14 +290,14 @@ struct CooMatrix
         coo_tuples          = new CooTuple[num_nonzeros];
         int current_edge    = 0;
 
-        for (VertexT j = 0; j < width; j++)
+        for (OffsetT j = 0; j < width; j++)
         {
-            for (VertexT k = 0; k < width; k++)
+            for (OffsetT k = 0; k < width; k++)
             {
-                VertexT me = (j * width) + k;
+                OffsetT me = (j * width) + k;
 
                 // West
-                VertexT neighbor = (j * width) + (k - 1);
+                OffsetT neighbor = (j * width) + (k - 1);
                 if (k - 1 >= 0) {
                     coo_tuples[current_edge] = CooTuple(me, neighbor, default_value);
                     current_edge++;
@@ -344,7 +344,7 @@ struct CooMatrix
      * Builds a square 3D grid COO sparse matrix.  Interior num_vertices have degree 7 when including
      * a self-loop.  Values are unintialized, coo_tuples are sorted.
      */
-    int InitGrid3d(VertexT width, bool self_loop, ValueT default_value = 1.0)
+    int InitGrid3d(OffsetT width, bool self_loop, ValueT default_value = 1.0)
     {
         if (coo_tuples)
         {
@@ -352,10 +352,10 @@ struct CooMatrix
             return -1;
         }
 
-        VertexT interior_nodes  = (width - 2) * (width - 2) * (width - 2);
-        VertexT face_nodes      = (width - 2) * (width - 2) * 6;
-        VertexT edge_nodes      = (width - 2) * 12;
-        VertexT corner_nodes    = 8;
+        OffsetT interior_nodes  = (width - 2) * (width - 2) * (width - 2);
+        OffsetT face_nodes      = (width - 2) * (width - 2) * 6;
+        OffsetT edge_nodes      = (width - 2) * 12;
+        OffsetT corner_nodes    = 8;
         num_cols                       = width * width * width;
         num_rows                       = num_cols;
         num_nonzeros                     = (interior_nodes * 6) + (face_nodes * 5) + (edge_nodes * 4) + (corner_nodes * 3);
@@ -366,17 +366,17 @@ struct CooMatrix
         coo_tuples          = new CooTuple[num_nonzeros];
         int current_edge    = 0;
 
-        for (VertexT i = 0; i < width; i++)
+        for (OffsetT i = 0; i < width; i++)
         {
-            for (VertexT j = 0; j < width; j++)
+            for (OffsetT j = 0; j < width; j++)
             {
-                for (VertexT k = 0; k < width; k++)
+                for (OffsetT k = 0; k < width; k++)
                 {
 
-                    VertexT me = (i * width * width) + (j * width) + k;
+                    OffsetT me = (i * width * width) + (j * width) + k;
 
                     // Up
-                    VertexT neighbor = (i * width * width) + (j * width) + (k - 1);
+                    OffsetT neighbor = (i * width * width) + (j * width) + (k - 1);
                     if (k - 1 >= 0) {
                         coo_tuples[current_edge] = CooTuple(me, neighbor, default_value);
                         current_edge++;
@@ -444,14 +444,16 @@ struct CooMatrix
 /**
  * CSR sparse format matrix
  */
-template<typename VertexT, typename ValueT, typename OffsetT>
+template<
+    typename ValueT,
+    typename OffsetT>
 struct CsrMatrix
 {
     int         num_rows;
     int         num_cols;
     int         num_nonzeros;
-    OffsetT*      row_offsets;
-    VertexT*    column_indices;
+    OffsetT*    row_offsets;
+    OffsetT*    column_indices;
     ValueT*     values;
 
     /**
@@ -474,23 +476,23 @@ struct CsrMatrix
     /**
      * Build CSR matrix from sorted COO matrix
      */
-    void FromCoo(const CooMatrix<VertexT, ValueT> &coo_matrix)
+    void FromCoo(const CooMatrix<OffsetT, ValueT> &coo_matrix)
     {
         num_rows        = coo_matrix.num_rows;
         num_cols        = coo_matrix.num_cols;
         num_nonzeros    = coo_matrix.num_nonzeros;
 
         row_offsets     = new OffsetT[num_rows + 1];
-        column_indices  = new VertexT[num_nonzeros];
+        column_indices  = new OffsetT[num_nonzeros];
         values          = new ValueT[num_nonzeros];
 
-        VertexT prev_row = -1;
+        OffsetT prev_row = -1;
         for (OffsetT current_edge = 0; current_edge < num_nonzeros; current_edge++)
         {
-            VertexT current_row = coo_matrix.coo_tuples[current_edge].row;
+            OffsetT current_row = coo_matrix.coo_tuples[current_edge].row;
 
             // Fill in rows up to and including the current row
-            for (VertexT row = prev_row + 1; row <= current_row; row++)
+            for (OffsetT row = prev_row + 1; row <= current_row; row++)
             {
                 row_offsets[row] = current_edge;
             }
@@ -501,7 +503,7 @@ struct CsrMatrix
         }
 
         // Fill out any trailing edgeless vertices (and the end-of-list element)
-        for (VertexT row = prev_row + 1; row <= num_rows; row++)
+        for (OffsetT row = prev_row + 1; row <= num_rows; row++)
         {
             row_offsets[row] = num_nonzeros;
         }

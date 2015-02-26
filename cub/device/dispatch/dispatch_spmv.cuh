@@ -39,6 +39,7 @@
 #include <limits>
 
 #include "../../agent/agent_spmv.cuh"
+#include "../../util_type.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 #include "../../thread/thread_search.cuh"
@@ -56,6 +57,56 @@ namespace cub {
  * SpMV kernel entry points
  *****************************************************************************/
 
+/**
+ * Spmv privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
+ */
+template <
+    typename    AgentSpmvPolicyT,                   ///< Parameterized AgentSpmvPolicy tuning policy type
+    typename    OffsetT,                            ///< Signed integer type for sequence offsets
+    typename    CoordinateT>                        ///< Merge path coordinate type
+__global__ void AgentSpmvSearchKernel(
+    int             agent_spmv_grid_size,
+    OffsetT*        d_matrix_row_end_offsets,       ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
+    CoordinateT*    d_agent_coordinates,            ///< [out] Pointer to the temporary array of agent starting coordinates
+    int             num_rows,                       ///< [in] number of rows of matrix <b>A</b>.
+    int             num_nonzeros)                   ///< [in] number of nonzero elements of matrix <b>A</b>.
+{
+    /// Constants
+    enum
+    {
+        BLOCK_THREADS           = AgentSpmvPolicyT::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = AgentSpmvPolicyT::ITEMS_PER_THREAD,
+        TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
+    };
+
+    typedef CacheModifiedInputIterator<
+            AgentSpmvPolicyT::MATRIX_ROW_OFFSETS_LOAD_MODIFIER,
+            OffsetT,
+            OffsetT>
+        MatrixRowOffsetsIteratorT;
+
+    // Find the starting coordinate for all agents (plus the end coordinate of the last one)
+    int agent_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (agent_idx < agent_spmv_grid_size + 1)
+    {
+        OffsetT                         diagonal = (agent_idx * TILE_ITEMS);
+        CoordinateT                     path_coordinate;
+        CountingInputIterator<OffsetT>  nonzero_indices(0);
+
+        // Search the merge path
+        MergePathSearch(
+            diagonal,
+            MatrixRowOffsetsIteratorT(d_matrix_row_end_offsets),
+            nonzero_indices,
+            num_rows,
+            num_nonzeros,
+            path_coordinate);
+
+        // Output starting offset
+        d_agent_coordinates[agent_idx] = path_coordinate;
+    }
+}
+
 
 /**
  * Spmv privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
@@ -63,20 +114,47 @@ namespace cub {
 template <
     typename    AgentSpmvPolicyT,           ///< Parameterized AgentSpmvPolicy tuning policy type
     typename    ValueT,                     ///< Matrix and vector value type
-    typename    OffsetT>                    ///< Signed integer type for sequence offsets
+    typename    OffsetT,                    ///< Signed integer type for sequence offsets
+    typename    CoordinateT>                ///< Merge path coordinate type
 __launch_bounds__ (int(AgentSpmvPolicyT::BLOCK_THREADS))
 __global__ void AgentSpmvKernel(
-    ValueT*     d_matrix_values,            ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-    OffsetT*    d_matrix_row_offsets,       ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
-    OffsetT*    d_matrix_column_indices,    ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
-    ValueT*     d_vector_x,                 ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
-    ValueT*     d_vector_y,                 ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-    OffsetT*    d_block_carryout_rows,      ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-    ValueT*     d_block_runout_values,      ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
-    int         num_rows,                   ///< [in] number of rows of matrix <b>A</b>.
-    int         num_cols,                   ///< [in] number of columns of matrix <b>A</b>.
-    int         num_nonzeros)               ///< [in] number of nonzero elements of matrix <b>A</b>.
+    ValueT*         d_matrix_values,                ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
+    OffsetT*        d_matrix_row_end_offsets,       ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
+    OffsetT*        d_matrix_column_indices,        ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
+    ValueT*         d_vector_x,                     ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
+    ValueT*         d_vector_y,                     ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
+    CoordinateT*    d_agent_coordinates,            ///< [in] Pointer to the temporary array of agent starting coordinates
+    OffsetT*        d_block_carryout_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
+    ValueT*         d_block_carryout_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
+    int             num_rows,                       ///< [in] number of rows of matrix <b>A</b>.
+    int             num_cols,                       ///< [in] number of columns of matrix <b>A</b>.
+    int             num_nonzeros)                   ///< [in] number of nonzero elements of matrix <b>A</b>.
 {
+    // Spmv agent type specialization
+    typedef AgentSpmv<
+            AgentSpmvPolicyT,
+            ValueT,
+            OffsetT,
+            CoordinateT>
+        AgentSpmvT;
+
+    // Shared memory for AgentSpmv
+    __shared__ typename AgentSpmvT::TempStorage temp_storage;
+
+    AgentSpmvT agent(
+        temp_storage,
+        d_matrix_values,
+        d_matrix_row_end_offsets,
+        d_matrix_column_indices,
+        d_vector_x,
+        d_vector_y,
+        d_block_carryout_rows,
+        d_block_carryout_values,
+        num_rows,
+        num_cols,
+        num_nonzeros);
+
+    agent.ConsumeTile(d_agent_coordinates);
 }
 
 
@@ -93,6 +171,13 @@ template <
     typename    OffsetT>                    ///< Signed integer type for global offsets
 struct DispatchSpmv
 {
+    //---------------------------------------------------------------------
+    // Types
+    //---------------------------------------------------------------------
+
+    // 2D merge path coordinate type
+    typedef typename CubVector<OffsetT, 2>::Type CoordinateT;
+
 
     //---------------------------------------------------------------------
     // Tuning policies
@@ -121,8 +206,8 @@ struct DispatchSpmv
     struct Policy350
     {
         typedef AgentSpmvPolicy<
-                256,
-                17,
+                128,
+                8,
                 LOAD_LDG,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
@@ -131,7 +216,17 @@ struct DispatchSpmv
     };
 
     /// SM50
-    struct Policy500 : Policy110 {};
+    struct Policy500
+    {
+        typedef AgentSpmvPolicy<
+                256,
+                7,
+                LOAD_LDG,
+                LOAD_DEFAULT,
+                LOAD_DEFAULT,
+                LOAD_LDG>
+            AgentSpmvPolicy;
+    };
 
 
 
@@ -224,7 +319,7 @@ struct DispatchSpmv
         cudaError_t Init()
         {
             block_threads       = AgentPolicyT::BLOCK_THREADS;
-            items_per_thread   = AgentPolicyT::items_per_thread;
+            items_per_thread    = AgentPolicyT::ITEMS_PER_THREAD;
 
             return cudaSuccess;
         }
@@ -254,23 +349,25 @@ struct DispatchSpmv
      * kernel invocations.
      */
     template <
-        typename            AgentSpmvKernelT>                   ///< Function type of cub::AgentSpmvKernel
+        typename            AgentSpmvSearchKernelT,                 ///< Function type of cub::AgentSpmvSearchKernel
+        typename            AgentSpmvKernelT>                       ///< Function type of cub::AgentSpmvKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*               d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t&             temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        ValueT*             d_matrix_values,                    ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-        OffsetT*            d_matrix_row_offsets,               ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
-        OffsetT*            d_matrix_column_indices,            ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
-        ValueT*             d_vector_x,                         ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
-        ValueT*             d_vector_y,                         ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-        int                 num_rows,                           ///< [in] number of rows of matrix <b>A</b>.
-        int                 num_cols,                           ///< [in] number of columns of matrix <b>A</b>.
-        int                 num_nonzeros,                       ///< [in] number of nonzero elements of matrix <b>A</b>.
-        cudaStream_t        stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
-        AgentSpmvKernelT    agent_spmv_kernel,                  ///< [in] Kernel function pointer to parameterization of AgentSpmvKernel
-        KernelConfig        agent_spmv_config)                  ///< [in] Dispatch parameters that match the policy that \p agent_spmv_kernel was compiled for
+        void*                   d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&                 temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        ValueT*                 d_matrix_values,                    ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
+        OffsetT*                d_matrix_row_offsets,               ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
+        OffsetT*                d_matrix_column_indices,            ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
+        ValueT*                 d_vector_x,                         ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
+        ValueT*                 d_vector_y,                         ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
+        int                     num_rows,                           ///< [in] number of rows of matrix <b>A</b>.
+        int                     num_cols,                           ///< [in] number of columns of matrix <b>A</b>.
+        int                     num_nonzeros,                       ///< [in] number of nonzero elements of matrix <b>A</b>.
+        cudaStream_t            stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        AgentSpmvSearchKernelT  agent_spmv_search_kernel,           ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
+        AgentSpmvKernelT        agent_spmv_kernel,                  ///< [in] Kernel function pointer to parameterization of AgentSpmvKernel
+        KernelConfig            agent_spmv_config)                  ///< [in] Dispatch parameters that match the policy that \p agent_spmv_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -281,6 +378,9 @@ struct DispatchSpmv
         cudaError error = cudaSuccess;
         do
         {
+            // Row end offsets
+            OffsetT* d_matrix_row_end_offsets = d_matrix_row_offsets + 1;
+
             // Get device ordinal
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
@@ -297,7 +397,7 @@ struct DispatchSpmv
             int tile_size = agent_spmv_config.block_threads * agent_spmv_config.items_per_thread;
 
             // Total number of work items
-            int work_items = (num_rows + 1) + num_cols;
+            int work_items = num_rows + num_nonzeros;
 
             // Get SM occupancy for agent_spmv_kernel
             int agent_spmv_sm_occupancy;
@@ -308,18 +408,19 @@ struct DispatchSpmv
                 agent_spmv_config.block_threads))) break;
 
             // Get device occupancy for agent_spmv_kernel
-            int agent_spmv_occupancy = agent_spmv_sm_occupancy * sm_count;
+//            int agent_spmv_occupancy = agent_spmv_sm_occupancy * sm_count;
 
             // Get grid size for agent_spmv_kernel
             int agent_spmv_grid_size = (work_items + tile_size - 1) / tile_size;
 
             // Temporary storage allocation requirements
-            void* allocations[3];
-            size_t allocation_sizes[3] =
+            void* allocations[4];
+            size_t allocation_sizes[4] =
             {
-                agent_spmv_grid_size * sizeof(OffsetT),     // bytes needed for block run-out row-ids
-                agent_spmv_grid_size * sizeof(ValueT),      // bytes needed for block run-out partials sums
-                GridQueue<int>::AllocationSize()            // bytes needed for grid queue descriptor
+                agent_spmv_grid_size * sizeof(OffsetT),             // bytes needed for block run-out row-ids
+                agent_spmv_grid_size * sizeof(ValueT),              // bytes needed for block run-out partials sums
+                (agent_spmv_grid_size + 1) * sizeof(CoordinateT),   // bytes needed for agent starting coordinates
+                GridQueue<int>::AllocationSize()                    // bytes needed for grid queue descriptor
             };
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
@@ -330,12 +431,28 @@ struct DispatchSpmv
                 return cudaSuccess;
             }
 
-            // Alias the allocations for block run-out row-ids and partial sums
-            OffsetT*    d_block_carryout_rows   = (OffsetT*) allocations[0];
-            ValueT*     d_block_runout_values   = (ValueT*) allocations[1];
+            // Alias the allocations
+            OffsetT*        d_block_carryout_rows       = (OffsetT*) allocations[0];        // Agent carry-out row-ids
+            ValueT*         d_block_carryout_values     = (ValueT*) allocations[1];         // Agent carry-out partial sums
+            CoordinateT*    d_agent_coordinates         = (CoordinateT*) allocations[2];    // Agent starting coordinates
 
             // Alias the allocation for the grid queue descriptor
-            GridQueue<OffsetT> queue(allocations[2]);
+            GridQueue<OffsetT> queue(allocations[3]);
+
+            int search_block_size = 128;
+            int search_grid_size = (agent_spmv_grid_size + search_block_size - 1) / search_block_size;
+
+            // Log agent_spmv_search_kernel configuration
+            if (debug_synchronous) CubLog("Invoking agent_spmv_search_kernel<<<%d, %d, 0, %lld>>>()\n",
+                search_block_size, search_grid_size, (long long) stream);
+
+            // Invoke agent_spmv_search_kernel
+            agent_spmv_search_kernel<<<search_grid_size, search_block_size, 0, stream>>>(
+                agent_spmv_grid_size,
+                d_matrix_row_end_offsets,
+                d_agent_coordinates,
+                num_rows,
+                num_nonzeros);
 
             // Log agent_spmv_kernel configuration
             if (debug_synchronous) CubLog("Invoking agent_spmv_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
@@ -344,12 +461,13 @@ struct DispatchSpmv
             // Invoke agent_spmv_kernel
             agent_spmv_kernel<<<agent_spmv_grid_size, agent_spmv_config.block_threads, 0, stream>>>(
                 d_matrix_values,
-                d_matrix_row_offsets,
+                d_matrix_row_end_offsets,
                 d_matrix_column_indices,
                 d_vector_x,
                 d_vector_y,
+                d_agent_coordinates,
                 d_block_carryout_rows,
-                d_block_runout_values,
+                d_block_carryout_values,
                 num_rows,
                 num_cols,
                 num_nonzeros);
@@ -416,7 +534,8 @@ struct DispatchSpmv
                 num_nonzeros,
                 stream,
                 debug_synchronous,
-                AgentSpmvKernel<PtxAgentSpmvPolicy, ValueT, OffsetT>,
+                AgentSpmvSearchKernel<PtxAgentSpmvPolicy, OffsetT, CoordinateT>,
+                AgentSpmvKernel<PtxAgentSpmvPolicy, ValueT, OffsetT, CoordinateT>,
                 agent_spmv_config))) break;
         }
         while (0);

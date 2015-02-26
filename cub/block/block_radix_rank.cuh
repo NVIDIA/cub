@@ -202,13 +202,13 @@ private:
             int             num_bits)                               // The number of bits in the current digit
         {
             // Get digit
-            UnsignedBits digit = BFE(keys[COUNT], current_bit, num_bits);
+            unsigned int digit = BFE(keys[COUNT], current_bit, num_bits);
 
             // Get sub-counter
-            UnsignedBits sub_counter = digit >> LOG_COUNTER_LANES;
+            unsigned int sub_counter = digit >> LOG_COUNTER_LANES;
 
             // Get counter lane
-            UnsignedBits counter_lane = digit & (COUNTER_LANES - 1);
+            unsigned int counter_lane = digit & (COUNTER_LANES - 1);
 
             if (DESCENDING)
             {
