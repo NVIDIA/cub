@@ -79,7 +79,7 @@ __device__ __forceinline__ void MergePathSearch(
         }
     }
 
-    path_coordinate.x = split_min;
+    path_coordinate.x = CUB_MIN(split_min, a_len);
     path_coordinate.y = diagonal - split_min;
 }
 
