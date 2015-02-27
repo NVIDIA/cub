@@ -58,7 +58,7 @@ namespace cub {
  *****************************************************************************/
 
 /**
- * Spmv privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
+ * Spmv search kernel. Identifies merge path starting coordinates for each tile.
  */
 template <
     typename    AgentSpmvPolicyT,                   ///< Parameterized AgentSpmvPolicy tuning policy type
@@ -67,7 +67,7 @@ template <
 __global__ void AgentSpmvSearchKernel(
     int             agent_spmv_grid_size,
     OffsetT*        d_matrix_row_end_offsets,       ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
-    CoordinateT*    d_agent_coordinates,            ///< [out] Pointer to the temporary array of agent starting coordinates
+    CoordinateT*    d_tile_coordinates,            ///< [out] Pointer to the temporary array of tile starting coordinates
     int             num_rows,                       ///< [in] number of rows of matrix <b>A</b>.
     int             num_nonzeros)                   ///< [in] number of nonzero elements of matrix <b>A</b>.
 {
@@ -85,12 +85,12 @@ __global__ void AgentSpmvSearchKernel(
             OffsetT>
         MatrixRowOffsetsIteratorT;
 
-    // Find the starting coordinate for all agents (plus the end coordinate of the last one)
-    int agent_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (agent_idx < agent_spmv_grid_size + 1)
+    // Find the starting coordinate for all tiles (plus the end coordinate of the last one)
+    int tile_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (tile_idx < agent_spmv_grid_size + 1)
     {
-        OffsetT                         diagonal = (agent_idx * TILE_ITEMS);
-        CoordinateT                     path_coordinate;
+        OffsetT                         diagonal = (tile_idx * TILE_ITEMS);
+        CoordinateT                     tile_coordinate;
         CountingInputIterator<OffsetT>  nonzero_indices(0);
 
         // Search the merge path
@@ -100,16 +100,16 @@ __global__ void AgentSpmvSearchKernel(
             nonzero_indices,
             num_rows,
             num_nonzeros,
-            path_coordinate);
+            tile_coordinate);
 
         // Output starting offset
-        d_agent_coordinates[agent_idx] = path_coordinate;
+        d_tile_coordinates[tile_idx] = tile_coordinate;
     }
 }
 
 
 /**
- * Spmv privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
+ * Spmv agent entry point
  */
 template <
     typename    AgentSpmvPolicyT,           ///< Parameterized AgentSpmvPolicy tuning policy type
@@ -123,7 +123,7 @@ __global__ void AgentSpmvKernel(
     OffsetT*        d_matrix_column_indices,        ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
     ValueT*         d_vector_x,                     ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
     ValueT*         d_vector_y,                     ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-    CoordinateT*    d_agent_coordinates,            ///< [in] Pointer to the temporary array of agent starting coordinates
+    CoordinateT*    d_tile_coordinates,             ///< [in] Pointer to the temporary array of tile starting coordinates
     OffsetT*        d_block_carryout_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
     ValueT*         d_block_carryout_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
     int             num_rows,                       ///< [in] number of rows of matrix <b>A</b>.
@@ -154,7 +154,7 @@ __global__ void AgentSpmvKernel(
         num_cols,
         num_nonzeros);
 
-    agent.ConsumeTile(d_agent_coordinates);
+    agent.ConsumeTile(d_tile_coordinates);
 }
 
 
@@ -337,10 +337,6 @@ struct DispatchSpmv
     // Dispatch entrypoints
     //---------------------------------------------------------------------
 
-    /******************************************************************************
-     * Dispatch entrypoints
-     ******************************************************************************/
-
     /**
      * Internal dispatch routine for computing a device-wide reduction using the
      * specified kernel functions.
@@ -419,7 +415,7 @@ struct DispatchSpmv
             {
                 agent_spmv_grid_size * sizeof(OffsetT),             // bytes needed for block run-out row-ids
                 agent_spmv_grid_size * sizeof(ValueT),              // bytes needed for block run-out partials sums
-                (agent_spmv_grid_size + 1) * sizeof(CoordinateT),   // bytes needed for agent starting coordinates
+                (agent_spmv_grid_size + 1) * sizeof(CoordinateT),   // bytes needed for tile starting coordinates
                 GridQueue<int>::AllocationSize()                    // bytes needed for grid queue descriptor
             };
 
@@ -434,7 +430,7 @@ struct DispatchSpmv
             // Alias the allocations
             OffsetT*        d_block_carryout_rows       = (OffsetT*) allocations[0];        // Agent carry-out row-ids
             ValueT*         d_block_carryout_values     = (ValueT*) allocations[1];         // Agent carry-out partial sums
-            CoordinateT*    d_agent_coordinates         = (CoordinateT*) allocations[2];    // Agent starting coordinates
+            CoordinateT*    d_tile_coordinates         = (CoordinateT*) allocations[2];    // Agent starting coordinates
 
             // Alias the allocation for the grid queue descriptor
             GridQueue<OffsetT> queue(allocations[3]);
@@ -444,13 +440,13 @@ struct DispatchSpmv
 
             // Log agent_spmv_search_kernel configuration
             if (debug_synchronous) CubLog("Invoking agent_spmv_search_kernel<<<%d, %d, 0, %lld>>>()\n",
-                search_block_size, search_grid_size, (long long) stream);
+                search_grid_size, search_block_size, (long long) stream);
 
             // Invoke agent_spmv_search_kernel
             agent_spmv_search_kernel<<<search_grid_size, search_block_size, 0, stream>>>(
                 agent_spmv_grid_size,
                 d_matrix_row_end_offsets,
-                d_agent_coordinates,
+                d_tile_coordinates,
                 num_rows,
                 num_nonzeros);
 
@@ -465,7 +461,7 @@ struct DispatchSpmv
                 d_matrix_column_indices,
                 d_vector_x,
                 d_vector_y,
-                d_agent_coordinates,
+                d_tile_coordinates,
                 d_block_carryout_rows,
                 d_block_carryout_values,
                 num_rows,

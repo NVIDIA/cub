@@ -560,7 +560,7 @@ struct CsrMatrix
         cout << "Input Matrix:\n";
         for (OffsetT row = 0; row < num_rows; row++)
         {
-            cout << row << ": ";
+            cout << row << "[@" << row_offsets[row] << "]: ";
             for (OffsetT current_edge = row_offsets[row]; current_edge < row_offsets[row + 1]; current_edge++)
             {
                 cout << column_indices[current_edge] << " (" << values[current_edge] << "), ";
