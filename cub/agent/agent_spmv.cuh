@@ -36,7 +36,7 @@
 #include <iterator>
 
 #include "../util_type.cuh"
-#include "../block/block_load.cuh"
+#include "../block/block_reduce.cuh"
 #include "../thread/thread_search.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
@@ -133,6 +133,13 @@ struct AgentSpmv
             OffsetT>
         VectorValueIteratorT;
 
+    // BlockReduce specialization
+    typedef BlockReduce<
+            ValueT,
+            BLOCK_THREADS,
+            BLOCK_REDUCE_WARP_REDUCTIONS>
+        BlockReduceT;
+
     /// Shared memory type required by this thread block
     struct _TempStorage
     {
@@ -223,31 +230,29 @@ struct AgentSpmv
         ValueT*                         tile_nonzeros           = reinterpret_cast<ValueT*>(temp_storage.merge_items + tile_num_rows);
         ValueT*                         tile_partial_sums       = reinterpret_cast<ValueT*>(temp_storage.merge_items);
 
-        CountingInputIterator<OffsetT>  tile_nonzero_indices(tile_start.y);
-
         // Gather a merge tile of (A) row end-offsets and (B) nonzeros
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
         {
-            int item = (ITEM * BLOCK_THREADS) + threadIdx.x;
-            if (item < tile_num_rows)
-            {
-                tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start.x + item];
-            }
-            if (item < tile_num_nonzeros)
-            {
-                OffsetT column_index        = d_matrix_column_indices[tile_start.y + item];
-                ValueT  matrix_value        = d_matrix_values[tile_start.y + item];
-                ValueT  vector_value        = d_vector_x[column_index];
+            tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start.x + item];
+        }
 
-                tile_nonzeros[item]         = matrix_value * vector_value;
-            }
+        __syncthreads();
+
+        for (int item = threadIdx.x; item < tile_num_nonzeros; item += BLOCK_THREADS)
+        {
+            OffsetT column_index        = d_matrix_column_indices[tile_start.y + item];
+            ValueT  matrix_value        = d_matrix_values[tile_start.y + item];
+            ValueT  vector_value        = d_vector_x[column_index];
+
+            tile_nonzeros[item]         = matrix_value * vector_value;
         }
 
         __syncthreads();
 
         // Search for the thread's starting coordinate within the merge tile
-        CoordinateT thread_coordinate;
+        CountingInputIterator<OffsetT>  tile_nonzero_indices(tile_start.y);
+        CoordinateT                     thread_coordinate;
+     
         MergePathSearch(
             OffsetT(threadIdx.x * ITEMS_PER_THREAD),            // Diagonal
             tile_row_end_offsets,                               // List A
@@ -258,45 +263,46 @@ struct AgentSpmv
 
         __syncthreads();
 
-        // Run merge
+        // Run merge and reduce value by key
+
         OffsetT     row_ids[ITEMS_PER_THREAD];
         ValueT      non_zeros[ITEMS_PER_THREAD];
-
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            row_ids[ITEM] = -1;
-
-            if ((tile_nonzero_indices[thread_coordinate.y] < tile_row_end_offsets[thread_coordinate.x]))
-            {
-                // Move down (accumulate)
-                non_zeros[ITEM] = tile_nonzeros[thread_coordinate.y];
-                ++thread_coordinate.y;
-            }
-            else
-            {
-                // Move right
-                row_ids[ITEM] = thread_coordinate.x;
-                ++thread_coordinate.x;
-            }
-        }
-
-        __syncthreads();
-
-        // Reduce value by key
+    
         ValueT running_sum = 0.0;
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            if (row_ids[ITEM] < 0)
+            row_ids[ITEM]   = -1;
+            non_zeros[ITEM] = running_sum;
+// Mooch
+//            if (thread_coordinate.x < tile_num_rows)
             {
-                running_sum += non_zeros[ITEM];
+                if ((tile_nonzero_indices[thread_coordinate.y] < tile_row_end_offsets[thread_coordinate.x]))
+                {
+                    // Move down (accumulate)
+                    running_sum += tile_nonzeros[thread_coordinate.y];
+                    ++thread_coordinate.y;
+                }
+                else
+                {
+                    // Move right
+                    row_ids[ITEM] = thread_coordinate.x;
+                    ++thread_coordinate.x;
+                    running_sum = 0.0;
+                }
             }
-            else
+        }
+
+        __syncthreads();
+
+        // Local scatter
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (row_ids[ITEM] >= 0)
             {
-                tile_partial_sums[row_ids[ITEM]] = running_sum;
-                running_sum = 0.0;
+                tile_partial_sums[row_ids[ITEM]] = non_zeros[ITEM];
             }
         }
 
@@ -323,13 +329,12 @@ struct AgentSpmv
     __device__ __forceinline__ void ConsumeTile(
         CoordinateT* d_tile_coordinates)
     {
-        int agent_idx = blockIdx.x;
+        int tile_idx = blockIdx.x;
 
         // Find the starting and ending coordinates for this block's merge path segment
         if (threadIdx.x < 2)
         {
-            temp_storage.tile_coordinates[threadIdx.x] = d_tile_coordinates[agent_idx + threadIdx.x];
-            temp_storage.tile_coordinates[threadIdx.x] = d_tile_coordinates[agent_idx + threadIdx.x];
+            temp_storage.tile_coordinates[threadIdx.x] = d_tile_coordinates[tile_idx + threadIdx.x];
         }
 
         __syncthreads();
