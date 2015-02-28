@@ -40,6 +40,9 @@
 
 #include "matrix.h"
 
+// Ensure printing of CUDA runtime errors to console
+#define CUB_STDERR
+
 #include <cub/device/device_spmv.cuh>
 #include <cub/util_allocator.cuh>
 #include <test/test_util.h>
@@ -51,8 +54,6 @@ using namespace cub;
 // Globals, constants, and type declarations
 //---------------------------------------------------------------------
 
-// Ensure printing of CUDA runtime errors to console
-#define CUB_STDERR
 
 bool                    g_verbose   = false;      // Whether to display output to console
 bool                    g_verbose2  = false;     // Whether to display input to console
@@ -463,6 +464,8 @@ int main(int argc, char **argv)
     CubDebugExit(cudaDeviceGetAttribute(&bus_width, cudaDevAttrGlobalMemoryBusWidth, device_ordinal));
     CubDebugExit(cudaDeviceGetAttribute(&mem_clock_khz, cudaDevAttrMemoryClockRate, device_ordinal));
     float bandwidth_GBs = float(bus_width) * mem_clock_khz * 2 / 8 / 1000 / 1000;
+
+    printf("Peak global B/W: %.3f GB/s (%d bits, %d kHz clock)\n", bandwidth_GBs, bus_width, mem_clock_khz);
 
     // Run test(s)
     if (fp64)

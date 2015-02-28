@@ -67,7 +67,7 @@ template <
 __global__ void AgentSpmvSearchKernel(
     int             agent_spmv_grid_size,
     OffsetT*        d_matrix_row_end_offsets,       ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
-    CoordinateT*    d_tile_coordinates,            ///< [out] Pointer to the temporary array of tile starting coordinates
+    CoordinateT*    d_tile_coordinates,             ///< [out] Pointer to the temporary array of tile starting coordinates
     int             num_rows,                       ///< [in] number of rows of matrix <b>A</b>.
     int             num_nonzeros)                   ///< [in] number of nonzero elements of matrix <b>A</b>.
 {
@@ -207,7 +207,7 @@ struct DispatchSpmv
     {
         typedef AgentSpmvPolicy<
                 128,
-                8,
+                5,
                 LOAD_LDG,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
@@ -219,11 +219,11 @@ struct DispatchSpmv
     struct Policy500
     {
         typedef AgentSpmvPolicy<
-                256,
-                7,
+                128,
+                9,
                 LOAD_LDG,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
+                LOAD_LDG,
+                LOAD_LDG,
                 LOAD_LDG>
             AgentSpmvPolicy;
     };
@@ -436,7 +436,7 @@ struct DispatchSpmv
             GridQueue<OffsetT> queue(allocations[3]);
 
             int search_block_size = 128;
-            int search_grid_size = (agent_spmv_grid_size + search_block_size - 1) / search_block_size;
+            int search_grid_size = (agent_spmv_grid_size + 1 + search_block_size - 1) / search_block_size;
 
             // Log agent_spmv_search_kernel configuration
             if (debug_synchronous) CubLog("Invoking agent_spmv_search_kernel<<<%d, %d, 0, %lld>>>()\n",
