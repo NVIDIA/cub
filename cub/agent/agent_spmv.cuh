@@ -36,7 +36,7 @@
 #include <iterator>
 
 #include "../util_type.cuh"
-#include "../block/block_reduce.cuh"
+#include "../block/block_scan.cuh"
 #include "../thread/thread_search.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
@@ -134,11 +134,28 @@ struct AgentSpmv
         VectorValueIteratorT;
 
     // BlockReduce specialization
-    typedef BlockReduce<
-            ValueT,
+    typedef BlockScan<
+            ItemOffsetPair<ValueT, OffsetT>,
             BLOCK_THREADS,
-            BLOCK_REDUCE_WARP_REDUCTIONS>
-        BlockReduceT;
+            BLOCK_SCAN_WARP_SCANS>
+        BlockScanT;
+
+    /// Block-wide reduce-by-key scan operator
+    struct ReduceByKeyOp
+    {
+        // Reduction operator
+        __device__ __forceinline__ ItemOffsetPair<ValueT, OffsetT> operator()(
+            const ItemOffsetPair<ValueT, OffsetT> &a,
+            const ItemOffsetPair<ValueT, OffsetT> &b) const
+        {
+            ItemOffsetPair<ValueT, OffsetT> retval;
+
+            retval.offset = CUB_MAX(a.offset, b.offset);
+            retval.value = (b.offset < 0) ? a.value + b.value : b.value;
+
+            return retval;
+        }
+    };
 
     /// Shared memory type required by this thread block
     struct _TempStorage
@@ -153,6 +170,8 @@ struct AgentSpmv
 
         // Starting and ending global merge path coordinates for the tile
         CoordinateT tile_coordinates[2];
+
+        typename BlockScanT::TempStorage scan;
     };
 
     /// Temporary storage type (unionable)
@@ -264,53 +283,49 @@ struct AgentSpmv
         __syncthreads();
 
         // Run merge and reduce value by key
-
-        OffsetT     row_ids[ITEMS_PER_THREAD];
-        ValueT      non_zeros[ITEMS_PER_THREAD];
-    
-        ValueT running_sum = 0.0;
+        ItemOffsetPair<ValueT, OffsetT> merged_items[ITEMS_PER_THREAD];
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            row_ids[ITEM]   = -1;
-            non_zeros[ITEM] = running_sum;
-// Mooch
+// Mooch range check
 //            if (thread_coordinate.x < tile_num_rows)
+
+            bool accumulate = (tile_nonzero_indices[thread_coordinate.y] < tile_row_end_offsets[thread_coordinate.x]);
+
+            merged_items[ITEM].value    = (accumulate) ? tile_nonzeros[thread_coordinate.y] : 0.0;
+            merged_items[ITEM].offset   = (accumulate) ? -1 : thread_coordinate.x;
+
+            if (accumulate)
             {
-                if ((tile_nonzero_indices[thread_coordinate.y] < tile_row_end_offsets[thread_coordinate.x]))
-                {
-                    // Move down (accumulate)
-                    running_sum += tile_nonzeros[thread_coordinate.y];
-                    ++thread_coordinate.y;
-                }
-                else
-                {
-                    // Move right
-                    row_ids[ITEM] = thread_coordinate.x;
-                    ++thread_coordinate.x;
-                    running_sum = 0.0;
-                }
+                // Move down
+                ++thread_coordinate.y;
+            }
+            else
+            {
+                // Move right
+                ++thread_coordinate.x;
             }
         }
 
-        __syncthreads();
+        // Reduce value by key
+        ItemOffsetPair<ValueT, OffsetT> block_aggregate;
+        ItemOffsetPair<ValueT, OffsetT> identity;
+        identity.offset     = -1;
+        identity.value      = ValueT(0.0);
 
-        // Local scatter
+        ItemOffsetPair<ValueT, OffsetT> scanned_items[ITEMS_PER_THREAD];
+        BlockScanT(temp_storage.scan).ExclusiveScan(merged_items, scanned_items, identity, ReduceByKeyOp(), block_aggregate);
+
+        // Compact row partial sums to smem
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            if (row_ids[ITEM] >= 0)
+            if (merged_items[ITEM].offset >= 0)
             {
-                tile_partial_sums[row_ids[ITEM]] = non_zeros[ITEM];
+                tile_partial_sums[merged_items[ITEM].offset] = scanned_items[ITEM].value;
             }
         }
-
-        __syncthreads();
-
-        // Update with thread_carry_out values
-        if (thread_coordinate.x < tile_num_rows)
-            atomicAdd(tile_partial_sums + thread_coordinate.x, running_sum);
 
         __syncthreads();
 
