@@ -160,16 +160,17 @@ struct AgentSpmv
     /// Shared memory type required by this thread block
     struct _TempStorage
     {
+        // Starting and ending global merge path coordinates for the tile
+        CoordinateT tile_coordinates[2];
+
         // Tile of merge items
         union MergeItem
         {
             OffsetT    row_end_offset;
             ValueT     nonzero;
 
-        } merge_items[TILE_ITEMS + 1];
+        } merge_items[TILE_ITEMS + ITEMS_PER_THREAD];
 
-        // Starting and ending global merge path coordinates for the tile
-        CoordinateT tile_coordinates[2];
 
         typename BlockScanT::TempStorage scan;
     };
@@ -280,7 +281,10 @@ struct AgentSpmv
             tile_num_nonzeros,
             thread_coordinate);
 
+        OffsetT starting_row = thread_coordinate.x;
+
         __syncthreads();
+
 
         // Run merge and reduce value by key
         ItemOffsetPair<ValueT, OffsetT> merged_items[ITEMS_PER_THREAD];
@@ -308,24 +312,40 @@ struct AgentSpmv
             }
         }
 
+        __syncthreads();
+
+        ValueT running_total = 0.0;
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (merged_items[ITEM].offset < 0)
+            {
+                running_total += merged_items[ITEM].value;
+            }
+            else
+            {
+                tile_partial_sums[merged_items[ITEM].offset] = running_total;
+                running_total = 0.0;
+            }
+        }
+
+        __syncthreads();
+
+
         // Reduce value by key
         ItemOffsetPair<ValueT, OffsetT> block_aggregate;
         ItemOffsetPair<ValueT, OffsetT> identity;
         identity.offset     = -1;
         identity.value      = ValueT(0.0);
 
-        ItemOffsetPair<ValueT, OffsetT> scanned_items[ITEMS_PER_THREAD];
-        BlockScanT(temp_storage.scan).ExclusiveScan(merged_items, scanned_items, identity, ReduceByKeyOp(), block_aggregate);
+        ItemOffsetPair<ValueT, OffsetT> scan_in, scan_out;
+        scan_in.offset     = (thread_coordinate.x == starting_row) ? -1 : thread_coordinate.x;
+        scan_in.value      = running_total;
 
-        // Compact row partial sums to smem
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            if (merged_items[ITEM].offset >= 0)
-            {
-                tile_partial_sums[merged_items[ITEM].offset] = scanned_items[ITEM].value;
-            }
-        }
+        BlockScanT(temp_storage.scan).ExclusiveScan(scan_in, scan_out, identity, ReduceByKeyOp(), block_aggregate);
+
+        tile_partial_sums[scan_out.offset] += scan_out.value;
 
         __syncthreads();
 
