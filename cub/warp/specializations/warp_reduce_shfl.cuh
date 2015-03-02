@@ -295,7 +295,7 @@ struct WarpReduceShfl
 
         // Perform reduction op if valid
         if (offset <= last_lane - lane_id)
-            output = reduction_op(temp, output);
+            output = reduction_op(input, temp);
 
         return output;
     }
