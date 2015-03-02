@@ -150,8 +150,8 @@ struct AgentSpmv
         {
             ItemOffsetPair<ValueT, OffsetT> retval;
 
-            retval.offset = CUB_MAX(a.offset, b.offset);
-            retval.value = (b.offset < 0) ? a.value + b.value : b.value;
+            retval.offset = a.offset + b.offset;
+            retval.value = (b.offset) ? b.value : a.value + b.value;
 
             return retval;
         }
@@ -285,21 +285,16 @@ struct AgentSpmv
 
         __syncthreads();
 
-
-        // Run merge and reduce value by key
+        // Compute the thread's merge path segment
         ItemOffsetPair<ValueT, OffsetT> merged_items[ITEMS_PER_THREAD];
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-// Mooch range check
-//            if (thread_coordinate.x < tile_num_rows)
-
             bool accumulate = (tile_nonzero_indices[thread_coordinate.y] < tile_row_end_offsets[thread_coordinate.x]);
 
             merged_items[ITEM].value    = (accumulate) ? tile_nonzeros[thread_coordinate.y] : 0.0;
             merged_items[ITEM].offset   = (accumulate) ? -1 : thread_coordinate.x;
-
             if (accumulate)
             {
                 // Move down
@@ -314,6 +309,7 @@ struct AgentSpmv
 
         __syncthreads();
 
+        // Intra-thread reduce-value-by-key, flushing partials at row-transitions
         ValueT running_total = 0.0;
 
         #pragma unroll
@@ -332,20 +328,21 @@ struct AgentSpmv
 
         __syncthreads();
 
-
-        // Reduce value by key
+        // Inter-thread reduce-value-by-key, flushing partials at row-transitions
         ItemOffsetPair<ValueT, OffsetT> block_aggregate;
         ItemOffsetPair<ValueT, OffsetT> identity;
-        identity.offset     = -1;
+        ItemOffsetPair<ValueT, OffsetT> scan_tuple;
+
+        int num_thread_rows = thread_coordinate.x - starting_row;
+        identity.offset     = 0;
         identity.value      = ValueT(0.0);
+        scan_tuple.offset   = num_thread_rows;
+        scan_tuple.value    = running_total;
 
-        ItemOffsetPair<ValueT, OffsetT> scan_in, scan_out;
-        scan_in.offset     = (thread_coordinate.x == starting_row) ? -1 : thread_coordinate.x;
-        scan_in.value      = running_total;
+        BlockScanT(temp_storage.scan).ExclusiveScan(scan_tuple, scan_tuple, identity, ReduceByKeyOp(), block_aggregate);
 
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_in, scan_out, identity, ReduceByKeyOp(), block_aggregate);
-
-        tile_partial_sums[scan_out.offset] += scan_out.value;
+        if (num_thread_rows > 0)
+            tile_partial_sums[scan_tuple.offset] += scan_tuple.value;
 
         __syncthreads();
 
