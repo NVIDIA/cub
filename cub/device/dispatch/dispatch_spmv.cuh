@@ -124,8 +124,8 @@ __global__ void AgentSpmvKernel(
     ValueT*         d_vector_x,                     ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
     ValueT*         d_vector_y,                     ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
     CoordinateT*    d_tile_coordinates,             ///< [in] Pointer to the temporary array of tile starting coordinates
-    OffsetT*        d_block_carryout_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-    ValueT*         d_block_carryout_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
+    OffsetT*        d_tile_carry_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
+    ValueT*         d_tile_carry_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
     int             num_rows,                       ///< [in] number of rows of matrix <b>A</b>.
     int             num_cols,                       ///< [in] number of columns of matrix <b>A</b>.
     int             num_nonzeros)                   ///< [in] number of nonzero elements of matrix <b>A</b>.
@@ -148,8 +148,8 @@ __global__ void AgentSpmvKernel(
         d_matrix_column_indices,
         d_vector_x,
         d_vector_y,
-        d_block_carryout_rows,
-        d_block_carryout_values,
+        d_tile_carry_rows,
+        d_tile_carry_values,
         num_rows,
         num_cols,
         num_nonzeros);
@@ -428,8 +428,8 @@ struct DispatchSpmv
             }
 
             // Alias the allocations
-            OffsetT*        d_block_carryout_rows       = (OffsetT*) allocations[0];        // Agent carry-out row-ids
-            ValueT*         d_block_carryout_values     = (ValueT*) allocations[1];         // Agent carry-out partial sums
+            OffsetT*        d_tile_carry_rows       = (OffsetT*) allocations[0];        // Agent carry-out row-ids
+            ValueT*         d_tile_carry_values     = (ValueT*) allocations[1];         // Agent carry-out partial sums
             CoordinateT*    d_tile_coordinates         = (CoordinateT*) allocations[2];    // Agent starting coordinates
 
             // Alias the allocation for the grid queue descriptor
@@ -462,8 +462,8 @@ struct DispatchSpmv
                 d_vector_x,
                 d_vector_y,
                 d_tile_coordinates,
-                d_block_carryout_rows,
-                d_block_carryout_values,
+                d_tile_carry_rows,
+                d_tile_carry_values,
                 num_rows,
                 num_cols,
                 num_nonzeros);
