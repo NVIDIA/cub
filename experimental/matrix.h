@@ -237,7 +237,9 @@ struct CooMatrix
             exit(1);
         }
 
-        num_nonzeros       = spokes + (spokes - 1);
+        num_rows        = spokes + 1;
+        num_cols        = num_rows;
+        num_nonzeros    = spokes * 2;
         coo_tuples      = new CooTuple[num_nonzeros];
 
         // Add spoke num_nonzeros
@@ -282,7 +284,7 @@ struct CooMatrix
         int     corner_nodes    = 4;
         num_rows                       = width * width;
         num_cols                       = num_rows;
-        num_nonzeros                     = (interior_nodes * 4) + (edge_nodes * 3) + (corner_nodes * 2);
+        num_nonzeros                   = (interior_nodes * 4) + (edge_nodes * 3) + (corner_nodes * 2);
 
         if (self_loop)
             num_nonzeros += num_rows;
