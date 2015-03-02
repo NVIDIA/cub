@@ -231,6 +231,9 @@ private:
 public:
 
     /// Constructor
+    __host__ __device__ __forceinline__ ReduceBySegmentOp() {}
+
+    /// Constructor
     __host__ __device__ __forceinline__ ReduceBySegmentOp(ReductionOp op) : op(op) {}
 
     /// Scan operator
