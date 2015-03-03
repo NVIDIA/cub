@@ -172,12 +172,16 @@ struct CooMatrix
                 // Done
                 break;
             }
-            if ((line[0] == '%') && (line[1] == '%'))
+            if (line[0] == '%')
             {
                 // Comment
-                symmetric = (strstr(line, "symmetric") != NULL);
-                skew = (strstr(line, "skew") != NULL);
-                printf("symmetric: %d, skew: %d\n", symmetric, skew);
+                if (line[1] == '%')
+                {
+                    // Banner
+                    symmetric = (strstr(line, "symmetric") != NULL);
+                    skew = (strstr(line, "skew") != NULL);
+                    printf("symmetric: %d, skew: %d\n", symmetric, skew);
+                }
             }
             else if (current_edge == -1)
             {
