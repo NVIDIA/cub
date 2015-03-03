@@ -172,7 +172,7 @@ struct CooMatrix
                 // Done
                 break;
             }
-            if (line[0] == '%')
+            if ((line[0] == '%') && (line[1] == '%'))
             {
                 // Comment
                 symmetric = (strstr(line, "symmetric") != NULL);
