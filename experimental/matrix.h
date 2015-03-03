@@ -579,18 +579,19 @@ struct CsrMatrix
      */
     void Display()
     {
-        cout << "Input Matrix:\n";
+        printf("Input Matrix:\n");
         for (OffsetT row = 0; row < num_rows; row++)
         {
-            cout << row << "[@" << row_offsets[row] << "]: ";
+            printf("%d [@%d, #%d]: ", row, row_offsets[row], row_offsets[row + 1] - row_offsets[row]);
             for (OffsetT current_edge = row_offsets[row]; current_edge < row_offsets[row + 1]; current_edge++)
             {
                 printf("%d (%f), ", column_indices[current_edge], values[current_edge]);
             }
-            cout << "\n";
+            printf("\n");
         }
     }
 
 
 };
+
 
