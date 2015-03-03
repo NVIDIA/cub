@@ -169,16 +169,15 @@ struct CooMatrix
         {
             if (fscanf(f_in, "%[^\n]\n", line) <= 0)
             {
-                symmetric = (strstr(line, "symmetric") == NULL);
-                skew = (strstr(line, "skew") == NULL);
-
-                printf("symmetric: %d, skew: %d\n", symmetric, skew);
-
+                // Done
                 break;
             }
             if (line[0] == '%')
             {
                 // Comment
+                symmetric = (strstr(line, "symmetric") != NULL);
+                skew = (strstr(line, "skew") != NULL);
+                printf("symmetric: %d, skew: %d\n", symmetric, skew);
             }
             else if (current_edge == -1)
             {
@@ -198,6 +197,7 @@ struct CooMatrix
             }
             else
             {
+                // Edge
                 if (current_edge >= num_nonzeros)
                 {
                     fprintf(stderr, "Error parsing MARKET matrix: encountered more than %d num_nonzeros\n", num_nonzeros);
@@ -205,8 +205,9 @@ struct CooMatrix
                 }
 
                 int row, col;
-                ValueT val;
-                int nparsed = sscanf(line, "%d %d %f", &row, &col, &val);
+                double val;
+                int nparsed = sscanf(line, "%d %d %lf", &row, &col, &val);
+
                 if (nparsed == 2)
                 {
                     // No value specified
@@ -228,12 +229,6 @@ struct CooMatrix
                     coo_tuples[current_edge].val = coo_tuples[current_edge - 1].val * (skew ? -1 : 1);
                     current_edge++;
                 }
-            }
-
-            if (current_edge > num_nonzeros)
-            {
-                fprintf(stderr, "Error parsing MARKET matrix: too many edges\n");
-                exit(1);
             }
         }
 
@@ -586,7 +581,7 @@ struct CsrMatrix
             cout << row << "[@" << row_offsets[row] << "]: ";
             for (OffsetT current_edge = row_offsets[row]; current_edge < row_offsets[row + 1]; current_edge++)
             {
-                cout << column_indices[current_edge] << " (" << values[current_edge] << "), ";
+                printf("%d (%f), ", column_indices[current_edge], values[current_edge]);
             }
             cout << "\n";
         }
