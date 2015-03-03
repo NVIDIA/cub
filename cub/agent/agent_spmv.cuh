@@ -240,8 +240,8 @@ struct AgentSpmv
         CoordinateT tile_start_coord,
         CoordinateT tile_end_coord)
     {
-        ItemOffsetPair<ValueT, OffsetT> tile_carry;
-        ValueT non_zeros[ITEMS_PER_THREAD];
+        ItemOffsetPair<ValueT, OffsetT>     tile_carry;
+        ValueT                              non_zeros[ITEMS_PER_THREAD];
 
         // Gather the nonzeros for the merge tile
         #pragma unroll
@@ -259,7 +259,7 @@ struct AgentSpmv
 
         ValueT tile_sum = BlockReduceT(temp_storage.reduce).Sum(non_zeros);
 
-        tile_carry.offset = tile_start_coord.x;
+        tile_carry.offset = 0;
         tile_carry.value = tile_sum;
 
         // Return the tile's running carry-out
