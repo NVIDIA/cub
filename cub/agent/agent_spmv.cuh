@@ -281,25 +281,33 @@ struct AgentSpmv
         ValueT*                         tile_nonzeros           = reinterpret_cast<ValueT*>(temp_storage.merge_items + tile_num_rows);
         ValueT*                         tile_partial_sums       = reinterpret_cast<ValueT*>(temp_storage.merge_items);
 
-        // Gather the row end-offsets for the merge tile into shared memory
-        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
+        // Read row end-offsets merge input items
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start_coord.x + item];
+            int item = (ITEM * BLOCK_THREADS) + threadIdx.x;
+
+            if (item < tile_num_rows)
+            {
+                tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start_coord.x + item];
+            }
         }
 
-        __syncthreads();    // Perf-sync
+        __syncthreads();    // Perf sync
 
-        // Gather the nonzeros for the merge tile into shared memory
-        for (int item = threadIdx.x; item < tile_num_nonzeros; item += BLOCK_THREADS)
+        // Read nonzeros merge input items
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
-            ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
-            ValueT  vector_value        = d_vector_x[column_index];
+            int item = (ITEM * BLOCK_THREADS) + threadIdx.x;
 
-            tile_nonzeros[item]         = matrix_value * vector_value;
+            if (item < tile_num_nonzeros)
+            {
+                OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
+                ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
+                ValueT  vector_value        = d_vector_x[column_index];
+
+                tile_nonzeros[item]         = matrix_value * vector_value;
+            }
         }
-
-        __syncthreads();
 
         // Search for the thread's starting coordinate within the merge tile
         CountingInputIterator<OffsetT>  tile_nonzero_indices(tile_start_coord.y);
@@ -313,13 +321,11 @@ struct AgentSpmv
             tile_num_nonzeros,
             thread_start_coord);
 
-
-        __syncthreads();    // Perf-sync
+        __syncthreads();
 
         // Compute the thread's merge path segment
         ItemOffsetPair<ValueT, OffsetT> thread_segment[ITEMS_PER_THREAD];
-        CoordinateT                     thread_current_coord    = thread_start_coord;
-        ValueT                          running_total           = 0.0;
+        CoordinateT                     thread_current_coord = thread_start_coord;
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -329,17 +335,15 @@ struct AgentSpmv
             if (accumulate)
             {
                 // Move down (accumulate)
-                thread_segment[ITEM].offset = -1;
-                thread_segment[ITEM].value  = running_total + tile_nonzeros[thread_current_coord.y];
-                running_total               = thread_segment[ITEM].value;
+                thread_segment[ITEM].offset = 0;
+                thread_segment[ITEM].value  = tile_nonzeros[thread_current_coord.y];
                 ++thread_current_coord.y;
             }
             else
             {
                 // Move right (reset)
-                thread_segment[ITEM].offset = thread_current_coord.x;
-                thread_segment[ITEM].value  = running_total;
-                running_total = 0.0;
+                thread_segment[ITEM].offset = 1;
+                thread_segment[ITEM].value  = 0.0;
                 ++thread_current_coord.x;
             }
         }
@@ -347,16 +351,22 @@ struct AgentSpmv
         __syncthreads();
 
         // Compact the accumulated value for each row-end into shared memory
+        OffsetT running_offset = 0;
+        ValueT  running_total = 0.0;
+
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            if (thread_segment[ITEM].offset >= 0)
-            {
-                tile_partial_sums[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
-            }
-        }
+            running_total += thread_segment[ITEM].value;
 
-        __syncthreads();
+            if (thread_segment[ITEM].offset)
+            {
+                tile_partial_sums[thread_start_coord.x + running_offset] = running_total;
+                running_total = 0.0;
+            }
+
+            running_offset += thread_segment[ITEM].offset;
+        }
 
         // Compute the inter-thread fix-up from thread-carries (for when a row spans more than one thread-segment)
         int num_thread_rows = thread_current_coord.x - thread_start_coord.x;
@@ -408,13 +418,14 @@ struct AgentSpmv
 
         // Consume a merge tile
         ItemOffsetPair<ValueT, OffsetT> tile_carry;
+/*
         if (tile_start_coord.x == tile_end_coord.x)
         {
             // Fast-path when the merge segment is comprised of all non-zeros
             tile_carry = ConsumeTileNonZeros(tile_idx, tile_start_coord, tile_end_coord);
         }
         else
-        {
+*/        {
             tile_carry = ConsumeTile(tile_idx, tile_start_coord, tile_end_coord);
         }
 
