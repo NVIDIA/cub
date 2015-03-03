@@ -219,11 +219,11 @@ struct DispatchSpmv
     struct Policy500
     {
         typedef AgentSpmvPolicy<
-                128,
-                9,
+                (sizeof(ValueT) > 4) ? 64 : 128,
+                7,
                 LOAD_LDG,
-                LOAD_LDG,
-                LOAD_LDG,
+                LOAD_DEFAULT,
+                LOAD_DEFAULT,
                 LOAD_LDG>
             AgentSpmvPolicy;
     };

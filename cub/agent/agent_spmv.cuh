@@ -281,33 +281,25 @@ struct AgentSpmv
         ValueT*                         tile_nonzeros           = reinterpret_cast<ValueT*>(temp_storage.merge_items + tile_num_rows);
         ValueT*                         tile_partial_sums       = reinterpret_cast<ValueT*>(temp_storage.merge_items);
 
-        // Read row end-offsets merge input items
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        // Gather the row end-offsets for the merge tile into shared memory
+        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
         {
-            int item = (ITEM * BLOCK_THREADS) + threadIdx.x;
+            tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start_coord.x + item];
+        }
 
-            if (item < tile_num_rows)
-            {
-                tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start_coord.x + item];
-            }
+        __syncthreads();    // Perf-sync
+
+        // Gather the nonzeros for the merge tile into shared memory
+        for (int item = threadIdx.x; item < tile_num_nonzeros; item += BLOCK_THREADS)
+        {
+            OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
+            ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
+            ValueT  vector_value        = d_vector_x[column_index];
+
+            tile_nonzeros[item]         = matrix_value * vector_value;
         }
 
         __syncthreads();    // Perf sync
-
-        // Read nonzeros merge input items
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            int item = (ITEM * BLOCK_THREADS) + threadIdx.x;
-
-            if (item < tile_num_nonzeros)
-            {
-                OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
-                ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
-                ValueT  vector_value        = d_vector_x[column_index];
-
-                tile_nonzeros[item]         = matrix_value * vector_value;
-            }
-        }
 
         // Search for the thread's starting coordinate within the merge tile
         CountingInputIterator<OffsetT>  tile_nonzero_indices(tile_start_coord.y);
@@ -418,14 +410,14 @@ struct AgentSpmv
 
         // Consume a merge tile
         ItemOffsetPair<ValueT, OffsetT> tile_carry;
-/*
+
         if (tile_start_coord.x == tile_end_coord.x)
         {
             // Fast-path when the merge segment is comprised of all non-zeros
             tile_carry = ConsumeTileNonZeros(tile_idx, tile_start_coord, tile_end_coord);
         }
         else
-*/        {
+        {
             tile_carry = ConsumeTile(tile_idx, tile_start_coord, tile_end_coord);
         }
 
