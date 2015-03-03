@@ -159,13 +159,21 @@ struct CooMatrix
             exit(1);
         }
 
+        bool    symmetric = false;
+        bool    skew = false;
         int     current_edge = -1;
         char    line[1024];
 
-        while(true)
+
+        while (true)
         {
             if (fscanf(f_in, "%[^\n]\n", line) <= 0)
             {
+                symmetric = (strstr(line, "symmetric") == NULL);
+                skew = (strstr(line, "skew") == NULL);
+
+                printf("symmetric: %d, skew: %d\n", symmetric, skew);
+
                 break;
             }
             if (line[0] == '%')
@@ -180,6 +188,9 @@ struct CooMatrix
                     fprintf(stderr, "Error parsing MARKET matrix: invalid problem description\n");
                     exit(1);
                 }
+
+                if (symmetric)
+                    num_nonzeros *= 2;
 
                 // Allocate coo matrix
                 coo_tuples = new CooTuple[num_nonzeros];
@@ -208,16 +219,26 @@ struct CooMatrix
                 }
 
                 coo_tuples[current_edge] = CooTuple(row - 1, col - 1, val);    // Convert indices to zero-based
-
                 current_edge++;
+
+                if (symmetric && (row != col))
+                {
+                    coo_tuples[current_edge].row = coo_tuples[current_edge - 1].col;
+                    coo_tuples[current_edge].col = coo_tuples[current_edge - 1].row;
+                    coo_tuples[current_edge].val = coo_tuples[current_edge - 1].val * (skew ? -1 : 1);
+                    current_edge++;
+                }
+            }
+
+            if (current_edge > num_nonzeros)
+            {
+                fprintf(stderr, "Error parsing MARKET matrix: too many edges\n");
+                exit(1);
             }
         }
 
-        if (current_edge != num_nonzeros)
-        {
-            fprintf(stderr, "Error parsing MARKET matrix: only %d/%d num_nonzeros read\n", current_edge, num_nonzeros);
-            exit(1);
-        }
+        // Adjust nonzero count (nonzeros along the diagonal aren't reversed)
+        num_nonzeros = current_edge;
 
         // Sort by rows, then columns
         std::stable_sort(coo_tuples, coo_tuples + num_nonzeros);
