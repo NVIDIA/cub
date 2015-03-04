@@ -192,7 +192,9 @@ struct DispatchSpmv
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
-                LOAD_DEFAULT>
+                LOAD_DEFAULT,
+                true,
+                BLOCK_SCAN_WARP_SCANS>
             AgentSpmvPolicy;
     };
 
@@ -211,7 +213,9 @@ struct DispatchSpmv
                 LOAD_LDG,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
-                LOAD_LDG>
+                LOAD_LDG,
+                true,
+                BLOCK_SCAN_WARP_SCANS>
             AgentSpmvPolicy;
     };
 
@@ -222,9 +226,11 @@ struct DispatchSpmv
                 (sizeof(ValueT) > 4) ? 64 : 128,
                 7,
                 LOAD_LDG,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_LDG>
+                LOAD_LDG,
+                LOAD_LDG,
+                LOAD_LDG,
+                false,
+                BLOCK_SCAN_RAKING_MEMOIZE>
             AgentSpmvPolicy;
     };
 

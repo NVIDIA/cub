@@ -66,19 +66,24 @@ template <
     CacheLoadModifier               _MATRIX_ROW_OFFSETS_LOAD_MODIFIER,      ///< Cache load modifier for reading CSR row-offsets
     CacheLoadModifier               _MATRIX_COLUMN_INDICES_LOAD_MODIFIER,   ///< Cache load modifier for reading CSR column-indices
     CacheLoadModifier               _MATRIX_VALUES_LOAD_MODIFIER,           ///< Cache load modifier for reading CSR values
-    CacheLoadModifier               _VECTOR_VALUES_LOAD_MODIFIER>           ///< Cache load modifier for reading vector values
+    CacheLoadModifier               _VECTOR_VALUES_LOAD_MODIFIER,           ///< Cache load modifier for reading vector values
+    bool                            _UNROLL_NONZERO_LOADS,                  ///< Whether to fully unroll the loading of the non-zero merge tile segment
+    BlockScanAlgorithm              _SCAN_ALGORITHM>                        ///< The BlockScan algorithm to use
 struct AgentSpmvPolicy
 {
     enum
     {
-        BLOCK_THREADS                                                   = _BLOCK_THREADS,                           ///< Threads per thread block
-        ITEMS_PER_THREAD                                                = _ITEMS_PER_THREAD,                        ///< Items per thread (per tile of input)
+        BLOCK_THREADS                                                   = _BLOCK_THREADS,                       ///< Threads per thread block
+        ITEMS_PER_THREAD                                                = _ITEMS_PER_THREAD,                    ///< Items per thread (per tile of input)
+        UNROLL_NONZERO_LOADS                                            = _UNROLL_NONZERO_LOADS,                ///< Whether to fully unroll the loading of the non-zero merge tile segment
     };
 
-    static const CacheLoadModifier MATRIX_ROW_OFFSETS_LOAD_MODIFIER    = _MATRIX_ROW_OFFSETS_LOAD_MODIFIER;       ///< Cache load modifier for reading CSR row-offsets
-    static const CacheLoadModifier MATRIX_COLUMN_INDICES_LOAD_MODIFIER = _MATRIX_COLUMN_INDICES_LOAD_MODIFIER;    ///< Cache load modifier for reading CSR column-indices
-    static const CacheLoadModifier MATRIX_VALUES_LOAD_MODIFIER         = _MATRIX_VALUES_LOAD_MODIFIER;            ///< Cache load modifier for reading CSR values
-    static const CacheLoadModifier VECTOR_VALUES_LOAD_MODIFIER         = _VECTOR_VALUES_LOAD_MODIFIER;            ///< Cache load modifier for reading vector values
+    static const CacheLoadModifier  MATRIX_ROW_OFFSETS_LOAD_MODIFIER    = _MATRIX_ROW_OFFSETS_LOAD_MODIFIER;    ///< Cache load modifier for reading CSR row-offsets
+    static const CacheLoadModifier  MATRIX_COLUMN_INDICES_LOAD_MODIFIER = _MATRIX_COLUMN_INDICES_LOAD_MODIFIER; ///< Cache load modifier for reading CSR column-indices
+    static const CacheLoadModifier  MATRIX_VALUES_LOAD_MODIFIER         = _MATRIX_VALUES_LOAD_MODIFIER;         ///< Cache load modifier for reading CSR values
+    static const CacheLoadModifier  VECTOR_VALUES_LOAD_MODIFIER         = _VECTOR_VALUES_LOAD_MODIFIER;         ///< Cache load modifier for reading vector values
+    static const BlockScanAlgorithm SCAN_ALGORITHM                      = _SCAN_ALGORITHM;                      ///< The BlockScan algorithm to use
+
 };
 
 
@@ -146,8 +151,15 @@ struct AgentSpmv
     typedef BlockScan<
             ItemOffsetPair<ValueT, OffsetT>,
             BLOCK_THREADS,
-            BLOCK_SCAN_WARP_SCANS>
+            AgentSpmvPolicyT::SCAN_ALGORITHM>
         BlockScanT;
+
+    /// Merge item type (either a non-zero value or a row-end offset)
+    union MergeItem
+    {
+        OffsetT    row_end_offset;
+        ValueT     nonzero;
+    };
 
     /// Shared memory type required by this thread block
     struct _TempStorage
@@ -156,12 +168,7 @@ struct AgentSpmv
         CoordinateT tile_coordinates[2];
 
         // Tile of merge items
-        union MergeItem
-        {
-            OffsetT    row_end_offset;
-            ValueT     nonzero;
-
-        } merge_items[TILE_ITEMS + ITEMS_PER_THREAD];
+        MergeItem merge_items[TILE_ITEMS + ITEMS_PER_THREAD];
 
         union
         {
@@ -287,19 +294,39 @@ struct AgentSpmv
             tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start_coord.x + item];
         }
 
-        __syncthreads();    // Perf-sync
+        __syncthreads();              // Perf-sync
 
         // Gather the nonzeros for the merge tile into shared memory
-        for (int item = threadIdx.x; item < tile_num_nonzeros; item += BLOCK_THREADS)
+        if (AgentSpmvPolicyT::UNROLL_NONZERO_LOADS)
         {
-            OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
-            ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
-            ValueT  vector_value        = d_vector_x[column_index];
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+            {
+                int item = threadIdx.x + (ITEM * BLOCK_THREADS);
 
-            tile_nonzeros[item]         = matrix_value * vector_value;
+                if (item < tile_num_nonzeros)
+                {
+                    OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
+                    ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
+                    ValueT  vector_value        = d_vector_x[column_index];
+
+                    tile_nonzeros[item]         = matrix_value * vector_value;
+                }
+            }
+        }
+        else
+        {
+            for (int item = threadIdx.x; item < tile_num_nonzeros; item += BLOCK_THREADS)
+            {
+                OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
+                ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
+                ValueT  vector_value        = d_vector_x[column_index];
+
+                tile_nonzeros[item]         = matrix_value * vector_value;
+            }
         }
 
-        __syncthreads();    // Perf sync
+        __syncthreads();   
 
         // Search for the thread's starting coordinate within the merge tile
         CountingInputIterator<OffsetT>  tile_nonzero_indices(tile_start_coord.y);
@@ -313,7 +340,7 @@ struct AgentSpmv
             tile_num_nonzeros,
             thread_start_coord);
 
-        __syncthreads();
+        __syncthreads();    // Perf-sync
 
         // Compute the thread's merge path segment
         ItemOffsetPair<ValueT, OffsetT> thread_segment[ITEMS_PER_THREAD];
@@ -411,14 +438,14 @@ struct AgentSpmv
         // Consume a merge tile
         ItemOffsetPair<ValueT, OffsetT> tile_carry;
 
-        if (tile_start_coord.x == tile_end_coord.x)
+        if (tile_start_coord.x < tile_end_coord.x)
         {
-            // Fast-path when the merge segment is comprised of all non-zeros
-            tile_carry = ConsumeTileNonZeros(tile_idx, tile_start_coord, tile_end_coord);
+            tile_carry = ConsumeTile(tile_idx, tile_start_coord, tile_end_coord);
         }
         else
         {
-            tile_carry = ConsumeTile(tile_idx, tile_start_coord, tile_end_coord);
+            // Fast-path when the merge segment is comprised of all non-zeros
+            tile_carry = ConsumeTileNonZeros(tile_idx, tile_start_coord, tile_end_coord);
         }
 
         // Output the tile's merge-path carry
