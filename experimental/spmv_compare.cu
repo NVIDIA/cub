@@ -474,7 +474,7 @@ int main(int argc, char **argv)
     }
     else
     {
-//        RunTests<float, int>(mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
+        RunTests<float, int>(mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
     }
 
     CubDebugExit(cudaDeviceSynchronize());
