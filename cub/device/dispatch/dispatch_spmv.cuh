@@ -188,7 +188,7 @@ struct DispatchSpmv
     {
         typedef AgentSpmvPolicy<
                 128,
-                7,
+                1,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
