@@ -208,11 +208,11 @@ struct DispatchSpmv
     struct Policy350
     {
         typedef AgentSpmvPolicy<
-                (sizeof(ValueT) > 4) ? 64 : 128,
-                5,
+                128,
+                (sizeof(ValueT) > 4) ? 6 : 7,
                 LOAD_LDG,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
+                LOAD_LDG,
+                LOAD_LDG,
                 LOAD_LDG,
                 true,
                 BLOCK_SCAN_WARP_SCANS>
@@ -230,7 +230,7 @@ struct DispatchSpmv
                 LOAD_LDG,
                 LOAD_LDG,
                 false,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             AgentSpmvPolicy;
     };
 
