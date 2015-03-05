@@ -158,7 +158,7 @@ struct AgentSpmv
     union MergeItem
     {
         OffsetT    row_end_offset;
-        ValueT     nonzero;
+//        ValueT     nonzero;
     };
 
     /// Shared memory type required by this thread block
@@ -275,73 +275,101 @@ struct AgentSpmv
 
 
     /**
-     * Consume a merge tile (specialized for ITEMS_PER_THREAD == 1)
+     * Consume a merge tile
      */
     __device__ __forceinline__ ItemOffsetPair<ValueT, OffsetT> ConsumeTile1(
         int tile_idx,
         CoordinateT tile_start_coord,
         CoordinateT tile_end_coord)
     {
-        int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
-        int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
-        OffsetT*    tile_row_end_offsets    = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
+        ItemOffsetPair<ValueT, OffsetT> tile_carry;
+
+        int                             tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
+        int                             tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
+        OffsetT*                        tile_row_end_offsets    = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
 
         // Gather the row end-offsets for the merge tile into shared memory
-        int item = threadIdx.x;
-        if (item < tile_num_rows)
+        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
         {
             tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start_coord.x + item];
         }
 
-        __syncthreads();   
+        __syncthreads();
 
         // Search for the thread's starting coordinate within the merge tile
         CountingInputIterator<OffsetT>  tile_nonzero_indices(tile_start_coord.y);
-        CoordinateT                     thread_coord;
+        CoordinateT                     thread_start_coord;
 
         MergePathSearch(
-            OffsetT(item),                                      // Diagonal
+            OffsetT(threadIdx.x * ITEMS_PER_THREAD),            // Diagonal
             tile_row_end_offsets,                               // List A
             tile_nonzero_indices,                               // List B
             tile_num_rows,
             tile_num_nonzeros,
-            thread_coord);
+            thread_start_coord);
 
         __syncthreads();    // Perf-sync
 
-        OffsetT nonzero_idx = tile_nonzero_indices[thread_coord.y];
-        bool    accumulate  = (nonzero_idx < num_nonzeros) && (nonzero_idx < tile_row_end_offsets[thread_coord.x]);
+        // Compute the thread's merge path segment
+        OffsetT         flags[ITEMS_PER_THREAD];
+        OffsetT         column_indices[ITEMS_PER_THREAD];
+        CoordinateT     thread_current_coord = thread_start_coord;
 
-        ItemOffsetPair<ValueT, OffsetT> path_item(0.0, 1);
-        if (accumulate)
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            OffsetT column_idx      = d_matrix_column_indices[nonzero_idx];
-            ValueT  matrix_value    = d_matrix_values[nonzero_idx];
-            ValueT  vector_value    = d_vector_x[column_idx];
-            path_item.value         = matrix_value * vector_value;
-            path_item.offset        = 0;
+            column_indices[ITEM] = CUB_MIN(tile_nonzero_indices[thread_current_coord.y], num_nonzeros - 1);
+
+            bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < tile_row_end_offsets[thread_current_coord.x]);
+            if (accumulate)
+            {
+                // Move down (accumulate)
+                flags[ITEM] = 0;
+                ++thread_current_coord.y;
+            }
+            else
+            {
+                // Move right (reset)
+                flags[ITEM] = 1;
+                ++thread_current_coord.x;
+            }
         }
-        int flag = path_item.offset;
 
         __syncthreads();    // Perf-sync
 
-        // Reduce-by-segment
-        ItemOffsetPair<ValueT, OffsetT>                                 tile_carry;
+        ItemOffsetPair<ValueT, OffsetT> thread_segment[ITEMS_PER_THREAD];
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            OffsetT column_index        = d_matrix_column_indices[column_indices[ITEM]];
+            ValueT  matrix_value        = d_matrix_values[column_indices[ITEM]];
+            ValueT  vector_value        = d_vector_x[column_index];
+            thread_segment[ITEM].value  = (flags[ITEM]) ? 0.0 : matrix_value * vector_value;
+            thread_segment[ITEM].offset = flags[ITEM];
+        }
+
+        __syncthreads();    // Perf-sync
+
+        // Compute the inter-thread fix-up from thread-carries (for when a row spans more than one thread-segment)
         ItemOffsetPair<ValueT, OffsetT>                                 scan_identity(0.0, 0);
         ReduceBySegmentOp<cub::Sum, ItemOffsetPair<ValueT, OffsetT> >   scan_op;
 
         // Block-wide reduce-value-by-key
-        BlockScanT(temp_storage.scan).ExclusiveScan(path_item, path_item, scan_identity, scan_op, tile_carry);
+        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_carry);
 
         // Scatter
-        if (flag)
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            d_vector_y[tile_start_coord.x + path_item.offset] = path_item.value;
+            if (flags[ITEM])
+                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
         }
 
         // Return the tile's running carry-out
         return tile_carry;
     }
+
 
 
     /**
