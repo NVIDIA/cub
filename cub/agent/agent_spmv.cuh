@@ -389,10 +389,11 @@ struct AgentSpmv
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             int item                    = threadIdx.x + (ITEM * BLOCK_THREADS);
-            item                        = CUB_MIN(ITEM, tile_num_nonzeros - 1);
+            item                        = CUB_MIN(item, tile_num_nonzeros - 1);
             OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
             ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
             ValueT  vector_value        = d_vector_x[column_index];
+  
             tile_nonzeros[item]         = matrix_value * vector_value;
         }
 
