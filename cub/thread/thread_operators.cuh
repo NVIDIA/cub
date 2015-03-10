@@ -203,6 +203,28 @@ struct Cast
 
 
 /**
+ * \brief Binary operator wrapper for switching non-commutative scan arguments
+ */
+template <typename ScanOp>
+struct SwizzleScanOp
+{
+    ScanOp scan_op;
+
+    // Constructor
+    __host__ __device__ __forceinline__
+    SwizzleScanOp(ScanOp scan_op) : scan_op(scan_op) {}
+
+    // Switch the scan arguments
+    template <typename T>
+    __host__ __device__ __forceinline__
+    T operator()(const T &a, const T &b)
+    {
+        return scan_op(b, a);
+    }
+};
+
+
+/**
  * \brief Reduce-by-segment functor.
  *
  * Given two cub::ItemOffsetPair inputs \p a and \p b and a

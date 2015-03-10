@@ -61,14 +61,14 @@ namespace cub {
  */
 template <
     typename T,                 ///< BlockScan value type
-    typename ScanOp>            ///< Wrapped scan operator type
+    typename ScanOpT>            ///< Wrapped scan operator type
 struct BlockScanRunningPrefixOp
 {
-    ScanOp  op;                 ///< Wrapped scan operator
+    ScanOpT  op;                 ///< Wrapped scan operator
     T       running_total;      ///< Running block-wide prefix
 
     /// Constructor
-    __device__ __forceinline__ BlockScanRunningPrefixOp(ScanOp op)
+    __device__ __forceinline__ BlockScanRunningPrefixOp(ScanOpT op)
     :
         op(op)
     {}
@@ -76,7 +76,7 @@ struct BlockScanRunningPrefixOp
     /// Constructor
     __device__ __forceinline__ BlockScanRunningPrefixOp(
         T starting_prefix,
-        ScanOp op)
+        ScanOpT op)
     :
         op(op),
         running_total(starting_prefix)
@@ -653,26 +653,31 @@ struct ReduceByKeyScanTileState<Value, OffsetT, true>
  */
 template <
     typename T,
-    typename ScanOp,
-    typename ScanTileState>
+    typename ScanOpT,
+    typename ScanTileStateT>
 struct BlockScanLookbackPrefixOp
 {
     // Parameterized warp reduce
     typedef WarpReduce<T> WarpReduceT;
 
     // Temporary storage type
-    typedef typename WarpReduceT::TempStorage _TempStorage;
+    struct _TempStorage
+    {
+        typename WarpReduceT::TempStorage   warp_reduce;
+        T                                   exclusive_prefix;
+        T                                   inclusive_prefix;
+    };
 
     // Alias wrapper allowing temporary storage to be unioned
     struct TempStorage : Uninitialized<_TempStorage> {};
 
     // Type of status word
-    typedef typename ScanTileState::StatusWord StatusWord;
+    typedef typename ScanTileStateT::StatusWord StatusWord;
 
     // Fields
-    ScanTileState               &tile_status;       ///< Interface to tile status
+    ScanTileStateT              &tile_status;       ///< Interface to tile status
     _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
-    ScanOp                      scan_op;            ///< Binary scan operator
+    ScanOpT                     scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
     T                           exclusive_prefix;   ///< Exclusive prefix for the tile
     T                           inclusive_prefix;   ///< Inclusive prefix for the tile
@@ -680,9 +685,9 @@ struct BlockScanLookbackPrefixOp
     // Constructor
     __device__ __forceinline__
     BlockScanLookbackPrefixOp(
-        ScanTileState       &tile_status,
+        ScanTileStateT       &tile_status,
         TempStorage         &temp_storage,
-        ScanOp              scan_op,
+        ScanOpT              scan_op,
         int                 tile_idx)
     :
         tile_status(tile_status),
@@ -702,12 +707,13 @@ struct BlockScanLookbackPrefixOp
         tile_status.WaitForValid(predecessor_idx, predecessor_status, value);
 
         // Perform a segmented reduction to get the prefix for the current window.
-        int tail_flag = (predecessor_status == StatusWord(SCAN_TILE_INCLUSIVE));
+        // Use the swizzled scan operator because we are now scanning *down* towards thread0.
 
-        window_aggregate = WarpReduceT(temp_storage).TailSegmentedReduce(
+        int tail_flag = (predecessor_status == StatusWord(SCAN_TILE_INCLUSIVE));
+        window_aggregate = WarpReduceT(temp_storage.warp_reduce).TailSegmentedReduce(
             value,
             tail_flag,
-            scan_op);
+            SwizzleScanOp<ScanOpT>(scan_op));
     }
 
 
@@ -746,11 +752,29 @@ struct BlockScanLookbackPrefixOp
         {
             inclusive_prefix = scan_op(exclusive_prefix, block_aggregate);
             tile_status.SetInclusive(tile_idx, inclusive_prefix);
+
+            temp_storage.exclusive_prefix = exclusive_prefix;
+            temp_storage.inclusive_prefix = inclusive_prefix;
         }
 
         // Return exclusive_prefix
         return exclusive_prefix;
     }
+
+    // Get the exclusive prefix stored in temporary storage
+    __device__ __forceinline__
+    T GetExclusivePrefix()
+    {
+        return temp_storage.exclusive_prefix;
+    }
+
+    // Get the inclusive prefix stored in temporary storage
+    __device__ __forceinline__
+    T GetInclusivePrefix()
+    {
+        return temp_storage.inclusive_prefix;
+    }
+
 };
 
 

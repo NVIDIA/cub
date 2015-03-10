@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "device_scan_dispatch.cuh"
+#include "dispatch_scan.cuh"
 #include "../../agent/agent_rle.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"

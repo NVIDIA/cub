@@ -37,7 +37,7 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "device_scan_dispatch.cuh"
+#include "dispatch_scan.cuh"
 #include "../../agent/agent_select_if.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
@@ -74,16 +74,16 @@ template <
     bool                KEEP_REJECTS>               ///< Whether or not we push rejected items to the back of the output
 __launch_bounds__ (int(AgentSelectIfPolicy::BLOCK_THREADS))
 __global__ void DeviceSelectSweepKernel(
-    InputIteratorT      d_in,                       ///< [in] Pointer to the input sequence of data items
-    FlagsInputIteratorT       d_flags,                    ///< [in] Pointer to the input sequence of selection flags
-    SelectedOutputIteratorT     d_selected_out,                      ///< [out] Pointer to the output sequence of selected data items
-    NumSelectedIteratorT d_num_selected_out,             ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
-    ScanTileState       tile_status,                ///< [in] Tile status interface
-    SelectOp            select_op,                  ///< [in] Selection operator
-    EqualityOp          equality_op,                ///< [in] Equality operator
-    OffsetT             num_items,                  ///< [in] Total number of input items (i.e., length of \p d_in)
-    int                 num_tiles,                  ///< [in] Total number of tiles for the entire problem
-    GridQueue<int>      queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
+    FlagsInputIteratorT     d_flags,                    ///< [in] Pointer to the input sequence of selection flags
+    SelectedOutputIteratorT d_selected_out,                      ///< [out] Pointer to the output sequence of selected data items
+    NumSelectedIteratorT    d_num_selected_out,             ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+    ScanTileState           tile_status,                ///< [in] Tile status interface
+    SelectOp                select_op,                  ///< [in] Selection operator
+    EqualityOp              equality_op,                ///< [in] Equality operator
+    OffsetT                 num_items,                  ///< [in] Total number of input items (i.e., length of \p d_in)
+    int                     num_tiles,                  ///< [in] Total number of tiles for the entire problem
+    GridQueue<int>          queue)                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
 {
     // Thread block type for selecting data from input tiles
     typedef AgentSelectIf<
