@@ -807,7 +807,7 @@ int main(int argc, char** argv)
 {
     int num_items           = -1;
     int entropy_reduction   = 0;
-    int maxseg              = 1000;
+    int max_segment              = 1000;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -815,7 +815,7 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
-    args.GetCmdLineArgument("maxseg", maxseg);
+    args.GetCmdLineArgument("max_segment", max_segment);
     args.GetCmdLineArgument("entropy", entropy_reduction);
 
     // Print usage
@@ -825,7 +825,7 @@ int main(int argc, char** argv)
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--maxseg=<max segment length>]"
+            "[--max_segment=<max segment length>]"
             "[--entropy=<segment length bit entropy reduction rounds>]"
             "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
@@ -847,8 +847,8 @@ int main(int argc, char** argv)
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
 
-    TestPointer<RLE,         CUB, int, int, int>(num_items, entropy_reduction, maxseg, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-    TestPointer<NON_TRIVIAL, CUB, int, int, int>(num_items, entropy_reduction, maxseg, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+    TestPointer<RLE,         CUB, int, int, int>(num_items, entropy_reduction, max_segment, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+    TestPointer<NON_TRIVIAL, CUB, int, int, int>(num_items, entropy_reduction, max_segment, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
 
 #elif defined(QUICK_TEST)
 

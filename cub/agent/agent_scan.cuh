@@ -89,12 +89,12 @@ struct AgentScanPolicy
  * \brief AgentScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
  */
 template <
-    typename AgentScanPolicy,      ///< Parameterized AgentScanPolicy tuning policy type
-    typename InputIteratorT,            ///< Random-access input iterator type
-    typename OutputIteratorT,           ///< Random-access output iterator type
-    typename ScanOp,                    ///< Scan functor type
-    typename Identity,                  ///< Identity element type (cub::NullType for inclusive scan)
-    typename OffsetT>                   ///< Signed integer type for global offsets
+    typename AgentScanPolicyT,      ///< Parameterized AgentScanPolicyT tuning policy type
+    typename InputIteratorT,        ///< Random-access input iterator type
+    typename OutputIteratorT,       ///< Random-access output iterator type
+    typename ScanOpT,               ///< Scan functor type
+    typename IdentityT,             ///< The identity element for ScanOpT type (cub::NullType for inclusive scan)
+    typename OffsetT>               ///< Signed integer type for global offsets
 struct AgentScan
 {
     //---------------------------------------------------------------------
@@ -105,78 +105,73 @@ struct AgentScan
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Tile status descriptor interface type
-    typedef ScanTileState<T> ScanTileState;
+    typedef ScanTileState<T> ScanTileStateT;
 
     // Input iterator wrapper type (for applying cache modifier)
     typedef typename If<IsPointer<InputIteratorT>::VALUE,
-            CacheModifiedInputIterator<AgentScanPolicy::LOAD_MODIFIER, T, OffsetT>,    // Wrap the native input pointer with CacheModifiedInputIterator
+            CacheModifiedInputIterator<AgentScanPolicyT::LOAD_MODIFIER, T, OffsetT>,    // Wrap the native input pointer with CacheModifiedInputIterator
             InputIteratorT>::Type                                                            // Directly use the supplied input iterator type
         WrappedInputIteratorT;
 
     // Constants
     enum
     {
-        INCLUSIVE           = Equals<Identity, NullType>::VALUE,            // Inclusive scan if no identity type is provided
-        BLOCK_THREADS       = AgentScanPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD    = AgentScanPolicy::ITEMS_PER_THREAD,
+        INCLUSIVE           = Equals<IdentityT, NullType>::VALUE,            // Inclusive scan if no identity type is provided
+        BLOCK_THREADS       = AgentScanPolicyT::BLOCK_THREADS,
+        ITEMS_PER_THREAD    = AgentScanPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Whether or not to sync after loading data
-        SYNC_AFTER_LOAD     = (AgentScanPolicy::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
-
+        SYNC_AFTER_LOAD     = (AgentScanPolicyT::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
     };
 
     // Parameterized BlockLoad type
     typedef BlockLoad<
             WrappedInputIteratorT,
-            AgentScanPolicy::BLOCK_THREADS,
-            AgentScanPolicy::ITEMS_PER_THREAD,
-            AgentScanPolicy::LOAD_ALGORITHM>
+            AgentScanPolicyT::BLOCK_THREADS,
+            AgentScanPolicyT::ITEMS_PER_THREAD,
+            AgentScanPolicyT::LOAD_ALGORITHM>
         BlockLoadT;
 
     // Parameterized BlockStore type
     typedef BlockStore<
             OutputIteratorT,
-            AgentScanPolicy::BLOCK_THREADS,
-            AgentScanPolicy::ITEMS_PER_THREAD,
-            AgentScanPolicy::STORE_ALGORITHM>
+            AgentScanPolicyT::BLOCK_THREADS,
+            AgentScanPolicyT::ITEMS_PER_THREAD,
+            AgentScanPolicyT::STORE_ALGORITHM>
         BlockStoreT;
 
     // Parameterized BlockScan type
     typedef BlockScan<
             T,
-            AgentScanPolicy::BLOCK_THREADS,
-            AgentScanPolicy::SCAN_ALGORITHM>
+            AgentScanPolicyT::BLOCK_THREADS,
+            AgentScanPolicyT::SCAN_ALGORITHM>
         BlockScanT;
 
     // Callback type for obtaining tile prefix during block scan
     typedef BlockScanLookbackPrefixOp<
             T,
-            ScanOp,
-            ScanTileState>
+            ScanOpT,
+            ScanTileStateT>
         LookbackPrefixCallbackOp;
 
     // Stateful BlockScan prefix callback type for managing a running total while scanning consecutive tiles
     typedef BlockScanRunningPrefixOp<
             T,
-            ScanOp>
+            ScanOpT>
         RunningPrefixCallbackOp;
 
     // Shared memory type for this threadblock
-    struct _TempStorage
+    union _TempStorage
     {
-        union
-        {
-            typename BlockLoadT::TempStorage    load;       // Smem needed for tile loading
-            typename BlockStoreT::TempStorage   store;      // Smem needed for tile storing
-            struct
-            {
-                typename LookbackPrefixCallbackOp::TempStorage  prefix;     // Smem needed for cooperative prefix callback
-                typename BlockScanT::TempStorage                scan;       // Smem needed for tile scanning
-            };
-        };
+        typename BlockLoadT::TempStorage    load;       // Smem needed for tile loading
+        typename BlockStoreT::TempStorage   store;      // Smem needed for tile storing
 
-        OffsetT tile_idx;   // Shared tile index
+        struct
+        {
+            typename LookbackPrefixCallbackOp::TempStorage  prefix;     // Smem needed for cooperative prefix callback
+            typename BlockScanT::TempStorage                scan;       // Smem needed for tile scanning
+        };
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -187,11 +182,11 @@ struct AgentScan
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    _TempStorage                &temp_storage;      ///< Reference to temp_storage
+    _TempStorage&               temp_storage;       ///< Reference to temp_storage
     WrappedInputIteratorT       d_in;               ///< Input data
     OutputIteratorT             d_out;              ///< Output data
-    ScanOp                      scan_op;            ///< Binary scan operator
-    Identity                    identity;           ///< Identity element
+    ScanOpT                     scan_op;            ///< Binary scan operator
+    IdentityT                   identity;           ///< The identity element for ScanOpT
 
 
 
@@ -204,7 +199,7 @@ struct AgentScan
      */
     template <typename _ScanOp, typename _Identity>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate)
+    void ScanTile(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate)
     {
         BlockScanT(temp_storage.scan).ExclusiveScan(items, items, identity, scan_op, block_aggregate);
     }
@@ -214,7 +209,7 @@ struct AgentScan
      */
     template <typename _Identity>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, _Identity identity, T& block_aggregate)
+    void ScanTile(T (&items)[ITEMS_PER_THREAD], Sum scan_op, _Identity identity, T& block_aggregate)
     {
         BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate);
     }
@@ -224,7 +219,7 @@ struct AgentScan
      */
     template <typename _ScanOp>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate)
+    void ScanTile(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate)
     {
         BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate);
     }
@@ -233,7 +228,7 @@ struct AgentScan
      * Inclusive sum specialization
      */
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, T& block_aggregate)
+    void ScanTile(T (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, T& block_aggregate)
     {
         BlockScanT(temp_storage.scan).InclusiveSum(items, items, block_aggregate);
     }
@@ -247,7 +242,7 @@ struct AgentScan
      */
     template <typename _ScanOp, typename _Identity, typename PrefixCallback>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate, PrefixCallback &prefix_op)
+    void ScanTile(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, T& block_aggregate, PrefixCallback &prefix_op)
     {
         BlockScanT(temp_storage.scan).ExclusiveScan(items, items, identity, scan_op, block_aggregate, prefix_op);
     }
@@ -257,7 +252,7 @@ struct AgentScan
      */
     template <typename _Identity, typename PrefixCallback>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, _Identity identity, T& block_aggregate, PrefixCallback &prefix_op)
+    void ScanTile(T (&items)[ITEMS_PER_THREAD], Sum scan_op, _Identity identity, T& block_aggregate, PrefixCallback &prefix_op)
     {
         BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate, prefix_op);
     }
@@ -267,7 +262,7 @@ struct AgentScan
      */
     template <typename _ScanOp, typename PrefixCallback>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate, PrefixCallback &prefix_op)
+    void ScanTile(T (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, T& block_aggregate, PrefixCallback &prefix_op)
     {
         BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate, prefix_op);
     }
@@ -277,7 +272,7 @@ struct AgentScan
      */
     template <typename PrefixCallback>
     __device__ __forceinline__
-    void ScanBlock(T (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, T& block_aggregate, PrefixCallback &prefix_op)
+    void ScanTile(T (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, T& block_aggregate, PrefixCallback &prefix_op)
     {
         BlockScanT(temp_storage.scan).InclusiveSum(items, items, block_aggregate, prefix_op);
     }
@@ -290,11 +285,11 @@ struct AgentScan
     // Constructor
     __device__ __forceinline__
     AgentScan(
-        TempStorage                 &temp_storage,      ///< Reference to temp_storage
-        InputIteratorT              d_in,               ///< Input data
-        OutputIteratorT             d_out,              ///< Output data
-        ScanOp                      scan_op,            ///< Binary scan operator
-        Identity                    identity)           ///< Identity element
+        TempStorage&    temp_storage,       ///< Reference to temp_storage
+        InputIteratorT  d_in,               ///< Input data
+        OutputIteratorT d_out,              ///< Output data
+        ScanOpT         scan_op,            ///< Binary scan operator
+        IdentityT       identity)           ///< The identity element for ScanOpT
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
@@ -311,21 +306,21 @@ struct AgentScan
     /**
      * Process a tile of input (dynamic chained scan)
      */
-    template <bool LAST_TILE>
+    template <bool IS_FULL_TILE>
     __device__ __forceinline__ void ConsumeTile(
         OffsetT             num_items,          ///< Total number of input items
         OffsetT             num_remaining,      ///< Total number of items remaining to be processed (including this tile)
         int                 tile_idx,           ///< Tile index
-        OffsetT             block_offset,       ///< Tile offset
-        ScanTileState       &tile_status)       ///< Global list of tile status
+        OffsetT             tile_offset,        ///< Tile offset
+        ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
         // Load items
         T items[ITEMS_PER_THREAD];
 
-        if (LAST_TILE)
-            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, num_remaining);
+        if (IS_FULL_TILE)
+            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
         else
-            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
+            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining);
 
         if (SYNC_AFTER_LOAD)
             __syncthreads();
@@ -335,27 +330,27 @@ struct AgentScan
         {
             // Scan first tile
             T block_aggregate;
-            ScanBlock(items, scan_op, identity, block_aggregate);
+            ScanTile(items, scan_op, identity, block_aggregate);
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
-            if (!LAST_TILE && (threadIdx.x == 0))
-                tile_status.SetInclusive(0, block_aggregate);
+            if (IS_FULL_TILE && (threadIdx.x == 0))
+                tile_state.SetInclusive(0, block_aggregate);
         }
         else
         {
             // Scan non-first tile
             T block_aggregate;
-            LookbackPrefixCallbackOp prefix_op(tile_status, temp_storage.prefix, scan_op, tile_idx);
-            ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
+            LookbackPrefixCallbackOp prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
+            ScanTile(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
         __syncthreads();
 
         // Store items
-        if (LAST_TILE)
-            BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, num_remaining);
+        if (IS_FULL_TILE)
+            BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items);
         else
-            BlockStoreT(temp_storage.store).Store(d_out + block_offset, items);
+            BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items, num_remaining);
     }
 
 
@@ -364,19 +359,23 @@ struct AgentScan
      */
     __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
-        GridQueue<int>      queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        ScanTileState       &tile_status)       ///< Global list of tile status
+        ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
         // Blocks are launched in increasing order, so just assign one tile per block
-
         int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
-        OffsetT block_offset    = OffsetT(TILE_ITEMS) * tile_idx;            // Global offset for the current tile
-        OffsetT num_remaining   = num_items - block_offset;                 // Remaining items (including this tile)
+        OffsetT tile_offset    = OffsetT(TILE_ITEMS) * tile_idx;           // Global offset for the current tile
+        OffsetT num_remaining   = num_items - tile_offset;                 // Remaining items (including this tile)
 
         if (num_remaining > TILE_ITEMS)
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+        {
+            // Full tile
+            ConsumeTile<true>(num_items, num_remaining, tile_idx, tile_offset, tile_state);
+        }
         else if (num_remaining > 0)
-            ConsumeTile<true>(num_items, num_remaining, tile_idx, block_offset, tile_status);
+        {
+            // Partially-full tile
+            ConsumeTile<false>(num_items, num_remaining, tile_idx, tile_offset, tile_state);
+        }
     }
 
 
@@ -388,43 +387,43 @@ struct AgentScan
      * Process a tile of input
      */
     template <
-        bool                FULL_TILE,
-        bool                FIRST_TILE>
+        bool                        IS_FULL_TILE,
+        bool                        IS_FIRST_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        OffsetT                     block_offset,               ///< Tile offset
-        RunningPrefixCallbackOp     &prefix_op,                 ///< Running prefix operator
+        OffsetT                     tile_offset,               ///< Tile offset
+        RunningPrefixCallbackOp&    prefix_op,                  ///< Running prefix operator
         int                         valid_items = TILE_ITEMS)   ///< Number of valid items in the tile
     {
         // Load items
         T items[ITEMS_PER_THREAD];
 
-        if (FULL_TILE)
-            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items);
+        if (IS_FULL_TILE)
+            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
         else
-            BlockLoadT(temp_storage.load).Load(d_in + block_offset, items, valid_items);
+            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, valid_items);
 
         __syncthreads();
 
         // Block scan
-        if (FIRST_TILE)
+        if (IS_FIRST_TILE)
         {
             T block_aggregate;
-            ScanBlock(items, scan_op, identity, block_aggregate);
+            ScanTile(items, scan_op, identity, block_aggregate);
             prefix_op.running_total = block_aggregate;
         }
         else
         {
             T block_aggregate;
-            ScanBlock(items, scan_op, identity, block_aggregate, prefix_op);
+            ScanTile(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
         __syncthreads();
 
         // Store items
-        if (FULL_TILE)
-            BlockStoreT(temp_storage.store).Store(d_out + block_offset, items);
+        if (IS_FULL_TILE)
+            BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items);
         else
-            BlockStoreT(temp_storage.store).Store(d_out + block_offset, items, valid_items);
+            BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items, valid_items);
     }
 
 
@@ -432,36 +431,36 @@ struct AgentScan
      * Scan a consecutive share of input tiles
      */
     __device__ __forceinline__ void ConsumeRange(
-        OffsetT  block_offset,      ///< [in] Threadblock begin offset (inclusive)
-        OffsetT  block_end)         ///< [in] Threadblock end offset (exclusive)
+        OffsetT  range_offset,      ///< [in] Threadblock begin offset (inclusive)
+        OffsetT  range_end)         ///< [in] Threadblock end offset (exclusive)
     {
-        BlockScanRunningPrefixOp<T, ScanOp> prefix_op(scan_op);
+        BlockScanRunningPrefixOp<T, ScanOpT> prefix_op(scan_op);
 
-        if (block_offset + TILE_ITEMS <= block_end)
+        if (range_offset + TILE_ITEMS <= range_end)
         {
             // Consume first tile of input (full)
-            ConsumeTile<true, true>(block_offset, prefix_op);
-            block_offset += TILE_ITEMS;
+            ConsumeTile<true, true>(range_offset, prefix_op);
+            range_offset += TILE_ITEMS;
 
             // Consume subsequent full tiles of input
-            while (block_offset + TILE_ITEMS <= block_end)
+            while (range_offset + TILE_ITEMS <= range_end)
             {
-                ConsumeTile<true, false>(block_offset, prefix_op);
-                block_offset += TILE_ITEMS;
+                ConsumeTile<true, false>(range_offset, prefix_op);
+                range_offset += TILE_ITEMS;
             }
 
             // Consume a partially-full tile
-            if (block_offset < block_end)
+            if (range_offset < range_end)
             {
-                int valid_items = block_end - block_offset;
-                ConsumeTile<false, false>(block_offset, prefix_op, valid_items);
+                int valid_items = range_end - range_offset;
+                ConsumeTile<false, false>(range_offset, prefix_op, valid_items);
             }
         }
         else
         {
             // Consume the first tile of input (partially-full)
-            int valid_items = block_end - block_offset;
-            ConsumeTile<false, true>(block_offset, prefix_op, valid_items);
+            int valid_items = range_end - range_offset;
+            ConsumeTile<false, true>(range_offset, prefix_op, valid_items);
         }
     }
 
@@ -470,24 +469,24 @@ struct AgentScan
      * Scan a consecutive share of input tiles, seeded with the specified prefix value
      */
     __device__ __forceinline__ void ConsumeRange(
-        OffsetT block_offset,                       ///< [in] Threadblock begin offset (inclusive)
-        OffsetT block_end,                          ///< [in] Threadblock end offset (exclusive)
+        OffsetT range_offset,                       ///< [in] Threadblock begin offset (inclusive)
+        OffsetT range_end,                          ///< [in] Threadblock end offset (exclusive)
         T       prefix)                             ///< [in] The prefix to apply to the scan segment
     {
-        BlockScanRunningPrefixOp<T, ScanOp> prefix_op(prefix, scan_op);
+        BlockScanRunningPrefixOp<T, ScanOpT> prefix_op(prefix, scan_op);
 
         // Consume full tiles of input
-        while (block_offset + TILE_ITEMS <= block_end)
+        while (range_offset + TILE_ITEMS <= range_end)
         {
-            ConsumeTile<true, false>(block_offset, prefix_op);
-            block_offset += TILE_ITEMS;
+            ConsumeTile<true, false>(range_offset, prefix_op);
+            range_offset += TILE_ITEMS;
         }
 
         // Consume a partially-full tile
-        if (block_offset < block_end)
+        if (range_offset < range_end)
         {
-            int valid_items = block_end - block_offset;
-            ConsumeTile<false, false>(block_offset, prefix_op, valid_items);
+            int valid_items = range_end - range_offset;
+            ConsumeTile<false, false>(range_offset, prefix_op, valid_items);
         }
     }
 
