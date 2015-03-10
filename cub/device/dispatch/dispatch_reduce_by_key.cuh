@@ -163,7 +163,6 @@ struct DispatchReduceByKey
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
-                true,
                 BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicyT;
     };
@@ -181,7 +180,6 @@ struct DispatchReduceByKey
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
-                true,
                 BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicyT;
     };
@@ -199,7 +197,6 @@ struct DispatchReduceByKey
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
-                true,
                 BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicyT;
     };
@@ -217,7 +214,6 @@ struct DispatchReduceByKey
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
-                true,
                 BLOCK_SCAN_WARP_SCANS>
             ReduceByKeyPolicyT;
     };
@@ -235,7 +231,6 @@ struct DispatchReduceByKey
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
-                true,
                 BLOCK_SCAN_RAKING>
             ReduceByKeyPolicyT;
     };
@@ -342,7 +337,7 @@ struct DispatchReduceByKey
      */
     template <
         typename                    ScanInitKernelPtrT,         ///< Function type of cub::DeviceScanInitKernel
-        typename                    ReduceByKeyKernelPtrT> ///< Function type of cub::DeviceReduceByKeyKernelPtrT
+        typename                    ReduceByKeyKernelPtrT>      ///< Function type of cub::DeviceReduceByKeyKernelPtrT
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void*                       d_temp_storage,             ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -374,16 +369,16 @@ struct DispatchReduceByKey
         do
         {
             // Get device ordinal
-            int ordinal;
-            if (CubDebug(error = cudaGetDevice(&ordinal))) break;
+            int device_ordinal;
+            if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
             // Get device SM version
             int sm_version;
-            if (CubDebug(error = SmVersion(sm_version, ordinal))) break;
+            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
 
             // Get SM count
             int sm_count;
-            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, ordinal))) break;
+            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
             int tile_size = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
@@ -431,7 +426,7 @@ struct DispatchReduceByKey
 
             // Get max x-dimension of grid
             int max_dim_x;
-            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, ordinal))) break;;
+            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
 
             // Get grid size for scanning tiles
             dim3 scan_grid_size;

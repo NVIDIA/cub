@@ -28,7 +28,7 @@
 
 /**
  * \file
- * AgentRadixSortDownsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep across a range of tiles.
+ * AgentRadixSortDownsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep .
  */
 
 
@@ -100,7 +100,7 @@ struct AgentRadixSortDownsweepPolicy
  ******************************************************************************/
 
 /**
- * \brief AgentRadixSortDownsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep across a range of tiles.
+ * \brief AgentRadixSortDownsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep .
  */
 template <
     typename AgentRadixSortDownsweepPolicy,             ///< Parameterized AgentRadixSortDownsweepPolicy tuning policy type

@@ -39,7 +39,6 @@
 #include "../block/block_load.cuh"
 #include "../block/block_store.cuh"
 #include "../block/block_scan.cuh"
-#include "../block/block_exchange.cuh"
 #include "../block/block_discontinuity.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
@@ -65,7 +64,6 @@ template <
     int                         _ITEMS_PER_THREAD,              ///< Items per thread (per tile of input)
     BlockLoadAlgorithm          _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
     CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
-    bool                        _TWO_PHASE_SCATTER,             ///< Whether or not to coalesce output values in shared memory before scattering them to global
     BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
 struct AgentReduceByKeyPolicy
 {
@@ -73,7 +71,6 @@ struct AgentReduceByKeyPolicy
     {
         BLOCK_THREADS           = _BLOCK_THREADS,               ///< Threads per thread block
         ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
-        TWO_PHASE_SCATTER       = _TWO_PHASE_SCATTER,           ///< Whether or not to coalesce output values in shared memory before scattering them to global
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;      ///< The BlockLoad algorithm to use
@@ -87,16 +84,16 @@ struct AgentReduceByKeyPolicy
  ******************************************************************************/
 
 /**
- * \brief AgentReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key across a range of tiles
+ * \brief AgentReduceByKey implements a stateful abstraction of CUDA thread blocks for participating in device-wide reduce-value-by-key
  */
 template <
-    typename    AgentReduceByKeyPolicyT,         ///< Parameterized AgentReduceByKeyPolicy tuning policy type
+    typename    AgentReduceByKeyPolicyT,        ///< Parameterized AgentReduceByKeyPolicy tuning policy type
     typename    KeysInputIteratorT,             ///< Random-access input iterator type for keys
     typename    UniqueOutputIteratorT,          ///< Random-access output iterator type for keys
     typename    ValuesInputIteratorT,           ///< Random-access input iterator type for values
     typename    AggregatesOutputIteratorT,      ///< Random-access output iterator type for values
-    typename    EqualityOp,                     ///< KeyT equality operator type
-    typename    ReductionOp,                    ///< ValueT reduction operator type
+    typename    EqualityOpT,                    ///< KeyT equality operator type
+    typename    ReductionOpT,                   ///< ValueT reduction operator type
     typename    OffsetT>                        ///< Signed integer type for global offsets
 struct AgentReduceByKey
 {
@@ -120,16 +117,12 @@ struct AgentReduceByKey
     enum
     {
         BLOCK_THREADS       = AgentReduceByKeyPolicyT::BLOCK_THREADS,
-        WARPS               = BLOCK_THREADS / CUB_PTX_WARP_THREADS,
         ITEMS_PER_THREAD    = AgentReduceByKeyPolicyT::ITEMS_PER_THREAD,
-        TWO_PHASE_SCATTER   = (AgentReduceByKeyPolicyT::TWO_PHASE_SCATTER) && (ITEMS_PER_THREAD > 1),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
+        TWO_PHASE_SCATTER   = (ITEMS_PER_THREAD > 1),
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
-        HAS_IDENTITY_ZERO   = (Equals<ReductionOp, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),
-
-        // Whether or not to sync after loading data
-        SYNC_AFTER_LOAD     = (AgentReduceByKeyPolicyT::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
+        HAS_IDENTITY_ZERO   = (Equals<ReductionOpT, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),
     };
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for keys
@@ -146,7 +139,7 @@ struct AgentReduceByKey
 
     // Reduce-value-by-segment scan operator
     typedef ReduceBySegmentOp<
-            ReductionOp,
+            ReductionOpT,
             ItemOffsetPairT>
         ScanOpT;
 
@@ -180,11 +173,11 @@ struct AgentReduceByKey
         BlockScanT;
 
     // Callback type for obtaining tile prefix during block scan
-    typedef BlockScanLookbackPrefixOp<
+    typedef TilePrefixCallbackOp<
             ItemOffsetPairT,
             ScanOpT,
             ScanTileStateT>
-        LookbackPrefixCallbackOp;
+        TilePrefixCallbackOpT;
 
     // Shared memory type for this threadblock
     union _TempStorage
@@ -192,7 +185,7 @@ struct AgentReduceByKey
         struct
         {
             typename BlockScanT::TempStorage                scan;           // Smem needed for tile scanning
-            typename LookbackPrefixCallbackOp::TempStorage  prefix;         // Smem needed for cooperative prefix callback
+            typename TilePrefixCallbackOpT::TempStorage     prefix;         // Smem needed for cooperative prefix callback
             typename BlockDiscontinuityKeys::TempStorage    discontinuity;  // Smem needed for discontinuity detection
         };
 
@@ -217,15 +210,12 @@ struct AgentReduceByKey
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    _TempStorage&                   temp_storage;      ///< Reference to temp_storage
-
+    _TempStorage&                   temp_storage;       ///< Reference to temp_storage
     WrappedKeysInputIteratorT       d_keys_in;          ///< Input keys
     UniqueOutputIteratorT           d_unique_out;       ///< Unique output keys
-
     WrappedValuesInputIteratorT     d_values_in;        ///< Input values
     AggregatesOutputIteratorT       d_aggregates_out;   ///< Output value aggregates
-
-    InequalityWrapper<EqualityOp>   inequality_op;      ///< KeyT inequality operator
+    InequalityWrapper<EqualityOpT>  inequality_op;      ///< KeyT inequality operator
     ScanOpT                         scan_op;            ///< Reduce-by-segment scan operator
 
 
@@ -241,8 +231,8 @@ struct AgentReduceByKey
         UniqueOutputIteratorT       d_unique_out,       ///< Unique output keys
         ValuesInputIteratorT        d_values_in,        ///< Input values
         AggregatesOutputIteratorT   d_aggregates_out,   ///< Output value aggregates
-        EqualityOp                  equality_op,        ///< KeyT equality operator
-        ReductionOp                 reduction_op)       ///< ValueT reduction operator
+        EqualityOpT                 equality_op,        ///< KeyT equality operator
+        ReductionOpT                reduction_op)       ///< ValueT reduction operator
     :
         temp_storage(temp_storage.Alias()),
         d_keys_in(d_keys_in),
@@ -293,7 +283,7 @@ struct AgentReduceByKey
     void ScanTile(
         ItemOffsetPairT             (&scan_items)[ITEMS_PER_THREAD],
         ItemOffsetPairT             &tile_aggregate,
-        LookbackPrefixCallbackOp    &prefix_op,
+        TilePrefixCallbackOpT    &prefix_op,
         Int2Type<true>              has_identity)
     {
         ItemOffsetPairT identity;
@@ -309,7 +299,7 @@ struct AgentReduceByKey
     void ScanTile(
         ItemOffsetPairT             (&scan_items)[ITEMS_PER_THREAD],
         ItemOffsetPairT             &tile_aggregate,
-        LookbackPrefixCallbackOp    &prefix_op,
+        TilePrefixCallbackOpT    &prefix_op,
         Int2Type<false>             has_identity)
     {
         BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, tile_aggregate, prefix_op);
@@ -363,11 +353,7 @@ struct AgentReduceByKey
      * Scatter flagged items to output offsets (specialized for direct scattering)
      *
      * The exclusive scan causes each head flag to be paired with the previous
-     * value aggregate. As such:
-     * - The scatter offsets must be decremented for value value aggregates
-     * - The first tile does not scatter the first flagged value (it is undefined from the exclusive scan)
-     * - If the tile is partially-full, we need to scatter the first out-of-bounds value (which aggregates all valid values in the last segment)
-     *
+     * value aggregate: the scatter offsets must be decremented for value aggregates
      */
     template <bool IS_LAST_TILE, bool IS_FIRST_TILE>
     __device__ __forceinline__ void ScatterDirect(
@@ -377,12 +363,6 @@ struct AgentReduceByKey
         OffsetT (&segment_indices)[ITEMS_PER_THREAD],
         OffsetT num_segments)
     {
-        // Scatter first key of first tile
-        if (IS_FIRST_TILE && (threadIdx.x == 0))
-        {
-            d_unique_out[0] = keys[0];
-        }
-
         // Scatter flagged keys and values
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -406,11 +386,7 @@ struct AgentReduceByKey
      * Scatter flagged items to output offsets (specialized for two-phase scattering)
      *
      * The exclusive scan causes each head flag to be paired with the previous
-     * value aggregate. As such:
-     * - The scatter offsets must be decremented for value value aggregates
-     * - The first tile does not scatter the first flagged value (it is undefined from the exclusive scan)
-     * - If the tile is partially-full, we need to scatter the first out-of-bounds value (which aggregates all valid values in the last segment)
-     *
+     * value aggregate: the scatter offsets must be decremented for value aggregates
      */
     template <bool IS_LAST_TILE, bool IS_FIRST_TILE>
     __device__ __forceinline__ void ScatterTwoPhase(
@@ -421,12 +397,6 @@ struct AgentReduceByKey
         OffsetT num_tile_segments,
         OffsetT num_tile_segments_prefix)
     {
-        // Scatter first key of first tile
-        if (IS_FIRST_TILE && (threadIdx.x == 0))
-        {
-            d_unique_out[0] = keys[0];
-        }
-
         __syncthreads();
 
         // Compact and scatter keys
@@ -482,6 +452,12 @@ struct AgentReduceByKey
         OffsetT         num_tile_segments_prefix,
         OffsetT         num_segments)
     {
+        // Scatter first key of first tile (we unflagged it after scan)
+        if (IS_FIRST_TILE && (threadIdx.x == 0))
+        {
+            d_unique_out[0] = keys[0];
+        }
+
         // Do a one-phase scatter if (a) two-phase is disabled or (b) the average number of selected items per thread is less than one
         if (TWO_PHASE_SCATTER && (num_tile_segments > BLOCK_THREADS))
         {
@@ -519,11 +495,11 @@ struct AgentReduceByKey
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
-        KeyT                keys[ITEMS_PER_THREAD];                         // Tile keys
-        ValueT              values[ITEMS_PER_THREAD];                       // Tile values
-        OffsetT             segment_flags[ITEMS_PER_THREAD];                // Segment head flags
-        OffsetT             segment_indices[ITEMS_PER_THREAD];              // Segment indices
-        ItemOffsetPairT     scan_items[ITEMS_PER_THREAD];          // Zipped values and segment flags|indices
+        KeyT                keys[ITEMS_PER_THREAD];             // Tile keys
+        ValueT              values[ITEMS_PER_THREAD];           // Tile values
+        OffsetT             segment_flags[ITEMS_PER_THREAD];    // Segment head flags
+        OffsetT             segment_indices[ITEMS_PER_THREAD];  // Segment indices
+        ItemOffsetPairT     scan_items[ITEMS_PER_THREAD];       // Zipped values and segment flags|indices
 
         // Load keys
         if (IS_LAST_TILE)
@@ -587,7 +563,7 @@ struct AgentReduceByKey
 
 
     /**
-     * Process first tile of input (dynamic chained scan).  Returns the running count of segments and aggregated values (including this tile)
+     * Process subsequent tile of input (dynamic chained scan).  Returns the running count of segments and aggregated values (including this tile)
      */
     template <bool IS_LAST_TILE>
     __device__ __forceinline__ ItemOffsetPairT ConsumeSubsequentTile(
@@ -630,7 +606,7 @@ struct AgentReduceByKey
 
         // Exclusive scan of values and segment_flags
         ItemOffsetPairT tile_aggregate;
-        LookbackPrefixCallbackOp prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
+        TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
         ScanTile(scan_items, tile_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
         ItemOffsetPairT tile_inclusive_prefix = prefix_op.GetInclusivePrefix();
 
@@ -660,7 +636,7 @@ struct AgentReduceByKey
 
 
     /**
-     * Process a tile of input (dynamic chained scan)
+     * Process a tile of input
      */
     template <
         bool                IS_LAST_TILE>
@@ -685,14 +661,14 @@ struct AgentReduceByKey
 
 
     /**
-     * Dequeue and scan tiles of items as part of a dynamic chained scan
+     * Scan tiles of items as part of a dynamic chained scan
      */
-    template <typename NumRunsIterator>         ///< Output iterator type for recording number of items selected
+    template <typename NumRunsIteratorT>        ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
         int                 num_tiles,          ///< Total number of input tiles
         ScanTileStateT&     tile_state,         ///< Global tile state descriptor
-        NumRunsIterator     d_num_runs_out)     ///< Output pointer for total number of segments identified
+        NumRunsIteratorT    d_num_runs_out)     ///< Output pointer for total number of segments identified
     {
         // Blocks are launched in increasing order, so just assign one tile per block
         int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
