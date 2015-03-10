@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::AgentScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
+ * cub::AgentScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan .
  */
 
 #pragma once
@@ -86,7 +86,7 @@ struct AgentScanPolicy
  ******************************************************************************/
 
 /**
- * \brief AgentScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan across a range of tiles.
+ * \brief AgentScan implements a stateful abstraction of CUDA thread blocks for participating in device-wide prefix scan .
  */
 template <
     typename AgentScanPolicyT,      ///< Parameterized AgentScanPolicyT tuning policy type
@@ -149,11 +149,11 @@ struct AgentScan
         BlockScanT;
 
     // Callback type for obtaining tile prefix during block scan
-    typedef BlockScanLookbackPrefixOp<
+    typedef TilePrefixCallbackOp<
             T,
             ScanOpT,
             ScanTileStateT>
-        LookbackPrefixCallbackOp;
+        TilePrefixCallbackOpT;
 
     // Stateful BlockScan prefix callback type for managing a running total while scanning consecutive tiles
     typedef BlockScanRunningPrefixOp<
@@ -169,7 +169,7 @@ struct AgentScan
 
         struct
         {
-            typename LookbackPrefixCallbackOp::TempStorage  prefix;     // Smem needed for cooperative prefix callback
+            typename TilePrefixCallbackOpT::TempStorage  prefix;     // Smem needed for cooperative prefix callback
             typename BlockScanT::TempStorage                scan;       // Smem needed for tile scanning
         };
     };
@@ -340,7 +340,7 @@ struct AgentScan
         {
             // Scan non-first tile
             T block_aggregate;
-            LookbackPrefixCallbackOp prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
+            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
             ScanTile(items, scan_op, identity, block_aggregate, prefix_op);
         }
 
@@ -362,7 +362,7 @@ struct AgentScan
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
         // Blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;   // Current tile index
         OffsetT tile_offset    = OffsetT(TILE_ITEMS) * tile_idx;           // Global offset for the current tile
         OffsetT num_remaining   = num_items - tile_offset;                 // Remaining items (including this tile)
 
