@@ -90,17 +90,17 @@ struct AgentSelectIfPolicy
 /**
  * \brief AgentSelectIf implements a stateful abstraction of CUDA thread blocks for participating in device-wide selection across a range of tiles
  *
- * Performs functor-based selection if SelectOp functor type != NullType
+ * Performs functor-based selection if SelectOpT functor type != NullType
  * Otherwise performs flag-based selection if FlagsInputIterator's value type != NullType
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename    AgentSelectIfPolicy,         ///< Parameterized AgentSelectIfPolicy tuning policy type
+    typename    AgentSelectIfPolicy,            ///< Parameterized AgentSelectIfPolicy tuning policy type
     typename    InputIteratorT,                 ///< Random-access input iterator type for selection items
-    typename    FlagsInputIteratorT,                  ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    SelectedOutputIteratorT,                ///< Random-access input iterator type for selected items
-    typename    SelectOp,                       ///< Selection operator type (NullType if selections or discontinuity flagging is to be used for selection)
-    typename    EqualityOp,                     ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
+    typename    FlagsInputIteratorT,            ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
+    typename    SelectedOutputIteratorT,        ///< Random-access input iterator type for selected items
+    typename    SelectOpT,                      ///< Selection operator type (NullType if selections or discontinuity flagging is to be used for selection)
+    typename    EqualityOpT,                    ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
     typename    OffsetT,                        ///< Signed integer type for global offsets
     bool        KEEP_REJECTS>                   ///< Whether or not we push rejected items to the back of the output
 struct AgentSelectIf
@@ -143,7 +143,7 @@ struct AgentSelectIf
         STORE_WARP_TIME_SLICING = AgentSelectIfPolicy::STORE_WARP_TIME_SLICING,
         ACTIVE_EXCHANGE_WARPS   = (STORE_WARP_TIME_SLICING) ? 1 : WARPS,
 
-        SELECT_METHOD           = (!Equals<SelectOp, NullType>::VALUE) ?
+        SELECT_METHOD           = (!Equals<SelectOpT, NullType>::VALUE) ?
                                     USE_SELECT_OP :
                                     (!Equals<FlagT, NullType>::VALUE) ?
                                         USE_SELECT_FLAGS :
@@ -238,8 +238,8 @@ struct AgentSelectIf
     WrappedInputIteratorT           d_in;               ///< Input data
     WrappedFlagsInputIteratorT      d_flags;            ///< Input flags
     SelectedOutputIteratorT         d_selected_out;     ///< Output data
-    SelectOp                        select_op;          ///< Selection operator
-    InequalityWrapper<EqualityOp>   inequality_op;      ///< Inequality operator
+    SelectOpT                        select_op;          ///< Selection operator
+    InequalityWrapper<EqualityOpT>   inequality_op;      ///< Inequality operator
     OffsetT                         num_items;          ///< Total number of input items
 
 
@@ -254,8 +254,8 @@ struct AgentSelectIf
         InputIteratorT              d_in,               ///< Input data
         FlagsInputIteratorT         d_flags,            ///< Input flags
         SelectedOutputIteratorT     d_selected_out,     ///< Output data
-        SelectOp                    select_op,          ///< Selection operator
-        EqualityOp                  equality_op,        ///< Equality operator
+        SelectOpT                   select_op,          ///< Selection operator
+        EqualityOpT                 equality_op,        ///< Equality operator
         OffsetT                     num_items)          ///< Total number of input items
     :
         temp_storage(temp_storage.Alias()),

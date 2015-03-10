@@ -59,19 +59,14 @@ namespace cub {
  * Initialization kernel for tile status initialization (multi-block)
  */
 template <
-    typename            OffsetT,                ///< Signed integer type for global offsets
-    typename            ScanTileState>          ///< Tile status interface type
+    typename            OffsetT,            ///< Signed integer type for global offsets
+    typename            ScanTileStateT>     ///< Tile status interface type
 __global__ void DeviceScanInitKernel(
-    GridQueue<OffsetT>  grid_queue,             ///< [in] Descriptor for performing dynamic mapping of input tiles to thread blocks
-    ScanTileState       tile_status,            ///< [in] Tile status interface
-    int                 num_tiles)              ///< [in] Number of tiles
+    ScanTileStateT      tile_state,         ///< [in] Tile status interface
+    int                 num_tiles)          ///< [in] Number of tiles
 {
-    // Reset queue descriptor
-    if ((blockIdx.x == 0) && (threadIdx.x == 0))
-        grid_queue.FillAndResetDrain(num_tiles);
-
     // Initialize tile status
-    tile_status.InitializeStatus(num_tiles);
+    tile_state.InitializeStatus(num_tiles);
 }
 
 
@@ -79,30 +74,29 @@ __global__ void DeviceScanInitKernel(
  * Scan kernel entry point (multi-block)
  */
 template <
-    typename            AgentScanPolicy,       ///< Parameterized AgentScanPolicy tuning policy type
-    typename            InputIteratorT,             ///< Random-access input iterator type for reading scan inputs \iterator
-    typename            OutputIteratorT,            ///< Random-access output iterator type for writing scan outputs \iterator
-    typename            ScanTileState,              ///< Tile status interface type
-    typename            ScanOp,                     ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename            Identity,                   ///< Identity value type (cub::NullType for inclusive scans)
-    typename            OffsetT>                    ///< Signed integer type for global offsets
-__launch_bounds__ (int(AgentScanPolicy::BLOCK_THREADS))
+    typename            ScanPolicyT,        ///< Parameterized ScanPolicyT tuning policy type
+    typename            InputIteratorT,     ///< Random-access input iterator type for reading scan inputs \iterator
+    typename            OutputIteratorT,    ///< Random-access output iterator type for writing scan outputs \iterator
+    typename            ScanTileStateT,     ///< Tile status interface type
+    typename            ScanOpT,            ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename            IdentityT,          ///< The identity element for ScanOpT (cub::NullType for inclusive scans)
+    typename            OffsetT>            ///< Signed integer type for global offsets
+__launch_bounds__ (int(ScanPolicyT::BLOCK_THREADS))
 __global__ void DeviceScanSweepKernel(
-    InputIteratorT      d_in,                       ///< Input data
-    OutputIteratorT     d_out,                      ///< Output data
-    ScanTileState       tile_status,                ///< [in] Tile status interface
-    ScanOp              scan_op,                    ///< Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
-    Identity            identity,                   ///< Identity element
-    OffsetT             num_items,                  ///< Total number of scan items for the entire problem
-    GridQueue<OffsetT>  queue)                      ///< Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    InputIteratorT      d_in,               ///< Input data
+    OutputIteratorT     d_out,              ///< Output data
+    ScanTileStateT      tile_state,         ///< [in] Tile status interface
+    ScanOpT             scan_op,            ///< Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+    IdentityT           identity,           ///< The identity element for ScanOpT
+    OffsetT             num_items)          ///< Total number of scan items for the entire problem
 {
     // Thread block type for scanning input tiles
     typedef AgentScan<
-        AgentScanPolicy,
+        ScanPolicyT,
         InputIteratorT,
         OutputIteratorT,
-        ScanOp,
-        Identity,
+        ScanOpT,
+        IdentityT,
         OffsetT> AgentScanT;
 
     // Shared memory for AgentScan
@@ -111,8 +105,7 @@ __global__ void DeviceScanSweepKernel(
     // Process tiles
     AgentScanT(temp_storage, d_in, d_out, scan_op, identity).ConsumeRange(
         num_items,
-        queue,
-        tile_status);
+        tile_state);
 }
 
 
@@ -128,8 +121,8 @@ __global__ void DeviceScanSweepKernel(
 template <
     typename InputIteratorT,     ///< Random-access input iterator type for reading scan inputs \iterator
     typename OutputIteratorT,    ///< Random-access output iterator type for writing scan outputs \iterator
-    typename ScanOp,             ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename Identity,           ///< Identity value type (cub::NullType for inclusive scans)
+    typename ScanOpT,            ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename IdentityT,          ///< The identity element type for ScanOpT (cub::NullType for inclusive scans)
     typename OffsetT>            ///< Signed integer type for global offsets
 struct DispatchScan
 {
@@ -142,7 +135,7 @@ struct DispatchScan
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Tile status descriptor interface type
-    typedef ScanTileState<T> ScanTileState;
+    typedef ScanTileState<T> ScanTileStateT;
 
 
     /******************************************************************************
@@ -164,7 +157,7 @@ struct DispatchScan
                 BLOCK_LOAD_DIRECT, LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            RangeScanPolicy;
+            ScanPolicyT;
     };
 
     /// SM35
@@ -183,7 +176,7 @@ struct DispatchScan
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            RangeScanPolicy;
+            ScanPolicyT;
     };
 
     /// SM30
@@ -201,7 +194,7 @@ struct DispatchScan
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            RangeScanPolicy;
+            ScanPolicyT;
     };
 
     /// SM20
@@ -220,7 +213,7 @@ struct DispatchScan
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            RangeScanPolicy;
+            ScanPolicyT;
     };
 
     /// SM13
@@ -238,7 +231,7 @@ struct DispatchScan
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
                 BLOCK_SCAN_RAKING_MEMOIZE>
-            RangeScanPolicy;
+            ScanPolicyT;
     };
 
     /// SM10
@@ -256,7 +249,7 @@ struct DispatchScan
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
                 BLOCK_SCAN_WARP_SCANS>
-            RangeScanPolicy;
+            ScanPolicyT;
     };
 
 
@@ -285,7 +278,7 @@ struct DispatchScan
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxRangeScanPolicy : PtxPolicy::RangeScanPolicy {};
+    struct PtxAgentScanPolicy : PtxPolicy::ScanPolicyT {};
 
 
     /******************************************************************************
@@ -299,39 +292,39 @@ struct DispatchScan
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &device_scan_sweep_config)
+        KernelConfig    &scan_sweep_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        device_scan_sweep_config.template Init<PtxRangeScanPolicy>();
+        scan_sweep_config.template Init<PtxAgentScanPolicy>();
 
     #else
 
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 520)
         {
-            device_scan_sweep_config.template Init<typename Policy520::RangeScanPolicy>();
+            scan_sweep_config.template Init<typename Policy520::ScanPolicyT>();
         }
         else if (ptx_version >= 350)
         {
-            device_scan_sweep_config.template Init<typename Policy350::RangeScanPolicy>();
+            scan_sweep_config.template Init<typename Policy350::ScanPolicyT>();
         }
         else if (ptx_version >= 300)
         {
-            device_scan_sweep_config.template Init<typename Policy300::RangeScanPolicy>();
+            scan_sweep_config.template Init<typename Policy300::ScanPolicyT>();
         }
         else if (ptx_version >= 200)
         {
-            device_scan_sweep_config.template Init<typename Policy200::RangeScanPolicy>();
+            scan_sweep_config.template Init<typename Policy200::ScanPolicyT>();
         }
         else if (ptx_version >= 130)
         {
-            device_scan_sweep_config.template Init<typename Policy130::RangeScanPolicy>();
+            scan_sweep_config.template Init<typename Policy130::ScanPolicyT>();
         }
         else
         {
-            device_scan_sweep_config.template Init<typename Policy100::RangeScanPolicy>();
+            scan_sweep_config.template Init<typename Policy100::ScanPolicyT>();
         }
 
     #endif
@@ -339,36 +332,21 @@ struct DispatchScan
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within AgentScanPolicy.
+     * Kernel kernel dispatch configuration.
      */
     struct KernelConfig
     {
-        int                     block_threads;
-        int                     items_per_thread;
-        BlockLoadAlgorithm      load_policy;
-        BlockStoreAlgorithm     store_policy;
-        BlockScanAlgorithm      scan_algorithm;
+        int block_threads;
+        int items_per_thread;
+        int tile_items;
 
-        template <typename AgentScanPolicy>
+        template <typename PolicyT>
         CUB_RUNTIME_FUNCTION __forceinline__
         void Init()
         {
-            block_threads               = AgentScanPolicy::BLOCK_THREADS;
-            items_per_thread            = AgentScanPolicy::ITEMS_PER_THREAD;
-            load_policy                 = AgentScanPolicy::LOAD_ALGORITHM;
-            store_policy                = AgentScanPolicy::STORE_ALGORITHM;
-            scan_algorithm              = AgentScanPolicy::SCAN_ALGORITHM;
-        }
-
-        CUB_RUNTIME_FUNCTION __forceinline__
-        void Print()
-        {
-            printf("%d, %d, %d, %d, %d",
-                block_threads,
-                items_per_thread,
-                load_policy,
-                store_policy,
-                scan_algorithm);
+            block_threads       = PolicyT::BLOCK_THREADS;
+            items_per_thread    = PolicyT::ITEMS_PER_THREAD;
+            tile_items          = block_threads * items_per_thread;
         }
     };
 
@@ -382,23 +360,23 @@ struct DispatchScan
      * specified kernel functions.
      */
     template <
-        typename                    DeviceScanInitKernelPtr,        ///< Function type of cub::DeviceScanInitKernel
-        typename                    DeviceScanSweepKernelPtr>       ///< Function type of cub::DeviceScanSweepKernelPtr
+        typename            ScanInitKernelPtrT,     ///< Function type of cub::DeviceScanInitKernel
+        typename            ScanSweepKernelPtrT>    ///< Function type of cub::DeviceScanSweepKernelPtrT
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void                        *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
-        OutputIteratorT             d_out,                          ///< [out] Pointer to the output sequence of data items
-        ScanOp                      scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
-        Identity                    identity,                       ///< [in] Identity element
-        OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
-        cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
-        int                         ptx_version,                    ///< [in] PTX version of dispatch kernels
-        DeviceScanInitKernelPtr     device_scan_init_kernel,        ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
-        DeviceScanSweepKernelPtr    device_scan_sweep_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceScanSweepKernel
-        KernelConfig                device_scan_sweep_config)       ///< [in] Dispatch parameters that match the policy that \p device_scan_sweep_kernel was compiled for
+        void*               d_temp_storage,         ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&             temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIteratorT      d_in,                   ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT     d_out,                  ///< [out] Pointer to the output sequence of data items
+        ScanOpT              scan_op,                ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        IdentityT            identity,               ///< [in] The identity element for ScanOpT
+        OffsetT             num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
+        cudaStream_t        stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                debug_synchronous,      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        int                 ptx_version,            ///< [in] PTX version of dispatch kernels
+        ScanInitKernelPtrT  scan_init_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
+        ScanSweepKernelPtrT scan_sweep_kernel,      ///< [in] Kernel function pointer to parameterization of cub::DeviceScanSweepKernel
+        KernelConfig        scan_sweep_config)      ///< [in] Dispatch parameters that match the policy that \p scan_sweep_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -423,16 +401,15 @@ struct DispatchScan
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int tile_size = device_scan_sweep_config.block_threads * device_scan_sweep_config.items_per_thread;
+            int tile_size = scan_sweep_config.block_threads * scan_sweep_config.items_per_thread;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
-            size_t  allocation_sizes[2];
-            if (CubDebug(error = ScanTileState::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
-            allocation_sizes[1] = GridQueue<int>::AllocationSize();                                             // bytes needed for grid queue descriptor
+            size_t  allocation_sizes[1];
+            if (CubDebug(error = ScanTileStateT::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
 
             // Compute allocation pointers into the single storage blob (or compute the necessary size of the blob)
-            void* allocations[2];
+            void* allocations[1];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
@@ -441,20 +418,16 @@ struct DispatchScan
             }
 
             // Construct the tile status interface
-            ScanTileState tile_status;
-            if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
+            ScanTileStateT tile_state;
+            if (CubDebug(error = tile_state.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
-            // Construct the grid queue descriptor
-            GridQueue<int> queue(allocations[1]);
-
-            // Log device_scan_init_kernel configuration
+            // Log scan_init_kernel configuration
             int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
-            if (debug_synchronous) CubLog("Invoking device_scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            if (debug_synchronous) CubLog("Invoking scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
-            // Invoke device_scan_init_kernel to initialize tile descriptors and queue descriptors
-            device_scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
-                queue,
-                tile_status,
+            // Invoke scan_init_kernel to initialize tile descriptors
+            scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
+                tile_state,
                 num_tiles);
 
             // Check for failure to launch
@@ -463,13 +436,13 @@ struct DispatchScan
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
-            // Get SM occupancy for device_scan_sweep_kernel
+            // Get SM occupancy for scan_sweep_kernel
             int range_scan_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
                 range_scan_sm_occupancy,            // out
                 sm_version,
-                device_scan_sweep_kernel,
-                device_scan_sweep_config.block_threads))) break;
+                scan_sweep_kernel,
+                scan_sweep_config.block_threads))) break;
 
             // Get max x-dimension of grid
             int max_dim_x;
@@ -481,19 +454,18 @@ struct DispatchScan
             scan_grid_size.y = ((unsigned int) num_tiles + max_dim_x - 1) / max_dim_x;
             scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
-            // Log device_scan_sweep_kernel configuration
-            if (debug_synchronous) CubLog("Invoking device_scan_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, device_scan_sweep_config.block_threads, (long long) stream, device_scan_sweep_config.items_per_thread, range_scan_sm_occupancy);
+            // Log scan_sweep_kernel configuration
+            if (debug_synchronous) CubLog("Invoking scan_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, scan_sweep_config.block_threads, (long long) stream, scan_sweep_config.items_per_thread, range_scan_sm_occupancy);
 
-            // Invoke device_scan_sweep_kernel
-            device_scan_sweep_kernel<<<scan_grid_size, device_scan_sweep_config.block_threads, 0, stream>>>(
+            // Invoke scan_sweep_kernel
+            scan_sweep_kernel<<<scan_grid_size, scan_sweep_config.block_threads, 0, stream>>>(
                 d_in,
                 d_out,
-                tile_status,
+                tile_state,
                 scan_op,
                 identity,
-                num_items,
-                queue);
+                num_items);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -514,15 +486,15 @@ struct DispatchScan
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void            *d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t          &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIteratorT  d_in,                           ///< [in] Pointer to the input sequence of data items
-        OutputIteratorT d_out,                          ///< [out] Pointer to the output sequence of data items
-        ScanOp          scan_op,                        ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
-        Identity        identity,                       ///< [in] Identity element
-        OffsetT         num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
-        cudaStream_t    stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool            debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        void*           d_temp_storage,         ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&         temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIteratorT  d_in,                   ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT d_out,                  ///< [out] Pointer to the output sequence of data items
+        ScanOpT         scan_op,                ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        IdentityT       identity,               ///< [in] The identity element for ScanOpT
+        OffsetT         num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
+        cudaStream_t    stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool            debug_synchronous)      ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         cudaError error = cudaSuccess;
         do
@@ -536,8 +508,8 @@ struct DispatchScan
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig device_scan_sweep_config;
-            InitConfigs(ptx_version, device_scan_sweep_config);
+            KernelConfig scan_sweep_config;
+            InitConfigs(ptx_version, scan_sweep_config);
 
             // Dispatch
             if (CubDebug(error = Dispatch(
@@ -551,9 +523,9 @@ struct DispatchScan
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<OffsetT, ScanTileState>,
-                DeviceScanSweepKernel<PtxRangeScanPolicy, InputIteratorT, OutputIteratorT, ScanTileState, ScanOp, Identity, OffsetT>,
-                device_scan_sweep_config))) break;
+                DeviceScanInitKernel<OffsetT, ScanTileStateT>,
+                DeviceScanSweepKernel<PtxAgentScanPolicy, InputIteratorT, OutputIteratorT, ScanTileStateT, ScanOpT, IdentityT, OffsetT>,
+                scan_sweep_config))) break;
         }
         while (0);
 

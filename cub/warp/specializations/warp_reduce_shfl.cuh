@@ -261,13 +261,13 @@ struct WarpReduceShfl
     }
 
 
-    /// Reduction (specialized for ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<ValueT, OffsetT> types)
+    /// Reduction (specialized for swizzled ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<ValueT, OffsetT> types)
     template <typename ValueT, typename OffsetT>
     __device__ __forceinline__ ItemOffsetPair<ValueT, OffsetT> ReduceStep(
-        ItemOffsetPair<ValueT, OffsetT>                                 input,              ///< [in] Calling thread's input item.
-        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<ValueT, OffsetT> >   reduction_op,       ///< [in] Binary reduction operator
-        int                                                             last_lane,          ///< [in] Index of last lane in segment
-        int                                                             offset)             ///< [in] Up-offset to pull from
+        ItemOffsetPair<ValueT, OffsetT>                                                 input,              ///< [in] Calling thread's input item.
+        SwizzleScanOp<ReduceBySegmentOp<cub::Sum, ItemOffsetPair<ValueT, OffsetT> > >   reduction_op,       ///< [in] Binary reduction operator
+        int                                                                             last_lane,          ///< [in] Index of last lane in segment
+        int                                                                             offset)             ///< [in] Up-offset to pull from
     {
         ItemOffsetPair<ValueT, OffsetT> output;
 
