@@ -190,11 +190,11 @@ struct AgentRle
     typedef ReduceBySegmentOp<cub::Sum, LengthOffsetPair> ReduceBySegmentOp;
 
     // Callback type for obtaining tile prefix during block scan
-    typedef BlockScanLookbackPrefixOp<
+    typedef TilePrefixCallbackOp<
             LengthOffsetPair,
             ReduceBySegmentOp,
             ScanTileState>
-        LookbackPrefixCallbackOp;
+        TilePrefixCallbackOpT;
 
     // Warp exchange types
     typedef WarpExchange<LengthOffsetPair, ITEMS_PER_THREAD>    WarpExchangePairs;
@@ -214,7 +214,7 @@ struct AgentRle
                 typename BlockDiscontinuityT::TempStorage       discontinuity;              // Smem needed for discontinuity detection
                 typename WarpScanPairs::TempStorage             warp_scan[WARPS];           // Smem needed for warp-synchronous scans
                 LengthOffsetPair                                warp_aggregates[WARPS];     // Smem needed for sharing warp-wide aggregates
-                typename LookbackPrefixCallbackOp::TempStorage  prefix;                     // Smem needed for cooperative prefix callback
+                typename TilePrefixCallbackOpT::TempStorage  prefix;                     // Smem needed for cooperative prefix callback
             };
 
             // Smem needed for input loading
@@ -730,7 +730,7 @@ struct AgentRle
                 lengths_and_num_runs);
 
             // First warp computes tile prefix in lane 0
-            LookbackPrefixCallbackOp prefix_op(tile_status, temp_storage.prefix, Sum(), tile_idx);
+            TilePrefixCallbackOpT prefix_op(tile_status, temp_storage.prefix, Sum(), tile_idx);
             int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
             if (warp_id == 0)
             {
