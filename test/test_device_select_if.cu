@@ -745,9 +745,10 @@ int main(int argc, char** argv)
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
-    TestPointer<CUB, false, int>(num_items, select_ratio, type_string);
+    TestPointer<CUB, false, int>(num_items, select_ratio,  CUB_TYPE_STRING(int));
+
 // Mooch
-//    TestPointer<CUB, true, int>(num_items, select_ratio, type_string);
+//    TestPointer<CUB, true, int>(num_items, select_ratio,  CUB_TYPE_STRING(int));
 
 #elif defined(QUICK_TEST)
 

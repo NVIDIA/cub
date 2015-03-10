@@ -655,7 +655,7 @@ template <
     typename T,
     typename ScanOpT,
     typename ScanTileStateT>
-struct BlockScanLookbackPrefixOp
+struct TilePrefixCallbackOp
 {
     // Parameterized warp reduce
     typedef WarpReduce<T> WarpReduceT;
@@ -675,8 +675,8 @@ struct BlockScanLookbackPrefixOp
     typedef typename ScanTileStateT::StatusWord StatusWord;
 
     // Fields
-    ScanTileStateT              &tile_status;       ///< Interface to tile status
-    _TempStorage                &temp_storage;      ///< Reference to a warp-reduction instance
+    _TempStorage&               temp_storage;       ///< Reference to a warp-reduction instance
+    ScanTileStateT&             tile_status;        ///< Interface to tile status
     ScanOpT                     scan_op;            ///< Binary scan operator
     int                         tile_idx;           ///< The current tile index
     T                           exclusive_prefix;   ///< Exclusive prefix for the tile
@@ -684,7 +684,7 @@ struct BlockScanLookbackPrefixOp
 
     // Constructor
     __device__ __forceinline__
-    BlockScanLookbackPrefixOp(
+    TilePrefixCallbackOp(
         ScanTileStateT       &tile_status,
         TempStorage         &temp_storage,
         ScanOpT              scan_op,
