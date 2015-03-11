@@ -184,6 +184,9 @@ struct AgentSelectIf
             ScanTileStateT>
         TilePrefixCallbackOpT;
 
+    // Item exchange type
+    typedef T ItemExchangeT[TILE_ITEMS];
+
     // Shared memory type for this threadblock
     union _TempStorage
     {
@@ -200,8 +203,8 @@ struct AgentSelectIf
         // Smem needed for loading values
         typename BlockLoadFlags::TempStorage load_flags;
 
-        // Smem needed for compacting items
-        T exchange_items[TILE_ITEMS];
+        // Smem needed for compacting items (allows non POD items in this union)
+        Uninitialized<ItemExchangeT> raw_exchange;
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -215,9 +218,10 @@ struct AgentSelectIf
     _TempStorage&                   temp_storage;       ///< Reference to temp_storage
     WrappedInputIteratorT           d_in;               ///< Input items
     SelectedOutputIteratorT         d_selected_out;     ///< Unique output items
-    WrappedFlagsInputIteratorT      d_flags_in;         ///< Input values
+    WrappedFlagsInputIteratorT      d_flags_in;         ///< Input selection flags (if applicable)
     InequalityWrapper<EqualityOpT>  inequality_op;      ///< T inequality operator
     SelectOpT                       select_op;          ///< Selection operator
+    OffsetT                         num_items;          ///< Total number of input items
 
 
     //---------------------------------------------------------------------
@@ -229,17 +233,19 @@ struct AgentSelectIf
     AgentSelectIf(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIteratorT              d_in,               ///< Input data
-        FlagsInputIteratorT         d_flags_in,         ///< Input flags
+        FlagsInputIteratorT         d_flags_in,         ///< Input selection flags (if applicable)
         SelectedOutputIteratorT     d_selected_out,     ///< Output data
         SelectOpT                   select_op,          ///< Selection operator
-        EqualityOpT                 equality_op)        ///< Equality operator
+        EqualityOpT                 equality_op,        ///< Equality operator
+        OffsetT                     num_items)          ///< Total number of input items
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_flags_in(d_flags_in),
         d_selected_out(d_selected_out),
         select_op(select_op),
-        inequality_op(equality_op)
+        inequality_op(equality_op),
+        num_items(num_items)
     {}
 
 
@@ -324,9 +330,9 @@ struct AgentSelectIf
         }
         else
         {
-            T tile_predecessor = (threadIdx.x == 0) ?
-                d_in[tile_offset - 1] :
-                ZeroInitialize<T>();
+            T tile_predecessor;
+            if (threadIdx.x == 0)
+                tile_predecessor = d_in[tile_offset - 1];
 
             __syncthreads();
 
@@ -381,11 +387,11 @@ struct AgentSelectIf
         T               (&items)[ITEMS_PER_THREAD],
         OffsetT         (&selection_flags)[ITEMS_PER_THREAD],
         OffsetT         (&selection_indices)[ITEMS_PER_THREAD],
-        OffsetT         num_tile_selections,
-        OffsetT         num_tile_selections_prefix,
-        int             num_tile_items,
-        Int2Type<false> is_keep_rejects
-        )
+        int             num_tile_items,                             ///< Number of valid items in this tile
+        int             num_tile_selections,                        ///< Number of selections in this tile
+        OffsetT         num_selections_prefix,                      ///< Total number of selections prior to this tile
+        OffsetT         num_rejected_prefix,                        ///< Total number of rejections prior to this tile
+        Int2Type<false> is_keep_rejects)                            ///< Marker type indicating whether to keep rejected items in the second partition
     {
         __syncthreads();
 
@@ -393,9 +399,10 @@ struct AgentSelectIf
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
+            int local_scatter_offset = selection_indices[ITEM] - num_selections_prefix;
             if (selection_flags[ITEM])
             {
-                temp_storage.exchange_items[selection_indices[ITEM] - num_tile_selections_prefix] = items[ITEM];
+                temp_storage.raw_exchange.Alias()[local_scatter_offset] = items[ITEM];
             }
         }
 
@@ -403,7 +410,7 @@ struct AgentSelectIf
 
         for (int item = threadIdx.x; item < num_tile_selections; item += BLOCK_THREADS)
         {
-            d_selected_out[num_tile_selections_prefix + item] = temp_storage.exchange_items[item];
+            d_selected_out[num_selections_prefix + item] = temp_storage.raw_exchange.Alias()[item];
         }
     }
 
@@ -416,39 +423,50 @@ struct AgentSelectIf
         T               (&items)[ITEMS_PER_THREAD],
         OffsetT         (&selection_flags)[ITEMS_PER_THREAD],
         OffsetT         (&selection_indices)[ITEMS_PER_THREAD],
-        OffsetT         num_tile_selections,
-        OffsetT         num_tile_selections_prefix,
-        int             num_tile_items,
-        Int2Type<true>  is_keep_rejects)
+        int             num_tile_items,                             ///< Number of valid items in this tile
+        int             num_tile_selections,                        ///< Number of selections in this tile
+        OffsetT         num_selections_prefix,                      ///< Total number of selections prior to this tile
+        OffsetT         num_rejected_prefix,                        ///< Total number of rejections prior to this tile
+        Int2Type<true>  is_keep_rejects)                            ///< Marker type indicating whether to keep rejected items in the second partition
     {
         __syncthreads();
 
-        // Compact and scatter items
+        int tile_num_rejections = num_tile_items - num_tile_selections;
+
+        // Scatter items to shared memory (rejections first)
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            int item = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-            int scatter_offset = selection_indices[ITEM] - num_tile_selections_prefix;
-            if (selection_flags[ITEM])
-                scatter_offset = num_tile_selections + (item - scatter_offset);
+            int item_idx                = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+            int local_selection_idx     = selection_indices[ITEM] - num_selections_prefix;
+            int local_rejection_idx     = item_idx - local_selection_idx;
+            int local_scatter_offset    = (selection_flags[ITEM]) ?
+                                            tile_num_rejections + local_selection_idx :
+                                            local_rejection_idx;
 
-            temp_storage.exchange_items[scatter_offset] = items[ITEM];
+            temp_storage.raw_exchange.Alias()[local_scatter_offset] = items[ITEM];
         }
 
         __syncthreads();
 
-        for (int item = threadIdx.x; item < num_tile_selections; item += BLOCK_THREADS)
+        // Gather items from shared memory and scatter to global
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            d_selected_out[num_tile_selections_prefix + item] = temp_storage.exchange_items[item];
+            int item_idx            = (ITEM * BLOCK_THREADS) + threadIdx.x;
+            int rejection_idx       = item_idx;
+            int selection_idx       = item_idx - tile_num_rejections;
+            OffsetT scatter_offset  = (item_idx < tile_num_rejections) ?
+                                        num_items - num_rejected_prefix - rejection_idx - 1 :
+                                        num_selections_prefix + selection_idx;
+
+            T item = temp_storage.raw_exchange.Alias()[item_idx];
+
+            if (!IS_LAST_TILE || (item_idx < num_tile_items))
+            {
+                d_selected_out[scatter_offset] = item;
+            }
         }
-
-        OffsetT num_rejected = (tile_idx * TILE_ITEMS)
-
-        for (int item = num_tile_selections + threadIdx.x; item < num_tile_items; item += BLOCK_THREADS)
-        {
-            d_selected_out[num_items - num_tile_selections_prefix + item] = temp_storage.exchange_items[item];
-        }
-
     }
 
 
@@ -460,11 +478,11 @@ struct AgentSelectIf
         T               (&items)[ITEMS_PER_THREAD],
         OffsetT         (&selection_flags)[ITEMS_PER_THREAD],
         OffsetT         (&selection_indices)[ITEMS_PER_THREAD],
-        OffsetT         num_tile_selections,
-        OffsetT         num_tile_selections_prefix,
-        int             num_tile_items,
-        OffsetT         num_selections,
-)
+        int             num_tile_items,                             ///< Number of valid items in this tile
+        int             num_tile_selections,                        ///< Number of selections in this tile
+        OffsetT         num_selections_prefix,                      ///< Total number of selections prior to this tile
+        OffsetT         num_rejected_prefix,                        ///< Total number of rejections prior to this tile
+        OffsetT         num_selections)                             ///< Total number of selections including this tile
     {
         // Do a two-phase scatter if (a) keeping both partitions or (b) two-phase is enabled and the average number of selection_flags items per thread is greater than one
         if (KEEP_REJECTS || (TWO_PHASE_SCATTER && (num_tile_selections > BLOCK_THREADS)))
@@ -473,9 +491,10 @@ struct AgentSelectIf
                 items,
                 selection_flags,
                 selection_indices,
-                num_tile_selections,
-                num_tile_selections_prefix,
                 num_tile_items,
+                num_tile_selections,
+                num_selections_prefix,
+                num_rejected_prefix,
                 Int2Type<KEEP_REJECTS>());
         }
         else
@@ -523,31 +542,32 @@ struct AgentSelectIf
         __syncthreads();
 
         // Exclusive scan of selection_flags
-        OffsetT tile_aggregate;
-        BlockScanT(temp_storage.scan).ExclusiveSum(selection_flags, selection_indices, tile_aggregate);
+        OffsetT num_tile_selections;
+        BlockScanT(temp_storage.scan).ExclusiveSum(selection_flags, selection_indices, num_tile_selections);
 
         if (threadIdx.x == 0)
         {
             // Update tile status if this is not the last tile
             if (!IS_LAST_TILE)
-                tile_state.SetInclusive(0, tile_aggregate);
+                tile_state.SetInclusive(0, num_tile_selections);
         }
 
         // Discount any out-of-bounds selections
         if (IS_LAST_TILE)
-            tile_aggregate -= (TILE_ITEMS - num_tile_items);
+            num_tile_selections -= (TILE_ITEMS - num_tile_items);
 
         // Scatter flagged items
         Scatter<IS_LAST_TILE, true>(
             items,
             selection_flags,
             selection_indices,
-            tile_aggregate,
-            0,
             num_tile_items,
-            tile_aggregate)
+            num_tile_selections,
+            0,
+            0,
+            num_tile_selections);
 
-        return tile_aggregate;
+        return num_tile_selections;
     }
 
 
@@ -582,17 +602,20 @@ struct AgentSelectIf
         __syncthreads();
 
         // Exclusive scan of values and selection_flags
-        OffsetT tile_aggregate;
+        OffsetT num_tile_selections;
         TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, cub::Sum(), tile_idx);
-        BlockScanT(temp_storage.scan).ExclusiveSum(selection_flags, selection_indices, tile_aggregate, prefix_op);
-        OffsetT tile_inclusive_prefix = prefix_op.GetInclusivePrefix();
+        BlockScanT(temp_storage.scan).ExclusiveSum(selection_flags, selection_indices, num_tile_selections, prefix_op);
+
+        OffsetT num_selections          = prefix_op.GetInclusivePrefix();
+        OffsetT num_selections_prefix   = prefix_op.GetExclusivePrefix();
+        OffsetT num_rejected_prefix     = (tile_idx * TILE_ITEMS) - num_selections_prefix;
 
         // Discount any out-of-bounds selections
         if (IS_LAST_TILE)
         {
-            int num_discount        = TILE_ITEMS - num_tile_items;
-            tile_inclusive_prefix   -= num_discount;
-            tile_aggregate          -= num_discount;
+            int num_discount    = TILE_ITEMS - num_tile_items;
+            num_selections      -= num_discount;
+            num_tile_selections -= num_discount;
         }
 
         // Scatter flagged items
@@ -600,12 +623,13 @@ struct AgentSelectIf
             items,
             selection_flags,
             selection_indices,
-            tile_aggregate,
-            prefix_op.GetExclusivePrefix(),
             num_tile_items,
-            tile_inclusive_prefix)
+            num_tile_selections,
+            num_selections_prefix,
+            num_rejected_prefix,
+            num_selections);
 
-        return tile_inclusive_prefix;
+        return num_selections;
     }
 
 
@@ -619,17 +643,17 @@ struct AgentSelectIf
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
-        OffsetT tile_inclusive_prefix;
+        OffsetT num_selections;
         if (tile_idx == 0)
         {
-            tile_inclusive_prefix = ConsumeFirstTile<IS_LAST_TILE>(num_tile_items, tile_offset, tile_state);
+            num_selections = ConsumeFirstTile<IS_LAST_TILE>(num_tile_items, tile_offset, tile_state);
         }
         else
         {
-            tile_inclusive_prefix = ConsumeSubsequentTile<IS_LAST_TILE>(num_tile_items, tile_idx, tile_offset, tile_state);
+            num_selections = ConsumeSubsequentTile<IS_LAST_TILE>(num_tile_items, tile_idx, tile_offset, tile_state);
         }
 
-        return tile_inclusive_prefix;
+        return num_selections;
     }
 
 
@@ -638,7 +662,6 @@ struct AgentSelectIf
      */
     template <typename NumSelectedIteratorT>        ///< Output iterator type for recording number of items selection_flags
     __device__ __forceinline__ void ConsumeRange(
-        int                     num_items,          ///< Total number of input items
         int                     num_tiles,          ///< Total number of input tiles
         ScanTileStateT&         tile_state,         ///< Global tile state descriptor
         NumSelectedIteratorT    d_num_selected_out) ///< Output total number selection_flags
@@ -655,13 +678,13 @@ struct AgentSelectIf
         else
         {
             // The last tile (possibly partially-full)
-            OffsetT num_remaining           = num_items - tile_offset;
-            OffsetT tile_inclusive_prefix   = ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
+            OffsetT num_remaining   = num_items - tile_offset;
+            OffsetT num_selections  = ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
 
             if (threadIdx.x == 0)
             {
                 // Output the total number of items selection_flags
-                *d_num_selected_out = tile_inclusive_prefix;
+                *d_num_selected_out = num_selections;
             }
         }
     }

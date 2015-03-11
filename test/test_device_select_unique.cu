@@ -51,9 +51,10 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                    g_verbose           = false;
-int                     g_timing_iterations = 0;
-int                     g_repeat            = 0;
+bool                    g_verbose               = false;
+int                     g_timing_iterations     = 0;
+int                     g_repeat                = 0;
+float                   g_device_giga_bandwidth;
 CachingDeviceAllocator  g_allocator(true);
 
 // Dispatch types
@@ -366,10 +367,10 @@ void Test(
     // Display performance
     if (g_timing_iterations > 0)
     {
-        float avg_millis = elapsed_millis / g_timing_iterations;
-        float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = float((num_items + num_selected) * sizeof(T)) / avg_millis / 1000.0 / 1000.0;
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
+        float avg_millis        = elapsed_millis / g_timing_iterations;
+        float giga_rate         = float(num_items) / avg_millis / 1000.0 / 1000.0;
+        float giga_bandwidth    = float((num_items + num_selected) * sizeof(T)) / avg_millis / 1000.0 / 1000.0;
+        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, giga_rate, giga_bandwidth, giga_bandwidth / g_device_giga_bandwidth * 100.0);
     }
     printf("\n\n");
 
@@ -442,8 +443,7 @@ template <
     typename        T>
 void TestIterator(
     int             num_items,
-    const char*     type_string,
-    Int2Type<true>  is_number)
+    const char*     type_string)
 {
     // Use a counting iterator as the input
     CountingInputIterator<T, int> h_in(0);
@@ -470,19 +470,6 @@ void TestIterator(
 
 
 /**
- * Test DeviceSelect on iterator type
- */
-template <
-    Backend         BACKEND,
-    typename        T>
-void TestIterator(
-    int             num_items,
-    const char*     type_string,
-    Int2Type<false> is_number)
-{}
-
-
-/**
  * Test different gen modes
  */
 template <
@@ -498,9 +485,6 @@ void Test(
         TestPointer<BACKEND, T>(num_items, 2, max_segment, type_string);
         TestPointer<BACKEND, T>(num_items, 7, max_segment, type_string);
     }
-
-    TestIterator<BACKEND, T>(num_items, type_string, Int2Type<Traits<T>::CATEGORY != NOT_A_NUMBER>());
-
 }
 
 
@@ -583,15 +567,8 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
+    g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
-
-    // Get device ordinal
-    int device_ordinal;
-    CubDebugExit(cudaGetDevice(&device_ordinal));
-
-    // Get device SM version
-    int sm_version;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
 
 #ifdef QUICKER_TEST
 
@@ -601,10 +578,21 @@ int main(int argc, char** argv)
 
 #elif defined(QUICK_TEST)
 
+    // Get device ordinal
+    int device_ordinal;
+    CubDebugExit(cudaGetDevice(&device_ordinal));
+
+    // Get device SM version
+    int sm_version;
+    CubDebugExit(SmVersion(sm_version, device_ordinal));
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;
 
+    printf("-- Iterator ----------------------------\n");
+    TestIterator<CUB, int>(        num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+
+    printf("----------------------------\n");
     TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
     TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
 
