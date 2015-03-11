@@ -99,8 +99,7 @@ __global__ void DeviceSelectSweepKernel(
     __shared__ typename AgentSelectIfT::TempStorage temp_storage;
 
     // Process tiles
-    AgentSelectIfT(temp_storage, d_in, d_flags, d_selected_out, select_op, equality_op).ConsumeRange(
-        num_items,
+    AgentSelectIfT(temp_storage, d_in, d_flags, d_selected_out, select_op, equality_op, num_items).ConsumeRange(
         num_tiles,
         tile_status,
         d_num_selected_out);
@@ -171,16 +170,16 @@ struct DispatchSelectIf
     struct Policy300
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 5,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            NOMINAL_4B_ITEMS_PER_THREAD = 7,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(3, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef AgentSelectIfPolicy<
-                256,
+                128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             SelectIfPolicyT;
     };
 
