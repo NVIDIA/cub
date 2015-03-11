@@ -179,6 +179,10 @@ struct AgentReduceByKey
             ScanTileStateT>
         TilePrefixCallbackOpT;
 
+    // Key and value exchange types
+    typedef KeyT    KeyExchangeT[TILE_ITEMS + 1];
+    typedef ValueT  ValueExchangeT[TILE_ITEMS + 1];
+
     // Shared memory type for this threadblock
     union _TempStorage
     {
@@ -195,11 +199,11 @@ struct AgentReduceByKey
         // Smem needed for loading values
         typename BlockLoadValues::TempStorage load_values;
 
-        // Smem needed for compacting values
-        ValueT exchange_values[TILE_ITEMS];
+        // Smem needed for compacting keys (allows non POD items in this union)
+        Uninitialized<KeyExchangeT> raw_exchange_keys;
 
-        // Smem needed for compacting keys
-        KeyT exchange_keys[TILE_ITEMS];
+        // Smem needed for compacting values (allows non POD items in this union)
+        Uninitialized<ValueExchangeT> raw_exchange_values;
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -405,7 +409,7 @@ struct AgentReduceByKey
         {
             if (segment_flags[ITEM])
             {
-                temp_storage.exchange_keys[segment_indices[ITEM] - num_tile_segments_prefix] = keys[ITEM];
+                temp_storage.raw_exchange_keys.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = keys[ITEM];
             }
         }
 
@@ -413,7 +417,7 @@ struct AgentReduceByKey
 
         for (int item = (IS_FIRST_TILE ? threadIdx.x + 1 : threadIdx.x); item < num_tile_segments; item += BLOCK_THREADS)
         {
-            d_unique_out[num_tile_segments_prefix + item] = temp_storage.exchange_keys[item];
+            d_unique_out[num_tile_segments_prefix + item] = temp_storage.raw_exchange_keys.Alias()[item];
         }
 
         __syncthreads();
@@ -425,7 +429,7 @@ struct AgentReduceByKey
             if (segment_flags[ITEM])
             {
                 OffsetT scatter_offset = segment_indices[ITEM] - num_tile_segments_prefix - ((IS_FIRST_TILE ? 1 : 0));
-                temp_storage.exchange_values[scatter_offset] = values[ITEM];
+                temp_storage.raw_exchange_values.Alias()[scatter_offset] = values[ITEM];
             }
         }
 
@@ -434,7 +438,7 @@ struct AgentReduceByKey
         for (int item = threadIdx.x; item < num_tile_segments + ((IS_LAST_TILE ? 1 : 0)); item += BLOCK_THREADS)
         {
             OffsetT scatter_offset = num_tile_segments_prefix + item - ((IS_FIRST_TILE ? 0 : 1));
-            d_aggregates_out[scatter_offset] = temp_storage.exchange_values[item];
+            d_aggregates_out[scatter_offset] = temp_storage.raw_exchange_values.Alias()[item];
         }
     }
 

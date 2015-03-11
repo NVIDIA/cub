@@ -79,7 +79,7 @@ struct CommandLineArgs
     std::vector<std::string>    values;
     std::vector<std::string>    args;
     cudaDeviceProp              deviceProp;
-    float                       bandwidth_gBs;
+    float                       device_giga_bandwidth;
 
     /**
      * Constructor
@@ -278,7 +278,7 @@ struct CommandLineArgs
                 exit(1);
             }
 
-            bandwidth_gBs = float(deviceProp.memoryBusWidth) * deviceProp.memoryClockRate * 2 / 8 / 1000 / 1000;
+            device_giga_bandwidth = float(deviceProp.memoryBusWidth) * deviceProp.memoryClockRate * 2 / 8 / 1000 / 1000;
 
             if (!CheckCmdLineFlag("quiet"))
             {
@@ -293,7 +293,7 @@ struct CommandLineArgs
                     deviceProp.multiProcessorCount,
                     (unsigned long long) free_physmem / 1024 / 1024,
                     (unsigned long long) total_physmem / 1024 / 1024,
-                    bandwidth_gBs,
+                    device_giga_bandwidth,
                     deviceProp.memoryClockRate,
                     (deviceProp.ECCEnabled) ? "on" : "off");
                 fflush(stdout);
