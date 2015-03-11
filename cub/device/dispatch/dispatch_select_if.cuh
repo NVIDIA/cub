@@ -75,7 +75,7 @@ template <
 __launch_bounds__ (int(AgentSelectIfPolicyT::BLOCK_THREADS))
 __global__ void DeviceSelectSweepKernel(
     InputIteratorT          d_in,                   ///< [in] Pointer to the input sequence of data items
-    FlagsInputIteratorT     d_flags,                ///< [in] Pointer to the input sequence of selection flags
+    FlagsInputIteratorT     d_flags,                ///< [in] Pointer to the input sequence of selection flags (if applicable)
     SelectedOutputIteratorT d_selected_out,         ///< [out] Pointer to the output sequence of selected data items
     NumSelectedIteratorT    d_num_selected_out,     ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
     ScanTileStateT          tile_status,            ///< [in] Tile status interface
@@ -153,12 +153,12 @@ struct DispatchSelectIf
     struct Policy350
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 17,
+            NOMINAL_4B_ITEMS_PER_THREAD = 10,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef AgentSelectIfPolicy<
-                96,
+                128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
@@ -342,7 +342,7 @@ struct DispatchSelectIf
         void*                       d_temp_storage,                 ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
-        FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags
+        FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags (if applicable)
         SelectedOutputIteratorT     d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
         NumSelectedIteratorT        d_num_selected_out,             ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
         SelectOpT                   select_op,                      ///< [in] Selection operator
@@ -470,7 +470,7 @@ struct DispatchSelectIf
         void*                       d_temp_storage,                 ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
-        FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags
+        FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags (if applicable)
         SelectedOutputIteratorT     d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
         NumSelectedIteratorT        d_num_selected_out,             ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
         SelectOpT                   select_op,                      ///< [in] Selection operator

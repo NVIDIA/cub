@@ -583,11 +583,11 @@ void Test(
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = (KEYS_ONLY) ?
-            grate * sizeof(Key) * 2 :
-            grate * (sizeof(Key) + sizeof(Value)) * 2;
-        printf("\n%.3f elapsed ms, %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", elapsed_millis, avg_millis, grate, gbandwidth);
+        float giga_rate = float(num_items) / avg_millis / 1000.0 / 1000.0;
+        float giga_bandwidth = (KEYS_ONLY) ?
+            giga_rate * sizeof(Key) * 2 :
+            giga_rate * (sizeof(Key) + sizeof(Value)) * 2;
+        printf("\n%.3f elapsed ms, %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", elapsed_millis, avg_millis, giga_rate, giga_bandwidth);
     }
 
     printf("\n\n");

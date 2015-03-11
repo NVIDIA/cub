@@ -784,14 +784,14 @@ void TestEven(
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float grate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = grate * sizeof(SampleT);
+        float giga_rate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
+        float giga_bandwidth = giga_rate * sizeof(SampleT);
         printf("\t%.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
             avg_millis,
-            grate,
-            grate * NUM_ACTIVE_CHANNELS / NUM_CHANNELS,
-            grate / NUM_CHANNELS,
-            gbandwidth);
+            giga_rate,
+            giga_rate * NUM_ACTIVE_CHANNELS / NUM_CHANNELS,
+            giga_rate / NUM_CHANNELS,
+            giga_bandwidth);
     }
 
     printf("\n\n");
@@ -967,15 +967,14 @@ void TestRange(
     // Display performance
     if (g_timing_iterations > 0)
     {
-        float avg_millis = elapsed_millis / g_timing_iterations;
-        float grate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = grate * sizeof(SampleT);
+        float giga_rate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
+        float giga_bandwidth = giga_rate * sizeof(SampleT);
         printf("\t%.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
             avg_millis,
-            grate,
-            grate * NUM_ACTIVE_CHANNELS / NUM_CHANNELS,
-            grate / NUM_CHANNELS,
-            gbandwidth);
+            giga_rate,
+            giga_rate * NUM_ACTIVE_CHANNELS / NUM_CHANNELS,
+            giga_rate / NUM_CHANNELS,
+            giga_bandwidth);
     }
 
     printf("\n\n");

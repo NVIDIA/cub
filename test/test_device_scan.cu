@@ -54,7 +54,7 @@ using namespace cub;
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
-double                  g_bandwidth_gBs;
+double                  g_device_giga_bandwidth;
 CachingDeviceAllocator  g_allocator(true);
 
 // Dispatch types
@@ -568,9 +568,9 @@ void Test(
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
-        float gbandwidth = grate * sizeof(T) * 2;
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, grate, gbandwidth, gbandwidth / g_bandwidth_gBs * 100.0);
+        float giga_rate = float(num_items) / avg_millis / 1000.0 / 1000.0;
+        float giga_bandwidth = giga_rate * sizeof(T) * 2;
+        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, giga_rate, giga_bandwidth, giga_bandwidth / g_device_giga_bandwidth * 100.0);
     }
 
     printf("\n\n");
@@ -820,7 +820,7 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
-    g_bandwidth_gBs = args.bandwidth_gBs;
+    g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
 
 #ifdef QUICKER_TEST
