@@ -190,7 +190,7 @@ struct AgentSelectIf
         struct
         {
             typename BlockScanT::TempStorage                scan;           // Smem needed for tile scanning
-            typename TilePrefixCallbackOpT::TempStorage  prefix;         // Smem needed for cooperative prefix callback
+            typename TilePrefixCallbackOpT::TempStorage     prefix;         // Smem needed for cooperative prefix callback
             typename BlockDiscontinuityT::TempStorage       discontinuity;  // Smem needed for discontinuity detection
         };
 
@@ -229,7 +229,7 @@ struct AgentSelectIf
     AgentSelectIf(
         TempStorage                 &temp_storage,      ///< Reference to temp_storage
         InputIteratorT              d_in,               ///< Input data
-        FlagsInputIteratorT         d_flags_in,            ///< Input flags
+        FlagsInputIteratorT         d_flags_in,         ///< Input flags
         SelectedOutputIteratorT     d_selected_out,     ///< Output data
         SelectOpT                   select_op,          ///< Selection operator
         EqualityOpT                 equality_op)        ///< Equality operator
@@ -253,7 +253,7 @@ struct AgentSelectIf
     template <bool IS_FIRST_TILE, bool IS_LAST_TILE>
     __device__ __forceinline__ void InitializeSelections(
         OffsetT                     tile_offset,
-        OffsetT                     num_remaining,
+        OffsetT                     num_tile_items,
         T                           (&items)[ITEMS_PER_THREAD],
         OffsetT                     (&selection_flags)[ITEMS_PER_THREAD],
         Int2Type<USE_SELECT_OP>     select_method)
@@ -264,7 +264,7 @@ struct AgentSelectIf
             // Out-of-bounds items are selection_flags
             selection_flags[ITEM] = 1;
 
-            if (!IS_LAST_TILE || (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining))
+            if (!IS_LAST_TILE || (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_tile_items))
                 selection_flags[ITEM] = select_op(items[ITEM]);
         }
     }
@@ -276,7 +276,7 @@ struct AgentSelectIf
     template <bool IS_FIRST_TILE, bool IS_LAST_TILE>
     __device__ __forceinline__ void InitializeSelections(
         OffsetT                     tile_offset,
-        OffsetT                     num_remaining,
+        OffsetT                     num_tile_items,
         T                           (&items)[ITEMS_PER_THREAD],
         OffsetT                     (&selection_flags)[ITEMS_PER_THREAD],
         Int2Type<USE_SELECT_FLAGS>  select_method)
@@ -288,7 +288,7 @@ struct AgentSelectIf
         if (IS_LAST_TILE)
         {
             // Out-of-bounds items are selection_flags
-            BlockLoadFlags(temp_storage.load_flags).Load(d_flags_in + tile_offset, flags, num_remaining, 1);
+            BlockLoadFlags(temp_storage.load_flags).Load(d_flags_in + tile_offset, flags, num_tile_items, 1);
         }
         else
         {
@@ -310,7 +310,7 @@ struct AgentSelectIf
     template <bool IS_FIRST_TILE, bool IS_LAST_TILE>
     __device__ __forceinline__ void InitializeSelections(
         OffsetT                     tile_offset,
-        OffsetT                     num_remaining,
+        OffsetT                     num_tile_items,
         T                           (&items)[ITEMS_PER_THREAD],
         OffsetT                     (&selection_flags)[ITEMS_PER_THREAD],
         Int2Type<USE_DISCONTINUITY> select_method)
@@ -338,7 +338,7 @@ struct AgentSelectIf
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             // Set selection_flags for out-of-bounds items
-            if ((IS_LAST_TILE) && (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM >= num_remaining))
+            if ((IS_LAST_TILE) && (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM >= num_tile_items))
                 selection_flags[ITEM] = 1;
         }
     }
@@ -356,7 +356,7 @@ struct AgentSelectIf
         T       (&items)[ITEMS_PER_THREAD],
         OffsetT (&selection_flags)[ITEMS_PER_THREAD],
         OffsetT (&selection_indices)[ITEMS_PER_THREAD],
-        OffsetT num_segments)
+        OffsetT num_selections)
     {
         // Scatter flagged items
         #pragma unroll
@@ -364,8 +364,10 @@ struct AgentSelectIf
         {
             if (selection_flags[ITEM])
             {
-                if ((!IS_LAST_TILE) || selection_indices[ITEM] < num_segments)
+                if ((!IS_LAST_TILE) || selection_indices[ITEM] < num_selections)
+                {
                     d_selected_out[selection_indices[ITEM]] = items[ITEM];
+                }
             }
         }
     }
@@ -376,18 +378,15 @@ struct AgentSelectIf
      */
     template <bool IS_LAST_TILE, bool IS_FIRST_TILE>
     __device__ __forceinline__ void ScatterTwoPhase(
-        T       (&items)[ITEMS_PER_THREAD],
-        OffsetT (&selection_flags)[ITEMS_PER_THREAD],
-        OffsetT (&selection_indices)[ITEMS_PER_THREAD],
-        OffsetT num_tile_segments,
-        OffsetT num_tile_segments_prefix)
+        T               (&items)[ITEMS_PER_THREAD],
+        OffsetT         (&selection_flags)[ITEMS_PER_THREAD],
+        OffsetT         (&selection_indices)[ITEMS_PER_THREAD],
+        OffsetT         num_tile_selections,
+        OffsetT         num_tile_selections_prefix,
+        int             num_tile_items,
+        Int2Type<false> is_keep_rejects
+        )
     {
-        // Scatter first key of first tile
-        if (IS_FIRST_TILE && (threadIdx.x == 0))
-        {
-            d_selected_out[0] = items[0];
-        }
-
         __syncthreads();
 
         // Compact and scatter items
@@ -396,16 +395,60 @@ struct AgentSelectIf
         {
             if (selection_flags[ITEM])
             {
-                temp_storage.exchange_items[selection_indices[ITEM] - num_tile_segments_prefix] = items[ITEM];
+                temp_storage.exchange_items[selection_indices[ITEM] - num_tile_selections_prefix] = items[ITEM];
             }
         }
 
         __syncthreads();
 
-        for (int item = (IS_FIRST_TILE ? threadIdx.x + 1 : threadIdx.x); item < num_tile_segments; item += BLOCK_THREADS)
+        for (int item = threadIdx.x; item < num_tile_selections; item += BLOCK_THREADS)
         {
-            d_selected_out[num_tile_segments_prefix + item] = temp_storage.exchange_items[item];
+            d_selected_out[num_tile_selections_prefix + item] = temp_storage.exchange_items[item];
         }
+    }
+
+
+    /**
+     * Scatter flagged items to output offsets (specialized for two-phase scattering)
+     */
+    template <bool IS_LAST_TILE, bool IS_FIRST_TILE>
+    __device__ __forceinline__ void ScatterTwoPhase(
+        T               (&items)[ITEMS_PER_THREAD],
+        OffsetT         (&selection_flags)[ITEMS_PER_THREAD],
+        OffsetT         (&selection_indices)[ITEMS_PER_THREAD],
+        OffsetT         num_tile_selections,
+        OffsetT         num_tile_selections_prefix,
+        int             num_tile_items,
+        Int2Type<true>  is_keep_rejects)
+    {
+        __syncthreads();
+
+        // Compact and scatter items
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            int item = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+            int scatter_offset = selection_indices[ITEM] - num_tile_selections_prefix;
+            if (selection_flags[ITEM])
+                scatter_offset = num_tile_selections + (item - scatter_offset);
+
+            temp_storage.exchange_items[scatter_offset] = items[ITEM];
+        }
+
+        __syncthreads();
+
+        for (int item = threadIdx.x; item < num_tile_selections; item += BLOCK_THREADS)
+        {
+            d_selected_out[num_tile_selections_prefix + item] = temp_storage.exchange_items[item];
+        }
+
+        OffsetT num_rejected = (tile_idx * TILE_ITEMS)
+
+        for (int item = num_tile_selections + threadIdx.x; item < num_tile_items; item += BLOCK_THREADS)
+        {
+            d_selected_out[num_items - num_tile_selections_prefix + item] = temp_storage.exchange_items[item];
+        }
+
     }
 
 
@@ -417,19 +460,23 @@ struct AgentSelectIf
         T               (&items)[ITEMS_PER_THREAD],
         OffsetT         (&selection_flags)[ITEMS_PER_THREAD],
         OffsetT         (&selection_indices)[ITEMS_PER_THREAD],
-        OffsetT         num_tile_segments,
-        OffsetT         num_tile_segments_prefix,
-        OffsetT         num_segments)
+        OffsetT         num_tile_selections,
+        OffsetT         num_tile_selections_prefix,
+        int             num_tile_items,
+        OffsetT         num_selections,
+)
     {
-        // Do a one-phase scatter if (a) two-phase is disabled or (b) the average number of selection_flags items per thread is less than one
-        if (TWO_PHASE_SCATTER && (num_tile_segments > BLOCK_THREADS))
+        // Do a two-phase scatter if (a) keeping both partitions or (b) two-phase is enabled and the average number of selection_flags items per thread is greater than one
+        if (KEEP_REJECTS || (TWO_PHASE_SCATTER && (num_tile_selections > BLOCK_THREADS)))
         {
             ScatterTwoPhase<IS_LAST_TILE, IS_FIRST_TILE>(
                 items,
                 selection_flags,
                 selection_indices,
-                num_tile_segments,
-                num_tile_segments_prefix);
+                num_tile_selections,
+                num_tile_selections_prefix,
+                num_tile_items,
+                Int2Type<KEEP_REJECTS>());
         }
         else
         {
@@ -437,10 +484,9 @@ struct AgentSelectIf
                 items,
                 selection_flags,
                 selection_indices,
-                num_segments);
+                num_selections);
         }
     }
-
 
     //---------------------------------------------------------------------
     // Cooperatively scan a device-wide sequence of tiles with other CTAs
@@ -452,7 +498,7 @@ struct AgentSelectIf
      */
     template <bool IS_LAST_TILE>
     __device__ __forceinline__ OffsetT ConsumeFirstTile(
-        OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
+        int                 num_tile_items,      ///< Number of input items comprising this tile
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
@@ -462,14 +508,14 @@ struct AgentSelectIf
 
         // Load items
         if (IS_LAST_TILE)
-            BlockLoadT(temp_storage.load_items).Load(d_in + tile_offset, items, num_remaining);
+            BlockLoadT(temp_storage.load_items).Load(d_in + tile_offset, items, num_tile_items);
         else
             BlockLoadT(temp_storage.load_items).Load(d_in + tile_offset, items);
 
         // Initialize selection_flags
         InitializeSelections<true, IS_LAST_TILE>(
             tile_offset,
-            num_remaining,
+            num_tile_items,
             items,
             selection_flags,
             Int2Type<SELECT_METHOD>());
@@ -487,9 +533,9 @@ struct AgentSelectIf
                 tile_state.SetInclusive(0, tile_aggregate);
         }
 
-        // Discount any out-of-bounds segments
+        // Discount any out-of-bounds selections
         if (IS_LAST_TILE)
-            tile_aggregate -= (TILE_ITEMS - num_remaining);
+            tile_aggregate -= (TILE_ITEMS - num_tile_items);
 
         // Scatter flagged items
         Scatter<IS_LAST_TILE, true>(
@@ -498,7 +544,8 @@ struct AgentSelectIf
             selection_indices,
             tile_aggregate,
             0,
-            tile_aggregate);
+            num_tile_items,
+            tile_aggregate)
 
         return tile_aggregate;
     }
@@ -509,7 +556,7 @@ struct AgentSelectIf
      */
     template <bool IS_LAST_TILE>
     __device__ __forceinline__ OffsetT ConsumeSubsequentTile(
-        OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
+        int                 num_tile_items,      ///< Number of input items comprising this tile
         int                 tile_idx,           ///< Tile index
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
@@ -520,14 +567,14 @@ struct AgentSelectIf
 
         // Load items
         if (IS_LAST_TILE)
-            BlockLoadT(temp_storage.load_items).Load(d_in + tile_offset, items, num_remaining);
+            BlockLoadT(temp_storage.load_items).Load(d_in + tile_offset, items, num_tile_items);
         else
             BlockLoadT(temp_storage.load_items).Load(d_in + tile_offset, items);
 
         // Initialize selection_flags
         InitializeSelections<false, IS_LAST_TILE>(
             tile_offset,
-            num_remaining,
+            num_tile_items,
             items,
             selection_flags,
             Int2Type<SELECT_METHOD>());
@@ -540,10 +587,10 @@ struct AgentSelectIf
         BlockScanT(temp_storage.scan).ExclusiveSum(selection_flags, selection_indices, tile_aggregate, prefix_op);
         OffsetT tile_inclusive_prefix = prefix_op.GetInclusivePrefix();
 
-        // Discount any out-of-bounds segments
+        // Discount any out-of-bounds selections
         if (IS_LAST_TILE)
         {
-            int num_discount        = TILE_ITEMS - num_remaining;
+            int num_discount        = TILE_ITEMS - num_tile_items;
             tile_inclusive_prefix   -= num_discount;
             tile_aggregate          -= num_discount;
         }
@@ -555,7 +602,8 @@ struct AgentSelectIf
             selection_indices,
             tile_aggregate,
             prefix_op.GetExclusivePrefix(),
-            tile_inclusive_prefix);
+            num_tile_items,
+            tile_inclusive_prefix)
 
         return tile_inclusive_prefix;
     }
@@ -566,7 +614,7 @@ struct AgentSelectIf
      */
     template <bool IS_LAST_TILE>
     __device__ __forceinline__ OffsetT ConsumeTile(
-        OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
+        int                 num_tile_items,         ///< Number of input items comprising this tile
         int                 tile_idx,           ///< Tile index
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
@@ -574,11 +622,11 @@ struct AgentSelectIf
         OffsetT tile_inclusive_prefix;
         if (tile_idx == 0)
         {
-            tile_inclusive_prefix = ConsumeFirstTile<IS_LAST_TILE>(num_remaining, tile_offset, tile_state);
+            tile_inclusive_prefix = ConsumeFirstTile<IS_LAST_TILE>(num_tile_items, tile_offset, tile_state);
         }
         else
         {
-            tile_inclusive_prefix = ConsumeSubsequentTile<IS_LAST_TILE>(num_remaining, tile_idx, tile_offset, tile_state);
+            tile_inclusive_prefix = ConsumeSubsequentTile<IS_LAST_TILE>(num_tile_items, tile_idx, tile_offset, tile_state);
         }
 
         return tile_inclusive_prefix;
@@ -598,17 +646,17 @@ struct AgentSelectIf
         // Blocks are launched in increasing order, so just assign one tile per block
         int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
         OffsetT tile_offset     = tile_idx * TILE_ITEMS;                    // Global offset for the current tile
-        OffsetT num_remaining   = num_items - tile_offset;                  // Remaining items (including this tile)
 
         if (tile_idx < num_tiles - 1)
         {
             // Not the last tile (full)
-            ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state);
+            ConsumeTile<false>(TILE_ITEMS, tile_idx, tile_offset, tile_state);
         }
-        else if (num_remaining > 0)
+        else
         {
             // The last tile (possibly partially-full)
-            OffsetT tile_inclusive_prefix = ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
+            OffsetT num_remaining           = num_items - tile_offset;
+            OffsetT tile_inclusive_prefix   = ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
 
             if (threadIdx.x == 0)
             {

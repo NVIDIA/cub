@@ -72,15 +72,14 @@
 /**
  * Utility for parsing command line arguments
  */
-class CommandLineArgs
+struct CommandLineArgs
 {
-protected:
 
-    std::vector<std::string> keys;
-    std::vector<std::string> values;
-    std::vector<std::string> args;
-
-public:
+    std::vector<std::string>    keys;
+    std::vector<std::string>    values;
+    std::vector<std::string>    args;
+    cudaDeviceProp              deviceProp;
+    float                       bandwidth_gBs;
 
     /**
      * Constructor
@@ -271,7 +270,6 @@ public:
             error = CubDebug(cub::PtxVersion(ptx_version));
             if (error) break;
 
-            cudaDeviceProp deviceProp;
             error = CubDebug(cudaGetDeviceProperties(&deviceProp, dev));
             if (error) break;
 
@@ -279,8 +277,15 @@ public:
                 fprintf(stderr, "Device does not support CUDA.\n");
                 exit(1);
             }
-            if (!CheckCmdLineFlag("quiet")) {
-                printf("Using device %d: %s (PTX version %d, SM%d, %d SMs, %lld free / %lld total MB physmem, ECC %s)\n",
+
+            bandwidth_gBs = float(deviceProp.memoryBusWidth) * deviceProp.memoryClockRate * 2 / 8 / 1000 / 1000;
+
+            if (!CheckCmdLineFlag("quiet"))
+            {
+                printf(
+                        "Using device %d: %s (PTX version %d, SM%d, %d SMs, "
+                        "%lld free / %lld total MB physmem, "
+                        "%.3f GB/s @ %d kHz mem clock, ECC %s)\n",
                     dev,
                     deviceProp.name,
                     ptx_version,
@@ -288,6 +293,8 @@ public:
                     deviceProp.multiProcessorCount,
                     (unsigned long long) free_physmem / 1024 / 1024,
                     (unsigned long long) total_physmem / 1024 / 1024,
+                    bandwidth_gBs,
+                    deviceProp.memoryClockRate,
                     (deviceProp.ECCEnabled) ? "on" : "off");
                 fflush(stdout);
             }
@@ -297,7 +304,6 @@ public:
         return error;
     }
 };
-
 
 /******************************************************************************
  * Random bits generator

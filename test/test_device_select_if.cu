@@ -57,6 +57,7 @@ using namespace cub;
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
+float                   g_bandwidth_gBs;
 CachingDeviceAllocator  g_allocator(true);
 
 // Dispatch types
@@ -466,7 +467,7 @@ void Test(
         float grate = float(num_items) / avg_millis / 1000.0 / 1000.0;
         int output_items = (PARTITION) ? num_items : num_selected;
         float gbandwidth = float((num_items + output_items) * sizeof(T)) / avg_millis / 1000.0 / 1000.0;
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, grate, gbandwidth);
+        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, grate, gbandwidth, gbandwidth / g_bandwidth_gBs * 100.0);
     }
     printf("\n\n");
 
@@ -731,15 +732,8 @@ int main(int argc, char** argv)
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
+    g_bandwidth_gBs = args.bandwidth_gBs;
     printf("\n");
-
-    // Get device ordinal
-    int device_ordinal;
-    CubDebugExit(cudaGetDevice(&device_ordinal));
-
-    // Get device SM version
-    int sm_version;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
 
 #ifdef QUICKER_TEST
 
@@ -751,6 +745,14 @@ int main(int argc, char** argv)
 //    TestPointer<CUB, true, int>(num_items, select_ratio,  CUB_TYPE_STRING(int));
 
 #elif defined(QUICK_TEST)
+
+    // Get device ordinal
+    int device_ordinal;
+    CubDebugExit(cudaGetDevice(&device_ordinal));
+
+    // Get device SM version
+    int sm_version;
+    CubDebugExit(SmVersion(sm_version, device_ordinal));
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;
