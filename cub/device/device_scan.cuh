@@ -298,8 +298,8 @@ struct DeviceScan
         typename            OutputIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t InclusiveSum(
-        void                *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        void*               d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&             temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                              ///< [out] Pointer to the output sequence of data items
         int                 num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)

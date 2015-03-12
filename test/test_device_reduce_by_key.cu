@@ -91,7 +91,7 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void                        *d_temp_storage,
+    void*               d_temp_storage,
     size_t                      &temp_storage_bytes,
     KeyInputIteratorT           d_keys_in,
     KeyOutputIteratorT          d_keys_out,
@@ -146,7 +146,7 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void                        *d_temp_storage,
+    void*               d_temp_storage,
     size_t                      &temp_storage_bytes,
     KeyInputIteratorT           d_keys_in,
     KeyOutputIteratorT          d_keys_out,
@@ -217,7 +217,7 @@ __global__ void CnpDispatchKernel(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void                        *d_temp_storage,
+    void*               d_temp_storage,
     size_t                      temp_storage_bytes,
     KeyInputIteratorT           d_keys_in,
     KeyOutputIteratorT          d_keys_out,
@@ -261,7 +261,7 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void                        *d_temp_storage,
+    void*               d_temp_storage,
     size_t                      &temp_storage_bytes,
     KeyInputIteratorT           d_keys_in,
     KeyOutputIteratorT          d_keys_out,
