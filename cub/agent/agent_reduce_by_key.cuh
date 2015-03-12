@@ -367,6 +367,13 @@ struct AgentReduceByKey
         OffsetT (&segment_indices)[ITEMS_PER_THREAD],
         OffsetT num_segments)
     {
+        // Scatter first key of first tile and then unset the flag so we won't scatter the value
+        if (IS_FIRST_TILE && (threadIdx.x == 0))
+        {
+            segment_flags[0] = 0;
+            d_unique_out[0] = keys[0];
+        }
+
         // Scatter flagged keys and values
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -415,7 +422,7 @@ struct AgentReduceByKey
 
         __syncthreads();
 
-        for (int item = (IS_FIRST_TILE ? threadIdx.x + 1 : threadIdx.x); item < num_tile_segments; item += BLOCK_THREADS)
+        for (int item = threadIdx.x; item < num_tile_segments; item += BLOCK_THREADS)
         {
             d_unique_out[num_tile_segments_prefix + item] = temp_storage.raw_exchange_keys.Alias()[item];
         }
@@ -428,17 +435,17 @@ struct AgentReduceByKey
         {
             if (segment_flags[ITEM])
             {
-                OffsetT scatter_offset = segment_indices[ITEM] - num_tile_segments_prefix - ((IS_FIRST_TILE ? 1 : 0));
-                temp_storage.raw_exchange_values.Alias()[scatter_offset] = values[ITEM];
+                temp_storage.raw_exchange_values.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = values[ITEM];
             }
         }
 
         __syncthreads();
 
-        for (int item = threadIdx.x; item < num_tile_segments + ((IS_LAST_TILE ? 1 : 0)); item += BLOCK_THREADS)
+        int first_value = (IS_FIRST_TILE) ? threadIdx.x + 1 : threadIdx.x;
+        int last_value = (IS_LAST_TILE) ? CUB_MIN(num_tile_segments + 1, TILE_ITEMS) : num_tile_segments;
+        for (int item = first_value; item < last_value; item += BLOCK_THREADS)
         {
-            OffsetT scatter_offset = num_tile_segments_prefix + item - ((IS_FIRST_TILE ? 0 : 1));
-            d_aggregates_out[scatter_offset] = temp_storage.raw_exchange_values.Alias()[item];
+            d_aggregates_out[num_tile_segments_prefix + item - 1] = temp_storage.raw_exchange_values.Alias()[item];
         }
     }
 
@@ -456,12 +463,6 @@ struct AgentReduceByKey
         OffsetT         num_tile_segments_prefix,
         OffsetT         num_segments)
     {
-        // Scatter first key of first tile (we unflagged it after scan)
-        if (IS_FIRST_TILE && (threadIdx.x == 0))
-        {
-            d_unique_out[0] = keys[0];
-        }
-
         // Do a one-phase scatter if (a) two-phase is disabled or (b) the average number of selected items per thread is less than one
         if (TWO_PHASE_SCATTER && (num_tile_segments > BLOCK_THREADS))
         {
@@ -539,9 +540,6 @@ struct AgentReduceByKey
             // Update tile status if this is not the last tile
             if (!IS_LAST_TILE)
                 tile_state.SetInclusive(0, tile_aggregate);
-
-            // Unset first flag in first tile
-            segment_flags[0] = 0;
 
             // Initialize the segment index for the first scan item if necessary (the exclusive prefix for the first item is garbage)
             if (!HAS_IDENTITY_ZERO)
