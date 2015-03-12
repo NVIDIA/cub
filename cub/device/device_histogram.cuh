@@ -124,7 +124,7 @@ struct DeviceHistogram
     CUB_RUNTIME_FUNCTION
     static cudaError_t HistogramEven(
         void*               d_temp_storage,                             ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        size_t&             temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the input sequence of data samples.
         CounterT*           d_histogram,                                ///< [out] The pointer to the histogram counter output array of length <tt>num_levels</tt> - 1.
         int                 num_levels,                                 ///< [in] The number of boundaries (levels) for delineating histogram samples.  Implies that the number of bins is <tt>num_levels</tt> - 1.
@@ -224,7 +224,7 @@ struct DeviceHistogram
     CUB_RUNTIME_FUNCTION
     static cudaError_t HistogramEven(
         void*               d_temp_storage,                             ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        size_t&             temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the input sequence of data samples.
         CounterT*           d_histogram,                                ///< [out] The pointer to the histogram counter output array of length <tt>num_levels</tt> - 1.
         int                 num_levels,                                 ///< [in] The number of boundaries (levels) for delineating histogram samples.  Implies that the number of bins is <tt>num_levels</tt> - 1.
@@ -327,7 +327,7 @@ struct DeviceHistogram
     CUB_RUNTIME_FUNCTION
     static cudaError_t MultiHistogramEven(
         void*               d_temp_storage,                             ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        size_t&             temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four <em>RGBA</em> 8-bit samples).
         CounterT*           d_histogram[NUM_ACTIVE_CHANNELS],           ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histogram[i]</tt> should be <tt>num_levels[i]</tt> - 1.
         int                 num_levels[NUM_ACTIVE_CHANNELS],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
@@ -435,7 +435,7 @@ struct DeviceHistogram
     CUB_RUNTIME_FUNCTION
     static cudaError_t MultiHistogramEven(
         void*               d_temp_storage,                             ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        size_t&             temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four <em>RGBA</em> 8-bit samples).
         CounterT*           d_histogram[NUM_ACTIVE_CHANNELS],           ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histogram[i]</tt> should be <tt>num_levels[i]</tt> - 1.
         int                 num_levels[NUM_ACTIVE_CHANNELS],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
@@ -531,7 +531,7 @@ struct DeviceHistogram
     CUB_RUNTIME_FUNCTION
     static cudaError_t HistogramRange(
         void*               d_temp_storage,                         ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        size_t&             temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                              ///< [in] The pointer to the input sequence of data samples.
         CounterT*           d_histogram,                            ///< [out] The pointer to the histogram counter output array of length <tt>num_levels</tt> - 1.
         int                 num_levels,                             ///< [in] The number of boundaries (levels) for delineating histogram samples.  Implies that the number of bins is <tt>num_levels</tt> - 1.
@@ -627,7 +627,7 @@ struct DeviceHistogram
     CUB_RUNTIME_FUNCTION
     static cudaError_t HistogramRange(
         void*               d_temp_storage,                         ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        size_t&             temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                              ///< [in] The pointer to the input sequence of data samples.
         CounterT*           d_histogram,                            ///< [out] The pointer to the histogram counter output array of length <tt>num_levels</tt> - 1.
         int                 num_levels,                             ///< [in] The number of boundaries (levels) for delineating histogram samples.  Implies that the number of bins is <tt>num_levels</tt> - 1.
@@ -727,7 +727,7 @@ struct DeviceHistogram
     CUB_RUNTIME_FUNCTION
     static cudaError_t MultiHistogramRange(
         void*               d_temp_storage,                         ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        size_t&             temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                              ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four <em>RGBA</em> 8-bit samples).
         CounterT*           d_histogram[NUM_ACTIVE_CHANNELS],       ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histogram[i]</tt> should be <tt>num_levels[i]</tt> - 1.
         int                 num_levels[NUM_ACTIVE_CHANNELS],        ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
@@ -831,7 +831,7 @@ struct DeviceHistogram
     CUB_RUNTIME_FUNCTION
     static cudaError_t MultiHistogramRange(
         void*               d_temp_storage,                         ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        size_t&             temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                              ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four <em>RGBA</em> 8-bit samples).
         CounterT*           d_histogram[NUM_ACTIVE_CHANNELS],       ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histogram[i]</tt> should be <tt>num_levels[i]</tt> - 1.
         int                 num_levels[NUM_ACTIVE_CHANNELS],        ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.

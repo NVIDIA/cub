@@ -368,8 +368,8 @@ struct DispatchScan
         size_t&             temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                   ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                  ///< [out] Pointer to the output sequence of data items
-        ScanOpT              scan_op,                ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
-        IdentityT            identity,               ///< [in] The identity element for ScanOpT
+        ScanOpT             scan_op,                ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        IdentityT           identity,               ///< [in] The identity element for ScanOpT
         OffsetT             num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t        stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous,      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.

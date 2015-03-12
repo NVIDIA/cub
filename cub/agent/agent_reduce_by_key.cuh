@@ -441,7 +441,7 @@ struct AgentReduceByKey
 
         __syncthreads();
 
-        int first_value = (IS_FIRST_TILE) ? threadIdx.x + 1 : threadIdx.x;
+        int first_value = (num_tile_segments_prefix) ? threadIdx.x + 1 : threadIdx.x;                       // Don't scatter the first value in the first tile (which is always flagged)
         int last_value = (IS_LAST_TILE) ? CUB_MIN(num_tile_segments + 1, TILE_ITEMS) : num_tile_segments;
         for (int item = first_value; item < last_value; item += BLOCK_THREADS)
         {
