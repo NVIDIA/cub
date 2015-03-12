@@ -356,8 +356,8 @@ struct DipatchHistogram
         // HistogramSweepPolicy
         typedef AgentHistogramPolicy<
                 (NUM_CHANNELS == 1) ? 256 : 128,
-                (NUM_CHANNELS == 1) ? 8 : 3,
-                (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_WARP_TRANSPOSE,
+                (NUM_CHANNELS == 1) ? 12 : 3,
+                BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
                 SMEM,
@@ -371,8 +371,8 @@ struct DipatchHistogram
         // HistogramSweepPolicy
         typedef AgentHistogramPolicy<
                 (NUM_CHANNELS == 1) ? 256 : 128,
-                (NUM_CHANNELS == 1) ? 8 : 3,
-                (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_WARP_TRANSPOSE,
+                (NUM_CHANNELS == 1) ? 12 : 3,
+                BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
                 SMEM,
@@ -387,10 +387,10 @@ struct DipatchHistogram
         typedef AgentHistogramPolicy<
                 128,
                 (NUM_CHANNELS == 1) ? 8 : 7,
-                (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
+                BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
-                BLEND,
+                GMEM,
                 true>
             HistogramSweepPolicy;
     };
@@ -402,7 +402,7 @@ struct DipatchHistogram
         typedef AgentHistogramPolicy<
                 256,
                 8,
-                (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
+                BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
                 SMEM,
@@ -806,10 +806,10 @@ struct DipatchHistogram
      */
     CUB_RUNTIME_FUNCTION
     static cudaError_t DispatchRange(
-        void*               d_temp_storage,                            ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t&             temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        void*               d_temp_storage,                             ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&             temp_storage_bytes,                         ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
-        CounterT*           d_output_histograms[NUM_ACTIVE_CHANNELS],  ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.
+        CounterT*           d_output_histograms[NUM_ACTIVE_CHANNELS],   ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.
         int                 num_output_levels[NUM_ACTIVE_CHANNELS],     ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_output_levels[i]</tt> - 1.
         LevelT              *d_levels[NUM_ACTIVE_CHANNELS],             ///< [in] The pointers to the arrays of boundaries (levels), one for each active channel.  Bin ranges are defined by consecutive boundary pairings: lower sample value boundaries are inclusive and upper sample value boundaries are exclusive.
         OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
