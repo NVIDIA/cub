@@ -80,9 +80,9 @@ struct AgentHistogramPolicy
     {
         BLOCK_THREADS           = _BLOCK_THREADS,                   ///< Threads per thread block
         PIXELS_PER_THREAD       = _PIXELS_PER_THREAD,               ///< Pixels per thread (per tile of input)
-        RLE_COMPRESS            = _RLE_COMPRESS,                    ///< Whether to perform localized RLE to compress samples before histogramming
+        IS_RLE_COMPRESS            = _RLE_COMPRESS,                    ///< Whether to perform localized RLE to compress samples before histogramming
         MEM_PREFERENCE          = _MEM_PREFERENCE,                  ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
-        WORK_STEALING           = _WORK_STEALING,                   ///< Whether to dequeue tiles from a global work queue
+        IS_WORK_STEALING           = _WORK_STEALING,                   ///< Whether to dequeue tiles from a global work queue
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;          ///< The BlockLoad algorithm to use
@@ -120,24 +120,28 @@ struct AgentHistogram
     /// The pixel type of SampleT
     typedef typename CubVector<SampleT, NUM_CHANNELS>::Type PixelT;
 
+    /// The quad type of SampleT
+    typedef typename CubVector<SampleT, 4>::Type QuadT;
+
     /// Constants
     enum
     {
         BLOCK_THREADS           = AgentHistogramPolicyT::BLOCK_THREADS,
 
         PIXELS_PER_THREAD       = AgentHistogramPolicyT::PIXELS_PER_THREAD,
-        TILE_PIXELS             = PIXELS_PER_THREAD * BLOCK_THREADS,
-
         SAMPLES_PER_THREAD      = PIXELS_PER_THREAD * NUM_CHANNELS,
+        QUADS_PER_THREAD        = SAMPLES_PER_THREAD / 4,
+
+        TILE_PIXELS             = PIXELS_PER_THREAD * BLOCK_THREADS,
         TILE_SAMPLES            = SAMPLES_PER_THREAD * BLOCK_THREADS,
 
-        RLE_COMPRESS            = AgentHistogramPolicyT::RLE_COMPRESS,
+        IS_RLE_COMPRESS            = AgentHistogramPolicyT::IS_RLE_COMPRESS,
 
         MEM_PREFERENCE          = (PRIVATIZED_SMEM_BINS > 0) ?
                                         AgentHistogramPolicyT::MEM_PREFERENCE :
                                         GMEM,
 
-        WORK_STEALING           = AgentHistogramPolicyT::WORK_STEALING,
+        IS_WORK_STEALING           = AgentHistogramPolicyT::IS_WORK_STEALING,
     };
 
     /// Cache load modifier for reading input elements
@@ -153,6 +157,10 @@ struct AgentHistogram
     /// Pixel input iterator type (for applying cache modifier)
     typedef CacheModifiedInputIterator<LOAD_MODIFIER, PixelT, OffsetT>
         WrappedPixelIteratorT;
+
+    /// Qaud input iterator type (for applying cache modifier)
+    typedef CacheModifiedInputIterator<LOAD_MODIFIER, QuadT, OffsetT>
+        WrappedQuadIteratorT;
 
     /// Parameterized BlockLoad type for samples
     typedef BlockLoad<
@@ -170,18 +178,26 @@ struct AgentHistogram
             AgentHistogramPolicyT::LOAD_ALGORITHM>
         BlockLoadPixelT;
 
+    /// Parameterized BlockLoad type for quads
+    typedef BlockLoad<
+            WrappedQuadIteratorT,
+            BLOCK_THREADS,
+            QUADS_PER_THREAD,
+            AgentHistogramPolicyT::LOAD_ALGORITHM>
+        BlockLoadQuadT;
 
     /// Shared memory type required by this thread block
     struct _TempStorage
     {
         CounterT histograms[NUM_ACTIVE_CHANNELS][PRIVATIZED_SMEM_BINS + 1];     // Smem needed for block-privatized smem histogram (with 1 word of padding)
 
-        int     tile_idx;
+        int tile_idx;
 
         union
         {
-            typename BlockLoadSampleT::TempStorage sample_load;                 // Smem needed for loading a tile of samples
-            typename BlockLoadPixelT::TempStorage pixel_load;                   // Smem needed for loading a tile of pixels
+            typename BlockLoadSampleT::TempStorage sample_load;     // Smem needed for loading a tile of samples
+            typename BlockLoadPixelT::TempStorage pixel_load;       // Smem needed for loading a tile of pixels
+            typename BlockLoadQuadT::TempStorage quad_load;         // Smem needed for loading a tile of quads
         };
     };
 
@@ -320,7 +336,7 @@ struct AgentHistogram
 
 
     //---------------------------------------------------------------------
-    // Accumulate privatized histograms
+    // Tile accumulation
     //---------------------------------------------------------------------
 
     // Accumulate pixels.  Specialized for RLE compression.
@@ -343,7 +359,7 @@ struct AgentHistogram
                 privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bins[PIXEL], is_valid[PIXEL]);
 
             CounterT accumulator = 1;
-/*
+
             #pragma unroll
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD - 1; ++PIXEL)
             {
@@ -361,20 +377,29 @@ struct AgentHistogram
                      atomicAdd(privatized_histograms[CHANNEL] + bins[PIXEL], accumulator);
                      accumulator = 1;
                 }
-            }
-*/
+/*
+                if (bins[PIXEL] == bins[PIXEL + 1])
+                {
+                     accumulator++;
+                }
+                else
+                {
+                    if (bins[PIXEL] >= 0)
+                        atomicAdd(privatized_histograms[CHANNEL] + bins[PIXEL], accumulator);
 
-            #pragma unroll
-            for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD - 1; ++PIXEL)
-            {
+                     accumulator = 1;
+                }
+*/
+/*
                 if ((bins[PIXEL] >= 0) && (bins[PIXEL] != bins[PIXEL + 1]))
                 {
                     atomicAdd(privatized_histograms[CHANNEL] + bins[PIXEL], accumulator);
                     accumulator = 0;
                 }
                 accumulator++;
-            }
+*/
 
+            }
             // Last pixel
             if (bins[PIXELS_PER_THREAD - 1] >= 0)
                 atomicAdd(privatized_histograms[CHANNEL] + bins[PIXELS_PER_THREAD - 1], accumulator);
@@ -417,7 +442,7 @@ struct AgentHistogram
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
             privatized_histograms[CHANNEL] = temp_storage.histograms[CHANNEL];
 
-        AccumulatePixels(samples, is_valid, privatized_histograms, Int2Type<RLE_COMPRESS>());
+        AccumulatePixels(samples, is_valid, privatized_histograms, Int2Type<IS_RLE_COMPRESS>());
     }
 
 
@@ -428,22 +453,22 @@ struct AgentHistogram
         SampleT             samples[PIXELS_PER_THREAD][NUM_CHANNELS],
         bool                is_valid[PIXELS_PER_THREAD])
     {
-        AccumulatePixels(samples, is_valid, d_privatized_histograms, Int2Type<RLE_COMPRESS>());
+        AccumulatePixels(samples, is_valid, d_privatized_histograms, Int2Type<IS_RLE_COMPRESS>());
     }
 
 
 
     //---------------------------------------------------------------------
-    // Tile processing
+    // Tile loading
     //---------------------------------------------------------------------
 
-    // Load full, aligned tile using pixel iterator
-    __device__ __forceinline__ void LoadTile(
-        OffsetT         block_offset,
-        int             valid_samples,
-        SampleT         (&samples)[PIXELS_PER_THREAD][NUM_CHANNELS],
-        Int2Type<true>  is_full_tile,
-        Int2Type<true>  is_aligned)
+    // Load full, aligned tile using pixel iterator (multi-channel)
+    template <int _NUM_ACTIVE_CHANNELS>
+    __device__ __forceinline__ void LoadFullAlignedTile(
+        OffsetT                         block_offset,
+        int                             valid_samples,
+        SampleT                         (&samples)[PIXELS_PER_THREAD][NUM_CHANNELS],
+        Int2Type<_NUM_ACTIVE_CHANNELS>  num_active_channels)
     {
         typedef PixelT AliasedPixels[PIXELS_PER_THREAD];
 
@@ -453,6 +478,34 @@ struct AgentHistogram
         BlockLoadPixelT(temp_storage.pixel_load).Load(
             d_wrapped_pixels,
             reinterpret_cast<AliasedPixels&>(samples));
+    }
+
+    // Load full, aligned tile using quad iterator (single-channel)
+    __device__ __forceinline__ void LoadFullAlignedTile(
+        OffsetT                         block_offset,
+        int                             valid_samples,
+        SampleT                         (&samples)[PIXELS_PER_THREAD][NUM_CHANNELS],
+        Int2Type<1>                     num_active_channels)
+    {
+        typedef QuadT AliasedQuads[QUADS_PER_THREAD];
+
+        WrappedQuadIteratorT d_wrapped_quads((QuadT*) (d_native_samples + block_offset));
+
+        // Load using a wrapped quad iterator
+        BlockLoadQuadT(temp_storage.quad_load).Load(
+            d_wrapped_quads,
+            reinterpret_cast<AliasedQuads&>(samples));
+    }
+
+    // Load full, aligned tile
+    __device__ __forceinline__ void LoadTile(
+        OffsetT         block_offset,
+        int             valid_samples,
+        SampleT         (&samples)[PIXELS_PER_THREAD][NUM_CHANNELS],
+        Int2Type<true>  is_full_tile,
+        Int2Type<true>  is_aligned)
+    {
+        LoadFullAlignedTile(block_offset, valid_samples, samples, Int2Type<NUM_ACTIVE_CHANNELS>());
     }
 
     // Load full, mis-aligned tile using sample iterator
@@ -471,7 +524,7 @@ struct AgentHistogram
             reinterpret_cast<AliasedSamples&>(samples));
     }
 
-    // Load partially-full, aligned tile using pixel iterator
+    // Load partially-full, aligned tile using the pixel iterator
     __device__ __forceinline__ void LoadTile(
         OffsetT         block_offset,
         int             valid_samples,
@@ -490,7 +543,6 @@ struct AgentHistogram
             d_wrapped_pixels,
             reinterpret_cast<AliasedPixels&>(samples),
             valid_pixels);
-
     }
 
     // Load partially-full, mis-aligned tile using sample iterator
@@ -508,6 +560,11 @@ struct AgentHistogram
             reinterpret_cast<AliasedSamples&>(samples),
             valid_samples);
     }
+
+
+    //---------------------------------------------------------------------
+    // Tile processing
+    //---------------------------------------------------------------------
 
     // Consume a tile of data samples
     template <
@@ -551,23 +608,24 @@ struct AgentHistogram
         GridQueue<int>      tile_queue,
         Int2Type<true>      is_work_stealing)
     {
-/*
+
         int         num_tiles                   = num_rows * tiles_per_row;
         int         tile_idx                    = (blockIdx.y  * gridDim.x) + blockIdx.x;
         OffsetT     num_even_share_tiles        = gridDim.x * gridDim.y;
-        int         num_samples_last_tile       = (num_row_pixels * NUM_CHANNELS) % TILE_SAMPLES;       // Number of tile samples at the last row tile
 
         while (tile_idx < num_tiles)
         {
-            int row = tile_idx / tiles_per_row;
-            int col = tile_idx - (row * tiles_per_row);
-
+            int     row             = tile_idx / tiles_per_row;
+            int     col             = tile_idx - (row * tiles_per_row);
             OffsetT row_offset      = row * row_stride_samples;
-            OffsetT tile_offset     = row_offset + (col * TILE_SAMPLES);
+            OffsetT col_offset      = (col * TILE_SAMPLES);
+            OffsetT tile_offset     = row_offset + col_offset;
+
             if (col == tiles_per_row - 1)
             {
                 // Consume a partially-full tile at the end of the row
-                ConsumeTile<IS_ALIGNED, false>(tile_offset, num_samples_last_tile);
+                OffsetT num_remaining = (num_row_pixels * NUM_CHANNELS) - col_offset;
+                ConsumeTile<IS_ALIGNED, false>(tile_offset, num_remaining);
                 break;
             }
             // Consume full tile
@@ -577,44 +635,12 @@ struct AgentHistogram
 
             // Get next tile
             if (threadIdx.x == 0)
-                temp_storage.tile_idx = tile_queue.Drain(TILE_SAMPLES) + num_even_share_tiles;
+                temp_storage.tile_idx = tile_queue.Drain(1) + num_even_share_tiles;
 
             __syncthreads();
 
             tile_idx = temp_storage.tile_idx;
         }
-*/
-
-        OffsetT tile_idx        = blockIdx.x;
-        OffsetT row_end         = num_row_pixels * NUM_CHANNELS;
-        OffsetT even_share_base = gridDim.x;
-        OffsetT tile_offset     = tile_idx * TILE_SAMPLES;
-        OffsetT num_remaining   = row_end - tile_offset;
-
-        while (num_remaining >= TILE_SAMPLES)
-        {
-            // Consume full tile
-            ConsumeTile<IS_ALIGNED, true>(tile_offset, TILE_SAMPLES);
-
-            __syncthreads();
-
-            // Get next tile
-            if (threadIdx.x == 0)
-                temp_storage.tile_idx = tile_queue.Drain(TILE_SAMPLES) + even_share_base;
-
-            __syncthreads();
-
-            tile_offset     = temp_storage.tile_idx * TILE_SAMPLES;
-            num_remaining   = row_end - tile_offset;
-
-        }
-
-        if (num_remaining > 0)
-        {
-            // Consume the last (and potentially partially-full) tile
-            ConsumeTile<IS_ALIGNED, false>(tile_offset, num_remaining);
-        }
-
     }
 
 
@@ -628,7 +654,6 @@ struct AgentHistogram
         GridQueue<int>      tile_queue,
         Int2Type<false>     is_work_stealing)
     {
-/*
         for (int row = blockIdx.y; row < num_rows; row += gridDim.y)
         {
             OffsetT row_begin   = row * row_stride_samples;
@@ -651,8 +676,6 @@ struct AgentHistogram
                 tile_offset += gridDim.x * TILE_SAMPLES;
             }
         }
-*/
-        ConsumeTile<IS_ALIGNED, true>(0, TILE_SAMPLES);
     }
 
 
@@ -740,12 +763,12 @@ struct AgentHistogram
 
         // Whether rows are aligned and can be vectorized
         if (quad_aligned_rows || pixel_aligned_rows)
-            ConsumeTiles<true>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<WORK_STEALING>());
+            ConsumeTiles<true>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<IS_WORK_STEALING>());
         else
-            ConsumeTiles<false>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<WORK_STEALING>());
+            ConsumeTiles<false>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<IS_WORK_STEALING>());
 */
 
-        ConsumeTiles<true>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<WORK_STEALING>());
+        ConsumeTiles<true>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<IS_WORK_STEALING>());
 
     }
 
