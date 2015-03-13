@@ -442,8 +442,8 @@ struct AgentSpmv
     {
         int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
         int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
-        OffsetT*    tile_row_end_offsets    = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
-        ValueT*     tile_nonzeros           = reinterpret_cast<ValueT*>(temp_storage.merge_items + 1 + tile_num_rows);
+        OffsetT*    tile_row_end_offsets    = reinterpret_cast<OffsetT*>(temp_storage.merge_items + 1 + tile_num_nonzeros);
+        ValueT*     tile_nonzeros           = reinterpret_cast<ValueT*>(temp_storage.merge_items);
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
