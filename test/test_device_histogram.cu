@@ -927,7 +927,7 @@ void TestRange(
     // Run warmup/correctness iteration
     DispatchRange(
         Int2Type<NUM_CHANNELS>(), Int2Type<NUM_ACTIVE_CHANNELS>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error,
-        ((char *) d_temp_storage) + 128, temp_storage_bytes,
+        ((char *) d_temp_storage) + canary_bytes, temp_storage_bytes,
         d_samples, d_histogram, num_levels, d_levels,
         num_row_pixels, num_rows, row_stride_bytes,
         0, true);
@@ -1493,7 +1493,7 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         Test <unsigned char,    int, int,   int>(256,   256 + 1,    CUB_TYPE_STRING(unsigned char));
-//        Test <signed char,      int, int,   int>(256,   256 + 1,    CUB_TYPE_STRING(signed char));
+        Test <signed char,      int, int,   int>(256,   256 + 1,    CUB_TYPE_STRING(signed char));
         Test <unsigned short,   int, int,   int>(128,   128 + 1,    CUB_TYPE_STRING(unsigned short));
         Test <unsigned short,   int, int,   int>(8192,  8192 + 1,   CUB_TYPE_STRING(unsigned short));
         Test <float,            int, float, int>(1.0,   256 + 1,    CUB_TYPE_STRING(float));
