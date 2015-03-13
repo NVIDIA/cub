@@ -40,7 +40,6 @@
 #include "../block/block_store.cuh"
 #include "../block/block_scan.cuh"
 #include "../block/block_discontinuity.cuh"
-#include "../grid/grid_queue.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
 #include "../iterator/constant_input_iterator.cuh"
 #include "../util_namespace.cuh"
@@ -141,7 +140,7 @@ struct AgentReduceByKey
     typedef ReduceBySegmentOp<
             ReductionOpT,
             ItemOffsetPairT>
-        ScanOpT;
+        ReduceBySegmentOpT;
 
     // Parameterized BlockLoad type for keys
     typedef BlockLoad<
@@ -175,7 +174,7 @@ struct AgentReduceByKey
     // Callback type for obtaining tile prefix during block scan
     typedef TilePrefixCallbackOp<
             ItemOffsetPairT,
-            ScanOpT,
+            ReduceBySegmentOpT,
             ScanTileStateT>
         TilePrefixCallbackOpT;
 
@@ -220,7 +219,7 @@ struct AgentReduceByKey
     WrappedValuesInputIteratorT     d_values_in;        ///< Input values
     AggregatesOutputIteratorT       d_aggregates_out;   ///< Output value aggregates
     InequalityWrapper<EqualityOpT>  inequality_op;      ///< KeyT inequality operator
-    ScanOpT                         scan_op;            ///< Reduce-by-segment scan operator
+    ReduceBySegmentOpT              scan_op;            ///< Reduce-by-segment scan operator
 
 
     //---------------------------------------------------------------------
