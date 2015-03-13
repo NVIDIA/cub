@@ -67,7 +67,6 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
-    int                 WARP_TIME_SLICING,
     typename            InputIteratorT,
     typename            OutputIteratorT>
 __launch_bounds__ (BLOCK_THREADS, 1)
@@ -86,8 +85,8 @@ __global__ void Kernel(
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, WARP_TIME_SLICING> BlockLoad;
-    typedef BlockStore<OutputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, WARP_TIME_SLICING> BlockStore;
+    typedef BlockLoad<InputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
+    typedef BlockStore<OutputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
     // Shared memory type for this threadblock
     union TempStorage
@@ -147,7 +146,6 @@ template <
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
-    int                 WARP_TIME_SLICING,
     typename            InputIteratorT,
     typename            OutputIteratorT>
 void TestKernel(
@@ -165,7 +163,7 @@ void TestKernel(
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
 
     // Run kernel
-    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>
+    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>
         <<<grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out_unguarded_itr,
@@ -195,8 +193,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStoreAlgorithm STORE_ALGORITHM,
-    int                 WARP_TIME_SLICING>
+    BlockStoreAlgorithm STORE_ALGORITHM>
 void TestNative(
     int                 grid_size,
     float               fraction_valid,
@@ -233,11 +230,10 @@ void TestNative(
         "ITEMS_PER_THREAD(%d) "
         "LOAD_ALGORITHM(%d) "
         "STORE_ALGORITHM(%d) "
-        "WARP_TIME_SLICING(%d) "
         "sizeof(T)(%d)\n",
-            grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING, (int) sizeof(T));
+            grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>(
         h_in,
         d_in,
         d_out_unguarded,
@@ -263,8 +259,7 @@ template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
     BlockLoadAlgorithm  LOAD_ALGORITHM,
-    BlockStoreAlgorithm STORE_ALGORITHM,
-    int                 WARP_TIME_SLICING>
+    BlockStoreAlgorithm STORE_ALGORITHM>
 void TestNative(
     int                 grid_size,
     float               fraction_valid,
@@ -282,8 +277,7 @@ template <
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
     CacheLoadModifier   LOAD_MODIFIER,
-    CacheStoreModifier  STORE_MODIFIER,
-    int                 WARP_TIME_SLICING>
+    CacheStoreModifier  STORE_MODIFIER>
 void TestIterator(
     int                 grid_size,
     float               fraction_valid,
@@ -322,11 +316,10 @@ void TestIterator(
         "STORE_ALGORITHM(%d) "
         "LOAD_MODIFIER(%d) "
         "STORE_MODIFIER(%d) "
-        "WARP_TIME_SLICING(%d) "
         "sizeof(T)(%d)\n",
-            grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, WARP_TIME_SLICING, (int) sizeof(T));
+            grid_size, guarded_elements, unguarded_elements, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_MODIFIER, STORE_MODIFIER, (int) sizeof(T));
 
-    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(
+    TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>(
         h_in,
         CacheModifiedInputIterator<LOAD_MODIFIER, T>(d_in),
         CacheModifiedOutputIterator<STORE_MODIFIER, T>(d_out_unguarded),
@@ -353,8 +346,7 @@ template <
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM,
     CacheLoadModifier   LOAD_MODIFIER,
-    CacheStoreModifier  STORE_MODIFIER,
-    int                 WARP_TIME_SLICING>
+    CacheStoreModifier  STORE_MODIFIER>
 void TestIterator(
     int                 grid_size,
     float               fraction_valid,
@@ -370,23 +362,22 @@ template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     BlockLoadAlgorithm      LOAD_ALGORITHM,
-    BlockStoreAlgorithm     STORE_ALGORITHM,
-    bool                    WARP_TIME_SLICING>
+    BlockStoreAlgorithm     STORE_ALGORITHM>
 void TestPointerType(
     int             grid_size,
     float           fraction_valid)
 {
     // Threadblock load/store abstraction types
-    typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, WARP_TIME_SLICING> BlockLoad;
-    typedef BlockStore<T*, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM, WARP_TIME_SLICING> BlockStore;
+    typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
+    typedef BlockStore<T*, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
     static const bool sufficient_load_smem  = sizeof(typename BlockLoad::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
     static const bool sufficient_store_smem = sizeof(typename BlockStore::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
     static const bool sufficient_threads    = BLOCK_THREADS <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
     static const bool sufficient_resources  = sufficient_load_smem && sufficient_store_smem && sufficient_threads;
 
-    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<sufficient_resources>());
-    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT, WARP_TIME_SLICING>(grid_size, fraction_valid, Int2Type<sufficient_resources>());
+    TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>(grid_size, fraction_valid, Int2Type<sufficient_resources>());
+    TestIterator<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM, LOAD_DEFAULT, STORE_DEFAULT>(grid_size, fraction_valid, Int2Type<sufficient_resources>());
 }
 
 
@@ -421,9 +412,9 @@ void TestStrategy(
     float           fraction_valid,
     Int2Type<false> is_warp_multiple)
 {
-    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT, false>(grid_size, fraction_valid);
-    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, BLOCK_STORE_VECTORIZE, false>(grid_size, fraction_valid);
-    TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_VECTORIZE, BLOCK_STORE_VECTORIZE>(grid_size, fraction_valid);
 }
 
 
@@ -440,7 +431,8 @@ void TestStrategy(
     Int2Type<true>  is_warp_multiple)
 {
     TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, Int2Type<false>());
-    TestSlicedStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(grid_size, fraction_valid);
+    TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED, BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED>(grid_size, fraction_valid);
 }
 
 
@@ -524,7 +516,7 @@ int main(int argc, char** argv)
     TestThreads<TestFoo>(2, 0.8);
     TestThreads<TestBar>(2, 0.8);
 
-    #endif
+#endif
 
     return 0;
 }
