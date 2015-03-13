@@ -78,7 +78,7 @@ struct WarpScanShfl
             IS_INTEGER = (Traits<S>::CATEGORY == UNSIGNED_INTEGER) || (Traits<S>::CATEGORY == SIGNED_INTEGER),
 
             ///Whether the data type is a small (32b or less) integer for which we can use a single SFHL instruction per exchange
-            IS_SMALL_INTEGER = IS_INTEGER && (sizeof(S) <= sizeof(unsigned int))
+            IS_SMALL_UNSIGNED = (Traits<S>::CATEGORY == UNSIGNED_INTEGER) && (sizeof(S) <= sizeof(unsigned int))
         };
     };
 
@@ -249,8 +249,8 @@ struct WarpScanShfl
     {
         ItemOffsetPair<Value, OffsetT> output;
 
-        output.value = InclusiveScanStep(input.value, cub::Sum(), first_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_INTEGER>());
-        output.offset = InclusiveScanStep(input.offset, cub::Sum(), first_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_INTEGER>());
+        output.value = InclusiveScanStep(input.value, cub::Sum(), first_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_UNSIGNED>());
+        output.offset = InclusiveScanStep(input.offset, cub::Sum(), first_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_UNSIGNED>());
 
         if (input.offset > 0)
             output.value = input.value;
@@ -286,7 +286,7 @@ struct WarpScanShfl
         ScanOp          scan_op,            ///< [in] Binary scan operator
         int             first_lane,         ///< [in] Index of first lane in segment
         int             offset,             ///< [in] Up-offset to pull from
-        Int2Type<true>  is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+        Int2Type<true>  is_small_unsigned)  ///< [in] Marker type indicating whether T is a small integer
     {
         unsigned int temp = reinterpret_cast<unsigned int &>(input);
 
@@ -303,7 +303,7 @@ struct WarpScanShfl
         ScanOp          scan_op,            ///< [in] Binary scan operator
         int             first_lane,         ///< [in] Index of first lane in segment
         int             offset,             ///< [in] Up-offset to pull from
-        Int2Type<false> is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+        Int2Type<false> is_small_unsigned)  ///< [in] Marker type indicating whether T is a small integer
     {
         return InclusiveScanStep(input, scan_op, first_lane, offset);
     }
@@ -388,7 +388,7 @@ struct WarpScanShfl
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
-            output = InclusiveScanStep(output, scan_op, SHFL_C, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_INTEGER>());
+            output = InclusiveScanStep(output, scan_op, SHFL_C, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
     }
 

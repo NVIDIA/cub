@@ -76,11 +76,8 @@ struct WarpReduceShfl
     struct IsInteger
     {
         enum {
-            /// Whether the data type is a primitive integer
-            IS_INTEGER = (Traits<S>::CATEGORY == UNSIGNED_INTEGER) || (Traits<S>::CATEGORY == SIGNED_INTEGER),
-
             ///Whether the data type is a small (32b or less) integer for which we can use a single SFHL instruction per exchange
-            IS_SMALL_INTEGER = IS_INTEGER && (sizeof(S) <= sizeof(unsigned int))
+            IS_SMALL_UNSIGNED = (Traits<S>::CATEGORY == UNSIGNED_INTEGER) && (sizeof(S) <= sizeof(unsigned int))
         };
     };
 
@@ -271,8 +268,8 @@ struct WarpReduceShfl
     {
         ItemOffsetPair<ValueT, OffsetT> output;
 
-        output.value = ReduceStep(input.value, cub::Sum(), last_lane, offset, Int2Type<IsInteger<ValueT>::IS_SMALL_INTEGER>());
-        output.offset = ReduceStep(input.offset, cub::Sum(), last_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_INTEGER>());
+        output.value = ReduceStep(input.value, cub::Sum(), last_lane, offset, Int2Type<IsInteger<ValueT>::IS_SMALL_UNSIGNED>());
+        output.offset = ReduceStep(input.offset, cub::Sum(), last_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_UNSIGNED>());
 
         if (input.offset > 0)
             output.value = input.value;
@@ -301,30 +298,29 @@ struct WarpReduceShfl
     }
 
 
-    /// Reduction step (specialized for small integers size 32b or less)
+    /// Reduction step (specialized for small unsigned integers size 32b or less)
     template <typename _T, typename ReductionOp>
     __device__ __forceinline__ _T ReduceStep(
         _T              input,              ///< [in] Calling thread's input item.
         ReductionOp     reduction_op,       ///< [in] Binary reduction operator
         int             last_lane,          ///< [in] Index of last lane in segment
         int             offset,             ///< [in] Up-offset to pull from
-        Int2Type<true>  is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+        Int2Type<true>  is_small_unsigned)  ///< [in] Marker type indicating whether T is a small unsigned integer
     {
+        // Recast as uint32 to take advantage of any specializations
         unsigned int temp = reinterpret_cast<unsigned int &>(input);
-
         temp = ReduceStep(temp, reduction_op, last_lane, offset);
-
         return reinterpret_cast<_T&>(temp);
     }
 
-    /// Reduction step (specialized for types other than small integers size 32b or less)
+    /// Reduction step (specialized for types other than small unsigned integers size 32b or less)
     template <typename _T, typename ReductionOp>
     __device__ __forceinline__ _T ReduceStep(
         _T              input,              ///< [in] Calling thread's input item.
         ReductionOp     reduction_op,       ///< [in] Binary reduction operator
         int             last_lane,          ///< [in] Index of last lane in segment
         int             offset,             ///< [in] Up-offset to pull from
-        Int2Type<false> is_small_integer)   ///< [in] Marker type indicating whether T is a small integer
+        Int2Type<false> is_small_unsigned)  ///< [in] Marker type indicating whether T is a small unsigned integer
     {
         return ReduceStep(input, reduction_op, last_lane, offset);
     }
@@ -367,7 +363,7 @@ struct WarpReduceShfl
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
-            output = ReduceStep(output, reduction_op, last_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_INTEGER>());
+            output = ReduceStep(output, reduction_op, last_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
 
         return output;
@@ -405,7 +401,7 @@ struct WarpReduceShfl
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
-            output = ReduceStep(output, reduction_op, last_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_INTEGER>());
+            output = ReduceStep(output, reduction_op, last_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
 
         return output;
