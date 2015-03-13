@@ -480,10 +480,11 @@ void Test(
     int                 num_items)
 {
     // Allocate device output arrays and number of segments
-    T       *d_unique_out       = NULL;
-    LengthT  *d_offsets_out      = NULL;
-    OffsetT *d_lengths_out      = NULL;
-    int     *d_num_runs         = NULL;
+    T*          d_unique_out       = NULL;
+    LengthT*    d_offsets_out      = NULL;
+    OffsetT*    d_lengths_out      = NULL;
+    int*        d_num_runs         = NULL;
+
     if (RLE_METHOD == RLE)
         CubDebugExit(g_allocator.DeviceAllocate((void**)&d_unique_out, sizeof(T) * num_items));
     if (RLE_METHOD == NON_TRIVIAL)
@@ -492,13 +493,13 @@ void Test(
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_runs, sizeof(int)));
 
     // Allocate CDP device arrays
-    size_t          *d_temp_storage_bytes = NULL;
-    cudaError_t     *d_cdp_error = NULL;
+    size_t*          d_temp_storage_bytes = NULL;
+    cudaError_t*     d_cdp_error = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes,  sizeof(size_t) * 1));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cdp_error,           sizeof(cudaError_t) * 1));
 
     // Allocate temporary storage
-    void            *d_temp_storage = NULL;
+    void*           d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
     CubDebugExit(Dispatch(Int2Type<RLE_METHOD>(), Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
@@ -815,7 +816,7 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
-    args.GetCmdLineArgument("max_segment", max_segment);
+    args.GetCmdLineArgument("maxseg", max_segment);
     args.GetCmdLineArgument("entropy", entropy_reduction);
 
     // Print usage
@@ -825,7 +826,7 @@ int main(int argc, char** argv)
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--max_segment=<max segment length>]"
+            "[--maxseg=<max segment length>]"
             "[--entropy=<segment length bit entropy reduction rounds>]"
             "[--repeat=<repetitions of entire test suite>]"
             "[--v] "

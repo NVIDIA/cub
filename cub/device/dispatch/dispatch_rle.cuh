@@ -63,33 +63,32 @@ namespace cub {
  * Otherwise performs discontinuity selection (keep unique)
  */
 template <
-    typename            AgentRlePolicy,        ///< Parameterized AgentRlePolicy tuning policy type
+    typename            AgentRlePolicyT,        ///< Parameterized AgentRlePolicyT tuning policy type
     typename            InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
     typename            OffsetsOutputIteratorT,     ///< Random-access output iterator type for writing run-offset values \iterator
     typename            LengthsOutputIteratorT,     ///< Random-access output iterator type for writing run-length values \iterator
     typename            NumRunsOutputIteratorT,     ///< Output iterator type for recording the number of runs encountered \iterator
-    typename            ScanTileState,              ///< Tile status interface type
-    typename            EqualityOp,                 ///< T equality operator type
+    typename            ScanTileStateT,              ///< Tile status interface type
+    typename            EqualityOpT,                 ///< T equality operator type
     typename            OffsetT>                    ///< Signed integer type for global offsets
-__launch_bounds__ (int(AgentRlePolicy::BLOCK_THREADS))
+__launch_bounds__ (int(AgentRlePolicyT::BLOCK_THREADS))
 __global__ void DeviceRleSweepKernel(
     InputIteratorT              d_in,               ///< [in] Pointer to input sequence of data items
     OffsetsOutputIteratorT      d_offsets_out,      ///< [out] Pointer to output sequence of run-offsets
     LengthsOutputIteratorT      d_lengths_out,      ///< [out] Pointer to output sequence of run-lengths
     NumRunsOutputIteratorT      d_num_runs_out,     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
-    ScanTileState               tile_status,        ///< [in] Tile status interface
-    EqualityOp                  equality_op,        ///< [in] Equality operator for input items
+    ScanTileStateT              tile_status,        ///< [in] Tile status interface
+    EqualityOpT                 equality_op,        ///< [in] Equality operator for input items
     OffsetT                     num_items,          ///< [in] Total number of input items (i.e., length of \p d_in)
-    int                         num_tiles,          ///< [in] Total number of tiles for the entire problem
-    GridQueue<int>              queue)              ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
+    int                         num_tiles)          ///< [in] Total number of tiles for the entire problem
 {
     // Thread block type for selecting data from input tiles
     typedef AgentRle<
-        AgentRlePolicy,
+        AgentRlePolicyT,
         InputIteratorT,
         OffsetsOutputIteratorT,
         LengthsOutputIteratorT,
-        EqualityOp,
+        EqualityOpT,
         OffsetT> AgentRleT;
 
     // Shared memory for AgentRle
@@ -98,7 +97,6 @@ __global__ void DeviceRleSweepKernel(
     // Process tiles
     AgentRleT(temp_storage, d_in, d_offsets_out, d_lengths_out, equality_op, num_items).ConsumeRange(
         num_tiles,
-        queue,
         tile_status,
         d_num_runs_out);
 }
@@ -118,7 +116,7 @@ template <
     typename            OffsetsOutputIteratorT,     ///< Random-access output iterator type for writing run-offset values \iterator
     typename            LengthsOutputIteratorT,     ///< Random-access output iterator type for writing run-length values \iterator
     typename            NumRunsOutputIteratorT,     ///< Output iterator type for recording the number of runs encountered \iterator
-    typename            EqualityOp,                 ///< T equality operator type
+    typename            EqualityOpT,                ///< T equality operator type
     typename            OffsetT>                    ///< Signed integer type for global offsets
 struct DeviceRleDispatch
 {
@@ -138,7 +136,7 @@ struct DeviceRleDispatch
     };
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<LengthT, OffsetT> ScanTileState;
+    typedef ReduceByKeyScanTileState<LengthT, OffsetT> ScanTileStateT;
 
 
     /******************************************************************************
@@ -272,7 +270,7 @@ struct DeviceRleDispatch
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &device_rle_config)
+        KernelConfig&   device_rle_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
@@ -308,7 +306,7 @@ struct DeviceRleDispatch
 
 
     /**
-     * Kernel kernel dispatch configuration.  Mirrors the constants within AgentRlePolicy.
+     * Kernel kernel dispatch configuration.  Mirrors the constants within AgentRlePolicyT.
      */
     struct KernelConfig
     {
@@ -318,15 +316,15 @@ struct DeviceRleDispatch
         bool                    store_warp_time_slicing;
         BlockScanAlgorithm      scan_algorithm;
 
-        template <typename AgentRlePolicy>
+        template <typename AgentRlePolicyT>
         CUB_RUNTIME_FUNCTION __forceinline__
         void Init()
         {
-            block_threads               = AgentRlePolicy::BLOCK_THREADS;
-            items_per_thread            = AgentRlePolicy::ITEMS_PER_THREAD;
-            load_policy                 = AgentRlePolicy::LOAD_ALGORITHM;
-            store_warp_time_slicing     = AgentRlePolicy::STORE_WARP_TIME_SLICING;
-            scan_algorithm              = AgentRlePolicy::SCAN_ALGORITHM;
+            block_threads               = AgentRlePolicyT::BLOCK_THREADS;
+            items_per_thread            = AgentRlePolicyT::ITEMS_PER_THREAD;
+            load_policy                 = AgentRlePolicyT::LOAD_ALGORITHM;
+            store_warp_time_slicing     = AgentRlePolicyT::STORE_WARP_TIME_SLICING;
+            scan_algorithm              = AgentRlePolicyT::SCAN_ALGORITHM;
         }
 
         CUB_RUNTIME_FUNCTION __forceinline__
@@ -355,13 +353,13 @@ struct DeviceRleDispatch
         typename                    DeviceRleSweepKernelPtr>        ///< Function type of cub::DeviceRleSweepKernelPtr
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*               d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        void*                       d_temp_storage,                 ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
         OffsetsOutputIteratorT      d_offsets_out,                  ///< [out] Pointer to the output sequence of run-offsets
         LengthsOutputIteratorT      d_lengths_out,                  ///< [out] Pointer to the output sequence of run-lengths
         NumRunsOutputIteratorT      d_num_runs_out,                 ///< [out] Pointer to the total number of runs encountered (i.e., length of \p d_offsets_out)
-        EqualityOp                  equality_op,                    ///< [in] Equality operator for input items
+        EqualityOpT                 equality_op,                    ///< [in] Equality operator for input items
         OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
@@ -398,12 +396,11 @@ struct DeviceRleDispatch
             int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
-            size_t  allocation_sizes[2];
-            if (CubDebug(error = ScanTileState::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
-            allocation_sizes[1] = GridQueue<int>::AllocationSize();                                             // bytes needed for grid queue descriptor
+            size_t  allocation_sizes[1];
+            if (CubDebug(error = ScanTileStateT::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
 
             // Compute allocation pointers into the single storage blob (or compute the necessary size of the blob)
-            void* allocations[2];
+            void* allocations[1];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
@@ -412,11 +409,8 @@ struct DeviceRleDispatch
             }
 
             // Construct the tile status interface
-            ScanTileState tile_status;
+            ScanTileStateT tile_status;
             if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
-
-            // Construct the grid queue descriptor
-            GridQueue<int> queue(allocations[1]);
 
             // Log device_scan_init_kernel configuration
             int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
@@ -424,7 +418,6 @@ struct DeviceRleDispatch
 
             // Invoke device_scan_init_kernel to initialize tile descriptors and queue descriptors
             device_scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
-                queue,
                 tile_status,
                 num_tiles);
 
@@ -442,19 +435,22 @@ struct DeviceRleDispatch
                 device_rle_sweep_kernel,
                 device_rle_config.block_threads))) break;
 
+            // Get max x-dimension of grid
+            int max_dim_x;
+            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
+
             // Get grid size for scanning tiles
-            dim3 rle_grid_size;
-            int max_dim_x = 32 * 1024;
-            rle_grid_size.z = 1;
-            rle_grid_size.y = (num_tiles + max_dim_x - 1) / max_dim_x;
-            rle_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
+            dim3 scan_grid_size;
+            scan_grid_size.z = 1;
+            scan_grid_size.y = ((unsigned int) num_tiles + max_dim_x - 1) / max_dim_x;
+            scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
             // Log device_rle_sweep_kernel configuration
             if (debug_synchronous) CubLog("Invoking device_rle_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                rle_grid_size.x, rle_grid_size.y, rle_grid_size.z, device_rle_config.block_threads, (long long) stream, device_rle_config.items_per_thread, device_rle_kernel_sm_occupancy);
+                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, device_rle_config.block_threads, (long long) stream, device_rle_config.items_per_thread, device_rle_kernel_sm_occupancy);
 
             // Invoke device_rle_sweep_kernel
-            device_rle_sweep_kernel<<<rle_grid_size, device_rle_config.block_threads, 0, stream>>>(
+            device_rle_sweep_kernel<<<scan_grid_size, device_rle_config.block_threads, 0, stream>>>(
                 d_in,
                 d_offsets_out,
                 d_lengths_out,
@@ -462,8 +458,7 @@ struct DeviceRleDispatch
                 tile_status,
                 equality_op,
                 num_items,
-                num_tiles,
-                queue);
+                num_tiles);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -485,13 +480,13 @@ struct DeviceRleDispatch
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*               d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        void*                       d_temp_storage,                 ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to input sequence of data items
         OffsetsOutputIteratorT      d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets
         LengthsOutputIteratorT      d_lengths_out,                  ///< [out] Pointer to output sequence of run-lengths
-        NumRunsOutputIteratorT      d_num_runs_out,                     ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
-        EqualityOp                  equality_op,                    ///< [in] Equality operator for input items
+        NumRunsOutputIteratorT      d_num_runs_out,                 ///< [out] Pointer to total number of runs (i.e., length of \p d_offsets_out)
+        EqualityOpT                 equality_op,                    ///< [in] Equality operator for input items
         OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
@@ -524,8 +519,8 @@ struct DeviceRleDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<OffsetT, ScanTileState>,
-                DeviceRleSweepKernel<PtxRleSweepPolicy, InputIteratorT, OffsetsOutputIteratorT, LengthsOutputIteratorT, NumRunsOutputIteratorT, ScanTileState, EqualityOp, OffsetT>,
+                DeviceScanInitKernel<OffsetT, ScanTileStateT>,
+                DeviceRleSweepKernel<PtxRleSweepPolicy, InputIteratorT, OffsetsOutputIteratorT, LengthsOutputIteratorT, NumRunsOutputIteratorT, ScanTileStateT, EqualityOpT, OffsetT>,
                 device_rle_config))) break;
         }
         while (0);
