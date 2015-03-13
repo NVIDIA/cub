@@ -602,10 +602,12 @@ struct AgentHistogram
                 // Consume a partially-full tile at the end of the row
                 OffsetT num_remaining = (num_row_pixels * NUM_CHANNELS) - col_offset;
                 ConsumeTile<IS_ALIGNED, false>(tile_offset, num_remaining);
-                break;
+            } 
+            else
+            {
+                // Consume full tile
+                ConsumeTile<IS_ALIGNED, true>(tile_offset, TILE_SAMPLES);
             }
-            // Consume full tile
-            ConsumeTile<IS_ALIGNED, true>(tile_offset, TILE_SAMPLES);
 
             __syncthreads();
 
