@@ -301,7 +301,7 @@ struct AgentHistogram
                     privatized_bin < channel_bins;  
                     privatized_bin += BLOCK_THREADS)
             {
-                int         output_bin;
+                int         output_bin  = -1;
                 CounterT    count       = privatized_histograms[CHANNEL][privatized_bin];
                 bool        is_valid    = count > 0;
 
@@ -350,34 +350,21 @@ struct AgentHistogram
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
-
             // Bin pixels
             int bins[PIXELS_PER_THREAD];
 
             #pragma unroll
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
+            {
+                bins[PIXEL] = -1;
                 privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bins[PIXEL], is_valid[PIXEL]);
+            }
 
             CounterT accumulator = 1;
 
             #pragma unroll
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD - 1; ++PIXEL)
             {
-
-                if (bins[PIXEL] < 0)
-                {
-                     accumulator = 1;
-                }
-                else if (bins[PIXEL] == bins[PIXEL + 1])
-                {
-                     accumulator++;
-                }
-                else
-                {
-                     atomicAdd(privatized_histograms[CHANNEL] + bins[PIXEL], accumulator);
-                     accumulator = 1;
-                }
-/*
                 if (bins[PIXEL] == bins[PIXEL + 1])
                 {
                      accumulator++;
@@ -389,21 +376,10 @@ struct AgentHistogram
 
                      accumulator = 1;
                 }
-*/
-/*
-                if ((bins[PIXEL] >= 0) && (bins[PIXEL] != bins[PIXEL + 1]))
-                {
-                    atomicAdd(privatized_histograms[CHANNEL] + bins[PIXEL], accumulator);
-                    accumulator = 0;
-                }
-                accumulator++;
-*/
-
             }
             // Last pixel
             if (bins[PIXELS_PER_THREAD - 1] >= 0)
                 atomicAdd(privatized_histograms[CHANNEL] + bins[PIXELS_PER_THREAD - 1], accumulator);
-
         }
     }
 
@@ -421,7 +397,7 @@ struct AgentHistogram
             #pragma unroll
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
             {
-                int bin;
+                int bin = -1;
                 privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
                 if (bin >= 0)
                     atomicAdd(privatized_histograms[CHANNEL] + bin, 1);
@@ -752,7 +728,6 @@ struct AgentHistogram
         int                 tiles_per_row,              ///< Number of image tiles per row
         GridQueue<int>      tile_queue)                 ///< Queue descriptor for assigning tiles of work to thread blocks
     {
-/*
         // Check whether all row starting offsets are quad-aligned (in single-channel) or pixel-aligned (in multi-channel)
         size_t  row_bytes           = sizeof(SampleT) * row_stride_samples;
         size_t  offset_mask         = size_t(d_native_samples) | row_bytes;
@@ -766,10 +741,6 @@ struct AgentHistogram
             ConsumeTiles<true>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<IS_WORK_STEALING>());
         else
             ConsumeTiles<false>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<IS_WORK_STEALING>());
-*/
-
-        ConsumeTiles<true>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<IS_WORK_STEALING>());
-
     }
 
 

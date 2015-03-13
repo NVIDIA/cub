@@ -150,6 +150,7 @@ __global__ void DeviceHistogramSweepKernel(
 
     // Store output to global (if necessary)
     agent.StoreOutput();
+
 }
 
 
@@ -284,10 +285,8 @@ struct DipatchHistogram
         {
             LevelT level_sample = (LevelT) sample;
 
-            bin = (int) ((level_sample - min) / scale);
-
-            if ((!valid) || (level_sample < min) || (level_sample >= max))
-                bin = -1;
+            if (valid && (level_sample >= min) && (level_sample < max))
+                bin = (int) ((level_sample - min) / scale);
         }
 
         // Method for converting samples to bin-ids (float specialization)
@@ -296,10 +295,8 @@ struct DipatchHistogram
         {
             LevelT level_sample = (LevelT) sample;
 
-            bin = (int) ((level_sample - min) * scale);
-
-            if ((!valid) || (level_sample < min) || (level_sample >= max))
-                bin = -1;
+            if (valid && (level_sample >= min) && (level_sample < max))
+                bin = (int) ((level_sample - min) * scale);
         }
 
         // Method for converting samples to bin-ids (double specialization)
@@ -308,10 +305,8 @@ struct DipatchHistogram
         {
             LevelT level_sample = (LevelT) sample;
 
-            bin = (int) ((level_sample - min) * scale);
-
-            if ((!valid) || (level_sample < min) || (level_sample >= max))
-                bin = -1;
+            if (valid && (level_sample >= min) && (level_sample < max))
+                bin = (int) ((level_sample - min) * scale);
         }
     };
 
@@ -323,9 +318,8 @@ struct DipatchHistogram
         template <CacheLoadModifier LOAD_MODIFIER, typename _SampleT>
         __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, int &bin, bool valid)
         {
-            bin = (int) sample;
-            if (!valid)
-                bin = -1;
+            if (valid)
+                bin = (int) sample;
         }
     };
 
@@ -341,8 +335,8 @@ struct DipatchHistogram
         // HistogramSweepPolicy
         typedef AgentHistogramPolicy<
                 512,
-                2,
-                (NUM_CHANNELS == 1) ? BLOCK_LOAD_VECTORIZE : BLOCK_LOAD_DIRECT,
+                (NUM_CHANNELS == 1) ? 8 : 2,
+                BLOCK_LOAD_DIRECT,
                 LOAD_DEFAULT,
                 true,
                 GMEM,
@@ -356,8 +350,8 @@ struct DipatchHistogram
         // HistogramSweepPolicy
         typedef AgentHistogramPolicy<
                 (NUM_CHANNELS == 1) ? 256 : 128,
-                (NUM_CHANNELS == 1) ? 12 : 3,
-                BLOCK_LOAD_WARP_TRANSPOSE,
+                (NUM_CHANNELS == 1) ? 8 : 3,
+                (NUM_CHANNELS == 1) ? BLOCK_LOAD_DIRECT : BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 true,
                 SMEM,
@@ -370,12 +364,12 @@ struct DipatchHistogram
     {
         // HistogramSweepPolicy
         typedef AgentHistogramPolicy<
-                (NUM_CHANNELS == 1) ? 256 : 128,
-                (NUM_CHANNELS == 1) ? 12 : 3,
-                BLOCK_LOAD_WARP_TRANSPOSE,
+                512,
+                (NUM_CHANNELS == 1) ? 8 : 2,
+                BLOCK_LOAD_DIRECT,
                 LOAD_DEFAULT,
                 true,
-                SMEM,
+                GMEM,
                 false>
             HistogramSweepPolicy;
     };
@@ -390,7 +384,7 @@ struct DipatchHistogram
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 true,
-                GMEM,
+                BLEND,
                 true>
             HistogramSweepPolicy;
     };
@@ -582,11 +576,11 @@ struct DipatchHistogram
             }
 
             // Get grid dimensions, trying to keep total blocks ~histogram_sweep_occupancy
-            int pixels_per_tile                 = histogram_sweep_config.block_threads * histogram_sweep_config.pixels_per_thread;
-            int tiles_per_row                   = (num_row_pixels + pixels_per_tile - 1) / pixels_per_tile;
-            int blocks_per_row                  = CUB_MIN(histogram_sweep_occupancy, tiles_per_row);
-            int blocks_per_col                  = CUB_MIN(histogram_sweep_occupancy / blocks_per_row, num_rows);
-            int num_sweep_grid_blocks           = blocks_per_row * blocks_per_col;
+            int pixels_per_tile     = histogram_sweep_config.block_threads * histogram_sweep_config.pixels_per_thread;
+            int tiles_per_row       = (num_row_pixels + pixels_per_tile - 1) / pixels_per_tile;
+            int blocks_per_row      = CUB_MIN(histogram_sweep_occupancy, tiles_per_row);
+            int blocks_per_col      = CUB_MIN(histogram_sweep_occupancy / blocks_per_row, num_rows);
+            int num_threadblocks    = blocks_per_row * blocks_per_col;
 
             dim3 sweep_grid_dims;
             sweep_grid_dims.x = (unsigned int) blocks_per_row;
@@ -599,7 +593,7 @@ struct DipatchHistogram
             size_t      allocation_sizes[NUM_ALLOCATIONS];
 
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-                allocation_sizes[CHANNEL] = num_sweep_grid_blocks * (num_privatized_levels[CHANNEL] - 1) * sizeof(CounterT);
+                allocation_sizes[CHANNEL] = num_threadblocks * (num_privatized_levels[CHANNEL] - 1) * sizeof(CounterT);
 
             allocation_sizes[NUM_ALLOCATIONS - 1] = GridQueue<int>::AllocationSize();
 
