@@ -71,6 +71,8 @@ INC += -I$(CUB_DIR) -I$(CUB_DIR)test
 # Suffix to append to each binary
 SUFFIX = $(BIN_SUFFIX)_$(TEST_SUFFIX)
 
+# Define test arch
+DEFINES += -DTEST_ARCH=$(TEST_ARCH)
 
 
 #-------------------------------------------------------------------------------
