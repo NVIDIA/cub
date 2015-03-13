@@ -176,7 +176,7 @@ __device__ __forceinline__ void InternalLoadDirectBlockedVectorized(
                 2 :
                 1,
 
-        VECTORS_PER_THREAD = ITEMS_PER_THREAD / VECTOR_SIZE,
+        VECTORS_PER_THREAD = TOTAL_WORDS / VECTOR_SIZE,
     };
 
     // Vector type
