@@ -204,6 +204,8 @@ struct AgentRle
     typedef WarpExchange<OffsetT, ITEMS_PER_THREAD>                 WarpExchangeOffsets;
     typedef WarpExchange<LengthT, ITEMS_PER_THREAD>                 WarpExchangeLengths;
 
+    typedef LengthOffsetPair WarpAggregates[WARPS];
+
     // Shared memory type for this threadblock
     struct _TempStorage
     {
@@ -213,7 +215,7 @@ struct AgentRle
             {
                 typename BlockDiscontinuityT::TempStorage       discontinuity;              // Smem needed for discontinuity detection
                 typename WarpScanPairs::TempStorage             warp_scan[WARPS];           // Smem needed for warp-synchronous scans
-                Uninitialized<LengthOffsetPair[WARPS]>          warp_aggregates[WARPS];     // Smem needed for sharing warp-wide aggregates
+                Uninitialized<LengthOffsetPair[WARPS]>          warp_aggregates;            // Smem needed for sharing warp-wide aggregates
                 typename TilePrefixCallbackOpT::TempStorage     prefix;                     // Smem needed for cooperative prefix callback
             };
 
