@@ -36,6 +36,7 @@
 #include <iterator>
 
 #include "../util_type.cuh"
+#include "single_pass_scan_operators.cuh"
 #include "../block/block_reduce.cuh"
 #include "../block/block_scan.cuh"
 #include "../thread/thread_search.cuh"
@@ -43,7 +44,6 @@
 #include "../grid/grid_queue.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
 #include "../iterator/counting_input_iterator.cuh"
-#include "../iterator/transform_input_iterator.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -112,6 +112,8 @@ struct AgentSpmv
         BLOCK_THREADS           = AgentSpmvPolicyT::BLOCK_THREADS,
         ITEMS_PER_THREAD        = AgentSpmvPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
+
+        WARP_THREADS            = CUB_WARP_THREADS(PTX_ARCH)
     };
 
     /// Input iterator wrapper types (for applying cache modifiers)
@@ -140,6 +142,25 @@ struct AgentSpmv
             OffsetT>
         VectorValueIteratorT;
 
+    // Tuple type for scanning (pairs accumulated segment-value with segment-index)
+    typedef ItemOffsetPair<ValueT, OffsetT> ItemOffsetPairT;
+
+    // Tile status descriptor interface type
+    typedef ReduceByKeyScanTileState<ValueT, OffsetT> ScanTileStateT;
+
+    // Reduce-value-by-segment scan operator
+    typedef ReduceBySegmentOp<
+            cub::Sum,
+            ItemOffsetPairT>
+        ReduceBySegmentOpT;
+
+    // Callback type for obtaining tile prefix during block scan
+    typedef TilePrefixCallbackOp<
+            ItemOffsetPairT,
+            ReduceBySegmentOpT,
+            ScanTileStateT>
+        TilePrefixCallbackOpT;
+
     // BlockReduce specialization
     typedef BlockReduce<
             ValueT,
@@ -149,7 +170,7 @@ struct AgentSpmv
 
     // BlockScan specialization
     typedef BlockScan<
-            ItemOffsetPair<ValueT, OffsetT>,
+            ItemOffsetPairT,
             BLOCK_THREADS,
             AgentSpmvPolicyT::SCAN_ALGORITHM>
         BlockScanT;
@@ -165,18 +186,19 @@ struct AgentSpmv
     };
 
     /// Shared memory type required by this thread block
-    struct _TempStorage
+    union _TempStorage
     {
         // Starting and ending global merge path coordinates for the tile
         CoordinateT tile_coordinates[2];
 
-        union
-        {        
-            // Tile of merge items
-            MergeItem merge_items[ITEMS_PER_THREAD + TILE_ITEMS + 1];
+        MergeItem merge_items[ITEMS_PER_THREAD + TILE_ITEMS + 1];           // Smem needed for tile of merge items
 
-            typename BlockReduceT::TempStorage reduce;
-            typename BlockScanT::TempStorage scan;
+        typename BlockReduceT::TempStorage reduce;                          // Smem needed for block-wide reduction
+
+        struct
+        {
+            typename BlockScanT::TempStorage                scan;           // Smem needed for tile scanning
+            typename TilePrefixCallbackOpT::TempStorage     prefix;         // Smem needed for cooperative prefix callback
         };
     };
 
@@ -245,13 +267,14 @@ struct AgentSpmv
     /**
      * Consume a merge tile (when comprised entirely of non-zeros)
      */
-    __device__ __forceinline__ ItemOffsetPair<ValueT, OffsetT> ConsumeTileNonZeros(
+    __device__ __forceinline__ ItemOffsetPairT ConsumeTileNonZeros(
         int tile_idx,
         CoordinateT tile_start_coord,
-        CoordinateT tile_end_coord)
+        CoordinateT tile_end_coord,
+        ScanTileStateT& tile_state)         ///< Global tile state descriptor
     {
-        ItemOffsetPair<ValueT, OffsetT>     tile_carry;
-        ValueT                              non_zeros[ITEMS_PER_THREAD];
+        ItemOffsetPairT tile_aggregate;
+        ValueT          non_zeros[ITEMS_PER_THREAD];
 
         // Gather the nonzeros for the merge tile
         #pragma unroll
@@ -269,33 +292,55 @@ struct AgentSpmv
 
         ValueT tile_sum = BlockReduceT(temp_storage.reduce).Sum(non_zeros);
 
-        tile_carry.offset = 0;
-        tile_carry.value = tile_sum;
+        tile_aggregate.offset = 0;
+        tile_aggregate.value = tile_sum;
+
+        // Update tile status
+        if (tile_idx == 0)
+        {
+            // First tile
+            if (threadIdx.x == 0)
+                tile_state.SetInclusive(0, tile_aggregate);
+        }
+        else if (threadIdx.x < WARP_THREADS)
+        {
+            // Subsequent tile
+            ReduceBySegmentOpT scan_op;
+            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
+            prefix_op(tile_aggregate);
+        }
 
         // Return the tile's running carry-out
-        return tile_carry;
+        return tile_aggregate;
     }
 
 
     /**
      * Consume a merge tile, specialized for direct-load of nonzeros
      */
-    __device__ __forceinline__ ItemOffsetPair<ValueT, OffsetT> ConsumeTile(
+    __device__ __forceinline__ ItemOffsetPairT ConsumeTile(
         int             tile_idx,
         CoordinateT     tile_start_coord,
         CoordinateT     tile_end_coord,
-        Int2Type<true>  is_direct_load)
+        ScanTileStateT& tile_state,         ///< Global tile state descriptor
+        Int2Type<true>  is_direct_load)     ///< Marker type indicating whether to load nonzeros directly during path-discovery or beforehand in batch
     {
-        ItemOffsetPair<ValueT, OffsetT> tile_carry;
+        ItemOffsetPairT tile_aggregate;
 
-        int                             tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
-        int                             tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
-        OffsetT*                        tile_row_end_offsets    = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
+        int             tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
+        int             tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
+        OffsetT*        tile_row_end_offsets    = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
 
         // Gather the row end-offsets for the merge tile into shared memory
         for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
         {
             tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start_coord.x + item];
+        }
+
+        // Pad the end of the merge tile's axis of row-end offsets
+        if (threadIdx.x < ITEMS_PER_THREAD)
+        {
+            tile_row_end_offsets[tile_num_rows + threadIdx.x] = num_nonzeros;
         }
 
         __syncthreads();
@@ -314,11 +359,10 @@ struct AgentSpmv
 
         __syncthreads();    // Perf-sync
 
-
         // Compute the thread's merge path segment
-        CoordinateT                         thread_current_coord = thread_start_coord;
-        ItemOffsetPair<ValueT, OffsetT>     thread_segment[ITEMS_PER_THREAD];
-        OffsetT                             flags[ITEMS_PER_THREAD];
+        CoordinateT         thread_current_coord = thread_start_coord;
+        ItemOffsetPairT     thread_segment[ITEMS_PER_THREAD];
+        OffsetT             flags[ITEMS_PER_THREAD];
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -350,23 +394,38 @@ struct AgentSpmv
 
         __syncthreads();    // Perf-sync
 
-        // Compute the inter-thread fix-up from thread-carries (for when a row spans more than one thread-segment)
-        ItemOffsetPair<ValueT, OffsetT>                                 scan_identity(0.0, 0);
-        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<ValueT, OffsetT> >   scan_op;
-
         // Block-wide reduce-value-by-key
-        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_carry);
+        ItemOffsetPairT     scan_identity(0.0, 0);
+        ReduceBySegmentOpT  scan_op;
+        if (tile_idx == 0)
+        {
+            // First tile
+            BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
+
+            // Update tile status
+            if (threadIdx.x == 0)
+                tile_state.SetInclusive(0, tile_aggregate);
+        }
+        else
+        {
+            // Subsequent tile
+            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
+            BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate, prefix_op);
+        }
 
         // Scatter
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (flags[ITEM])
-                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+            {
+                d_vector_y[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+//                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+            }
         }
 
         // Return the tile's running carry-out
-        return tile_carry;
+        return tile_aggregate;
     }
 
 
@@ -374,16 +433,17 @@ struct AgentSpmv
     /**
      * Consume a merge tile, specialized for indirect load of nonzeros
      */
-    __device__ __forceinline__ ItemOffsetPair<ValueT, OffsetT> ConsumeTile(
+    __device__ __forceinline__ ItemOffsetPairT ConsumeTile(
         int             tile_idx,
         CoordinateT     tile_start_coord,
         CoordinateT     tile_end_coord,
-        Int2Type<false> is_direct_load)
+        ScanTileStateT& tile_state,         ///< Global tile state descriptor
+        Int2Type<false> is_direct_load)     ///< Marker type indicating whether to load nonzeros directly during path-discovery or beforehand in batch
     {
-        int                             tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
-        int                             tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
-        OffsetT*                        tile_row_end_offsets    = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
-        ValueT*                         tile_nonzeros           = reinterpret_cast<ValueT*>(temp_storage.merge_items + 1 + tile_num_rows);
+        int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
+        int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
+        OffsetT*    tile_row_end_offsets    = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
+        ValueT*     tile_nonzeros           = reinterpret_cast<ValueT*>(temp_storage.merge_items + 1 + tile_num_rows);
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -405,6 +465,12 @@ struct AgentSpmv
             tile_row_end_offsets[item] = d_matrix_row_end_offsets[tile_start_coord.x + item];
         }
 
+        // Pad the end of the merge tile's axis of row-end offsets
+        if (threadIdx.x < ITEMS_PER_THREAD)
+        {
+            tile_row_end_offsets[tile_num_rows + threadIdx.x] = num_nonzeros;
+        }
+
         __syncthreads();  
 
         // Search for the thread's starting coordinate within the merge tile
@@ -422,9 +488,9 @@ struct AgentSpmv
         __syncthreads();    // Perf-sync
 
         // Compute the thread's merge path segment
-        ItemOffsetPair<ValueT, OffsetT> thread_segment[ITEMS_PER_THREAD];
-        CoordinateT                     thread_current_coord = thread_start_coord;
-        OffsetT                         flags[ITEMS_PER_THREAD];
+        ItemOffsetPairT thread_segment[ITEMS_PER_THREAD];
+        CoordinateT     thread_current_coord = thread_start_coord;
+        OffsetT         flags[ITEMS_PER_THREAD];
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -451,23 +517,38 @@ struct AgentSpmv
         __syncthreads();
 
         // Compute the inter-thread fix-up from thread-carries (for when a row spans more than one thread-segment)
-        ItemOffsetPair<ValueT, OffsetT>                                 tile_carry;
-        ItemOffsetPair<ValueT, OffsetT>                                 scan_identity(0.0, 0);
-        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<ValueT, OffsetT> >   scan_op;
+        ItemOffsetPairT     tile_aggregate;
+        ItemOffsetPairT     scan_identity(0.0, 0);
+        ReduceBySegmentOpT  scan_op;
 
         // Block-wide reduce-value-by-key
-        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_carry);
+        if (tile_idx == 0)
+        {
+            // First tile
+            BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
+
+            // Update tile status
+            if (threadIdx.x == 0)
+                tile_state.SetInclusive(0, tile_aggregate);
+        }
+        else
+        {
+            // Subsequent tile
+            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
+            BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate, prefix_op);
+        }
 
         // Scatter
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (flags[ITEM])
-                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+                d_vector_y[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+//                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
         }
 
         // Return the tile's running carry-out
-        return tile_carry;
+        return tile_aggregate;
     }
 
 
@@ -476,7 +557,8 @@ struct AgentSpmv
      * Consume input tile
      */
     __device__ __forceinline__ void ConsumeTile(
-        CoordinateT* d_tile_coordinates)
+        CoordinateT*        d_tile_coordinates,
+        ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
         int tile_idx = blockIdx.x;
 
@@ -492,28 +574,32 @@ struct AgentSpmv
         CoordinateT tile_end_coord       = temp_storage.tile_coordinates[1];
 
         // Consume a merge tile
-        ItemOffsetPair<ValueT, OffsetT> tile_carry;
+        ItemOffsetPairT tile_aggregate;
 
         if (tile_start_coord.x < tile_end_coord.x)
         {
-            tile_carry = ConsumeTile(
+            // Consume multi-segment tile
+            tile_aggregate = ConsumeTile(
                 tile_idx, 
                 tile_start_coord, 
-                tile_end_coord, 
+                tile_end_coord,
+                tile_state,
                 Int2Type<AgentSpmvPolicyT::DIRECT_LOAD_NONZEROS>());
         }
         else
         {
-            // Fast-path when the merge segment is comprised of all non-zeros
-            tile_carry = ConsumeTileNonZeros(tile_idx, tile_start_coord, tile_end_coord);
+            // Consume single-segment tile (the merge segment is comprised of all non-zeros)
+            tile_aggregate = ConsumeTileNonZeros(tile_idx, tile_start_coord, tile_end_coord, tile_state);
         }
 
+/*
         // Output the tile's merge-path carry
         if (threadIdx.x == 0)
         {
-            d_tile_carry_rows[tile_idx] = tile_carry.offset;
-            d_tile_carry_values[tile_idx] = tile_carry.value;
+            d_tile_carry_rows[tile_idx] = tile_aggregate.offset;
+            d_tile_carry_values[tile_idx] = tile_aggregate.value;
         }
+*/
     }
 
 
