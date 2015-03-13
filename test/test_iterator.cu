@@ -187,7 +187,7 @@ void Test(
  * Test constant iterator
  */
 template <typename T>
-void TestConstant(T base, char *type_string)
+void TestConstant(T base, const char *type_string)
 {
     printf("\nTesting constant iterator on type %s (base: %d)\n", type_string, int(base)); fflush(stdout);
 
@@ -232,7 +232,7 @@ void TestConstant(T base, char *type_string)
  * Test counting iterator
  */
 template <typename T>
-void TestCounting(T base, char *type_string)
+void TestCounting(T base, const char *type_string)
 {
     printf("\nTesting counting iterator on type %s (base: %d) \n", type_string, int(base)); fflush(stdout);
 
@@ -287,7 +287,7 @@ void TestCounting(T base, char *type_string)
  * Test modified iterator
  */
 template <typename T, typename CastT>
-void TestModified(char *type_string)
+void TestModified(const char *type_string)
 {
     printf("\nTesting cache-modified iterator on type %s\n", type_string); fflush(stdout);
 
@@ -359,7 +359,7 @@ void TestModified(char *type_string)
  * Test transform iterator
  */
 template <typename T, typename CastT>
-void TestTransform(char *type_string)
+void TestTransform(const char *type_string)
 {
     printf("\nTesting transform iterator on type %s\n", type_string); fflush(stdout);
 
@@ -431,7 +431,7 @@ void TestTransform(char *type_string)
  * Test tex-obj texture iterator
  */
 template <typename T, typename CastT>
-void TestTexObj(char *type_string)
+void TestTexObj(const char *type_string)
 {
     printf("\nTesting tex-obj iterator on type %s\n", type_string); fflush(stdout);
 
@@ -511,7 +511,7 @@ void TestTexObj(char *type_string)
  * Test tex-ref texture iterator
  */
 template <typename T, typename CastT>
-void TestTexRef(char *type_string)
+void TestTexRef(const char *type_string)
 {
     printf("\nTesting tex-ref iterator on type %s\n", type_string); fflush(stdout);
 
@@ -593,7 +593,7 @@ void TestTexRef(char *type_string)
  * Test texture transform iterator
  */
 template <typename T, typename CastT>
-void TestTexTransform(char *type_string)
+void TestTexTransform(const char *type_string)
 {
     printf("\nTesting tex-transform iterator on type %s\n", type_string); fflush(stdout);
 
@@ -678,7 +678,7 @@ void TestTexTransform(char *type_string)
  * Run non-integer tests
  */
 template <typename T, typename CastT>
-void Test(Int2Type<false> is_integer, char *type_string)
+void Test(Int2Type<false> is_integer, const char *type_string)
 {
     TestModified<T, CastT>(type_string);
     TestTransform<T, CastT>(type_string);
@@ -699,7 +699,7 @@ void Test(Int2Type<false> is_integer, char *type_string)
  * Run integer tests
  */
 template <typename T, typename CastT>
-void Test(Int2Type<true> is_integer, char *type_string)
+void Test(Int2Type<true> is_integer, const char *type_string)
 {
     TestConstant<T>(0, type_string);
     TestConstant<T>(99, type_string);
@@ -715,7 +715,7 @@ void Test(Int2Type<true> is_integer, char *type_string)
  * Run tests
  */
 template <typename T>
-void Test(char *type_string)
+void Test(const char *type_string)
 {
     enum {
         IS_INTEGER = (Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER)
