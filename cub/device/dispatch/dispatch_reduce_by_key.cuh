@@ -171,10 +171,8 @@ struct DispatchReduceByKey
     struct Policy300
     {
         enum {
-//            NOMINAL_4B_ITEMS_PER_THREAD = 6,
-//            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-            NOMINAL_4B_ITEMS_PER_THREAD = 8,
-            ITEMS_PER_THREAD            = (MAX_INPUT_BYTES <= 8) ? 8 : CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
+            NOMINAL_4B_ITEMS_PER_THREAD = 6,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
         };
 
         typedef AgentReduceByKeyPolicy<
@@ -329,9 +327,9 @@ struct DispatchReduceByKey
     };
 
 
-    /******************************************************************************
-     * Dispatch entrypoints
-     ******************************************************************************/
+    //---------------------------------------------------------------------
+    // Dispatch entrypoints
+    //---------------------------------------------------------------------
 
     /**
      * Internal dispatch routine for computing a device-wide reduce-by-key using the
