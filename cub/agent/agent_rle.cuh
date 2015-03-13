@@ -201,8 +201,8 @@ struct AgentRle
 
     typedef typename If<STORE_WARP_TIME_SLICING, typename WarpExchangePairs::TempStorage, NullType>::Type WarpExchangePairsStorage;
 
-    typedef WarpExchange<OffsetT, ITEMS_PER_THREAD>              WarpExchangeOffsets;
-    typedef WarpExchange<LengthT, ITEMS_PER_THREAD>              WarpExchangeLengths;
+    typedef WarpExchange<OffsetT, ITEMS_PER_THREAD>                 WarpExchangeOffsets;
+    typedef WarpExchange<LengthT, ITEMS_PER_THREAD>                 WarpExchangeLengths;
 
     // Shared memory type for this threadblock
     struct _TempStorage
@@ -213,7 +213,7 @@ struct AgentRle
             {
                 typename BlockDiscontinuityT::TempStorage       discontinuity;              // Smem needed for discontinuity detection
                 typename WarpScanPairs::TempStorage             warp_scan[WARPS];           // Smem needed for warp-synchronous scans
-                LengthOffsetPair                                warp_aggregates[WARPS];     // Smem needed for sharing warp-wide aggregates
+                Uninitialized<LengthOffsetPair[WARPS]>          warp_aggregates[WARPS];     // Smem needed for sharing warp-wide aggregates
                 typename TilePrefixCallbackOpT::TempStorage     prefix;                     // Smem needed for cooperative prefix callback
             };
 
@@ -383,14 +383,14 @@ struct AgentRle
 
         // Last lane in each warp shares its warp-aggregate
         if (lane_id == WARP_THREADS - 1)
-            temp_storage.warp_aggregates[warp_id] = thread_inclusive;
+            temp_storage.warp_aggregates.Alias()[warp_id] = thread_inclusive;
 
         __syncthreads();
 
         // Accumulate total selected and the warp-wide prefix
         warp_exclusive_in_tile          = identity;
-        warp_aggregate                  = temp_storage.warp_aggregates[warp_id];
-        tile_aggregate                  = temp_storage.warp_aggregates[0];
+        warp_aggregate                  = temp_storage.warp_aggregates.Alias()[warp_id];
+        tile_aggregate                  = temp_storage.warp_aggregates.Alias()[0];
 
         #pragma unroll
         for (int WARP = 1; WARP < WARPS; ++WARP)
@@ -398,7 +398,7 @@ struct AgentRle
             if (warp_id == WARP)
                 warp_exclusive_in_tile = tile_aggregate;
 
-            tile_aggregate = scan_op(tile_aggregate, temp_storage.warp_aggregates[WARP]);
+            tile_aggregate = scan_op(tile_aggregate, temp_storage.warp_aggregates.Alias()[WARP]);
         }
     }
 
