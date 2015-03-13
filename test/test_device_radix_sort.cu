@@ -636,8 +636,7 @@ void TestBackend(
         }
     }
 
-// Mooch
-//    Test<CUB, IS_DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
+    Test<CUB, IS_DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
     Test<CUB_DB, IS_DESCENDING>(h_keys, h_values, num_items, begin_bit, end_bit, h_reference_keys, h_reference_values);
 
 #ifdef CUB_CDP
