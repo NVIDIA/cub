@@ -321,12 +321,12 @@ struct BlockScanRaking
                 T exclusive_partial;
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, identity, scan_op);
 
+                // Exclusive raking downsweep scan
+                ExclusiveDownsweep(scan_op, exclusive_partial);
+
                 // Broadcast aggregate to other threads
                 if (linear_tid == RAKING_THREADS - 1)
                     temp_storage.block_aggregate = inclusive_partial;
-
-                // Exclusive raking downsweep scan
-                ExclusiveDownsweep(scan_op, exclusive_partial);
             }
 
             __syncthreads();
@@ -490,12 +490,12 @@ struct BlockScanRaking
                 T exclusive_partial;
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
 
+                // Exclusive raking downsweep scan
+                ExclusiveDownsweep(scan_op, exclusive_partial, (linear_tid != 0));
+
                 // Broadcast aggregate to all threads
                 if (linear_tid == RAKING_THREADS - 1)
                     temp_storage.block_aggregate = inclusive_partial;
-
-                // Exclusive raking downsweep scan
-                ExclusiveDownsweep(scan_op, exclusive_partial, (linear_tid != 0));
             }
 
             __syncthreads();
@@ -659,12 +659,12 @@ struct BlockScanRaking
                 T exclusive_partial;
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
 
+                // Inclusive raking downsweep scan
+                InclusiveDownsweep(scan_op, exclusive_partial, (linear_tid != 0));
+
                 // Broadcast aggregate to all threads
                 if (linear_tid == RAKING_THREADS - 1)
                     temp_storage.block_aggregate = inclusive_partial;
-
-                // Inclusive raking downsweep scan
-                InclusiveDownsweep(scan_op, exclusive_partial, (linear_tid != 0));
             }
 
             __syncthreads();
