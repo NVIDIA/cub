@@ -186,7 +186,7 @@ __device__ __forceinline__ void InternalLoadDirectBlockedVectorized(
     Vector vec_items[VECTORS_PER_THREAD];
 
     // Aliased input ptr
-    Vector* vec_ptr = reinterpret_cast<Vector*>(block_ptr) + (threadIdx.x * VECTORS_PER_THREAD);
+    Vector* vec_ptr = reinterpret_cast<Vector*>(block_ptr) + (linear_tid * VECTORS_PER_THREAD);
 
     // Load directly in thread-blocked order
     #pragma unroll
