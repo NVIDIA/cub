@@ -44,6 +44,7 @@
 #include "../../util_device.cuh"
 #include "../../thread/thread_search.cuh"
 #include "../../grid/grid_queue.cuh"
+#include "../../grid/grid_even_share.cuh"
 #include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -62,12 +63,11 @@ namespace cub {
  */
 template <
     typename    AgentSpmvPolicyT,                   ///< Parameterized AgentSpmvPolicy tuning policy type
-    typename    ScanTileStateT,                     ///< Tile status interface type
     typename    OffsetT,                            ///< Signed integer type for sequence offsets
     typename    CoordinateT>                        ///< Merge path coordinate type
 __global__ void AgentSpmvSearchKernel(
-    ScanTileStateT  tile_state,                     ///< [in] Tile status interface
-    int             num_tiles,
+    GridEvenShare<OffsetT> even_share,          ///< [in] Work distribution interface
+    int             grid_size,
     OffsetT*        d_matrix_row_end_offsets,       ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
     CoordinateT*    d_tile_coordinates,             ///< [out] Pointer to the temporary array of tile starting coordinates
     int             num_rows,                       ///< [in] number of rows of matrix <b>A</b>.
@@ -87,14 +87,15 @@ __global__ void AgentSpmvSearchKernel(
             OffsetT>
         MatrixRowOffsetsIteratorT;
 
-    // Initialize tile status
-    tile_state.InitializeStatus(num_tiles);
-
     // Find the starting coordinate for all tiles (plus the end coordinate of the last one)
-    int tile_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
-    if (tile_idx < num_tiles + 1)
+    int agent_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+
+    // Initialize work distribution
+    even_share.Init(agent_idx);
+
+    if (agent_idx < grid_size + 1)
     {
-        OffsetT                         diagonal = (tile_idx * TILE_ITEMS);
+        OffsetT                         diagonal = even_share.block_offset;
         CoordinateT                     tile_coordinate;
         CountingInputIterator<OffsetT>  nonzero_indices(0);
 
@@ -108,7 +109,7 @@ __global__ void AgentSpmvSearchKernel(
             tile_coordinate);
 
         // Output starting offset
-        d_tile_coordinates[tile_idx] = tile_coordinate;
+        d_tile_coordinates[agent_idx] = tile_coordinate;
     }
 }
 
@@ -118,13 +119,12 @@ __global__ void AgentSpmvSearchKernel(
  */
 template <
     typename        AgentSpmvPolicyT,           ///< Parameterized AgentSpmvPolicy tuning policy type
-    typename        ScanTileStateT,             ///< Tile status interface type
     typename        ValueT,                     ///< Matrix and vector value type
     typename        OffsetT,                    ///< Signed integer type for sequence offsets
     typename        CoordinateT>                ///< Merge path coordinate type
 __launch_bounds__ (int(AgentSpmvPolicyT::BLOCK_THREADS))
 __global__ void AgentSpmvKernel(
-    ScanTileStateT  tile_state,                 ///< [in] Tile status interface
+    GridEvenShare<OffsetT> even_share,          ///< [in] Work distribution interface
     ValueT*         d_matrix_values,            ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
     OffsetT*        d_matrix_row_end_offsets,   ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
     OffsetT*        d_matrix_column_indices,    ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
@@ -161,7 +161,7 @@ __global__ void AgentSpmvKernel(
         num_cols,
         num_nonzeros);
 
-    agent.ConsumeTile(d_tile_coordinates, tile_state);
+    agent.ConsumeTile(d_tile_coordinates, even_share);
 }
 
 
@@ -190,9 +190,6 @@ struct DispatchSpmv
     // 2D merge path coordinate type
     typedef typename CubVector<OffsetT, 2>::Type CoordinateT;
 
-    // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<ValueT, OffsetT> ScanTileStateT;
-
 
     //---------------------------------------------------------------------
     // Tuning policies
@@ -203,7 +200,7 @@ struct DispatchSpmv
     {
         typedef AgentSpmvPolicy<
                 128,
-                1,
+                3,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
@@ -245,7 +242,8 @@ struct DispatchSpmv
                 LOAD_LDG,
                 LOAD_LDG,
                 false,
-                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
+//                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
             AgentSpmvPolicy;
     };
 
@@ -412,25 +410,27 @@ struct DispatchSpmv
             int work_items = num_rows + num_nonzeros;
 
             // Get SM occupancy for agent_spmv_kernel
-            int agent_spmv_sm_occupancy;
+            int sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                agent_spmv_sm_occupancy,
+                sm_occupancy,
                 sm_version,
                 agent_spmv_kernel,
                 agent_spmv_config.block_threads))) break;
 
-            // Get grid size for agent_spmv_kernel
-            int num_tiles = (work_items + tile_size - 1) / tile_size;
+            // Device occupancy, grid size, and work distribution for agent_spmv_kernel
+            int device_occupancy = sm_occupancy * sm_count;
+            int max_grid_size = device_occupancy * 1;
+            GridEvenShare<OffsetT> even_share(work_items, max_grid_size, tile_size);
+            int grid_size = even_share.grid_size;
 
             // Temporary storage allocation requirements
-            size_t allocation_sizes[4];
-            if (CubDebug(error = ScanTileStateT::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
-            allocation_sizes[1] = num_tiles * sizeof(OffsetT);             // bytes needed for block run-out row-ids
-            allocation_sizes[2] = num_tiles * sizeof(ValueT);              // bytes needed for block run-out partials sums
-            allocation_sizes[3] = (num_tiles + 1) * sizeof(CoordinateT);   // bytes needed for tile starting coordinates
+            size_t allocation_sizes[3];
+            allocation_sizes[0] = grid_size * sizeof(OffsetT);             // bytes needed for block run-out row-ids
+            allocation_sizes[1] = grid_size * sizeof(ValueT);              // bytes needed for block run-out partials sums
+            allocation_sizes[2] = (grid_size + 1) * sizeof(CoordinateT);   // bytes needed for tile starting coordinates
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-            void* allocations[4];
+            void* allocations[3];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
@@ -438,17 +438,13 @@ struct DispatchSpmv
                 return cudaSuccess;
             }
 
-            // Construct the tile status interface
-            ScanTileStateT tile_state;
-            if (CubDebug(error = tile_state.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
-
-            // Alias the other allocations
-            OffsetT*        d_tile_carry_rows       = (OffsetT*) allocations[1];        // Agent carry-out row-ids
-            ValueT*         d_tile_carry_values     = (ValueT*) allocations[2];         // Agent carry-out partial sums
-            CoordinateT*    d_tile_coordinates      = (CoordinateT*) allocations[3];    // Agent starting coordinates
-
+            // Alias the allocations
+            OffsetT*        d_tile_carry_rows       = (OffsetT*) allocations[0];        // Agent carry-out row-ids
+            ValueT*         d_tile_carry_values     = (ValueT*) allocations[1];         // Agent carry-out partial sums
+            CoordinateT*    d_tile_coordinates      = (CoordinateT*) allocations[2];    // Agent starting coordinates
+/*
             int search_block_size = INIT_KERNEL_THREADS;
-            int search_grid_size = (num_tiles + 1 + search_block_size - 1) / search_block_size;
+            int search_grid_size = (grid_size + 1 + search_block_size - 1) / search_block_size;
 
             // Log agent_spmv_search_kernel configuration
             if (debug_synchronous) CubLog("Invoking agent_spmv_search_kernel<<<%d, %d, 0, %lld>>>()\n",
@@ -456,20 +452,20 @@ struct DispatchSpmv
 
             // Invoke agent_spmv_search_kernel
             agent_spmv_search_kernel<<<search_grid_size, search_block_size, 0, stream>>>(
-                tile_state,
-                num_tiles,
+                even_share,
+                grid_size,
                 d_matrix_row_end_offsets,
                 d_tile_coordinates,
                 num_rows,
                 num_nonzeros);
-
+*/
             // Log agent_spmv_kernel configuration
             if (debug_synchronous) CubLog("Invoking agent_spmv_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                num_tiles, agent_spmv_config.block_threads, (long long) stream, agent_spmv_config.items_per_thread, agent_spmv_sm_occupancy);
+                grid_size, agent_spmv_config.block_threads, (long long) stream, agent_spmv_config.items_per_thread, sm_occupancy);
 
             // Invoke agent_spmv_kernel
-            agent_spmv_kernel<<<num_tiles, agent_spmv_config.block_threads, 0, stream>>>(
-                tile_state,
+            agent_spmv_kernel<<<grid_size, agent_spmv_config.block_threads, 0, stream>>>(
+                even_share,
                 d_matrix_values,
                 d_matrix_row_end_offsets,
                 d_matrix_column_indices,
@@ -544,8 +540,8 @@ struct DispatchSpmv
                 num_nonzeros,
                 stream,
                 debug_synchronous,
-                AgentSpmvSearchKernel<PtxAgentSpmvPolicy, ScanTileStateT, OffsetT, CoordinateT>,
-                AgentSpmvKernel<PtxAgentSpmvPolicy, ScanTileStateT, ValueT, OffsetT, CoordinateT>,
+                AgentSpmvSearchKernel<PtxAgentSpmvPolicy, OffsetT, CoordinateT>,
+                AgentSpmvKernel<PtxAgentSpmvPolicy, ValueT, OffsetT, CoordinateT>,
                 agent_spmv_config))) break;
         }
         while (0);
@@ -557,5 +553,6 @@ struct DispatchSpmv
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
+
 
 

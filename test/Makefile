@@ -174,7 +174,7 @@ bin/link_$(SUFFIX) : link_a.cu link_b.cu link_main.cpp $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_a.cu -c -o bin/link_a.obj
 	$(NVCC) $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_b.cu -c -o bin/link_b.obj
-	$(NVCC) $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_main.cpp bin/link_a.obj bin/link_b.obj $(CUDART) -o bin/link_$(SUFFIX)
+	$(NVCC) $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(DEFINES) $(SM_TARGETS) link_main.cpp bin/link_a.obj bin/link_b.obj -o bin/link_$(SUFFIX)
 
 
 #-------------------------------------------------------------------------------
