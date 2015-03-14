@@ -504,7 +504,7 @@ struct AgentSpmv
      */
     __device__ __forceinline__ void ConsumeTile(
         CoordinateT&        tile_coord,
-        ItemOffsetPairT&    block_carry)
+        ValueT&             block_carry)
     {
         __syncthreads();
 
@@ -559,26 +559,24 @@ struct AgentSpmv
             tile_row_end_offsets[tile_num_rows + threadIdx.x] = num_nonzeros;
         }
 
-        // Load a tile of nonzeros
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             int item_idx                = threadIdx.x + (ITEM * BLOCK_THREADS);
             item_idx                    = CUB_MIN(item_idx, tile_num_nonzeros - 1);
-
+        
             OffsetT column_index        = d_matrix_column_indices[tile_coord.y + item_idx];
             ValueT  matrix_value        = d_matrix_values[tile_coord.y + item_idx];
             ValueT  vector_value        = d_vector_x[column_index];
-
             tile_nonzeros[item_idx]     = matrix_value * vector_value;
         }
 
         __syncthreads();
 
-        // Compute the thread's merge path segment
-        ItemOffsetPairT thread_segment[ITEMS_PER_THREAD];
+        // Traverse the thread's merge path segment
+        ValueT*         row_partials = reinterpret_cast<ValueT*>(temp_storage.merge_items);
+        ValueT          running_total = (threadIdx.x == 0) ? block_carry : 0.0;
         CoordinateT     thread_current_coord = thread_start_coord;
-        OffsetT         flags[ITEMS_PER_THREAD];
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -588,55 +586,45 @@ struct AgentSpmv
             if (accumulate)
             {
                 // Move down (accumulate)
-                thread_segment[ITEM].offset = 0;
-                thread_segment[ITEM].value  = tile_nonzeros[thread_current_coord.y];
+                running_total += tile_nonzeros[thread_current_coord.y];
                 ++thread_current_coord.y;
             }
             else
             {
                 // Move right (reset)
-                thread_segment[ITEM].offset = 1;
-                thread_segment[ITEM].value  = 0.0;
+                row_partials[thread_current_coord.x] = running_total;
+                running_total = 0.0;
                 ++thread_current_coord.x;
             }
-            flags[ITEM] = thread_segment[ITEM].offset;
         }
 
+        __syncthreads(); // Perf sync
 
         // Block-wide reduce-value-by-key
+        int                 thread_num_rows = thread_end_coord.x - thread_start_coord.x;
+        ItemOffsetPairT     scan_item(thread_num_rows, running_total);
         ItemOffsetPairT     tile_aggregate;
         ItemOffsetPairT     scan_identity(0.0, 0);
         ReduceBySegmentOpT  scan_op;
-        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
+        BlockScanT(temp_storage.scan).ExclusiveScan(scan_item, scan_item, scan_identity, scan_op, tile_aggregate);
 
+        // Update block carry
+        block_carry = tile_aggregate.value;
+
+        // Inter-thread fix-up
+        if (thread_num_rows > 0)
+            row_partials[thread_start_coord.x] += scan_item.value;      
+
+        __syncthreads();
 
         // Scatter
-
-        ValueT* row_partials = reinterpret_cast<ValueT*>(temp_storage.merge_items);
-
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
         {
-            if (flags[ITEM] == 0)
-            {
-                thread_segment[ITEM].offset = TILE_ITEMS;
-            }
-            row_partials[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+            d_vector_y[tile_coord.x + item] = row_partials[item];
 
-
-/*
-            if (flags[ITEM])
-            {
-                row_partials[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
-//                d_vector_y[tile_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
-            }
-*/
         }
 
-        // Update block carry and the current tile coordinate
-        if (threadIdx.x == 0)
-            block_carry = scan_op(block_carry, tile_aggregate);
-
+        // Update the block coordinate
         tile_coord = tile_end_coord;
     }
 
@@ -673,7 +661,7 @@ struct AgentSpmv
         __syncthreads();
 
         CoordinateT         block_coord = temp_storage.block_coords[0];
-        ItemOffsetPairT     block_carry(0.0, 0);
+        ValueT              block_carry = 0.0;
 
         for (OffsetT block_offset = even_share.block_offset;
             block_offset < even_share.block_end;
@@ -685,8 +673,8 @@ struct AgentSpmv
         // Output the tile's merge-path carry
         if (threadIdx.x == 0)
         {
-            d_tile_carry_rows[blockIdx.x] = block_carry.offset;
-            d_tile_carry_values[blockIdx.x] = block_carry.value;
+            d_tile_carry_rows[blockIdx.x] = block_coord.x;
+            d_tile_carry_values[blockIdx.x] = block_carry;
         }
     }
 
