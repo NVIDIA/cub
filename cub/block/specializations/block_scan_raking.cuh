@@ -322,7 +322,7 @@ struct BlockScanRaking
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, identity, scan_op);
 
                 // Broadcast aggregate to other threads
-                if (threadIdx.x == RAKING_THREADS - 1)
+                if (linear_tid == RAKING_THREADS - 1)
                     temp_storage.block_aggregate = inclusive_partial;
 
                 // Exclusive raking downsweep scan
@@ -386,7 +386,7 @@ struct BlockScanRaking
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, identity, scan_op);
 
                 // Broadcast aggregate to other lanes (through smem because we eventually want it in all threads)
-                if (threadIdx.x == RAKING_THREADS - 1)
+                if (linear_tid == RAKING_THREADS - 1)
                     ThreadStore<STORE_VOLATILE>(&temp_storage.block_aggregate, inclusive_partial);
                 block_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage.block_aggregate);
 
@@ -491,7 +491,7 @@ struct BlockScanRaking
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
 
                 // Broadcast aggregate to all threads
-                if (threadIdx.x == RAKING_THREADS - 1)
+                if (linear_tid == RAKING_THREADS - 1)
                     temp_storage.block_aggregate = inclusive_partial;
 
                 // Exclusive raking downsweep scan
@@ -554,7 +554,7 @@ struct BlockScanRaking
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
 
                 // Broadcast aggregate to other lanes (through smem because we eventually want it in all threads)
-                if (threadIdx.x == RAKING_THREADS - 1)
+                if (linear_tid == RAKING_THREADS - 1)
                     ThreadStore<STORE_VOLATILE>(&temp_storage.block_aggregate, inclusive_partial);
                 block_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage.block_aggregate);
 
@@ -660,7 +660,7 @@ struct BlockScanRaking
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
 
                 // Broadcast aggregate to all threads
-                if (threadIdx.x == RAKING_THREADS - 1)
+                if (linear_tid == RAKING_THREADS - 1)
                     temp_storage.block_aggregate = inclusive_partial;
 
                 // Inclusive raking downsweep scan
@@ -722,7 +722,7 @@ struct BlockScanRaking
                 WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, scan_op);
 
                 // Broadcast aggregate to other lanes (through smem because we eventually want it in all threads)
-                if (threadIdx.x == RAKING_THREADS - 1)
+                if (linear_tid == RAKING_THREADS - 1)
                     ThreadStore<STORE_VOLATILE>(&temp_storage.block_aggregate, inclusive_partial);
                 block_aggregate = ThreadLoad<LOAD_VOLATILE>(&temp_storage.block_aggregate);
 
