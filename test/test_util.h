@@ -319,7 +319,7 @@ template<>
 bool IsNaN<float>(float val)
 {
     if (!(val == val)) {
-        printf("fNAN!\n"); return true; 
+        return true;
     }
     return false;
 }
@@ -328,7 +328,7 @@ template<>
 bool IsNaN<double>(double val)
 {
     if (!(val == val)) {
-        printf("dNAN!\n"); return true; 
+        return true;
     }
     return false;
 }

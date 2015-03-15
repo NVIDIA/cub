@@ -665,7 +665,7 @@ void Test()
 #else
     Test<BLOCK_THREADS, 4>();
 #endif
-//    Test<BLOCK_THREADS, 11>();
+    Test<BLOCK_THREADS, 11>();
 }
 
 
@@ -704,8 +704,8 @@ int main(int argc, char** argv)
 
     // Compile/run thorough tests
     Test<32>();
-//    Test<64>();
-//    Test<160>();
+    Test<64>();
+    Test<160>();
 
 
 #endif  // QUICK_TEST
