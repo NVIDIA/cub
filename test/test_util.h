@@ -309,6 +309,9 @@ struct CommandLineArgs
  * Random bits generator
  ******************************************************************************/
 
+int g_num_rand_samples = 0;
+
+
 /**
  * Generates random keys.
  *
@@ -367,6 +370,7 @@ void RandomBits(
             {
                 // Grab some of the higher bits from rand (better entropy, supposedly)
                 word &= mersenne::genrand_int32();
+                g_num_rand_samples++;                
             }
 
             word_buff[j] = word;
