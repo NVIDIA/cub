@@ -294,7 +294,7 @@ struct AgentSpmv
 
         tile_aggregate.offset = 0;
         tile_aggregate.value = tile_sum;
-
+/*
         // Update tile status
         if (tile_idx == 0)
         {
@@ -309,7 +309,7 @@ struct AgentSpmv
             TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
             prefix_op(tile_aggregate);
         }
-
+*/
         // Return the tile's running carry-out
         return tile_aggregate;
     }
@@ -522,11 +522,11 @@ struct AgentSpmv
         ReduceBySegmentOpT  scan_op;
 
         // Block-wide reduce-value-by-key
-        if (tile_idx == 0)
+//        if (tile_idx == 0)
         {
             // First tile
             BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
-
+/*
             // Update tile status
             if (threadIdx.x == 0)
                 tile_state.SetInclusive(0, tile_aggregate);
@@ -536,15 +536,15 @@ struct AgentSpmv
             // Subsequent tile
             TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
             BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate, prefix_op);
-        }
+*/        }
 
         // Scatter
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (flags[ITEM])
-                d_vector_y[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
-//                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+//                d_vector_y[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
         }
 
         // Return the tile's running carry-out
@@ -592,14 +592,13 @@ struct AgentSpmv
             tile_aggregate = ConsumeTileNonZeros(tile_idx, tile_start_coord, tile_end_coord, tile_state);
         }
 
-/*
+
         // Output the tile's merge-path carry
         if (threadIdx.x == 0)
         {
             d_tile_carry_rows[tile_idx] = tile_aggregate.offset;
             d_tile_carry_values[tile_idx] = tile_aggregate.value;
         }
-*/
     }
 
 

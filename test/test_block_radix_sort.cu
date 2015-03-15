@@ -370,9 +370,11 @@ void TestDriver(
         "BLOCKED_OUTPUT(%d) "
         "sizeof(Key)(%d) "
         "sizeof(Value)(%d) "
+        "gen_mode(%d), "
         "entropy_reduction(%d) "
         "begin_bit(%d) "
-        "end_bit(%d)\n",
+        "end_bit(%d), "
+        "samples(%d)\n",
             ((KEYS_ONLY) ? "Keys-only" : "Key-value"),
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
@@ -384,9 +386,11 @@ void TestDriver(
             BLOCKED_OUTPUT,
             (int) sizeof(Key),
             (int) sizeof(Value),
+            gen_mode,
             entropy_reduction,
             begin_bit,
-            end_bit);
+            end_bit,
+            g_num_rand_samples);
 
     // Set shared memory config
     cudaDeviceSetSharedMemConfig(SMEM_CONFIG);
@@ -661,7 +665,7 @@ void Test()
 #else
     Test<BLOCK_THREADS, 4>();
 #endif
-    Test<BLOCK_THREADS, 11>();
+//    Test<BLOCK_THREADS, 11>();
 }
 
 
@@ -700,8 +704,8 @@ int main(int argc, char** argv)
 
     // Compile/run thorough tests
     Test<32>();
-    Test<64>();
-    Test<160>();
+//    Test<64>();
+//    Test<160>();
 
 
 #endif  // QUICK_TEST
