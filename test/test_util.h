@@ -312,6 +312,28 @@ struct CommandLineArgs
 int g_num_rand_samples = 0;
 
 
+template <typename T>
+bool IsNaN(T val) { return false; }
+
+template<>
+bool IsNaN<float>(float val)
+{
+    if (!(val == val)) {
+        printf("fNAN!\n"); return true; 
+    }
+    return false;
+}
+
+template<>
+bool IsNaN<double>(double val)
+{
+    if (!(val == val)) {
+        printf("dNAN!\n"); return true; 
+    }
+    return false;
+}
+
+
 /**
  * Generates random keys.
  *
@@ -356,7 +378,8 @@ void RandomBits(
     if (end_bit < 0)
         end_bit = sizeof(K) * 8;
 
-    do {
+    while (true) 
+    {
         // Generate random word_buff
         for (int j = 0; j < NUM_WORDS; j++)
         {
@@ -378,7 +401,9 @@ void RandomBits(
 
         memcpy(&key, word_buff, sizeof(K));
 
-    } while (key != key);        // avoids NaNs when generating random floating point numbers
+        if (!IsNaN(key))
+            break;          // avoids NaNs when generating random floating point numbers
+    }
 }
 
 
