@@ -226,11 +226,11 @@ struct DispatchSelectIf
         };
 
         typedef AgentSelectIfPolicy<
-                256,
+                64,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_RAKING>
             SelectIfPolicyT;
     };
 
