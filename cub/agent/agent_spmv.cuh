@@ -294,22 +294,7 @@ struct AgentSpmv
 
         tile_aggregate.offset = 0;
         tile_aggregate.value = tile_sum;
-/*
-        // Update tile status
-        if (tile_idx == 0)
-        {
-            // First tile
-            if (threadIdx.x == 0)
-                tile_state.SetInclusive(0, tile_aggregate);
-        }
-        else if (threadIdx.x < WARP_THREADS)
-        {
-            // Subsequent tile
-            ReduceBySegmentOpT scan_op;
-            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            prefix_op(tile_aggregate);
-        }
-*/
+
         // Return the tile's running carry-out
         return tile_aggregate;
     }
@@ -397,21 +382,7 @@ struct AgentSpmv
         // Block-wide reduce-value-by-key
         ItemOffsetPairT     scan_identity(0.0, 0);
         ReduceBySegmentOpT  scan_op;
-        if (tile_idx == 0)
-        {
-            // First tile
-            BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
-
-            // Update tile status
-            if (threadIdx.x == 0)
-                tile_state.SetInclusive(0, tile_aggregate);
-        }
-        else
-        {
-            // Subsequent tile
-            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate, prefix_op);
-        }
+        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
 
         // Scatter
         #pragma unroll
@@ -419,8 +390,7 @@ struct AgentSpmv
         {
             if (flags[ITEM])
             {
-                d_vector_y[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
-//                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
             }
         }
 
@@ -502,6 +472,7 @@ struct AgentSpmv
                 // Move down (accumulate)
                 thread_segment[ITEM].offset = 0;
                 thread_segment[ITEM].value  = tile_nonzeros[thread_current_coord.y];
+                flags[ITEM] = tile_num_rows;
                 ++thread_current_coord.y;
             }
             else
@@ -509,9 +480,9 @@ struct AgentSpmv
                 // Move right (reset)
                 thread_segment[ITEM].offset = 1;
                 thread_segment[ITEM].value  = 0.0;
+                flags[ITEM] = thread_current_coord.x;
                 ++thread_current_coord.x;
             }
-            flags[ITEM] = thread_segment[ITEM].offset;
         }
 
         __syncthreads();
@@ -522,29 +493,24 @@ struct AgentSpmv
         ReduceBySegmentOpT  scan_op;
 
         // Block-wide reduce-value-by-key
-//        if (tile_idx == 0)
-        {
-            // First tile
-            BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
-/*
-            // Update tile status
-            if (threadIdx.x == 0)
-                tile_state.SetInclusive(0, tile_aggregate);
-        }
-        else
-        {
-            // Subsequent tile
-            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate, prefix_op);
-*/        }
+        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
+
+        __syncthreads();
 
         // Scatter
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            if (flags[ITEM])
-//                d_vector_y[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
-                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+            if (flags[ITEM] < tile_num_rows)
+//                d_vector_y[tile_start_coord.x + flags[ITEM]] = thread_segment[ITEM].value;
+                tile_nonzeros[flags[ITEM]] = thread_segment[ITEM].value;
+        }
+
+        __syncthreads();
+
+        for (int item_idx = threadIdx.x; item_idx < tile_num_rows; item_idx += BLOCK_THREADS)
+        {
+            d_vector_y[tile_start_coord.x + item_idx] = tile_nonzeros[item_idx];
         }
 
         // Return the tile's running carry-out
