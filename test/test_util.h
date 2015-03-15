@@ -316,99 +316,69 @@ template <typename T>
 __noinline__ bool IsNaN(T val) { return false; }
 
 template<>
-__noinline__ bool IsNaN<float>(volatile float val)
+__noinline__ bool IsNaN<float>(float val)
 {
-    if (!(val == val)) {
-        return true;
-    }
-    return false;
+    volatile unsigned int bits = reinterpret_cast<unsigned int &>(val);
+
+    return (((bits >= 0x7F800001) && (bits <= 0x7FFFFFFF)) || 
+        ((bits >= 0xFF800001) && (bits <= 0xFFFFFFFF)));
 }
 
 template<>
 __noinline__ bool IsNaN<float1>(float1 val)
 {
-    if (IsNaN(val.x)) {
-        return true;
-    }
-    return false;
+    return (IsNaN(val.x));
 }
 
 template<>
 __noinline__ bool IsNaN<float2>(float2 val)
 {
-    if (IsNaN(val.y) || IsNaN(val.x)) {
-        return true;
-    }
-    return false;
+    return (IsNaN(val.y) || IsNaN(val.x));
 }
 
 template<>
 __noinline__ bool IsNaN<float3>(float3 val)
 {
-    if (IsNaN(val.z) || IsNaN(val.y) || IsNaN(val.x)) {
-        return true;
-    }
-    return false;
+    return (IsNaN(val.z) || IsNaN(val.y) || IsNaN(val.x));
 }
 
 template<>
 __noinline__ bool IsNaN<float4>(float4 val)
 {
-    if (IsNaN(val.y) || IsNaN(val.x)) {
-        return true;
-    }
-    if (IsNaN(val.w) || IsNaN(val.z)) {
-        return true;
-    }
-    return false;
+    return (IsNaN(val.y) || IsNaN(val.x) || IsNaN(val.w) || IsNaN(val.z));
 }
 
 template<>
-__noinline__ bool IsNaN<double>(volatile double val)
+__noinline__ bool IsNaN<double>(double val)
 {
-    if (!(val == val)) {
-        return true;
-    }
-    return false;
+    volatile unsigned long long bits = *reinterpret_cast<unsigned long long *>(&val);
+
+    return (((bits >= 0x7FF0000000000001) && (bits <= 0x7FFFFFFFFFFFFFFF)) || 
+        ((bits >= 0xFFF0000000000001) && (bits <= 0xFFFFFFFFFFFFFFFF)));
 }
 
 template<>
 __noinline__ bool IsNaN<double1>(double1 val)
 {
-    if (IsNaN(val.x)) {
-        return true;
-    }
-    return false;
+    return (IsNaN(val.x));
 }
 
 template<>
 __noinline__ bool IsNaN<double2>(double2 val)
 {
-    if (IsNaN(val.y) || IsNaN(val.x)) {
-        return true;
-    }
-    return false;
+    return (IsNaN(val.y) || IsNaN(val.x));
 }
 
 template<>
 __noinline__ bool IsNaN<double3>(double3 val)
 {
-    if (IsNaN(val.z) || IsNaN(val.y) || IsNaN(val.x)) {
-        return true;
-    }
-    return false;
+    return (IsNaN(val.z) || IsNaN(val.y) || IsNaN(val.x));
 }
 
 template<>
 __noinline__ bool IsNaN<double4>(double4 val)
 {
-    if (IsNaN(val.y) || IsNaN(val.x)) {
-        return true;
-    }
-    if (IsNaN(val.w) || IsNaN(val.z)) {
-        return true;
-    }
-    return false;
+    return (IsNaN(val.y) || IsNaN(val.x) || IsNaN(val.w) || IsNaN(val.z));
 }
 
 /**
@@ -478,7 +448,8 @@ void RandomBits(
 
         memcpy(&key, word_buff, sizeof(K));
 
-        if (!IsNaN(key))
+        K copy = key;
+        if (!IsNaN(copy))
             break;          // avoids NaNs when generating random floating point numbers
     }
 }
@@ -499,7 +470,6 @@ int CoutCast(char val) { return val; }
 int CoutCast(unsigned char val) { return val; }
 
 int CoutCast(signed char val) { return val; }
-
 
 
 
