@@ -313,10 +313,10 @@ int g_num_rand_samples = 0;
 
 
 template <typename T>
-bool IsNaN(T val) { return false; }
+__noinline__ bool IsNaN(T val) { return false; }
 
 template<>
-bool IsNaN<float>(float val)
+__noinline__ bool IsNaN<float>(volatile float val)
 {
     if (!(val == val)) {
         return true;
@@ -325,7 +325,46 @@ bool IsNaN<float>(float val)
 }
 
 template<>
-bool IsNaN<double>(double val)
+__noinline__ bool IsNaN<float1>(float1 val)
+{
+    if (IsNaN(val.x)) {
+        return true;
+    }
+    return false;
+}
+
+template<>
+__noinline__ bool IsNaN<float2>(float2 val)
+{
+    if (IsNaN(val.y) || IsNaN(val.x)) {
+        return true;
+    }
+    return false;
+}
+
+template<>
+__noinline__ bool IsNaN<float3>(float3 val)
+{
+    if (IsNaN(val.z) || IsNaN(val.y) || IsNaN(val.x)) {
+        return true;
+    }
+    return false;
+}
+
+template<>
+__noinline__ bool IsNaN<float4>(float4 val)
+{
+    if (IsNaN(val.y) || IsNaN(val.x)) {
+        return true;
+    }
+    if (IsNaN(val.w) || IsNaN(val.z)) {
+        return true;
+    }
+    return false;
+}
+
+template<>
+__noinline__ bool IsNaN<double>(volatile double val)
 {
     if (!(val == val)) {
         return true;
@@ -333,6 +372,44 @@ bool IsNaN<double>(double val)
     return false;
 }
 
+template<>
+__noinline__ bool IsNaN<double1>(double1 val)
+{
+    if (IsNaN(val.x)) {
+        return true;
+    }
+    return false;
+}
+
+template<>
+__noinline__ bool IsNaN<double2>(double2 val)
+{
+    if (IsNaN(val.y) || IsNaN(val.x)) {
+        return true;
+    }
+    return false;
+}
+
+template<>
+__noinline__ bool IsNaN<double3>(double3 val)
+{
+    if (IsNaN(val.z) || IsNaN(val.y) || IsNaN(val.x)) {
+        return true;
+    }
+    return false;
+}
+
+template<>
+__noinline__ bool IsNaN<double4>(double4 val)
+{
+    if (IsNaN(val.y) || IsNaN(val.x)) {
+        return true;
+    }
+    if (IsNaN(val.w) || IsNaN(val.z)) {
+        return true;
+    }
+    return false;
+}
 
 /**
  * Generates random keys.
