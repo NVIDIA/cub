@@ -362,8 +362,8 @@ struct AgentScan
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
         // Blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;   // Current tile index
-        OffsetT tile_offset    = OffsetT(TILE_ITEMS) * tile_idx;           // Global offset for the current tile
+        int     tile_idx        = (blockIdx.x * gridDim.y) + blockIdx.y;   // Current tile index
+        OffsetT tile_offset     = OffsetT(TILE_ITEMS) * tile_idx;          // Global offset for the current tile
         OffsetT num_remaining   = num_items - tile_offset;                 // Remaining items (including this tile)
 
         if (num_remaining > TILE_ITEMS)
