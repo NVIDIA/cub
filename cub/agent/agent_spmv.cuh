@@ -550,7 +550,7 @@ struct AgentSpmv
     __device__ __forceinline__ void ConsumeTile(
         CoordinateT*        d_tile_coordinates)
     {
-        int tile_idx = blockIdx.x;
+        int tile_idx = (blockIdx.x * gridDim.y) + blockIdx.y;    // Current tile index
 
         // Find the starting and ending coordinates for this block's merge path segment
         if (threadIdx.x < 2)
@@ -584,8 +584,8 @@ struct AgentSpmv
         // Output the tile's merge-path carry
         if (threadIdx.x == 0)
         {
-            d_tile_carry_rows[tile_idx] = tile_aggregate.offset;
-            d_tile_carry_values[tile_idx] = tile_aggregate.value;
+            d_tile_carry_rows[tile_idx]     = tile_aggregate.offset + tile_start_coord.x;
+            d_tile_carry_values[tile_idx]   = tile_aggregate.value;
         }
     }
 

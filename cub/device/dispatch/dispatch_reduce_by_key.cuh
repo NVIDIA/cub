@@ -67,7 +67,8 @@ template <
     typename            ScanTileStateT,                         ///< Tile status interface type
     typename            EqualityOpT,                            ///< KeyT equality operator type
     typename            ReductionOpT,                           ///< ValueT reduction operator type
-    typename            OffsetT>                                ///< Signed integer type for global offsets
+    typename            OffsetT,                                ///< Signed integer type for global offsets
+    bool                IS_SEGMENTED_REDUCTION_FIXUP>           ///< Whether this agent is performing the inter-block fixup step for a global segmented reduction
 __launch_bounds__ (int(AgentReduceByKeyPolicyT::BLOCK_THREADS))
 __global__ void DeviceReduceByKeyKernel(
     KeysInputIteratorT          d_keys_in,                      ///< [in] Pointer to the input sequence of keys
@@ -91,7 +92,8 @@ __global__ void DeviceReduceByKeyKernel(
             NumRunsOutputIteratorT,
             EqualityOpT,
             ReductionOpT,
-            OffsetT>
+            OffsetT,
+            IS_SEGMENTED_REDUCTION_FIXUP>
         AgentReduceByKeyT;
 
     // Shared memory for AgentReduceByKey
@@ -122,7 +124,8 @@ template <
     typename    NumRunsOutputIteratorT,     ///< Output iterator type for recording number of segments encountered
     typename    EqualityOpT,                ///< KeyT equality operator type
     typename    ReductionOpT,               ///< ValueT reduction operator type
-    typename    OffsetT>                    ///< Signed integer type for global offsets
+    typename    OffsetT,                    ///< Signed integer type for global offsets
+    bool        IS_SEGMENTED_REDUCTION_FIXUP = false>   ///< Whether this agent is performing the inter-block fixup step for a global segmented reduction
 struct DispatchReduceByKey
 {
     //-------------------------------------------------------------------------
@@ -218,8 +221,8 @@ struct DispatchReduceByKey
             ReduceByKeyPolicyT;
     };
 
-    /// SM10
-    struct Policy100
+    /// SM11
+    struct Policy110
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 5,
@@ -253,7 +256,7 @@ struct DispatchReduceByKey
     typedef Policy130 PtxPolicy;
 
 #else
-    typedef Policy100 PtxPolicy;
+    typedef Policy110 PtxPolicy;
 
 #endif
 
@@ -300,7 +303,7 @@ struct DispatchReduceByKey
         }
         else
         {
-            reduce_by_key_config.template Init<typename Policy100::ReduceByKeyPolicyT>();
+            reduce_by_key_config.template Init<typename Policy110::ReduceByKeyPolicyT>();
         }
 
     #endif
@@ -336,8 +339,8 @@ struct DispatchReduceByKey
      * specified kernel functions.
      */
     template <
-        typename                    ScanInitKernelPtrT,         ///< Function type of cub::DeviceScanInitKernel
-        typename                    ReduceByKeyKernelPtrT>      ///< Function type of cub::DeviceReduceByKeyKernelPtrT
+        typename                    ScanInitKernelT,         ///< Function type of cub::DeviceScanInitKernel
+        typename                    ReduceByKeyKernelT>      ///< Function type of cub::DeviceReduceByKeyKernelT
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void*                       d_temp_storage,             ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -353,8 +356,8 @@ struct DispatchReduceByKey
         cudaStream_t                stream,                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                ///< [in] PTX version of dispatch kernels
-        ScanInitKernelPtrT          scan_init_kernel,           ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
-        ReduceByKeyKernelPtrT       reduce_by_key_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
+        ScanInitKernelT          scan_init_kernel,           ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
+        ReduceByKeyKernelT       reduce_by_key_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
         KernelConfig                reduce_by_key_config)       ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_kernel was compiled for
     {
 
@@ -381,8 +384,8 @@ struct DispatchReduceByKey
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int tile_size = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
-            int num_tiles = (num_items + tile_size - 1) / tile_size;
+            int             tile_size = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
+            unsigned int    num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
             size_t  allocation_sizes[1];
@@ -417,9 +420,9 @@ struct DispatchReduceByKey
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Get SM occupancy for reduce_by_key_kernel
-            int range_reduce_by_key_sm_occupancy;
+            int reduce_by_key_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                range_reduce_by_key_sm_occupancy,            // out
+                reduce_by_key_sm_occupancy,            // out
                 sm_version,
                 reduce_by_key_kernel,
                 reduce_by_key_config.block_threads))) break;
@@ -428,15 +431,15 @@ struct DispatchReduceByKey
             int max_dim_x;
             if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
 
-            // Get grid size for scanning tiles
-            dim3 scan_grid_size;
-            scan_grid_size.z = 1;
-            scan_grid_size.y = ((unsigned int) num_tiles + max_dim_x - 1) / max_dim_x;
-            scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
+            // Get grid dimensions
+            dim3 scan_grid_size(
+                CUB_MIN(num_tiles, max_dim_x),
+                (num_tiles + max_dim_x - 1) / max_dim_x,
+                1);
 
             // Log reduce_by_key_kernel configuration
             if (debug_synchronous) CubLog("Invoking reduce_by_key_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, reduce_by_key_config.block_threads, (long long) stream, reduce_by_key_config.items_per_thread, range_reduce_by_key_sm_occupancy);
+                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, reduce_by_key_config.block_threads, (long long) stream, reduce_by_key_config.items_per_thread, reduce_by_key_sm_occupancy);
 
             // Invoke reduce_by_key_kernel
             reduce_by_key_kernel<<<scan_grid_size, reduce_by_key_config.block_threads, 0, stream>>>(
@@ -515,7 +518,7 @@ struct DispatchReduceByKey
                 debug_synchronous,
                 ptx_version,
                 DeviceScanInitKernel<OffsetT, ScanTileStateT>,
-                DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, ScanTileStateT, EqualityOpT, ReductionOpT, OffsetT>,
+                DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, ScanTileStateT, EqualityOpT, ReductionOpT, OffsetT, IS_SEGMENTED_REDUCTION_FIXUP>,
                 reduce_by_key_config))) break;
         }
         while (0);
