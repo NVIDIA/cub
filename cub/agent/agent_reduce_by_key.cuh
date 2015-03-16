@@ -91,6 +91,7 @@ template <
     typename    UniqueOutputIteratorT,          ///< Random-access output iterator type for keys
     typename    ValuesInputIteratorT,           ///< Random-access input iterator type for values
     typename    AggregatesOutputIteratorT,      ///< Random-access output iterator type for values
+    typename    NumRunsOutputIteratorT,         ///< Output iterator type for recording number of items selected
     typename    EqualityOpT,                    ///< KeyT equality operator type
     typename    ReductionOpT,                   ///< ValueT reduction operator type
     typename    OffsetT,                        ///< Signed integer type for global offsets
@@ -225,6 +226,7 @@ struct AgentReduceByKey
     UniqueOutputIteratorT           d_unique_out;       ///< Unique output keys
     WrappedValuesInputIteratorT     d_values_in;        ///< Input values
     AggregatesOutputIteratorT       d_aggregates_out;   ///< Output value aggregates
+    NumRunsOutputIteratorT          d_num_runs_out;     ///< Output pointer for total number of segments identified
     WrappedFixupInputIteratorT      d_fixup_in;         ///< Fixup input values
     InequalityWrapper<EqualityOpT>  inequality_op;      ///< KeyT inequality operator
     ReductionOpT                    reduction_op;       ///< Reduction operator
@@ -243,6 +245,7 @@ struct AgentReduceByKey
         UniqueOutputIteratorT       d_unique_out,       ///< Unique output keys
         ValuesInputIteratorT        d_values_in,        ///< Input values
         AggregatesOutputIteratorT   d_aggregates_out,   ///< Output value aggregates
+        NumRunsOutputIteratorT      d_num_runs_out,     ///< Output pointer for total number of segments identified
         EqualityOpT                 equality_op,        ///< KeyT equality operator
         ReductionOpT                reduction_op)       ///< ValueT reduction operator
     :
@@ -251,6 +254,7 @@ struct AgentReduceByKey
         d_unique_out(d_unique_out),
         d_values_in(d_values_in),
         d_aggregates_out(d_aggregates_out),
+        d_num_runs_out(d_num_runs_out),
         d_fixup_in(d_aggregates_out),
         inequality_op(equality_op),
         reduction_op(reduction_op),
@@ -338,8 +342,8 @@ struct AgentReduceByKey
             // Set segment_flags for first out-of-bounds item, zero for others
             if (IS_LAST_TILE)
             {
-                bool valid = (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_remaining + 1);
-                segment_flags[ITEM] &= valid;
+                bool is_first_oob = (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining);
+                segment_flags[ITEM] |= is_first_oob;
             }
 
             scan_items[ITEM].value      = values[ITEM];
@@ -377,8 +381,7 @@ struct AgentReduceByKey
         KeyT    (&keys)[ITEMS_PER_THREAD],
         ValueT  (&values)[ITEMS_PER_THREAD],
         OffsetT (&segment_flags)[ITEMS_PER_THREAD],
-        OffsetT (&segment_indices)[ITEMS_PER_THREAD],
-        OffsetT num_segments)
+        OffsetT (&segment_indices)[ITEMS_PER_THREAD])
     {
         // Scatter flagged keys and values
         #pragma unroll
@@ -471,7 +474,10 @@ struct AgentReduceByKey
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         OffsetT         num_tile_segments,
         OffsetT         num_tile_segments_prefix,
-        OffsetT         num_segments)
+        OffsetT         num_segments,
+        OffsetT         num_remaining,
+        KeyT            last_key,
+        ValueT          last_value)
     {
         // Do a one-phase scatter if (a) two-phase is disabled or (b) the average number of selected items per thread is less than one
         if (TWO_PHASE_SCATTER && (num_tile_segments > BLOCK_THREADS))
@@ -490,9 +496,35 @@ struct AgentReduceByKey
                 keys,
                 values,
                 segment_flags,
-                segment_indices,
-                num_segments);
+                segment_indices);
         }
+
+        // Last thread will output final count and last item, if necessary
+        if (IS_LAST_TILE && (threadIdx.x == BLOCK_THREADS - 1))
+        {
+            // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
+            if (num_remaining == TILE_ITEMS)
+            {
+                if (IS_SEGMENTED_REDUCTION_FIXUP)
+                {
+                    // Update the value at the key location
+                    d_aggregates_out[last_key] = reduction_op(last_value, d_fixup_in[last_key]);
+                }
+                else
+                {
+                    // Scatter key and value
+                    d_unique_out[num_segments] = last_key;
+                    d_aggregates_out[num_segments] = last_value;
+                    num_segments++;
+                }
+            }
+
+            // Output the total number of items selected
+            if (!IS_SEGMENTED_REDUCTION_FIXUP)
+                *d_num_runs_out = num_segments;
+        }
+
+
     }
 
 
@@ -505,7 +537,7 @@ struct AgentReduceByKey
      * Process first tile of input (dynamic chained scan).  Returns the running count of segments and aggregated values (including this tile)
      */
     template <bool IS_LAST_TILE>
-    __device__ __forceinline__ ItemOffsetPairT ConsumeFirstTile(
+    __device__ __forceinline__ void ConsumeFirstTile(
         OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
@@ -517,7 +549,7 @@ struct AgentReduceByKey
         OffsetT             segment_indices[ITEMS_PER_THREAD];  // Segment indices
         ItemOffsetPairT     scan_items[ITEMS_PER_THREAD];       // Zipped values and segment flags|indices
 
-        // Load keys
+        // Load keys (last tile repeats final element)
         if (IS_LAST_TILE)
             BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + tile_offset, keys, num_remaining);
         else
@@ -525,7 +557,7 @@ struct AgentReduceByKey
 
         __syncthreads();
 
-        // Load values
+        // Load values (last tile repeats final element)
         if (IS_LAST_TILE)
             BlockLoadValues(temp_storage.load_values).Load(d_values_in + tile_offset, values, num_remaining);
         else
@@ -569,9 +601,10 @@ struct AgentReduceByKey
             segment_indices,
             tile_aggregate.offset,
             0,
-            tile_aggregate.offset);
-
-        return tile_aggregate;
+            tile_aggregate.offset,
+            num_remaining,
+            keys[ITEMS_PER_THREAD - 1],
+            tile_aggregate.value);
     }
 
 
@@ -579,7 +612,7 @@ struct AgentReduceByKey
      * Process subsequent tile of input (dynamic chained scan).  Returns the running count of segments and aggregated values (including this tile)
      */
     template <bool IS_LAST_TILE>
-    __device__ __forceinline__ ItemOffsetPairT ConsumeSubsequentTile(
+    __device__ __forceinline__ void ConsumeSubsequentTile(
         OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
         OffsetT             tile_offset,        ///< Tile offset
@@ -592,7 +625,7 @@ struct AgentReduceByKey
         OffsetT             segment_indices[ITEMS_PER_THREAD];      // Segment indices
         ItemOffsetPairT     scan_items[ITEMS_PER_THREAD];           // Zipped values and segment flags|indices
 
-        // Load keys
+        // Load keys (last tile repeats final element)
         if (IS_LAST_TILE)
             BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in + tile_offset, keys, num_remaining);
         else
@@ -604,7 +637,7 @@ struct AgentReduceByKey
 
         __syncthreads();
 
-        // Load values
+        // Load values (last tile repeats final element)
         if (IS_LAST_TILE)
             BlockLoadValues(temp_storage.load_values).Load(d_values_in + tile_offset, values, num_remaining);
         else
@@ -635,9 +668,10 @@ struct AgentReduceByKey
             segment_indices,
             tile_aggregate.offset,
             prefix_op.GetExclusivePrefix().offset,
-            tile_inclusive_prefix.offset);
-
-        return tile_inclusive_prefix;
+            tile_inclusive_prefix.offset,
+            num_remaining,
+            keys[ITEMS_PER_THREAD - 1],
+            tile_aggregate.value);
     }
 
 
@@ -646,35 +680,30 @@ struct AgentReduceByKey
      */
     template <
         bool                IS_LAST_TILE>
-    __device__ __forceinline__ ItemOffsetPairT ConsumeTile(
+    __device__ __forceinline__ void ConsumeTile(
         OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
-        ItemOffsetPairT tile_inclusive_prefix;
         if (tile_idx == 0)
         {
-            tile_inclusive_prefix = ConsumeFirstTile<IS_LAST_TILE>(num_remaining, tile_offset, tile_state);
+            ConsumeFirstTile<IS_LAST_TILE>(num_remaining, tile_offset, tile_state);
         }
         else
         {
-            tile_inclusive_prefix = ConsumeSubsequentTile<IS_LAST_TILE>(num_remaining, tile_idx, tile_offset, tile_state);
+            ConsumeSubsequentTile<IS_LAST_TILE>(num_remaining, tile_idx, tile_offset, tile_state);
         }
-
-        return tile_inclusive_prefix;
     }
 
 
     /**
      * Scan tiles of items as part of a dynamic chained scan
      */
-    template <typename NumRunsIteratorT>        ///< Output iterator type for recording number of items selected
     __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
         int                 num_tiles,          ///< Total number of input tiles
-        ScanTileStateT&     tile_state,         ///< Global tile state descriptor
-        NumRunsIteratorT    d_num_runs_out)     ///< Output pointer for total number of segments identified
+        ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
         // Blocks are launched in increasing order, so just assign one tile per block
         int     tile_idx        = (blockIdx.x * gridDim.y) + blockIdx.y;    // Current tile index
@@ -689,19 +718,7 @@ struct AgentReduceByKey
         else if (num_remaining > 0)
         {
             // The last tile (possibly partially-full)
-            ItemOffsetPairT tile_inclusive_prefix = ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
-
-            if (threadIdx.x == 0)
-            {
-                // Output the total number of items selected
-                *d_num_runs_out = tile_inclusive_prefix.offset;
-
-                // If the last tile is a whole tile, the inclusive prefix contains accumulated value reduction for the last segment
-                if (num_remaining == TILE_ITEMS)
-                {
-                    d_aggregates_out[tile_inclusive_prefix.offset - 1] = tile_inclusive_prefix.value;
-                }
-            }
+            ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
         }
     }
 
