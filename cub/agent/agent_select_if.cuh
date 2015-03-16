@@ -667,7 +667,7 @@ struct AgentSelectIf
         NumSelectedIteratorT    d_num_selected_out) ///< Output total number selection_flags
     {
         // Blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.x * gridDim.y) + blockIdx.y;    // Current tile index
         OffsetT tile_offset     = tile_idx * TILE_ITEMS;                    // Global offset for the current tile
 
         if (tile_idx < num_tiles - 1)

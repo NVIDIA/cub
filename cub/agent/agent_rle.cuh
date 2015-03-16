@@ -798,7 +798,7 @@ struct AgentRle
         NumRunsIteratorT    d_num_runs_out)         ///< Output pointer for total number of runs identified
     {
         // Blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.y * gridDim.x) + blockIdx.x;    // Current tile index
+        int     tile_idx        = (blockIdx.x * gridDim.y) + blockIdx.y;    // Current tile index
         OffsetT tile_offset     = tile_idx * TILE_ITEMS;                  // Global offset for the current tile
         OffsetT num_remaining   = num_items - tile_offset;                  // Remaining items (including this tile)
 
