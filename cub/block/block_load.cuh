@@ -106,6 +106,7 @@ __device__ __forceinline__ void LoadDirectBlocked(
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
+/*
     int bounds = valid_items - (linear_tid * ITEMS_PER_THREAD);
 
     #pragma unroll
@@ -115,6 +116,15 @@ __device__ __forceinline__ void LoadDirectBlocked(
         {
             items[ITEM] = block_itr[(linear_tid * ITEMS_PER_THREAD) + ITEM];
         }
+    }
+*/
+
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        int offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
+        offset = CUB_MIN(offset, valid_items - 1);
+        items[ITEM] = block_itr[offset];
     }
 }
 
@@ -288,6 +298,7 @@ __device__ __forceinline__ void LoadDirectStriped(
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
+/*
     int bounds = valid_items - linear_tid;
 
     #pragma unroll
@@ -297,6 +308,14 @@ __device__ __forceinline__ void LoadDirectStriped(
         {
             items[ITEM] = block_itr[linear_tid + (ITEM * BLOCK_THREADS)];
         }
+    }
+*/
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        int offset = linear_tid + (ITEM * BLOCK_THREADS);
+        offset = CUB_MIN(offset, valid_items - 1);
+        items[ITEM] = block_itr[offset];
     }
 }
 
@@ -397,9 +416,12 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
+
     int tid                 = linear_tid & (CUB_PTX_WARP_THREADS - 1);
     int wid                 = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
     int warp_offset         = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+
+/*
     int bounds              = valid_items - warp_offset - tid;
 
     // Load directly in warp-striped order
@@ -410,6 +432,16 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
         {
             items[ITEM] = block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)];
         }
+    }
+*/
+
+    // Load directly in warp-striped order
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
+    {
+        int offset = warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS);
+        offset = CUB_MIN(offset, valid_items);
+        items[ITEM] = block_itr[offset];
     }
 }
 

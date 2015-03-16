@@ -88,6 +88,7 @@ __global__ void DeviceReduceByKeyKernel(
             UniqueOutputIteratorT,
             ValuesInputIteratorT,
             AggregatesOutputIteratorT,
+            NumRunsOutputIteratorT,
             EqualityOpT,
             ReductionOpT,
             OffsetT>
@@ -97,11 +98,10 @@ __global__ void DeviceReduceByKeyKernel(
     __shared__ typename AgentReduceByKeyT::TempStorage temp_storage;
 
     // Process tiles
-    AgentReduceByKeyT(temp_storage, d_keys_in, d_unique_out, d_values_in, d_aggregates_out, equality_op, reduction_op).ConsumeRange(
+    AgentReduceByKeyT(temp_storage, d_keys_in, d_unique_out, d_values_in, d_aggregates_out, d_num_runs_out, equality_op, reduction_op).ConsumeRange(
         num_items,
         num_tiles,
-        tile_state,
-        d_num_runs_out);
+        tile_state);
 }
 
 
