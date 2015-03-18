@@ -130,6 +130,7 @@ public:
 
 public:
 
+    /// Wrapped native pointer
     ValueType* ptr;
 
     /// Constructor

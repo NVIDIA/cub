@@ -91,6 +91,24 @@ struct AgentSpmvPolicy
  * Thread block abstractions
  ******************************************************************************/
 
+template <
+    typename        ValueT,                     ///< Matrix and vector value type
+    typename        OffsetT>                    ///< Signed integer type for sequence offsets
+struct SpmvParams
+{
+    ValueT*         d_matrix_values;            ///< Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
+    OffsetT*        d_matrix_row_end_offsets;   ///< Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
+    OffsetT*        d_matrix_column_indices;    ///< Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
+    ValueT*         d_vector_x;                 ///< Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
+    ValueT*         d_vector_y;                 ///< Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
+    int             num_rows;                   ///< Number of rows of matrix <b>A</b>.
+    int             num_cols;                   ///< Number of columns of matrix <b>A</b>.
+    int             num_nonzeros;               ///< Number of nonzero elements of matrix <b>A</b>.
+    ValueT          alpha;                      ///< Alpha multiplicand
+    ValueT          beta;                       ///< Beta addend-multiplicand
+};
+
+
 /**
  * \brief AgentSpmv implements a stateful abstraction of CUDA thread blocks for participating in device-wide SpMV.
  */
@@ -99,6 +117,7 @@ template <
     typename    ValueT,                     ///< Matrix and vector value type
     typename    OffsetT,                    ///< Signed integer type for sequence offsets
     typename    CoordinateT,                ///< Merge path coordinate type
+    bool        HAS_BETA_ZERO,              ///< Whether the input parameter \p beta is zero (and vector Y is set rather than updated)
     int         PTX_ARCH = CUB_PTX_ARCH>    ///< PTX compute capability
 struct AgentSpmv
 {
@@ -207,19 +226,19 @@ struct AgentSpmv
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    /// Reference to temp_storage
-    _TempStorage &temp_storage;
 
+    _TempStorage&                   temp_storage;               /// Reference to temp_storage
     MatrixValueIteratorT            d_matrix_values;            ///< Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
     MatrixRowOffsetsIteratorT       d_matrix_row_end_offsets;   ///< Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
     MatrixColumnIndicesIteratorT    d_matrix_column_indices;    ///< Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
     VectorValueIteratorT            d_vector_x;                 ///< Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
-    ValueT*                         d_vector_y;                 ///< Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-    OffsetT*                        d_tile_carry_rows;          ///< Pointer to the temporary array carry-out dot product row-ids, one per block
-    ValueT*                         d_tile_carry_values;        ///< Pointer to the temporary array carry-out dot product partial-sums, one per block
+    VectorValueIteratorT            d_vector_y_in;              ///< Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
+    ValueT*                         d_vector_y_out;             ///< Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
     int                             num_rows;                   ///< The number of rows of matrix <b>A</b>.
     int                             num_cols;                   ///< The number of columns of matrix <b>A</b>.
     int                             num_nonzeros;               ///< The number of nonzero elements of matrix <b>A</b>.
+    ValueT                          alpha;                      ///< Alpha multiplicand
+    ValueT                          beta;                       ///< Beta addend-multiplicand
 
     //---------------------------------------------------------------------
     // Utility methods
@@ -241,7 +260,17 @@ struct AgentSpmv
         {
             if (row_indices[ITEM] < tile_num_rows)
             {
-                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+                if (HAS_BETA_ZERO)
+                {
+                    // Set the output vector element
+                    d_vector_y_out[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+                }
+                else
+                {
+                    // Update the output vector element
+                    ValueT addend = beta * d_vector_y_in[tile_start_coord.x + thread_segment[ITEM].offset];
+                    d_vector_y_out[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value + addend;
+                }
             }
         }
     }
@@ -274,7 +303,16 @@ struct AgentSpmv
         // Scatter row dot products from smem to gmem
         for (int item_idx = threadIdx.x; item_idx < tile_num_rows; item_idx += BLOCK_THREADS)
         {
-            d_vector_y[tile_start_coord.x + item_idx] = s_tile_nonzeros[item_idx];
+            if (HAS_BETA_ZERO)
+            {
+                // Set the output vector element
+                d_vector_y_out[tile_start_coord.x + item_idx] = s_tile_nonzeros[item_idx];
+            }
+            {
+                // Update the output vector element
+                ValueT addend = d_vector_y_in[tile_start_coord.x + item_idx] * beta;
+                d_vector_y_out[tile_start_coord.x + item_idx] = s_tile_nonzeros[item_idx] + addend;
+            }
         }
     }
 
@@ -287,29 +325,21 @@ struct AgentSpmv
      * Constructor
      */
     __device__ __forceinline__ AgentSpmv(
-        TempStorage&    temp_storage,              ///< Reference to temp_storage
-        ValueT*         d_matrix_values,            ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-        OffsetT*        d_matrix_row_end_offsets,   ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
-        OffsetT*        d_matrix_column_indices,    ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
-        ValueT*         d_vector_x,                 ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
-        ValueT*         d_vector_y,                 ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-        OffsetT*        d_tile_carry_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-        ValueT*         d_tile_carry_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
-        int             num_rows,                   ///< [in] number of rows of matrix <b>A</b>.
-        int             num_cols,                   ///< [in] number of columns of matrix <b>A</b>.
-        int             num_nonzeros)               ///< [in] number of nonzero elements of matrix <b>A</b>.
+        TempStorage&                    temp_storage,           ///< Reference to temp_storage
+        SpmvParams<ValueT, OffsetT>&    spmv_params)            ///< SpMV input parameter bundle
     :
         temp_storage(temp_storage.Alias()),
-        d_matrix_values(d_matrix_values),
-        d_matrix_row_end_offsets(d_matrix_row_end_offsets),
-        d_matrix_column_indices(d_matrix_column_indices),
-        d_vector_x(d_vector_x),
-        d_vector_y(d_vector_y),
-        d_tile_carry_rows(d_tile_carry_rows),
-        d_tile_carry_values(d_tile_carry_values),
-        num_rows(num_rows),
-        num_cols(num_cols),
-        num_nonzeros(num_nonzeros)
+        d_matrix_values(spmv_params.d_matrix_values),
+        d_matrix_row_end_offsets(spmv_params.d_matrix_row_end_offsets),
+        d_matrix_column_indices(spmv_params.d_matrix_column_indices),
+        d_vector_x(spmv_params.d_vector_x),
+        d_vector_y_in(spmv_params.d_vector_y),
+        d_vector_y_out(spmv_params.d_vector_y),
+        num_rows(spmv_params.num_rows),
+        num_cols(spmv_params.num_cols),
+        num_nonzeros(spmv_params.num_nonzeros),
+        alpha(spmv_params.alpha),
+        beta(spmv_params.beta)
     {}
 
 
@@ -382,9 +412,9 @@ struct AgentSpmv
         CoordinateT                     thread_start_coord;
 
         MergePathSearch(
-            OffsetT(threadIdx.x * ITEMS_PER_THREAD),            // Diagonal
-            s_tile_row_end_offsets,                               // List A
-            tile_nonzero_indices,                               // List B
+            OffsetT(threadIdx.x * ITEMS_PER_THREAD),    // Diagonal
+            s_tile_row_end_offsets,                     // List A
+            tile_nonzero_indices,                       // List B
             tile_num_rows,
             tile_num_nonzeros,
             thread_start_coord);
@@ -403,7 +433,7 @@ struct AgentSpmv
             OffsetT column_index        = d_matrix_column_indices[nonzero_idx];
             ValueT  matrix_value        = d_matrix_values[nonzero_idx];
             ValueT  vector_value        = d_vector_x[column_index];
-            ValueT  nonzero             = matrix_value * vector_value;
+            ValueT  nonzero             = alpha * matrix_value * vector_value;
 
             bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
             if (accumulate)
@@ -463,7 +493,7 @@ struct AgentSpmv
             ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
             ValueT  vector_value        = d_vector_x[column_index];
   
-            s_tile_nonzeros[item]       = matrix_value * vector_value;
+            s_tile_nonzeros[item]       = alpha * matrix_value * vector_value;
         }
 
         __syncthreads();    // Perf-sync
@@ -487,9 +517,9 @@ struct AgentSpmv
         CoordinateT                     thread_start_coord;
 
         MergePathSearch(
-            OffsetT(threadIdx.x * ITEMS_PER_THREAD),            // Diagonal
-            s_tile_row_end_offsets,                               // List A
-            tile_nonzero_indices,                               // List B
+            OffsetT(threadIdx.x * ITEMS_PER_THREAD),    // Diagonal
+            s_tile_row_end_offsets,                     // List A
+            tile_nonzero_indices,                       // List B
             tile_num_rows,
             tile_num_nonzeros,
             thread_start_coord);
@@ -544,7 +574,9 @@ struct AgentSpmv
      * Consume input tile
      */
     __device__ __forceinline__ void ConsumeTile(
-        CoordinateT*        d_tile_coordinates)
+        CoordinateT*    d_tile_coordinates,     ///< [in] Pointer to the temporary array of tile starting coordinates
+        OffsetT*        d_tile_carry_rows,      ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
+        ValueT*         d_tile_carry_values)    ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
     {
         int tile_idx = (blockIdx.x * gridDim.y) + blockIdx.y;    // Current tile index
 
