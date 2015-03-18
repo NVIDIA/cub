@@ -62,29 +62,28 @@ namespace cub {
  * Spmv search kernel. Identifies merge path starting coordinates for each tile.
  */
 template <
-    typename    SpmvPolicyTT,                   ///< Parameterized SpmvPolicyT tuning policy type
-    typename    ScanTileStateT,                     ///< Tile status interface type
-    typename    OffsetT,                            ///< Signed integer type for sequence offsets
-    typename    CoordinateT>                        ///< Merge path coordinate type
+    typename    SpmvPolicyT,                    ///< Parameterized SpmvPolicy tuning policy type
+    typename    ScanTileStateT,                 ///< Tile status interface type
+    typename    OffsetT,                        ///< Signed integer type for sequence offsets
+    typename    CoordinateT,                    ///< Merge path coordinate type
+    typename    SpmvParamsT>                    ///< SpmvParams type
 __global__ void DeviceSpmvSearchKernel(
-    ScanTileStateT  tile_state,                     ///< [in] Tile status interface
-    int             num_spmv_tiles,
-    int             num_reduce_by_key_tiles,
-    OffsetT*        d_matrix_row_end_offsets,       ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
-    CoordinateT*    d_tile_coordinates,             ///< [out] Pointer to the temporary array of tile starting coordinates
-    int             num_rows,                       ///< [in] number of rows of matrix <b>A</b>.
-    int             num_nonzeros)                   ///< [in] number of nonzero elements of matrix <b>A</b>.
+    ScanTileStateT  tile_state,                 ///< [in] Tile status interface for fixup reduce-by-key kernel
+    int             num_spmv_tiles,             ///< [in] Number of SpMV merge tiles (spmv grid size)
+    int             num_reduce_by_key_tiles,    ///< [in] Number of reduce-by-key tiles (fixup grid size)
+    CoordinateT*    d_tile_coordinates,         ///< [out] Pointer to the temporary array of tile starting coordinates
+    SpmvParamsT     spmv_params)                ///< [in] SpMV input parameter bundle
 {
     /// Constants
     enum
     {
-        BLOCK_THREADS           = SpmvPolicyTT::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = SpmvPolicyTT::ITEMS_PER_THREAD,
+        BLOCK_THREADS           = SpmvPolicyT::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = SpmvPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     typedef CacheModifiedInputIterator<
-            SpmvPolicyTT::MATRIX_ROW_OFFSETS_LOAD_MODIFIER,
+            SpmvPolicyT::MATRIX_ROW_OFFSETS_LOAD_MODIFIER,
             OffsetT,
             OffsetT>
         MatrixRowOffsetsIteratorT;
@@ -103,10 +102,10 @@ __global__ void DeviceSpmvSearchKernel(
         // Search the merge path
         MergePathSearch(
             diagonal,
-            MatrixRowOffsetsIteratorT(d_matrix_row_end_offsets),
+            MatrixRowOffsetsIteratorT(spmv_params.d_matrix_row_end_offsets),
             nonzero_indices,
-            num_rows,
-            num_nonzeros,
+            spmv_params.num_rows,
+            spmv_params.num_nonzeros,
             tile_coordinate);
 
         // Output starting offset
@@ -119,49 +118,34 @@ __global__ void DeviceSpmvSearchKernel(
  * Spmv agent entry point
  */
 template <
-    typename        SpmvPolicyTT,           ///< Parameterized SpmvPolicyT tuning policy type
+    typename        SpmvPolicyT,                ///< Parameterized SpmvPolicy tuning policy type
     typename        ValueT,                     ///< Matrix and vector value type
     typename        OffsetT,                    ///< Signed integer type for sequence offsets
-    typename        CoordinateT>                ///< Merge path coordinate type
-__launch_bounds__ (int(SpmvPolicyTT::BLOCK_THREADS))
+    typename        CoordinateT,                ///< Merge path coordinate type
+    bool            HAS_BETA_ZERO>              ///< Whether the input parameter Beta is zero (and vector Y is set rather than updated)
+__launch_bounds__ (int(SpmvPolicyT::BLOCK_THREADS))
 __global__ void DeviceSpmvKernel(
-    ValueT*         d_matrix_values,            ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-    OffsetT*        d_matrix_row_end_offsets,   ///< [in] Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
-    OffsetT*        d_matrix_column_indices,    ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
-    ValueT*         d_vector_x,                 ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
-    ValueT*         d_vector_y,                 ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-    CoordinateT*    d_tile_coordinates,         ///< [in] Pointer to the temporary array of tile starting coordinates
-    OffsetT*        d_tile_carry_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-    ValueT*         d_tile_carry_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
-    int             num_rows,                   ///< [in] number of rows of matrix <b>A</b>.
-    int             num_cols,                   ///< [in] number of columns of matrix <b>A</b>.
-    int             num_nonzeros)               ///< [in] number of nonzero elements of matrix <b>A</b>.
+    SpmvParams<ValueT, OffsetT>     spmv_params,                ///< [in] SpMV input parameter bundle
+    CoordinateT*                    d_tile_coordinates,         ///< [in] Pointer to the temporary array of tile starting coordinates
+    OffsetT*                        d_tile_carry_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
+    ValueT*                         d_tile_carry_values)        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
 {
     // Spmv agent type specialization
     typedef AgentSpmv<
-            SpmvPolicyTT,
+            SpmvPolicyT,
             ValueT,
             OffsetT,
-            CoordinateT>
+            CoordinateT,
+            HAS_BETA_ZERO>
         AgentSpmvT;
 
     // Shared memory for AgentSpmv
     __shared__ typename AgentSpmvT::TempStorage temp_storage;
 
-    AgentSpmvT agent(
-        temp_storage,
-        d_matrix_values,
-        d_matrix_row_end_offsets,
-        d_matrix_column_indices,
-        d_vector_x,
-        d_vector_y,
+    AgentSpmvT(temp_storage, spmv_params).ConsumeTile(
+        d_tile_coordinates,
         d_tile_carry_rows,
-        d_tile_carry_values,
-        num_rows,
-        num_cols,
-        num_nonzeros);
-
-    agent.ConsumeTile(d_tile_coordinates);
+        d_tile_carry_values);
 }
 
 
@@ -186,6 +170,9 @@ struct DispatchSpmv
     {
         INIT_KERNEL_THREADS = 128
     };
+
+    // SpmvParams bundle type
+    typedef SpmvParams<ValueT, OffsetT> SpmvParamsT;
 
     // 2D merge path coordinate type
     typedef typename CubVector<OffsetT, 2>::Type CoordinateT;
@@ -386,14 +373,7 @@ struct DispatchSpmv
     static cudaError_t Dispatch(
         void*                   d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                 temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        ValueT*                 d_matrix_values,                    ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-        OffsetT*                d_matrix_row_offsets,               ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
-        OffsetT*                d_matrix_column_indices,            ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
-        ValueT*                 d_vector_x,                         ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
-        ValueT*                 d_vector_y,                         ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-        int                     num_rows,                           ///< [in] number of rows of matrix <b>A</b>.
-        int                     num_cols,                           ///< [in] number of columns of matrix <b>A</b>.
-        int                     num_nonzeros,                       ///< [in] number of nonzero elements of matrix <b>A</b>.
+        SpmvParamsT&            spmv_params,                        ///< SpMV input parameter bundle
         cudaStream_t            stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         SpmvSearchKernelT       spmv_search_kernel,                 ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
@@ -411,9 +391,6 @@ struct DispatchSpmv
         cudaError error = cudaSuccess;
         do
         {
-            // Row end offsets
-            OffsetT* d_matrix_row_end_offsets = d_matrix_row_offsets + 1;
-
             // Get device ordinal
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
@@ -431,7 +408,7 @@ struct DispatchSpmv
             if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
 
             // Total number of spmv work items
-            int num_spmv_items = num_rows + num_nonzeros;
+            int num_spmv_items = spmv_params.num_rows + spmv_params.num_nonzeros;
 
             // Tile sizes of kernels
             int spmv_tile_size              = spmv_config.block_threads * spmv_config.items_per_thread;
@@ -505,10 +482,8 @@ struct DispatchSpmv
                 tile_state,
                 num_spmv_tiles,
                 num_reduce_by_key_tiles,
-                d_matrix_row_end_offsets,
                 d_tile_coordinates,
-                num_rows,
-                num_nonzeros);
+                spmv_params);
 
             // Log spmv_kernel configuration
             if (debug_synchronous) CubLog("Invoking spmv_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
@@ -516,17 +491,10 @@ struct DispatchSpmv
 
             // Invoke spmv_kernel
             spmv_kernel<<<spmv_grid_size, spmv_config.block_threads, 0, stream>>>(
-                d_matrix_values,
-                d_matrix_row_end_offsets,
-                d_matrix_column_indices,
-                d_vector_x,
-                d_vector_y,
+                spmv_params,
                 d_tile_coordinates,
                 d_tile_carry_rows,
-                d_tile_carry_values,
-                num_rows,
-                num_cols,
-                num_nonzeros);
+                d_tile_carry_values);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -546,7 +514,7 @@ struct DispatchSpmv
                     d_tile_carry_rows,
                     NULL,
                     d_tile_carry_values,
-                    d_vector_y,
+                    spmv_params.d_vector_y,
                     NULL,
                     tile_state,
                     cub::Equality(),
@@ -575,18 +543,11 @@ struct DispatchSpmv
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*               d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t&             temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        ValueT*             d_matrix_values,                    ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-        OffsetT*            d_matrix_row_offsets,               ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
-        OffsetT*            d_matrix_column_indices,            ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
-        ValueT*             d_vector_x,                         ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
-        ValueT*             d_vector_y,                         ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-        int                 num_rows,                           ///< [in] number of rows of matrix <b>A</b>.
-        int                 num_cols,                           ///< [in] number of columns of matrix <b>A</b>.
-        int                 num_nonzeros,                       ///< [in] number of nonzero elements of matrix <b>A</b>.
-        cudaStream_t        stream                  = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous       = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        void*                   d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&                 temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        SpmvParamsT&            spmv_params,                        ///< SpMV input parameter bundle
+        cudaStream_t            stream                  = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    debug_synchronous       = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         cudaError error = cudaSuccess;
         do
@@ -604,24 +565,37 @@ struct DispatchSpmv
             InitConfigs(ptx_version, spmv_config, reduce_by_key_config);
 
             // Dispatch
-            if (CubDebug(error = Dispatch(
-                d_temp_storage,
-                temp_storage_bytes,
-                d_matrix_values,
-                d_matrix_row_offsets,
-                d_matrix_column_indices,
-                d_vector_x,
-                d_vector_y,
-                num_rows,
-                num_cols,
-                num_nonzeros,
-                stream,
-                debug_synchronous,
-                DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT>,
-                DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT>,
-                DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                spmv_config,
-                reduce_by_key_config))) break;
+            if (spmv_params.beta == 0.0)
+            {
+                // Dispatch y = alpha*A*x
+                if (CubDebug(error = Dispatch(
+                    d_temp_storage,
+                    temp_storage_bytes,
+                    spmv_params,
+                    stream,
+                    debug_synchronous,
+                    DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
+                    DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, true>,
+                    DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
+                    spmv_config,
+                    reduce_by_key_config))) break;
+            }
+            else
+            {
+                // Dispatch y = alpha*A*x + beta*y
+                if (CubDebug(error = Dispatch(
+                    d_temp_storage,
+                    temp_storage_bytes,
+                    spmv_params,
+                    stream,
+                    debug_synchronous,
+                    DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
+                    DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false>,
+                    DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
+                    spmv_config,
+                    reduce_by_key_config))) break;
+            }
+
         }
         while (0);
 
