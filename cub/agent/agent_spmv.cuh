@@ -117,7 +117,8 @@ template <
     typename    ValueT,                     ///< Matrix and vector value type
     typename    OffsetT,                    ///< Signed integer type for sequence offsets
     typename    CoordinateT,                ///< Merge path coordinate type
-    bool        HAS_BETA_ZERO,              ///< Whether the input parameter \p beta is zero (and vector Y is set rather than updated)
+    bool        HAS_ALPHA,                  ///< Whether the input parameter \p alpha is 1
+    bool        HAS_BETA,                   ///< Whether the input parameter \p beta is 0 
     int         PTX_ARCH = CUB_PTX_ARCH>    ///< PTX compute capability
 struct AgentSpmv
 {
@@ -260,16 +261,16 @@ struct AgentSpmv
         {
             if (row_indices[ITEM] < tile_num_rows)
             {
-                if (HAS_BETA_ZERO)
-                {
-                    // Set the output vector element
-                    d_vector_y_out[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
-                }
-                else
+                if (HAS_BETA)
                 {
                     // Update the output vector element
                     ValueT addend = beta * d_vector_y_in[tile_start_coord.x + thread_segment[ITEM].offset];
                     d_vector_y_out[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value + addend;
+                }
+                else
+                {
+                    // Set the output vector element
+                    d_vector_y_out[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
                 }
             }
         }
@@ -295,7 +296,9 @@ struct AgentSpmv
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (row_indices[ITEM] < tile_num_rows)
+            {
                 s_tile_nonzeros[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
+            }
         }
 
         __syncthreads();
@@ -303,15 +306,16 @@ struct AgentSpmv
         // Scatter row dot products from smem to gmem
         for (int item_idx = threadIdx.x; item_idx < tile_num_rows; item_idx += BLOCK_THREADS)
         {
-            if (HAS_BETA_ZERO)
-            {
-                // Set the output vector element
-                d_vector_y_out[tile_start_coord.x + item_idx] = s_tile_nonzeros[item_idx];
-            }
+            if (HAS_BETA)
             {
                 // Update the output vector element
                 ValueT addend = d_vector_y_in[tile_start_coord.x + item_idx] * beta;
                 d_vector_y_out[tile_start_coord.x + item_idx] = s_tile_nonzeros[item_idx] + addend;
+            }
+            else
+            {
+                // Set the output vector element
+                d_vector_y_out[tile_start_coord.x + item_idx] = s_tile_nonzeros[item_idx];
             }
         }
     }
@@ -363,7 +367,7 @@ struct AgentSpmv
             OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
             ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
             ValueT  vector_value        = d_vector_x[column_index];
-            nonzeros[ITEM]             = matrix_value * vector_value;
+            nonzeros[ITEM]              = matrix_value * vector_value;
         }
 
         __syncthreads();    // Perf-sync
@@ -372,6 +376,9 @@ struct AgentSpmv
 
         tile_aggregate.offset = 0;
         tile_aggregate.value = tile_sum;
+
+        if (HAS_ALPHA)
+            tile_aggregate.value *= alpha;
 
         // Return the tile's running carry-out
         return tile_aggregate;
@@ -433,7 +440,10 @@ struct AgentSpmv
             OffsetT column_index        = d_matrix_column_indices[nonzero_idx];
             ValueT  matrix_value        = d_matrix_values[nonzero_idx];
             ValueT  vector_value        = d_vector_x[column_index];
-            ValueT  nonzero             = alpha * matrix_value * vector_value;
+            ValueT  nonzero             = matrix_value * vector_value;
+
+            if (HAS_ALPHA)
+                nonzero *= alpha;
 
             bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
             if (accumulate)
@@ -492,8 +502,12 @@ struct AgentSpmv
             OffsetT column_index        = d_matrix_column_indices[tile_start_coord.y + item];
             ValueT  matrix_value        = d_matrix_values[tile_start_coord.y + item];
             ValueT  vector_value        = d_vector_x[column_index];
-  
-            s_tile_nonzeros[item]       = alpha * matrix_value * vector_value;
+            ValueT  nonzero             = matrix_value * vector_value;
+
+            if (HAS_ALPHA)
+                nonzero *= alpha;
+
+            s_tile_nonzeros[item]       = nonzero;
         }
 
         __syncthreads();    // Perf-sync

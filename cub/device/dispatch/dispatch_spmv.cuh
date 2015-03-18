@@ -122,7 +122,8 @@ template <
     typename        ValueT,                     ///< Matrix and vector value type
     typename        OffsetT,                    ///< Signed integer type for sequence offsets
     typename        CoordinateT,                ///< Merge path coordinate type
-    bool            HAS_BETA_ZERO>              ///< Whether the input parameter Beta is zero (and vector Y is set rather than updated)
+    bool            HAS_ALPHA,                  ///< Whether the input parameter Alpha is 1
+    bool            HAS_BETA>                   ///< Whether the input parameter Beta is 0
 __launch_bounds__ (int(SpmvPolicyT::BLOCK_THREADS))
 __global__ void DeviceSpmvKernel(
     SpmvParams<ValueT, OffsetT>     spmv_params,                ///< [in] SpMV input parameter bundle
@@ -136,7 +137,8 @@ __global__ void DeviceSpmvKernel(
             ValueT,
             OffsetT,
             CoordinateT,
-            HAS_BETA_ZERO>
+            HAS_ALPHA,
+            HAS_BETA>
         AgentSpmvT;
 
     // Shared memory for AgentSpmv
@@ -567,33 +569,49 @@ struct DispatchSpmv
             // Dispatch
             if (spmv_params.beta == 0.0)
             {
-                // Dispatch y = alpha*A*x
-                if (CubDebug(error = Dispatch(
-                    d_temp_storage,
-                    temp_storage_bytes,
-                    spmv_params,
-                    stream,
-                    debug_synchronous,
-                    DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
-                    DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, true>,
-                    DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                    spmv_config,
-                    reduce_by_key_config))) break;
+                if (spmv_params.alpha == 1.0)
+                {
+                    // Dispatch y = A*x
+                    if (CubDebug(error = Dispatch(
+                        d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
+                        DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
+                        DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false, false>,
+                        DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
+                        spmv_config, reduce_by_key_config))) break;
+                }
+                else
+                {
+                    // Dispatch y = alpha*A*x
+                    if (CubDebug(error = Dispatch(
+                        d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
+                        DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
+                        DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, true, false>,
+                        DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
+                        spmv_config, reduce_by_key_config))) break;
+                }
             }
             else
             {
-                // Dispatch y = alpha*A*x + beta*y
-                if (CubDebug(error = Dispatch(
-                    d_temp_storage,
-                    temp_storage_bytes,
-                    spmv_params,
-                    stream,
-                    debug_synchronous,
-                    DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
-                    DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false>,
-                    DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                    spmv_config,
-                    reduce_by_key_config))) break;
+                if (spmv_params.alpha == 1.0)
+                {
+                    // Dispatch y = A*x + beta*y
+                    if (CubDebug(error = Dispatch(
+                        d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
+                        DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
+                        DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false, true>,
+                        DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
+                        spmv_config, reduce_by_key_config))) break;
+                }
+                else
+                {
+                    // Dispatch y = alpha*A*x + beta*y
+                    if (CubDebug(error = Dispatch(
+                        d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
+                        DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
+                        DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, true, true>,
+                        DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
+                        spmv_config, reduce_by_key_config))) break;
+                }
             }
 
         }
