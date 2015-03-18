@@ -243,14 +243,9 @@ __global__ void DeviceRadixSortSingleKernel(
 
     // Assign default (min/max) value to all keys
     UnsignedBits default_key = (DESCENDING) ? Traits<KeyT>::MIN_KEY : Traits<KeyT>::MAX_KEY;
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-    {
-        keys[ITEM] = reinterpret_cast<KeyT&>(default_key);
-    }
 
     // Load keys
-    BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in, keys, num_items);
+    BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in, keys, num_items, default_key);
 
     __syncthreads();
 
