@@ -118,7 +118,8 @@ float CusparseSpmv(
     cusparseCreateMatDescr(&desc);
 
     // Reset input/output vector y
-    CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(float) * num_rows, cudaMemcpyHostToDevice));
+    if (beta != 0)
+        CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(float) * num_rows, cudaMemcpyHostToDevice));
 
     // Warmup
     AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseScsrmv(
@@ -134,7 +135,8 @@ float CusparseSpmv(
     for(int it = 0; it < timing_iterations; ++it)
     {
         // Reset input/output vector y
-        CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(float) * num_rows, cudaMemcpyHostToDevice));
+        if (beta != 0)
+            CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(float) * num_rows, cudaMemcpyHostToDevice));
 
         gpu_timer.Start();
 
@@ -177,7 +179,8 @@ float CusparseSpmv(
     cusparseCreateMatDescr(&desc);
 
     // Reset input/output vector y
-    CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(double) * num_rows, cudaMemcpyHostToDevice));
+    if (beta != 0)
+        CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(double) * num_rows, cudaMemcpyHostToDevice));
 
     // Warmup
     AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDcsrmv(
@@ -193,7 +196,8 @@ float CusparseSpmv(
     for(int it = 0; it < timing_iterations; ++it)
     {
         // Reset input/output vector y
-        CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(double) * num_rows, cudaMemcpyHostToDevice));
+        if (beta != 0)
+            CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(double) * num_rows, cudaMemcpyHostToDevice));
 
         gpu_timer.Start();
 
@@ -248,7 +252,8 @@ float CubSpmv(
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Reset input/output vector y
-    CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(ValueT) * num_rows, cudaMemcpyHostToDevice));
+    if (beta != 0)
+        CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(ValueT) * num_rows, cudaMemcpyHostToDevice));
 
     // Warmup
     CubDebugExit(DeviceSpmv::CsrMV(
@@ -265,7 +270,8 @@ float CubSpmv(
     for(int it = 0; it < timing_iterations; ++it)
     {
         // Reset input/output vector y
-        CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(ValueT) * num_rows, cudaMemcpyHostToDevice));
+        if (beta != 0)
+            CubDebugExit(cudaMemcpy(d_vector_y, vector_y_in, sizeof(ValueT) * num_rows, cudaMemcpyHostToDevice));
 
         gpu_timer.Start();
 
@@ -351,7 +357,7 @@ void RunTests(
     for (int col = 0; col < csr_matrix.num_cols; ++col)
         vector_x[col] = 1.0;
 
-    for (int row = 0; row < csr_matrix.num_cols; ++row)
+    for (int row = 0; row < csr_matrix.num_rows; ++row)
         vector_y_in[row] = 1.0;
 
     // Compute reference answer
