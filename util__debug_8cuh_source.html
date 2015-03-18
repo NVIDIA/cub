@@ -103,7 +103,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="util__debug_8cuh.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/******************************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * </span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -158,7 +158,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;<span class="preprocessor"></span>        fprintf(stderr, <span class="stringliteral">&quot;CUDA error %d [%s, %d]: %s\n&quot;</span>, error, filename, line, cudaGetErrorString(error));</div>
 <div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;        fflush(stderr);</div>
 <div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;<span class="preprocessor">    #elif (CUB_PTX_ARCH &gt;= 200)</span></div>
-<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor"></span>        printf(<span class="stringliteral">&quot;CUDA error %d [block %d, thread %d, %s, %d]\n&quot;</span>, error, blockIdx.x, threadIdx.x, filename, line);</div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor"></span>        printf(<span class="stringliteral">&quot;CUDA error %d [block (%d,%d,%d) thread (%d,%d,%d), %s, %d]\n&quot;</span>, error, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, filename, line);</div>
 <div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;<span class="preprocessor">    #endif</span></div>
 <div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;<span class="preprocessor"></span>    }</div>
 <div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;<span class="preprocessor">#endif</span></div>
@@ -175,7 +175,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
 <div class="line"><a name="l00104"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga6788287a780dc10c443aa1ab5ae9f0db">  104</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CubLog(format, ...) printf(format,__VA_ARGS__);</span></div>
 <div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#elif (CUB_PTX_ARCH &gt;= 200)</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CubLog(format, ...) printf(&quot;[block %d, thread %d]: &quot; format, blockIdx.x, threadIdx.x, __VA_ARGS__);</span></div>
+<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CubLog(format, ...) printf(&quot;[block (%d,%d,%d), thread (%d,%d,%d)]: &quot; format, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, __VA_ARGS__);</span></div>
 <div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;</div>
@@ -188,7 +188,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 28 2014 22:37:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

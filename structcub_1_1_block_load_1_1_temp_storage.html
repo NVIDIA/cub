@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage Struct Reference</title>
+<title>CUB: cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage Struct Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -100,31 +100,30 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div class="summary">
 <a href="structcub_1_1_block_load_1_1_temp_storage-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage Struct Reference</div>  </div>
+<div class="title">cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage Struct Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
-    typename InputIterator, 
+    typename InputIteratorT, 
     int BLOCK_DIM_X, 
     int ITEMS_PER_THREAD, 
     BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, 
-    bool WARP_TIME_SLICING = false, 
     int BLOCK_DIM_Y = 1, 
     int BLOCK_DIM_Z = 1, 
     int PTX_ARCH = CUB_PTX_ARCH&gt;<br/>
-struct cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage</h3>
+struct cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage</h3>
 
 <p>The operations exposed by <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. </p>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00903">903</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01021">1021</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 </div><div class="dynheader">
-Inheritance diagram for cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage:</div>
+Inheritance diagram for cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage:</div>
 <div class="dyncontent">
  <div class="center">
-  <img src="structcub_1_1_block_load_1_1_temp_storage.png" usemap="#cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map" alt=""/>
-  <map id="cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map" name="cub::BlockLoad&lt; InputIterator, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map">
-<area href="structcub_1_1_uninitialized.html" alt="cub::Uninitialized&lt; _TempStorage &gt;" shape="rect" coords="0,0,987,24"/>
+  <img src="structcub_1_1_block_load_1_1_temp_storage.png" usemap="#cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map" alt=""/>
+  <map id="cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map" name="cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map">
+<area href="structcub_1_1_uninitialized.html" alt="cub::Uninitialized&lt; _TempStorage &gt;" shape="rect" coords="0,0,858,24"/>
 </map>
  </div></div>
 <table class="memberdecls">
@@ -157,7 +156,7 @@ DeviceWord&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 28 2014 22:37:04 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:35 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

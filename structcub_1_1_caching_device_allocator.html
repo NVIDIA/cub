@@ -106,10 +106,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><p>A simple caching allocator for device memory allocations. </p>
-<dl class="section user"><dt>Overview</dt><dd>The allocator is thread-safe and is capable of managing cached device allocations on multiple devices. It behaves as follows:</dd></dl>
+<dl class="section user"><dt>Overview</dt><dd>The allocator is thread-safe and stream-safe and is capable of managing cached device allocations on multiple devices. It behaves as follows:</dd></dl>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Allocations categorized by bin size.</li>
-<li>Bin sizes progress geometrically in accordance with the growth factor <code>bin_growth</code> provided during construction. Unused device allocations within a larger bin cache are not reused for allocation requests that categorize to smaller bin sizes.</li>
+<li>Allocations from the allocator are associated with an <code>active_stream</code>. Once freed, the allocation becomes available immediately for reuse within the <code>active_stream</code> with which it was associated with during allocation, and it becomes available for reuse within other streams when all prior work submitted to <code>active_stream</code> has completed.</li>
+<li>Allocations are categorized and cached by bin size. A new allocation request of a given size will only consider cached allocations within the corresponding bin.</li>
+<li>Bin limits progress geometrically in accordance with the growth factor <code>bin_growth</code> provided during construction. Unused device allocations within a larger bin cache are not reused for allocation requests that categorize to smaller bin sizes.</li>
 <li>Allocation requests below (<code>bin_growth</code> ^ <code>min_bin</code>) are rounded up to (<code>bin_growth</code> ^ <code>min_bin</code>).</li>
 <li>Allocations above (<code>bin_growth</code> ^ <code>max_bin</code>) are not rounded up to the nearest bin and are simply freed when they are deallocated instead of being returned to a bin-cache.</li>
 <li>If the total storage of cached allocations on a given device will exceed <code>max_cached_bytes</code>, allocations for that device are simply freed when they are deallocated instead of being returned to their bin-cache.</li>
@@ -125,7 +126,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and sets a maximum of 6,291,455 cached bytes per device </dd></dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_histogram_8cu-example.html#_a0">example_device_histogram.cu</a>, <a class="el" href="example_device_partition_flagged_8cu-example.html#_a0">example_device_partition_flagged.cu</a>, <a class="el" href="example_device_partition_if_8cu-example.html#_a0">example_device_partition_if.cu</a>, <a class="el" href="example_device_radix_sort_8cu-example.html#_a0">example_device_radix_sort.cu</a>, <a class="el" href="example_device_reduce_8cu-example.html#_a0">example_device_reduce.cu</a>, <a class="el" href="example_device_scan_8cu-example.html#_a0">example_device_scan.cu</a>, <a class="el" href="example_device_select_flagged_8cu-example.html#_a0">example_device_select_flagged.cu</a>, <a class="el" href="example_device_select_if_8cu-example.html#_a0">example_device_select_if.cu</a>, and <a class="el" href="example_device_select_unique_8cu-example.html#_a0">example_device_select_unique.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00099">99</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00104">104</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
@@ -139,21 +140,17 @@ Public Methods</h2></td></tr>
 cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a2216ab13fdeb11ce61f04f69899fff33">SetMaxCachedBytes</a> (size_t max_cached_bytes)</td></tr>
 <tr class="memdesc:a2216ab13fdeb11ce61f04f69899fff33"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sets the limit on the number bytes this allocator is allowed to cache per device. <br/></td></tr>
 <tr class="separator:a2216ab13fdeb11ce61f04f69899fff33"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4a6fd29b17ff15c6a2ee01a25c5e45fb"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a4a6fd29b17ff15c6a2ee01a25c5e45fb"></a>
-cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a4a6fd29b17ff15c6a2ee01a25c5e45fb">DeviceAllocate</a> (void **d_ptr, size_t bytes, int device)</td></tr>
-<tr class="memdesc:a4a6fd29b17ff15c6a2ee01a25c5e45fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides a suitable allocation of device memory for the given size on the specified device. <br/></td></tr>
-<tr class="separator:a4a6fd29b17ff15c6a2ee01a25c5e45fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7d8a199c902d88ed14f0433bdf94318c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7d8a199c902d88ed14f0433bdf94318c"></a>
-cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a7d8a199c902d88ed14f0433bdf94318c">DeviceAllocate</a> (void **d_ptr, size_t bytes)</td></tr>
-<tr class="memdesc:a7d8a199c902d88ed14f0433bdf94318c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides a suitable allocation of device memory for the given size on the current device. <br/></td></tr>
-<tr class="separator:a7d8a199c902d88ed14f0433bdf94318c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aafd80ae2cdadb883fe1da0c8a549228c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aafd80ae2cdadb883fe1da0c8a549228c"></a>
-cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#aafd80ae2cdadb883fe1da0c8a549228c">DeviceFree</a> (void *d_ptr, int device)</td></tr>
-<tr class="memdesc:aafd80ae2cdadb883fe1da0c8a549228c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a live allocation of device memory on the specified device, returning it to the allocator. <br/></td></tr>
-<tr class="separator:aafd80ae2cdadb883fe1da0c8a549228c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:adbf65c59172b140420636e150325deeb"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="adbf65c59172b140420636e150325deeb"></a>
-cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#adbf65c59172b140420636e150325deeb">DeviceFree</a> (void *d_ptr)</td></tr>
-<tr class="memdesc:adbf65c59172b140420636e150325deeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a live allocation of device memory on the current device, returning it to the allocator. <br/></td></tr>
+<tr class="memitem:ae1088ac6ba6e5d55832ffbc0b2a5d714"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#ae1088ac6ba6e5d55832ffbc0b2a5d714">DeviceAllocate</a> (int device, void **d_ptr, size_t bytes, cudaStream_t active_stream=0)</td></tr>
+<tr class="memdesc:ae1088ac6ba6e5d55832ffbc0b2a5d714"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides a suitable allocation of device memory for the given size on the specified device.  <a href="#ae1088ac6ba6e5d55832ffbc0b2a5d714">More...</a><br/></td></tr>
+<tr class="separator:ae1088ac6ba6e5d55832ffbc0b2a5d714"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2fe4020cf8bc86ad886c797525ac8ea"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#ab2fe4020cf8bc86ad886c797525ac8ea">DeviceAllocate</a> (void **d_ptr, size_t bytes, cudaStream_t active_stream=0)</td></tr>
+<tr class="memdesc:ab2fe4020cf8bc86ad886c797525ac8ea"><td class="mdescLeft">&#160;</td><td class="mdescRight">Provides a suitable allocation of device memory for the given size on the current device.  <a href="#ab2fe4020cf8bc86ad886c797525ac8ea">More...</a><br/></td></tr>
+<tr class="separator:ab2fe4020cf8bc86ad886c797525ac8ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a66e72cc3cc7d0dbd59148ac7c4ba0de6"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a66e72cc3cc7d0dbd59148ac7c4ba0de6">DeviceFree</a> (int device, void *d_ptr)</td></tr>
+<tr class="memdesc:a66e72cc3cc7d0dbd59148ac7c4ba0de6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a live allocation of device memory on the specified device, returning it to the allocator.  <a href="#a66e72cc3cc7d0dbd59148ac7c4ba0de6">More...</a><br/></td></tr>
+<tr class="separator:a66e72cc3cc7d0dbd59148ac7c4ba0de6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adbf65c59172b140420636e150325deeb"><td class="memItemLeft" align="right" valign="top">cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#adbf65c59172b140420636e150325deeb">DeviceFree</a> (void *d_ptr)</td></tr>
+<tr class="memdesc:adbf65c59172b140420636e150325deeb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Frees a live allocation of device memory on the current device, returning it to the allocator.  <a href="#adbf65c59172b140420636e150325deeb">More...</a><br/></td></tr>
 <tr class="separator:adbf65c59172b140420636e150325deeb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afbe43fd3a59ba6f4b974a4a66315c86e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afbe43fd3a59ba6f4b974a4a66315c86e"></a>
 cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#afbe43fd3a59ba6f4b974a4a66315c86e">FreeAllCached</a> ()</td></tr>
@@ -227,7 +224,7 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00252">252</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00259">259</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
 
 </div>
 </div>
@@ -270,7 +267,189 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00287">287</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00294">294</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="ae1088ac6ba6e5d55832ffbc0b2a5d714"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">cudaError_t cub::CachingDeviceAllocator::DeviceAllocate </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>device</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void **&#160;</td>
+          <td class="paramname"><em>d_ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>active_stream</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Provides a suitable allocation of device memory for the given size on the specified device. </p>
+<p>Once freed, the allocation becomes available immediately for reuse within the <code>active_stream</code> with which it was associated with during allocation, and it becomes available for reuse within other streams when all prior work submitted to <code>active_stream</code> has completed. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[in]</td><td class="paramname">device</td><td>Device on which to place the allocation </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_ptr</td><td>Reference to pointer to the allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bytes</td><td>Minimum number of bytes for the allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">active_stream</td><td>The stream to be associated with this allocation </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00347">347</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="ab2fe4020cf8bc86ad886c797525ac8ea"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">cudaError_t cub::CachingDeviceAllocator::DeviceAllocate </td>
+          <td>(</td>
+          <td class="paramtype">void **&#160;</td>
+          <td class="paramname"><em>d_ptr</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>bytes</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">cudaStream_t&#160;</td>
+          <td class="paramname"><em>active_stream</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Provides a suitable allocation of device memory for the given size on the current device. </p>
+<p>Once freed, the allocation becomes available immediately for reuse within the <code>active_stream</code> with which it was associated with during allocation, and it becomes available for reuse within other streams when all prior work submitted to <code>active_stream</code> has completed. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramdir">[out]</td><td class="paramname">d_ptr</td><td>Reference to pointer to the allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">bytes</td><td>Minimum number of bytes for the allocation </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">active_stream</td><td>The stream to be associated with this allocation </td></tr>
+  </table>
+  </dd>
+</dl>
+
+<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00485">485</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a66e72cc3cc7d0dbd59148ac7c4ba0de6"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">cudaError_t cub::CachingDeviceAllocator::DeviceFree </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>device</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_ptr</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Frees a live allocation of device memory on the specified device, returning it to the allocator. </p>
+<p>Once freed, the allocation becomes available immediately for reuse within the <code>active_stream</code> with which it was associated with during allocation, and it becomes available for reuse within other streams when all prior work submitted to <code>active_stream</code> has completed. </p>
+
+<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00506">506</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="adbf65c59172b140420636e150325deeb"></a>
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">cudaError_t cub::CachingDeviceAllocator::DeviceFree </td>
+          <td>(</td>
+          <td class="paramtype">void *&#160;</td>
+          <td class="paramname"><em>d_ptr</em>)</td><td></td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Frees a live allocation of device memory on the current device, returning it to the allocator. </p>
+<p>Once freed, the allocation becomes available immediately for reuse within the <code>active_stream</code> with which it was associated with during allocation, and it becomes available for reuse within other streams when all prior work submitted to <code>active_stream</code> has completed. </p>
+
+<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00604">604</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
 
 </div>
 </div>
@@ -281,7 +460,7 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="s
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 28 2014 22:37:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:32 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

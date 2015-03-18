@@ -205,14 +205,14 @@ Public Methods</h2></td></tr>
 <tr class="memitem:ad9c4a8d85a7795cf220713f362c36f30"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#ad9c4a8d85a7795cf220713f362c36f30">Sum</a> (T input, int valid_items)</td></tr>
 <tr class="memdesc:ad9c4a8d85a7795cf220713f362c36f30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a partially-full warp-wide sum in the calling warp. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#ad9c4a8d85a7795cf220713f362c36f30">More...</a><br/></td></tr>
 <tr class="separator:ad9c4a8d85a7795cf220713f362c36f30"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a11b16118606a582bf9ce011938873305"><td class="memTemplParams" colspan="2">template&lt;typename Flag &gt; </td></tr>
-<tr class="memitem:a11b16118606a582bf9ce011938873305"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a11b16118606a582bf9ce011938873305">HeadSegmentedSum</a> (T input, Flag head_flag)</td></tr>
-<tr class="memdesc:a11b16118606a582bf9ce011938873305"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented sum in the calling warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a11b16118606a582bf9ce011938873305">More...</a><br/></td></tr>
-<tr class="separator:a11b16118606a582bf9ce011938873305"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a57747500b876173a6dcb113109306258"><td class="memTemplParams" colspan="2">template&lt;typename Flag &gt; </td></tr>
-<tr class="memitem:a57747500b876173a6dcb113109306258"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a57747500b876173a6dcb113109306258">TailSegmentedSum</a> (T input, Flag tail_flag)</td></tr>
-<tr class="memdesc:a57747500b876173a6dcb113109306258"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented sum in the calling warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a57747500b876173a6dcb113109306258">More...</a><br/></td></tr>
-<tr class="separator:a57747500b876173a6dcb113109306258"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1d4c60ee63a232dceb983297f5d288ec"><td class="memTemplParams" colspan="2">template&lt;typename FlagT &gt; </td></tr>
+<tr class="memitem:a1d4c60ee63a232dceb983297f5d288ec"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a1d4c60ee63a232dceb983297f5d288ec">HeadSegmentedSum</a> (T input, FlagT head_flag)</td></tr>
+<tr class="memdesc:a1d4c60ee63a232dceb983297f5d288ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented sum in the calling warp where segments are defined by head-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a1d4c60ee63a232dceb983297f5d288ec">More...</a><br/></td></tr>
+<tr class="separator:a1d4c60ee63a232dceb983297f5d288ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4c73c5bb3636224abb3fe3e1e5e05705"><td class="memTemplParams" colspan="2">template&lt;typename FlagT &gt; </td></tr>
+<tr class="memitem:a4c73c5bb3636224abb3fe3e1e5e05705"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a4c73c5bb3636224abb3fe3e1e5e05705">TailSegmentedSum</a> (T input, FlagT tail_flag)</td></tr>
+<tr class="memdesc:a4c73c5bb3636224abb3fe3e1e5e05705"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented sum in the calling warp where segments are defined by tail-flags. The sum of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a4c73c5bb3636224abb3fe3e1e5e05705">More...</a><br/></td></tr>
+<tr class="separator:a4c73c5bb3636224abb3fe3e1e5e05705"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Generic reductions</div></td></tr>
 <tr class="memitem:a0dd72fc4cf7e1ecf59e8b15bd6819185"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp &gt; </td></tr>
 <tr class="memitem:a0dd72fc4cf7e1ecf59e8b15bd6819185"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a0dd72fc4cf7e1ecf59e8b15bd6819185">Reduce</a> (T input, ReductionOp reduction_op)</td></tr>
@@ -222,14 +222,14 @@ Public Methods</h2></td></tr>
 <tr class="memitem:ad1ecfeddf0e7fb3f359cf61b60f4745a"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#ad1ecfeddf0e7fb3f359cf61b60f4745a">Reduce</a> (T input, ReductionOp reduction_op, int valid_items)</td></tr>
 <tr class="memdesc:ad1ecfeddf0e7fb3f359cf61b60f4745a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a partially-full warp-wide reduction in the calling warp using the specified binary reduction functor. The output is valid in warp <em>lane</em><sub>0</sub>.  <a href="#ad1ecfeddf0e7fb3f359cf61b60f4745a">More...</a><br/></td></tr>
 <tr class="separator:ad1ecfeddf0e7fb3f359cf61b60f4745a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74291c266eaff04ad548f54af69756f8"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp , typename Flag &gt; </td></tr>
-<tr class="memitem:a74291c266eaff04ad548f54af69756f8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a74291c266eaff04ad548f54af69756f8">HeadSegmentedReduce</a> (T input, Flag head_flag, ReductionOp reduction_op)</td></tr>
-<tr class="memdesc:a74291c266eaff04ad548f54af69756f8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented reduction in the calling warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a74291c266eaff04ad548f54af69756f8">More...</a><br/></td></tr>
-<tr class="separator:a74291c266eaff04ad548f54af69756f8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp , typename Flag &gt; </td></tr>
-<tr class="memitem:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a1503c473a73c5dcfb3db5c11c2da4daa">TailSegmentedReduce</a> (T input, Flag tail_flag, ReductionOp reduction_op)</td></tr>
-<tr class="memdesc:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented reduction in the calling warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a1503c473a73c5dcfb3db5c11c2da4daa">More...</a><br/></td></tr>
-<tr class="separator:a1503c473a73c5dcfb3db5c11c2da4daa"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a42d774e187ac8262f205d82936c3c54f"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp , typename FlagT &gt; </td></tr>
+<tr class="memitem:a42d774e187ac8262f205d82936c3c54f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#a42d774e187ac8262f205d82936c3c54f">HeadSegmentedReduce</a> (T input, FlagT head_flag, ReductionOp reduction_op)</td></tr>
+<tr class="memdesc:a42d774e187ac8262f205d82936c3c54f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented reduction in the calling warp where segments are defined by head-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#a42d774e187ac8262f205d82936c3c54f">More...</a><br/></td></tr>
+<tr class="separator:a42d774e187ac8262f205d82936c3c54f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab89e501348f1ae4ade9a21c4e88d2d6c"><td class="memTemplParams" colspan="2">template&lt;typename ReductionOp , typename FlagT &gt; </td></tr>
+<tr class="memitem:ab89e501348f1ae4ade9a21c4e88d2d6c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_warp_reduce.html#ab89e501348f1ae4ade9a21c4e88d2d6c">TailSegmentedReduce</a> (T input, FlagT tail_flag, ReductionOp reduction_op)</td></tr>
+<tr class="memdesc:ab89e501348f1ae4ade9a21c4e88d2d6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a segmented reduction in the calling warp where segments are defined by tail-flags. The reduction of each segment is returned to the first lane in that segment (which always includes <em>lane</em><sub>0</sub>).  <a href="#ab89e501348f1ae4ade9a21c4e88d2d6c">More...</a><br/></td></tr>
+<tr class="separator:ab89e501348f1ae4ade9a21c4e88d2d6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="ac62468e86401f21b58b9dfb5db9f717b"></a>
@@ -395,13 +395,13 @@ template&lt;typename T , int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS, int PT
 
 </div>
 </div>
-<a class="anchor" id="a11b16118606a582bf9ce011938873305"></a>
+<a class="anchor" id="a1d4c60ee63a232dceb983297f5d288ec"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename Flag &gt; </div>
+template&lt;typename FlagT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -415,7 +415,7 @@ template&lt;typename Flag &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Flag&#160;</td>
+          <td class="paramtype">FlagT&#160;</td>
           <td class="paramname"><em>head_flag</em>&#160;</td>
         </tr>
         <tr>
@@ -467,17 +467,17 @@ template&lt;typename Flag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00351">351</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00344">344</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a57747500b876173a6dcb113109306258"></a>
+<a class="anchor" id="a4c73c5bb3636224abb3fe3e1e5e05705"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename Flag &gt; </div>
+template&lt;typename FlagT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -491,7 +491,7 @@ template&lt;typename Flag &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Flag&#160;</td>
+          <td class="paramtype">FlagT&#160;</td>
           <td class="paramname"><em>tail_flag</em>&#160;</td>
         </tr>
         <tr>
@@ -543,7 +543,7 @@ template&lt;typename Flag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00398">398</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00391">391</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -620,7 +620,7 @@ template&lt;typename ReductionOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00452">452</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00445">445</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -706,17 +706,17 @@ template&lt;typename ReductionOp &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00501">501</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00494">494</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a74291c266eaff04ad548f54af69756f8"></a>
+<a class="anchor" id="a42d774e187ac8262f205d82936c3c54f"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename ReductionOp , typename Flag &gt; </div>
+template&lt;typename ReductionOp , typename FlagT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -730,7 +730,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Flag&#160;</td>
+          <td class="paramtype">FlagT&#160;</td>
           <td class="paramname"><em>head_flag</em>, </td>
         </tr>
         <tr>
@@ -790,17 +790,17 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00560">560</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00545">545</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a1503c473a73c5dcfb3db5c11c2da4daa"></a>
+<a class="anchor" id="ab89e501348f1ae4ade9a21c4e88d2d6c"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T , int LOGICAL_WARP_THREADS = CUB_PTX_WARP_THREADS, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
 <div class="memtemplate">
-template&lt;typename ReductionOp , typename Flag &gt; </div>
+template&lt;typename ReductionOp , typename FlagT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -814,7 +814,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">Flag&#160;</td>
+          <td class="paramtype">FlagT&#160;</td>
           <td class="paramname"><em>tail_flag</em>, </td>
         </tr>
         <tr>
@@ -874,7 +874,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00611">611</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="warp__reduce_8cuh_source.html#l00596">596</a> of file <a class="el" href="warp__reduce_8cuh_source.html">warp_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -885,7 +885,7 @@ template&lt;typename ReductionOp , typename Flag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 28 2014 22:37:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:39 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

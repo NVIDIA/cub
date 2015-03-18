@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html">cub::BlockRadixSort&lt; Key, BLOCK_DIM_X, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_radix_sort.html">cub::BlockRadixSort&lt; KeyT, BLOCK_DIM_X, ITEMS_PER_THREAD, ValueT, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort</a> class provides <a href="index.html#sec0"><em>collective</em></a> methods for sorting items partitioned across a CUDA thread block using a radix sorting method. </p>
 <div class="image">
 <img src="sorting_logo.png" alt="sorting_logo.png"/>
@@ -123,7 +123,7 @@ Classes</h2></td></tr>
 .</div></div>
   <a href="classcub_1_1_block_radix_sort.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html">cub::BlockRadixSort&lt; Key, BLOCK_DIM_X, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html">cub::BlockRadixSort&lt; KeyT, BLOCK_DIM_X, ITEMS_PER_THREAD, ValueT, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The operations exposed by <a class="el" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse.  <a href="structcub_1_1_block_radix_sort_1_1_temp_storage.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
@@ -141,7 +141,7 @@ Namespaces</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 28 2014 22:37:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:30 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

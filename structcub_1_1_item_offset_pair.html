@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::ItemOffsetPair&lt; _T, _Offset &gt; Struct Template Reference</title>
+<title>CUB: cub::ItemOffsetPair&lt; _T, _OffsetT &gt; Struct Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -103,14 +103,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-attribs">Public Members</a> &#124;
 <a href="structcub_1_1_item_offset_pair-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::ItemOffsetPair&lt; _T, _Offset &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Utilities</a></div></div>  </div>
+<div class="title">cub::ItemOffsetPair&lt; _T, _OffsetT &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Utilities</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
     typename _T, 
-    typename _Offset&gt;<br/>
-struct cub::ItemOffsetPair&lt; _T, _Offset &gt;</h3>
+    typename _OffsetT&gt;<br/>
+struct cub::ItemOffsetPair&lt; _T, _OffsetT &gt;</h3>
 
 <p>An item value paired with a corresponding offset. </p>
 
@@ -118,39 +118,47 @@ struct cub::ItemOffsetPair&lt; _T, _Offset &gt;</h3>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
 Public Types</h2></td></tr>
-<tr class="memitem:aa6e5dfd6b22478ead18c080694768528"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa6e5dfd6b22478ead18c080694768528"></a>
-typedef _T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#aa6e5dfd6b22478ead18c080694768528">T</a></td></tr>
-<tr class="memdesc:aa6e5dfd6b22478ead18c080694768528"><td class="mdescLeft">&#160;</td><td class="mdescRight">Item data type. <br/></td></tr>
-<tr class="separator:aa6e5dfd6b22478ead18c080694768528"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac541377b1ef1b842825716a85acd5009"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac541377b1ef1b842825716a85acd5009"></a>
-typedef _Offset&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#ac541377b1ef1b842825716a85acd5009">Offset</a></td></tr>
-<tr class="memdesc:ac541377b1ef1b842825716a85acd5009"><td class="mdescLeft">&#160;</td><td class="mdescRight">Integer offset data type. <br/></td></tr>
-<tr class="separator:ac541377b1ef1b842825716a85acd5009"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac22187f58250cf701a41ae55f52beb3d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac22187f58250cf701a41ae55f52beb3d"></a>
+typedef _T&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#ac22187f58250cf701a41ae55f52beb3d">T</a></td></tr>
+<tr class="memdesc:ac22187f58250cf701a41ae55f52beb3d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Item data type. <br/></td></tr>
+<tr class="separator:ac22187f58250cf701a41ae55f52beb3d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3b32e96a23c20b17137493d2051d39df"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a3b32e96a23c20b17137493d2051d39df"></a>
+typedef _OffsetT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#a3b32e96a23c20b17137493d2051d39df">OffsetT</a></td></tr>
+<tr class="memdesc:a3b32e96a23c20b17137493d2051d39df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Integer offset data type. <br/></td></tr>
+<tr class="separator:a3b32e96a23c20b17137493d2051d39df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a1dcd4c2f7f65e78a6a292a031ac1695d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a1dcd4c2f7f65e78a6a292a031ac1695d"></a>
+<tr class="memitem:a71442385ddb81e34226e223f4a44fda4"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a71442385ddb81e34226e223f4a44fda4"></a>
+__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#a71442385ddb81e34226e223f4a44fda4">ItemOffsetPair</a> ()</td></tr>
+<tr class="memdesc:a71442385ddb81e34226e223f4a44fda4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
+<tr class="separator:a71442385ddb81e34226e223f4a44fda4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abf4432978c75032fb7070ae79d83cd30"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abf4432978c75032fb7070ae79d83cd30"></a>
+__device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#abf4432978c75032fb7070ae79d83cd30">ItemOffsetPair</a> (_T <a class="el" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde">value</a>, _OffsetT <a class="el" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb">offset</a>)</td></tr>
+<tr class="memdesc:abf4432978c75032fb7070ae79d83cd30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
+<tr class="separator:abf4432978c75032fb7070ae79d83cd30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a701775f57fbd49f51725c81bc417bbfa"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a701775f57fbd49f51725c81bc417bbfa"></a>
 __host__ __device__ <br class="typebreak"/>
-__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#a1dcd4c2f7f65e78a6a292a031ac1695d">operator!=</a> (const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a> &amp;b)</td></tr>
-<tr class="memdesc:a1dcd4c2f7f65e78a6a292a031ac1695d"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_inequality.html" title="Default inequality functor. ">Inequality</a> operator. <br/></td></tr>
-<tr class="separator:a1dcd4c2f7f65e78a6a292a031ac1695d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+__forceinline__ bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#a701775f57fbd49f51725c81bc417bbfa">operator!=</a> (const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a> &amp;b)</td></tr>
+<tr class="memdesc:a701775f57fbd49f51725c81bc417bbfa"><td class="mdescLeft">&#160;</td><td class="mdescRight"><a class="el" href="structcub_1_1_inequality.html" title="Default inequality functor. ">Inequality</a> operator. <br/></td></tr>
+<tr class="separator:a701775f57fbd49f51725c81bc417bbfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
 Public Members</h2></td></tr>
-<tr class="memitem:ab4c13311891660699cb44882c60e1190"><td class="memItemLeft" ><a class="anchor" id="ab4c13311891660699cb44882c60e1190"></a>
+<tr class="memitem:a11e4a13c734654251b14765678cb5a95"><td class="memItemLeft" ><a class="anchor" id="a11e4a13c734654251b14765678cb5a95"></a>
 union {</td></tr>
-<tr class="memitem:a4cc5c063c2c34e5d2f052f8c5f6885e3"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#ac541377b1ef1b842825716a85acd5009">Offset</a>&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#afcfe08263d11c584940b28718bc10173">offset</a></td></tr>
-<tr class="memdesc:a4cc5c063c2c34e5d2f052f8c5f6885e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Offset. <br/></td></tr>
-<tr class="separator:a4cc5c063c2c34e5d2f052f8c5f6885e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9d607e6bf8ed900b2b7e48344c83cf72"><td class="memItemLeft" >&#160;&#160;&#160;UnitWord&lt; <a class="el" href="structcub_1_1_item_offset_pair.html#aa6e5dfd6b22478ead18c080694768528">T</a> &gt;::DeviceWord&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#af3f5a98f34e1d552345abf1b320eb387">align0</a></td></tr>
-<tr class="memdesc:a9d607e6bf8ed900b2b7e48344c83cf72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alignment/padding (for Win32 consistency between host/device) <br/></td></tr>
-<tr class="separator:a9d607e6bf8ed900b2b7e48344c83cf72"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab4c13311891660699cb44882c60e1190"><td class="memItemLeft" valign="top">};&#160;</td><td class="memItemRight" valign="bottom"></td></tr>
-<tr class="separator:ab4c13311891660699cb44882c60e1190"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7faea6eea84a2e5bb4250bd78e765685"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a7faea6eea84a2e5bb4250bd78e765685"></a>
-<a class="el" href="structcub_1_1_item_offset_pair.html#aa6e5dfd6b22478ead18c080694768528">T</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#a7faea6eea84a2e5bb4250bd78e765685">value</a></td></tr>
-<tr class="memdesc:a7faea6eea84a2e5bb4250bd78e765685"><td class="mdescLeft">&#160;</td><td class="mdescRight">Item value. <br/></td></tr>
-<tr class="separator:a7faea6eea84a2e5bb4250bd78e765685"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a797d43eb9f048f1524d0869a4e1187d4"><td class="memItemLeft" >&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#a3b32e96a23c20b17137493d2051d39df">OffsetT</a>&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb">offset</a></td></tr>
+<tr class="memdesc:a797d43eb9f048f1524d0869a4e1187d4"><td class="mdescLeft">&#160;</td><td class="mdescRight">OffsetT. <br/></td></tr>
+<tr class="separator:a797d43eb9f048f1524d0869a4e1187d4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2154f577d9a57b7e314056e1f1113c07"><td class="memItemLeft" >&#160;&#160;&#160;UnitWord&lt; <a class="el" href="structcub_1_1_item_offset_pair.html#ac22187f58250cf701a41ae55f52beb3d">T</a> &gt;::DeviceWord&#160;&#160;&#160;<a class="el" href="structcub_1_1_item_offset_pair.html#a8e709237e64b6e3998b10c4e22ae5e9a">align0</a></td></tr>
+<tr class="memdesc:a2154f577d9a57b7e314056e1f1113c07"><td class="mdescLeft">&#160;</td><td class="mdescRight">Alignment/padding (for Win32 consistency between host/device) <br/></td></tr>
+<tr class="separator:a2154f577d9a57b7e314056e1f1113c07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a11e4a13c734654251b14765678cb5a95"><td class="memItemLeft" valign="top">};&#160;</td><td class="memItemRight" valign="bottom"></td></tr>
+<tr class="separator:a11e4a13c734654251b14765678cb5a95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abe5280fafb189d7ac2ae65d2f7f0dbde"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="abe5280fafb189d7ac2ae65d2f7f0dbde"></a>
+<a class="el" href="structcub_1_1_item_offset_pair.html#ac22187f58250cf701a41ae55f52beb3d">T</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde">value</a></td></tr>
+<tr class="memdesc:abe5280fafb189d7ac2ae65d2f7f0dbde"><td class="mdescLeft">&#160;</td><td class="mdescRight">Item value. <br/></td></tr>
+<tr class="separator:abe5280fafb189d7ac2ae65d2f7f0dbde"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li><a class="el" href="util__type_8cuh_source.html">util_type.cuh</a></li>
@@ -159,7 +167,7 @@ union {</td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 28 2014 22:37:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:32 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

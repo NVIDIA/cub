@@ -105,19 +105,19 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><p>Arg max functor (keeps the value and offset of the first occurrence of the l item) </p>
+<div class="textblock"><p>Arg max functor (keeps the value and offset of the first occurrence of the larger item) </p>
 
 <p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00137">137</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a92f406c450119b178e62f3745d85dd11"><td class="memTemplParams" colspan="2"><a class="anchor" id="a92f406c450119b178e62f3745d85dd11"></a>
-template&lt;typename T , typename Offset &gt; </td></tr>
-<tr class="memitem:a92f406c450119b178e62f3745d85dd11"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+<tr class="memitem:a02e4ab816bfb49a00d0241efe09c1967"><td class="memTemplParams" colspan="2"><a class="anchor" id="a02e4ab816bfb49a00d0241efe09c1967"></a>
+template&lt;typename T , typename OffsetT &gt; </td></tr>
+<tr class="memitem:a02e4ab816bfb49a00d0241efe09c1967"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
 __forceinline__ <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a><br class="typebreak"/>
-&lt; T, Offset &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_arg_max.html#a92f406c450119b178e62f3745d85dd11">operator()</a> (const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a>&lt; T, Offset &gt; &amp;a, const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a>&lt; T, Offset &gt; &amp;b) const </td></tr>
-<tr class="memdesc:a92f406c450119b178e62f3745d85dd11"><td class="mdescLeft">&#160;</td><td class="mdescRight">Boolean max operator, preferring the item having the smaller offset in case of ties. <br/></td></tr>
-<tr class="separator:a92f406c450119b178e62f3745d85dd11"><td class="memSeparator" colspan="2">&#160;</td></tr>
+&lt; T, OffsetT &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_arg_max.html#a02e4ab816bfb49a00d0241efe09c1967">operator()</a> (const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a>&lt; T, OffsetT &gt; &amp;a, const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a>&lt; T, OffsetT &gt; &amp;b) const </td></tr>
+<tr class="memdesc:a02e4ab816bfb49a00d0241efe09c1967"><td class="mdescLeft">&#160;</td><td class="mdescRight">Boolean max operator, preferring the item having the smaller offset in case of ties. <br/></td></tr>
+<tr class="separator:a02e4ab816bfb49a00d0241efe09c1967"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <hr/>The documentation for this struct was generated from the following file:<ul>
 <li><a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a></li>
@@ -126,7 +126,7 @@ __forceinline__ <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOff
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 28 2014 22:37:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:33 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

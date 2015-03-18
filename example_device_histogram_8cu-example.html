@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <div class="fragment"><div class="line"><span class="comment">/******************************************************************************</span></div>
 <div class="line"><span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><span class="comment"> * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><span class="comment"> *</span></div>
 <div class="line"><span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -267,7 +267,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line">    <span class="comment">// Texture iterator type for loading samples through tex</span></div>
 <div class="line">    <a name="_a2"></a><a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">TexRefInputIterator&lt;unsigned char, __LINE__, int&gt;</a> d_sample_itr;</div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(d_sample_itr.<a name="a3"></a><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a7dde3698fbb46725a95cc648c9894d1e" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(d_samples, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>) * num_samples));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(d_sample_itr.<a name="a3"></a><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a2478415f3ecdad9ae266ea3be43634d1" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(d_samples, <span class="keyword">sizeof</span>(<span class="keywordtype">unsigned</span> <span class="keywordtype">char</span>) * num_samples));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Allocate temporary storage</span></div>
 <div class="line">    <span class="keywordtype">void</span>            *d_temp_storage = NULL;</div>
@@ -295,7 +295,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    AssertEquals(0, compare);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Cleanup</span></div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(d_sample_itr.<a name="a4"></a><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#aae8811cd17853d1591fe366e018d7c18" title="Unbind this iterator from its texture reference. ">UnbindTexture</a>());</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(d_sample_itr.<a name="a4"></a><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a5f451683e1f40e5f702251b707e87956" title="Unbind this iterator from its texture reference. ">UnbindTexture</a>());</div>
 <div class="line">    <span class="keywordflow">if</span> (h_samples) <span class="keyword">delete</span>[] h_samples;</div>
 <div class="line">    <span class="keywordflow">if</span> (d_samples) <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceFree(d_samples));</div>
 <div class="line">    <span class="keywordflow">if</span> (d_histograms_linear) <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceFree(d_histograms_linear));</div>
@@ -312,7 +312,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Jul 28 2014 22:37:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:27 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
