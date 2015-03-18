@@ -1,7 +1,7 @@
 <hr>
 <h3>About CUB</h3>
 
-Current release: v1.3.2 (July 28, 2014)
+Current release: v1.4.0 (03/18/2015)
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) and the [cub-users discussion forum](http://groups.google.com/group/cub-users) for further information and examples.
 
@@ -92,6 +92,7 @@ to contact us if you would like such things.)  See the
  
 | Date | Version |
 | ---- | ------- |
+| 03/18/2015 | [CUB v1.4.0](https://github.com/NVlabs/cub/archive/1.4.0.zip) |
 | 05/23/2014 | [CUB v1.3.2](https://github.com/NVlabs/cub/archive/1.3.2.zip) |
 | 04/01/2014 | [CUB v1.2.3](https://github.com/NVlabs/cub/archive/1.2.3.zip) |
 | 12/10/2013 | [CUB v1.1.1](https://github.com/NVlabs/cub/archive/1.1.1.zip) |
