@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -526,6 +526,21 @@ for the current feature release.
 03/18/2015<br>
 [<b>CUB v1.4.0</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
+  - New Features: 
+    - Updated cub::DeviceHistogram implementation that provides the same 
+      "histogram-even" and "histogram-range" functionality as IPP/NPP.
+      Provides extremely fast and, perhaps more importantly, very 
+      uniform performance response across diverse real-world datasets, 
+      including pathological (homogeneous) sample distributions (resilience)
+    - New cub::DeviceSpmv methods for multiplying sparse matrices by 
+      dense vectors, load-balanced using a merge-based parallel decomposition.
+    - New cub::DeviceRadixSort sorting entry-points that always return
+      the sorted output into the specified buffer (as opposed to the 
+      cub::DoubleBuffer in which it could end up in either buffer)
+    - New cub::DeviceRunLengthEncode::NonTrivialRuns for finding the starting 
+      offsets and lengths of all non-trivial runs (i.e., length > 1) of keys in 
+      a given sequence.  (Useful for top-down partitioning algorithms like 
+      MSD sorting of very-large keys.)
   - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
@@ -619,7 +634,7 @@ CUB is available under the "New BSD" open-source license:
 \par
 \code
 Copyright (c) 2011, Duane Merrill.  All rights reserved.
-Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.
+Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

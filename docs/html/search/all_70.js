@@ -4,6 +4,7 @@ var searchData=
   ['poweroftwo',['PowerOfTwo',['../structcub_1_1_power_of_two.html',1,'cub']]],
   ['primitives',['Primitives',['../group___primitive_module.html',1,'']]],
   ['prmt',['PRMT',['../group___util_ptx.html#ga7b6445f3d02d31c17d9d33c67fcffcb1',1,'cub']]],
+  ['ptr',['ptr',['../classcub_1_1_cache_modified_input_iterator.html#abcd5d6e49d039ebbcec5402738f21047',1,'cub::CacheModifiedInputIterator']]],
   ['ptxversion',['PtxVersion',['../group___util_mgmt.html#ga274acbdeef0a8f56373501323ef51d05',1,'cub']]],
   ['ptx_20intrinsics',['PTX intrinsics',['../group___util_ptx.html',1,'']]]
 ];

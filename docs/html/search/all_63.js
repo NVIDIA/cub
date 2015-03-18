@@ -19,6 +19,7 @@ var searchData=
   ['counting_5finput_5fiterator_2ecuh',['counting_input_iterator.cuh',['../counting__input__iterator_8cuh.html',1,'']]],
   ['countinginputiterator',['CountingInputIterator',['../classcub_1_1_counting_input_iterator.html#ac51f0117505e3b13f5cf8771d99ea623',1,'cub::CountingInputIterator']]],
   ['countinginputiterator',['CountingInputIterator',['../classcub_1_1_counting_input_iterator.html',1,'cub']]],
+  ['csrmv',['CsrMV',['../structcub_1_1_device_spmv.html#afe511ab3864d94e02a65b9dedb4de14d',1,'cub::DeviceSpmv']]],
   ['cub',['cub',['../namespacecub.html',1,'']]],
   ['cub_2ecuh',['cub.cuh',['../cub_8cuh.html',1,'']]],
   ['cub_5flog_5fsmem_5fbanks',['CUB_LOG_SMEM_BANKS',['../group___util_mgmt.html#ga2863430ef147807280c593c89658a52c',1,'util_arch.cuh']]],
