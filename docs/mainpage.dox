@@ -58,7 +58,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.3.2</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.4.0</b></em></a>
 
 </td><td>
 
@@ -90,15 +90,15 @@
 CUB provides state-of-the-art, reusable software components for every layer 
 of the CUDA programming model:
 - <b><em>Parallel primitives</em></b>
-  - [<b><em>Device-wide primitives</em></b>] (group___device_module.html) 
-    - Parallel sort, prefix scan, reduction, histogram, etc.  
-    - Compatible with CUDA dynamic parallelism
-  - [<b><em>Block-wide "collective" primitives</em></b>] (group___block_module.html)
-    - Cooperative I/O, sort, scan, reduction, histogram, etc.  
-    - Compatible with arbitrary thread block sizes and types 
   - [<b><em>Warp-wide "collective" primitives</em></b>] (group___warp_module.html)
     - Cooperative warp-wide prefix scan, reduction, etc.
     - Safely specialized for each underlying CUDA architecture
+  - [<b><em>Block-wide "collective" primitives</em></b>] (group___block_module.html)
+    - Cooperative I/O, sort, scan, reduction, histogram, etc.  
+    - Compatible with arbitrary thread block sizes and types 
+  - [<b><em>Device-wide primitives</em></b>] (group___device_module.html) 
+    - Parallel sort, prefix scan, reduction, histogram, etc.  
+    - Compatible with CUDA dynamic parallelism
 - <b><em>Utilities</em></b>
   - [<b><em>Fancy iterators</em></b>] (group___util_iterator.html)
   - [<b><em>Thread and thread block I/O</em></b>] (group___util_io.html)
@@ -523,34 +523,15 @@ for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-07/28/2014<br>
-[<b>CUB v1.3.2</b>](download_cub.html)
+03/18/2015<br>
+[<b>CUB v1.4.0</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
-  - Bug fixes: 
-    - Fix for bug in cub::DeviceReduce where reductions of small problems 
-      (small enough to only dispatch a single threadblock) would run in 
-      the default stream (stream zero) regardless of whether an alternate
-      stream was specified.  
-  - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
-</td></tr>
-
-<tr><td style="white-space: nowrap; vertical-align:text-top;">
-05/23/2014<br>
-<b>CUB v1.3.1</b>
-</td><td style="vertical-align:text-top;">
-  - Bug fixes: 
-    - Workaround for a benign WAW race warning reported by cuda-memcheck
-      in cub::BlockScan specialized for cub::BLOCK_SCAN_WARP_SCANS algorithm.
-    - Fix for bug in cub::DeviceRadixSort where the algorithm may sort more 
-      key bits than the caller specified (up to the nearest radix digit).
-    - Fix for a cub::DeviceRadixSort performance regression (~3%) on Kepler and 
-      Fermi that was introduced in v1.3.0.  
   - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 05/12/2014<br>
-<b>CUB v1.3.0</b>
+<b>CUB v1.3.2</b>
 </td><td style="vertical-align:text-top;">
   - CUB's collective (block-wide, warp-wide) primitives underwent a minor 
     interface refactoring:
@@ -572,16 +553,6 @@ for the current feature release.
       changes to accomodate these updates.
   - Added new "combination scan" methods to cub::WarpScan for efficiently computing 
     both inclusive and exclusive prefix scans (and sums).
-  - Fixed bug in cub::WarpScan (which affected cub::BlockScan and 
-    cub::DeviceScan) where incorrect results (e.g., NAN) would often be 
-    returned when parameterized for floating-point types (fp32, fp64).
-  - Workaround-fix for ptxas error when compiling with with -G flag on Linux 
-    (for debug instrumentation) 
-  - Misc. workaround-fixes for certain scan scenarios (using custom 
-    scan operators) where code compiled for SM1x is run on newer 
-    GPUs of higher compute-capability: the compiler could not tell
-    which memory space was being used collective operations and was 
-    mistakenly using global ops instead of shared ops. 
   - See the [change-log](CHANGE_LOG.TXT) for further details
 </td></tr>
 
