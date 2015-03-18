@@ -255,7 +255,7 @@ struct DispatchSpmv
     {
         typedef AgentSpmvPolicy<
                 (sizeof(ValueT) > 4) ? 64 : 128,
-                7,
+                9,
                 LOAD_LDG,
                 LOAD_LDG,
                 LOAD_LDG,
@@ -318,7 +318,8 @@ struct DispatchSpmv
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 500)
         {
-            spmv_config.template Init<typename Policy500::SpmvPolicyT>();
+            spmv_config.template            Init<typename Policy500::SpmvPolicyT>();
+            reduce_by_key_config.template   Init<typename Policy500::ReduceByKeyPolicyT>();
         }
         else if (ptx_version >= 350)
         {
@@ -559,6 +560,7 @@ struct DispatchSpmv
                 // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
+
         }
         while (0);
 

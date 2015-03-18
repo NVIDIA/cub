@@ -186,11 +186,11 @@ struct AgentSpmv
         // Starting and ending global merge path coordinates for the tile
         CoordinateT tile_coordinates[2];
 
+        // Smem needed for tile of merge items
+        MergeItem merge_items[ITEMS_PER_THREAD + TILE_ITEMS + 1];
+
         union
         {
-            // Smem needed for tile of merge items
-            MergeItem merge_items[ITEMS_PER_THREAD + TILE_ITEMS + 1];
-
             // Smem needed for block-wide reduction
             typename BlockReduceT::TempStorage reduce;
 
@@ -241,7 +241,7 @@ struct AgentSpmv
         {
             if (row_indices[ITEM] < tile_num_rows)
             {
-                d_vector_y[tile_start_coord.x + row_indices[ITEM]] = thread_segment[ITEM].value;
+                d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
             }
         }
     }
@@ -266,7 +266,7 @@ struct AgentSpmv
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (row_indices[ITEM] < tile_num_rows)
-                s_tile_nonzeros[row_indices[ITEM]] = thread_segment[ITEM].value;
+                s_tile_nonzeros[thread_segment[ITEM].offset] = thread_segment[ITEM].value;
         }
 
         __syncthreads();
@@ -424,8 +424,6 @@ struct AgentSpmv
             }
         }
 
-        __syncthreads();    // Perf-sync
-
         // Block-wide reduce-value-by-segment
         ItemOffsetPairT     scan_identity(0.0, 0);
         ReduceBySegmentOpT  scan_op;
@@ -526,8 +524,6 @@ struct AgentSpmv
             }
         }
 
-        __syncthreads();
-
         // Block-wide reduce-value-by-segment
         ItemOffsetPairT     tile_aggregate;
         ItemOffsetPairT     scan_identity(0.0, 0);
@@ -552,16 +548,8 @@ struct AgentSpmv
     {
         int tile_idx = (blockIdx.x * gridDim.y) + blockIdx.y;    // Current tile index
 
-        // Find the starting and ending coordinates for this block's merge path segment
-        if (threadIdx.x < 2)
-        {
-            temp_storage.tile_coordinates[threadIdx.x] = d_tile_coordinates[tile_idx + threadIdx.x];
-        }
-
-        __syncthreads();
-
-        CoordinateT tile_start_coord     = temp_storage.tile_coordinates[0];
-        CoordinateT tile_end_coord       = temp_storage.tile_coordinates[1];
+        CoordinateT tile_start_coord     = d_tile_coordinates[tile_idx + 0];
+        CoordinateT tile_end_coord       = d_tile_coordinates[tile_idx + 1];
 
         // Consume a merge tile
         ItemOffsetPairT tile_aggregate;
