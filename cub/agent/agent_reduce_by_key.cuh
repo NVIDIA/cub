@@ -120,7 +120,7 @@ struct AgentReduceByKey
         BLOCK_THREADS       = AgentReduceByKeyPolicyT::BLOCK_THREADS,
         ITEMS_PER_THREAD    = AgentReduceByKeyPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
-        TWO_PHASE_SCATTER   = (ITEMS_PER_THREAD > 1),
+        TWO_PHASE_SCATTER   = (!IS_SEGMENTED_REDUCTION_FIXUP) && (ITEMS_PER_THREAD > 1),
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
         HAS_IDENTITY_ZERO   = (Equals<ReductionOpT, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),
@@ -406,14 +406,22 @@ struct AgentReduceByKey
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         Int2Type<true>  is_segmented_reduction_fixup)
     {
-        // Scatter flagged keys and values
+        // Grab current values for updating
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            ValueT addend = d_fixup_in[keys[ITEM]];
+            if (segment_flags[ITEM])
+                values[ITEM] = reduction_op(values[ITEM], addend);
+        }
+
+        // Scatter updated values
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (segment_flags[ITEM])
             {
                 // Update the value at the key location
-                values[ITEM] = reduction_op(values[ITEM], d_fixup_in[keys[ITEM]]);
                 d_aggregates_out[keys[ITEM]] = values[ITEM];
             }
         }
@@ -491,6 +499,15 @@ struct AgentReduceByKey
         OffsetT         num_tile_segments_prefix,
         Int2Type<true>  is_segmented_reduction_fixup)
     {
+        // Grab current values for updating
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            ValueT addend = d_fixup_in[keys[ITEM]];
+            if (segment_flags[ITEM])
+                values[ITEM] = reduction_op(values[ITEM], addend);
+        }
+
         __syncthreads();
 
         // Exchange keys
@@ -538,7 +555,7 @@ struct AgentReduceByKey
             if ((BLOCK_THREADS * ITEM) + threadIdx.x < num_tile_segments)
             {
                 // Update the value at the key location
-                d_aggregates_out[keys[ITEM]] = reduction_op(values[ITEM], d_fixup_in[keys[ITEM]]);
+                d_aggregates_out[keys[ITEM]] = values[ITEM];
             }
         }
     }
@@ -707,7 +724,6 @@ struct AgentReduceByKey
             tile_aggregate.offset,
             0);
 
-
         if (IS_LAST_TILE)
         {
             // Finalize the carry-out from the last tile
@@ -806,6 +822,7 @@ struct AgentReduceByKey
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
+
         if (tile_idx == 0)
         {
             ConsumeFirstTile<IS_LAST_TILE>(num_remaining, tile_offset, tile_state);
