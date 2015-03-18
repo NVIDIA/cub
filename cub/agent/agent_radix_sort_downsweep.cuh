@@ -416,6 +416,22 @@ struct AgentRadixSortDownsweep
 
 
     /**
+     * Load a tile of items (specialized for full tile)
+     */
+    template <typename BlockLoadT, typename T, typename InputIteratorT>
+    __device__ __forceinline__ void LoadItems(
+        BlockLoadT      &block_loader,
+        T               (&items)[ITEMS_PER_THREAD],
+        InputIteratorT  d_in,
+        OffsetT         valid_items,
+        T               oob_item,
+        Int2Type<true>  is_full_tile)
+    {
+        block_loader.Load(d_in, items);
+    }
+
+
+    /**
      * Load a tile of items (specialized for partial tile)
      */
     template <typename BlockLoadT, typename T, typename InputIteratorT>
@@ -427,6 +443,21 @@ struct AgentRadixSortDownsweep
         Int2Type<false> is_full_tile)
     {
         block_loader.Load(d_in, items, valid_items);
+    }
+
+    /**
+     * Load a tile of items (specialized for partial tile)
+     */
+    template <typename BlockLoadT, typename T, typename InputIteratorT>
+    __device__ __forceinline__ void LoadItems(
+        BlockLoadT      &block_loader,
+        T               (&items)[ITEMS_PER_THREAD],
+        InputIteratorT  d_in,
+        OffsetT         valid_items,
+        T               oob_item,
+        Int2Type<false> is_full_tile)
+    {
+        block_loader.Load(d_in, items, valid_items, oob_item);
     }
 
 
@@ -487,12 +518,8 @@ struct AgentRadixSortDownsweep
         int             ranks[ITEMS_PER_THREAD];                    // For each key, the local rank within the CTA
         OffsetT         relative_bin_offsets[ITEMS_PER_THREAD];     // For each key, the global scatter base offset of the corresponding digit
 
-        // Assign max-key to all keys
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            keys[ITEM] = (DESCENDING) ? MIN_KEY : MAX_KEY;
-        }
+        // Assign default (min/max) value to all keys
+        UnsignedBits default_key = (DESCENDING) ? MIN_KEY : MAX_KEY;
 
         // Load tile of keys
         BlockLoadKeys loader(temp_storage.load_keys);
@@ -501,6 +528,7 @@ struct AgentRadixSortDownsweep
             keys,
             d_keys_in + block_offset,
             valid_items, 
+            default_key,
             Int2Type<FULL_TILE>());
 
         __syncthreads();
