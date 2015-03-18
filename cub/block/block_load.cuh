@@ -106,19 +106,6 @@ __device__ __forceinline__ void LoadDirectBlocked(
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
-/*
-    int bounds = valid_items - (linear_tid * ITEMS_PER_THREAD);
-
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        if (ITEM < bounds)
-        {
-            items[ITEM] = block_itr[(linear_tid * ITEMS_PER_THREAD) + ITEM];
-        }
-    }
-*/
-
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
@@ -152,10 +139,9 @@ __device__ __forceinline__ void LoadDirectBlocked(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = oob_default;
+        int offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
+        items[ITEM] = (offset < valid_items) ? block_itr[offset] : oob_default;
     }
-
-    LoadDirectBlocked(linear_tid, block_itr, items, valid_items);
 }
 
 
@@ -298,18 +284,6 @@ __device__ __forceinline__ void LoadDirectStriped(
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
-/*
-    int bounds = valid_items - linear_tid;
-
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        if (ITEM * BLOCK_THREADS < bounds)
-        {
-            items[ITEM] = block_itr[linear_tid + (ITEM * BLOCK_THREADS)];
-        }
-    }
-*/
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
@@ -345,10 +319,9 @@ __device__ __forceinline__ void LoadDirectStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = oob_default;
+        int offset = linear_tid + (ITEM * BLOCK_THREADS);
+        items[ITEM] = (offset < valid_items) ? block_itr[offset] : oob_default;
     }
-
-    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
 }
 
 
@@ -416,24 +389,9 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
-
     int tid                 = linear_tid & (CUB_PTX_WARP_THREADS - 1);
     int wid                 = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
     int warp_offset         = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
-
-/*
-    int bounds              = valid_items - warp_offset - tid;
-
-    // Load directly in warp-striped order
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        if ((ITEM * CUB_PTX_WARP_THREADS) < bounds)
-        {
-            items[ITEM] = block_itr[warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)];
-        }
-    }
-*/
 
     // Load directly in warp-striped order
     #pragma unroll
@@ -469,13 +427,17 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
     int             valid_items,               ///< [in] Number of valid items to load
     T               oob_default)                ///< [in] Default value to assign out-of-bound items
 {
+    int tid                 = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid                 = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset         = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+
+    // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = oob_default;
+        int offset = warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS);
+        items[ITEM] = (offset < valid_items) ? block_itr[offset] : oob_default;
     }
-
-    LoadDirectWarpStriped(linear_tid, block_itr, items, valid_items);
 }
 
 
