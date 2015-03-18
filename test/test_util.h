@@ -313,10 +313,10 @@ int g_num_rand_samples = 0;
 
 
 template <typename T>
-bool IsNaN(T val) { return false; }
+__noinline__ bool IsNaN(T val) { return false; }
 
 template<>
-bool IsNaN<float>(float val)
+__noinline__ bool IsNaN<float>(float val)
 {
     volatile unsigned int bits = reinterpret_cast<unsigned int &>(val);
 
@@ -325,31 +325,31 @@ bool IsNaN<float>(float val)
 }
 
 template<>
-bool IsNaN<float1>(float1 val)
+__noinline__ bool IsNaN<float1>(float1 val)
 {
     return (IsNaN(val.x));
 }
 
 template<>
-bool IsNaN<float2>(float2 val)
+__noinline__ bool IsNaN<float2>(float2 val)
 {
     return (IsNaN(val.y) || IsNaN(val.x));
 }
 
 template<>
-bool IsNaN<float3>(float3 val)
+__noinline__ bool IsNaN<float3>(float3 val)
 {
     return (IsNaN(val.z) || IsNaN(val.y) || IsNaN(val.x));
 }
 
 template<>
-bool IsNaN<float4>(float4 val)
+__noinline__ bool IsNaN<float4>(float4 val)
 {
     return (IsNaN(val.y) || IsNaN(val.x) || IsNaN(val.w) || IsNaN(val.z));
 }
 
 template<>
-bool IsNaN<double>(double val)
+__noinline__ bool IsNaN<double>(double val)
 {
     volatile unsigned long long bits = *reinterpret_cast<unsigned long long *>(&val);
 
@@ -358,25 +358,25 @@ bool IsNaN<double>(double val)
 }
 
 template<>
-bool IsNaN<double1>(double1 val)
+__noinline__ bool IsNaN<double1>(double1 val)
 {
     return (IsNaN(val.x));
 }
 
 template<>
-bool IsNaN<double2>(double2 val)
+__noinline__ bool IsNaN<double2>(double2 val)
 {
     return (IsNaN(val.y) || IsNaN(val.x));
 }
 
 template<>
-bool IsNaN<double3>(double3 val)
+__noinline__ bool IsNaN<double3>(double3 val)
 {
     return (IsNaN(val.z) || IsNaN(val.y) || IsNaN(val.x));
 }
 
 template<>
-bool IsNaN<double4>(double4 val)
+__noinline__ bool IsNaN<double4>(double4 val)
 {
     return (IsNaN(val.y) || IsNaN(val.x) || IsNaN(val.w) || IsNaN(val.z));
 }
