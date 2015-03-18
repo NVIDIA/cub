@@ -206,15 +206,20 @@ struct Cast
  * \brief Binary operator wrapper for switching non-commutative scan arguments
  */
 template <typename ScanOp>
-struct SwizzleScanOp
+class SwizzleScanOp
 {
+private:
+
+    /// Wrapped scan operator
     ScanOp scan_op;
 
-    // Constructor
+public:
+
+    /// Constructor
     __host__ __device__ __forceinline__
     SwizzleScanOp(ScanOp scan_op) : scan_op(scan_op) {}
 
-    // Switch the scan arguments
+    /// Switch the scan arguments
     template <typename T>
     __host__ __device__ __forceinline__
     T operator()(const T &a, const T &b)
