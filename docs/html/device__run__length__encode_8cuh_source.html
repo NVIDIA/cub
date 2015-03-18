@@ -104,7 +104,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="device__run__length__encode_8cuh.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;</div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">/******************************************************************************</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -135,8 +135,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;iterator&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;dispatch/device_rle_dispatch.cuh&quot;</span></div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;dispatch/device_reduce_by_key_dispatch.cuh&quot;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;dispatch/dispatch_rle.cuh&quot;</span></div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;dispatch/dispatch_reduce_by_key.cuh&quot;</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;<span class="preprocessor">#include &quot;../util_namespace.cuh&quot;</span></div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;CUB_NS_PREFIX</div>
@@ -154,7 +154,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="keyword">typename</span>                    NumRunsOutputIteratorT&gt;</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line"><a name="l00149"></a><span class="lineno"><a class="code" href="structcub_1_1_device_run_length_encode.html#ab25e5e8289fe198b8fea68ac5f010118">  149</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_run_length_encode.html#ab25e5e8289fe198b8fea68ac5f010118" title="Computes a run-length encoding of the sequence d_in. ">Encode</a>(</div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                </div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        InputIteratorT              d_in,                           </div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        UniqueOutputIteratorT       d_unique_out,                   </div>
@@ -179,7 +179,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        Value one_val;</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;        one_val = 1;</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        <span class="keywordflow">return</span> DeviceReduceByKeyDispatch&lt;InputIteratorT, UniqueOutputIteratorT, LengthsInputIteratorT, LengthsOutputIteratorT, NumRunsOutputIteratorT, EqualityOp, ReductionOp, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        <span class="keywordflow">return</span> DispatchReduceByKey&lt;InputIteratorT, UniqueOutputIteratorT, LengthsInputIteratorT, LengthsOutputIteratorT, NumRunsOutputIteratorT, EqualityOp, ReductionOp, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;            d_in,</div>
@@ -202,7 +202,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        <span class="keyword">typename</span>                NumRunsOutputIteratorT&gt;</div>
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line"><a name="l00247"></a><span class="lineno"><a class="code" href="structcub_1_1_device_run_length_encode.html#aa2318dc7a69f28a8c47d417aaf53db3a">  247</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_run_length_encode.html#aa2318dc7a69f28a8c47d417aaf53db3a" title="Enumerates the starting offsets and lengths of all non-trivial runs (of length &gt; 1) of same-valued ke...">NonTrivialRuns</a>(</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <span class="keywordtype">void</span>                    *d_temp_storage,                </div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                </div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <span class="keywordtype">size_t</span>                  &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        InputIteratorT          d_in,                           </div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        OffsetsOutputIteratorT  d_offsets_out,                  </div>
@@ -240,7 +240,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Sep 22 2014 21:22:46 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -104,7 +104,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="device__radix__sort_8cuh.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;</div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">/******************************************************************************</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -135,7 +135,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;iterator&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;dispatch/device_radix_sort_dispatch.cuh&quot;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;dispatch/dispatch_radix_sort.cuh&quot;</span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;../util_namespace.cuh&quot;</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;CUB_NS_PREFIX</div>
@@ -153,8 +153,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        <span class="keyword">typename</span>            Value&gt;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    CUB_RUNTIME_FUNCTION</div>
 <div class="line"><a name="l00147"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#ad74ed926d2b879e6655746f142f86f58">  147</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#ad74ed926d2b879e6655746f142f86f58" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">SortPairs</a>(</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                        </div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        Key                 *d_keys_in,                             </div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        Key                 *d_keys_out,                            </div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        Value               *d_values_in,                           </div>
@@ -171,7 +171,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>       d_keys(d_keys_in, d_keys_out);</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a>     d_values(d_values_in, d_values_out);</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;false, true, Key, Value, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;false, true, Key, Value, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            d_keys,</div>
@@ -189,8 +189,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;        <span class="keyword">typename</span>            Value&gt;</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;    CUB_RUNTIME_FUNCTION</div>
 <div class="line"><a name="l00248"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a7d8a191fcd84476606fbc255a61f0069">  248</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a7d8a191fcd84476606fbc255a61f0069" title="Sorts key-value pairs into ascending order. (~N auxiliary storage required) ">SortPairs</a>(</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                        </div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a> &amp;d_values,                              </div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
@@ -202,7 +202,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
 <div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;</div>
-<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;false, false, Key, Value, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;false, false, Key, Value, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;            d_keys,</div>
@@ -220,8 +220,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;        <span class="keyword">typename</span>            Value&gt;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    CUB_RUNTIME_FUNCTION</div>
 <div class="line"><a name="l00328"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a8a5ca4f97c384e92a41bb71ebb60798b">  328</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a8a5ca4f97c384e92a41bb71ebb60798b" title="Sorts key-value pairs into descending order. (~2N auxiliary storage required). ">SortPairsDescending</a>(</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                        </div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;        Key                 *d_keys_in,                             </div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;        Key                 *d_keys_out,                            </div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        Value               *d_values_in,                           </div>
@@ -238,7 +238,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>       d_keys(d_keys_in, d_keys_out);</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a>     d_values(d_values_in, d_values_out);</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;true, true, Key, Value, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;true, true, Key, Value, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;            d_keys,</div>
@@ -256,8 +256,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;        <span class="keyword">typename</span>            Value&gt;</div>
 <div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;    CUB_RUNTIME_FUNCTION</div>
 <div class="line"><a name="l00424"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a14e10d543e45468b5bb77f2c9dd5dd0f">  424</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a14e10d543e45468b5bb77f2c9dd5dd0f" title="Sorts key-value pairs into descending order. (~N auxiliary storage required). ">SortPairsDescending</a>(</div>
-<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                        </div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Value&gt;</a> &amp;d_values,                              </div>
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
@@ -269,7 +269,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;</div>
-<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;true, false, Key, Value, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00438"></a><span class="lineno">  438</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;true, false, Key, Value, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00439"></a><span class="lineno">  439</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00440"></a><span class="lineno">  440</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00441"></a><span class="lineno">  441</span>&#160;            d_keys,</div>
@@ -288,8 +288,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
 <div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;    CUB_RUNTIME_FUNCTION</div>
 <div class="line"><a name="l00506"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#aa4441b309e0208036b58fd231cb86da9">  506</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#aa4441b309e0208036b58fd231cb86da9" title="Sorts keys into ascending order. (~2N auxiliary storage required) ">SortKeys</a>(</div>
-<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                        </div>
+<div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
 <div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;        Key                 *d_keys_in,                             </div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;        Key                 *d_keys_out,                            </div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
@@ -305,7 +305,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>       d_keys(d_keys_in, d_keys_out);</div>
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a>  d_values;</div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;</div>
-<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;false, true, Key, NullType, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;false, true, Key, NullType, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;            d_keys,</div>
@@ -321,8 +321,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00593"></a><span class="lineno">  593</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
 <div class="line"><a name="l00594"></a><span class="lineno">  594</span>&#160;    CUB_RUNTIME_FUNCTION</div>
 <div class="line"><a name="l00595"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#aa312d1b1f3626544f1016b866905f162">  595</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#aa312d1b1f3626544f1016b866905f162" title="Sorts keys into ascending order. (~N auxiliary storage required). ">SortKeys</a>(</div>
-<div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l00596"></a><span class="lineno">  596</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                        </div>
+<div class="line"><a name="l00597"></a><span class="lineno">  597</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
 <div class="line"><a name="l00598"></a><span class="lineno">  598</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
 <div class="line"><a name="l00599"></a><span class="lineno">  599</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
 <div class="line"><a name="l00600"></a><span class="lineno">  600</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
@@ -336,7 +336,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;        <span class="comment">// Null value type</span></div>
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a> d_values;</div>
 <div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;</div>
-<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;false, false, Key, NullType, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;false, false, Key, NullType, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00614"></a><span class="lineno">  614</span>&#160;            d_keys,</div>
@@ -351,8 +351,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;    CUB_RUNTIME_FUNCTION</div>
 <div class="line"><a name="l00670"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a736c40b9b0b64c85e427df0ce9477dd6">  670</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a736c40b9b0b64c85e427df0ce9477dd6" title="Sorts keys into descending order. (~2N auxiliary storage required). ">SortKeysDescending</a>(</div>
-<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                        </div>
+<div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        Key                 *d_keys_in,                             </div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        Key                 *d_keys_out,                            </div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
@@ -367,7 +367,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>       d_keys(d_keys_in, d_keys_out);</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a>  d_values;</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;</div>
-<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;true, false, Key, NullType, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;true, false, Key, NullType, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00689"></a><span class="lineno">  689</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;            d_keys,</div>
@@ -383,8 +383,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Key&gt;</div>
 <div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;    CUB_RUNTIME_FUNCTION</div>
 <div class="line"><a name="l00754"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a60ac6dece773d9f7df5b77d681a657bc">  754</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a60ac6dece773d9f7df5b77d681a657bc" title="Sorts keys into descending order. (~N auxiliary storage required). ">SortKeysDescending</a>(</div>
-<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
+<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                        </div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;Key&gt;</a>   &amp;d_keys,                                </div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
 <div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
@@ -398,7 +398,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;        <span class="comment">// Null value type</span></div>
 <div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        <a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer&lt;NullType&gt;</a> d_values;</div>
 <div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;</div>
-<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;        <span class="keywordflow">return</span> DeviceRadixSortDispatch&lt;true, false, Key, NullType, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;true, false, Key, NullType, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;            d_keys,</div>
@@ -423,7 +423,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Sep 22 2014 21:22:46 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

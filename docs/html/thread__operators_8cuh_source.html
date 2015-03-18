@@ -103,7 +103,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <a href="thread__operators_8cuh.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;<span class="comment">/******************************************************************************</span></div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * </span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -255,43 +255,66 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;};</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;</div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;</div>
-<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;<span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;    <span class="keyword">typename</span> ReductionOp,                           </div>
-<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    <span class="keyword">typename</span> ItemOffsetPair&gt;                        </div>
-<div class="line"><a name="l00224"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html">  224</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_reduce_by_segment_op.html" title="Reduce-by-segment functor. ">ReduceBySegmentOp</a></div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;{</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;<span class="keyword">private</span>:</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;    ReductionOp op;</div>
+<div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> ScanOp&gt;</div>
+<div class="line"><a name="l00209"></a><span class="lineno"><a class="code" href="classcub_1_1_swizzle_scan_op.html">  209</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_swizzle_scan_op.html" title="Binary operator wrapper for switching non-commutative scan arguments. ">SwizzleScanOp</a></div>
+<div class="line"><a name="l00210"></a><span class="lineno">  210</span>&#160;{</div>
+<div class="line"><a name="l00211"></a><span class="lineno">  211</span>&#160;<span class="keyword">private</span>:</div>
+<div class="line"><a name="l00212"></a><span class="lineno">  212</span>&#160;</div>
+<div class="line"><a name="l00214"></a><span class="lineno">  214</span>&#160;    ScanOp scan_op;</div>
+<div class="line"><a name="l00215"></a><span class="lineno">  215</span>&#160;</div>
+<div class="line"><a name="l00216"></a><span class="lineno">  216</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;</div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    __host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00220"></a><span class="lineno"><a class="code" href="classcub_1_1_swizzle_scan_op.html#ae81a38aa9d94025da72544b9e0dc611b">  220</a></span>&#160;    <a class="code" href="classcub_1_1_swizzle_scan_op.html#ae81a38aa9d94025da72544b9e0dc611b" title="Constructor. ">SwizzleScanOp</a>(ScanOp scan_op) : scan_op(scan_op) {}</div>
+<div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;</div>
+<div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;    __host__ __device__ __forceinline__</div>
+<div class="line"><a name="l00225"></a><span class="lineno"><a class="code" href="classcub_1_1_swizzle_scan_op.html#a9548d484ccfb5161d56d3db1003693e2">  225</a></span>&#160;    T <a class="code" href="classcub_1_1_swizzle_scan_op.html#a9548d484ccfb5161d56d3db1003693e2" title="Switch the scan arguments. ">operator()</a>(<span class="keyword">const</span> T &amp;a, <span class="keyword">const</span> T &amp;b)</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;    {</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        <span class="keywordflow">return</span> scan_op(b, a);</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;    }</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;};</div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;</div>
-<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;</div>
-<div class="line"><a name="l00234"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html#afe9fea5e67755f66033b6473df0ba4fc">  234</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_reduce_by_segment_op.html#afe9fea5e67755f66033b6473df0ba4fc" title="Constructor. ">ReduceBySegmentOp</a>(ReductionOp op) : op(op) {}</div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;</div>
-<div class="line"><a name="l00237"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html#a2b0dc8dc37809e37fc0a2f09c5c23d67">  237</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> <a class="code" href="classcub_1_1_reduce_by_segment_op.html#a2b0dc8dc37809e37fc0a2f09c5c23d67" title="Scan operator. ">operator()</a>(</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> &amp;first,       </div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> &amp;second)      </div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    {</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        <span class="comment">// This expression uses less registers and is faster when compiled with Open64</span></div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> retval;</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        retval.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a> = first.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a> + second.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a>;</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        retval.<a class="code" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde" title="Item value. ">value</a> = (second.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a>) ?</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;                second.<a class="code" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde" title="Item value. ">value</a> :                          <span class="comment">// The second partial reduction spans a segment reset, so it&#39;s value aggregate becomes the running aggregate</span></div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;                op(first.<a class="code" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde" title="Item value. ">value</a>, second.<a class="code" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde" title="Item value. ">value</a>);          <span class="comment">// The second partial reduction does not span a reset, so accumulate both into the running aggregate</span></div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        <span class="keywordflow">return</span> retval;</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;    }</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;};</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;       <span class="comment">// end group UtilModule</span></div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    <span class="keyword">typename</span> ReductionOp,                           </div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    <span class="keyword">typename</span> ItemOffsetPair&gt;                        </div>
+<div class="line"><a name="l00251"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html">  251</a></span>&#160;<span class="keyword">class </span><a class="code" href="classcub_1_1_reduce_by_segment_op.html" title="Reduce-by-segment functor. ">ReduceBySegmentOp</a></div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;{</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;<span class="keyword">private</span>:</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    ReductionOp op;</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;</div>
+<div class="line"><a name="l00261"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html#a11713ed9019612010c0680c1cc9abf35">  261</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_reduce_by_segment_op.html#a11713ed9019612010c0680c1cc9abf35" title="Constructor. ">ReduceBySegmentOp</a>() {}</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;</div>
+<div class="line"><a name="l00264"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html#afe9fea5e67755f66033b6473df0ba4fc">  264</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_reduce_by_segment_op.html#afe9fea5e67755f66033b6473df0ba4fc" title="Constructor. ">ReduceBySegmentOp</a>(ReductionOp op) : op(op) {}</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;</div>
+<div class="line"><a name="l00267"></a><span class="lineno"><a class="code" href="classcub_1_1_reduce_by_segment_op.html#a2b0dc8dc37809e37fc0a2f09c5c23d67">  267</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> <a class="code" href="classcub_1_1_reduce_by_segment_op.html#a2b0dc8dc37809e37fc0a2f09c5c23d67" title="Scan operator. ">operator()</a>(</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> &amp;first,       </div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        <span class="keyword">const</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> &amp;second)      </div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    {</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;        <span class="comment">// This expression uses less registers and is faster when compiled with Open64</span></div>
+<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;        <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> retval;</div>
+<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        retval.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a> = first.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a> + second.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a>;</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        retval.<a class="code" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde" title="Item value. ">value</a> = (second.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a>) ?</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;                second.<a class="code" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde" title="Item value. ">value</a> :                          <span class="comment">// The second partial reduction spans a segment reset, so it&#39;s value aggregate becomes the running aggregate</span></div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;                op(first.<a class="code" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde" title="Item value. ">value</a>, second.<a class="code" href="structcub_1_1_item_offset_pair.html#abe5280fafb189d7ac2ae65d2f7f0dbde" title="Item value. ">value</a>);          <span class="comment">// The second partial reduction does not span a reset, so accumulate both into the running aggregate</span></div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;        <span class="keywordflow">return</span> retval;</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;    }</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;};</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;       <span class="comment">// end group UtilModule</span></div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Sep 22 2014 21:22:46 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

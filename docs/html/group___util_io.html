@@ -97,7 +97,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html">cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for loading a linear segment of items from memory into a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> across a CUDA thread block. </p>
 <div class="image">
 <img src="block_load_logo.png" alt="block_load_logo.png"/>
@@ -105,7 +105,7 @@ Classes</h2></td></tr>
 .</div></div>
   <a href="classcub_1_1_block_load.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html">cub::BlockStore&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_store.html">cub::BlockStore&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The <a class="el" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore</a> class provides <a href="index.html#sec0"><em>collective</em></a> data movement methods for writing a <a href="index.html#sec5sec3"><em>blocked arrangement</em></a> of items partitioned across a CUDA thread block to a linear segment of memory. </p>
 <div class="image">
 <img src="block_store_logo.png" alt="block_store_logo.png"/>
@@ -467,7 +467,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00075">75</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00076">76</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -529,7 +529,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00102">102</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00103">103</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -598,7 +598,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00134">134</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00132">132</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -658,7 +658,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00168">168</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00222">222</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -714,7 +714,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00235">235</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00253">253</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -777,7 +777,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00263">263</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00281">281</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -847,7 +847,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Input
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00297">297</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00312">312</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -903,7 +903,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00338">338</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00352">352</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -966,7 +966,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00372">372</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00386">386</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -1036,7 +1036,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </di
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00411">411</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00423">423</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -1459,7 +1459,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorT &gt; </d
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Sep 22 2014 21:22:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:31 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

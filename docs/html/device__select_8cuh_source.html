@@ -104,7 +104,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="device__select_8cuh.html">Go to the documentation of this file.</a><div class="fragment"><div class="line"><a name="l00001"></a><span class="lineno">    1</span>&#160;</div>
 <div class="line"><a name="l00002"></a><span class="lineno">    2</span>&#160;<span class="comment">/******************************************************************************</span></div>
 <div class="line"><a name="l00003"></a><span class="lineno">    3</span>&#160;<span class="comment"> * Copyright (c) 2011, Duane Merrill.  All rights reserved.</span></div>
-<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * Copyright (c) 2011-2014, NVIDIA CORPORATION.  All rights reserved.</span></div>
+<div class="line"><a name="l00004"></a><span class="lineno">    4</span>&#160;<span class="comment"> * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.</span></div>
 <div class="line"><a name="l00005"></a><span class="lineno">    5</span>&#160;<span class="comment"> *</span></div>
 <div class="line"><a name="l00006"></a><span class="lineno">    6</span>&#160;<span class="comment"> * Redistribution and use in source and binary forms, with or without</span></div>
 <div class="line"><a name="l00007"></a><span class="lineno">    7</span>&#160;<span class="comment"> * modification, are permitted provided that the following conditions are met:</span></div>
@@ -135,7 +135,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;<span class="preprocessor">#include &lt;stdio.h&gt;</span></div>
 <div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;<span class="preprocessor">#include &lt;iterator&gt;</span></div>
 <div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;dispatch/device_select_dispatch.cuh&quot;</span></div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;<span class="preprocessor">#include &quot;dispatch/dispatch_select_if.cuh&quot;</span></div>
 <div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;<span class="preprocessor">#include &quot;../util_namespace.cuh&quot;</span></div>
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;CUB_NS_PREFIX</div>
@@ -152,7 +152,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIteratorT&gt;</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line"><a name="l00134"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#ad1273ce1f20e442c5a045e0fa17fd5fb">  134</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#ad1273ce1f20e442c5a045e0fa17fd5fb" title="Uses the d_flags sequence to selectively copy the corresponding items from d_in into d_out...">Flagged</a>(</div>
-<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
+<div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                </div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        InputIteratorT              d_in,                           </div>
 <div class="line"><a name="l00138"></a><span class="lineno">  138</span>&#160;        FlagIterator                d_flags,                        </div>
@@ -166,7 +166,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>                SelectOp;       <span class="comment">// Selection op (not used)</span></div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>                EqualityOp;     <span class="comment">// Equality operator (not used)</span></div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;</div>
-<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <span class="keywordflow">return</span> DeviceSelectDispatch&lt;InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false&gt;::Dispatch(</div>
+<div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <span class="keywordflow">return</span> DispatchSelectIf&lt;InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false&gt;::Dispatch(</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;            d_in,</div>
@@ -188,7 +188,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        <span class="keyword">typename</span>                    SelectOp&gt;</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line"><a name="l00241"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#abec3c5afa3f1ca08e7b4fe3fd8990c39">  241</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#abec3c5afa3f1ca08e7b4fe3fd8990c39" title="Uses the select_op functor to selectively copy items from d_in into d_out. The total number of items ...">If</a>(</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                </div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        InputIteratorT              d_in,                           </div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        OutputIteratorT             d_out,                          </div>
@@ -202,7 +202,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>*               FlagIterator;   <span class="comment">// FlagT iterator type (not used)</span></div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>                EqualityOp;     <span class="comment">// Equality operator (not used)</span></div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="keywordflow">return</span> DeviceSelectDispatch&lt;InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false&gt;::Dispatch(</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;        <span class="keywordflow">return</span> DispatchSelectIf&lt;InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false&gt;::Dispatch(</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;            d_in,</div>
@@ -223,7 +223,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <span class="keyword">typename</span>                    NumSelectedIteratorT&gt;</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    CUB_RUNTIME_FUNCTION __forceinline__</div>
 <div class="line"><a name="l00332"></a><span class="lineno"><a class="code" href="structcub_1_1_device_select.html#a5e9ea8f2581326391ea63e1808ba514d">  332</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_select.html#a5e9ea8f2581326391ea63e1808ba514d" title="Given an input sequence d_in having runs of consecutive equal-valued keys, only the first key from ea...">Unique</a>(</div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        <span class="keywordtype">void</span>                        *d_temp_storage,                </div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                </div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;        <span class="keywordtype">size_t</span>                      &amp;temp_storage_bytes,            </div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        InputIteratorT              d_in,                           </div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;        OutputIteratorT             d_out,                          </div>
@@ -237,7 +237,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a>                SelectOp;       <span class="comment">// Selection op (not used)</span></div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_equality.html" title="Default equality functor. ">Equality</a>                EqualityOp;     <span class="comment">// Default == operator</span></div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        <span class="keywordflow">return</span> DeviceSelectDispatch&lt;InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false&gt;::Dispatch(</div>
+<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        <span class="keywordflow">return</span> DispatchSelectIf&lt;InputIteratorT, FlagIterator, OutputIteratorT, NumSelectedIteratorT, SelectOp, EqualityOp, OffsetT, false&gt;::Dispatch(</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;            d_temp_storage,</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;            temp_storage_bytes,</div>
 <div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;            d_in,</div>
@@ -261,7 +261,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Sep 22 2014 21:22:46 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 18 2015 18:50:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
