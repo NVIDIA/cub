@@ -190,9 +190,6 @@ __global__ void DeviceRadixSortSingleKernel(
     int                     current_bit,                            ///< [in] Bit position of current radix digit
     int                     end_bit)                                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
 {
-    // Appropriate unsigned-bits representation of KeyT
-    typedef typename Traits<KeyT>::UnsignedBits UnsignedBits;
-
     // Constants
     enum
     {
@@ -241,8 +238,10 @@ __global__ void DeviceRadixSortSingleKernel(
     KeyT            keys[ITEMS_PER_THREAD];
     ValueT          values[ITEMS_PER_THREAD];
 
-    // Assign default (min/max) value to all keys
-    UnsignedBits default_key = (DESCENDING) ? Traits<KeyT>::MIN_KEY : Traits<KeyT>::MAX_KEY;
+    // Get default (min/max) value for out-of-bounds keys
+    typedef typename Traits<KeyT>::UnsignedBits UnsignedBitsT;
+    UnsignedBitsT default_key_bits = (DESCENDING) ? Traits<KeyT>::MIN_KEY : Traits<KeyT>::MAX_KEY;
+    KeyT default_key = reinterpret_cast<KeyT&>(default_key_bits);
 
     // Load keys
     BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in, keys, num_items, default_key);
