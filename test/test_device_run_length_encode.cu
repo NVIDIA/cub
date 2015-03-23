@@ -848,8 +848,10 @@ int main(int argc, char** argv)
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
 
-    TestPointer<RLE,         CUB, int, int, int>(num_items, entropy_reduction, max_segment, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-    TestPointer<NON_TRIVIAL, CUB, int, int, int>(num_items, entropy_reduction, max_segment, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+//    TestPointer<RLE,         CUB, int, int, int>(num_items, entropy_reduction, max_segment, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+//    TestPointer<NON_TRIVIAL, CUB, int, int, int>(num_items, entropy_reduction, max_segment, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+    TestIterator<RLE, CUB, float, int, int>(num_items, CUB_TYPE_STRING(float), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int), Int2Type<true>());
+
 
 #elif defined(QUICK_TEST)
 
