@@ -119,7 +119,7 @@ private:
         __host__ __device__ __forceinline__ Reference(ValueType* ptr) : ptr(ptr) {}
 
         /// Assignment
-        __host__ __device__ __forceinline__ ValueType operator =(ValueType val)
+        __device__ __forceinline__ ValueType operator =(ValueType val)
         {
             ThreadStore<MODIFIER>(ptr, val);
             return val;

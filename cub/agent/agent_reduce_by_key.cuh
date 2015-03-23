@@ -805,7 +805,7 @@ struct AgentReduceByKey
                 tile_inclusive_prefix.offset,
                 num_remaining,
                 keys[ITEMS_PER_THREAD - 1],
-                tile_aggregate.value,
+                tile_inclusive_prefix.value,
                 Int2Type<IS_SEGMENTED_REDUCTION_FIXUP>());
         }
     }
