@@ -157,7 +157,7 @@ public:
     }
 
     /// Indirection
-    __host__ __device__ __forceinline__ reference operator*() const
+    __device__ __forceinline__ reference operator*() const
     {
         return ThreadLoad<MODIFIER>(ptr);
     }
@@ -202,13 +202,13 @@ public:
 
     /// Array subscript
     template <typename Distance>
-    __host__ __device__ __forceinline__ reference operator[](Distance n) const
+    __device__ __forceinline__ reference operator[](Distance n) const
     {
         return ThreadLoad<MODIFIER>(ptr + n);
     }
 
     /// Structure dereference
-    __host__ __device__ __forceinline__ pointer operator->()
+    __device__ __forceinline__ pointer operator->()
     {
         return &ThreadLoad<MODIFIER>(ptr);
     }
