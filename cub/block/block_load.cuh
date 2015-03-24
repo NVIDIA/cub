@@ -398,7 +398,7 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
         int offset = warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS);
-        offset = CUB_MIN(offset, valid_items);
+        offset = CUB_MIN(offset, valid_items - 1);
         items[ITEM] = block_itr[offset];
     }
 }
@@ -424,7 +424,7 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
     int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
-    int             valid_items,               ///< [in] Number of valid items to load
+    int             valid_items,                ///< [in] Number of valid items to load
     T               oob_default)                ///< [in] Default value to assign out-of-bound items
 {
     int tid                 = linear_tid & (CUB_PTX_WARP_THREADS - 1);

@@ -36,6 +36,8 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <queue>
+#include <set>
 #include <stdio.h>
 
 using namespace std;
@@ -51,7 +53,7 @@ using namespace std;
  * COO matrix type.  A COO matrix is just a vector of edge tuples.  Tuples are sorted
  * first by row, then by column.
  */
-template<typename OffsetT, typename ValueT>
+template<typename ValueT, typename OffsetT>
 struct CooMatrix
 {
     //---------------------------------------------------------------------
@@ -123,6 +125,39 @@ struct CooMatrix
             cout << '\t' << i << ',' << coo_tuples[i].row << ',' << coo_tuples[i].col << ',' << coo_tuples[i].val << "\n";
         }
     }
+
+
+    /**
+     * Builds a COO sparse from a relabeled CSR matrix.
+     */
+    template <typename CsrMatrixT>
+    void InitCsrRelabel(CsrMatrixT &csr_matrix, OffsetT* relabel_indices)
+    {
+        if (coo_tuples)
+        {
+            fprintf(stderr, "Matrix already constructed\n");
+            exit(1);
+        }
+
+        num_rows        = csr_matrix.num_rows;
+        num_cols        = csr_matrix.num_cols;
+        num_nonzeros    = csr_matrix.num_nonzeros;
+        coo_tuples      = new CooTuple[num_nonzeros];
+
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            for (OffsetT nonzero = csr_matrix.row_offsets[row]; nonzero < csr_matrix.row_offsets[row + 1]; ++nonzero)
+            {
+                coo_tuples[nonzero].row = relabel_indices[row];
+                coo_tuples[nonzero].col = relabel_indices[csr_matrix.column_indices[nonzero]];
+                coo_tuples[nonzero].val = csr_matrix.values[nonzero];
+            }
+        }
+
+        // Sort by rows, then columns
+        std::stable_sort(coo_tuples, coo_tuples + num_nonzeros);
+    }
+
 
 
     /**
@@ -485,20 +520,31 @@ struct CsrMatrix
 
 
     /**
-     * Destructor
+     * Clear
      */
-    ~CsrMatrix()
+    void Clear()
     {
         if (row_offsets)    delete[] row_offsets;
         if (column_indices) delete[] column_indices;
         if (values)         delete[] values;
+
+        row_offsets = NULL;
+        column_indices = NULL;
+        values = NULL;
     }
 
+    /**
+     * Destructor
+     */
+    ~CsrMatrix()
+    {
+        Clear();
+    }
 
     /**
      * Build CSR matrix from sorted COO matrix
      */
-    void FromCoo(const CooMatrix<OffsetT, ValueT> &coo_matrix)
+    void FromCoo(const CooMatrix<ValueT, OffsetT> &coo_matrix)
     {
         num_rows        = coo_matrix.num_rows;
         num_cols        = coo_matrix.num_cols;
@@ -594,4 +640,139 @@ struct CsrMatrix
 
 };
 
+
+
+/******************************************************************************
+ * Matrix transformations
+ ******************************************************************************/
+
+/**
+ * Reverse Cuthill-McKee
+ */
+template <typename ValueT, typename OffsetT>
+void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
+{
+    // Comparator for ordering rows by degree (lowest first), then by row-id (lowest first)
+    struct OrderByLowDegree
+    {
+        OffsetT* row_degrees;
+        OrderByLowDegree(OffsetT* row_degrees) : row_degrees(row_degrees) {}
+
+        bool operator()(const OffsetT &a, const OffsetT &b)
+        {
+            if (row_degrees[a] < row_degrees[b])
+                return true;
+            else if (row_degrees[a] > row_degrees[b])
+                return false;
+            else
+                return (a < b);
+        }
+    };
+
+    // Comparator for ordering rows by degree (highest first), then by row-id (lowest first)
+    struct OrderByHighDegree
+    {
+        OffsetT* row_degrees;
+        OrderByHighDegree(OffsetT* row_degrees) : row_degrees(row_degrees) {}
+
+        bool operator()(const OffsetT &a, const OffsetT &b)
+        {
+            if (row_degrees[a] > row_degrees[b])
+                return true;
+            else if (row_degrees[a] < row_degrees[b])
+                return false;
+            else
+                return (a < b);
+        }
+    };
+
+    // Unlabeled set type
+    typedef std::set<OffsetT, OrderByLowDegree> UnlabeledSet;
+
+    // Frontier set type
+    typedef std::set<OffsetT, OrderByHighDegree> FrontierSet;
+
+    // Do not process if not square
+    if (matrix.num_cols != matrix.num_rows)
+    {
+        printf("RCM transformation ignored (not square)\n");
+        return;
+    }
+    printf("RCM relabeling... "); fflush(stdout);
+
+    // Initialize row degrees, relabel indices, and unlabeled vertices
+    OffsetT*            row_degrees     = new OffsetT[matrix.num_rows];
+    OffsetT*            relabel_indices = new OffsetT[matrix.num_rows];
+    OrderByLowDegree    low_deg_comp(row_degrees);
+    UnlabeledSet        unlabeled(low_deg_comp);
+
+    for (OffsetT row = 0; row < matrix.num_rows; ++row)
+    {
+        row_degrees[row]        = matrix.row_offsets[row + 1] - matrix.row_offsets[row];
+        relabel_indices[row]    = -1;
+        unlabeled.insert(row);
+    }
+
+    OrderByHighDegree   high_deg_comp(row_degrees);
+    FrontierSet         frontier_in(high_deg_comp);
+    FrontierSet         frontier_out(high_deg_comp);
+
+    // Process unlabeled vertices (traverse connected components)
+    OffsetT relabel_idx = 0;
+    while (!unlabeled.empty())
+    {
+        // Seed the unvisited frontier queue with the unlabeled vertex of lowest-degree
+        OffsetT vertex = *unlabeled.begin();
+
+        // Update this vertex
+        unlabeled.erase(vertex);
+        relabel_indices[vertex] = relabel_idx;
+        relabel_idx++;
+        frontier_in.insert(vertex);
+
+        while (!frontier_in.empty())
+        {
+            // Process a BFS level of unlabeled vertices
+            frontier_out.clear();
+            for (typename FrontierSet::iterator itr = frontier_in.begin(); itr != frontier_in.end(); ++itr)
+            {
+                vertex = *itr;
+
+                // Inspect neighbors, adding to the out frontier if unlabeled
+                for (OffsetT neighbor_idx = matrix.row_offsets[vertex]; neighbor_idx < matrix.row_offsets[vertex + 1]; ++neighbor_idx)
+                {
+                    OffsetT neighbor = matrix.column_indices[neighbor_idx];
+                    if (relabel_indices[neighbor] == -1)
+                    {
+                        // Update this vertex
+                        unlabeled.erase(neighbor);
+                        relabel_indices[neighbor] = relabel_idx;
+                        relabel_idx++;
+                        frontier_out.insert(neighbor);
+                    }
+                }
+            }
+
+            // Swap frontiers
+            frontier_in = frontier_out;
+        }
+    }
+
+    printf("done.  Reconstituting... "); fflush(stdout);
+
+    // Create a COO matrix from the relabel indices
+    CooMatrix<ValueT, OffsetT> coo_matrix;
+    coo_matrix.InitCsrRelabel(matrix, relabel_indices);
+
+    // Cleanup
+    if (row_degrees) delete[] row_degrees;
+    if (relabel_indices) delete[] relabel_indices;
+
+    // Reconstitute the CSR matrix from the sorted COO tuples
+    matrix.Clear();
+
+    matrix.FromCoo(coo_matrix);
+
+    printf("done. "); fflush(stdout);
+}
 
