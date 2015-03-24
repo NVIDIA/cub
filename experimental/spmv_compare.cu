@@ -300,6 +300,7 @@ template <
     typename ValueT,
     typename OffsetT>
 void RunTests(
+    bool                rcm_relabel,
     ValueT              alpha,
     ValueT              beta,
     std::string         &mtx_filename,
@@ -311,7 +312,7 @@ void RunTests(
     cusparseHandle_t    cusparse)
 {
     // Initialize matrix in COO form
-    CooMatrix<OffsetT, ValueT> coo_matrix;
+    CooMatrix<ValueT, OffsetT> coo_matrix;
 
     if (!mtx_filename.empty())
     {
@@ -348,6 +349,14 @@ void RunTests(
     csr_matrix.DisplayHistogram();
     if (g_verbose2) csr_matrix.Display();
     printf("\n");
+
+    if (rcm_relabel)
+    {
+        RcmRelabel(csr_matrix);
+        csr_matrix.DisplayHistogram();
+        if (g_verbose2) csr_matrix.Display();
+        printf("\n");
+    }
 
     // Allocate input and output vectors
     ValueT* vector_x        = new ValueT[csr_matrix.num_cols];
@@ -466,6 +475,7 @@ int main(int argc, char **argv)
             "[--v] "
             "[--i=<timing iterations>] "
             "[--fp64] "
+            "[--rcm] "
             "[--alpha=<alpha scalar (default: 1.0)>] "
             "[--beta=<beta scalar (default: 0.0)>] "
             "\n\t"
@@ -481,6 +491,7 @@ int main(int argc, char **argv)
     }
 
     bool                fp64;
+    bool                rcm_relabel;
     std::string         mtx_filename;
     int                 grid2d              = -1;
     int                 grid3d              = -1;
@@ -492,6 +503,7 @@ int main(int argc, char **argv)
     g_verbose = args.CheckCmdLineFlag("v");
     g_verbose2 = args.CheckCmdLineFlag("v2");
     fp64 = args.CheckCmdLineFlag("fp64");
+    rcm_relabel = args.CheckCmdLineFlag("rcm");
     args.GetCmdLineArgument("i", timing_iterations);
     args.GetCmdLineArgument("mtx", mtx_filename);
     args.GetCmdLineArgument("grid2d", grid2d);
@@ -519,11 +531,11 @@ int main(int argc, char **argv)
     // Run test(s)
     if (fp64)
     {
-        RunTests<double, int>(alpha, beta, mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
+        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
     }
     else
     {
-        RunTests<float, int>(alpha, beta, mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
+        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
     }
 
     CubDebugExit(cudaDeviceSynchronize());

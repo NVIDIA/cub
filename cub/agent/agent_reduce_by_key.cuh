@@ -410,9 +410,11 @@ struct AgentReduceByKey
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            ValueT addend = d_fixup_in[keys[ITEM]];
             if (segment_flags[ITEM])
+            {
+                ValueT addend = d_fixup_in[keys[ITEM]];
                 values[ITEM] = reduction_op(values[ITEM], addend);
+            }
         }
 
         // Scatter updated values
