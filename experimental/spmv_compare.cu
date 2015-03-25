@@ -352,6 +352,7 @@ void RunTests(
 
     if (rcm_relabel)
     {
+//        DgmRelabel(csr_matrix);
         RcmRelabel(csr_matrix);
         csr_matrix.DisplayHistogram();
         if (g_verbose2) csr_matrix.Display();
