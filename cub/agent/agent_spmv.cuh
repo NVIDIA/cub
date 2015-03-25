@@ -707,6 +707,7 @@ struct AgentSpmv
 
         __syncthreads();
 
+        #pragma unroll 1
         for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
         {
             d_vector_y_out[tile_start_coord.x + item] = s_partials[item];
