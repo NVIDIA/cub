@@ -313,7 +313,7 @@ int g_num_rand_samples = 0;
 
 
 template <typename T>
-__noinline__ bool IsNaN(T val) { return false; }
+bool IsNaN(T val) { return false; }
 
 template<>
 __noinline__ bool IsNaN<float>(float val)

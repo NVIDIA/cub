@@ -105,13 +105,20 @@ struct CooMatrix
     CooMatrix() : num_rows(0), num_cols(0), num_nonzeros(0), coo_tuples(NULL) {}
 
 
+    /**
+     * Clear
+     */
+    void Clear()
+    {
+        if (coo_tuples) delete[] coo_tuples;
+        coo_tuples = NULL;
+    }
+
+
     // Destructor
     ~CooMatrix()
     {
-        if (coo_tuples)
-        {
-            delete[] coo_tuples;
-        }
+        Clear();
     }
 
 
@@ -126,6 +133,41 @@ struct CooMatrix
         }
     }
 
+
+    /**
+     * Builds a symmetric COO sparse from an asymmetric CSR matrix.
+     */
+    template <typename CsrMatrixT>
+    void InitCsrSymmetric(CsrMatrixT &csr_matrix)
+    {
+        if (coo_tuples)
+        {
+            fprintf(stderr, "Matrix already constructed\n");
+            exit(1);
+        }
+
+        num_rows        = csr_matrix.num_rows;
+        num_cols        = csr_matrix.num_cols;
+        num_nonzeros    = csr_matrix.num_nonzeros * 2;
+        coo_tuples      = new CooTuple[num_nonzeros];
+
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            for (OffsetT nonzero = csr_matrix.row_offsets[row]; nonzero < csr_matrix.row_offsets[row + 1]; ++nonzero)
+            {
+                coo_tuples[nonzero].row = row;
+                coo_tuples[nonzero].col = csr_matrix.column_indices[nonzero];
+                coo_tuples[nonzero].val = csr_matrix.values[nonzero];
+
+                coo_tuples[csr_matrix.num_nonzeros + nonzero].row = coo_tuples[nonzero].col;
+                coo_tuples[csr_matrix.num_nonzeros + nonzero].col = coo_tuples[nonzero].row;
+                coo_tuples[csr_matrix.num_nonzeros + nonzero].val = coo_tuples[nonzero].val;
+            }
+        }
+
+        // Sort by rows, then columns
+        std::stable_sort(coo_tuples, coo_tuples + num_nonzeros);
+    }
 
     /**
      * Builds a COO sparse from a relabeled CSR matrix.
@@ -650,7 +692,9 @@ struct CsrMatrix
  * Reverse Cuthill-McKee
  */
 template <typename ValueT, typename OffsetT>
-void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
+void RcmRelabel(
+    CsrMatrix<ValueT, OffsetT>&     matrix,
+    OffsetT*                        relabel_indices)
 {
     // Comparator for ordering rows by degree (lowest first), then by row-id (lowest first)
     struct OrderByLowDegree
@@ -688,6 +732,7 @@ void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
 
     // Unlabeled set type
     typedef std::set<OffsetT, OrderByLowDegree> UnlabeledSet;
+//    typedef std::set<OffsetT, OrderByHighDegree> UnlabeledSet;
 
     // Frontier set type
     typedef std::set<OffsetT, OrderByHighDegree> FrontierSet;
@@ -701,10 +746,9 @@ void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
     printf("RCM relabeling... "); fflush(stdout);
 
     // Initialize row degrees, relabel indices, and unlabeled vertices
-    OffsetT*            row_degrees     = new OffsetT[matrix.num_rows];
-    OffsetT*            relabel_indices = new OffsetT[matrix.num_rows];
-    OrderByLowDegree    low_deg_comp(row_degrees);
-    UnlabeledSet        unlabeled(low_deg_comp);
+    OffsetT*                            row_degrees     = new OffsetT[matrix.num_rows];
+    typename UnlabeledSet::key_compare  unlabeled_comp(row_degrees);
+    UnlabeledSet                        unlabeled(unlabeled_comp);
 
     for (OffsetT row = 0; row < matrix.num_rows; ++row)
     {
@@ -713,9 +757,9 @@ void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
         unlabeled.insert(row);
     }
 
-    OrderByHighDegree   high_deg_comp(row_degrees);
-    FrontierSet         frontier_in(high_deg_comp);
-    FrontierSet         frontier_out(high_deg_comp);
+    typename FrontierSet::key_compare   frontier_comp(row_degrees);
+    FrontierSet                         frontier_in(frontier_comp);
+    FrontierSet                         frontier_out(frontier_comp);
 
     // Process unlabeled vertices (traverse connected components)
     OffsetT relabel_idx = 0;
@@ -723,6 +767,8 @@ void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
     {
         // Seed the unvisited frontier queue with the unlabeled vertex of lowest-degree
         OffsetT vertex = *unlabeled.begin();
+
+//        printf("Choosing starting vertex %d degree %d\n", vertex, row_degrees[vertex]);
 
         // Update this vertex
         unlabeled.erase(vertex);
@@ -758,21 +804,74 @@ void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
         }
     }
 
-    printf("done.  Reconstituting... "); fflush(stdout);
+    printf("done. "); fflush(stdout);
+
+    // Cleanup
+    if (row_degrees) delete[] row_degrees;
+}
+
+
+/**
+ * Reverse Cuthill-McKee
+ */
+template <typename ValueT, typename OffsetT>
+void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
+{
+    // Initialize relabel indices
+    OffsetT* relabel_indices = new OffsetT[matrix.num_rows];
+
+    RcmRelabel(matrix, relabel_indices);
+
+    printf("Reconstituting... "); fflush(stdout);
 
     // Create a COO matrix from the relabel indices
     CooMatrix<ValueT, OffsetT> coo_matrix;
     coo_matrix.InitCsrRelabel(matrix, relabel_indices);
 
-    // Cleanup
-    if (row_degrees) delete[] row_degrees;
-    if (relabel_indices) delete[] relabel_indices;
-
     // Reconstitute the CSR matrix from the sorted COO tuples
+    if (relabel_indices) delete[] relabel_indices;
     matrix.Clear();
-
     matrix.FromCoo(coo_matrix);
 
     printf("done. "); fflush(stdout);
 }
+
+
+/**
+ * DGM relabel
+ */
+template <typename ValueT, typename OffsetT>
+void DgmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
+{
+    printf("Symmetry... "); fflush(stdout);
+
+    // Create a COO matrix from the relabel indices
+    CooMatrix<ValueT, OffsetT> symmetric_coo;
+    symmetric_coo.InitCsrSymmetric(matrix);
+
+    CsrMatrix<ValueT, OffsetT> symmetric_csr;
+    symmetric_csr.FromCoo(symmetric_coo);
+    symmetric_coo.Clear();
+    printf("done. "); fflush(stdout);
+
+    // Initialize relabel indices
+    OffsetT* relabel_indices = new OffsetT[matrix.num_rows];
+    RcmRelabel(symmetric_csr, relabel_indices);
+    symmetric_csr.Clear();
+
+    printf("Reconstituting... "); fflush(stdout);
+
+    // Create a COO matrix from the relabel indices
+    CooMatrix<ValueT, OffsetT> coo_matrix;
+    coo_matrix.InitCsrRelabel(matrix, relabel_indices);
+
+    // Reconstitute the CSR matrix from the sorted COO tuples
+    if (relabel_indices) delete[] relabel_indices;
+    matrix.Clear();
+    matrix.FromCoo(coo_matrix);
+
+    printf("done. "); fflush(stdout);
+
+}
+
 
