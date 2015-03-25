@@ -83,7 +83,7 @@ __global__ void DeviceSpmvSearchKernel(
     };
 
     typedef CacheModifiedInputIterator<
-            SpmvPolicyT::MATRIX_ROW_OFFSETS_LOAD_MODIFIER,
+            SpmvPolicyT::SEARCH_ROW_OFFSETS_LOAD_MODIFIER,
             OffsetT,
             OffsetT>
         MatrixRowOffsetsIteratorT;
@@ -129,7 +129,8 @@ __global__ void DeviceSpmvKernel(
     SpmvParams<ValueT, OffsetT>     spmv_params,                ///< [in] SpMV input parameter bundle
     CoordinateT*                    d_tile_coordinates,         ///< [in] Pointer to the temporary array of tile starting coordinates
     OffsetT*                        d_tile_carry_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-    ValueT*                         d_tile_carry_values)        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
+    ValueT*                         d_tile_carry_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
+    int                             num_tiles)                  ///< [in] Number of merge tiles
 {
     // Spmv agent type specialization
     typedef AgentSpmv<
@@ -147,7 +148,8 @@ __global__ void DeviceSpmvKernel(
     AgentSpmvT(temp_storage, spmv_params).ConsumeTile(
         d_tile_coordinates,
         d_tile_carry_rows,
-        d_tile_carry_values);
+        d_tile_carry_values,
+        num_tiles);
 }
 
 
@@ -201,6 +203,7 @@ struct DispatchSpmv
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
+                LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_WARP_SCANS>
             SpmvPolicyT;
@@ -219,39 +222,59 @@ struct DispatchSpmv
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
+                LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_WARP_SCANS>
             SpmvPolicyT;
     };
 
     /// SM35
-    struct Policy350 : DispatchReduceByKeyT::Policy350
+    struct Policy350
     {
         typedef AgentSpmvPolicy<
                 128,
                 7,
                 LOAD_LDG,
-                LOAD_LDG,
-                LOAD_LDG,
-                LOAD_LDG,
-                true,
-                BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
-    };
-
-    /// SM50
-    struct Policy500 : DispatchReduceByKeyT::Policy350
-    {
-        typedef AgentSpmvPolicy<
-                (sizeof(ValueT) > 4) ? 64 : 128,
-                9,
-                LOAD_LDG,
+                LOAD_CA,
                 LOAD_LDG,
                 LOAD_LDG,
                 LOAD_LDG,
                 false,
-                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             SpmvPolicyT;
+
+        typedef AgentReduceByKeyPolicy<
+                128,
+                4,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_LDG,
+                BLOCK_SCAN_WARP_SCANS>
+            ReduceByKeyPolicyT;
+    };
+
+    /// SM50
+    struct Policy500
+    {
+        typedef AgentSpmvPolicy<
+                (sizeof(ValueT) > 4) ? 64 : 128,
+                7,
+                LOAD_LDG,
+                LOAD_CA,
+                LOAD_LDG,
+                LOAD_LDG,
+                LOAD_LDG,
+                false,
+                BLOCK_SCAN_RAKING_MEMOIZE>
+//                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
+            SpmvPolicyT;
+
+        typedef AgentReduceByKeyPolicy<
+                128,
+                4,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_LDG,
+                BLOCK_SCAN_WARP_SCANS>
+            ReduceByKeyPolicyT;
     };
 
 
@@ -496,7 +519,8 @@ struct DispatchSpmv
                 spmv_params,
                 d_tile_coordinates,
                 d_tile_carry_rows,
-                d_tile_carry_values);
+                d_tile_carry_values,
+                num_spmv_tiles);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -565,12 +589,13 @@ struct DispatchSpmv
             // Get kernel kernel dispatch configurations
             KernelConfig spmv_config, reduce_by_key_config;
             InitConfigs(ptx_version, spmv_config, reduce_by_key_config);
-
+/*
             // Dispatch
             if (spmv_params.beta == 0.0)
             {
                 if (spmv_params.alpha == 1.0)
                 {
+*/
                     // Dispatch y = A*x
                     if (CubDebug(error = Dispatch(
                         d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
@@ -578,6 +603,7 @@ struct DispatchSpmv
                         DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false, false>,
                         DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
                         spmv_config, reduce_by_key_config))) break;
+/*
                 }
                 else
                 {
@@ -613,7 +639,7 @@ struct DispatchSpmv
                         spmv_config, reduce_by_key_config))) break;
                 }
             }
-
+*/
         }
         while (0);
 

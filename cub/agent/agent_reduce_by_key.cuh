@@ -121,6 +121,7 @@ struct AgentReduceByKey
         ITEMS_PER_THREAD    = AgentReduceByKeyPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         TWO_PHASE_SCATTER   = (!IS_SEGMENTED_REDUCTION_FIXUP) && (ITEMS_PER_THREAD > 1),
+//        TWO_PHASE_SCATTER   = (ITEMS_PER_THREAD > 1),
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
         HAS_IDENTITY_ZERO   = (Equals<ReductionOpT, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),
@@ -190,6 +191,8 @@ struct AgentReduceByKey
     typedef KeyT    KeyExchangeT[TILE_ITEMS + 1];
     typedef ValueT  ValueExchangeT[TILE_ITEMS + 1];
 
+    typedef KeyValuePair<KeyT, ValueT> KeyValuePairT;
+
     // Shared memory type for this threadblock
     union _TempStorage
     {
@@ -206,11 +209,8 @@ struct AgentReduceByKey
         // Smem needed for loading values
         typename BlockLoadValues::TempStorage load_values;
 
-        // Smem needed for compacting keys (allows non POD items in this union)
-        Uninitialized<KeyExchangeT> raw_exchange_keys;
-
-        // Smem needed for compacting values (allows non POD items in this union)
-        Uninitialized<ValueExchangeT> raw_exchange_values;
+        // Smem needed for compacting key value pairs(allows non POD items in this union)
+        Uninitialized<KeyValuePairT[TILE_ITEMS + 1]> raw_exchange;
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -340,28 +340,27 @@ struct AgentReduceByKey
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             // Set segment_flags for first out-of-bounds item, zero for others
-            if (IS_LAST_TILE)
-            {
-                bool is_first_oob = (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining);
-                segment_flags[ITEM] |= is_first_oob;
-            }
+            if (IS_LAST_TILE && (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM == num_remaining))
+                segment_flags[ITEM] = 1;
 
             scan_items[ITEM].value      = values[ITEM];
             scan_items[ITEM].offset     = segment_flags[ITEM];
         }
     }
 
-    __device__ __forceinline__ void UnzipValuesAndIndices(
-        ValueT          (&values)[ITEMS_PER_THREAD],
-        OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
-        ItemOffsetPairT (&scan_items)[ITEMS_PER_THREAD])
+    __device__ __forceinline__ void ZipKeysAndValues(
+        KeyT            (&keys)[ITEMS_PER_THREAD],                  ///< in
+        OffsetT         (&segment_indices)[ITEMS_PER_THREAD],       ///< out
+        ItemOffsetPairT (&scan_items)[ITEMS_PER_THREAD],            ///< in
+        KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD])         ///< out
     {
         // Zip values and segment_flags
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            values[ITEM]            = scan_items[ITEM].value;
-            segment_indices[ITEM]   = scan_items[ITEM].offset;
+            scatter_items[ITEM].key     = keys[ITEM];
+            scatter_items[ITEM].value   = scan_items[ITEM].value;
+            segment_indices[ITEM]       = scan_items[ITEM].offset;
         }
     }
 
@@ -374,8 +373,7 @@ struct AgentReduceByKey
      * Directly scatter flagged items to output offsets (specialized for IS_SEGMENTED_REDUCTION_FIXUP == false)
      */
     __device__ __forceinline__ void ScatterDirect(
-        KeyT            (&keys)[ITEMS_PER_THREAD],
-        ValueT          (&values)[ITEMS_PER_THREAD],
+        KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD],
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         Int2Type<false> is_segmented_reduction_fixup)
@@ -387,10 +385,10 @@ struct AgentReduceByKey
             if (segment_flags[ITEM])
             {
                 // Scatter key
-                d_unique_out[segment_indices[ITEM]] = keys[ITEM];
+                d_unique_out[segment_indices[ITEM]] = scatter_items[ITEM].key;
 
                 // Scatter value
-                d_aggregates_out[segment_indices[ITEM]] = values[ITEM];
+                d_aggregates_out[segment_indices[ITEM]] = scatter_items[ITEM].value;
             }
         }
     }
@@ -400,23 +398,11 @@ struct AgentReduceByKey
      * Directly scatter flagged items to output offsets (specialized for IS_SEGMENTED_REDUCTION_FIXUP == false)
      */
     __device__ __forceinline__ void ScatterDirect(
-        KeyT            (&keys)[ITEMS_PER_THREAD],
-        ValueT          (&values)[ITEMS_PER_THREAD],
+        KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD],
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         Int2Type<true>  is_segmented_reduction_fixup)
     {
-        // Grab current values for updating
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            if (segment_flags[ITEM])
-            {
-                ValueT addend = d_fixup_in[keys[ITEM]];
-                values[ITEM] = reduction_op(values[ITEM], addend);
-            }
-        }
-
         // Scatter updated values
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -424,7 +410,10 @@ struct AgentReduceByKey
             if (segment_flags[ITEM])
             {
                 // Update the value at the key location
-                d_aggregates_out[keys[ITEM]] = values[ITEM];
+                ValueT value    = d_fixup_in[scatter_items[ITEM].key];
+                value           = reduction_op(value, scatter_items[ITEM].value);
+
+                d_aggregates_out[scatter_items[ITEM].key] = value;
             }
         }
     }
@@ -437,8 +426,7 @@ struct AgentReduceByKey
      * value aggregate: the scatter offsets must be decremented for value aggregates
      */
     __device__ __forceinline__ void ScatterTwoPhase(
-        KeyT            (&keys)[ITEMS_PER_THREAD],
-        ValueT          (&values)[ITEMS_PER_THREAD],
+        KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD],
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         OffsetT         num_tile_segments,
@@ -453,7 +441,7 @@ struct AgentReduceByKey
         {
             if (segment_flags[ITEM])
             {
-                temp_storage.raw_exchange_keys.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = keys[ITEM];
+                temp_storage.raw_exchange.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = scatter_items[ITEM];
             }
         }
 
@@ -461,27 +449,11 @@ struct AgentReduceByKey
 
         for (int item = threadIdx.x; item < num_tile_segments; item += BLOCK_THREADS)
         {
-            d_unique_out[num_tile_segments_prefix + item] = temp_storage.raw_exchange_keys.Alias()[item];
+            KeyValuePairT pair                                  = temp_storage.raw_exchange.Alias()[item];
+            d_unique_out[num_tile_segments_prefix + item]       = pair.key;
+            d_aggregates_out[num_tile_segments_prefix + item]   = pair.value;
         }
 
-        __syncthreads();
-
-        // Compact and scatter values
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            if (segment_flags[ITEM])
-            {
-                temp_storage.raw_exchange_values.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = values[ITEM];
-            }
-        }
-
-        __syncthreads();
-
-        for (int item = threadIdx.x; item < num_tile_segments; item += BLOCK_THREADS)
-        {
-            d_aggregates_out[num_tile_segments_prefix + item] = temp_storage.raw_exchange_values.Alias()[item];
-        }
     }
 
 
@@ -493,72 +465,43 @@ struct AgentReduceByKey
      * value aggregate: the scatter offsets must be decremented for value aggregates
      */
     __device__ __forceinline__ void ScatterTwoPhase(
-        KeyT            (&keys)[ITEMS_PER_THREAD],
-        ValueT          (&values)[ITEMS_PER_THREAD],
+        KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD],
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         OffsetT         num_tile_segments,
         OffsetT         num_tile_segments_prefix,
         Int2Type<true>  is_segmented_reduction_fixup)
     {
+
         // Grab current values for updating
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            ValueT addend = d_fixup_in[keys[ITEM]];
-            if (segment_flags[ITEM])
-                values[ITEM] = reduction_op(values[ITEM], addend);
-        }
-
-        __syncthreads();
-
-        // Exchange keys
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
             if (segment_flags[ITEM])
             {
-                temp_storage.raw_exchange_keys.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = keys[ITEM];
+                ValueT addend = d_fixup_in[scatter_items[ITEM].key];
+                scatter_items[ITEM].value = reduction_op(scatter_items[ITEM].value, addend);
             }
         }
 
         __syncthreads();
 
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            keys[ITEM] = temp_storage.raw_exchange_keys.Alias()[(BLOCK_THREADS * ITEM) + threadIdx.x];
-        }
-
-        __syncthreads();
-
-        // Exchange values
+        // Compact and scatter keys
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (segment_flags[ITEM])
             {
-                temp_storage.raw_exchange_values.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = values[ITEM];
+                temp_storage.raw_exchange.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = scatter_items[ITEM];
             }
         }
 
         __syncthreads();
 
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        for (int item = threadIdx.x; item < num_tile_segments; item += BLOCK_THREADS)
         {
-            values[ITEM] = temp_storage.raw_exchange_values.Alias()[(BLOCK_THREADS * ITEM) + threadIdx.x];
-        }
-
-        // Scatter to global
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            if ((BLOCK_THREADS * ITEM) + threadIdx.x < num_tile_segments)
-            {
-                // Update the value at the key location
-                d_aggregates_out[keys[ITEM]] = values[ITEM];
-            }
+            KeyValuePairT pair = temp_storage.raw_exchange.Alias()[item];
+            d_aggregates_out[pair.key] = pair.value;
         }
     }
 
@@ -566,8 +509,7 @@ struct AgentReduceByKey
      * Scatter flagged items
      */
     __device__ __forceinline__ void Scatter(
-        KeyT            (&keys)[ITEMS_PER_THREAD],
-        ValueT          (&values)[ITEMS_PER_THREAD],
+        KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD],
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         OffsetT         num_tile_segments,
@@ -577,8 +519,7 @@ struct AgentReduceByKey
         if (TWO_PHASE_SCATTER && (num_tile_segments > BLOCK_THREADS))
         {
             ScatterTwoPhase(
-                keys,
-                values,
+                scatter_items,
                 segment_flags,
                 segment_indices,
                 num_tile_segments,
@@ -588,8 +529,7 @@ struct AgentReduceByKey
         else
         {
             ScatterDirect(
-                keys,
-                values,
+                scatter_items,
                 segment_flags,
                 segment_indices,
                 Int2Type<IS_SEGMENTED_REDUCTION_FIXUP>());
@@ -672,6 +612,7 @@ struct AgentReduceByKey
         OffsetT             segment_flags[ITEMS_PER_THREAD];    // Segment head flags
         OffsetT             segment_indices[ITEMS_PER_THREAD];  // Segment indices
         ItemOffsetPairT     scan_items[ITEMS_PER_THREAD];       // Zipped values and segment flags|indices
+        KeyValuePairT       scatter_items[ITEMS_PER_THREAD];    // Zipped key value pairs for scattering
 
         // Load keys (last tile repeats final element)
         if (IS_LAST_TILE)
@@ -715,12 +656,11 @@ struct AgentReduceByKey
         }
 
         // Unzip values and segment indices
-        UnzipValuesAndIndices(values, segment_indices, scan_items);
+        ZipKeysAndValues(pred_keys, segment_indices, scan_items, scatter_items);
 
         // Scatter flagged items
         Scatter(
-            pred_keys,
-            values,
+            scatter_items,
             segment_flags,
             segment_indices,
             tile_aggregate.offset,
@@ -755,6 +695,7 @@ struct AgentReduceByKey
         OffsetT             segment_flags[ITEMS_PER_THREAD];        // Segment head flags
         OffsetT             segment_indices[ITEMS_PER_THREAD];      // Segment indices
         ItemOffsetPairT     scan_items[ITEMS_PER_THREAD];           // Zipped values and segment flags|indices
+        KeyValuePairT       scatter_items[ITEMS_PER_THREAD];    // Zipped key value pairs for scattering
 
         // Load keys (last tile repeats final element)
         if (IS_LAST_TILE)
@@ -789,12 +730,11 @@ struct AgentReduceByKey
         ItemOffsetPairT tile_inclusive_prefix = prefix_op.GetInclusivePrefix();
 
         // Unzip values and segment indices
-        UnzipValuesAndIndices(values, segment_indices, scan_items);
+        ZipKeysAndValues(pred_keys, segment_indices, scan_items, scatter_items);
 
         // Scatter flagged items
         Scatter(
-            pred_keys,
-            values,
+            scatter_items,
             segment_flags,
             segment_indices,
             tile_aggregate.offset,
@@ -849,7 +789,7 @@ struct AgentReduceByKey
         OffsetT tile_offset     = tile_idx * TILE_ITEMS;                    // Global offset for the current tile
         OffsetT num_remaining   = num_items - tile_offset;                  // Remaining items (including this tile)
 
-        if (tile_idx < num_tiles - 1)
+        if (num_remaining > TILE_ITEMS)
         {
             // Not the last tile (full)
             ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state);
