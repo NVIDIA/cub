@@ -241,7 +241,7 @@ struct CooMatrix
         int     current_edge = -1;
         char    line[1024];
 
-
+        printf("Parsing... "); fflush(stdout);
         while (true)
         {
             if (fscanf(f_in, "%[^\n]\n", line) <= 0)
@@ -257,7 +257,7 @@ struct CooMatrix
                     // Banner
                     symmetric = (strstr(line, "symmetric") != NULL);
                     skew = (strstr(line, "skew") != NULL);
-                    printf("symmetric: %d, skew: %d\n", symmetric, skew);
+                    printf("(symmetric: %d, skew: %d) ", symmetric, skew); fflush(stdout);
                 }
             }
             else if (current_edge == -1)
@@ -316,8 +316,12 @@ struct CooMatrix
         // Adjust nonzero count (nonzeros along the diagonal aren't reversed)
         num_nonzeros = current_edge;
 
+        printf("done. Ordering..."); fflush(stdout);
+
         // Sort by rows, then columns
         std::stable_sort(coo_tuples, coo_tuples + num_nonzeros);
+
+        printf("done. "); fflush(stdout);
 
         fclose(f_in);
     }
@@ -836,42 +840,5 @@ void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
     printf("done. "); fflush(stdout);
 }
 
-
-/**
- * DGM relabel
- */
-template <typename ValueT, typename OffsetT>
-void DgmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
-{
-    printf("Symmetry... "); fflush(stdout);
-
-    // Create a COO matrix from the relabel indices
-    CooMatrix<ValueT, OffsetT> symmetric_coo;
-    symmetric_coo.InitCsrSymmetric(matrix);
-
-    CsrMatrix<ValueT, OffsetT> symmetric_csr;
-    symmetric_csr.FromCoo(symmetric_coo);
-    symmetric_coo.Clear();
-    printf("done. "); fflush(stdout);
-
-    // Initialize relabel indices
-    OffsetT* relabel_indices = new OffsetT[matrix.num_rows];
-    RcmRelabel(symmetric_csr, relabel_indices);
-    symmetric_csr.Clear();
-
-    printf("Reconstituting... "); fflush(stdout);
-
-    // Create a COO matrix from the relabel indices
-    CooMatrix<ValueT, OffsetT> coo_matrix;
-    coo_matrix.InitCsrRelabel(matrix, relabel_indices);
-
-    // Reconstitute the CSR matrix from the sorted COO tuples
-    if (relabel_indices) delete[] relabel_indices;
-    matrix.Clear();
-    matrix.FromCoo(coo_matrix);
-
-    printf("done. "); fflush(stdout);
-
-}
 
 
