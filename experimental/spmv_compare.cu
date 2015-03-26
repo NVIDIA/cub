@@ -348,7 +348,7 @@ void RunTests(
     // Display matrix info
     csr_matrix.DisplayHistogram();
     if (g_verbose2) csr_matrix.Display();
-    printf("\n");
+    printf("\n"); fflush(stdout);
 
     if (rcm_relabel)
     {
@@ -400,6 +400,8 @@ void RunTests(
 
     CubDebugExit(cudaMemset(d_vector_y, 0, sizeof(ValueT) * csr_matrix.num_rows));
 
+    printf("\n\nCusparse: "); fflush(stdout);
+
     avg_millis = CusparseSpmv(
         vector_y_in,
         d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices, d_vector_x, d_vector_y,
@@ -410,8 +412,7 @@ void RunTests(
     nz_throughput       = double(csr_matrix.num_nonzeros) / avg_millis / 1.0e6;
     effective_bandwidth = double(total_bytes) / avg_millis / 1.0e6;
 
-    printf("\n\n%s fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
-        "cuSparse",
+    printf("fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
         sizeof(ValueT) * 8,
         avg_millis,
         2 * nz_throughput,
@@ -426,6 +427,8 @@ void RunTests(
 
     CubDebugExit(cudaMemset(d_vector_y, 0, sizeof(ValueT) * csr_matrix.num_rows));
 
+    printf("\n\nCUB: "); fflush(stdout);
+
     avg_millis = CubSpmv(
         vector_y_in,
         d_matrix_values, d_matrix_row_offsets, d_matrix_column_indices, d_vector_x, d_vector_y,
@@ -436,8 +439,7 @@ void RunTests(
     nz_throughput       = double(csr_matrix.num_nonzeros) / avg_millis / 1.0e6;
     effective_bandwidth = double(total_bytes) / avg_millis / 1.0e6;
 
-    printf("\n\n%s fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
-        "CUB",
+    printf("fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
         sizeof(ValueT) * 8,
         avg_millis,
         2 * nz_throughput,
@@ -532,7 +534,7 @@ int main(int argc, char **argv)
     // Run test(s)
     if (fp64)
     {
-        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
+//        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
     }
     else
     {
