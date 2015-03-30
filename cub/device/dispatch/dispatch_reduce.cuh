@@ -65,7 +65,7 @@ template <
     typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
     typename                OutputIteratorT,            ///< Output iterator type for recording the reduced aggregate \iterator
     typename                OffsetT,                    ///< Signed integer type for global offsets
-    typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> (e.g., cub::Sum, cub::Min, cub::Max, etc.)
 __launch_bounds__ (int(AgentReducePolicy::BLOCK_THREADS))
 __global__ void DeviceReduceSweepKernel(
     InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
@@ -111,7 +111,7 @@ template <
     typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
     typename                OutputIteratorT,            ///< Output iterator type for recording the reduced aggregate \iterator
     typename                OffsetT,                    ///< Signed integer type for global offsets
-    typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename                ReductionOp>                ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> (e.g., cub::Sum, cub::Min, cub::Max, etc.)
 __launch_bounds__ (int(AgentReducePolicy::BLOCK_THREADS), 1)
 __global__ void SingleReduceSweepKernel(
     InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
@@ -158,7 +158,7 @@ template <
     typename InputIteratorT,    ///< Random-access input iterator type for reading input items \iterator
     typename OutputIteratorT,   ///< Output iterator type for recording the reduced aggregate \iterator
     typename OffsetT,           ///< Signed integer type for global offsets
-    typename ReductionOp>       ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+    typename ReductionOp>       ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> (e.g., cub::Sum, cub::Min, cub::Max, etc.)
 struct DispatchReduce
 {
     /******************************************************************************
