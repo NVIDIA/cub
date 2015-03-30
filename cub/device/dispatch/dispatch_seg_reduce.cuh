@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceSpmv provides device-wide parallel operations for performing sparse-matrix * vector multiplication (SpMV).
+ * cub::DeviceSegReduce provides device-wide parallel operations for performing sparse-matrix * vector multiplication (SpMV).
  */
 
 #pragma once
@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "dispatch_reduce_by_key.cuh"
-#include "../../agent/agent_spmv.cuh"
+#include "../../agent/agent_seg_reduce.cuh"
 #include "../../util_type.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
@@ -54,35 +54,35 @@ namespace cub {
 
 
 /******************************************************************************
- * SpMV kernel entry points
+ * Segmented reduction kernel entry points
  *****************************************************************************/
 
 /**
- * Spmv search kernel. Identifies merge path starting coordinates for each tile.
+ * SegReduce search kernel. Identifies merge path starting coordinates for each tile.
  */
 template <
-    typename    SpmvPolicyT,                    ///< Parameterized SpmvPolicy tuning policy type
-    typename    ScanTileStateT,                 ///< Tile status interface type
-    typename    OffsetT,                        ///< Signed integer type for sequence offsets
-    typename    CoordinateT,                    ///< Merge path coordinate type
-    typename    SpmvParamsT>                    ///< SpmvParams type
-__global__ void DeviceSpmvSearchKernel(
-    ScanTileStateT  tile_state,                 ///< [in] Tile status interface for fixup reduce-by-key kernel
-    int             num_merge_tiles,            ///< [in] Number of SpMV merge tiles (spmv grid size)
-    int             num_reduce_by_key_tiles,    ///< [in] Number of reduce-by-key tiles (fixup grid size)
-    CoordinateT*    d_tile_coordinates,         ///< [out] Pointer to the temporary array of tile starting coordinates
-    SpmvParamsT     spmv_params)                ///< [in] SpMV input parameter bundle
+    typename    SegReducePolicyT,                   ///< Parameterized SegReducePolicy tuning policy type
+    typename    ScanTileStateT,                     ///< Tile status interface type
+    typename    OffsetT,                            ///< Signed integer type for sequence offsets
+    typename    CoordinateT,                        ///< Merge path coordinate type
+    typename    SegReduceParamsT>                   ///< SegReduceParams type
+__global__ void DeviceSegReduceSearchKernel(
+    ScanTileStateT      tile_state,                 ///< [in] Tile status interface for fixup reduce-by-key kernel
+    int                 num_merge_tiles,            ///< [in] Number of Segmented reduction merge tiles (seg_reduce grid size)
+    int                 num_reduce_by_key_tiles,    ///< [in] Number of reduce-by-key tiles (fixup grid size)
+    CoordinateT*        d_tile_coordinates,         ///< [out] Pointer to the temporary array of tile starting coordinates
+    SegReduceParamsT    seg_reduce_params)          ///< [in] Segmented reduction input parameter bundle
 {
     /// Constants
     enum
     {
-        BLOCK_THREADS           = SpmvPolicyT::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = SpmvPolicyT::ITEMS_PER_THREAD,
+        BLOCK_THREADS           = SegReducePolicyT::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = SegReducePolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
     typedef CacheModifiedInputIterator<
-            SpmvPolicyT::SEARCH_ROW_OFFSETS_LOAD_MODIFIER,
+            SegReducePolicyT::SEARCH_ROW_OFFSETS_LOAD_MODIFIER,
             OffsetT,
             OffsetT>
         RowOffsetsIteratorT;
@@ -101,10 +101,10 @@ __global__ void DeviceSpmvSearchKernel(
         // Search the merge path
         MergePathSearch(
             diagonal,
-            RowOffsetsIteratorT(spmv_params.d_matrix_row_end_offsets),
+            RowOffsetsIteratorT(seg_reduce_params.d_matrix_row_end_offsets),
             nonzero_indices,
-            spmv_params.num_rows,
-            spmv_params.num_nonzeros,
+            seg_reduce_params.num_rows,
+            seg_reduce_params.num_nonzeros,
             tile_coordinate);
 
         // Output starting offset
@@ -114,36 +114,34 @@ __global__ void DeviceSpmvSearchKernel(
 
 
 /**
- * Spmv agent entry point
+ * SegReduce agent entry point
  */
 template <
-    typename        SpmvPolicyT,                ///< Parameterized SpmvPolicy tuning policy type
-    typename        ValueT,                     ///< Matrix and vector value type
-    typename        OffsetT,                    ///< Signed integer type for sequence offsets
-    typename        CoordinateT,                ///< Merge path coordinate type
-    bool            HAS_ALPHA,                  ///< Whether the input parameter Alpha is 1
-    bool            HAS_BETA>                   ///< Whether the input parameter Beta is 0
-__launch_bounds__ (int(SpmvPolicyT::BLOCK_THREADS))
-__global__ void DeviceSpmvKernel(
-    SpmvParams<ValueT, OffsetT>     spmv_params,                ///< [in] SpMV input parameter bundle
-    CoordinateT*                    d_tile_coordinates,         ///< [in] Pointer to the temporary array of tile starting coordinates
-    OffsetT*                        d_tile_carry_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-    ValueT*                         d_tile_carry_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
-    int                             num_tiles)                  ///< [in] Number of merge tiles
+    typename SegReducePolicyT,       ///< Parameterized SegReducePolicy tuning policy type
+    typename ValueT,                 ///< Matrix and vector value type
+    typename OffsetT,                ///< Signed integer type for sequence offsets
+    typename ReductionOpT,           ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> (e.g., cub::Sum, cub::Min, cub::Max, etc.)
+    typename CoordinateT>            ///< Merge path coordinate type
+__launch_bounds__ (int(SegReducePolicyT::BLOCK_THREADS))
+__global__ void DeviceSegReduceKernel(
+    SegReduceParams<ValueT, OffsetT, ReductionOpT>  seg_reduce_params,      ///< [in] Segmented reduction input parameter bundle
+    CoordinateT*                                    d_tile_coordinates,     ///< [in] Pointer to the temporary array of tile starting coordinates
+    OffsetT*                                        d_tile_carry_rows,      ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
+    ValueT*                                         d_tile_carry_values,    ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
+    int                                             num_tiles)              ///< [in] Number of merge tiles
 {
-    // Spmv agent type specialization
-    typedef AgentSpmv<
-            SpmvPolicyT,
+    // SegReduce agent type specialization
+    typedef AgentSegReduce<
+            SegReducePolicyT,
             ValueT,
             OffsetT,
-            HAS_ALPHA,
-            HAS_BETA>
-        AgentSpmvT;
+            ReductionOpT>
+        AgentSegReduceT;
 
-    // Shared memory for AgentSpmv
-    __shared__ typename AgentSpmvT::TempStorage temp_storage;
+    // Shared memory for AgentSegReduce
+    __shared__ typename AgentSegReduceT::TempStorage temp_storage;
 
-    AgentSpmvT(temp_storage, spmv_params).ConsumeTile(
+    AgentSegReduceT(temp_storage, seg_reduce_params).ConsumeTile(
         d_tile_coordinates,
         d_tile_carry_rows,
         d_tile_carry_values,
@@ -157,12 +155,13 @@ __global__ void DeviceSpmvKernel(
  ******************************************************************************/
 
 /**
- * Utility class for dispatching the appropriately-tuned kernels for DeviceSpmv
+ * Utility class for dispatching the appropriately-tuned kernels for DeviceSegReduce
  */
 template <
-    typename    ValueT,                     ///< Matrix and vector value type
-    typename    OffsetT>                    ///< Signed integer type for global offsets
-struct DispatchSpmv
+    typename ValueT,            ///< Matrix and vector value type
+    typename OffsetT,           ///< Signed integer type for global offsets
+    typename ReductionOpT>      ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> (e.g., cub::Sum, cub::Min, cub::Max, etc.)
+struct DispatchSegReduce
 {
     //---------------------------------------------------------------------
     // Constants and Types
@@ -173,8 +172,8 @@ struct DispatchSpmv
         INIT_KERNEL_THREADS = 128
     };
 
-    // SpmvParams bundle type
-    typedef SpmvParams<ValueT, OffsetT> SpmvParamsT;
+    // SegReduceParams bundle type
+    typedef SegReduceParams<ValueT, OffsetT, ReductionOpT> SegReduceParamsT;
 
     // 2D merge path coordinate type
     typedef typename CubVector<OffsetT, 2>::Type CoordinateT;
@@ -194,17 +193,15 @@ struct DispatchSpmv
     /// SM11
     struct Policy110 : DispatchReduceByKeyT::Policy110
     {
-        typedef AgentSpmvPolicy<
+        typedef AgentSegReducePolicy<
                 128,
                 1,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
+            SegReducePolicyT;
     };
 
     /// SM20
@@ -213,33 +210,29 @@ struct DispatchSpmv
     /// SM30
     struct Policy300 : DispatchReduceByKeyT::Policy300
     {
-        typedef AgentSpmvPolicy<
+        typedef AgentSegReducePolicy<
                 128,
                 7,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
                 false,
                 BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
+            SegReducePolicyT;
     };
 
     /// SM35
     struct Policy350
     {
-        typedef AgentSpmvPolicy<
+        typedef AgentSegReducePolicy<
                 128,
                 7,
                 LOAD_LDG,
                 LOAD_CA,
                 LOAD_LDG,
-                LOAD_LDG,
-                LOAD_LDG,
                 false,
                 BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
+            SegReducePolicyT;
 
         typedef AgentReduceByKeyPolicy<
                 128,
@@ -253,18 +246,16 @@ struct DispatchSpmv
     /// SM50
     struct Policy500
     {
-        typedef AgentSpmvPolicy<
+        typedef AgentSegReducePolicy<
                 (sizeof(ValueT) > 4) ? 64 : 128,
                 7,
                 LOAD_LDG,
                 LOAD_CA,
                 LOAD_LDG,
-                LOAD_LDG,
-                LOAD_LDG,
                 false,
                 BLOCK_SCAN_RAKING_MEMOIZE>
 //                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
-            SpmvPolicyT;
+            SegReducePolicyT;
 
         typedef AgentReduceByKeyPolicy<
                 128,
@@ -299,7 +290,7 @@ struct DispatchSpmv
 #endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxSpmvPolicyT : PtxPolicy::SpmvPolicyT {};
+    struct PtxSegReducePolicyT : PtxPolicy::SegReducePolicyT {};
     struct PtxReduceByKeyPolicy : PtxPolicy::ReduceByKeyPolicyT {};
 
 
@@ -314,13 +305,13 @@ struct DispatchSpmv
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
         int             ptx_version,
-        KernelConfig    &spmv_config,
+        KernelConfig    &seg_reduce_config,
         KernelConfig    &reduce_by_key_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        spmv_config.template Init<PtxSpmvPolicyT>();
+        seg_reduce_config.template Init<PtxSegReducePolicyT>();
         reduce_by_key_config.template Init<PtxReduceByKeyPolicy>();
 
     #else
@@ -328,28 +319,28 @@ struct DispatchSpmv
         // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
         if (ptx_version >= 500)
         {
-            spmv_config.template            Init<typename Policy500::SpmvPolicyT>();
+            seg_reduce_config.template      Init<typename Policy500::SegReducePolicyT>();
             reduce_by_key_config.template   Init<typename Policy500::ReduceByKeyPolicyT>();
         }
         else if (ptx_version >= 350)
         {
-            spmv_config.template            Init<typename Policy350::SpmvPolicyT>();
+            seg_reduce_config.template      Init<typename Policy350::SegReducePolicyT>();
             reduce_by_key_config.template   Init<typename Policy350::ReduceByKeyPolicyT>();
         }
         else if (ptx_version >= 300)
         {
-            spmv_config.template            Init<typename Policy300::SpmvPolicyT>();
+            seg_reduce_config.template      Init<typename Policy300::SegReducePolicyT>();
             reduce_by_key_config.template   Init<typename Policy300::ReduceByKeyPolicyT>();
 
         }
         else if (ptx_version >= 200)
         {
-            spmv_config.template            Init<typename Policy200::SpmvPolicyT>();
+            seg_reduce_config.template      Init<typename Policy200::SegReducePolicyT>();
             reduce_by_key_config.template   Init<typename Policy200::ReduceByKeyPolicyT>();
         }
         else
         {
-            spmv_config.template            Init<typename Policy110::SpmvPolicyT>();
+            seg_reduce_config.template      Init<typename Policy110::SegReducePolicyT>();
             reduce_by_key_config.template   Init<typename Policy110::ReduceByKeyPolicyT>();
         }
 
@@ -389,21 +380,21 @@ struct DispatchSpmv
      * kernel invocations.
      */
     template <
-        typename                SpmvSearchKernelT,                  ///< Function type of cub::AgentSpmvSearchKernel
-        typename                SpmvKernelT,                        ///< Function type of cub::AgentSpmvKernel
-        typename                ReduceByKeyKernelT>                 ///< Function type of cub::DeviceReduceByKeyKernelT
+        typename                SegReduceSearchKernelT,         ///< Function type of cub::AgentSegReduceSearchKernel
+        typename                SegReduceKernelT,               ///< Function type of cub::AgentSegReduceKernel
+        typename                ReduceByKeyKernelT>             ///< Function type of cub::DeviceReduceByKeyKernelT
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*                   d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t&                 temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        SpmvParamsT&            spmv_params,                        ///< SpMV input parameter bundle
-        cudaStream_t            stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                    debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
-        SpmvSearchKernelT       spmv_search_kernel,                 ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
-        SpmvKernelT             spmv_kernel,                        ///< [in] Kernel function pointer to parameterization of AgentSpmvKernel
-        ReduceByKeyKernelT      reduce_by_key_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
-        KernelConfig            spmv_config,                        ///< [in] Dispatch parameters that match the policy that \p spmv_kernel was compiled for
-        KernelConfig            reduce_by_key_config)               ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_kernel was compiled for
+        void*                   d_temp_storage,                 ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&                 temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        SegReduceParamsT&       seg_reduce_params,              ///< Segmented reduction input parameter bundle
+        cudaStream_t            stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                    debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        SegReduceSearchKernelT  seg_reduce_search_kernel,       ///< [in] Kernel function pointer to parameterization of AgentSegReduceSearchKernel
+        SegReduceKernelT        seg_reduce_kernel,              ///< [in] Kernel function pointer to parameterization of AgentSegReduceKernel
+        ReduceByKeyKernelT      reduce_by_key_kernel,           ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
+        KernelConfig            seg_reduce_config,              ///< [in] Dispatch parameters that match the policy that \p seg_reduce_kernel was compiled for
+        KernelConfig            reduce_by_key_config)           ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -430,24 +421,24 @@ struct DispatchSpmv
             int max_dim_x;
             if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
 
-            // Total number of spmv work items
-            int num_merge_items = spmv_params.num_rows + spmv_params.num_nonzeros;
+            // Total number of seg_reduce work items
+            int num_merge_items = seg_reduce_params.num_rows + seg_reduce_params.num_nonzeros;
 
             // Tile sizes of kernels
-            int merge_tile_size              = spmv_config.block_threads * spmv_config.items_per_thread;
+            int merge_tile_size        = seg_reduce_config.block_threads * seg_reduce_config.items_per_thread;
             int reduce_by_key_tile_size     = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
 
             // Number of tiles for kernels
-            unsigned int num_merge_tiles            = (num_merge_items + merge_tile_size - 1) / merge_tile_size;
+            unsigned int num_merge_tiles                = (num_merge_items + merge_tile_size - 1) / merge_tile_size;
             unsigned int num_reduce_by_key_tiles    = (num_merge_tiles + reduce_by_key_tile_size - 1) / reduce_by_key_tile_size;
 
             // Get SM occupancy for kernels
-            int spmv_sm_occupancy;
+            int seg_reduce_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                spmv_sm_occupancy,
+                seg_reduce_sm_occupancy,
                 sm_version,
-                spmv_kernel,
-                spmv_config.block_threads))) break;
+                seg_reduce_kernel,
+                seg_reduce_config.block_threads))) break;
 
             int reduce_by_key_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
@@ -457,7 +448,7 @@ struct DispatchSpmv
                 reduce_by_key_config.block_threads))) break;
 
             // Get grid dimensions
-            dim3 spmv_grid_size(
+            dim3 seg_reduce_grid_size(
                 CUB_MIN(num_merge_tiles, max_dim_x),
                 (num_merge_tiles + max_dim_x - 1) / max_dim_x,
                 1);
@@ -496,25 +487,25 @@ struct DispatchSpmv
             int search_block_size   = INIT_KERNEL_THREADS;
             int search_grid_size    = (num_merge_tiles + 1 + search_block_size - 1) / search_block_size;
 
-            // Log spmv_search_kernel configuration
-            if (debug_synchronous) CubLog("Invoking spmv_search_kernel<<<%d, %d, 0, %lld>>>()\n",
+            // Log seg_reduce_search_kernel configuration
+            if (debug_synchronous) CubLog("Invoking seg_reduce_search_kernel<<<%d, %d, 0, %lld>>>()\n",
                 search_grid_size, search_block_size, (long long) stream);
 
-            // Invoke spmv_search_kernel
-            spmv_search_kernel<<<search_grid_size, search_block_size, 0, stream>>>(
+            // Invoke seg_reduce_search_kernel
+            seg_reduce_search_kernel<<<search_grid_size, search_block_size, 0, stream>>>(
                 tile_state,
                 num_merge_tiles,
                 num_reduce_by_key_tiles,
                 d_tile_coordinates,
-                spmv_params);
+                seg_reduce_params);
 
-            // Log spmv_kernel configuration
-            if (debug_synchronous) CubLog("Invoking spmv_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                spmv_grid_size.x, spmv_grid_size.y, spmv_grid_size.z, spmv_config.block_threads, (long long) stream, spmv_config.items_per_thread, spmv_sm_occupancy);
+            // Log seg_reduce_kernel configuration
+            if (debug_synchronous) CubLog("Invoking seg_reduce_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                seg_reduce_grid_size.x, seg_reduce_grid_size.y, seg_reduce_grid_size.z, seg_reduce_config.block_threads, (long long) stream, seg_reduce_config.items_per_thread, seg_reduce_sm_occupancy);
 
-            // Invoke spmv_kernel
-            spmv_kernel<<<spmv_grid_size, spmv_config.block_threads, 0, stream>>>(
-                spmv_params,
+            // Invoke seg_reduce_kernel
+            seg_reduce_kernel<<<seg_reduce_grid_size, seg_reduce_config.block_threads, 0, stream>>>(
+                seg_reduce_params,
                 d_tile_coordinates,
                 d_tile_carry_rows,
                 d_tile_carry_values,
@@ -538,7 +529,7 @@ struct DispatchSpmv
                     d_tile_carry_rows,
                     NULL,
                     d_tile_carry_values,
-                    spmv_params.d_vector_y,
+                    seg_reduce_params.d_vector_y,
                     NULL,
                     tile_state,
                     cub::Equality(),
@@ -568,7 +559,7 @@ struct DispatchSpmv
     static cudaError_t Dispatch(
         void*                   d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                 temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        SpmvParamsT&            spmv_params,                        ///< SpMV input parameter bundle
+        SegReduceParamsT&            seg_reduce_params,                        ///< Segmented reduction input parameter bundle
         cudaStream_t            stream                  = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous       = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -584,56 +575,56 @@ struct DispatchSpmv
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig spmv_config, reduce_by_key_config;
-            InitConfigs(ptx_version, spmv_config, reduce_by_key_config);
+            KernelConfig seg_reduce_config, reduce_by_key_config;
+            InitConfigs(ptx_version, seg_reduce_config, reduce_by_key_config);
 /*
             // Dispatch
-            if (spmv_params.beta == 0.0)
+            if (seg_reduce_params.beta == 0.0)
             {
-                if (spmv_params.alpha == 1.0)
+                if (seg_reduce_params.alpha == 1.0)
                 {
 */
                     // Dispatch y = A*x
                     if (CubDebug(error = Dispatch(
-                        d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
-                        DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
-                        DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false, false>,
+                        d_temp_storage, temp_storage_bytes, seg_reduce_params, stream, debug_synchronous,
+                        DeviceSegReduceSearchKernel<PtxSegReducePolicyT, ScanTileStateT, OffsetT, CoordinateT, SegReduceParamsT>,
+                        DeviceSegReduceKernel<PtxSegReducePolicyT, ValueT, OffsetT, CoordinateT, false, false>,
                         DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                        spmv_config, reduce_by_key_config))) break;
+                        seg_reduce_config, reduce_by_key_config))) break;
 /*
                 }
                 else
                 {
                     // Dispatch y = alpha*A*x
                     if (CubDebug(error = Dispatch(
-                        d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
-                        DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
-                        DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, true, false>,
+                        d_temp_storage, temp_storage_bytes, seg_reduce_params, stream, debug_synchronous,
+                        DeviceSegReduceSearchKernel<PtxSegReducePolicyT, ScanTileStateT, OffsetT, CoordinateT, SegReduceParamsT>,
+                        DeviceSegReduceKernel<PtxSegReducePolicyT, ValueT, OffsetT, CoordinateT, true, false>,
                         DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                        spmv_config, reduce_by_key_config))) break;
+                        seg_reduce_config, reduce_by_key_config))) break;
                 }
             }
             else
             {
-                if (spmv_params.alpha == 1.0)
+                if (seg_reduce_params.alpha == 1.0)
                 {
                     // Dispatch y = A*x + beta*y
                     if (CubDebug(error = Dispatch(
-                        d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
-                        DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
-                        DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false, true>,
+                        d_temp_storage, temp_storage_bytes, seg_reduce_params, stream, debug_synchronous,
+                        DeviceSegReduceSearchKernel<PtxSegReducePolicyT, ScanTileStateT, OffsetT, CoordinateT, SegReduceParamsT>,
+                        DeviceSegReduceKernel<PtxSegReducePolicyT, ValueT, OffsetT, CoordinateT, false, true>,
                         DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                        spmv_config, reduce_by_key_config))) break;
+                        seg_reduce_config, reduce_by_key_config))) break;
                 }
                 else
                 {
                     // Dispatch y = alpha*A*x + beta*y
                     if (CubDebug(error = Dispatch(
-                        d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
-                        DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
-                        DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, true, true>,
+                        d_temp_storage, temp_storage_bytes, seg_reduce_params, stream, debug_synchronous,
+                        DeviceSegReduceSearchKernel<PtxSegReducePolicyT, ScanTileStateT, OffsetT, CoordinateT, SegReduceParamsT>,
+                        DeviceSegReduceKernel<PtxSegReducePolicyT, ValueT, OffsetT, CoordinateT, true, true>,
                         DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                        spmv_config, reduce_by_key_config))) break;
+                        seg_reduce_config, reduce_by_key_config))) break;
                 }
             }
 */

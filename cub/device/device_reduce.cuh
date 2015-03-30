@@ -132,7 +132,7 @@ struct DeviceReduce
      *
      * \tparam InputIteratorT     <b>[inferred]</b> Random-access input iterator type for reading input items \iterator
      * \tparam OutputIteratorT    <b>[inferred]</b> Output iterator type for recording the reduced aggregate \iterator
-     * \tparam ReductionOp        <b>[inferred]</b> Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ReductionOp        <b>[inferred]</b> Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> (e.g., cub::Sum, cub::Min, cub::Max, etc.)
      */
     template <
         typename                    InputIteratorT,
@@ -140,7 +140,7 @@ struct DeviceReduce
         typename                    ReductionOp>
     CUB_RUNTIME_FUNCTION
     static cudaError_t Reduce(
-        void*               d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                       d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
@@ -217,7 +217,7 @@ struct DeviceReduce
         typename                    OutputIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t Sum(
-        void*               d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                       d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
@@ -289,7 +289,7 @@ struct DeviceReduce
         typename                    OutputIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t Min(
-        void*               d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                       d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
@@ -629,7 +629,7 @@ struct DeviceReduce
      * \tparam ValuesInputIteratorT     <b>[inferred]</b> Random-access input iterator type for reading input values \iterator
      * \tparam AggregatesOutputIterator <b>[inferred]</b> Random-access output iterator type for writing output value aggregates \iterator
      * \tparam NumRunsOutputIteratorT   <b>[inferred]</b> Output iterator type for recording the number of runs encountered \iterator
-     * \tparam ReductionOp              <b>[inferred]</b> Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+     * \tparam ReductionOp              <b>[inferred]</b> Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> (e.g., cub::Sum, cub::Min, cub::Max, etc.)
      */
     template <
         typename                    KeysInputIteratorT,
