@@ -101,7 +101,7 @@ __global__ void DeviceSpmvSearchKernel(
         // Search the merge path
         MergePathSearch(
             diagonal,
-            RowOffsetsIteratorT(spmv_params.d_matrix_row_end_offsets),
+            RowOffsetsIteratorT(spmv_params.d_row_end_offsets),
             nonzero_indices,
             spmv_params.num_rows,
             spmv_params.num_nonzeros,
@@ -237,7 +237,7 @@ struct DispatchSpmv
                 LOAD_LDG,
                 LOAD_LDG,
                 LOAD_LDG,
-                false,
+                (sizeof(ValueT) > 4) ? true : false,
                 BLOCK_SCAN_WARP_SCANS>
             SpmvPolicyT;
 
@@ -255,15 +255,14 @@ struct DispatchSpmv
     {
         typedef AgentSpmvPolicy<
                 (sizeof(ValueT) > 4) ? 64 : 128,
-                7,
+                (sizeof(ValueT) > 4) ? 6 : 7,
                 LOAD_LDG,
-                LOAD_CA,
+                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
+                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
+                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
                 LOAD_LDG,
-                LOAD_LDG,
-                LOAD_LDG,
-                false,
-                BLOCK_SCAN_RAKING_MEMOIZE>
-//                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
+                (sizeof(ValueT) > 4) ? true : false,
+                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
             SpmvPolicyT;
 
         typedef AgentReduceByKeyPolicy<

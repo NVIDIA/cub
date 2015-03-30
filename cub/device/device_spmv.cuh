@@ -93,7 +93,7 @@ struct DeviceSpmv
      * float  alpha = 1.0;
      * float  beta = 0.0;
      *
-     * float* d_matrix_values;  // e.g., [1, 1, 1, 1, 1, 1, 1, 1,
+     * float* d_values;  // e.g., [1, 1, 1, 1, 1, 1, 1, 1,
      *                          //        1, 1, 1, 1, 1, 1, 1, 1,
      *                          //        1, 1, 1, 1, 1, 1, 1, 1]
      *
@@ -110,16 +110,16 @@ struct DeviceSpmv
      * // Determine temporary device storage requirements
      * void*    d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceSpmv::CsrMV(d_temp_storage, temp_storage_bytes, d_matrix_values,
-     *     d_matrix_row_offsets, d_matrix_column_indices, d_vector_x, d_vector_y,
+     * cub::DeviceSpmv::CsrMV(d_temp_storage, temp_storage_bytes, d_values,
+     *     d_row_offsets, d_column_indices, d_vector_x, d_vector_y,
      *     num_rows, num_cols, num_nonzeros, alpha, beta);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run SpMV
-     * cub::DeviceSpmv::CsrMV(d_temp_storage, temp_storage_bytes, d_matrix_values,
-     *     d_matrix_row_offsets, d_matrix_column_indices, d_vector_x, d_vector_y,
+     * cub::DeviceSpmv::CsrMV(d_temp_storage, temp_storage_bytes, d_values,
+     *     d_row_offsets, d_column_indices, d_vector_x, d_vector_y,
      *     num_rows, num_cols, num_nonzeros, alpha, beta);
      *
      * // d_vector_y <-- [2, 3, 2, 3, 4, 3, 2, 3, 2]
@@ -134,9 +134,9 @@ struct DeviceSpmv
     static cudaError_t CsrMV(
         void*               d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&             temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        ValueT*             d_matrix_values,                    ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-        int*                d_matrix_row_offsets,               ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_matrix_column_indices and \p d_matrix_values (with the final entry being equal to \p num_nonzeros)
-        int*                d_matrix_column_indices,            ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
+        ValueT*             d_values,                           ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
+        int*                d_row_offsets,                      ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_column_indices and \p d_values (with the final entry being equal to \p num_nonzeros)
+        int*                d_column_indices,                   ///< [in] Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
         ValueT*             d_vector_x,                         ///< [in] Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
         ValueT*             d_vector_y,                         ///< [out] Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
         int                 num_rows,                           ///< [in] number of rows of matrix <b>A</b>.
@@ -148,16 +148,16 @@ struct DeviceSpmv
         bool                debug_synchronous       = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         SpmvParams<ValueT, int> spmv_params;
-        spmv_params.d_matrix_values             = d_matrix_values;
-        spmv_params.d_matrix_row_end_offsets    = d_matrix_row_offsets + 1;
-        spmv_params.d_matrix_column_indices     = d_matrix_column_indices;
-        spmv_params.d_vector_x                  = d_vector_x;
-        spmv_params.d_vector_y                  = d_vector_y;
-        spmv_params.num_rows                    = num_rows;
-        spmv_params.num_cols                    = num_cols;
-        spmv_params.num_nonzeros                = num_nonzeros;
-        spmv_params.alpha                       = alpha;
-        spmv_params.beta                        = beta;
+        spmv_params.d_values             = d_values;
+        spmv_params.d_row_end_offsets    = d_row_offsets + 1;
+        spmv_params.d_column_indices     = d_column_indices;
+        spmv_params.d_vector_x           = d_vector_x;
+        spmv_params.d_vector_y           = d_vector_y;
+        spmv_params.num_rows             = num_rows;
+        spmv_params.num_cols             = num_cols;
+        spmv_params.num_nonzeros         = num_nonzeros;
+        spmv_params.alpha                = alpha;
+        spmv_params.beta                 = beta;
 
         return DispatchSpmv<ValueT, int>::Dispatch(
             d_temp_storage,

@@ -92,20 +92,20 @@ struct AgentSpmvPolicy
  ******************************************************************************/
 
 template <
-    typename        ValueT,                     ///< Matrix and vector value type
-    typename        OffsetT>                    ///< Signed integer type for sequence offsets
+    typename        ValueT,              ///< Matrix and vector value type
+    typename        OffsetT>             ///< Signed integer type for sequence offsets
 struct SpmvParams
 {
-    ValueT*         d_matrix_values;            ///< Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-    OffsetT*        d_matrix_row_end_offsets;   ///< Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
-    OffsetT*        d_matrix_column_indices;    ///< Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
-    ValueT*         d_vector_x;                 ///< Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
-    ValueT*         d_vector_y;                 ///< Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
-    int             num_rows;                   ///< Number of rows of matrix <b>A</b>.
-    int             num_cols;                   ///< Number of columns of matrix <b>A</b>.
-    int             num_nonzeros;               ///< Number of nonzero elements of matrix <b>A</b>.
-    ValueT          alpha;                      ///< Alpha multiplicand
-    ValueT          beta;                       ///< Beta addend-multiplicand
+    ValueT*         d_values;            ///< Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
+    OffsetT*        d_row_end_offsets;   ///< Pointer to the array of \p m offsets demarcating the end of every row in \p d_column_indices and \p d_values
+    OffsetT*        d_column_indices;    ///< Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
+    ValueT*         d_vector_x;          ///< Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
+    ValueT*         d_vector_y;          ///< Pointer to the array of \p num_rows values corresponding to the dense output vector <em>y</em>
+    int             num_rows;            ///< Number of rows of matrix <b>A</b>.
+    int             num_cols;            ///< Number of columns of matrix <b>A</b>.
+    int             num_nonzeros;        ///< Number of nonzero elements of matrix <b>A</b>.
+    ValueT          alpha;               ///< Alpha multiplicand
+    ValueT          beta;                ///< Beta addend-multiplicand
 };
 
 
@@ -201,9 +201,6 @@ struct AgentSpmv
     /// Shared memory type required by this thread block
     struct _TempStorage
     {
-        // Starting and ending global merge path coordinates for the tile
-        CoordinateT tile_coordinates[2];
-
         // Smem needed for tile of merge items
         MergeItem merge_items[ITEMS_PER_THREAD + TILE_ITEMS + 1];
 
@@ -231,9 +228,9 @@ struct AgentSpmv
 
     SpmvParams<ValueT, OffsetT>&    spmv_params;
 
-    ValueIteratorT            wd_matrix_values;            ///< Wrapped pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
-    RowOffsetsIteratorT       wd_matrix_row_end_offsets;   ///< Wrapped Pointer to the array of \p m offsets demarcating the end of every row in \p d_matrix_column_indices and \p d_matrix_values
-    ColumnIndicesIteratorT    wd_matrix_column_indices;    ///< Wrapped Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
+    ValueIteratorT            wd_values;            ///< Wrapped pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
+    RowOffsetsIteratorT       wd_row_end_offsets;   ///< Wrapped Pointer to the array of \p m offsets demarcating the end of every row in \p d_column_indices and \p d_values
+    ColumnIndicesIteratorT    wd_column_indices;    ///< Wrapped Pointer to the array of \p num_nonzeros column-indices of the corresponding nonzero elements of matrix <b>A</b>.  (Indices are zero-valued.)
     VectorValueIteratorT            wd_vector_x;                 ///< Wrapped Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
     VectorValueIteratorT            wd_vector_y;                 ///< Wrapped Pointer to the array of \p num_cols values corresponding to the dense input vector <em>x</em>
 
@@ -251,9 +248,9 @@ struct AgentSpmv
     :
         temp_storage(temp_storage.Alias()),
         spmv_params(spmv_params),
-        wd_matrix_values(spmv_params.d_matrix_values),
-        wd_matrix_row_end_offsets(spmv_params.d_matrix_row_end_offsets),
-        wd_matrix_column_indices(spmv_params.d_matrix_column_indices),
+        wd_values(spmv_params.d_values),
+        wd_row_end_offsets(spmv_params.d_row_end_offsets),
+        wd_column_indices(spmv_params.d_column_indices),
         wd_vector_x(spmv_params.d_vector_x),
         wd_vector_y(spmv_params.d_vector_y)
     {}
@@ -270,7 +267,7 @@ struct AgentSpmv
         CoordinateT     tile_end_coord,
         Int2Type<true>  is_direct_load)     ///< Marker type indicating whether to load nonzeros directly during path-discovery or beforehand in batch
     {
-        ItemOffsetPairT tile_aggregate;
+        ItemOffsetPairT tile_carry;
 
         int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
         int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
@@ -279,7 +276,7 @@ struct AgentSpmv
         // Gather the row end-offsets for the merge tile into shared memory
         for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
         {
-            s_tile_row_end_offsets[item] = wd_matrix_row_end_offsets[tile_start_coord.x + item];
+            s_tile_row_end_offsets[item] = wd_row_end_offsets[tile_start_coord.x + item];
         }
 
         // Pad the end of the merge tile's axis of row-end offsets
@@ -307,16 +304,16 @@ struct AgentSpmv
         // Compute the thread's merge path segment
         CoordinateT         thread_current_coord = thread_start_coord;
         ItemOffsetPairT     thread_segment[ITEMS_PER_THREAD];
-        OffsetT             row_indices[ITEMS_PER_THREAD];
+        OffsetT             flush[ITEMS_PER_THREAD];
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             OffsetT nonzero_idx         = CUB_MIN(tile_nonzero_indices[thread_current_coord.y], spmv_params.num_nonzeros - 1);
-            OffsetT column_idx          = wd_matrix_column_indices[nonzero_idx];
-            ValueT  matrix_value        = wd_matrix_values[nonzero_idx];
+            OffsetT column_idx          = wd_column_indices[nonzero_idx];
+            ValueT  value               = wd_values[nonzero_idx];
             ValueT  vector_value        = wd_vector_x[column_idx];
-            ValueT  nonzero             = matrix_value * vector_value;
+            ValueT  nonzero             = value * vector_value;
 
             if (HAS_ALPHA)
                 nonzero *= spmv_params.alpha;
@@ -327,7 +324,7 @@ struct AgentSpmv
                 // Move down (accumulate)
                 thread_segment[ITEM].value = nonzero;
                 thread_segment[ITEM].offset = 0;
-                row_indices[ITEM] = tile_num_rows;
+                flush[ITEM] = 0;
                 ++thread_current_coord.y;
             }
             else
@@ -335,7 +332,7 @@ struct AgentSpmv
                 // Move right (reset)
                 thread_segment[ITEM].value = 0.0;
                 thread_segment[ITEM].offset = 1;
-                row_indices[ITEM] = thread_current_coord.x;
+                flush[ITEM] = 1;
                 ++thread_current_coord.x;
             }
         }
@@ -346,13 +343,13 @@ struct AgentSpmv
         ItemOffsetPairT     scan_identity(0.0, 0);
         ReduceBySegmentOpT  scan_op;
 
-        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_aggregate);
+        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_carry);
 
         // Direct scatter
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            if (row_indices[ITEM] < tile_num_rows)
+            if (flush[ITEM])
             {
                 if (HAS_BETA)
                 {
@@ -363,12 +360,11 @@ struct AgentSpmv
 
                 // Set the output vector element
                 spmv_params.d_vector_y[tile_start_coord.x + thread_segment[ITEM].offset] = thread_segment[ITEM].value;
-//                  spmv_params.d_vector_y[tile_start_coord.x + row_indices[ITEM]] = thread_segment[ITEM].value;
             }
         }
 
         // Return the tile's running carry-out
-        return tile_aggregate;
+        return tile_carry;
     }
 
 
@@ -393,14 +389,14 @@ struct AgentSpmv
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
-                int nonzero_idx             = threadIdx.x + (ITEM * BLOCK_THREADS);
+                int     nonzero_idx         = threadIdx.x + (ITEM * BLOCK_THREADS);
                 nonzero_idx                 = CUB_MIN(nonzero_idx, tile_num_nonzeros - 1);
 
-                OffsetT column_idx          = wd_matrix_column_indices[tile_start_coord.y + nonzero_idx];
-                ValueT  matrix_value        = wd_matrix_values[tile_start_coord.y + nonzero_idx];
+                OffsetT column_idx          = wd_column_indices[tile_start_coord.y + nonzero_idx];
+                ValueT  value               = wd_values[tile_start_coord.y + nonzero_idx];
 
                 ValueT  vector_value        = wd_vector_x[column_idx];
-                ValueT  nonzero             = matrix_value * vector_value;
+                ValueT  nonzero             = value * vector_value;
 
                 if (HAS_ALPHA)
                     nonzero *= spmv_params.alpha;
@@ -415,7 +411,7 @@ struct AgentSpmv
         #pragma unroll 1
         for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
         {
-            s_tile_row_end_offsets[item] = wd_matrix_row_end_offsets[tile_start_coord.x + item];
+            s_tile_row_end_offsets[item] = wd_row_end_offsets[tile_start_coord.x + item];
         }
 
         // Pad the end of the merge tile's axis of row-end offsets
@@ -439,6 +435,63 @@ struct AgentSpmv
             thread_start_coord);
 
         __syncthreads();    // Perf-sync
+/*
+        // Compute the thread's merge path segment
+        CoordinateT         thread_current_coord = thread_start_coord;
+        ItemOffsetPairT     thread_segment[ITEMS_PER_THREAD];
+        OffsetT             flush[ITEMS_PER_THREAD];
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
+            if (accumulate)
+            {
+                // Move down (accumulate)
+                thread_segment[ITEM].value = s_tile_nonzeros[thread_current_coord.y];
+                thread_segment[ITEM].offset = tile_num_rows;
+                flush[ITEM] = tile_num_rows;
+                ++thread_current_coord.y;
+            }
+            else
+            {
+                // Move right (reset)
+                thread_segment[ITEM].value = 0.0;
+                thread_segment[ITEM].offset = 1;
+                flush[ITEM] = thread_current_coord.x;
+                ++thread_current_coord.x;
+            }
+        }
+
+        __syncthreads();    // Perf-sync
+
+        // Block-wide reduce-value-by-segment
+        ItemOffsetPairT     scan_identity(0.0, 0);
+        ReduceBySegmentOpT  scan_op;
+        ItemOffsetPairT     tile_carry;
+        BlockScanT(temp_storage.scan).ExclusiveScan(thread_segment, thread_segment, scan_identity, scan_op, tile_carry);
+
+        // Two phase scatter
+        ValueT* s_partials = reinterpret_cast<ValueT*>(temp_storage.merge_items);
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (flush[ITEM] < tile_num_rows)
+            {
+                if (HAS_BETA)
+                {
+                    // Update the output vector element
+                    ValueT addend = spmv_params.beta * wd_vector_y[tile_start_coord.x + thread_segment[ITEM].offset];
+                    thread_segment[ITEM].value += addend;
+                }
+
+                // Set the output vector element
+                s_partials[flush[ITEM]] = thread_segment[ITEM].value;
+            }
+        }
+
+*/
 
         // Compute the thread's merge path segment
         CoordinateT         thread_current_coord = thread_start_coord;
@@ -450,19 +503,20 @@ struct AgentSpmv
         {
             bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
 
+            thread_segment[ITEM].value  = running_total;
+            thread_segment[ITEM].offset = thread_current_coord.x;
+            running_total += s_tile_nonzeros[thread_current_coord.y];
+
             if (accumulate)
             {
                 // Move down (accumulate)
-                running_total += s_tile_nonzeros[thread_current_coord.y];
                 thread_segment[ITEM].offset = tile_num_rows;
                 ++thread_current_coord.y;
             }
             else
             {
                 // Move right (reset)
-                thread_segment[ITEM].value  = running_total;
                 running_total = 0.0;
-                thread_segment[ITEM].offset = thread_current_coord.x;
                 ++thread_current_coord.x;
             }
         }
@@ -523,7 +577,7 @@ struct AgentSpmv
         CoordinateT tile_end_coord       = d_tile_coordinates[tile_idx + 1];
 
         // Consume multi-segment tile
-        ItemOffsetPairT tile_aggregate = ConsumeTile(
+        ItemOffsetPairT tile_carry = ConsumeTile(
             tile_idx,
             tile_start_coord,
             tile_end_coord,
@@ -532,8 +586,8 @@ struct AgentSpmv
         // Output the tile's carry-out
         if (threadIdx.x == 0)
         {
-            d_tile_carry_rows[tile_idx]     = tile_aggregate.offset + tile_start_coord.x;
-            d_tile_carry_values[tile_idx]   = tile_aggregate.value;
+            d_tile_carry_rows[tile_idx]     = tile_start_coord.x + tile_carry.offset;
+            d_tile_carry_values[tile_idx]   = tile_carry.value;
         }
     }
 
