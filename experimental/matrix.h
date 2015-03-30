@@ -146,12 +146,12 @@ struct CooMatrix
             exit(1);
         }
 
-        num_rows        = csr_matrix.num_rows;
-        num_cols        = csr_matrix.num_cols;
+        num_rows        = csr_matrix.num_cols;
+        num_cols        = csr_matrix.num_rows;
         num_nonzeros    = csr_matrix.num_nonzeros * 2;
         coo_tuples      = new CooTuple[num_nonzeros];
 
-        for (OffsetT row = 0; row < num_rows; ++row)
+        for (OffsetT row = 0; row < csr_matrix.num_rows; ++row)
         {
             for (OffsetT nonzero = csr_matrix.row_offsets[row]; nonzero < csr_matrix.row_offsets[row + 1]; ++nonzero)
             {
@@ -161,7 +161,8 @@ struct CooMatrix
 
                 coo_tuples[csr_matrix.num_nonzeros + nonzero].row = coo_tuples[nonzero].col;
                 coo_tuples[csr_matrix.num_nonzeros + nonzero].col = coo_tuples[nonzero].row;
-                coo_tuples[csr_matrix.num_nonzeros + nonzero].val = coo_tuples[nonzero].val;
+                coo_tuples[csr_matrix.num_nonzeros + nonzero].val = csr_matrix.values[nonzero];
+
             }
         }
 
@@ -694,10 +695,10 @@ struct CsrMatrix
 
 // Comparator for ordering rows by degree (lowest first), then by row-id (lowest first)
 template <typename OffsetT>
-struct OrderByLowDegree
+struct OrderByLow
 {
     OffsetT* row_degrees;
-    OrderByLowDegree(OffsetT* row_degrees) : row_degrees(row_degrees) {}
+    OrderByLow(OffsetT* row_degrees) : row_degrees(row_degrees) {}
 
     bool operator()(const OffsetT &a, const OffsetT &b)
     {
@@ -712,10 +713,10 @@ struct OrderByLowDegree
 
 // Comparator for ordering rows by degree (highest first), then by row-id (lowest first)
 template <typename OffsetT>
-struct OrderByHighDegree
+struct OrderByHigh
 {
     OffsetT* row_degrees;
-    OrderByHighDegree(OffsetT* row_degrees) : row_degrees(row_degrees) {}
+    OrderByHigh(OffsetT* row_degrees) : row_degrees(row_degrees) {}
 
     bool operator()(const OffsetT &a, const OffsetT &b)
     {
@@ -741,22 +742,21 @@ void RcmRelabel(
     printf("RCM relabeling... "); fflush(stdout);
 
     // Initialize row degrees
-    OffsetT* row_degrees = new OffsetT[matrix.num_rows];
+    OffsetT* row_degrees_in     = new OffsetT[matrix.num_rows];
+    OffsetT* row_degrees_out    = new OffsetT[matrix.num_rows];
     for (OffsetT row = 0; row < matrix.num_rows; ++row)
     {
-//        row_degrees[row]        = matrix.row_offsets[row + 1] - matrix.row_offsets[row];
-        row_degrees[row]        = 0;
+        row_degrees_in[row]         = 0;
+        row_degrees_out[row]        = matrix.row_offsets[row + 1] - matrix.row_offsets[row];
     }
-
     for (OffsetT nonzero = 0; nonzero < matrix.num_nonzeros; ++nonzero)
     {
-        row_degrees[matrix.column_indices[nonzero]]++;
+        row_degrees_in[matrix.column_indices[nonzero]]++;
     }
 
     // Initialize unlabeled set 
-//    typedef std::set<OffsetT, OrderByHighDegree<OffsetT> > UnlabeledSet;
-    typedef std::set<OffsetT, OrderByLowDegree<OffsetT> > UnlabeledSet;
-    typename UnlabeledSet::key_compare  unlabeled_comp(row_degrees);
+    typedef std::set<OffsetT, OrderByLow<OffsetT> > UnlabeledSet;
+    typename UnlabeledSet::key_compare  unlabeled_comp(row_degrees_in);
     UnlabeledSet                        unlabeled(unlabeled_comp);
     for (OffsetT row = 0; row < matrix.num_rows; ++row)
     {
@@ -764,15 +764,8 @@ void RcmRelabel(
         unlabeled.insert(row);
     }
 
-//    OrderByHighDegree<OffsetT> neighbor_comp(row_degrees);
-    OrderByLowDegree<OffsetT> neighbor_comp(row_degrees);
-
-    std::queue<OffsetT> q;
-
-    typedef std::set<OffsetT, OrderByHighDegree<OffsetT> > QueueSet;
-//    typedef std::set<OffsetT, OrderByLowDegree<OffsetT> > QueueSet;
-//    typename QueueSet::key_compare      queue_comp(row_degrees);
-//    QueueSet                        q(queue_comp);
+    // Initialize queue set
+    std::deque<OffsetT> q;
 
     // Process unlabeled vertices (traverse connected components)
     OffsetT relabel_idx = 0;
@@ -780,60 +773,52 @@ void RcmRelabel(
     {
         // Seed the unvisited frontier queue with the unlabeled vertex of lowest-degree
         OffsetT vertex = *unlabeled.begin();
-
-        // Update this vertex
-        unlabeled.erase(vertex);
-        relabel_indices[vertex] = relabel_idx;
-        relabel_idx++;
-  
-        q.push(vertex);
-//        q.insert(vertex);
+        q.push_back(vertex);
 
         while (!q.empty())
         {
             vertex = q.front();
-            q.pop();
+            q.pop_front();
 
-//                OffsetT vertex = *q.begin();
-//                q.erase(vertex);
-
-            // Sort neighbors by degree
-            std::sort(
-                matrix.column_indices + matrix.row_offsets[vertex],
-                matrix.column_indices + matrix.row_offsets[vertex + 1],
-                neighbor_comp);
-
-            // Inspect neighbors, adding to the out frontier if unlabeled
-            for (OffsetT neighbor_idx = matrix.row_offsets[vertex]; 
-                neighbor_idx < matrix.row_offsets[vertex + 1]; 
-                ++neighbor_idx)
+            if (relabel_indices[vertex] == -1)
             {
-                OffsetT neighbor = matrix.column_indices[neighbor_idx];
-                if (relabel_indices[neighbor] == -1)
+                // Update this vertex
+                unlabeled.erase(vertex);
+                relabel_indices[vertex] = relabel_idx;
+                relabel_idx++;
+
+                // Sort neighbors by degree
+                OrderByLow<OffsetT> neighbor_comp(row_degrees_in);
+                std::sort(
+                    matrix.column_indices + matrix.row_offsets[vertex],
+                    matrix.column_indices + matrix.row_offsets[vertex + 1],
+                    neighbor_comp);
+
+                // Inspect neighbors, adding to the out frontier if unlabeled
+                for (OffsetT neighbor_idx = matrix.row_offsets[vertex];
+                    neighbor_idx < matrix.row_offsets[vertex + 1];
+                    ++neighbor_idx)
                 {
-                    // Update this vertex
-                    unlabeled.erase(neighbor);
-                    relabel_indices[neighbor] = relabel_idx;
-                    relabel_idx++;
-//                    q.insert(neighbor);
-                    q.push(neighbor);
+                    OffsetT neighbor = matrix.column_indices[neighbor_idx];
+                    q.push_back(neighbor);
                 }
             }
         }
     }
+
 /*
     // Reverse labels
-    for (int row = 0; row < matrix.num_rows / 2; ++row)
+    for (int row = 0; row < matrix.num_rows; ++row)
     {
-        OffsetT temp = relabel_indices[row];
-        relabel_indices[row] = relabel_indices[matrix.num_rows - row - 1];
-        relabel_indices[matrix.num_rows - row - 1] = temp;
+        relabel_indices[row] = matrix.num_rows - relabel_indices[row] - 1;
     }
 */
+
     printf("done. "); fflush(stdout);
 
     // Cleanup
-    if (row_degrees) delete[] row_degrees;
+    if (row_degrees_in) delete[] row_degrees_in;
+    if (row_degrees_out) delete[] row_degrees_out;
 }
 
 
@@ -868,6 +853,7 @@ void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
 
     printf("done. "); fflush(stdout);
 }
+
 
 
 
