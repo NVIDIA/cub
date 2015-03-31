@@ -546,8 +546,8 @@ struct KeyValuePair
     typedef _Key    Key;                ///< Key data type
     typedef _Value  Value;              ///< Value data type
 
-    Value                   value;      ///< Item value
     Key                     key;        ///< Item key
+    Value                   value;      ///< Item value
 
     /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
