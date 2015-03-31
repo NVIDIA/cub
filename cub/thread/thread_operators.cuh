@@ -247,7 +247,7 @@ public:
  */
 template <
     typename ReductionOp,                           ///< Binary reduction operator to apply to values
-    typename ItemOffsetPair>                        ///< ItemOffsetPair pairing of T (value) and OffsetT (head flag)
+    typename ItemOffsetPairT>                        ///< ItemOffsetPair pairing of T (value) and OffsetT (head flag)
 class ReduceBySegmentOp
 {
 private:
@@ -264,12 +264,11 @@ public:
     __host__ __device__ __forceinline__ ReduceBySegmentOp(ReductionOp op) : op(op) {}
 
     /// Scan operator
-    __host__ __device__ __forceinline__ ItemOffsetPair operator()(
-        const ItemOffsetPair &first,       ///< First partial reduction
-        const ItemOffsetPair &second)      ///< Second partial reduction
+    __host__ __device__ __forceinline__ ItemOffsetPairT operator()(
+        const ItemOffsetPairT &first,       ///< First partial reduction
+        const ItemOffsetPairT &second)      ///< Second partial reduction
     {
-        // This expression uses less registers and is faster when compiled with Open64
-        ItemOffsetPair retval;
+        ItemOffsetPairT retval;
         retval.offset = first.offset + second.offset;
         retval.value = (second.offset) ?
                 second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
@@ -277,6 +276,46 @@ public:
         return retval;
     }
 };
+
+
+
+template <
+    typename ReductionOp,                           ///< Binary reduction operator to apply to values
+    typename KeyValuePairT>                        ///< ItemOffsetPair pairing of T (value) and OffsetT (head flag)
+class ReduceByKeyOp
+{
+private:
+
+    /// Wrapped reduction operator
+    ReductionOp op;
+
+public:
+
+    /// Constructor
+    __host__ __device__ __forceinline__ ReduceByKeyOp() {}
+
+    /// Constructor
+    __host__ __device__ __forceinline__ ReduceByKeyOp(ReductionOp op) : op(op) {}
+
+    /// Scan operator
+    __host__ __device__ __forceinline__ KeyValuePairT operator()(
+        const KeyValuePairT &first,       ///< First partial reduction
+        const KeyValuePairT &second)      ///< Second partial reduction
+    {
+        KeyValuePairT retval;
+        retval.key = second.key;
+        retval.value = (first.key != second.key) ?
+                second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
+                op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
+        return retval;
+
+    }
+};
+
+
+
+
+
 
 
 /** @} */       // end group UtilModule

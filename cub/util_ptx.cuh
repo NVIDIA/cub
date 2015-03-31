@@ -387,13 +387,9 @@ __device__ __forceinline__ unsigned int LaneMaskGe()
 template <typename T>
 __device__ __forceinline__ T ShuffleUp(
     T               input,              ///< [in] The value to broadcast
-    int             src_offset)         ///< [in] The relative down-offset of the peer to read from
+    int             src_offset,         ///< [in] The relative down-offset of the peer to read from
+    int             first_lane = 0)     ///< [in] Index of first lane in segment
 {
-    enum
-    {
-        SHFL_C = 0,
-    };
-
     typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
     const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
@@ -407,7 +403,7 @@ __device__ __forceinline__ T ShuffleUp(
         unsigned int shuffle_word = input_alias[WORD];
         asm(
             "  shfl.up.b32 %0, %1, %2, %3;"
-            : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_offset), "r"(SHFL_C));
+            : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_offset), "r"(first_lane));
         output_alias[WORD] = (ShuffleWord) shuffle_word;
     }
 
