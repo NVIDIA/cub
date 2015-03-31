@@ -57,6 +57,7 @@ namespace cub {
 /**
  * Reduce-value-by-ID scan operator
  */
+/*
 template <typename ReductionOp>     ///< Wrapped reduction operator type
 struct ReduceByKeyOp
 {
@@ -81,7 +82,7 @@ struct ReduceByKeyOp
         return retval;
     }
 };
-
+*/
 
 
 /**
