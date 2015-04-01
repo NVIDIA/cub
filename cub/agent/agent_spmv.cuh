@@ -42,6 +42,7 @@
 #include "../thread/thread_operators.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
 #include "../iterator/counting_input_iterator.cuh"
+#include "../iterator/tex_ref_input_iterator.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -106,6 +107,9 @@ struct SpmvParams
     int             num_nonzeros;        ///< Number of nonzero elements of matrix <b>A</b>.
     ValueT          alpha;               ///< Alpha multiplicand
     ValueT          beta;                ///< Beta addend-multiplicand
+
+    TexRefInputIterator<OffsetT, 77889900, OffsetT> t_row_end_offsets;
+    TexRefInputIterator<ValueT, 66778899, OffsetT>  t_vector_x;
 };
 
 
@@ -308,7 +312,11 @@ struct AgentSpmv
             OffsetT nonzero_idx         = CUB_MIN(tile_nonzero_indices[thread_current_coord.y], spmv_params.num_nonzeros - 1);
             OffsetT column_idx          = wd_column_indices[nonzero_idx];
             ValueT  value               = wd_values[nonzero_idx];
+#if (CUB_PTX_ARCH < 350)
+            ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
+#else
             ValueT  vector_value        = wd_vector_x[column_idx];
+#endif
             ValueT  nonzero             = value * vector_value;
 
             bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
@@ -399,11 +407,14 @@ struct AgentSpmv
             {
                 int     nonzero_idx         = threadIdx.x + (ITEM * BLOCK_THREADS);
                 nonzero_idx                 = CUB_MIN(nonzero_idx, tile_num_nonzeros - 1);
-
                 OffsetT column_idx          = wd_column_indices[tile_start_coord.y + nonzero_idx];
                 ValueT  value               = wd_values[tile_start_coord.y + nonzero_idx];
 
+#if (CUB_PTX_ARCH < 350)
+                ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
+#else
                 ValueT  vector_value        = wd_vector_x[column_idx];
+#endif
                 ValueT  nonzero             = value * vector_value;
 
                 s_tile_nonzeros[nonzero_idx]       = nonzero;
@@ -432,9 +443,9 @@ struct AgentSpmv
         CoordinateT                     thread_start_coord;
 
         MergePathSearch(
-            OffsetT(threadIdx.x * ITEMS_PER_THREAD),            // Diagonal
-            s_tile_row_end_offsets,                               // List A
-            tile_nonzero_indices,                               // List B
+            OffsetT(threadIdx.x * ITEMS_PER_THREAD),    // Diagonal
+            s_tile_row_end_offsets,                     // List A
+            tile_nonzero_indices,                       // List B
             tile_num_rows,
             tile_num_nonzeros,
             thread_start_coord);
@@ -443,43 +454,37 @@ struct AgentSpmv
 
         // Compute the thread's merge path segment
         CoordinateT     thread_current_coord = thread_start_coord;
-        KeyValuePairT   thread_segment[ITEMS_PER_THREAD];
+        ValueT          thread_segment[ITEMS_PER_THREAD];
         OffsetT         row_indices[ITEMS_PER_THREAD];
         ValueT          running_total = 0.0;
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            OffsetT nonzero_idx         = CUB_MIN(tile_nonzero_indices[thread_current_coord.y], spmv_params.num_nonzeros - 1);
-            OffsetT column_idx          = wd_column_indices[nonzero_idx];
-            ValueT  value               = wd_values[nonzero_idx];
-            ValueT  vector_value        = wd_vector_x[column_idx];
-            ValueT  nonzero             = value * vector_value;
-
             bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
+
+            row_indices[ITEM]       = thread_current_coord.x;
+            thread_segment[ITEM]    = running_total;
+            running_total           += s_tile_nonzeros[thread_current_coord.y];
 
             if (accumulate)
             {
                 // Move down (accumulate)
-                running_total += nonzero;
-                thread_segment[ITEM].value  = running_total;
-                thread_segment[ITEM].key    = thread_current_coord.x;
-                row_indices[ITEM]           = tile_num_rows;
+                row_indices[ITEM] = tile_num_rows;
                 ++thread_current_coord.y;
             }
             else
             {
                 // Move right (reset)
-                thread_segment[ITEM].value  = running_total;
-                running_total               = 0.0;
-                thread_segment[ITEM].key    = thread_current_coord.x;
-                row_indices[ITEM]           = thread_current_coord.x;
+                running_total = 0.0;
                 ++thread_current_coord.x;
             }
         }
 
+        __syncthreads();    // Perf-sync
+
         // Block-wide reduce-value-by-segment
-        KeyValuePairT tile_carry;
+        KeyValuePairT       tile_carry;
         ReduceBySegmentOpT  scan_op;
         KeyValuePairT       scan_item;
 
@@ -498,22 +503,22 @@ struct AgentSpmv
         {
             if (row_indices[ITEM] < tile_num_rows)
             {
-                if (scan_item.key == thread_segment[ITEM].key)
-                    thread_segment[ITEM].value = scan_item.value + thread_segment[ITEM].value;
+                if (scan_item.key == row_indices[ITEM])
+                    thread_segment[ITEM] = scan_item.value + thread_segment[ITEM];
 
                 if (HAS_ALPHA)
                 {
-                    thread_segment[ITEM].value *= spmv_params.alpha;
+                    thread_segment[ITEM] *= spmv_params.alpha;
                 }
 
                 if (HAS_BETA)
                 {
                     // Update the output vector element
                     ValueT addend = spmv_params.beta * wd_vector_y[tile_start_coord.x + row_indices[ITEM]];
-                    thread_segment[ITEM].value += addend;
+                    thread_segment[ITEM] += addend;
                 }
 
-                s_partials[thread_segment[ITEM].key] = thread_segment[ITEM].value;
+                s_partials[row_indices[ITEM]] = thread_segment[ITEM];
             }
         }
 
