@@ -91,13 +91,13 @@ struct IteratorTexRef
         static TexRef ref;
 
         /// Bind texture
-        static cudaError_t BindTexture(void *d_in)
+        static cudaError_t BindTexture(void *d_in, size_t &offset)
         {
             if (d_in)
             {
                 cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc<TextureWord>();
                 ref.channelDesc = tex_desc;
-                return (CubDebug(cudaBindTexture(NULL, ref, d_in)));
+                return (CubDebug(cudaBindTexture(&offset, ref, d_in)));
             }
 
             return cudaSuccess;
@@ -249,8 +249,10 @@ public:
         size_t          tex_offset = 0)         ///< OffsetT (in items) from \p ptr denoting the position of the iterator
     {
         this->ptr = const_cast<typename RemoveQualifiers<QualifiedT>::Type *>(ptr);
-        this->tex_offset = (difference_type) tex_offset;
-        return TexId::BindTexture(this->ptr);
+        size_t offset;
+        cudaError_t retval = TexId::BindTexture(this->ptr + tex_offset, offset);
+        this->tex_offset = (difference_type) (offset / sizeof(QualifiedT));
+        return retval;
     }
 
     /// Unbind this iterator from its texture reference
