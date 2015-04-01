@@ -38,6 +38,7 @@
 #include <iostream>
 #include <queue>
 #include <set>
+#include <fstream>
 #include <stdio.h>
 
 using namespace std;
@@ -237,6 +238,10 @@ struct CooMatrix
             exit(1);
         }
 
+/*
+        std::ifstream ifs;
+        ifs.open(market_filename.c_str(), std::ifstream::in);
+*/
         bool    symmetric = false;
         bool    skew = false;
         int     current_edge = -1;
@@ -245,11 +250,18 @@ struct CooMatrix
         printf("Parsing... "); fflush(stdout);
         while (true)
         {
+/*
+            ifs.getline(line, 1024);
+            if (!ifs.good())
+                break;
+*/
+
             if (fscanf(f_in, "%[^\n]\n", line) <= 0)
             {
                 // Done
                 break;
             }
+
             if (line[0] == '%')
             {
                 // Comment
@@ -325,6 +337,7 @@ struct CooMatrix
         printf("done. "); fflush(stdout);
 
         fclose(f_in);
+//        ifs.close();
     }
 
 

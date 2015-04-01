@@ -108,7 +108,6 @@ struct SpmvParams
     ValueT          alpha;               ///< Alpha multiplicand
     ValueT          beta;                ///< Beta addend-multiplicand
 
-    TexRefInputIterator<OffsetT, 77889900, OffsetT> t_row_end_offsets;
     TexRefInputIterator<ValueT, 66778899, OffsetT>  t_vector_x;
 };
 
@@ -262,7 +261,7 @@ struct AgentSpmv
     /**
      * Consume a merge tile, specialized for direct-load of nonzeros
      */
-    __device__ __forceinline__ ValueT ConsumeTile(
+    __device__ __forceinline__ KeyValuePairT ConsumeTile(
         int             tile_idx,
         CoordinateT     tile_start_coord,
         CoordinateT     tile_end_coord,
@@ -270,7 +269,7 @@ struct AgentSpmv
     {
         int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
         int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
-        OffsetT*    s_tile_row_end_offsets  = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
+        OffsetT*    s_tile_row_end_offsets  = &temp_storage.merge_items[0].row_end_offset;
 
         // Gather the row end-offsets for the merge tile into shared memory
         for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
@@ -302,7 +301,7 @@ struct AgentSpmv
 
         // Compute the thread's merge path segment
         CoordinateT     thread_current_coord = thread_start_coord;
-        KeyValuePairT   thread_segment[ITEMS_PER_THREAD];
+        ValueT          thread_segment[ITEMS_PER_THREAD];
         OffsetT         row_indices[ITEMS_PER_THREAD];
         ValueT          running_total = 0.0;
 
@@ -312,37 +311,36 @@ struct AgentSpmv
             OffsetT nonzero_idx         = CUB_MIN(tile_nonzero_indices[thread_current_coord.y], spmv_params.num_nonzeros - 1);
             OffsetT column_idx          = wd_column_indices[nonzero_idx];
             ValueT  value               = wd_values[nonzero_idx];
-#if (CUB_PTX_ARCH < 350)
-            ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
-#else
+//#if (CUB_PTX_ARCH < 350)
+//            ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
+//#else
             ValueT  vector_value        = wd_vector_x[column_idx];
-#endif
+//#endif
             ValueT  nonzero             = value * vector_value;
-
-            bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
+            bool    accumulate          = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
 
             if (accumulate)
             {
                 // Move down (accumulate)
                 running_total += nonzero;
-                thread_segment[ITEM].value  = running_total;
-                thread_segment[ITEM].key    = thread_current_coord.x;
+                thread_segment[ITEM]        = running_total;
                 row_indices[ITEM]           = tile_num_rows;
                 ++thread_current_coord.y;
             }
             else
             {
                 // Move right (reset)
-                thread_segment[ITEM].value  = running_total;
+                thread_segment[ITEM]        = running_total;
                 running_total               = 0.0;
-                thread_segment[ITEM].key    = thread_current_coord.x;
                 row_indices[ITEM]           = thread_current_coord.x;
                 ++thread_current_coord.x;
             }
         }
 
+        __syncthreads();    // Perf-sync
+
         // Block-wide reduce-value-by-segment
-        KeyValuePairT tile_carry;
+        KeyValuePairT       tile_carry;
         ReduceBySegmentOpT  scan_op;
         KeyValuePairT       scan_item;
 
@@ -359,28 +357,28 @@ struct AgentSpmv
         {
             if (row_indices[ITEM] < tile_num_rows)
             {
-                if (scan_item.key == thread_segment[ITEM].key)
-                    thread_segment[ITEM].value = scan_item.value + thread_segment[ITEM].value;
+                if (scan_item.key == row_indices[ITEM])
+                    thread_segment[ITEM] = scan_item.value + thread_segment[ITEM];
 
                 if (HAS_ALPHA)
                 {
-                    thread_segment[ITEM].value *= spmv_params.alpha;
+                    thread_segment[ITEM] *= spmv_params.alpha;
                 }
 
                 if (HAS_BETA)
                 {
                     // Update the output vector element
                     ValueT addend = spmv_params.beta * wd_vector_y[tile_start_coord.x + row_indices[ITEM]];
-                    thread_segment[ITEM].value += addend;
+                    thread_segment[ITEM] += addend;
                 }
 
                 // Set the output vector element
-                spmv_params.d_vector_y[tile_start_coord.x + row_indices[ITEM]] = thread_segment[ITEM].value;
+                spmv_params.d_vector_y[tile_start_coord.x + row_indices[ITEM]] = thread_segment[ITEM];
             }
         }
 
         // Return the tile's running carry-out
-        return tile_carry.value;
+        return tile_carry;
     }
 
 
@@ -388,7 +386,7 @@ struct AgentSpmv
     /**
      * Consume a merge tile, specialized for indirect load of nonzeros
      */
-    __device__ __forceinline__ ValueT ConsumeTile(
+    __device__ __forceinline__ KeyValuePairT ConsumeTile(
         int             tile_idx,
         CoordinateT     tile_start_coord,
         CoordinateT     tile_end_coord,
@@ -396,8 +394,8 @@ struct AgentSpmv
     {
         int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
         int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
-        OffsetT*    s_tile_row_end_offsets  = reinterpret_cast<OffsetT*>(temp_storage.merge_items);
-        ValueT*     s_tile_nonzeros         = reinterpret_cast<ValueT*>(temp_storage.merge_items + tile_num_rows + ITEMS_PER_THREAD);
+        OffsetT*    s_tile_row_end_offsets  = &temp_storage.merge_items[0].row_end_offset;
+        ValueT*     s_tile_nonzeros         = &temp_storage.merge_items[tile_num_rows + ITEMS_PER_THREAD].nonzero;
 
         if (tile_num_nonzeros > 0)
         {
@@ -410,11 +408,11 @@ struct AgentSpmv
                 OffsetT column_idx          = wd_column_indices[tile_start_coord.y + nonzero_idx];
                 ValueT  value               = wd_values[tile_start_coord.y + nonzero_idx];
 
-#if (CUB_PTX_ARCH < 350)
-                ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
-#else
+//#if (CUB_PTX_ARCH < 350)
+//                ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
+//#else
                 ValueT  vector_value        = wd_vector_x[column_idx];
-#endif
+//#endif
                 ValueT  nonzero             = value * vector_value;
 
                 s_tile_nonzeros[nonzero_idx]       = nonzero;
@@ -461,22 +459,23 @@ struct AgentSpmv
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            bool accumulate = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
-
-            row_indices[ITEM]       = thread_current_coord.x;
-            thread_segment[ITEM]    = running_total;
-            running_total           += s_tile_nonzeros[thread_current_coord.y];
+            ValueT  nonzero         = s_tile_nonzeros[thread_current_coord.y];
+            bool    accumulate      = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
 
             if (accumulate)
             {
                 // Move down (accumulate)
-                row_indices[ITEM] = tile_num_rows;
+                running_total               += nonzero;
+                thread_segment[ITEM]        = running_total;
+                row_indices[ITEM]           = tile_num_rows;
                 ++thread_current_coord.y;
             }
             else
             {
                 // Move right (reset)
-                running_total = 0.0;
+                thread_segment[ITEM]        = running_total;
+                running_total               = 0.0;
+                row_indices[ITEM]           = thread_current_coord.x;
                 ++thread_current_coord.x;
             }
         }
@@ -496,7 +495,7 @@ struct AgentSpmv
             scan_item.key = -1;
 
         // Two phase scatter
-        ValueT* s_partials = reinterpret_cast<ValueT*>(temp_storage.merge_items);
+        ValueT* s_partials = &temp_storage.merge_items[0].nonzero;
 
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
@@ -531,7 +530,7 @@ struct AgentSpmv
         }
 
         // Return the tile's running carry-out
-        return tile_carry.value;
+        return tile_carry;
     }
 
 
@@ -552,13 +551,8 @@ struct AgentSpmv
         CoordinateT tile_start_coord     = d_tile_coordinates[tile_idx + 0];
         CoordinateT tile_end_coord       = d_tile_coordinates[tile_idx + 1];
 
-        if (threadIdx.x == 0)
-        {
-            d_tile_carry_rows[tile_idx]     = tile_end_coord.x;
-        }
-
         // Consume multi-segment tile
-        ValueT tile_carry = ConsumeTile(
+        KeyValuePairT tile_carry = ConsumeTile(
             tile_idx,
             tile_start_coord,
             tile_end_coord,
@@ -569,10 +563,11 @@ struct AgentSpmv
         {
             if (HAS_ALPHA)
             {
-                tile_carry *= spmv_params.alpha;
+                tile_carry.value *= spmv_params.alpha;
             }
 
-            d_tile_carry_values[tile_idx]   = tile_carry;
+            d_tile_carry_rows[tile_idx]     = tile_start_coord.x + tile_carry.key;
+            d_tile_carry_values[tile_idx]   = tile_carry.value;
         }
     }
 
