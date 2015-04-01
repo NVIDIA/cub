@@ -215,7 +215,7 @@ struct DispatchSpmv
     {
         typedef AgentSpmvPolicy<
                 128,
-                7,
+                5,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
@@ -224,6 +224,15 @@ struct DispatchSpmv
                 false,
                 BLOCK_SCAN_WARP_SCANS>
             SpmvPolicyT;
+
+        typedef AgentReduceByKeyPolicy<
+                128,
+                4,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_DEFAULT,
+                BLOCK_SCAN_WARP_SCANS>
+            ReduceByKeyPolicyT;
+
     };
 
     /// SM35
@@ -495,6 +504,10 @@ struct DispatchSpmv
             int search_block_size   = INIT_KERNEL_THREADS;
             int search_grid_size    = (num_merge_tiles + 1 + search_block_size - 1) / search_block_size;
 
+#if (CUB_PTX_ARCH == 0)
+            // Init textures
+            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
+#endif
             // Log spmv_search_kernel configuration
             if (debug_synchronous) CubLog("Invoking spmv_search_kernel<<<%d, %d, 0, %lld>>>()\n",
                 search_grid_size, search_block_size, (long long) stream);
@@ -551,6 +564,11 @@ struct DispatchSpmv
                 // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
+
+#if (CUB_PTX_ARCH == 0)
+            // Free textures
+            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
+#endif
         }
         while (0);
 
