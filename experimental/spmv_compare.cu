@@ -98,7 +98,12 @@ void SpmvGold(
 /**
  * Read every matrix nonzero value, read every corresponding vector value
  */
-template <typename ValueT, typename OffsetT, typename VectorItr>
+template <
+    int         BLOCK_THREADS,
+    int         ITEMS_PER_THREAD,
+    typename    ValueT,
+    typename    OffsetT,
+    typename    VectorItr>
 __global__ void NonZeroIO(
     int                 num_nonzeros,
     ValueT*             d_values,
@@ -107,14 +112,23 @@ __global__ void NonZeroIO(
 {
     __shared__ volatile ValueT no_elide[1];
 
-    OffsetT item_idx = CUB_MIN((blockIdx.x * blockDim.x) + threadIdx.x, num_nonzeros - 1);
+    OffsetT block_offset = blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    OffsetT     column_idx      = d_column_indices[item_idx];
-    ValueT      value           = d_values[item_idx];
-    ValueT      vector_value    = d_vector_x[column_idx];
-    ValueT      nonzero         = vector_value * value;
+    ValueT nonzero = 0.0;
 
-    if (threadIdx.x > column_idx + 9000)
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+    {
+        OffsetT item_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
+        item_idx = CUB_MIN(item_idx, num_nonzeros - 1);
+
+        OffsetT     column_idx      = d_column_indices[item_idx];
+        ValueT      value           = d_values[item_idx];
+        ValueT      vector_value    = d_vector_x[column_idx];
+        nonzero         += vector_value * value;
+    }
+
+    if (threadIdx.x > num_nonzeros)
         no_elide[threadIdx.x] = nonzero;
 }
 
@@ -122,13 +136,16 @@ __global__ void NonZeroIO(
 /**
  * Read every row-offset, write every row-sum
  */
-template <typename ValueT, typename OffsetT>
+template <
+    int         BLOCK_THREADS,
+    typename    ValueT,
+    typename    OffsetT>
 __global__ void RowIO(
     int         num_rows,
     OffsetT*    d_row_offsets,
     ValueT*     d_vector_y)
 {
-    OffsetT item_idx = CUB_MIN((blockIdx.x * blockDim.x) + threadIdx.x, num_rows - 1);
+    OffsetT item_idx = CUB_MIN((blockIdx.x * BLOCK_THREADS) + threadIdx.x, num_rows - 1);
     d_vector_y[item_idx] = (ValueT) d_row_offsets[num_rows];
 }
 
@@ -144,23 +161,25 @@ float IoSpmv(
     int                             timing_iterations)
 {
     enum {
-        BLOCK_THREADS = 128,
+        BLOCK_THREADS       = 128,
+        ITEMS_PER_THREAD    = 7,
+        TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
-    unsigned int nonzero_blocks = (params.num_nonzeros + BLOCK_THREADS - 1) / BLOCK_THREADS;
+    unsigned int nonzero_blocks = (params.num_nonzeros + TILE_SIZE - 1) / TILE_SIZE;
     unsigned int row_blocks = (params.num_rows + BLOCK_THREADS - 1) / BLOCK_THREADS;
 
     TexRefInputIterator<ValueT, 1234, int> x_itr;
     CubDebugExit(x_itr.BindTexture(params.d_vector_x));
 
     // Warmup
-    NonZeroIO<<<nonzero_blocks, BLOCK_THREADS>>>(
+    NonZeroIO<BLOCK_THREADS, ITEMS_PER_THREAD><<<nonzero_blocks, BLOCK_THREADS>>>(
         params.num_nonzeros,
         params.d_values,
         params.d_column_indices,
         x_itr);
 
-    RowIO<<<row_blocks, BLOCK_THREADS>>>(
+    RowIO<BLOCK_THREADS><<<row_blocks, BLOCK_THREADS>>>(
         params.num_rows,
         params.d_row_end_offsets,
         params.d_vector_y);
@@ -174,13 +193,13 @@ float IoSpmv(
         // Reset input/output vector y
         gpu_timer.Start();
 
-        NonZeroIO<<<nonzero_blocks, BLOCK_THREADS>>>(
+        NonZeroIO<BLOCK_THREADS, ITEMS_PER_THREAD><<<nonzero_blocks, BLOCK_THREADS>>>(
             params.num_nonzeros,
             params.d_values,
             params.d_column_indices,
             x_itr);
 
-        RowIO<<<row_blocks, BLOCK_THREADS>>>(
+        RowIO<BLOCK_THREADS><<<row_blocks, BLOCK_THREADS>>>(
             params.num_rows,
             params.d_row_end_offsets,
             params.d_vector_y);
