@@ -280,22 +280,18 @@ public:
 
 
 template <
-    typename ReductionOp,                           ///< Binary reduction operator to apply to values
+    typename ReductionOpT,                           ///< Binary reduction operator to apply to values
     typename KeyValuePairT>                        ///< ItemOffsetPair pairing of T (value) and OffsetT (head flag)
-class ReduceByKeyOp
+struct ReduceByKeyOp
 {
-private:
-
     /// Wrapped reduction operator
-    ReductionOp op;
-
-public:
+    ReductionOpT op;
 
     /// Constructor
     __host__ __device__ __forceinline__ ReduceByKeyOp() {}
 
     /// Constructor
-    __host__ __device__ __forceinline__ ReduceByKeyOp(ReductionOp op) : op(op) {}
+    __host__ __device__ __forceinline__ ReduceByKeyOp(ReductionOpT op) : op(op) {}
 
     /// Scan operator
     __host__ __device__ __forceinline__ KeyValuePairT operator()(
