@@ -43,6 +43,80 @@
 
 using namespace std;
 
+/******************************************************************************
+ * COO matrix type
+ ******************************************************************************/
+
+struct GraphStats
+{
+    int         num_rows;
+    int         num_cols;
+    int         num_nonzeros;
+
+    long long   row_profile;
+    double      row_profile_occupancy;
+
+    long long   intersection_profile;
+    double      intersection_profile_occupancy;
+
+    double      row_length_mean;        // mean
+    double      row_length_variance;    // sample variance
+    double      row_length_variation;   // coefficient of variation
+    double      row_length_skewness;    // skewness
+
+    void Display(bool show_labels = true)
+    {
+        if (show_labels)
+            printf("\n"
+                "\tnum_rows: %d\n"
+                "\tnum_cols: %d\n"
+                "\tnum_nonzeros: %d\n"
+                "\trow_profile: %lld\n"
+                "\trow_profile_occupancy: %f\n"
+                "\tintersection_profile: %lld\n"
+                "\tintersection_profile_occupancy: %f\n"
+                "\trow_length_mean: %.4f\n"
+                "\trow_length_variance: %.4f\n"
+                "\trow_length_variation: %.4f\n"
+                "\trow_length_skewness: %.4f\n",
+                    num_rows,
+                    num_cols,
+                    num_nonzeros,
+                    row_profile,
+                    row_profile_occupancy,
+                    intersection_profile,
+                    intersection_profile_occupancy,
+                    row_length_mean,
+                    row_length_variance,
+                    row_length_variation,
+                    row_length_skewness);
+        else
+            printf(
+                "%d, "
+                "%d, "
+                "%d, "
+                "%lld, "
+                "%.4f, "
+                "%lld, "
+                "%.4f, "
+                "%.4f, "
+                "%.4f, "
+                "%.4f, "
+                "%.4f, ",
+                    num_rows,
+                    num_cols,
+                    num_nonzeros,
+                    row_profile,
+                    row_profile_occupancy,
+                    intersection_profile,
+                    intersection_profile_occupancy,
+                    row_length_mean,
+                    row_length_variance,
+                    row_length_variation,
+                    row_length_skewness);
+    }
+};
+
 
 
 /******************************************************************************
@@ -96,7 +170,6 @@ struct CooMatrix
     int                 num_cols;
     int                 num_nonzeros;
     CooTuple*           coo_tuples;
-
 
     //---------------------------------------------------------------------
     // Methods
@@ -222,8 +295,15 @@ struct CooMatrix
     /**
      * Builds a MARKET COO sparse from the given file.
      */
-    void InitMarket(const string &market_filename, ValueT default_value = 1.0)
+    void InitMarket(
+        const string&   market_filename,
+        ValueT          default_value       = 1.0,
+        bool            verbose             = false)
     {
+        if (verbose) {
+            printf("Reading... "); fflush(stdout);
+        }
+
         if (coo_tuples)
         {
             fprintf(stderr, "Matrix already constructed\n");
@@ -247,7 +327,10 @@ struct CooMatrix
         int     current_edge = -1;
         char    line[1024];
 
-        printf("Parsing... "); fflush(stdout);
+        if (verbose) {
+            printf("Parsing... "); fflush(stdout);
+        }
+
         while (true)
         {
 /*
@@ -270,7 +353,10 @@ struct CooMatrix
                     // Banner
                     symmetric = (strstr(line, "symmetric") != NULL);
                     skew = (strstr(line, "skew") != NULL);
-                    printf("(symmetric: %d, skew: %d) ", symmetric, skew); fflush(stdout);
+
+                    if (verbose) {
+                        printf("(symmetric: %d, skew: %d) ", symmetric, skew); fflush(stdout);
+                    }
                 }
             }
             else if (current_edge == -1)
@@ -329,12 +415,16 @@ struct CooMatrix
         // Adjust nonzero count (nonzeros along the diagonal aren't reversed)
         num_nonzeros = current_edge;
 
-        printf("done. Ordering..."); fflush(stdout);
+        if (verbose) {
+            printf("done. Ordering..."); fflush(stdout);
+        }
 
         // Sort by rows, then columns
         std::stable_sort(coo_tuples, coo_tuples + num_nonzeros);
 
-        printf("done. "); fflush(stdout);
+        if (verbose) {
+            printf("done. "); fflush(stdout);
+        }
 
         fclose(f_in);
 //        ifs.close();
@@ -344,7 +434,10 @@ struct CooMatrix
     /**
      * Builds a wheel COO sparse matrix having spokes spokes.
      */
-    int InitWheel(OffsetT spokes, ValueT default_value = 1.0)
+    int InitWheel(
+        OffsetT     spokes,
+        ValueT      default_value   = 1.0,
+        bool        verbose         = false)
     {
         if (coo_tuples)
         {
@@ -601,6 +694,118 @@ struct CsrMatrix
         Clear();
     }
 
+    GraphStats Stats()
+    {
+        GraphStats stats;
+        stats.num_rows = num_rows;
+        stats.num_cols = num_cols;
+        stats.num_nonzeros = num_nonzeros;
+
+        // Compute diagonal profile
+/*
+        OffsetT num_diags = num_rows + num_cols;
+        OffsetT* diag_min = new OffsetT[num_diags];       // upper right
+        OffsetT* diag_max = new OffsetT[num_diags];       // lower left
+        for (OffsetT diag = 0; diag < num_diags; ++diag)
+        {
+            diag_min[diag] = num_rows;
+            diag_max[diag] = -1;
+        }
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            for (OffsetT column_idx = row_offsets[row]; column_idx < row_offsets[row + 1]; ++column_idx)
+            {
+                OffsetT nz_diag = row + column_indices[column_idx];
+                diag_min[nz_diag] = std::min(diag_min[nz_diag], row);
+                diag_max[nz_diag] = std::max(diag_max[nz_diag], row);
+            }
+        }
+        stats.counter_diagonal_profile = 0;
+        for (OffsetT diag = 0; diag < num_diags; ++diag)
+        {
+            OffsetT delta = diag_max[diag] - diag_min[diag];
+            if (delta > 0)
+            {
+                stats.counter_diagonal_profile += delta;
+            }
+        }
+        stats.counter_diagonal_occupancy = double(num_nonzeros) / double(stats.counter_diagonal_profile);
+*/
+        // Compute row profile
+
+        stats.row_profile = 0;
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            if (row_offsets[row + 1] > row_offsets[row])
+                stats.row_profile += column_indices[row_offsets[row + 1] - 1] - column_indices[row_offsets[row]];
+        }
+        stats.row_profile_occupancy = double(num_nonzeros) / double(stats.row_profile);
+
+        // Compute intersection profile
+
+        // Compute the min and max row for each column
+        OffsetT* min_row = new OffsetT[num_cols];
+        OffsetT* max_row = new OffsetT[num_cols];
+
+        for (OffsetT col = 0; col < num_cols; ++col)
+        {
+            min_row[col] = num_rows;
+            max_row[col] = -1;
+        }
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            for (OffsetT column_idx = row_offsets[row]; column_idx < row_offsets[row + 1]; ++column_idx)
+            {
+                OffsetT col = column_indices[column_idx];
+                min_row[col] = std::min(min_row[col], row);
+                max_row[col] = std::max(max_row[col], row);
+            }
+        }
+
+        stats.intersection_profile = 0;
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            if (row_offsets[row] < row_offsets[row + 1])
+            {
+                // Non-empty row
+                OffsetT first_col = column_indices[row_offsets[row]];
+                OffsetT last_col  = column_indices[row_offsets[row + 1] - 1];
+
+                for (OffsetT col = first_col; col <= last_col; ++col)
+                {
+                    if ((min_row[col] >= row) && (max_row[col] >= row))
+                        ++stats.intersection_profile;
+                }
+            }
+        }
+        stats.intersection_profile_occupancy = double(num_nonzeros) / double(stats.intersection_profile);
+
+        // Compute row-length statistics
+
+        // Sample mean
+        stats.row_length_mean       = float(num_nonzeros) / num_rows;
+        stats.row_length_variance   = 0.0;
+        stats.row_length_skewness   = 0.0;
+        for (int row = 0; row < num_rows; ++row)
+        {
+            int length                  = row_offsets[row + 1] - row_offsets[row];
+            double delta                = length - stats.row_length_mean;
+            stats.row_length_variance   += delta * delta;
+            stats.row_length_skewness   += delta * delta * delta;
+        }
+        stats.row_length_variance   /= (num_rows - 1);
+        double std_dev              = sqrt(stats.row_length_variance);
+        stats.row_length_skewness   /= (num_rows);
+        stats.row_length_skewness   = stats.row_length_skewness / pow(std_dev, 3.0);
+        stats.row_length_variation  = std_dev / stats.row_length_mean;
+
+        // Cleanup
+        delete[] min_row;
+        delete[] max_row;
+
+        return stats;
+    }
+
     /**
      * Build CSR matrix from sorted COO matrix
      */
@@ -643,8 +848,6 @@ struct CsrMatrix
      */
     void DisplayHistogram()
     {
-        fflush(stdout);
-
         // Initialize
         int log_counts[9];
         for (int i = 0; i < 9; i++)
@@ -695,6 +898,7 @@ struct CsrMatrix
             }
             printf("\n");
         }
+        fflush(stdout);
     }
 
 
@@ -752,8 +956,6 @@ void RcmRelabel(
     CsrMatrix<ValueT, OffsetT>&     matrix,
     OffsetT*                        relabel_indices)
 {
-    printf("RCM relabeling... "); fflush(stdout);
-
     // Initialize row degrees
     OffsetT* row_degrees_in     = new OffsetT[matrix.num_rows];
     OffsetT* row_degrees_out    = new OffsetT[matrix.num_rows];
@@ -827,8 +1029,6 @@ void RcmRelabel(
     }
 */
 
-    printf("done. "); fflush(stdout);
-
     // Cleanup
     if (row_degrees_in) delete[] row_degrees_in;
     if (row_degrees_out) delete[] row_degrees_out;
@@ -839,21 +1039,31 @@ void RcmRelabel(
  * Reverse Cuthill-McKee
  */
 template <typename ValueT, typename OffsetT>
-void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
+void RcmRelabel(
+    CsrMatrix<ValueT, OffsetT>&     matrix,
+    bool                            verbose = false)
 {
     // Do not process if not square
     if (matrix.num_cols != matrix.num_rows)
     {
-        printf("RCM transformation ignored (not square)\n");
+        if (verbose) {
+            printf("RCM transformation ignored (not square)\n"); fflush(stdout);
+        }
         return;
     }
 
     // Initialize relabel indices
     OffsetT* relabel_indices = new OffsetT[matrix.num_rows];
 
+    if (verbose) {
+        printf("RCM relabeling... "); fflush(stdout);
+    }
+
     RcmRelabel(matrix, relabel_indices);
 
-    printf("Reconstituting... "); fflush(stdout);
+    if (verbose) {
+        printf("done. Reconstituting... "); fflush(stdout);
+    }
 
     // Create a COO matrix from the relabel indices
     CooMatrix<ValueT, OffsetT> coo_matrix;
@@ -864,7 +1074,9 @@ void RcmRelabel(CsrMatrix<ValueT, OffsetT>& matrix)
     matrix.Clear();
     matrix.FromCoo(coo_matrix);
 
-    printf("done. "); fflush(stdout);
+    if (verbose) {
+        printf("done. "); fflush(stdout);
+    }
 }
 
 
