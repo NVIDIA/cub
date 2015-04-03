@@ -737,7 +737,10 @@ struct CsrMatrix
         for (OffsetT row = 0; row < num_rows; ++row)
         {
             if (row_offsets[row + 1] > row_offsets[row])
-                stats.row_profile += column_indices[row_offsets[row + 1] - 1] - column_indices[row_offsets[row]];
+            {
+                OffsetT row_segment = column_indices[row_offsets[row + 1] - 1] - column_indices[row_offsets[row]] + 1;
+                stats.row_profile += row_segment;
+            }
         }
         stats.row_profile_occupancy = double(num_nonzeros) / double(stats.row_profile);
 
@@ -773,8 +776,10 @@ struct CsrMatrix
 
                 for (OffsetT col = first_col; col <= last_col; ++col)
                 {
-                    if ((min_row[col] >= row) && (max_row[col] >= row))
+                    if ((min_row[col] <= row) && (max_row[col] >= row))
+                    {
                         ++stats.intersection_profile;
+                    }
                 }
             }
         }
