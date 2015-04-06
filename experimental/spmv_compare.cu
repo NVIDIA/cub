@@ -55,7 +55,7 @@ using namespace cub;
 // Globals, constants, and type declarations
 //---------------------------------------------------------------------
 
-bool                    g_report    = false;        // Whether to display stats in CSV format
+bool                    g_quiet    = false;        // Whether to display stats in CSV format
 bool                    g_verbose   = false;        // Whether to display output to console
 bool                    g_verbose2  = false;        // Whether to display input to console
 CachingDeviceAllocator  g_allocator(true);          // Caching allocator for device memory
@@ -128,7 +128,7 @@ __global__ void NonZeroIO(
         nonzero         += vector_value * value;
     }
 
-    if (threadIdx.x > num_nonzeros)
+    if (num_nonzeros < 0)
         no_elide[threadIdx.x] = nonzero;
 }
 
@@ -145,7 +145,8 @@ __global__ void RowIO(
     OffsetT*    d_row_offsets,
     ValueT*     d_vector_y)
 {
-    OffsetT item_idx = CUB_MIN((blockIdx.x * BLOCK_THREADS) + threadIdx.x, num_rows - 1);
+    OffsetT item_idx = (blockIdx.x * BLOCK_THREADS) + threadIdx.x;
+    item_idx = CUB_MIN(item_idx, num_rows - 1);
     d_vector_y[item_idx] = (ValueT) d_row_offsets[num_rows];
 }
 
@@ -179,16 +180,24 @@ float IoSpmv(
         params.d_column_indices,
         x_itr);
 
+    // Check for failures
+    CubDebugExit(cudaPeekAtLastError());
+    CubDebugExit(SyncStream(0));
+
     RowIO<BLOCK_THREADS><<<row_blocks, BLOCK_THREADS>>>(
         params.num_rows,
         params.d_row_end_offsets,
         params.d_vector_y);
 
+    // Check for failures
+    CubDebugExit(cudaPeekAtLastError());
+    CubDebugExit(SyncStream(0));
+
     // Timing
     GpuTimer gpu_timer;
     float elapsed_millis = 0.0;
 
-    for(int it = 0; it < timing_iterations; ++it)
+    for (int it = 0; it < timing_iterations; ++it)
     {
         // Reset input/output vector y
         gpu_timer.Start();
@@ -242,7 +251,7 @@ float CusparseSpmv(
         params.d_values, params.d_row_end_offsets, params.d_column_indices,
         params.d_vector_x, &params.beta, params.d_vector_y));
 
-    if (!g_report)
+    if (!g_quiet)
     {
         int compare = CompareDeviceResults(vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
@@ -297,7 +306,7 @@ float CusparseSpmv(
         params.d_values, params.d_row_end_offsets, params.d_column_indices,
         params.d_vector_x, &params.beta, params.d_vector_y));
 
-    if (!g_report)
+    if (!g_quiet)
     {
         int compare = CompareDeviceResults(vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
@@ -365,9 +374,9 @@ float CubSpmv(
         params.d_values, params.d_row_end_offsets, params.d_column_indices,
         params.d_vector_x, params.d_vector_y,
         params.num_rows, params.num_cols, params.num_nonzeros, params.alpha, params.beta,
-        (cudaStream_t) 0, !g_report));
+        (cudaStream_t) 0, !g_quiet));
 
-    if (!g_report)
+    if (!g_quiet)
     {
         int compare = CompareDeviceResults(vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
@@ -415,7 +424,7 @@ void DisplayPerf(
     nz_throughput       = double(csr_matrix.num_nonzeros) / avg_millis / 1.0e6;
     effective_bandwidth = double(total_bytes) / avg_millis / 1.0e6;
 
-    if (!g_report)
+    if (!g_quiet)
         printf("fp%d: %.3f avg ms, %.3f gflops, %.3lf effective GB/s (%.1f%% peak)\n",
             sizeof(ValueT) * 8,
             avg_millis,
@@ -457,7 +466,7 @@ void RunTests(
     {
         // Parse matrix market file
         printf("%s, ", mtx_filename.c_str());
-        coo_matrix.InitMarket(mtx_filename, 1.0, !g_report);
+        coo_matrix.InitMarket(mtx_filename, 1.0, !g_quiet);
     }
     else if (grid2d > 0)
     {
@@ -486,7 +495,7 @@ void RunTests(
     // Relabel
     if (rcm_relabel)
     {
-        if (!g_report)
+        if (!g_quiet)
         {
             csr_matrix.Stats().Display();
             printf("\n");
@@ -497,14 +506,15 @@ void RunTests(
             printf("\n");
         }
 
-        RcmRelabel(csr_matrix, !g_report);
+        RcmRelabel(csr_matrix, !g_quiet);
 
+        if (!g_quiet)
         printf("\n");
     }
 
     // Display matrix info
-    csr_matrix.Stats().Display(!g_report);
-    if (!g_report)
+    csr_matrix.Stats().Display(!g_quiet);
+    if (!g_quiet)
     {
         printf("\n");
         csr_matrix.DisplayHistogram();
@@ -547,19 +557,19 @@ void RunTests(
     CubDebugExit(cudaMemcpy(params.d_column_indices,    csr_matrix.column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemcpy(params.d_vector_x,          vector_x,                   sizeof(ValueT) * csr_matrix.num_cols, cudaMemcpyHostToDevice));
 
-    if (!g_report) {
+    if (!g_quiet) {
         printf("\n\nIO Proxy: "); fflush(stdout);
     }
     float avg_millis = IoSpmv(params, timing_iterations);
     DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
 
-    if (!g_report) {
+    if (!g_quiet) {
         printf("\n\nCusparse: "); fflush(stdout);
     }
     avg_millis = CusparseSpmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
     DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
 
-    if (!g_report) {
+    if (!g_quiet) {
         printf("\n\nCUB: "); fflush(stdout);
     }
     avg_millis = CubSpmv(vector_y_in, vector_y_out, params, timing_iterations);
@@ -590,7 +600,7 @@ int main(int argc, char **argv)
         printf(
             "%s "
             "[--device=<device-id>] "
-            "[--report] "
+            "[--quiet] "
             "[--v] "
             "[--i=<timing iterations>] "
             "[--fp64] "
@@ -621,7 +631,7 @@ int main(int argc, char **argv)
 
     g_verbose = args.CheckCmdLineFlag("v");
     g_verbose2 = args.CheckCmdLineFlag("v2");
-    g_report = args.CheckCmdLineFlag("report");
+    g_quiet = args.CheckCmdLineFlag("quiet");
     fp64 = args.CheckCmdLineFlag("fp64");
     rcm_relabel = args.CheckCmdLineFlag("rcm");
     args.GetCmdLineArgument("i", timing_iterations);
@@ -646,8 +656,6 @@ int main(int argc, char **argv)
     CubDebugExit(cudaDeviceGetAttribute(&mem_clock_khz, cudaDevAttrMemoryClockRate, device_ordinal));
     float bandwidth_GBs = float(bus_width) * mem_clock_khz * 2 / 8 / 1000 / 1000;
 
-    printf("Peak global B/W: %.3f GB/s (%d bits, %d kHz clock)\n", bandwidth_GBs, bus_width, mem_clock_khz);
-
     // Run test(s)
     if (fp64)
     {
@@ -659,7 +667,7 @@ int main(int argc, char **argv)
     }
 
     CubDebugExit(cudaDeviceSynchronize());
-    printf("\n\n");
+    printf("\n");
 
     return 0;
 }
