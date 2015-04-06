@@ -54,10 +54,10 @@ struct GraphStats
     int         num_nonzeros;
 
     long long   row_profile;
-    double      row_profile_occupancy;
+    double      log_row_profile_occupancy;
 
     long long   intersection_profile;
-    double      intersection_profile_occupancy;
+    double      log_intersection_profile_occupancy;
 
     double      row_length_mean;        // mean
     double      row_length_variance;    // sample variance
@@ -72,20 +72,20 @@ struct GraphStats
                 "\tnum_cols: %d\n"
                 "\tnum_nonzeros: %d\n"
                 "\trow_profile: %lld\n"
-                "\trow_profile_occupancy: %f\n"
+                "\tlog_row_profile_occupancy: %.10f\n"
                 "\tintersection_profile: %lld\n"
-                "\tintersection_profile_occupancy: %f\n"
-                "\trow_length_mean: %.4f\n"
-                "\trow_length_variance: %.4f\n"
-                "\trow_length_variation: %.4f\n"
-                "\trow_length_skewness: %.4f\n",
+                "\tlog_intersection_profile_occupancy: %.10f\n"
+                "\trow_length_mean: %.5f\n"
+                "\trow_length_variance: %.5f\n"
+                "\trow_length_variation: %.5f\n"
+                "\trow_length_skewness: %.5f\n",
                     num_rows,
                     num_cols,
                     num_nonzeros,
                     row_profile,
-                    row_profile_occupancy,
+                    log_row_profile_occupancy,
                     intersection_profile,
-                    intersection_profile_occupancy,
+                    log_intersection_profile_occupancy,
                     row_length_mean,
                     row_length_variance,
                     row_length_variation,
@@ -95,21 +95,21 @@ struct GraphStats
                 "%d, "
                 "%d, "
                 "%d, "
-                "%lld, "
-                "%.4f, "
-                "%lld, "
-                "%.4f, "
-                "%.4f, "
-                "%.4f, "
-                "%.4f, "
-                "%.4f, ",
+//                "%lld, "
+                "%.10f, "
+//                "%lld, "
+                "%.10f, "
+                "%.5f, "
+                "%.5f, "
+                "%.5f, "
+                "%.5f, ",
                     num_rows,
                     num_cols,
                     num_nonzeros,
-                    row_profile,
-                    row_profile_occupancy,
-                    intersection_profile,
-                    intersection_profile_occupancy,
+//                    row_profile,
+                    log_row_profile_occupancy,
+//                    intersection_profile,
+                    log_intersection_profile_occupancy,
                     row_length_mean,
                     row_length_variance,
                     row_length_variation,
@@ -701,8 +701,9 @@ struct CsrMatrix
         stats.num_cols = num_cols;
         stats.num_nonzeros = num_nonzeros;
 
-        // Compute diagonal profile
 /*
+        // Compute diagonal profile
+
         OffsetT num_diags = num_rows + num_cols;
         OffsetT* diag_min = new OffsetT[num_diags];       // upper right
         OffsetT* diag_max = new OffsetT[num_diags];       // lower left
@@ -729,7 +730,7 @@ struct CsrMatrix
                 stats.counter_diagonal_profile += delta;
             }
         }
-        stats.counter_diagonal_occupancy = double(num_nonzeros) / double(stats.counter_diagonal_profile);
+        stats.log_counter_diagonal_occupancy = pow(2.0, double(num_nonzeros) / double(stats.counter_diagonal_profile));
 */
         // Compute row profile
 
@@ -742,11 +743,10 @@ struct CsrMatrix
                 stats.row_profile += row_segment;
             }
         }
-        stats.row_profile_occupancy = double(num_nonzeros) / double(stats.row_profile);
+        stats.log_row_profile_occupancy = pow(2.0, double(num_nonzeros) / double(stats.row_profile));
 
-        // Compute intersection profile
+        // Compute column profile
 
-        // Compute the min and max row for each column
         OffsetT* min_row = new OffsetT[num_cols];
         OffsetT* max_row = new OffsetT[num_cols];
 
@@ -764,6 +764,24 @@ struct CsrMatrix
                 max_row[col] = std::max(max_row[col], row);
             }
         }
+
+        long long col_profile = 0;
+        for (OffsetT col = 0; col < num_cols; ++col)
+        {
+            OffsetT delta = max_row[col] - min_row[col] + 1;
+            if (delta > 0)
+                col_profile += delta;
+        }
+
+        // Compute average profile
+
+        stats.intersection_profile = (stats.row_profile + col_profile) / 2;
+        stats.log_intersection_profile_occupancy = pow(2.0, double(num_nonzeros) / double(stats.intersection_profile));
+
+/*
+        // Compute intersection profile
+
+        // Compute the min and max row for each column
 
         stats.intersection_profile = 0;
         for (OffsetT row = 0; row < num_rows; ++row)
@@ -783,7 +801,8 @@ struct CsrMatrix
                 }
             }
         }
-        stats.intersection_profile_occupancy = double(num_nonzeros) / double(stats.intersection_profile);
+        stats.log_intersection_profile_occupancy = pow(2.0, double(num_nonzeros) / double(stats.intersection_profile));
+*/
 
         // Compute row-length statistics
 
