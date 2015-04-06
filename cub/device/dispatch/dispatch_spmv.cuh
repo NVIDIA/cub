@@ -208,14 +208,38 @@ struct DispatchSpmv
     };
 
     /// SM20
-    struct Policy200 : Policy110 {};
-
-    /// SM30
-    struct Policy300 : DispatchReduceByKeyT::Policy300
+    struct Policy200 
     {
         typedef AgentSpmvPolicy<
+                96,
+                18,
+                LOAD_DEFAULT,
+                LOAD_DEFAULT,
+                LOAD_DEFAULT,
+                LOAD_DEFAULT,
+                LOAD_DEFAULT,
+                false,
+                BLOCK_SCAN_RAKING>
+            SpmvPolicyT;
+
+        typedef AgentReduceByKeyPolicy<
                 128,
-                5,
+                4,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_DEFAULT,
+                BLOCK_SCAN_WARP_SCANS>
+            ReduceByKeyPolicyT;
+
+    };
+
+
+
+    /// SM30
+    struct Policy300 
+    {
+        typedef AgentSpmvPolicy<
+                96,
+                6,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
@@ -506,7 +530,7 @@ struct DispatchSpmv
 
 #if (CUB_PTX_ARCH == 0)
             // Init textures
-//            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
+            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
 #endif
             // Log spmv_search_kernel configuration
             if (debug_synchronous) CubLog("Invoking spmv_search_kernel<<<%d, %d, 0, %lld>>>()\n",
@@ -567,7 +591,7 @@ struct DispatchSpmv
 
 #if (CUB_PTX_ARCH == 0)
             // Free textures
-//            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
+            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
 #endif
         }
         while (0);

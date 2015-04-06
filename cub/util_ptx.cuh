@@ -355,6 +355,114 @@ __device__ __forceinline__ unsigned int LaneMaskGe()
 
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
+/**
+ * Shuffle word up
+ */
+template <typename ShuffleWordT, int STEP>
+__device__ __forceinline__ void ShuffleUp(
+    ShuffleWordT*   input, 
+    ShuffleWordT*   output,
+    int             src_offset,
+    int             first_lane,
+    Int2Type<STEP>  step)
+{
+    unsigned int word = input[STEP];
+    asm("shfl.up.b32 %0, %1, %2, %3;"
+        : "=r"(word) : "r"(word), "r"(src_offset), "r"(first_lane));
+    output[STEP] = word;
+
+    ShuffleUp(input, output, src_offset, first_lane, Int2Type<STEP - 1>());
+}
+
+
+/**
+ * Shuffle word up
+ */
+template <typename ShuffleWordT>
+__device__ __forceinline__ void ShuffleUp(
+    ShuffleWordT*   input, 
+    ShuffleWordT*   output,
+    int             src_offset,
+    int             first_lane,
+    Int2Type<-1>    step)
+{}
+
+
+
+/**
+ * Shuffle word down
+ */
+template <typename ShuffleWordT, int STEP>
+__device__ __forceinline__ void ShuffleDown(
+    ShuffleWordT*   input, 
+    ShuffleWordT*   output,
+    int             src_offset,
+    int             last_lane,
+    Int2Type<STEP>  step)
+{
+    unsigned int word = input[STEP];
+    asm("shfl.down.b32 %0, %1, %2, %3;"
+        : "=r"(word) : "r"(word), "r"(src_offset), "r"(last_lane));
+    output[STEP] = word;
+
+    ShuffleDown(input, output, src_offset, last_lane, Int2Type<STEP - 1>());
+}
+
+
+/**
+ * Shuffle word down
+ */
+template <typename ShuffleWordT>
+__device__ __forceinline__ void ShuffleDown(
+    ShuffleWordT*   input, 
+    ShuffleWordT*   output,
+    int             src_offset,
+    int             last_lane,
+    Int2Type<-1>    step)
+{}
+
+
+/**
+ * Shuffle index
+ */
+template <typename ShuffleWordT, int STEP>
+__device__ __forceinline__ void ShuffleIdx(
+    ShuffleWordT*   input, 
+    ShuffleWordT*   output,
+    int             src_lane,
+    int             last_lane,
+    Int2Type<STEP>  step)
+{
+    unsigned int word = input[STEP];
+    asm("shfl.idx.b32 %0, %1, %2, %3;"
+        : "=r"(word) : "r"(word), "r"(src_lane), "r"(last_lane));
+    output[STEP] = word;
+
+    ShuffleIdx(input, output, src_lane, last_lane, Int2Type<STEP - 1>());
+}
+
+
+/**
+ * Shuffle index
+ */
+template <typename ShuffleWordT>
+__device__ __forceinline__ void ShuffleIdx(
+    ShuffleWordT*   input, 
+    ShuffleWordT*   output,
+    int             src_lane,
+    int             last_lane,
+    Int2Type<-1>    step)
+{}
+
+
+
+
+#endif  // DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+
 
 /**
  * \brief Shuffle-up for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><em>i</em>-<tt>src_offset</tt></sub>.  For thread lanes \e i < src_offset, the thread's own \p input is returned to the thread. ![](shfl_up_logo.png)
@@ -393,19 +501,12 @@ __device__ __forceinline__ T ShuffleUp(
     typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
     const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
+ 
     T               output;
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    #pragma unroll
-    for (int WORD = 0; WORD < WORDS; ++WORD)
-    {
-        unsigned int shuffle_word = input_alias[WORD];
-        asm(
-            "  shfl.up.b32 %0, %1, %2, %3;"
-            : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_offset), "r"(first_lane));
-        output_alias[WORD] = (ShuffleWord) shuffle_word;
-    }
+    ShuffleUp(input_alias, output_alias, src_offset, first_lane, Int2Type<WORDS - 1>());
 
     return output;
 }
@@ -441,30 +542,19 @@ __device__ __forceinline__ T ShuffleUp(
  */
 template <typename T>
 __device__ __forceinline__ T ShuffleDown(
-    T               input,              ///< [in] The value to broadcast
-    int             src_offset)         ///< [in] The relative up-offset of the peer to read from
+    T               input,                                  ///< [in] The value to broadcast
+    int             src_offset,                             ///< [in] The relative up-offset of the peer to read from
+    int             last_lane = CUB_PTX_WARP_THREADS - 1)   ///< [in] Index of first lane in segment
 {
-    enum
-    {
-        SHFL_C = CUB_PTX_WARP_THREADS - 1,
-    };
-
     typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
     const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
+
     T               output;
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    #pragma unroll
-    for (int WORD = 0; WORD < WORDS; ++WORD)
-    {
-        unsigned int shuffle_word = input_alias[WORD];
-        asm(
-            "  shfl.down.b32 %0, %1, %2, %3;"
-            : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_offset), "r"(SHFL_C));
-        output_alias[WORD] = (ShuffleWord) shuffle_word;
-    }
+    ShuffleDown(input_alias, output_alias, src_offset, last_lane, Int2Type<WORDS - 1>());
 
     return output;
 }
@@ -487,18 +577,12 @@ __device__ __forceinline__ T ShuffleBroadcast(
     typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
     const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
+
     T               output;
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    #pragma unroll
-    for (int WORD = 0; WORD < WORDS; ++WORD)
-    {
-        unsigned int shuffle_word = input_alias[WORD];
-        asm("shfl.idx.b32 %0, %1, %2, %3;"
-            : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_lane), "r"(logical_warp_threads - 1));
-        output_alias[WORD] = (ShuffleWord) shuffle_word;
-    }
+    ShuffleIdx(input_alias, output_alias, src_lane, logical_warp_threads - 1, Int2Type<WORDS - 1>());
 
     return output;
 }

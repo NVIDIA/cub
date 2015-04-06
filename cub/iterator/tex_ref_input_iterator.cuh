@@ -233,14 +233,14 @@ private:
     typedef typename IteratorTexRef<T>::template TexId<UNIQUE_ID> TexId;
 
 public:
-
+/*
     /// Constructor
     __host__ __device__ __forceinline__ TexRefInputIterator()
     :
         ptr(NULL),
         tex_offset(0)
     {}
-
+*/
     /// Use this iterator to bind \p ptr with a texture reference
     template <typename QualifiedT>
     cudaError_t BindTexture(
@@ -334,7 +334,8 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ reference operator[](Distance n) const
     {
-        return *(*this + n);
+        self_type offset = (*this) + n;
+        return *offset;
     }
 
     /// Structure dereference
