@@ -521,14 +521,6 @@ struct ItemOffsetPair
     T                                       value;      ///< Item value
 
 
-    /// Constructor
-    __device__ __forceinline__ ItemOffsetPair() {}
-
-    /// Constructor
-    __device__ __forceinline__ ItemOffsetPair(_T value, _OffsetT offset) :
-        value(value), offset(offset)
-    {}
-
     /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const ItemOffsetPair &b)
     {
