@@ -61,12 +61,12 @@ __device__ __forceinline__ void MergePathSearch(
     /// The value type of the input iterator
     typedef typename std::iterator_traits<AIteratorT>::value_type T;
 
-    int split_min = CUB_MAX(diagonal - b_len, 0);
-    int split_max = CUB_MIN(diagonal, a_len);
+    OffsetT split_min = CUB_MAX(diagonal - b_len, 0);
+    OffsetT split_max = CUB_MIN(diagonal, a_len);
 
     while (split_min < split_max)
     {
-        int split_pivot = (split_min + split_max) >> 1;
+        OffsetT split_pivot = (split_min + split_max) >> 1;
         if (a[split_pivot] <= b[diagonal - split_pivot - 1])
         {
             // Move candidate split range up A, down B
