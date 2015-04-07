@@ -219,7 +219,8 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ reference operator[](Distance n) const
     {
-        return *(*this + n);
+        self_type offset = (*this) + n;
+        return *offset;
     }
 
     /// Structure dereference
