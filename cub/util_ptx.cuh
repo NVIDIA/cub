@@ -37,6 +37,8 @@
 #include "util_type.cuh"
 #include "util_arch.cuh"
 #include "util_namespace.cuh"
+#include "util_debug.cuh"
+
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -89,7 +91,7 @@ __device__ __forceinline__ unsigned int SHR_ADD(
 {
     unsigned int ret;
 #if CUB_PTX_ARCH >= 200
-    asm("vshr.u32.u32.u32.clamp.add %0, %1, %2, %3;" :
+    asm volatile("vshr.u32.u32.u32.clamp.add %0, %1, %2, %3;" :
         "=r"(ret) : "r"(x), "r"(shift), "r"(addend));
 #else
     ret = (x >> shift) + addend;
@@ -108,7 +110,7 @@ __device__ __forceinline__ unsigned int SHL_ADD(
 {
     unsigned int ret;
 #if CUB_PTX_ARCH >= 200
-    asm("vshl.u32.u32.u32.clamp.add %0, %1, %2, %3;" :
+    asm volatile("vshl.u32.u32.u32.clamp.add %0, %1, %2, %3;" :
         "=r"(ret) : "r"(x), "r"(shift), "r"(addend));
 #else
     ret = (x << shift) + addend;
@@ -130,7 +132,7 @@ __device__ __forceinline__ unsigned int BFE(
 {
     unsigned int bits;
 #if CUB_PTX_ARCH >= 200
-    asm("bfe.u32 %0, %1, %2, %3;" : "=r"(bits) : "r"((unsigned int) source), "r"(bit_start), "r"(num_bits));
+    asm volatile("bfe.u32 %0, %1, %2, %3;" : "=r"(bits) : "r"((unsigned int) source), "r"(bit_start), "r"(num_bits));
 #else
     const unsigned int MASK = (1 << num_bits) - 1;
     bits = (source >> bit_start) & MASK;
@@ -179,7 +181,7 @@ __device__ __forceinline__ void BFI(
     unsigned int num_bits)
 {
 #if CUB_PTX_ARCH >= 200
-    asm("bfi.b32 %0, %1, %2, %3, %4;" :
+    asm volatile("bfi.b32 %0, %1, %2, %3, %4;" :
         "=r"(ret) : "r"(y), "r"(x), "r"(bit_start), "r"(num_bits));
 #else
     x <<= bit_start;
@@ -196,7 +198,7 @@ __device__ __forceinline__ void BFI(
 __device__ __forceinline__ unsigned int IADD3(unsigned int x, unsigned int y, unsigned int z)
 {
 #if CUB_PTX_ARCH >= 200
-    asm("vadd.u32.u32.u32.add %0, %1, %2, %3;" : "=r"(x) : "r"(x), "r"(y), "r"(z));
+    asm volatile("vadd.u32.u32.u32.add %0, %1, %2, %3;" : "=r"(x) : "r"(x), "r"(y), "r"(z));
 #else
     x = x + y + z;
 #endif
@@ -233,7 +235,7 @@ __device__ __forceinline__ unsigned int IADD3(unsigned int x, unsigned int y, un
 __device__ __forceinline__ int PRMT(unsigned int a, unsigned int b, unsigned int index)
 {
     int ret;
-    asm("prmt.b32 %0, %1, %2, %3;" : "=r"(ret) : "r"(a), "r"(b), "r"(index));
+    asm volatile("prmt.b32 %0, %1, %2, %3;" : "=r"(ret) : "r"(a), "r"(b), "r"(index));
     return ret;
 }
 
@@ -254,7 +256,7 @@ __device__ __forceinline__ void BAR(int count)
 __device__ __forceinline__ float FMUL_RZ(float a, float b)
 {
     float d;
-    asm("mul.rz.f32 %0, %1, %2;" : "=f"(d) : "f"(a), "f"(b));
+    asm volatile("mul.rz.f32 %0, %1, %2;" : "=f"(d) : "f"(a), "f"(b));
     return d;
 }
 
@@ -265,7 +267,7 @@ __device__ __forceinline__ float FMUL_RZ(float a, float b)
 __device__ __forceinline__ float FFMA_RZ(float a, float b, float c)
 {
     float d;
-    asm("fma.rz.f32 %0, %1, %2, %3;" : "=f"(d) : "f"(a), "f"(b), "f"(c));
+    asm volatile("fma.rz.f32 %0, %1, %2, %3;" : "=f"(d) : "f"(a), "f"(b), "f"(c));
     return d;
 }
 
@@ -275,7 +277,7 @@ __device__ __forceinline__ float FFMA_RZ(float a, float b, float c)
  * \brief Terminates the calling thread
  */
 __device__ __forceinline__ void ThreadExit() {
-    asm("exit;");
+    asm volatile("exit;");
 }    
 
 
@@ -296,7 +298,7 @@ __device__ __forceinline__ int RowMajorTid(int block_dim_x, int block_dim_y, int
 __device__ __forceinline__ unsigned int LaneId()
 {
     unsigned int ret;
-    asm("mov.u32 %0, %laneid;" : "=r"(ret) );
+    asm volatile("mov.u32 %0, %laneid;" : "=r"(ret) );
     return ret;
 }
 
@@ -307,7 +309,7 @@ __device__ __forceinline__ unsigned int LaneId()
 __device__ __forceinline__ unsigned int WarpId()
 {
     unsigned int ret;
-    asm("mov.u32 %0, %warpid;" : "=r"(ret) );
+    asm volatile("mov.u32 %0, %warpid;" : "=r"(ret) );
     return ret;
 }
 
@@ -317,7 +319,7 @@ __device__ __forceinline__ unsigned int WarpId()
 __device__ __forceinline__ unsigned int LaneMaskLt()
 {
     unsigned int ret;
-    asm("mov.u32 %0, %lanemask_lt;" : "=r"(ret) );
+    asm volatile("mov.u32 %0, %lanemask_lt;" : "=r"(ret) );
     return ret;
 }
 
@@ -327,7 +329,7 @@ __device__ __forceinline__ unsigned int LaneMaskLt()
 __device__ __forceinline__ unsigned int LaneMaskLe()
 {
     unsigned int ret;
-    asm("mov.u32 %0, %lanemask_le;" : "=r"(ret) );
+    asm volatile("mov.u32 %0, %lanemask_le;" : "=r"(ret) );
     return ret;
 }
 
@@ -337,7 +339,7 @@ __device__ __forceinline__ unsigned int LaneMaskLe()
 __device__ __forceinline__ unsigned int LaneMaskGt()
 {
     unsigned int ret;
-    asm("mov.u32 %0, %lanemask_gt;" : "=r"(ret) );
+    asm volatile("mov.u32 %0, %lanemask_gt;" : "=r"(ret) );
     return ret;
 }
 
@@ -347,7 +349,7 @@ __device__ __forceinline__ unsigned int LaneMaskGt()
 __device__ __forceinline__ unsigned int LaneMaskGe()
 {
     unsigned int ret;
-    asm("mov.u32 %0, %lanemask_ge;" : "=r"(ret) );
+    asm volatile("mov.u32 %0, %lanemask_ge;" : "=r"(ret) );
     return ret;
 }
 
@@ -370,9 +372,9 @@ __device__ __forceinline__ void ShuffleUp(
     Int2Type<STEP>  step)
 {
     unsigned int word = input[STEP];
-    asm("shfl.up.b32 %0, %1, %2, %3;"
+    asm volatile("shfl.up.b32 %0, %1, %2, %3;"
         : "=r"(word) : "r"(word), "r"(src_offset), "r"(first_lane));
-    output[STEP] = word;
+    output[STEP] = (ShuffleWordT) word;
 
     ShuffleUp(input, output, src_offset, first_lane, Int2Type<STEP - 1>());
 }
@@ -404,9 +406,9 @@ __device__ __forceinline__ void ShuffleDown(
     Int2Type<STEP>  step)
 {
     unsigned int word = input[STEP];
-    asm("shfl.down.b32 %0, %1, %2, %3;"
+    asm volatile("shfl.down.b32 %0, %1, %2, %3;"
         : "=r"(word) : "r"(word), "r"(src_offset), "r"(last_lane));
-    output[STEP] = word;
+    output[STEP] = (ShuffleWordT) word;
 
     ShuffleDown(input, output, src_offset, last_lane, Int2Type<STEP - 1>());
 }
@@ -437,9 +439,9 @@ __device__ __forceinline__ void ShuffleIdx(
     Int2Type<STEP>  step)
 {
     unsigned int word = input[STEP];
-    asm("shfl.idx.b32 %0, %1, %2, %3;"
+    asm volatile("shfl.idx.b32 %0, %1, %2, %3;"
         : "=r"(word) : "r"(word), "r"(src_lane), "r"(last_lane));
-    output[STEP] = word;
+    output[STEP] = (ShuffleWordT) word;
 
     ShuffleIdx(input, output, src_lane, last_lane, Int2Type<STEP - 1>());
 }
