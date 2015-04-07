@@ -180,7 +180,7 @@ struct DispatchScan
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
-                BLOCK_SCAN_WARP_SCANS>
+                BLOCK_SCAN_RAKING>
             ScanPolicyT;
     };
 

@@ -319,6 +319,27 @@ struct WarpScanShfl
         return InclusiveScanStep(input, scan_op, first_lane, offset);
     }
 
+    /// Inclusive prefix scan step 
+    template <typename _T, typename ScanOp, int STEP>
+    __device__ __forceinline__ void InclusiveScanStep(
+        _T&             input,              ///< [in] Calling thread's input item.
+        ScanOp          scan_op,            ///< [in] Binary scan operator
+        int             first_lane,         ///< [in] Index of first lane in segment
+        Int2Type<STEP>  step)
+    {
+        input = InclusiveScanStep(input, scan_op, SHFL_C, 1 << STEP, Int2Type<IsInteger<_T>::IS_SMALL_UNSIGNED>());
+
+        InclusiveScanStep(input, scan_op, first_lane, Int2Type<STEP + 1>());
+    }
+
+    template <typename _T, typename ScanOp>
+    __device__ __forceinline__ void InclusiveScanStep(
+        _T&             input,              ///< [in] Calling thread's input item.
+        ScanOp          scan_op,            ///< [in] Binary scan operator
+        int             first_lane,         ///< [in] Index of first lane in segment
+        Int2Type<STEPS> step)
+    {}
+
 
     /// Get exclusive from inclusive (specialized for summation of integer types)
     __device__ __forceinline__ T GetExclusive(
@@ -396,11 +417,15 @@ struct WarpScanShfl
         output = input;
 
         // Iterate scan steps
+        InclusiveScanStep(output, scan_op, SHFL_C, Int2Type<0>());
+/*        
+        // Iterate scan steps
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
             output = InclusiveScanStep(output, scan_op, SHFL_C, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
+*/
     }
 
     /// Inclusive scan, specialized for reduce-value-by-key
@@ -423,11 +448,16 @@ struct WarpScanShfl
         int first_lane = CUB_MAX(0, 31 - __clz(ballot));
 
         // Iterate scan steps
+        InclusiveScanStep(output.value, scan_op, first_lane | SHFL_C, Int2Type<0>());
+
+/*
+        // Iterate scan steps
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
             output.value = InclusiveScanStep(output.value, scan_op.op, first_lane | SHFL_C, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
+*/
     }
 
     /// Inclusive scan with aggregate
