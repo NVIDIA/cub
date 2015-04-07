@@ -235,6 +235,33 @@ __device__ __forceinline__ void LoadDirectBlockedVectorized(
 //@{
 
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
+template <int BLOCK_THREADS, typename T, int ITEMS_PER_THREAD, typename InputIteratorT, int ITEM>
+__device__ __forceinline__ void LoadDirectStriped(
+    int             linear_tid,
+    InputIteratorT  block_itr,                  
+    T               (&items)[ITEMS_PER_THREAD], 
+    Int2Type<ITEM>  item)
+{
+    items[ITEM] = block_itr[(ITEM * BLOCK_THREADS) + linear_tid];
+    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, Int2Type<ITEM + 1>());
+}
+
+
+template <int BLOCK_THREADS, typename T, int ITEMS_PER_THREAD, typename InputIteratorT>
+__device__ __forceinline__ void LoadDirectStriped(
+    int                         linear_tid,
+    InputIteratorT              block_itr,                  
+    T                           (&items)[ITEMS_PER_THREAD], 
+    Int2Type<ITEMS_PER_THREAD>  item)
+{}
+
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
+
+
+
 /**
  * \brief Load a linear segment of items into a striped arrangement across the thread block.
  *
@@ -255,11 +282,15 @@ __device__ __forceinline__ void LoadDirectStriped(
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = block_itr[(ITEM * BLOCK_THREADS) + linear_tid];
+        int offset = linear_tid + (ITEM * BLOCK_THREADS);
+        items[ITEM] = block_itr[offset];
     }
+
+//    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, Int2Type<0>());
 }
 
 
