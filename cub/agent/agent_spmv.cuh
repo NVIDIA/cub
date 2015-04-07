@@ -612,45 +612,6 @@ struct AgentSpmv
 
         __syncthreads();
 
-/*
-        OffsetT* s_row_offsets = &temp_storage.merge_items[tile_num_nonzeros + 1].row_end_offset;
-
-        if (threadIdx.x == 0)
-            s_row_offsets[0] = 0;
-
-        #pragma unroll 1
-        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
-        {
-            OffsetT end = wd_row_end_offsets[tile_start_coord.x + item] - tile_start_coord.y;
-            s_row_offsets[item + 1] = end;
-        }
-
-        __syncthreads();
-
-        #pragma unroll 1
-        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
-        {
-            OffsetT start   = s_row_offsets[item];
-            OffsetT end     = s_row_offsets[item + 1];
-
-            ValueT row_partial = s_tile_nonzeros[end] - s_tile_nonzeros[start];
-
-            spmv_params.d_vector_y[tile_start_coord.x + item] = row_partial;
-        }
-
-        // Get the tile's carry-out
-        KeyValuePairT tile_carry;
-        if (threadIdx.x == 0)
-        {
-            tile_carry.key = tile_num_rows;
-    
-            OffsetT start = s_row_offsets[tile_num_rows];
-            OffsetT end = tile_num_nonzeros;
-
-            tile_carry.value = s_tile_nonzeros[end] - s_tile_nonzeros[start];
-        }
-*/
-
         // Gather the row end-offsets for the merge tile into shared memory
         #pragma unroll 1
         for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
@@ -703,7 +664,7 @@ struct AgentSpmv
         CoordinateT tile_end_coord       = d_tile_coordinates[tile_idx + 1];
 
         // Consume multi-segment tile
-        KeyValuePairT tile_carry = ConsumeTile2(
+        KeyValuePairT tile_carry = ConsumeTile(
             tile_idx,
             tile_start_coord,
             tile_end_coord,

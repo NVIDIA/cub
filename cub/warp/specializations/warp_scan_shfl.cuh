@@ -448,7 +448,7 @@ struct WarpScanShfl
         int first_lane = CUB_MAX(0, 31 - __clz(ballot));
 
         // Iterate scan steps
-        InclusiveScanStep(output.value, scan_op, first_lane | SHFL_C, Int2Type<0>());
+        InclusiveScanStep(output.value, scan_op.op, first_lane | SHFL_C, Int2Type<0>());
 
 /*
         // Iterate scan steps
