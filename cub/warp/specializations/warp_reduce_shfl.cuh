@@ -55,9 +55,9 @@ template <
     int         PTX_ARCH>               ///< The PTX compute capability for which to to specialize this collective
 struct WarpReduceShfl
 {
-    /******************************************************************************
-     * Constants and type definitions
-     ******************************************************************************/
+    //---------------------------------------------------------------------
+    // Constants and type definitions
+    //---------------------------------------------------------------------
 
     enum
     {
@@ -106,16 +106,16 @@ struct WarpReduceShfl
     typedef NullType TempStorage;
 
 
-    /******************************************************************************
-     * Thread fields
-     ******************************************************************************/
+    //---------------------------------------------------------------------
+    // Thread fields
+    //---------------------------------------------------------------------
 
     int lane_id;
 
 
-    /******************************************************************************
-     * Construction
-     ******************************************************************************/
+    //---------------------------------------------------------------------
+    // Construction
+    //---------------------------------------------------------------------
 
     /// Constructor
     __device__ __forceinline__ WarpReduceShfl(
@@ -125,9 +125,9 @@ struct WarpReduceShfl
     {}
 
 
-    /******************************************************************************
-     * Utility methods
-     ******************************************************************************/
+    //---------------------------------------------------------------------
+    // Reduction steps
+    //---------------------------------------------------------------------
 
     /// Reduction (specialized for summation across uint32 types)
     __device__ __forceinline__ unsigned int ReduceStep(
@@ -326,9 +326,34 @@ struct WarpReduceShfl
     }
 
 
-    /******************************************************************************
-     * Interface
-     ******************************************************************************/
+    //---------------------------------------------------------------------
+    // Templated inclusive scan iteration
+    //---------------------------------------------------------------------
+
+    template <typename ReductionOp, int STEP>
+    __device__ __forceinline__ void ReduceStep(
+        T&              input,              ///< [in] Calling thread's input item.
+        ReductionOp     reduction_op,       ///< [in] Binary reduction operator
+        int             last_lane,          ///< [in] Index of last lane in segment
+        Int2Type<STEP>  step)
+    {
+        input = ReduceStep(input, reduction_op, last_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
+
+        ReduceStep(input, reduction_op, last_lane, Int2Type<STEP + 1>());
+    }
+
+    template <typename ReductionOp>
+    __device__ __forceinline__ void ReduceStep(
+        T&              input,              ///< [in] Calling thread's input item.
+        ReductionOp     reduction_op,       ///< [in] Binary reduction operator
+        int             last_lane,          ///< [in] Index of last lane in segment
+        Int2Type<STEPS> step)
+    {}
+
+
+    //---------------------------------------------------------------------
+    // Reduction operations
+    //---------------------------------------------------------------------
 
     /// Reduction
     template <
@@ -359,12 +384,15 @@ struct WarpReduceShfl
 
         T output = input;
 
+/*
         // Iterate reduction steps
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
             output = ReduceStep(output, reduction_op, last_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
+*/
+        ReduceStep(output, reduction_op, last_lane, Int2Type<0>());
 
         return output;
     }
@@ -377,7 +405,7 @@ struct WarpReduceShfl
         typename        ReductionOp>
     __device__ __forceinline__ T SegmentedReduce(
         T               input,              ///< [in] Calling thread's input
-        FlagT            flag,               ///< [in] Whether or not the current lane is a segment head/tail
+        FlagT           flag,               ///< [in] Whether or not the current lane is a segment head/tail
         ReductionOp     reduction_op)       ///< [in] Binary reduction operator
     {
         // Get the start flags for each thread in the warp.
@@ -396,13 +424,15 @@ struct WarpReduceShfl
         int last_lane = __clz(__brev(warp_flags));
 
         T output = input;
-
+/*
         // Iterate reduction steps
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
             output = ReduceStep(output, reduction_op, last_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
+*/
+        ReduceStep(output, reduction_op, last_lane, Int2Type<0>());
 
         return output;
     }
