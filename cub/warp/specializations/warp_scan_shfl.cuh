@@ -404,7 +404,7 @@ struct WarpScanShfl
         T               input,              ///< [in] The value to broadcast
         int             src_lane)           ///< [in] Which warp lane is to do the broadcasting
     {
-        return ShuffleBroadcast(input, src_lane, LOGICAL_WARP_THREADS);
+        return ShuffleIndex(input, src_lane, LOGICAL_WARP_THREADS);
     }
 
     //---------------------------------------------------------------------
