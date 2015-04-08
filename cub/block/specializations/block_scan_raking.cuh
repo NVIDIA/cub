@@ -355,16 +355,15 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp-synchronous scan
-            T exclusive_partial;
-            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, exclusive_partial, identity, scan_op, block_aggregate);
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
 
             // Obtain warp-wide prefix in lane0, then broadcast to other lanes
-            output = block_prefix_callback_op(block_aggregate);
-            output = WarpScan(temp_storage.warp_scan).Broadcast(output, 0);
+            T prefix = block_prefix_callback_op(block_aggregate);
+            prefix = WarpScan(temp_storage.warp_scan).Broadcast(prefix, 0);
 
-            // Update prefix with exclusive warpscan partial
-            if (linear_tid > 0)
-                output = scan_op(output, exclusive_partial);
+            output = (linear_tid > 0) ?
+                scan_op(prefix, output) :
+                prefix;
         }
         else
         {
@@ -523,16 +522,15 @@ struct BlockScanRaking
         if (WARP_SYNCHRONOUS)
         {
             // Short-circuit directly to warp-synchronous scan
-            T exclusive_partial;
-            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, exclusive_partial, scan_op, block_aggregate);
+            WarpScan(temp_storage.warp_scan).ExclusiveScan(input, output, scan_op, block_aggregate);
 
             // Obtain warp-wide prefix in lane0, then broadcast to other lanes
-            output = block_prefix_callback_op(block_aggregate);
-            output = WarpScan(temp_storage.warp_scan).Broadcast(output, 0);
+            T prefix = block_prefix_callback_op(block_aggregate);
+            prefix = WarpScan(temp_storage.warp_scan).Broadcast(prefix, 0);
 
-            // Update prefix with exclusive warpscan partial
-            if (linear_tid > 0)
-                output = scan_op(output, exclusive_partial);
+            output = (linear_tid > 0) ?
+                scan_op(prefix, output) :
+                prefix;
         }
         else
         {
