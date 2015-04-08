@@ -323,21 +323,21 @@ struct WarpScanShfl
     // Templated inclusive scan iteration
     //---------------------------------------------------------------------
 
-    template <typename ScanOp, int STEP>
+    template <typename _T, typename ScanOp, int STEP>
     __device__ __forceinline__ void InclusiveScanStep(
-        T&              input,              ///< [in] Calling thread's input item.
+        _T&             input,              ///< [in] Calling thread's input item.
         ScanOp          scan_op,            ///< [in] Binary scan operator
         int             first_lane,         ///< [in] Index of first lane in segment
         Int2Type<STEP>  step)               ///< [in] Marker type indicating scan step
     {
-        input = InclusiveScanStep(input, scan_op, first_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
+        input = InclusiveScanStep(input, scan_op, first_lane, 1 << STEP, Int2Type<IsInteger<_T>::IS_SMALL_UNSIGNED>());
 
         InclusiveScanStep(input, scan_op, first_lane, Int2Type<STEP + 1>());
     }
 
-    template <typename ScanOp>
+    template <typename _T, typename ScanOp>
     __device__ __forceinline__ void InclusiveScanStep(
-        T&              input,              ///< [in] Calling thread's input item.
+        _T&             input,              ///< [in] Calling thread's input item.
         ScanOp          scan_op,            ///< [in] Binary scan operator
         int             first_lane,         ///< [in] Index of first lane in segment
         Int2Type<STEPS> step)               ///< [in] Marker type indicating scan step
