@@ -298,13 +298,12 @@ struct ReduceByKeyOp
         const KeyValuePairT &first,       ///< First partial reduction
         const KeyValuePairT &second)      ///< Second partial reduction
     {
-        KeyValuePairT retval;
-        retval.key = second.key;
-        retval.value = (first.key != second.key) ?
-                second.value :                          // The second partial reduction spans a segment reset, so it's value aggregate becomes the running aggregate
-                op(first.value, second.value);          // The second partial reduction does not span a reset, so accumulate both into the running aggregate
-        return retval;
+        KeyValuePairT retval = second;
 
+        if (first.key == second.key)
+            retval.value = op(first.value, retval.value);
+
+        return retval;
     }
 };
 

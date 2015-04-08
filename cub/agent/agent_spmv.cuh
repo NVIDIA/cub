@@ -229,7 +229,7 @@ struct AgentSpmv
 
             // Smem needed for tile prefix sum
             typename BlockPrefixSumT::TempStorage prefix_sum;
-    
+
             // Smem needed for block exchange
             typename BlockExchangeT::TempStorage exchange;
         };
@@ -417,40 +417,60 @@ struct AgentSpmv
         OffsetT*    s_tile_row_end_offsets  = &temp_storage.merge_items[0].row_end_offset;
         ValueT*     s_tile_nonzeros         = &temp_storage.merge_items[tile_num_rows + ITEMS_PER_THREAD].nonzero;
 
+#if (CUB_PTX_ARCH >= 520)
+
+        // Gather the nonzeros for the merge tile into shared memory
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            int nonzero_idx = threadIdx.x + (ITEM * BLOCK_THREADS);
+
+            if (nonzero_idx < tile_num_nonzeros)
+            {
+
+                OffsetT column_idx              = wd_column_indices[tile_start_coord.y + nonzero_idx];
+                ValueT  value                   = wd_values[tile_start_coord.y + nonzero_idx];
+
+                ValueT  vector_value            = spmv_params.t_vector_x[column_idx];
+                vector_value                    = wd_vector_x[column_idx];
+
+                ValueT  nonzero                 = value * vector_value;
+
+                s_tile_nonzeros[nonzero_idx]    = nonzero;
+            }
+        }
+
+#else
+
+        // Gather the nonzeros for the merge tile into shared memory
         if (tile_num_nonzeros > 0)
         {
-            // Gather the nonzeros for the merge tile into shared memory
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
-                int     nonzero_idx         = threadIdx.x + (ITEM * BLOCK_THREADS);
-                nonzero_idx                 = CUB_MIN(nonzero_idx, tile_num_nonzeros - 1);
-                OffsetT column_idx          = wd_column_indices[tile_start_coord.y + nonzero_idx];
-                ValueT  value               = wd_values[tile_start_coord.y + nonzero_idx];
+                int     nonzero_idx             = threadIdx.x + (ITEM * BLOCK_THREADS);
+                nonzero_idx                     = CUB_MIN(nonzero_idx, tile_num_nonzeros - 1);
 
-                ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
+                OffsetT column_idx              = wd_column_indices[tile_start_coord.y + nonzero_idx];
+                ValueT  value                   = wd_values[tile_start_coord.y + nonzero_idx];
+
+                ValueT  vector_value            = spmv_params.t_vector_x[column_idx];
 #if (CUB_PTX_ARCH >= 350)
-                vector_value                = wd_vector_x[column_idx];
+                vector_value                    = wd_vector_x[column_idx];
 #endif
-                ValueT  nonzero             = value * vector_value;
+                ValueT  nonzero                 = value * vector_value;
 
-                s_tile_nonzeros[nonzero_idx]       = nonzero;
+                s_tile_nonzeros[nonzero_idx]    = nonzero;
             }
-
-            __syncthreads();    // Perf-sync
         }
+
+#endif
 
         // Gather the row end-offsets for the merge tile into shared memory
         #pragma unroll 1
-        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
+        for (int item = threadIdx.x; item <= tile_num_rows; item += BLOCK_THREADS)
         {
             s_tile_row_end_offsets[item] = wd_row_end_offsets[tile_start_coord.x + item];
-        }
-
-        // Pad the end of the merge tile's axis of row-end offsets
-        if (threadIdx.x < ITEMS_PER_THREAD)
-        {
-            s_tile_row_end_offsets[tile_num_rows + threadIdx.x] = spmv_params.num_nonzeros;
         }
 
         __syncthreads();
@@ -521,25 +541,22 @@ struct AgentSpmv
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            if (row_indices[ITEM] < tile_num_rows)
+            if (scan_item.key == row_indices[ITEM])
+                thread_segment[ITEM] = scan_item.value + thread_segment[ITEM];
+
+            if (HAS_ALPHA)
             {
-                if (scan_item.key == row_indices[ITEM])
-                    thread_segment[ITEM] = scan_item.value + thread_segment[ITEM];
-
-                if (HAS_ALPHA)
-                {
-                    thread_segment[ITEM] *= spmv_params.alpha;
-                }
-
-                if (HAS_BETA)
-                {
-                    // Update the output vector element
-                    ValueT addend = spmv_params.beta * wd_vector_y[tile_start_coord.x + row_indices[ITEM]];
-                    thread_segment[ITEM] += addend;
-                }
-
-                s_partials[row_indices[ITEM]] = thread_segment[ITEM];
+                thread_segment[ITEM] *= spmv_params.alpha;
             }
+
+            if (HAS_BETA)
+            {
+                // Update the output vector element
+                ValueT addend = spmv_params.beta * wd_vector_y[tile_start_coord.x + row_indices[ITEM]];
+                thread_segment[ITEM] += addend;
+            }
+
+            s_partials[row_indices[ITEM]] = thread_segment[ITEM];
         }
 
         __syncthreads();
