@@ -395,6 +395,17 @@ struct WarpScanShfl
         return (lane_id == 0) ? identity : exclusive;
     }
 
+    //---------------------------------------------------------------------
+    // Broadcast
+    //---------------------------------------------------------------------
+
+    /// Broadcast
+    __device__ __forceinline__ T Broadcast(
+        T               input,              ///< [in] The value to broadcast
+        int             src_lane)           ///< [in] Which warp lane is to do the broadcasting
+    {
+        return ShuffleBroadcast(input, src_lane, LOGICAL_WARP_THREADS);
+    }
 
     //---------------------------------------------------------------------
     // Inclusive operations
