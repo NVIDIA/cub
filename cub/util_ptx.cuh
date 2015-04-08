@@ -508,7 +508,16 @@ __device__ __forceinline__ T ShuffleUp(
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    ShuffleUp(input_alias, output_alias, src_offset, first_lane, Int2Type<WORDS - 1>());
+    #pragma unroll
+    for (int WORD = 0; WORD < WORDS; ++WORD)
+    {
+        unsigned int shuffle_word = input_alias[WORD];
+        asm volatile("shfl.up.b32 %0, %1, %2, %3;"
+            : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_offset), "r"(first_lane));
+        output_alias[WORD] = (ShuffleWord) shuffle_word;
+    }
+
+//    ShuffleUp(input_alias, output_alias, src_offset, first_lane, Int2Type<WORDS - 1>());
 
     return output;
 }
@@ -556,7 +565,16 @@ __device__ __forceinline__ T ShuffleDown(
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    ShuffleDown(input_alias, output_alias, src_offset, last_lane, Int2Type<WORDS - 1>());
+    #pragma unroll
+    for (int WORD = 0; WORD < WORDS; ++WORD)
+    {
+        unsigned int shuffle_word = input_alias[WORD];
+        asm volatile("shfl.down.b32 %0, %1, %2, %3;"
+            : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_offset), "r"(last_lane));
+        output_alias[WORD] = (ShuffleWord) shuffle_word;
+    }
+
+//    ShuffleDown(input_alias, output_alias, src_offset, last_lane, Int2Type<WORDS - 1>());
 
     return output;
 }
@@ -564,14 +582,14 @@ __device__ __forceinline__ T ShuffleDown(
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 /**
- * \brief Shuffle-broadcast for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><tt>src_lane</tt></sub>.  For \p src_lane < 0 or \p src_lane >= WARP_THREADS, then the thread's own \p input is returned to the thread.  ![](shfl_broadcast_logo.png)
+ * \brief Shuffle-index for any data type.  Each <em>warp-lane<sub>i</sub></em> obtains the value \p input contributed by <em>warp-lane</em><sub><tt>src_lane</tt></sub>.  For \p src_lane < 0 or \p src_lane >= WARP_THREADS, then the thread's own \p input is returned to the thread.  ![](shfl_broadcast_logo.png)
  * \ingroup WarpModule
  *
  * \par
  * - Available only for SM3.0 or newer
  */
 template <typename T>
-__device__ __forceinline__ T ShuffleBroadcast(
+__device__ __forceinline__ T ShuffleIndex(
     T               input,                                          ///< [in] The value to broadcast
     int             src_lane,                                       ///< [in] Which warp lane is to do the broadcasting
     int             logical_warp_threads)                           ///< [in] Number of threads per logical warp
@@ -584,7 +602,16 @@ __device__ __forceinline__ T ShuffleBroadcast(
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    ShuffleIdx(input_alias, output_alias, src_lane, logical_warp_threads - 1, Int2Type<WORDS - 1>());
+    #pragma unroll
+    for (int WORD = 0; WORD < WORDS; ++WORD)
+    {
+        unsigned int shuffle_word = input_alias[WORD];
+        asm volatile("shfl.idx.b32 %0, %1, %2, %3;"
+            : "=r"(shuffle_word) : "r"(shuffle_word), "r"(src_lane), "r"(logical_warp_threads - 1));
+        output_alias[WORD] = (ShuffleWord) shuffle_word;
+    }
+
+//    ShuffleIdx(input_alias, output_alias, src_lane, logical_warp_threads - 1, Int2Type<WORDS - 1>());
 
     return output;
 }
@@ -612,7 +639,7 @@ __device__ __forceinline__ T ShuffleBroadcast(
  *     double thread_data = ...
  *
  *     // Obtain item from thread 0
- *     double peer_data = ShuffleBroadcast(thread_data, 0);
+ *     double peer_data = ShuffleIndex(thread_data, 0);
  *
  * \endcode
  * \par
@@ -621,11 +648,11 @@ __device__ __forceinline__ T ShuffleBroadcast(
  *
  */
 template <typename T>
-__device__ __forceinline__ T ShuffleBroadcast(
+__device__ __forceinline__ T ShuffleIndex(
     T               input,              ///< [in] The value to broadcast
     int             src_lane)           ///< [in] Which warp lane is to do the broadcasting
 {
-    return ShuffleBroadcast(input, src_lane, CUB_PTX_WARP_THREADS);
+    return ShuffleIndex(input, src_lane, CUB_PTX_WARP_THREADS);
 }
 
 
