@@ -589,7 +589,7 @@ for the current feature release.
   - Added min, max, arg-min, and arg-max to cub::DeviceReduce
   - Added cub::DeviceSelect (select-unique, select-if, and select-flagged)
   - Added cub::DevicePartition (partition-if, partition-flagged)
-  - Added generic cub::ShuffleUp(), cub::ShuffleDown(), and cub::ShuffleBroadcast() for warp-wide communication of arbitrary data types (SM3x+)
+  - Added generic cub::ShuffleUp(), cub::ShuffleDown(), and cub::ShuffleIndex() for warp-wide communication of arbitrary data types (SM3x+)
   - Added cub::MaxSmOccupancy() for accurately determining SM occupancy for any given kernel function pointer
   - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
