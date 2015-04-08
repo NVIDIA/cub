@@ -335,7 +335,7 @@ struct WarpScanShfl
         InclusiveScanStep(input, scan_op, first_lane, Int2Type<STEP + 1>());
     }
 
-    template <typename _T, typename ScanOp>
+    template <typename ScanOp>
     __device__ __forceinline__ void InclusiveScanStep(
         T&              input,              ///< [in] Calling thread's input item.
         ScanOp          scan_op,            ///< [in] Binary scan operator
