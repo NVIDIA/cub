@@ -361,9 +361,9 @@ struct BlockScanRaking
             T prefix = block_prefix_callback_op(block_aggregate);
             prefix = WarpScan(temp_storage.warp_scan).Broadcast(prefix, 0);
 
-            output = (linear_tid > 0) ?
-                scan_op(prefix, output) :
-                prefix;
+            output = scan_op(prefix, output);
+            if (linear_tid == 0)
+                output = prefix;
         }
         else
         {
@@ -528,9 +528,9 @@ struct BlockScanRaking
             T prefix = block_prefix_callback_op(block_aggregate);
             prefix = WarpScan(temp_storage.warp_scan).Broadcast(prefix, 0);
 
-            output = (linear_tid > 0) ?
-                scan_op(prefix, output) :
-                prefix;
+            output = scan_op(prefix, output);
+            if (linear_tid == 0)
+                output = prefix;
         }
         else
         {
