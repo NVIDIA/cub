@@ -19,7 +19,7 @@
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
  * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIAeBILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
@@ -472,6 +472,7 @@ void RunTests(
     int                 grid2d,
     int                 grid3d,
     int                 wheel,
+    int                 dense,
     int                 timing_iterations,
     float               bandwidth_GBs,
     cusparseHandle_t    cusparse)
@@ -488,17 +489,27 @@ void RunTests(
     else if (grid2d > 0)
     {
         // Generate 2D lattice
+        printf("grid2d_%d, ", grid2d);
         coo_matrix.InitGrid2d(grid2d, false);
     }
     else if (grid3d > 0)
     {
         // Generate 3D lattice
+        printf("grid3d_%d, ", grid2d);
         coo_matrix.InitGrid3d(grid3d, false);
     }
     else if (wheel > 0)
     {
         // Generate wheel graph
+        printf("wheel_%d, ", grid2d);
         coo_matrix.InitWheel(wheel);
+    }
+    else if (dense > 0)
+    {
+        // Generate dense graph
+        OffsetT rows = (1<<24) / dense;               // 16M nnz
+        printf("dense_%dx%d, ", rows, dense);
+        coo_matrix.InitDense(rows, dense);
     }
     else
     {
@@ -553,18 +564,19 @@ void RunTests(
         vector_y_in[row] = 1.0;
 
     // Compute reference answer
-    if (!g_quiet) {
-        printf("\n\nSequential: "); fflush(stdout);
-    }
-    CpuTimer cpu_timer;
-    cpu_timer.Start();
-    for (int it = 0; it < timing_iterations; ++it)
+    SpmvGold(csr_matrix, vector_x, vector_y_in, vector_y_out, alpha, beta);
+    if (g_quiet)
     {
-        SpmvGold(csr_matrix, vector_x, vector_y_in, vector_y_out, alpha, beta);
+        CpuTimer cpu_timer;
+        cpu_timer.Start();
+        for (int it = 0; it < timing_iterations; ++it)
+        {
+            SpmvGold(csr_matrix, vector_x, vector_y_in, vector_y_out, alpha, beta);
+        }
+        cpu_timer.Stop();
+        float avg_millis = cpu_timer.ElapsedMillis() / timing_iterations;
+        DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
     }
-    cpu_timer.Stop();
-    float avg_millis = cpu_timer.ElapsedMillis();
-    DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
 
     // Allocate and initialize GPU problem
     SpmvParams<ValueT, OffsetT> params;
@@ -588,7 +600,7 @@ void RunTests(
     if (!g_quiet) {
         printf("\n\nIO Proxy: "); fflush(stdout);
     }
-    avg_millis = IoSpmv(params, timing_iterations);
+    float avg_millis = IoSpmv(params, timing_iterations);
     DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
 
     if (!g_quiet) {
@@ -638,6 +650,8 @@ int main(int argc, char **argv)
             "\n\t"
                 "--mtx=<matrix market file> "
             "\n\t"
+                "--dense=<cols>"
+            "\n\t"
                 "--grid2d=<width>"
             "\n\t"
                 "--grid3d=<width>"
@@ -653,6 +667,7 @@ int main(int argc, char **argv)
     int                 grid2d              = -1;
     int                 grid3d              = -1;
     int                 wheel               = -1;
+    int                 dense               = -1;
     int                 timing_iterations   = 100;
     float               alpha               = 1.0;
     float               beta                = 0.0;
@@ -667,6 +682,7 @@ int main(int argc, char **argv)
     args.GetCmdLineArgument("grid2d", grid2d);
     args.GetCmdLineArgument("grid3d", grid3d);
     args.GetCmdLineArgument("wheel", wheel);
+    args.GetCmdLineArgument("dense", dense);
     args.GetCmdLineArgument("alpha", alpha);
     args.GetCmdLineArgument("beta", beta);
 
@@ -687,11 +703,11 @@ int main(int argc, char **argv)
     // Run test(s)
     if (fp64)
     {
-//        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
+//        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, bandwidth_GBs, cusparse);
     }
     else
     {
-        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, timing_iterations, bandwidth_GBs, cusparse);
+        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, bandwidth_GBs, cusparse);
     }
 
     CubDebugExit(cudaDeviceSynchronize());
