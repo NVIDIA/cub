@@ -170,10 +170,7 @@ struct AgentSpmv
     typedef KeyValuePair<OffsetT, ValueT> KeyValuePairT;
 
     // Reduce-value-by-segment scan operator
-    typedef ReduceByKeyOp<
-            cub::Sum,
-            KeyValuePairT>
-        ReduceBySegmentOpT;
+    typedef ReduceByKeyOp<cub::Sum> ReduceBySegmentOpT;
 
     // BlockReduce specialization
     typedef BlockReduce<
@@ -668,8 +665,7 @@ struct AgentSpmv
      */
     __device__ __forceinline__ void ConsumeTile(
         CoordinateT*    d_tile_coordinates,     ///< [in] Pointer to the temporary array of tile starting coordinates
-        OffsetT*        d_tile_carry_rows,      ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-        ValueT*         d_tile_carry_values,    ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
+        KeyValuePairT*  d_tile_carry_pairs,     ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
         int             num_merge_tiles)        ///< [in] Number of merge tiles
     {
         int tile_idx = (blockIdx.x * gridDim.y) + blockIdx.y;    // Current tile index
@@ -691,12 +687,11 @@ struct AgentSpmv
         if (threadIdx.x == 0)
         {
             if (HAS_ALPHA)
-            {
                 tile_carry.value *= spmv_params.alpha;
-            }
 
-            d_tile_carry_rows[tile_idx]     = tile_start_coord.x + tile_carry.key;
-            d_tile_carry_values[tile_idx]   = tile_carry.value;
+            tile_carry.key += tile_start_coord.x;
+
+            d_tile_carry_pairs[tile_idx]    = tile_carry;
         }
     }
 

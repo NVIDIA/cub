@@ -442,9 +442,9 @@ struct ScanTileState<T, false>
  *
  */
 template <
-    typename    Value,
-    typename    OffsetT,
-    bool        SINGLE_WORD = (Traits<Value>::PRIMITIVE) && (sizeof(Value) + sizeof(OffsetT) < 16)>
+    typename    ValueT,
+    typename    KeyT,
+    bool        SINGLE_WORD = (Traits<ValueT>::PRIMITIVE) && (sizeof(ValueT) + sizeof(KeyT) < 16)>
 struct ReduceByKeyScanTileState;
 
 
@@ -453,12 +453,12 @@ struct ReduceByKeyScanTileState;
  * cannot be combined into one machine word.
  */
 template <
-    typename    Value,
-    typename    OffsetT>
-struct ReduceByKeyScanTileState<Value, OffsetT, false> :
-    ScanTileState<ItemOffsetPair<Value, OffsetT> >
+    typename    ValueT,
+    typename    KeyT>
+struct ReduceByKeyScanTileState<ValueT, KeyT, false> :
+    ScanTileState<KeyValuePair<KeyT, ValueT> >
 {
-    typedef ScanTileState<ItemOffsetPair<Value, OffsetT> > SuperClass;
+    typedef ScanTileState<KeyValuePair<KeyT, ValueT> > SuperClass;
 
     /// Constructor
     __host__ __device__ __forceinline__
@@ -471,16 +471,16 @@ struct ReduceByKeyScanTileState<Value, OffsetT, false> :
  * can be combined into one machine word that can be read/written coherently in a single access.
  */
 template <
-    typename Value,
-    typename OffsetT>
-struct ReduceByKeyScanTileState<Value, OffsetT, true>
+    typename ValueT,
+    typename KeyT>
+struct ReduceByKeyScanTileState<ValueT, KeyT, true>
 {
-    typedef ItemOffsetPair<Value, OffsetT>ReductionOffsetPair;
+    typedef KeyValuePair<KeyT, ValueT>KeyValuePairT;
 
     // Constants
     enum
     {
-        PAIR_SIZE           = sizeof(Value) + sizeof(OffsetT),
+        PAIR_SIZE           = sizeof(ValueT) + sizeof(KeyT),
         TXN_WORD_SIZE       = 1 << Log2<PAIR_SIZE + 1>::VALUE,
         STATUS_WORD_SIZE    = TXN_WORD_SIZE - PAIR_SIZE,
 
@@ -503,25 +503,25 @@ struct ReduceByKeyScanTileState<Value, OffsetT, true>
             long long,
             int>::Type>::Type TxnWord;
 
-    // Device word type (for when sizeof(Value) == sizeof(OffsetT))
+    // Device word type (for when sizeof(ValueT) == sizeof(KeyT))
     struct TileDescriptorBigStatus
     {
-        OffsetT     offset;
-        Value       value;
+        KeyT        key;
+        ValueT      value;
         StatusWord  status;
     };
 
-    // Device word type (for when sizeof(Value) != sizeof(OffsetT))
+    // Device word type (for when sizeof(ValueT) != sizeof(KeyT))
     struct TileDescriptorLittleStatus
     {
-        Value       value;
+        ValueT      key;
         StatusWord  status;
-        OffsetT     offset;
+        KeyT        offset;
     };
 
     // Device word type
     typedef typename If<
-            (sizeof(Value) == sizeof(OffsetT)),
+            (sizeof(ValueT) == sizeof(KeyT)),
             TileDescriptorBigStatus,
             TileDescriptorLittleStatus>::Type
         TileDescriptor;
@@ -587,12 +587,12 @@ struct ReduceByKeyScanTileState<Value, OffsetT, true>
     /**
      * Update the specified tile's inclusive value and corresponding status
      */
-    __device__ __forceinline__ void SetInclusive(int tile_idx, ReductionOffsetPair tile_inclusive)
+    __device__ __forceinline__ void SetInclusive(int tile_idx, KeyValuePairT tile_inclusive)
     {
         TileDescriptor tile_descriptor;
         tile_descriptor.status = SCAN_TILE_INCLUSIVE;
         tile_descriptor.value = tile_inclusive.value;
-        tile_descriptor.offset = tile_inclusive.offset;
+        tile_descriptor.key = tile_inclusive.key;
 
         TxnWord alias;
         *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
@@ -603,12 +603,12 @@ struct ReduceByKeyScanTileState<Value, OffsetT, true>
     /**
      * Update the specified tile's partial value and corresponding status
      */
-    __device__ __forceinline__ void SetPartial(int tile_idx, ReductionOffsetPair tile_partial)
+    __device__ __forceinline__ void SetPartial(int tile_idx, KeyValuePairT tile_partial)
     {
         TileDescriptor tile_descriptor;
         tile_descriptor.status = SCAN_TILE_PARTIAL;
         tile_descriptor.value = tile_partial.value;
-        tile_descriptor.offset = tile_partial.offset;
+        tile_descriptor.key = tile_partial.key;
 
         TxnWord alias;
         *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
@@ -619,9 +619,9 @@ struct ReduceByKeyScanTileState<Value, OffsetT, true>
      * Wait for the corresponding tile to become non-invalid
      */
     __device__ __forceinline__ void WaitForValid(
-        int             tile_idx,
-        StatusWord      &status,
-        ReductionOffsetPair  &value)
+        int                     tile_idx,
+        StatusWord              &status,
+        KeyValuePairT           &value)
     {
         // Use warp-any to determine when all threads have valid status
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
@@ -635,7 +635,7 @@ struct ReduceByKeyScanTileState<Value, OffsetT, true>
 
         status = tile_descriptor.status;
         value.value = tile_descriptor.value;
-        value.offset = tile_descriptor.offset;
+        value.key = tile_descriptor.key;
     }
 
 };

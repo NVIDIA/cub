@@ -67,8 +67,7 @@ template <
     typename            ScanTileStateT,                         ///< Tile status interface type
     typename            EqualityOpT,                            ///< KeyT equality operator type
     typename            ReductionOpT,                           ///< ValueT reduction operator type
-    typename            OffsetT,                                ///< Signed integer type for global offsets
-    bool                IS_SEGMENTED_REDUCTION_FIXUP>           ///< Whether this agent is performing the inter-block fixup step for a global segmented reduction
+    typename            OffsetT>                                ///< Signed integer type for global offsets
 __launch_bounds__ (int(AgentReduceByKeyPolicyT::BLOCK_THREADS))
 __global__ void DeviceReduceByKeyKernel(
     KeysInputIteratorT          d_keys_in,                      ///< [in] Pointer to the input sequence of keys
@@ -92,8 +91,7 @@ __global__ void DeviceReduceByKeyKernel(
             NumRunsOutputIteratorT,
             EqualityOpT,
             ReductionOpT,
-            OffsetT,
-            IS_SEGMENTED_REDUCTION_FIXUP>
+            OffsetT>
         AgentReduceByKeyT;
 
     // Shared memory for AgentReduceByKey
@@ -124,8 +122,7 @@ template <
     typename    NumRunsOutputIteratorT,     ///< Output iterator type for recording number of segments encountered
     typename    EqualityOpT,                ///< KeyT equality operator type
     typename    ReductionOpT,               ///< ValueT reduction operator type
-    typename    OffsetT,                    ///< Signed integer type for global offsets
-    bool        IS_SEGMENTED_REDUCTION_FIXUP = false>   ///< Whether this agent is performing the inter-block fixup step for a global segmented reduction
+    typename    OffsetT>                    ///< Signed integer type for global offsets
 struct DispatchReduceByKey
 {
     //-------------------------------------------------------------------------
@@ -518,7 +515,7 @@ struct DispatchReduceByKey
                 debug_synchronous,
                 ptx_version,
                 DeviceScanInitKernel<OffsetT, ScanTileStateT>,
-                DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, ScanTileStateT, EqualityOpT, ReductionOpT, OffsetT, IS_SEGMENTED_REDUCTION_FIXUP>,
+                DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, ScanTileStateT, EqualityOpT, ReductionOpT, OffsetT>,
                 reduce_by_key_config))) break;
         }
         while (0);

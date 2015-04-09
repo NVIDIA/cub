@@ -112,7 +112,7 @@ struct AgentRle
     typedef typename std::iterator_traits<LengthsOutputIteratorT>::value_type LengthT;
 
     // Tuple type for scanning (pairs run-length and run-index)
-    typedef ItemOffsetPair<LengthT, OffsetT> LengthOffsetPair;
+    typedef KeyValuePair<OffsetT, LengthT> LengthOffsetPair;
 
     // Tile status descriptor interface type
     typedef ReduceByKeyScanTileState<LengthT, OffsetT> ScanTileStateT;
@@ -187,17 +187,17 @@ struct AgentRle
     typedef WarpScan<LengthOffsetPair> WarpScanPairs;
 
     // Reduce-length-by-run scan operator
-    typedef ReduceBySegmentOp<cub::Sum, LengthOffsetPair> ReduceBySegmentOp;
+    typedef ReduceBySegmentOp<cub::Sum> ReduceBySegmentOpT;
 
     // Callback type for obtaining tile prefix during block scan
     typedef TilePrefixCallbackOp<
             LengthOffsetPair,
-            ReduceBySegmentOp,
+            ReduceBySegmentOpT,
             ScanTileStateT>
         TilePrefixCallbackOpT;
 
     // Warp exchange types
-    typedef WarpExchange<LengthOffsetPair, ITEMS_PER_THREAD>    WarpExchangePairs;
+    typedef WarpExchange<LengthOffsetPair, ITEMS_PER_THREAD>        WarpExchangePairs;
 
     typedef typename If<STORE_WARP_TIME_SLICING, typename WarpExchangePairs::TempStorage, NullType>::Type WarpExchangePairsStorage;
 
@@ -252,7 +252,7 @@ struct AgentRle
     LengthsOutputIteratorT          d_lengths_out;      ///< Output run lengths
 
     EqualityOpT                     equality_op;        ///< T equality operator
-    ReduceBySegmentOp               scan_op;            ///< Reduce-length-by-flag scan operator
+    ReduceBySegmentOpT              scan_op;            ///< Reduce-length-by-flag scan operator
     OffsetT                         num_items;          ///< Total number of input items
 
 
@@ -347,7 +347,7 @@ struct AgentRle
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            lengths_and_num_runs[ITEM].offset   = head_flags[ITEM] && (!tail_flags[ITEM]);
+            lengths_and_num_runs[ITEM].key   = head_flags[ITEM] && (!tail_flags[ITEM]);
             lengths_and_num_runs[ITEM].value    = ((!head_flags[ITEM]) || (!tail_flags[ITEM]));
         }
     }
@@ -371,7 +371,7 @@ struct AgentRle
         int lane_id = LaneId();
 
         LengthOffsetPair identity;
-        identity.offset = 0;
+        identity.key = 0;
         identity.value = 0;
 
         LengthOffsetPair thread_inclusive;
@@ -454,7 +454,7 @@ struct AgentRle
                     (ITEM * WARP_THREADS) + lane_id;
 
                 // Scatter offset
-                d_offsets_out[item_offset] = lengths_and_offsets[ITEM].offset;
+                d_offsets_out[item_offset] = lengths_and_offsets[ITEM].key;
 
                 // Scatter length if not the first (global) length
                 if ((!FIRST_TILE) || (ITEM != 0) || (threadIdx.x > 0))
@@ -488,7 +488,7 @@ struct AgentRle
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-            run_offsets[ITEM] = lengths_and_offsets[ITEM].offset;
+            run_offsets[ITEM] = lengths_and_offsets[ITEM].key;
             run_lengths[ITEM] = lengths_and_offsets[ITEM].value;
         }
 
@@ -547,7 +547,7 @@ struct AgentRle
                     thread_num_runs_exclusive_in_warp[ITEM];
 
                 // Scatter offset
-                d_offsets_out[item_offset] = lengths_and_offsets[ITEM].offset;
+                d_offsets_out[item_offset] = lengths_and_offsets[ITEM].key;
 
                 // Scatter length if not the first (global) length
                 if (item_offset >= 1)
@@ -656,7 +656,7 @@ struct AgentRle
                 tile_status.SetInclusive(0, tile_aggregate);
 
             // Update thread_exclusive_in_warp to fold in warp run-length
-            if (thread_exclusive_in_warp.offset == 0)
+            if (thread_exclusive_in_warp.key == 0)
                 thread_exclusive_in_warp.value += warp_exclusive_in_tile.value;
 
             LengthOffsetPair    lengths_and_offsets[ITEMS_PER_THREAD];
@@ -672,16 +672,16 @@ struct AgentRle
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
                 lengths_and_offsets[ITEM].value         = lengths_and_num_runs2[ITEM].value;
-                lengths_and_offsets[ITEM].offset        = tile_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                thread_num_runs_exclusive_in_warp[ITEM] = (lengths_and_num_runs[ITEM].offset) ?
-                                                                lengths_and_num_runs2[ITEM].offset :         // keep
+                lengths_and_offsets[ITEM].key        = tile_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+                thread_num_runs_exclusive_in_warp[ITEM] = (lengths_and_num_runs[ITEM].key) ?
+                                                                lengths_and_num_runs2[ITEM].key :         // keep
                                                                 WARP_THREADS * ITEMS_PER_THREAD;            // discard
             }
 
-            OffsetT tile_num_runs_aggregate              = tile_aggregate.offset;
+            OffsetT tile_num_runs_aggregate              = tile_aggregate.key;
             OffsetT tile_num_runs_exclusive_in_global    = 0;
-            OffsetT warp_num_runs_aggregate              = warp_aggregate.offset;
-            OffsetT warp_num_runs_exclusive_in_tile      = warp_exclusive_in_tile.offset;
+            OffsetT warp_num_runs_aggregate              = warp_aggregate.key;
+            OffsetT warp_num_runs_exclusive_in_tile      = warp_exclusive_in_tile.key;
 
             // Scatter
             Scatter<true>(
@@ -747,7 +747,7 @@ struct AgentRle
 
             // Update thread_exclusive_in_warp to fold in warp and tile run-lengths
             LengthOffsetPair thread_exclusive = scan_op(tile_exclusive_in_global, warp_exclusive_in_tile);
-            if (thread_exclusive_in_warp.offset == 0)
+            if (thread_exclusive_in_warp.key == 0)
                 thread_exclusive_in_warp.value += thread_exclusive.value;
 
             // Downsweep scan through lengths_and_num_runs
@@ -762,16 +762,16 @@ struct AgentRle
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
             {
                 lengths_and_offsets[ITEM].value         = lengths_and_num_runs2[ITEM].value;
-                lengths_and_offsets[ITEM].offset        = tile_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                thread_num_runs_exclusive_in_warp[ITEM] = (lengths_and_num_runs[ITEM].offset) ?
-                                                                lengths_and_num_runs2[ITEM].offset :         // keep
+                lengths_and_offsets[ITEM].key        = tile_offset + (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+                thread_num_runs_exclusive_in_warp[ITEM] = (lengths_and_num_runs[ITEM].key) ?
+                                                                lengths_and_num_runs2[ITEM].key :         // keep
                                                                 WARP_THREADS * ITEMS_PER_THREAD;            // discard
             }
 
-            OffsetT tile_num_runs_aggregate              = tile_aggregate.offset;
-            OffsetT tile_num_runs_exclusive_in_global    = tile_exclusive_in_global.offset;
-            OffsetT warp_num_runs_aggregate              = warp_aggregate.offset;
-            OffsetT warp_num_runs_exclusive_in_tile      = warp_exclusive_in_tile.offset;
+            OffsetT tile_num_runs_aggregate              = tile_aggregate.key;
+            OffsetT tile_num_runs_exclusive_in_global    = tile_exclusive_in_global.key;
+            OffsetT warp_num_runs_aggregate              = warp_aggregate.key;
+            OffsetT warp_num_runs_exclusive_in_tile      = warp_exclusive_in_tile.key;
 
             // Scatter
             Scatter<false>(
@@ -815,11 +815,11 @@ struct AgentRle
             if (threadIdx.x == 0)
             {
                 // Output the total number of items selected
-                *d_num_runs_out = running_total.offset;
+                *d_num_runs_out = running_total.key;
 
                 // The inclusive prefix contains accumulated length reduction for the last run
-                if (running_total.offset > 0)
-                    d_lengths_out[running_total.offset - 1] = running_total.value;
+                if (running_total.key > 0)
+                    d_lengths_out[running_total.key - 1] = running_total.value;
             }
         }
     }
