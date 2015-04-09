@@ -222,10 +222,6 @@ struct AgentSpmv
             // Smem needed for block exchange
             typename BlockExchangeT::TempStorage exchange;
 
-        };
-
-        union 
-        {
             // Smem needed for block-wide reduction
             typename BlockReduceT::TempStorage reduce;
 
@@ -427,6 +423,9 @@ struct AgentSpmv
         {
             int nonzero_idx = threadIdx.x + (ITEM * BLOCK_THREADS);
 
+            ColumnIndicesIteratorT ci = wd_column_indices + tile_start_coord.y + nonzero_idx;
+            ValueIteratorT a = wd_values + tile_start_coord.y + nonzero_idx;
+
             if (nonzero_idx < tile_num_nonzeros)
             {
 
@@ -583,6 +582,8 @@ struct AgentSpmv
             row_indices[ITEM] = thread_current_coord.x;
         }
 
+        __syncthreads();
+
         // Block-wide reduce-value-by-segment
         KeyValuePairT       tile_carry;
         ReduceBySegmentOpT  scan_op;
@@ -597,6 +598,8 @@ struct AgentSpmv
             scan_item.key = row_indices[0];
             scan_item.value = 0.0;
         }
+
+        __syncthreads();
 
         // Scan downsweep and scatter
         ValueT* s_partials = &temp_storage.merge_items[0].nonzero;
