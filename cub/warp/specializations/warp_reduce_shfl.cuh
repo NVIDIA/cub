@@ -257,20 +257,20 @@ struct WarpReduceShfl
     }
 
 
-    /// Reduction (specialized for swizzled ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<ValueT, OffsetT> types)
+    /// Reduction (specialized for swizzled ReduceBySegmentOp<cub::Sum> across KeyValuePair<OffsetT, ValueT> types)
     template <typename ValueT, typename OffsetT>
-    __device__ __forceinline__ ItemOffsetPair<ValueT, OffsetT> ReduceStep(
-        ItemOffsetPair<ValueT, OffsetT>                                                 input,              ///< [in] Calling thread's input item.
-        SwizzleScanOp<ReduceBySegmentOp<cub::Sum, ItemOffsetPair<ValueT, OffsetT> > >   reduction_op,       ///< [in] Binary reduction operator
-        int                                                                             last_lane,          ///< [in] Index of last lane in segment
-        int                                                                             offset)             ///< [in] Up-offset to pull from
+    __device__ __forceinline__ KeyValuePair<OffsetT, ValueT> ReduceStep(
+        KeyValuePair<OffsetT, ValueT>                 input,              ///< [in] Calling thread's input item.
+        SwizzleScanOp<ReduceBySegmentOp<cub::Sum> >   reduction_op,       ///< [in] Binary reduction operator
+        int                                           last_lane,          ///< [in] Index of last lane in segment
+        int                                           offset)             ///< [in] Up-offset to pull from
     {
-        ItemOffsetPair<ValueT, OffsetT> output;
+        KeyValuePair<OffsetT, ValueT> output;
 
         output.value = ReduceStep(input.value, cub::Sum(), last_lane, offset, Int2Type<IsInteger<ValueT>::IS_SMALL_UNSIGNED>());
-        output.offset = ReduceStep(input.offset, cub::Sum(), last_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_UNSIGNED>());
+        output.key = ReduceStep(input.key, cub::Sum(), last_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_UNSIGNED>());
 
-        if (input.offset > 0)
+        if (input.key > 0)
             output.value = input.value;
 
         return output;

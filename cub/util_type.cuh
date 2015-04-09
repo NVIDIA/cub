@@ -501,7 +501,7 @@ struct Uninitialized
 
 /**
  * \brief An item value paired with a corresponding offset
- */
+ * /
 template <typename _T, typename _OffsetT>
 struct ItemOffsetPair
 {
@@ -520,14 +520,13 @@ struct ItemOffsetPair
 
     T                                       value;      ///< Item value
 
-
     /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const ItemOffsetPair &b)
     {
         return (value != b.value) || (offset != b.offset);
     }
 };
-
+*/
 
 /**
  * \brief A key identifier paired with a corresponding value
@@ -538,7 +537,16 @@ struct KeyValuePair
     typedef _Key    Key;                ///< Key data type
     typedef _Value  Value;              ///< Value data type
 
+#if (CUB_PTX_ARCH == 0)
+    union
+    {
+        Key                                     key;        ///< Item key
+        typename UnitWord<Value>::DeviceWord    align0;     ///< Alignment/padding (for Win32 consistency between host/device)
+    };
+#else
     Key                     key;        ///< Item key
+#endif
+
     Value                   value;      ///< Item value
 
     /// Inequality operator

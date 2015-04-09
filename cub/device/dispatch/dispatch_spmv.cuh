@@ -37,7 +37,8 @@
 #include <stdio.h>
 #include <iterator>
 
-#include "dispatch_reduce_by_key.cuh"
+#include "../../agent/single_pass_scan_operators.cuh"
+#include "../../agent/agent_segment_fixup.cuh"
 #include "../../agent/agent_spmv.cuh"
 #include "../../util_type.cuh"
 #include "../../util_debug.cuh"
@@ -69,7 +70,7 @@ template <
 __global__ void DeviceSpmvSearchKernel(
     ScanTileStateT  tile_state,                 ///< [in] Tile status interface for fixup reduce-by-key kernel
     int             num_merge_tiles,            ///< [in] Number of SpMV merge tiles (spmv grid size)
-    int             num_reduce_by_key_tiles,    ///< [in] Number of reduce-by-key tiles (fixup grid size)
+    int             num_segment_fixup_tiles,    ///< [in] Number of reduce-by-key tiles (fixup grid size)
     CoordinateT*    d_tile_coordinates,         ///< [out] Pointer to the temporary array of tile starting coordinates
     SpmvParamsT     spmv_params)                ///< [in] SpMV input parameter bundle
 {
@@ -88,7 +89,7 @@ __global__ void DeviceSpmvSearchKernel(
         RowOffsetsIteratorT;
 
     // Initialize tile status
-    tile_state.InitializeStatus(num_reduce_by_key_tiles);
+    tile_state.InitializeStatus(num_segment_fixup_tiles);
 
     // Find the starting coordinate for all tiles (plus the end coordinate of the last one)
     int tile_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
@@ -127,8 +128,7 @@ __launch_bounds__ (int(SpmvPolicyT::BLOCK_THREADS))
 __global__ void DeviceSpmvKernel(
     SpmvParams<ValueT, OffsetT>     spmv_params,                ///< [in] SpMV input parameter bundle
     CoordinateT*                    d_tile_coordinates,         ///< [in] Pointer to the temporary array of tile starting coordinates
-    OffsetT*                        d_tile_carry_rows,          ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-    ValueT*                         d_tile_carry_values,        ///< [out] Pointer to the temporary array carry-out dot product partial-sums, one per block
+    KeyValuePair<OffsetT,ValueT>*   d_tile_carry_pairs,         ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
     int                             num_tiles)                  ///< [in] Number of merge tiles
 {
     // Spmv agent type specialization
@@ -145,11 +145,47 @@ __global__ void DeviceSpmvKernel(
 
     AgentSpmvT(temp_storage, spmv_params).ConsumeTile(
         d_tile_coordinates,
-        d_tile_carry_rows,
-        d_tile_carry_values,
+        d_tile_carry_pairs,
         num_tiles);
 }
 
+
+/**
+ * Multi-block reduce-by-key sweep kernel entry point
+ */
+template <
+    typename    AgentSegmentFixupPolicyT,       ///< Parameterized AgentSegmentFixupPolicy tuning policy type
+    typename    PairsInputIteratorT,            ///< Random-access input iterator type for keys
+    typename    AggregatesOutputIteratorT,      ///< Random-access output iterator type for values
+    typename    OffsetT,                        ///< Signed integer type for global offsets
+    typename    ScanTileStateT>                 ///< Tile status interface type
+__launch_bounds__ (int(AgentSegmentFixupPolicyT::BLOCK_THREADS))
+__global__ void DeviceSegmentFixupKernel(
+    PairsInputIteratorT         d_pairs_in,         ///< [in] Pointer to the array carry-out dot product row-ids, one per spmv block
+    AggregatesOutputIteratorT   d_aggregates_out,   ///< [in,out] Output value aggregates
+    OffsetT                     num_items,          ///< [in] Total number of items to select from
+    int                         num_tiles,          ///< [in] Total number of tiles for the entire problem
+    ScanTileStateT              tile_state)         ///< [in] Tile status interface
+{
+    // Thread block type for reducing tiles of value segments
+    typedef AgentSegmentFixup<
+            AgentSegmentFixupPolicyT,
+            PairsInputIteratorT,
+            AggregatesOutputIteratorT,
+            cub::Equality,
+            cub::Sum,
+            OffsetT>
+        AgentSegmentFixupT;
+
+    // Shared memory for AgentSegmentFixup
+    __shared__ typename AgentSegmentFixupT::TempStorage temp_storage;
+
+    // Process tiles
+    AgentSegmentFixupT(temp_storage, d_pairs_in, d_aggregates_out, cub::Equality(), cub::Sum()).ConsumeRange(
+        num_items,
+        num_tiles,
+        tile_state);
+}
 
 
 /******************************************************************************
@@ -179,12 +215,11 @@ struct DispatchSpmv
     // 2D merge path coordinate type
     typedef typename CubVector<OffsetT, 2>::Type CoordinateT;
 
-    // Reduce-by-key fixup dispatch type
-    typedef DispatchReduceByKey<OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, cub::Equality, cub::Sum, OffsetT>
-        DispatchReduceByKeyT;
+    // Tile status descriptor interface type
+    typedef ReduceByKeyScanTileState<ValueT, OffsetT> ScanTileStateT;
 
-    // Reduce-by-key tile status descriptor interface type
-    typedef typename DispatchReduceByKeyT::ScanTileStateT ScanTileStateT;
+    // Tuple type for scanning (pairs accumulated segment-value with segment-index)
+    typedef KeyValuePair<OffsetT, ValueT> KeyValuePairT;
 
 
     //---------------------------------------------------------------------
@@ -192,7 +227,7 @@ struct DispatchSpmv
     //---------------------------------------------------------------------
 
     /// SM11
-    struct Policy110 : DispatchReduceByKeyT::Policy110
+    struct Policy110
     {
         typedef AgentSpmvPolicy<
                 128,
@@ -205,6 +240,14 @@ struct DispatchSpmv
                 false,
                 BLOCK_SCAN_WARP_SCANS>
             SpmvPolicyT;
+
+        typedef AgentSegmentFixupPolicy<
+                128,
+                4,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_DEFAULT,
+                BLOCK_SCAN_WARP_SCANS>
+            SegmentFixupPolicyT;
     };
 
     /// SM20
@@ -222,13 +265,13 @@ struct DispatchSpmv
                 BLOCK_SCAN_RAKING>
             SpmvPolicyT;
 
-        typedef AgentReduceByKeyPolicy<
+        typedef AgentSegmentFixupPolicy<
                 128,
                 4,
                 BLOCK_LOAD_VECTORIZE,
                 LOAD_DEFAULT,
                 BLOCK_SCAN_WARP_SCANS>
-            ReduceByKeyPolicyT;
+            SegmentFixupPolicyT;
 
     };
 
@@ -249,13 +292,13 @@ struct DispatchSpmv
                 BLOCK_SCAN_WARP_SCANS>
             SpmvPolicyT;
 
-        typedef AgentReduceByKeyPolicy<
+        typedef AgentSegmentFixupPolicy<
                 128,
                 4,
                 BLOCK_LOAD_VECTORIZE,
                 LOAD_DEFAULT,
                 BLOCK_SCAN_WARP_SCANS>
-            ReduceByKeyPolicyT;
+            SegmentFixupPolicyT;
 
     };
 
@@ -274,13 +317,13 @@ struct DispatchSpmv
                 BLOCK_SCAN_WARP_SCANS>
             SpmvPolicyT;
 
-        typedef AgentReduceByKeyPolicy<
+        typedef AgentSegmentFixupPolicy<
                 128,
                 4,
                 BLOCK_LOAD_VECTORIZE,
                 LOAD_LDG,
                 BLOCK_SCAN_WARP_SCANS>
-            ReduceByKeyPolicyT;
+            SegmentFixupPolicyT;
     };
 
     /// SM50
@@ -298,13 +341,13 @@ struct DispatchSpmv
                 (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
             SpmvPolicyT;
 
-        typedef AgentReduceByKeyPolicy<
+        typedef AgentSegmentFixupPolicy<
                 128,
                 4,
                 BLOCK_LOAD_VECTORIZE,
                 LOAD_LDG,
                 BLOCK_SCAN_WARP_SCANS>
-            ReduceByKeyPolicyT;
+            SegmentFixupPolicyT;
     };
 
 
@@ -332,7 +375,7 @@ struct DispatchSpmv
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxSpmvPolicyT : PtxPolicy::SpmvPolicyT {};
-    struct PtxReduceByKeyPolicy : PtxPolicy::ReduceByKeyPolicyT {};
+    struct PtxSegmentFixupPolicy : PtxPolicy::SegmentFixupPolicyT {};
 
 
     //---------------------------------------------------------------------
@@ -347,13 +390,13 @@ struct DispatchSpmv
     static void InitConfigs(
         int             ptx_version,
         KernelConfig    &spmv_config,
-        KernelConfig    &reduce_by_key_config)
+        KernelConfig    &segment_fixup_config)
     {
     #if (CUB_PTX_ARCH > 0)
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         spmv_config.template Init<PtxSpmvPolicyT>();
-        reduce_by_key_config.template Init<PtxReduceByKeyPolicy>();
+        segment_fixup_config.template Init<PtxSegmentFixupPolicy>();
 
     #else
 
@@ -361,28 +404,28 @@ struct DispatchSpmv
         if (ptx_version >= 500)
         {
             spmv_config.template            Init<typename Policy500::SpmvPolicyT>();
-            reduce_by_key_config.template   Init<typename Policy500::ReduceByKeyPolicyT>();
+            segment_fixup_config.template   Init<typename Policy500::SegmentFixupPolicyT>();
         }
         else if (ptx_version >= 350)
         {
             spmv_config.template            Init<typename Policy350::SpmvPolicyT>();
-            reduce_by_key_config.template   Init<typename Policy350::ReduceByKeyPolicyT>();
+            segment_fixup_config.template   Init<typename Policy350::SegmentFixupPolicyT>();
         }
         else if (ptx_version >= 300)
         {
             spmv_config.template            Init<typename Policy300::SpmvPolicyT>();
-            reduce_by_key_config.template   Init<typename Policy300::ReduceByKeyPolicyT>();
+            segment_fixup_config.template   Init<typename Policy300::SegmentFixupPolicyT>();
 
         }
         else if (ptx_version >= 200)
         {
             spmv_config.template            Init<typename Policy200::SpmvPolicyT>();
-            reduce_by_key_config.template   Init<typename Policy200::ReduceByKeyPolicyT>();
+            segment_fixup_config.template   Init<typename Policy200::SegmentFixupPolicyT>();
         }
         else
         {
             spmv_config.template            Init<typename Policy110::SpmvPolicyT>();
-            reduce_by_key_config.template   Init<typename Policy110::ReduceByKeyPolicyT>();
+            segment_fixup_config.template   Init<typename Policy110::SegmentFixupPolicyT>();
         }
 
     #endif
@@ -423,7 +466,7 @@ struct DispatchSpmv
     template <
         typename                SpmvSearchKernelT,                  ///< Function type of cub::AgentSpmvSearchKernel
         typename                SpmvKernelT,                        ///< Function type of cub::AgentSpmvKernel
-        typename                ReduceByKeyKernelT>                 ///< Function type of cub::DeviceReduceByKeyKernelT
+        typename                SegmentFixupKernelT>                 ///< Function type of cub::DeviceSegmentFixupKernelT
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void*                   d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -433,9 +476,9 @@ struct DispatchSpmv
         bool                    debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         SpmvSearchKernelT       spmv_search_kernel,                 ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
         SpmvKernelT             spmv_kernel,                        ///< [in] Kernel function pointer to parameterization of AgentSpmvKernel
-        ReduceByKeyKernelT      reduce_by_key_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
+        SegmentFixupKernelT      segment_fixup_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentFixupKernel
         KernelConfig            spmv_config,                        ///< [in] Dispatch parameters that match the policy that \p spmv_kernel was compiled for
-        KernelConfig            reduce_by_key_config)               ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_kernel was compiled for
+        KernelConfig            segment_fixup_config)               ///< [in] Dispatch parameters that match the policy that \p segment_fixup_kernel was compiled for
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -467,11 +510,11 @@ struct DispatchSpmv
 
             // Tile sizes of kernels
             int merge_tile_size              = spmv_config.block_threads * spmv_config.items_per_thread;
-            int reduce_by_key_tile_size     = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
+            int segment_fixup_tile_size     = segment_fixup_config.block_threads * segment_fixup_config.items_per_thread;
 
             // Number of tiles for kernels
             unsigned int num_merge_tiles            = (num_merge_items + merge_tile_size - 1) / merge_tile_size;
-            unsigned int num_reduce_by_key_tiles    = (num_merge_tiles + reduce_by_key_tile_size - 1) / reduce_by_key_tile_size;
+            unsigned int num_segment_fixup_tiles    = (num_merge_tiles + segment_fixup_tile_size - 1) / segment_fixup_tile_size;
 
             // Get SM occupancy for kernels
             int spmv_sm_occupancy;
@@ -481,12 +524,12 @@ struct DispatchSpmv
                 spmv_kernel,
                 spmv_config.block_threads))) break;
 
-            int reduce_by_key_sm_occupancy;
+            int segment_fixup_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                reduce_by_key_sm_occupancy,
+                segment_fixup_sm_occupancy,
                 sm_version,
-                reduce_by_key_kernel,
-                reduce_by_key_config.block_threads))) break;
+                segment_fixup_kernel,
+                segment_fixup_config.block_threads))) break;
 
             // Get grid dimensions
             dim3 spmv_grid_size(
@@ -494,20 +537,19 @@ struct DispatchSpmv
                 (num_merge_tiles + max_dim_x - 1) / max_dim_x,
                 1);
 
-            dim3 reduce_by_key_grid_size(
-                CUB_MIN(num_reduce_by_key_tiles, max_dim_x),
-                (num_reduce_by_key_tiles + max_dim_x - 1) / max_dim_x,
+            dim3 segment_fixup_grid_size(
+                CUB_MIN(num_segment_fixup_tiles, max_dim_x),
+                (num_segment_fixup_tiles + max_dim_x - 1) / max_dim_x,
                 1);
 
             // Get the temporary storage allocation requirements
-            size_t allocation_sizes[4];
-            if (CubDebug(error = ScanTileStateT::AllocationSize(num_reduce_by_key_tiles, allocation_sizes[0]))) break;    // bytes needed for reduce-by-key tile status descriptors
-            allocation_sizes[1] = num_merge_tiles * sizeof(OffsetT);             // bytes needed for block run-out row-ids
-            allocation_sizes[2] = num_merge_tiles * sizeof(ValueT);              // bytes needed for block run-out partials sums
-            allocation_sizes[3] = (num_merge_tiles + 1) * sizeof(CoordinateT);   // bytes needed for tile starting coordinates
+            size_t allocation_sizes[3];
+            if (CubDebug(error = ScanTileStateT::AllocationSize(num_segment_fixup_tiles, allocation_sizes[0]))) break;    // bytes needed for reduce-by-key tile status descriptors
+            allocation_sizes[1] = num_merge_tiles * sizeof(KeyValuePairT);       // bytes needed for block carry-out pairs
+            allocation_sizes[2] = (num_merge_tiles + 1) * sizeof(CoordinateT);   // bytes needed for tile starting coordinates
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-            void* allocations[4];
+            void* allocations[3];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
@@ -517,12 +559,11 @@ struct DispatchSpmv
 
             // Construct the tile status interface
             ScanTileStateT tile_state;
-            if (CubDebug(error = tile_state.Init(num_reduce_by_key_tiles, allocations[0], allocation_sizes[0]))) break;
+            if (CubDebug(error = tile_state.Init(num_segment_fixup_tiles, allocations[0], allocation_sizes[0]))) break;
 
             // Alias the other allocations
-            OffsetT*        d_tile_carry_rows       = (OffsetT*) allocations[1];        // Agent carry-out row-ids
-            ValueT*         d_tile_carry_values     = (ValueT*) allocations[2];         // Agent carry-out partial sums
-            CoordinateT*    d_tile_coordinates      = (CoordinateT*) allocations[3];    // Agent starting coordinates
+            KeyValuePairT*  d_tile_carry_pairs      = (KeyValuePairT*) allocations[1];  // Agent carry-out pairs
+            CoordinateT*    d_tile_coordinates      = (CoordinateT*) allocations[2];    // Agent starting coordinates
 
             // Get search/init grid dims
             int search_block_size   = INIT_KERNEL_THREADS;
@@ -540,7 +581,7 @@ struct DispatchSpmv
             spmv_search_kernel<<<search_grid_size, search_block_size, 0, stream>>>(
                 tile_state,
                 num_merge_tiles,
-                num_reduce_by_key_tiles,
+                num_segment_fixup_tiles,
                 d_tile_coordinates,
                 spmv_params);
 
@@ -552,8 +593,7 @@ struct DispatchSpmv
             spmv_kernel<<<spmv_grid_size, spmv_config.block_threads, 0, stream>>>(
                 spmv_params,
                 d_tile_coordinates,
-                d_tile_carry_rows,
-                d_tile_carry_values,
+                d_tile_carry_pairs,
                 num_merge_tiles);
 
             // Check for failure to launch
@@ -565,22 +605,17 @@ struct DispatchSpmv
             // Run reduce-by-key fixup if necessary
             if (num_merge_tiles > 1)
             {
-                // Log reduce_by_key_kernel configuration
-                if (debug_synchronous) CubLog("Invoking reduce_by_key_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                    reduce_by_key_grid_size.x, reduce_by_key_grid_size.y, reduce_by_key_grid_size.z, reduce_by_key_config.block_threads, (long long) stream, reduce_by_key_config.items_per_thread, reduce_by_key_sm_occupancy);
+                // Log segment_fixup_kernel configuration
+                if (debug_synchronous) CubLog("Invoking segment_fixup_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                    segment_fixup_grid_size.x, segment_fixup_grid_size.y, segment_fixup_grid_size.z, segment_fixup_config.block_threads, (long long) stream, segment_fixup_config.items_per_thread, segment_fixup_sm_occupancy);
 
-                // Invoke reduce_by_key_kernel
-                reduce_by_key_kernel<<<reduce_by_key_grid_size, reduce_by_key_config.block_threads, 0, stream>>>(
-                    d_tile_carry_rows,
-                    NULL,
-                    d_tile_carry_values,
+                // Invoke segment_fixup_kernel
+                segment_fixup_kernel<<<segment_fixup_grid_size, segment_fixup_config.block_threads, 0, stream>>>(
+                    d_tile_carry_pairs,
                     spmv_params.d_vector_y,
-                    NULL,
-                    tile_state,
-                    cub::Equality(),
-                    cub::Sum(),
                     num_merge_tiles,
-                    num_reduce_by_key_tiles);
+                    num_segment_fixup_tiles,
+                    tile_state);
 
                 // Check for failure to launch
                 if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -625,8 +660,8 @@ struct DispatchSpmv
     #endif
 
             // Get kernel kernel dispatch configurations
-            KernelConfig spmv_config, reduce_by_key_config;
-            InitConfigs(ptx_version, spmv_config, reduce_by_key_config);
+            KernelConfig spmv_config, segment_fixup_config;
+            InitConfigs(ptx_version, spmv_config, segment_fixup_config);
 /*
             // Dispatch
             if (spmv_params.beta == 0.0)
@@ -639,8 +674,8 @@ struct DispatchSpmv
                         d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
                         DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
                         DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false, false>,
-                        DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                        spmv_config, reduce_by_key_config))) break;
+                        DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
+                        spmv_config, segment_fixup_config))) break;
 /*
                 }
                 else
@@ -650,8 +685,8 @@ struct DispatchSpmv
                         d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
                         DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
                         DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, true, false>,
-                        DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                        spmv_config, reduce_by_key_config))) break;
+                        DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
+                        spmv_config, segment_fixup_config))) break;
                 }
             }
             else
@@ -663,8 +698,8 @@ struct DispatchSpmv
                         d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
                         DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
                         DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, false, true>,
-                        DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                        spmv_config, reduce_by_key_config))) break;
+                        DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
+                        spmv_config, segment_fixup_config))) break;
                 }
                 else
                 {
@@ -673,8 +708,8 @@ struct DispatchSpmv
                         d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
                         DeviceSpmvSearchKernel<PtxSpmvPolicyT, ScanTileStateT, OffsetT, CoordinateT, SpmvParamsT>,
                         DeviceSpmvKernel<PtxSpmvPolicyT, ValueT, OffsetT, CoordinateT, true, true>,
-                        DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, OffsetT*, OffsetT*, ValueT*, ValueT*, OffsetT*, ScanTileStateT, cub::Equality, cub::Sum, OffsetT, true>,
-                        spmv_config, reduce_by_key_config))) break;
+                        DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
+                        spmv_config, segment_fixup_config))) break;
                 }
             }
 */

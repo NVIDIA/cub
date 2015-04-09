@@ -519,16 +519,19 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::NullTy
 
 
 /**
- * cub::ItemOffsetPair<Value, OffsetT>test initialization
+ * cub::KeyValuePair<OffsetT, ValueT>test initialization
  */
-template <typename Value, typename OffsetT>
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::ItemOffsetPair<Value, OffsetT>&value, int index = 0)
+template <typename KeyT, typename ValueT>
+__host__ __device__ __forceinline__ void InitValue(
+    GenMode                             gen_mode,
+    cub::KeyValuePair<KeyT, ValueT>&    value,
+    int                                 index = 0)
 {
     InitValue(gen_mode, value.value, index);
 
     // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
-    RandomBits(value.offset, 3);
-    value.offset = (value.offset & 0x1);
+    RandomBits(value.key, 3);
+    value.offset = (value.key & 0x1);
 }
 
 
@@ -536,17 +539,6 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::ItemOf
 /******************************************************************************
  * Comparison and ostream operators
  ******************************************************************************/
-
-
-/**
- * ItemOffsetPair ostream operator
- */
-template <typename T, typename OffsetT>
-std::ostream& operator<<(std::ostream& os, const cub::ItemOffsetPair<T, OffsetT>&val)
-{
-    os << '(' << val.value<< ',' << val.offset << ')';
-    return os;
-}
 
 /**
  * KeyValuePair ostream operator
