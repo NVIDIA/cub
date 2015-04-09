@@ -319,7 +319,7 @@ struct DispatchSpmv
 
         typedef AgentSegmentFixupPolicy<
                 128,
-                4,
+                3,
                 BLOCK_LOAD_VECTORIZE,
                 LOAD_LDG,
                 BLOCK_SCAN_WARP_SCANS>
@@ -343,10 +343,10 @@ struct DispatchSpmv
 
         typedef AgentSegmentFixupPolicy<
                 128,
-                4,
+                3,
                 BLOCK_LOAD_VECTORIZE,
                 LOAD_LDG,
-                BLOCK_SCAN_WARP_SCANS>
+                BLOCK_SCAN_RAKING_MEMOIZE>
             SegmentFixupPolicyT;
     };
 
