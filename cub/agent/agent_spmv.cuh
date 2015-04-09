@@ -423,9 +423,6 @@ struct AgentSpmv
         {
             int nonzero_idx = threadIdx.x + (ITEM * BLOCK_THREADS);
 
-            ColumnIndicesIteratorT ci = wd_column_indices + tile_start_coord.y + nonzero_idx;
-            ValueIteratorT a = wd_values + tile_start_coord.y + nonzero_idx;
-
             if (nonzero_idx < tile_num_nonzeros)
             {
 
