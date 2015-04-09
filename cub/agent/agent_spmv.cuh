@@ -215,9 +215,17 @@ struct AgentSpmv
     {
         union
         {
+
             // Smem needed for tile of merge items
             MergeItem merge_items[ITEMS_PER_THREAD + TILE_ITEMS + 1];
 
+            // Smem needed for block exchange
+            typename BlockExchangeT::TempStorage exchange;
+
+        };
+
+        union 
+        {
             // Smem needed for block-wide reduction
             typename BlockReduceT::TempStorage reduce;
 
@@ -226,9 +234,6 @@ struct AgentSpmv
 
             // Smem needed for tile prefix sum
             typename BlockPrefixSumT::TempStorage prefix_sum;
-
-            // Smem needed for block exchange
-            typename BlockExchangeT::TempStorage exchange;
         };
     };
 
@@ -484,7 +489,67 @@ struct AgentSpmv
             tile_num_nonzeros,
             thread_start_coord);
 
-        __syncthreads();    // Perf-sync
+
+        __threadfence_block();      // Perf fence
+
+/*
+        // Compute the thread's merge path segment
+        CoordinateT     thread_current_coord = thread_start_coord;
+        KeyValuePairT   scan_in[ITEMS_PER_THREAD];
+
+
+        OffsetT row_end_offset  = s_tile_row_end_offsets[thread_current_coord.x];
+        ValueT  nonzero         = s_tile_nonzeros[thread_current_coord.y];
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            scan_in[ITEM].key = thread_current_coord.x;
+
+            if (tile_nonzero_indices[thread_current_coord.y] < row_end_offset)
+            {
+                // Move down (accumulate)
+                scan_in[ITEM].value = nonzero;
+                ++thread_current_coord.y;
+                nonzero = s_tile_nonzeros[thread_current_coord.y];
+            }
+            else
+            {
+                // Move right (reset)
+                scan_in[ITEM].value = 0.0;
+                ++thread_current_coord.x;
+                row_end_offset  = s_tile_row_end_offsets[thread_current_coord.x];
+            }
+        }
+
+        __syncthreads();
+
+        // Block-wide reduce-value-by-segment
+        KeyValuePairT       tile_carry;
+        ReduceBySegmentOpT  scan_op;
+
+        KeyValuePairT       scan_out[ITEMS_PER_THREAD];
+
+        BlockScanT(temp_storage.scan).ExclusiveScan(scan_in, scan_out, scan_op, tile_carry);
+
+        if (threadIdx.x == 0)
+            scan_out[0].key = scan_in[0].key;
+
+        __syncthreads();
+
+        // Two phase scatter
+        ValueT* s_partials = &temp_storage.merge_items[0].nonzero;
+
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (scan_out[ITEM].key != scan_in[ITEM].key)
+            {
+                s_partials[scan_out[ITEM].key] = scan_out[ITEM].value;
+            }
+        }
+*/
+
 
         // Compute the thread's merge path segment
         CoordinateT     thread_current_coord = thread_start_coord;
@@ -492,31 +557,31 @@ struct AgentSpmv
         OffsetT         row_indices[ITEMS_PER_THREAD];
         ValueT          running_total = 0.0;
 
+        OffsetT row_end_offset  = s_tile_row_end_offsets[thread_current_coord.x];
+        ValueT  nonzero         = s_tile_nonzeros[thread_current_coord.y];
+
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            ValueT  nonzero         = s_tile_nonzeros[thread_current_coord.y];
-            bool    accumulate      = (tile_nonzero_indices[thread_current_coord.y] < s_tile_row_end_offsets[thread_current_coord.x]);
-
-            if (accumulate)
+            if (tile_nonzero_indices[thread_current_coord.y] < row_end_offset)
             {
                 // Move down (accumulate)
+                thread_segment[ITEM]        = nonzero;
                 running_total               += nonzero;
-                thread_segment[ITEM]        = running_total;
-                row_indices[ITEM]           = tile_num_rows;
                 ++thread_current_coord.y;
+                nonzero                     = s_tile_nonzeros[thread_current_coord.y];
             }
             else
             {
                 // Move right (reset)
-                thread_segment[ITEM]        = running_total;
+                thread_segment[ITEM]        = 0.0;
                 running_total               = 0.0;
-                row_indices[ITEM]           = thread_current_coord.x;
                 ++thread_current_coord.x;
+                row_end_offset              = s_tile_row_end_offsets[thread_current_coord.x];
             }
-        }
 
-        __syncthreads();
+            row_indices[ITEM] = thread_current_coord.x;
+        }
 
         // Block-wide reduce-value-by-segment
         KeyValuePairT       tile_carry;
@@ -528,32 +593,34 @@ struct AgentSpmv
 
         BlockScanT(temp_storage.scan).ExclusiveScan(scan_item, scan_item, scan_op, tile_carry);
         if (threadIdx.x == 0)
-            scan_item.key = -1;
+        {
+            scan_item.key = row_indices[0];
+            scan_item.value = 0.0;
+        }
 
-        __syncthreads();
-
-        // Two phase scatter
+        // Scan downsweep and scatter
         ValueT* s_partials = &temp_storage.merge_items[0].nonzero;
 
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        if (scan_item.key != row_indices[0])
         {
-            if (scan_item.key == row_indices[ITEM])
-                thread_segment[ITEM] = scan_item.value + thread_segment[ITEM];
+            s_partials[scan_item.key] = scan_item.value;
+        }
+        else
+        {
+            thread_segment[0] += scan_item.value;
+        }
 
-            if (HAS_ALPHA)
+        #pragma unroll
+        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (row_indices[ITEM - 1] != row_indices[ITEM])
             {
-                thread_segment[ITEM] *= spmv_params.alpha;
+                s_partials[row_indices[ITEM - 1]] = thread_segment[ITEM - 1];
             }
-
-            if (HAS_BETA)
+            else
             {
-                // Update the output vector element
-                ValueT addend = spmv_params.beta * wd_vector_y[tile_start_coord.x + row_indices[ITEM]];
-                thread_segment[ITEM] += addend;
+                thread_segment[ITEM] += thread_segment[ITEM - 1];
             }
-
-            s_partials[row_indices[ITEM]] = thread_segment[ITEM];
         }
 
         __syncthreads();
