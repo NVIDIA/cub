@@ -222,6 +222,10 @@ struct AgentSpmv
             // Smem needed for block exchange
             typename BlockExchangeT::TempStorage exchange;
 
+        };
+
+        union 
+        {
             // Smem needed for block-wide reduction
             typename BlockReduceT::TempStorage reduce;
 
@@ -587,12 +591,7 @@ struct AgentSpmv
         scan_item.value = running_total;
         scan_item.key = thread_current_coord.x;
 
-        __syncthreads();
-
         BlockScanT(temp_storage.scan).ExclusiveScan(scan_item, scan_item, scan_op, tile_carry);
-
-        __syncthreads();
-
         if (threadIdx.x == 0)
         {
             scan_item.key = row_indices[0];
@@ -745,7 +744,7 @@ struct AgentSpmv
         CoordinateT tile_end_coord       = d_tile_coordinates[tile_idx + 1];
 
         // Consume multi-segment tile
-        KeyValuePairT tile_carry = ConsumeTile2(
+        KeyValuePairT tile_carry = ConsumeTile(
             tile_idx,
             tile_start_coord,
             tile_end_coord,
