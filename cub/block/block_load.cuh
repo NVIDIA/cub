@@ -224,7 +224,7 @@ __device__ __forceinline__ void LoadDirectBlockedVectorized(
     T               *block_ptr,                 ///< [in] Input pointer for loading from
     T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
-    LoadDirectBlockedVectorized<LOAD_DEFAULT>(linear_tid, block_ptr, items);
+    InternalLoadDirectBlockedVectorized<LOAD_DEFAULT>(linear_tid, block_ptr, items);
 }
 
 

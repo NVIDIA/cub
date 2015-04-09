@@ -320,8 +320,8 @@ struct DeviceReduce
      *
      * \par
      * Assuming the input \p d_in has value type \p T, the output \p d_out must have value type
-     * <tt>ItemOffsetPair<T, int></tt>.  The minimum value is written to <tt>d_out.value</tt> and its
-     * location in the input array is written to <tt>d_out.offset</tt>.
+     * <tt>KeyValuePair<int, T></tt>.  The minimum value is written to <tt>d_out.value</tt> and its
+     * location in the input array is written to <tt>d_out.key</tt>.
      *
      * \par
      * - Does not support non-commutative minimum operators.
@@ -340,7 +340,7 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device pointers for input and output
      * int                      num_items;      // e.g., 7
      * int                      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * ItemOffsetPair<int, int> *d_out;         // e.g., [{ , }]
+     * KeyValuePair<int, int>   *d_out;         // e.g., [{ , }]
      * ...
      *
      * // Determine temporary device storage requirements
@@ -359,7 +359,7 @@ struct DeviceReduce
      * \endcode
      *
      * \tparam InputIteratorT     <b>[inferred]</b> Random-access input iterator type for reading input items (of some type \p T) \iterator
-     * \tparam OutputIteratorT    <b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <tt>ItemOffsetPair<T, int></tt>) \iterator
+     * \tparam OutputIteratorT    <b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <tt>KeyValuePair<int, T></tt>) \iterator
      */
     template <
         typename                    InputIteratorT,
@@ -473,8 +473,8 @@ struct DeviceReduce
      *
      * \par
      * Assuming the input \p d_in has value type \p T, the output \p d_out must have value type
-     * <tt>ItemOffsetPair<T, int></tt>.  The maximum value is written to <tt>d_out.value</tt> and its
-     * location in the input array is written to <tt>d_out.offset</tt>.
+     * <tt>KeyValuePair<int, T></tt>.  The maximum value is written to <tt>d_out.value</tt> and its
+     * location in the input array is written to <tt>d_out.key</tt>.
      *
      * \par
      * - Does not support non-commutative maximum operators.
@@ -493,7 +493,7 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device pointers for input and output
      * int                      num_items;      // e.g., 7
      * int                      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * ItemOffsetPair<int, int> *d_out;         // e.g., [{ , }]
+     * KeyValuePair<int, int>   *d_out;         // e.g., [{ , }]
      * ...
      *
      * // Determine temporary device storage requirements
@@ -512,7 +512,7 @@ struct DeviceReduce
      * \endcode
      *
      * \tparam InputIteratorT     <b>[inferred]</b> Random-access input iterator type for reading input items (of some type \p T) \iterator
-     * \tparam OutputIteratorT    <b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <tt>ItemOffsetPair<T, int></tt>) \iterator
+     * \tparam OutputIteratorT    <b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <tt>KeyValuePair<int, T></tt>) \iterator
      */
     template <
         typename                    InputIteratorT,

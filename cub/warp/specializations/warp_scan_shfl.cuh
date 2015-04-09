@@ -251,20 +251,20 @@ struct WarpScanShfl
 
 
 /*
-    /// Inclusive prefix scan (specialized for ReduceBySegmentOp<cub::Sum> across ItemOffsetPair<Value, OffsetT> types)
+    /// Inclusive prefix scan (specialized for ReduceBySegmentOp<cub::Sum> across KeyValuePair<OffsetT, Value> types)
     template <typename Value, typename OffsetT>
-    __device__ __forceinline__ ItemOffsetPair<Value, OffsetT>InclusiveScanStep(
-        ItemOffsetPair<Value, OffsetT>                                  input,              ///< [in] Calling thread's input item.
-        ReduceBySegmentOp<cub::Sum, ItemOffsetPair<Value, OffsetT> >    scan_op,            ///< [in] Binary scan operator
-        int                                                             first_lane,         ///< [in] Index of first lane in segment
-        int                                                             offset)             ///< [in] Up-offset to pull from
+    __device__ __forceinline__ KeyValuePair<OffsetT, Value>InclusiveScanStep(
+        KeyValuePair<OffsetT, Value>    input,              ///< [in] Calling thread's input item.
+        ReduceBySegmentOp<cub::Sum>     scan_op,            ///< [in] Binary scan operator
+        int                             first_lane,         ///< [in] Index of first lane in segment
+        int                             offset)             ///< [in] Up-offset to pull from
     {
-        ItemOffsetPair<Value, OffsetT> output;
+        KeyValuePair<OffsetT, Value> output;
 
         output.value = InclusiveScanStep(input.value, cub::Sum(), first_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_UNSIGNED>());
-        output.offset = InclusiveScanStep(input.offset, cub::Sum(), first_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_UNSIGNED>());
+        output.key = InclusiveScanStep(input.offset, cub::Sum(), first_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_UNSIGNED>());
 
-        if (input.offset > 0)
+        if (input.key > 0)
             output.value = input.value;
 
         return output;
@@ -436,9 +436,9 @@ struct WarpScanShfl
     /// Inclusive scan, specialized for reduce-value-by-key
     template <typename KeyT, typename ValueT, typename ReductionOpT>
     __device__ __forceinline__ void InclusiveScan(
-        KeyValuePair<KeyT, ValueT>                                  input,      ///< [in] Calling thread's input item.
-        KeyValuePair<KeyT, ValueT>&                                 output,     ///< [out] Calling thread's output item.  May be aliased with \p input.
-        ReduceByKeyOp<ReductionOpT, KeyValuePair<KeyT, ValueT> >    scan_op)    ///< [in] Binary scan operator
+        KeyValuePair<KeyT, ValueT>      input,      ///< [in] Calling thread's input item.
+        KeyValuePair<KeyT, ValueT>&     output,     ///< [out] Calling thread's output item.  May be aliased with \p input.
+        ReduceByKeyOp<ReductionOpT >    scan_op)    ///< [in] Binary scan operator
     {
         output = input;
 

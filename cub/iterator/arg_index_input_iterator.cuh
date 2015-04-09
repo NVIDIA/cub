@@ -66,8 +66,8 @@ namespace cub {
  *
  * \par Overview
  * - ArgIndexInputIteratorTwraps a random access input iterator \p itr of type \p InputIteratorT.
- *   Dereferencing an ArgIndexInputIteratorTat offset \p i produces a \p ItemOffsetPair value whose
- *   \p offset field is \p i and whose \p item field is <tt>itr[i]</tt>.
+ *   Dereferencing an ArgIndexInputIteratorTat offset \p i produces a \p KeyValuePair value whose
+ *   \p key field is \p i and whose \p value field is <tt>itr[i]</tt>.
  * - Can be used with any data type.
  * - Can be constructed, manipulated, and exchanged within and between host and device
  *   functions.  Wrapped host memory can only be dereferenced on the host, and wrapped
@@ -121,7 +121,7 @@ public:
     // Required iterator traits
     typedef ArgIndexInputIterator               self_type;              ///< My own type
     typedef OffsetT                             difference_type;        ///< Type to express the result of subtracting one iterator from another
-    typedef ItemOffsetPair<T, difference_type>  value_type;             ///< The type of the element the iterator can point to
+    typedef KeyValuePair<difference_type, T>    value_type;             ///< The type of the element the iterator can point to
     typedef value_type*                         pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef value_type                          reference;              ///< The type of a reference to an element the iterator can point to
 
@@ -173,7 +173,7 @@ public:
     {
         value_type retval;
         retval.value = itr[offset];
-        retval.offset = offset;
+        retval.key = offset;
         return retval;
     }
 
