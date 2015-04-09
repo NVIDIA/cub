@@ -77,17 +77,34 @@ void SpmvGold(
     ValueT                          alpha,
     ValueT                          beta)
 {
-    for (OffsetT row = 0; row < a.num_rows; ++row)
+    if ((alpha == 1.0) && (beta == 0.0))
     {
-        vector_y_out[row] = beta * vector_y_in[row];
-        for (
-            OffsetT offset = a.row_offsets[row];
-            offset < a.row_offsets[row + 1];
-            ++offset)
+        for (OffsetT row = 0; row < a.num_rows; ++row)
         {
-            vector_y_out[row] += alpha * a.values[offset] * vector_x[a.column_indices[offset]];
+            for (
+                OffsetT offset = a.row_offsets[row];
+                offset < a.row_offsets[row + 1];
+                ++offset)
+            {
+                vector_y_out[row] += a.values[offset] * vector_x[a.column_indices[offset]];
+            }
         }
     }
+    else
+    {
+        for (OffsetT row = 0; row < a.num_rows; ++row)
+        {
+            vector_y_out[row] = beta * vector_y_in[row];
+            for (
+                OffsetT offset = a.row_offsets[row];
+                offset < a.row_offsets[row + 1];
+                ++offset)
+            {
+                vector_y_out[row] += alpha * a.values[offset] * vector_x[a.column_indices[offset]];
+            }
+        }
+    }
+
 }
 
 
@@ -536,7 +553,18 @@ void RunTests(
         vector_y_in[row] = 1.0;
 
     // Compute reference answer
-    SpmvGold(csr_matrix, vector_x, vector_y_in, vector_y_out, alpha, beta);
+    if (!g_quiet) {
+        printf("\n\nSequential: "); fflush(stdout);
+    }
+    CpuTimer cpu_timer;
+    cpu_timer.Start();
+    for (int it = 0; it < timing_iterations; ++it)
+    {
+        SpmvGold(csr_matrix, vector_x, vector_y_in, vector_y_out, alpha, beta);
+    }
+    cpu_timer.Stop();
+    float avg_millis = cpu_timer.ElapsedMillis();
+    DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
 
     // Allocate and initialize GPU problem
     SpmvParams<ValueT, OffsetT> params;
@@ -560,7 +588,7 @@ void RunTests(
     if (!g_quiet) {
         printf("\n\nIO Proxy: "); fflush(stdout);
     }
-    float avg_millis = IoSpmv(params, timing_iterations);
+    avg_millis = IoSpmv(params, timing_iterations);
     DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
 
     if (!g_quiet) {
