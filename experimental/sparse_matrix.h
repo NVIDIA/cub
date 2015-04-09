@@ -432,6 +432,41 @@ struct CooMatrix
 
 
     /**
+     * Builds a dense matrix
+     */
+    int InitDense(
+        OffsetT     num_rows,
+        OffsetT     num_cols,
+        ValueT      default_value   = 1.0,
+        bool        verbose         = false)
+    {
+        if (coo_tuples)
+        {
+            fprintf(stderr, "Matrix already constructed\n");
+            exit(1);
+        }
+
+        this->num_rows  = num_rows;
+        this->num_cols  = num_cols;
+
+        num_nonzeros    = num_rows * num_cols;
+        coo_tuples      = new CooTuple[num_nonzeros];
+
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            for (OffsetT col = 0; col < num_cols; ++col)
+            {
+                coo_tuples[(row * num_cols) + col] = CooTuple(row, col, default_value);
+            }
+        }
+
+        // Sort by rows, then columns
+        std::stable_sort(coo_tuples, coo_tuples + num_nonzeros);
+
+        return 0;
+    }
+
+    /**
      * Builds a wheel COO sparse matrix having spokes spokes.
      */
     int InitWheel(

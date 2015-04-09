@@ -423,11 +423,14 @@ struct AgentSpmv
         {
             int nonzero_idx = threadIdx.x + (ITEM * BLOCK_THREADS);
 
+            ValueIteratorT a                = wd_values + tile_start_coord.y + nonzero_idx;
+            ColumnIndicesIteratorT ci       = wd_column_indices + tile_start_coord.y + nonzero_idx;
+
             if (nonzero_idx < tile_num_nonzeros)
             {
 
-                OffsetT column_idx              = wd_column_indices[tile_start_coord.y + nonzero_idx];
-                ValueT  value                   = wd_values[tile_start_coord.y + nonzero_idx];
+                OffsetT column_idx              = *ci;
+                ValueT  value                   = *a;
 
                 ValueT  vector_value            = spmv_params.t_vector_x[column_idx];
                 vector_value                    = wd_vector_x[column_idx];
@@ -595,6 +598,9 @@ struct AgentSpmv
             scan_item.key = row_indices[0];
             scan_item.value = 0.0;
         }
+
+        if (tile_num_rows == 0)
+            return tile_carry;
 
         __syncthreads();
 
