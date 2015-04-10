@@ -495,7 +495,7 @@ void RunTests(
     else if (grid3d > 0)
     {
         // Generate 3D lattice
-        printf("grid3d_%d, ", grid2d);
+        printf("grid3d_%d, ", grid3d);
         coo_matrix.InitGrid3d(grid3d, false);
     }
     else if (wheel > 0)
@@ -508,7 +508,7 @@ void RunTests(
     {
         // Generate dense graph
         OffsetT rows = (1<<24) / dense;               // 16M nnz
-        printf("dense_%dx%d, ", rows, dense);
+        printf("dense_%d_x_%d, ", rows, dense);
         coo_matrix.InitDense(rows, dense);
     }
     else
@@ -703,7 +703,7 @@ int main(int argc, char **argv)
     // Run test(s)
     if (fp64)
     {
-//        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, bandwidth_GBs, cusparse);
+        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, bandwidth_GBs, cusparse);
     }
     else
     {
