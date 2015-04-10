@@ -306,8 +306,8 @@ struct DispatchSpmv
     struct Policy350
     {
         typedef AgentSpmvPolicy<
-                128,
-                7,
+                (sizeof(ValueT) > 4) ? 96 : 128,
+                (sizeof(ValueT) > 4) ? 4 : 7,
                 LOAD_LDG,
                 LOAD_CA,
                 LOAD_LDG,
@@ -329,6 +329,7 @@ struct DispatchSpmv
     /// SM50
     struct Policy500
     {
+/*
         typedef AgentSpmvPolicy<
                 (sizeof(ValueT) > 4) ? 64 : 128,
                 (sizeof(ValueT) > 4) ? 6 : 7,
@@ -340,6 +341,20 @@ struct DispatchSpmv
                 (sizeof(ValueT) > 4) ? true : false,
                 (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
             SpmvPolicyT;
+*/
+
+        typedef AgentSpmvPolicy<
+                (sizeof(ValueT) > 4) ? 64 : 128,
+                (sizeof(ValueT) > 4) ? 6 : 7,
+                LOAD_LDG,
+                LOAD_DEFAULT,
+                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
+                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
+                LOAD_LDG,
+                (sizeof(ValueT) > 4) ? true : false,
+                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
+            SpmvPolicyT;
+
 
         typedef AgentSegmentFixupPolicy<
                 128,

@@ -514,9 +514,9 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     // Device word type (for when sizeof(ValueT) != sizeof(KeyT))
     struct TileDescriptorLittleStatus
     {
-        ValueT      key;
+        ValueT      value;
         StatusWord  status;
-        KeyT        offset;
+        KeyT        key;
     };
 
     // Device word type
@@ -590,9 +590,9 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     __device__ __forceinline__ void SetInclusive(int tile_idx, KeyValuePairT tile_inclusive)
     {
         TileDescriptor tile_descriptor;
-        tile_descriptor.status = SCAN_TILE_INCLUSIVE;
-        tile_descriptor.value = tile_inclusive.value;
-        tile_descriptor.key = tile_inclusive.key;
+        tile_descriptor.status  = SCAN_TILE_INCLUSIVE;
+        tile_descriptor.value   = tile_inclusive.value;
+        tile_descriptor.key     = tile_inclusive.key;
 
         TxnWord alias;
         *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
@@ -606,9 +606,9 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     __device__ __forceinline__ void SetPartial(int tile_idx, KeyValuePairT tile_partial)
     {
         TileDescriptor tile_descriptor;
-        tile_descriptor.status = SCAN_TILE_PARTIAL;
-        tile_descriptor.value = tile_partial.value;
-        tile_descriptor.key = tile_partial.key;
+        tile_descriptor.status  = SCAN_TILE_PARTIAL;
+        tile_descriptor.value   = tile_partial.value;
+        tile_descriptor.key     = tile_partial.key;
 
         TxnWord alias;
         *reinterpret_cast<TileDescriptor*>(&alias) = tile_descriptor;
