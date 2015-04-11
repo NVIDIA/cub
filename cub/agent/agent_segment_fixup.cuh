@@ -114,6 +114,13 @@ struct AgentSegmentFixup
         ITEMS_PER_THREAD    = AgentSegmentFixupPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
+        // Whether or not do fixup using RLE + global atomics
+        USE_ATOMIC_FIXUP    = (CUB_PTX_ARCH >= 350) && 
+                                (Equals<ValueT, float>::VALUE || 
+                                 Equals<ValueT, int>::VALUE ||
+                                 Equals<ValueT, unsigned int>::VALUE ||
+                                 Equals<ValueT, unsigned long long>::VALUE),
+
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
         HAS_IDENTITY_ZERO   = (Equals<ReductionOpT, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),
     };
@@ -209,85 +216,60 @@ struct AgentSegmentFixup
 
 
     //---------------------------------------------------------------------
-    // Block scan utility methods
-    //---------------------------------------------------------------------
-
-    /**
-     * Scan with identity (first tile)
-     * /
-    __device__ __forceinline__
-    void ScanTile(
-        KeyValuePairT       scan_in[ITEMS_PER_THREAD],
-        KeyValuePairT       scan_out[ITEMS_PER_THREAD],
-        KeyValuePairT&      tile_aggregate,
-        Int2Type<true>      has_identity)
-    {
-        KeyValuePairT identity;
-        identity.value = 0;
-        identity.key = 0;
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_in, scan_out, identity, scan_op, tile_aggregate);
-    }
-
-    / **
-     * Scan without identity (first tile).  Without an identity, the first output item is undefined.
-     *
-     * /
-    __device__ __forceinline__
-    void ScanTile(
-        KeyValuePairT       scan_in[ITEMS_PER_THREAD],
-        KeyValuePairT       scan_out[ITEMS_PER_THREAD],
-        KeyValuePairT&      tile_aggregate,
-        Int2Type<false>     has_identity)
-    {
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_in, scan_out, scan_op, tile_aggregate);
-    }
-
-    / **
-     * Scan with identity (subsequent tile)
-     * /
-    __device__ __forceinline__
-    void ScanTile(
-        KeyValuePairT           scan_in[ITEMS_PER_THREAD],
-        KeyValuePairT           scan_out[ITEMS_PER_THREAD],
-        KeyValuePairT&          tile_aggregate,
-        TilePrefixCallbackOpT&  prefix_op,
-        Int2Type<true>          has_identity)
-    {
-        KeyValuePairT identity;
-        identity.value = 0;
-        identity.key = 0;
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_in, scan_out, identity, scan_op, tile_aggregate, prefix_op);
-    }
-
-    / **
-     * Scan without identity (subsequent tile).  Without an identity, the first output item is undefined.
-     * /
-    __device__ __forceinline__
-    void ScanTile(
-        KeyValuePairT           scan_in[ITEMS_PER_THREAD],
-        KeyValuePairT           scan_out[ITEMS_PER_THREAD],
-        KeyValuePairT&          tile_aggregate,
-        TilePrefixCallbackOpT&  prefix_op,
-        Int2Type<false>         has_identity)
-    {
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_in, scan_out, scan_op, tile_aggregate, prefix_op);
-    }
-
-
-    //---------------------------------------------------------------------
     // Cooperatively scan a device-wide sequence of tiles with other CTAs
     //---------------------------------------------------------------------
 
 
     /**
-     * Process first tile of input (dynamic chained scan).  Returns the running count of segments and aggregated values (including this tile)
+     * Process input tile.  Specialized for atomic-fixup
      */
     template <bool IS_LAST_TILE>
     __device__ __forceinline__ void ConsumeTile(
         OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
         OffsetT             tile_offset,        ///< Tile offset
-        ScanTileStateT&     tile_state)         ///< Global tile state descriptor
+        ScanTileStateT&     tile_state,         ///< Global tile state descriptor
+        Int2Type<true>      use_atomic_fixup)   ///< Marker whether to use atomicAdd (instead of reduce-by-key)
+    {
+        KeyValuePairT   pairs[ITEMS_PER_THREAD];
+
+        // Load pairs
+        KeyValuePairT oob_pair;
+        oob_pair.key = -1;
+
+        if (IS_LAST_TILE)
+            BlockLoadPairs(temp_storage.load_pairs).Load(d_pairs_in + tile_offset, pairs, num_remaining, oob_pair);
+        else
+            BlockLoadPairs(temp_storage.load_pairs).Load(d_pairs_in + tile_offset, pairs);
+
+        // RLE 
+        #pragma unroll
+        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            ValueT* d_scatter = d_aggregates_out + pairs[ITEM - 1].key;
+            if (pairs[ITEM].key != pairs[ITEM - 1].key)
+                atomicAdd(d_scatter, pairs[ITEM - 1].value);
+            else
+                pairs[ITEM].value = reduction_op(pairs[ITEM - 1].value, pairs[ITEM].value);
+        }
+
+        // Flush last item if valid
+        ValueT* d_scatter = d_aggregates_out + pairs[ITEMS_PER_THREAD - 1].key;
+        if ((!IS_LAST_TILE) || (pairs[ITEMS_PER_THREAD - 1].key >= 0))
+            atomicAdd(d_scatter, pairs[ITEMS_PER_THREAD - 1].value);
+    }
+
+
+    /**
+     * Process input tile.  Specialized for reduce-by-key fixup
+     */
+    template <bool IS_LAST_TILE>
+    __device__ __forceinline__ void ConsumeTile(
+        OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
+        int                 tile_idx,           ///< Tile index
+        OffsetT             tile_offset,        ///< Tile offset
+        ScanTileStateT&     tile_state,         ///< Global tile state descriptor
+        Int2Type<false>     use_atomic_fixup)   ///< Marker whether to use atomicAdd (instead of reduce-by-key)
     {
         KeyValuePairT   pairs[ITEMS_PER_THREAD];
         KeyValuePairT   scatter_pairs[ITEMS_PER_THREAD];
@@ -375,12 +357,12 @@ struct AgentSegmentFixup
         if (num_remaining > TILE_ITEMS)
         {
             // Not the last tile (full)
-            ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state);
+            ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state, Int2Type<USE_ATOMIC_FIXUP>());
         }
         else if (num_remaining > 0)
         {
             // The last tile (possibly partially-full)
-            ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
+            ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state, Int2Type<USE_ATOMIC_FIXUP>());
         }
     }
 
