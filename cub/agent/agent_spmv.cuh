@@ -487,7 +487,6 @@ struct AgentSpmv
             tile_num_nonzeros,
             thread_start_coord);
 
-
         __syncthreads();            // Perf-sync
 
         // Compute the thread's merge path segment
@@ -684,7 +683,7 @@ struct AgentSpmv
     {
         int tile_idx = (blockIdx.x * gridDim.y) + blockIdx.y;    // Current tile index
 
-        if (tile_idx >= num_merge_tiles)
+        if (tile_idx >= num_merge_tiles) 
             return;
 
         CoordinateT tile_start_coord     = d_tile_coordinates[tile_idx + 0];
@@ -704,7 +703,6 @@ struct AgentSpmv
                 tile_carry.value *= spmv_params.alpha;
 
             tile_carry.key += tile_start_coord.x;
-
             d_tile_carry_pairs[tile_idx]    = tile_carry;
         }
     }
