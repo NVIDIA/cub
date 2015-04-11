@@ -302,6 +302,7 @@ struct DispatchSpmv
 
     };
 
+
     /// SM35
     struct Policy350
     {
@@ -326,23 +327,35 @@ struct DispatchSpmv
             SegmentFixupPolicyT;
     };
 
+
+    /// SM37
+    struct Policy370
+    {
+
+        typedef AgentSpmvPolicy<
+                (sizeof(ValueT) > 4) ? 128 : 128,
+                (sizeof(ValueT) > 4) ? 9 : 14,
+                LOAD_LDG,
+                LOAD_CA,
+                LOAD_LDG,
+                LOAD_LDG,
+                LOAD_LDG,
+                false, 
+                BLOCK_SCAN_WARP_SCANS>
+            SpmvPolicyT;
+
+        typedef AgentSegmentFixupPolicy<
+                128,
+                3,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_LDG,
+                BLOCK_SCAN_WARP_SCANS>
+            SegmentFixupPolicyT;
+    };
+
     /// SM50
     struct Policy500
     {
-/*
-        typedef AgentSpmvPolicy<
-                (sizeof(ValueT) > 4) ? 64 : 128,
-                (sizeof(ValueT) > 4) ? 6 : 7,
-                LOAD_LDG,
-                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
-                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
-                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
-                LOAD_LDG,
-                (sizeof(ValueT) > 4) ? true : false,
-                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
-            SpmvPolicyT;
-*/
-
         typedef AgentSpmvPolicy<
                 (sizeof(ValueT) > 4) ? 64 : 128,
                 (sizeof(ValueT) > 4) ? 6 : 7,
@@ -373,6 +386,9 @@ struct DispatchSpmv
 
 #if (CUB_PTX_ARCH >= 500)
     typedef Policy500 PtxPolicy;
+
+#elif (CUB_PTX_ARCH >= 370)
+    typedef Policy370 PtxPolicy;
 
 #elif (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
@@ -420,6 +436,11 @@ struct DispatchSpmv
         {
             spmv_config.template            Init<typename Policy500::SpmvPolicyT>();
             segment_fixup_config.template   Init<typename Policy500::SegmentFixupPolicyT>();
+        }
+        else if (ptx_version >= 370)
+        {
+            spmv_config.template            Init<typename Policy370::SpmvPolicyT>();
+            segment_fixup_config.template   Init<typename Policy370::SegmentFixupPolicyT>();
         }
         else if (ptx_version >= 350)
         {
