@@ -55,9 +55,10 @@ using namespace cub;
 // Globals, constants, and type declarations
 //---------------------------------------------------------------------
 
-bool                    g_quiet    = false;        // Whether to display stats in CSV format
+bool                    g_quiet     = false;        // Whether to display stats in CSV format
 bool                    g_verbose   = false;        // Whether to display output to console
 bool                    g_verbose2  = false;        // Whether to display input to console
+bool                    g_cpu       = false;        // Whether to time the sequential CPU impl
 CachingDeviceAllocator  g_allocator(true);          // Caching allocator for device memory
 
 
@@ -217,10 +218,10 @@ float IoSpmv(
     GpuTimer gpu_timer;
     float elapsed_millis = 0.0;
 
+    // Reset input/output vector y
+    gpu_timer.Start();
     for (int it = 0; it < timing_iterations; ++it)
     {
-        // Reset input/output vector y
-        gpu_timer.Start();
 
         NonZeroIO<BLOCK_THREADS, ITEMS_PER_THREAD><<<nonzero_blocks, BLOCK_THREADS>>>(
             params.num_nonzeros,
@@ -232,10 +233,9 @@ float IoSpmv(
             params.num_rows,
             params.d_row_end_offsets,
             params.d_vector_y);
-
-        gpu_timer.Stop();
-        elapsed_millis += gpu_timer.ElapsedMillis();
     }
+    gpu_timer.Stop();
+    elapsed_millis += gpu_timer.ElapsedMillis();
 
     CubDebugExit(x_itr.UnbindTexture());
 
@@ -281,20 +281,17 @@ float CusparseSpmv(
     float elapsed_millis    = 0.0;
     GpuTimer gpu_timer;
 
+    gpu_timer.Start();
     for(int it = 0; it < timing_iterations; ++it)
     {
-        // Reset input/output vector y
-        gpu_timer.Start();
-
         AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseScsrmv(
             cusparse, CUSPARSE_OPERATION_NON_TRANSPOSE,
             params.num_rows, params.num_cols, params.num_nonzeros, &params.alpha, desc,
             params.d_values, params.d_row_end_offsets, params.d_column_indices,
             params.d_vector_x, &params.beta, params.d_vector_y));
-
-        gpu_timer.Stop();
-        elapsed_millis += gpu_timer.ElapsedMillis();
     }
+    gpu_timer.Stop();
+    elapsed_millis += gpu_timer.ElapsedMillis();
 
     cusparseDestroyMatDescr(desc);
     return elapsed_millis / timing_iterations;
@@ -336,19 +333,18 @@ float CusparseSpmv(
     float elapsed_millis    = 0.0;
     GpuTimer gpu_timer;
 
+    gpu_timer.Start();
     for(int it = 0; it < timing_iterations; ++it)
     {
-        gpu_timer.Start();
-
         AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDcsrmv(
             cusparse, CUSPARSE_OPERATION_NON_TRANSPOSE,
             params.num_rows, params.num_cols, params.num_nonzeros, &params.alpha, desc,
             params.d_values, params.d_row_end_offsets, params.d_column_indices,
             params.d_vector_x, &params.beta, params.d_vector_y));
 
-        gpu_timer.Stop();
-        elapsed_millis += gpu_timer.ElapsedMillis();
     }
+    gpu_timer.Stop();
+    elapsed_millis += gpu_timer.ElapsedMillis();
 
     cusparseDestroyMatDescr(desc);
     return elapsed_millis / timing_iterations;
@@ -406,20 +402,18 @@ float CubSpmv(
     GpuTimer gpu_timer;
     float elapsed_millis = 0.0;
 
+    gpu_timer.Start();
     for(int it = 0; it < timing_iterations; ++it)
     {
-        gpu_timer.Start();
-
         CubDebugExit(DeviceSpmv::CsrMV(
             d_temp_storage, temp_storage_bytes,
             params.d_values, params.d_row_end_offsets, params.d_column_indices,
             params.d_vector_x, params.d_vector_y,
             params.num_rows, params.num_cols, params.num_nonzeros, params.alpha, params.beta,
             (cudaStream_t) 0, false));
-
-        gpu_timer.Stop();
-        elapsed_millis += gpu_timer.ElapsedMillis();
     }
+    gpu_timer.Stop();
+    elapsed_millis += gpu_timer.ElapsedMillis();
 
     return elapsed_millis / timing_iterations;
 }
@@ -568,7 +562,7 @@ void RunTests(
 
     // Compute reference answer
     SpmvGold(csr_matrix, vector_x, vector_y_in, vector_y_out, alpha, beta);
-    if (g_quiet)
+    if (g_cpu)
     {
         CpuTimer cpu_timer;
         cpu_timer.Start();
@@ -645,6 +639,7 @@ int main(int argc, char **argv)
             "[--device=<device-id>] "
             "[--quiet] "
             "[--v] "
+            "[--cpu] "
             "[--i=<timing iterations>] "
             "[--fp64] "
             "[--rcm] "
@@ -678,6 +673,7 @@ int main(int argc, char **argv)
     g_verbose = args.CheckCmdLineFlag("v");
     g_verbose2 = args.CheckCmdLineFlag("v2");
     g_quiet = args.CheckCmdLineFlag("quiet");
+    g_cpu = args.CheckCmdLineFlag("cpu");
     fp64 = args.CheckCmdLineFlag("fp64");
     rcm_relabel = args.CheckCmdLineFlag("rcm");
     args.GetCmdLineArgument("i", timing_iterations);
