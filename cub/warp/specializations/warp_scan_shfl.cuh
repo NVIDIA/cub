@@ -165,25 +165,22 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         unsigned long long output;
-        unsigned long long temp = input;
 
         // Use predicate set from SHFL to guard against invalid peers
         asm(
             "{"
             "  .reg .u64 r0;"
-            "  .reg .u32 lo0;"
-            "  .reg .u32 hi0;"
-            "  .reg .u32 lo1;"
-            "  .reg .u32 hi1;"
+            "  .reg .u32 lo;"
+            "  .reg .u32 hi;"
             "  .reg .pred p;"
-            "  mov.b64 {lo1, hi1}, %1;"
-            "  shfl.up.b32 lo0|p, lo1, %2, %3;"
-            "  shfl.up.b32 hi0, hi1, %2, %3;"
-            "  mov.b64 r0, {lo0, hi0};"
-            "  @p add.u64 %1, r0, %1;"
-            "  mov.u64 %0, %1;"
+            "  mov.b64 {lo, hi}, %1;"
+            "  shfl.up.b32 lo|p, lo, %2, %3;"
+            "  shfl.up.b32 hi|p, hi, %2, %3;"
+            "  mov.b64 r0, {lo, hi};"
+            "  @p add.u64 r0, r0, %4;"
+            "  mov.u64 %0, r0;"
             "}"
-            : "=l"(output) : "l"(temp), "r"(offset), "r"(first_lane));
+            : "=l"(output) : "l"(input), "r"(offset), "r"(first_lane), "l"(input));
 
         return output;
     }
@@ -197,25 +194,22 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         long long output;
-        long long temp = input;
 
         // Use predicate set from SHFL to guard against invalid peers
         asm(
             "{"
             "  .reg .s64 r0;"
-            "  .reg .u32 lo0;"
-            "  .reg .u32 hi0;"
-            "  .reg .u32 lo1;"
-            "  .reg .u32 hi1;"
+            "  .reg .u32 lo;"
+            "  .reg .u32 hi;"
             "  .reg .pred p;"
-            "  mov.b64 {lo1, hi1}, %1;"
-            "  shfl.up.b32 lo0|p, lo1, %2, %3;"
-            "  shfl.up.b32 hi0, hi1, %2, %3;"
-            "  mov.b64 r0, {lo0, hi0};"
-            "  @p add.s64 %1, r0, %1;"
-            "  mov.s64 %0, %1;"
+            "  mov.b64 {lo, hi}, %1;"
+            "  shfl.up.b32 lo|p, lo, %2, %3;"
+            "  shfl.up.b32 hi|p, hi, %2, %3;"
+            "  mov.b64 r0, {lo, hi};"
+            "  @p add.s64 r0, r0, %4;"
+            "  mov.s64 %0, r0;"
             "}"
-            : "=l"(output) : "l"(temp), "r"(offset), "r"(first_lane));
+            : "=l"(output) : "l"(input), "r"(offset), "r"(first_lane), "l"(input));
 
         return output;
     }
@@ -229,26 +223,40 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         double output;
-        double temp = input;
 
         // Use predicate set from SHFL to guard against invalid peers
         asm(
             "{"
-            "  .reg .f64 r0;"
-            "  .reg .u32 lo0;"
-            "  .reg .u32 hi0;"
-            "  .reg .u32 lo1;"
-            "  .reg .u32 hi1;"
+            "  .reg .u32 lo;"
+            "  .reg .u32 hi;"
             "  .reg .pred p;"
-            "  mov.b64 {lo1, hi1}, %1;"
-            "  shfl.up.b32 lo0|p, lo1, %2, %3;"
-            "  shfl.up.b32 hi0, hi1, %2, %3;"
-            "  mov.b64 r0, {lo0, hi0};"
-            "  @p add.f64 %1, r0, %1;"
-            "  mov.f64 %0, %1;"
+            "  .reg .f64 r0;"
+            "  mov.b64 %0, %1;"
+            "  mov.b64 {lo, hi}, %1;"
+            "  shfl.up.b32 lo|p, lo, %2, %3;"
+            "  shfl.up.b32 hi|p, hi, %2, %3;"
+            "  mov.b64 r0, {lo, hi};"
+            "  @p add.f64 %0, %0, r0;"
             "}"
-            : "=d"(output) : "d"(temp), "r"(offset), "r"(first_lane));
+            : "=d"(output) : "d"(input), "r"(offset), "r"(first_lane));
 
+/*
+        // Use predicate set from SHFL to guard against invalid peers
+        asm(
+            "{"
+            "  .reg .f64 r0;"
+            "  .reg .u32 lo;"
+            "  .reg .u32 hi;"
+            "  .reg .pred p;"
+            "  mov.b64 {lo, hi}, %1;"
+            "  shfl.up.b32 lo|p, lo, %2, %3;"
+            "  shfl.up.b32 hi|p, hi, %2, %3;"
+            "  mov.b64 r0, {lo, hi};"
+            "  @p add.f64 %0, r0, %4;"
+            "  mov.f64 %0, r0;"
+            "}"
+            : "=d"(output) : "d"(input), "r"(offset), "r"(first_lane), "d"(input));
+*/
         return output;
     }
 
@@ -426,7 +434,7 @@ struct WarpScanShfl
 
         // Iterate scan steps
         InclusiveScanStep(output, scan_op, SHFL_C, Int2Type<0>());
-/*        
+/*
         // Iterate scan steps
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
