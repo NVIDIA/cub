@@ -1,11 +1,8 @@
 var searchData=
 [
-  ['basetraits',['BaseTraits',['../structcub_1_1_base_traits.html',1,'cub']]],
-  ['basetraits_3c_20not_5fa_5fnumber_2c_20false_2c_20false_2c_20removequalifiers_3c_20t_20_3e_3a_3atype_20_3e',['BaseTraits&lt; NOT_A_NUMBER, false, false, RemoveQualifiers&lt; T &gt;::Type &gt;',['../structcub_1_1_base_traits.html',1,'cub']]],
-  ['basetraits_3c_20not_5fa_5fnumber_2c_20false_2c_20false_2c_20t_20_3e',['BaseTraits&lt; NOT_A_NUMBER, false, false, T &gt;',['../structcub_1_1_base_traits.html',1,'cub']]],
   ['bfe',['BFE',['../group___util_ptx.html#gae6e3003e44d5f640aeea7d67414b3668',1,'cub']]],
   ['bfi',['BFI',['../group___util_ptx.html#ga4b1cabbd1372cf252aa63aaa6bc1d9df',1,'cub']]],
-  ['bindtexture',['BindTexture',['../classcub_1_1_tex_obj_input_iterator.html#adf05337e92bbe57058cc3ccb622c51fe',1,'cub::TexObjInputIterator::BindTexture()'],['../classcub_1_1_tex_ref_input_iterator.html#a2478415f3ecdad9ae266ea3be43634d1',1,'cub::TexRefInputIterator::BindTexture()']]],
+  ['bindtexture',['BindTexture',['../classcub_1_1_tex_obj_input_iterator.html#a1c8e90058139201e706d2aa863839a85',1,'cub::TexObjInputIterator::BindTexture()'],['../classcub_1_1_tex_ref_input_iterator.html#a992d24ab41d940120b093589c5eaf132',1,'cub::TexRefInputIterator::BindTexture()']]],
   ['block_5fdiscontinuity_2ecuh',['block_discontinuity.cuh',['../block__discontinuity_8cuh.html',1,'']]],
   ['block_5fexchange_2ecuh',['block_exchange.cuh',['../block__exchange_8cuh.html',1,'']]],
   ['block_5fhisto_5fatomic',['BLOCK_HISTO_ATOMIC',['../namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2abfc89fce43fcda396d18a4b2801025aa',1,'cub']]],
@@ -45,16 +42,16 @@ var searchData=
   ['blockload',['BlockLoad',['../classcub_1_1_block_load.html',1,'cub']]],
   ['blockloadalgorithm',['BlockLoadAlgorithm',['../namespacecub.html#a9d7e37497fdd99864c57adecda710401',1,'cub']]],
   ['block_2dwide_20_28collective_29',['Block-wide (collective)',['../group___block_module.html',1,'']]],
-  ['blockradixsort',['BlockRadixSort',['../classcub_1_1_block_radix_sort.html',1,'cub']]],
   ['blockradixsort',['BlockRadixSort',['../classcub_1_1_block_radix_sort.html#abaccdf539c5a4d3ec0eea3f080650f65',1,'cub::BlockRadixSort::BlockRadixSort()'],['../classcub_1_1_block_radix_sort.html#afec22300c3b4b119e18ecac33373a14c',1,'cub::BlockRadixSort::BlockRadixSort(TempStorage &amp;temp_storage)']]],
+  ['blockradixsort',['BlockRadixSort',['../classcub_1_1_block_radix_sort.html',1,'cub']]],
   ['blockreduce',['BlockReduce',['../classcub_1_1_block_reduce.html',1,'cub']]],
   ['blockreduce',['BlockReduce',['../classcub_1_1_block_reduce.html#a253f6c152fbb75e3d5d11bfa49224459',1,'cub::BlockReduce::BlockReduce()'],['../classcub_1_1_block_reduce.html#a66f94839182ae9981219c6313d5ccff4',1,'cub::BlockReduce::BlockReduce(TempStorage &amp;temp_storage)']]],
   ['blockreducealgorithm',['BlockReduceAlgorithm',['../namespacecub.html#add0251c713859b8974806079e498d10a',1,'cub']]],
-  ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html',1,'cub']]],
   ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html#a5133f76e261ce0b33d381e8be747966c',1,'cub::BlockScan::BlockScan()'],['../classcub_1_1_block_scan.html#aa5156b3509d81ed5e53e06e270ab28cf',1,'cub::BlockScan::BlockScan(TempStorage &amp;temp_storage)']]],
+  ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html',1,'cub']]],
   ['blockscanalgorithm',['BlockScanAlgorithm',['../namespacecub.html#abec44bba36037c547e7e84906d0d23ab',1,'cub']]],
-  ['blockstore',['BlockStore',['../classcub_1_1_block_store.html',1,'cub']]],
   ['blockstore',['BlockStore',['../classcub_1_1_block_store.html#a68e195459de99cc6c19edd123f036e4c',1,'cub::BlockStore::BlockStore()'],['../classcub_1_1_block_store.html#a5f82d32486214e5b1c3f443cc117ef6d',1,'cub::BlockStore::BlockStore(TempStorage &amp;temp_storage)']]],
+  ['blockstore',['BlockStore',['../classcub_1_1_block_store.html',1,'cub']]],
   ['blockstorealgorithm',['BlockStoreAlgorithm',['../namespacecub.html#a839b145451e9eec3d44172e3c3619700',1,'cub']]],
   ['broadcast',['Broadcast',['../classcub_1_1_warp_scan.html#a97e5ad8bd37d95b39f9f7dee8254d9ad',1,'cub::WarpScan']]]
 ];

@@ -116,33 +116,33 @@ Classes</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ga749c208dab03e3dc4ce1fa2e608a42aa"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ga749c208dab03e3dc4ce1fa2e608a42aa"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga749c208dab03e3dc4ce1fa2e608a42aa">cub::ShuffleUp</a> (T input, int src_offset)</td></tr>
-<tr class="memdesc:ga749c208dab03e3dc4ce1fa2e608a42aa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-up for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>-<code>src_offset</code></sub>. For thread lanes <em>i</em> &lt; src_offset, the thread's own <code>input</code> is returned to the thread. </p>
+<tr class="memitem:gaa09dbea525e654af4138cae81ea9a6a8"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:gaa09dbea525e654af4138cae81ea9a6a8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#gaa09dbea525e654af4138cae81ea9a6a8">cub::ShuffleUp</a> (T input, int src_offset, int first_lane=0)</td></tr>
+<tr class="memdesc:gaa09dbea525e654af4138cae81ea9a6a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-up for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>-<code>src_offset</code></sub>. For thread lanes <em>i</em> &lt; src_offset, the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_up_logo.png" alt="shfl_up_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#ga749c208dab03e3dc4ce1fa2e608a42aa">More...</a><br/></td></tr>
-<tr class="separator:ga749c208dab03e3dc4ce1fa2e608a42aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga13869cffbcc535abf4b883f5a367cc4b"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ga13869cffbcc535abf4b883f5a367cc4b"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga13869cffbcc535abf4b883f5a367cc4b">cub::ShuffleDown</a> (T input, int src_offset)</td></tr>
-<tr class="memdesc:ga13869cffbcc535abf4b883f5a367cc4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-down for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>+<code>src_offset</code></sub>. For thread lanes <em>i</em> &gt;= WARP_THREADS, the thread's own <code>input</code> is returned to the thread. </p>
+  <a href="#gaa09dbea525e654af4138cae81ea9a6a8">More...</a><br/></td></tr>
+<tr class="separator:gaa09dbea525e654af4138cae81ea9a6a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gafca5db82f4d7bea60266099297359059"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:gafca5db82f4d7bea60266099297359059"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#gafca5db82f4d7bea60266099297359059">cub::ShuffleDown</a> (T input, int src_offset, int last_lane=CUB_PTX_WARP_THREADS-1)</td></tr>
+<tr class="memdesc:gafca5db82f4d7bea60266099297359059"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-down for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>+<code>src_offset</code></sub>. For thread lanes <em>i</em> &gt;= WARP_THREADS, the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_down_logo.png" alt="shfl_down_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#ga13869cffbcc535abf4b883f5a367cc4b">More...</a><br/></td></tr>
-<tr class="separator:ga13869cffbcc535abf4b883f5a367cc4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga70c8abccb5e0f361a953b88c92dc0986"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ga70c8abccb5e0f361a953b88c92dc0986"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga70c8abccb5e0f361a953b88c92dc0986">cub::ShuffleBroadcast</a> (T input, int src_lane)</td></tr>
-<tr class="memdesc:ga70c8abccb5e0f361a953b88c92dc0986"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-broadcast for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><code>src_lane</code></sub>. For <code>src_lane</code> &lt; 0 or <code>src_lane</code> &gt;= WARP_THREADS, then the thread's own <code>input</code> is returned to the thread. </p>
+  <a href="#gafca5db82f4d7bea60266099297359059">More...</a><br/></td></tr>
+<tr class="separator:gafca5db82f4d7bea60266099297359059"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga490fe7fa432727b3d27be6cfe8d9439f"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ga490fe7fa432727b3d27be6cfe8d9439f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga490fe7fa432727b3d27be6cfe8d9439f">cub::ShuffleIndex</a> (T input, int src_lane)</td></tr>
+<tr class="memdesc:ga490fe7fa432727b3d27be6cfe8d9439f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-broadcast for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><code>src_lane</code></sub>. For <code>src_lane</code> &lt; 0 or <code>src_lane</code> &gt;= WARP_THREADS, then the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_broadcast_logo.png" alt="shfl_broadcast_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="#ga70c8abccb5e0f361a953b88c92dc0986">More...</a><br/></td></tr>
-<tr class="separator:ga70c8abccb5e0f361a953b88c92dc0986"><td class="memSeparator" colspan="2">&#160;</td></tr>
+  <a href="#ga490fe7fa432727b3d27be6cfe8d9439f">More...</a><br/></td></tr>
+<tr class="separator:ga490fe7fa432727b3d27be6cfe8d9439f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga938f8e0eade89e1264aabe2a54ae50ad"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga938f8e0eade89e1264aabe2a54ae50ad"></a>
 __device__ __forceinline__ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga938f8e0eade89e1264aabe2a54ae50ad">cub::WarpAll</a> (int cond)</td></tr>
 <tr class="memdesc:ga938f8e0eade89e1264aabe2a54ae50ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Portable implementation of __all. <br/></td></tr>
@@ -153,7 +153,7 @@ __device__ __forceinline__ int&#160;</td><td class="memItemRight" valign="bottom
 <tr class="separator:gaa1dc8cae33923255c06675806f9db155"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
-<a class="anchor" id="ga749c208dab03e3dc4ce1fa2e608a42aa"></a>
+<a class="anchor" id="gaa09dbea525e654af4138cae81ea9a6a8"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -169,7 +169,13 @@ template&lt;typename T &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>src_offset</em>&#160;</td>
+          <td class="paramname"><em>src_offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>first_lane</em> = <code>0</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -198,22 +204,23 @@ template&lt;typename T &gt; </div>
 <div class="line">    <span class="keywordtype">double</span> thread_data = ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain item from two ranks below</span></div>
-<div class="line">    <span class="keywordtype">double</span> peer_data = <a class="code" href="group___warp_module.html#ga749c208dab03e3dc4ce1fa2e608a42aa" title="Shuffle-up for any data type. Each warp-lanei obtains the value input contributed by warp-lanei-src_o...">ShuffleUp</a>(thread_data, 2);</div>
+<div class="line">    <span class="keywordtype">double</span> peer_data = <a class="code" href="group___warp_module.html#gaa09dbea525e654af4138cae81ea9a6a8" title="Shuffle-up for any data type. Each warp-lanei obtains the value input contributed by warp-lanei-src_o...">ShuffleUp</a>(thread_data, 2);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the first warp of threads is <code>{1.0, 2.0, 3.0, 4.0, 5.0, ..., 32.0}</code>. The corresponding output <code>peer_data</code> will be <code>{1.0, 2.0, 1.0, 2.0, 3.0, ..., 30.0}</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>The value to broadcast </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">src_offset</td><td>The relative down-offset of the peer to read from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">first_lane</td><td>Index of first lane in segment </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="util__ptx_8cuh_source.html#l00388">388</a> of file <a class="el" href="util__ptx_8cuh_source.html">util_ptx.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__ptx_8cuh_source.html#l00498">498</a> of file <a class="el" href="util__ptx_8cuh_source.html">util_ptx.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ga13869cffbcc535abf4b883f5a367cc4b"></a>
+<a class="anchor" id="gafca5db82f4d7bea60266099297359059"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -229,7 +236,13 @@ template&lt;typename T &gt; </div>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>src_offset</em>&#160;</td>
+          <td class="paramname"><em>src_offset</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>last_lane</em> = <code>CUB_PTX_WARP_THREADS&#160;-&#160;1</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -258,29 +271,30 @@ template&lt;typename T &gt; </div>
 <div class="line">    <span class="keywordtype">double</span> thread_data = ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain item from two ranks below</span></div>
-<div class="line">    <span class="keywordtype">double</span> peer_data = <a class="code" href="group___warp_module.html#ga13869cffbcc535abf4b883f5a367cc4b" title="Shuffle-down for any data type. Each warp-lanei obtains the value input contributed by warp-lanei+src...">ShuffleDown</a>(thread_data, 2);</div>
+<div class="line">    <span class="keywordtype">double</span> peer_data = <a class="code" href="group___warp_module.html#gafca5db82f4d7bea60266099297359059" title="Shuffle-down for any data type. Each warp-lanei obtains the value input contributed by warp-lanei+src...">ShuffleDown</a>(thread_data, 2);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the first warp of threads is <code>{1.0, 2.0, 3.0, 4.0, 5.0, ..., 32.0}</code>. The corresponding output <code>peer_data</code> will be <code>{3.0, 4.0, 5.0, 6.0, 7.0, ..., 32.0}</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>The value to broadcast </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">src_offset</td><td>The relative up-offset of the peer to read from </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">last_lane</td><td>Index of first lane in segment </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="util__ptx_8cuh_source.html#l00447">447</a> of file <a class="el" href="util__ptx_8cuh_source.html">util_ptx.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__ptx_8cuh_source.html#l00559">559</a> of file <a class="el" href="util__ptx_8cuh_source.html">util_ptx.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ga70c8abccb5e0f361a953b88c92dc0986"></a>
+<a class="anchor" id="ga490fe7fa432727b3d27be6cfe8d9439f"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename T &gt; </div>
       <table class="memname">
         <tr>
-          <td class="memname">__device__ __forceinline__ T cub::ShuffleBroadcast </td>
+          <td class="memname">__device__ __forceinline__ T cub::ShuffleIndex </td>
           <td>(</td>
           <td class="paramtype">T&#160;</td>
           <td class="paramname"><em>input</em>, </td>
@@ -318,7 +332,7 @@ template&lt;typename T &gt; </div>
 <div class="line">    <span class="keywordtype">double</span> thread_data = ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Obtain item from thread 0</span></div>
-<div class="line">    <span class="keywordtype">double</span> peer_data = <a class="code" href="group___warp_module.html#ga70c8abccb5e0f361a953b88c92dc0986" title="Shuffle-broadcast for any data type. Each warp-lanei obtains the value input contributed by warp-lane...">ShuffleBroadcast</a>(thread_data, 0);</div>
+<div class="line">    <span class="keywordtype">double</span> peer_data = <a class="code" href="group___warp_module.html#ga490fe7fa432727b3d27be6cfe8d9439f" title="Shuffle-broadcast for any data type. Each warp-lanei obtains the value input contributed by warp-lane...">ShuffleIndex</a>(thread_data, 0);</div>
 </div><!-- fragment --> </dd></dl>
 <dl class="section user"><dt></dt><dd>Suppose the set of input <code>thread_data</code> across the first warp of threads is <code>{1.0, 2.0, 3.0, 4.0, 5.0, ..., 32.0}</code>. The corresponding output <code>peer_data</code> will be <code>{1.0, 1.0, 1.0, 1.0, 1.0, ..., 1.0}</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
@@ -329,7 +343,7 @@ template&lt;typename T &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="util__ptx_8cuh_source.html#l00542">542</a> of file <a class="el" href="util__ptx_8cuh_source.html">util_ptx.cuh</a>.</p>
+<p>Definition at line <a class="el" href="util__ptx_8cuh_source.html#l00663">663</a> of file <a class="el" href="util__ptx_8cuh_source.html">util_ptx.cuh</a>.</p>
 
 </div>
 </div>
@@ -337,7 +351,7 @@ template&lt;typename T &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:31 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:51 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

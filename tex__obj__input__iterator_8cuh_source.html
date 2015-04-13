@@ -203,12 +203,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    {}</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> QualifiedT&gt;</div>
-<div class="line"><a name="l00162"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#adf05337e92bbe57058cc3ccb622c51fe">  162</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#adf05337e92bbe57058cc3ccb622c51fe" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(</div>
+<div class="line"><a name="l00162"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a1c8e90058139201e706d2aa863839a85">  162</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a1c8e90058139201e706d2aa863839a85" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        QualifiedT      *ptr,               </div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <span class="keywordtype">size_t</span>          bytes,              </div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <span class="keywordtype">size_t</span>          bytes = <span class="keywordtype">size_t</span>(-1),         </div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;        <span class="keywordtype">size_t</span>          tex_offset = 0)     </div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    {</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        this-&gt;ptr = <span class="keyword">const_cast&lt;</span>typename RemoveQualifiers&lt;QualifiedT&gt;::Type *<span class="keyword">&gt;</span>(ptr);</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        this-&gt;ptr = <span class="keyword">const_cast&lt;</span>typename <a class="code" href="structcub_1_1_remove_qualifiers.html#a9143e196ef5e6a0176b953f677e94671" title="Type without const and volatile qualifiers. ">RemoveQualifiers&lt;QualifiedT&gt;::Type</a> *<span class="keyword">&gt;</span>(ptr);</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        this-&gt;tex_offset = tex_offset;</div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;        cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc&lt;TextureWord&gt;();</div>
@@ -306,41 +306,42 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
 <div class="line"><a name="l00273"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a60fd926e1e100dee7a22088543a3b647">  273</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a56ce41371ce3bd489f594bf4aa3eb470" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a60fd926e1e100dee7a22088543a3b647" title="Array subscript. ">operator[]</a>(Distance n)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        <span class="keywordflow">return</span> *(*<span class="keyword">this</span> + n);</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    }</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;</div>
-<div class="line"><a name="l00279"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a909602025800c1f44525d95a65ad1bd4">  279</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a9d717dc2c9684a1da75f0326a0296118" title="The type of a pointer to an element the iterator can point to. ">pointer</a> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a909602025800c1f44525d95a65ad1bd4" title="Structure dereference. ">operator-&gt;</a>()</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;    {</div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;        <span class="keywordflow">return</span> &amp;(*(*this));</div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;    }</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;</div>
-<div class="line"><a name="l00285"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a38095c9cb635d8ba5ded2090ab671e20">  285</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a38095c9cb635d8ba5ded2090ab671e20" title="Equal to. ">operator==</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">self_type</a>&amp; rhs)</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;    {</div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        <span class="keywordflow">return</span> ((ptr == rhs.ptr) &amp;&amp; (tex_offset == rhs.tex_offset) &amp;&amp; (tex_obj == rhs.tex_obj));</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;    }</div>
-<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;</div>
-<div class="line"><a name="l00291"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#af500ff312438db4a22ce466968fd4c28">  291</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#af500ff312438db4a22ce466968fd4c28" title="Not equal to. ">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">self_type</a>&amp; rhs)</div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    {</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        <span class="keywordflow">return</span> ((ptr != rhs.ptr) || (tex_offset != rhs.tex_offset) || (tex_obj != rhs.tex_obj));</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    }</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;</div>
-<div class="line"><a name="l00297"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">  297</a></span>&#160;    <span class="keyword">friend</span> std::ostream&amp; <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80" title="ostream operator ">operator&lt;&lt;</a>(std::ostream&amp; os, <span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">self_type</a>&amp; itr)</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    {</div>
-<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;        <span class="keywordflow">return</span> os;</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    }</div>
-<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;};</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        <a class="code" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">self_type</a> offset = (*this) + n;</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;        <span class="keywordflow">return</span> *offset;</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    }</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;</div>
+<div class="line"><a name="l00280"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a909602025800c1f44525d95a65ad1bd4">  280</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a9d717dc2c9684a1da75f0326a0296118" title="The type of a pointer to an element the iterator can point to. ">pointer</a> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a909602025800c1f44525d95a65ad1bd4" title="Structure dereference. ">operator-&gt;</a>()</div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    {</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        <span class="keywordflow">return</span> &amp;(*(*this));</div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;    }</div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;</div>
+<div class="line"><a name="l00286"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a38095c9cb635d8ba5ded2090ab671e20">  286</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a38095c9cb635d8ba5ded2090ab671e20" title="Equal to. ">operator==</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">self_type</a>&amp; rhs)</div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;    {</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;        <span class="keywordflow">return</span> ((ptr == rhs.ptr) &amp;&amp; (tex_offset == rhs.tex_offset) &amp;&amp; (tex_obj == rhs.tex_obj));</div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;    }</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;</div>
+<div class="line"><a name="l00292"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#af500ff312438db4a22ce466968fd4c28">  292</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#af500ff312438db4a22ce466968fd4c28" title="Not equal to. ">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">self_type</a>&amp; rhs)</div>
+<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    {</div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;        <span class="keywordflow">return</span> ((ptr != rhs.ptr) || (tex_offset != rhs.tex_offset) || (tex_obj != rhs.tex_obj));</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    }</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;</div>
+<div class="line"><a name="l00298"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">  298</a></span>&#160;    <span class="keyword">friend</span> std::ostream&amp; <a class="code" href="classcub_1_1_tex_obj_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80" title="ostream operator ">operator&lt;&lt;</a>(std::ostream&amp; os, <span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_obj_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses newer Kepler-style texture objects. ">self_type</a>&amp; itr)</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    {</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;        <span class="keywordflow">return</span> os;</div>
+<div class="line"><a name="l00301"></a><span class="lineno">  301</span>&#160;    }</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;</div>
+<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;};</div>
 <div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;       <span class="comment">// end group UtilIterator</span></div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;       <span class="comment">// end group UtilIterator</span></div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

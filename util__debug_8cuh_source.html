@@ -140,7 +140,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;<span class="keyword">namespace </span>cub {</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;</div>
-<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor">#if (defined(DEBUG) || defined(_DEBUG))</span></div>
+<div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160;<span class="preprocessor">#if (defined(DEBUG) || defined(_DEBUG)) &amp;&amp; !defined(CUB_STDERR)</span></div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CUB_STDERR</span></div>
 <div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="preprocessor"></span></div>
@@ -166,29 +166,35 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;}</div>
 <div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;</div>
 <div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;</div>
-<div class="line"><a name="l00091"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236">   91</a></span>&#160;<span class="preprocessor">#define CubDebug(e) cub::Debug((e), __FILE__, __LINE__)</span></div>
-<div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;</div>
-<div class="line"><a name="l00097"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8">   97</a></span>&#160;<span class="preprocessor">#define CubDebugExit(e) if (cub::Debug((e), __FILE__, __LINE__)) { exit(1); }</span></div>
-<div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;</div>
-<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
-<div class="line"><a name="l00104"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga6788287a780dc10c443aa1ab5ae9f0db">  104</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CubLog(format, ...) printf(format,__VA_ARGS__);</span></div>
-<div class="line"><a name="l00105"></a><span class="lineno">  105</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#elif (CUB_PTX_ARCH &gt;= 200)</span></div>
-<div class="line"><a name="l00106"></a><span class="lineno">  106</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CubLog(format, ...) printf(&quot;[block (%d,%d,%d), thread (%d,%d,%d)]: &quot; format, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, __VA_ARGS__);</span></div>
-<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00109"></a><span class="lineno">  109</span>&#160;</div>
-<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;</div>
-<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;       <span class="comment">// end group UtilMgmt</span></div>
-<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;</div>
-<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;<span class="preprocessor">#ifndef CubDebug</span></div>
+<div class="line"><a name="l00092"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236">   92</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CubDebug(e) cub::Debug((e), __FILE__, __LINE__)</span></div>
+<div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;</div>
+<div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;<span class="preprocessor">#ifndef CubDebugExit</span></div>
+<div class="line"><a name="l00100"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8">  100</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #define CubDebugExit(e) if (cub::Debug((e), __FILE__, __LINE__)) { exit(1); }</span></div>
+<div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;</div>
+<div class="line"><a name="l00107"></a><span class="lineno">  107</span>&#160;<span class="preprocessor">#if !defined(CubLog)</span></div>
+<div class="line"><a name="l00108"></a><span class="lineno">  108</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #if (CUB_PTX_ARCH == 0)</span></div>
+<div class="line"><a name="l00109"></a><span class="lineno"><a class="code" href="group___util_mgmt.html#ga6788287a780dc10c443aa1ab5ae9f0db">  109</a></span>&#160;<span class="preprocessor"></span><span class="preprocessor">        #define CubLog(format, ...) printf(format,__VA_ARGS__);</span></div>
+<div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #elif (CUB_PTX_ARCH &gt;= 200)</span></div>
+<div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;<span class="preprocessor"></span><span class="preprocessor">        #define CubLog(format, ...) printf(&quot;[block (%d,%d,%d), thread (%d,%d,%d)]: &quot; format, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, __VA_ARGS__);</span></div>
+<div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;<span class="preprocessor"></span><span class="preprocessor">    #endif</span></div>
+<div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;<span class="preprocessor"></span><span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;<span class="preprocessor"></span></div>
+<div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;</div>
+<div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;</div>
+<div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;       <span class="comment">// end group UtilMgmt</span></div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;</div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: Member List</title>
+<title>CUB: cub::RemoveQualifiers&lt; Tp, Up &gt; Struct Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -93,25 +93,43 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="structcub_1_1_traits.html">Traits</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="structcub_1_1_remove_qualifiers.html">RemoveQualifiers</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
+  <div class="summary">
+<a href="#pub-types">Public Types</a> &#124;
+<a href="structcub_1_1_remove_qualifiers-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::Traits&lt; T &gt; Member List</div>  </div>
+<div class="title">cub::RemoveQualifiers&lt; Tp, Up &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Utilities</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
+<a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
+<div class="textblock"><h3>template&lt;
+    typename Tp, 
+    typename Up = Tp&gt;<br/>
+struct cub::RemoveQualifiers&lt; Tp, Up &gt;</h3>
 
-<p>This is the complete list of members for <a class="el" href="structcub_1_1_traits.html">cub::Traits&lt; T &gt;</a>, including all inherited members.</p>
-<table class="directory">
-  <tr class="even"><td class="entry"><a class="el" href="structcub_1_1_base_traits.html#a25ff6477c84dc3bd5f4b5e70cd600f09">CATEGORY</a></td><td class="entry"><a class="el" href="structcub_1_1_base_traits.html">cub::BaseTraits&lt; NOT_A_NUMBER, false, false, RemoveQualifiers&lt; T &gt;::Type &gt;</a></td><td class="entry"><span class="mlabel">static</span></td></tr>
-  <tr bgcolor="#f0f0f0"><td class="entry"><b>NULL_TYPE</b> enum value (defined in <a class="el" href="structcub_1_1_base_traits.html">cub::BaseTraits&lt; NOT_A_NUMBER, false, false, RemoveQualifiers&lt; T &gt;::Type &gt;</a>)</td><td class="entry"><a class="el" href="structcub_1_1_base_traits.html">cub::BaseTraits&lt; NOT_A_NUMBER, false, false, RemoveQualifiers&lt; T &gt;::Type &gt;</a></td><td class="entry"></td></tr>
-  <tr bgcolor="#f0f0f0" class="even"><td class="entry"><b>PRIMITIVE</b> enum value (defined in <a class="el" href="structcub_1_1_base_traits.html">cub::BaseTraits&lt; NOT_A_NUMBER, false, false, RemoveQualifiers&lt; T &gt;::Type &gt;</a>)</td><td class="entry"><a class="el" href="structcub_1_1_base_traits.html">cub::BaseTraits&lt; NOT_A_NUMBER, false, false, RemoveQualifiers&lt; T &gt;::Type &gt;</a></td><td class="entry"></td></tr>
-</table></div><!-- contents -->
+<p>Removes <code>const</code> and <code>volatile</code> qualifiers from type <code>Tp</code>. </p>
+<p>For example: <code>typename <a class="el" href="structcub_1_1_remove_qualifiers.html#a9143e196ef5e6a0176b953f677e94671" title="Type without const and volatile qualifiers. ">RemoveQualifiers&lt;volatile int&gt;::Type</a> // int;</code> </p>
+
+<p>Definition at line <a class="el" href="util__type_8cuh_source.html#l00721">721</a> of file <a class="el" href="util__type_8cuh_source.html">util_type.cuh</a>.</p>
+</div><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a9143e196ef5e6a0176b953f677e94671"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a9143e196ef5e6a0176b953f677e94671"></a>
+typedef Up&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_remove_qualifiers.html#a9143e196ef5e6a0176b953f677e94671">Type</a></td></tr>
+<tr class="memdesc:a9143e196ef5e6a0176b953f677e94671"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type without <code>const</code> and <code>volatile</code> qualifiers. <br/></td></tr>
+<tr class="separator:a9143e196ef5e6a0176b953f677e94671"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table>
+<hr/>The documentation for this struct was generated from the following file:<ul>
+<li><a class="el" href="util__type_8cuh_source.html">util_type.cuh</a></li>
+</ul>
+</div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:32 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:51 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
