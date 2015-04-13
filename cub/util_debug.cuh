@@ -54,7 +54,7 @@ namespace cub {
 
 
 /// CUB error reporting macro (prints error messages to stderr)
-#if (defined(DEBUG) || defined(_DEBUG))
+#if (defined(DEBUG) || defined(_DEBUG)) && !defined(CUB_STDERR)
     #define CUB_STDERR
 #endif
 
@@ -88,22 +88,28 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 /**
  * \brief Debug macro
  */
-#define CubDebug(e) cub::Debug((e), __FILE__, __LINE__)
+#ifndef CubDebug
+    #define CubDebug(e) cub::Debug((e), __FILE__, __LINE__)
+#endif
 
 
 /**
  * \brief Debug macro with exit
  */
-#define CubDebugExit(e) if (cub::Debug((e), __FILE__, __LINE__)) { exit(1); }
+#ifndef CubDebugExit
+    #define CubDebugExit(e) if (cub::Debug((e), __FILE__, __LINE__)) { exit(1); }
+#endif
 
 
 /**
  * \brief Log macro for printf statements.
  */
-#if (CUB_PTX_ARCH == 0)
-    #define CubLog(format, ...) printf(format,__VA_ARGS__);
-#elif (CUB_PTX_ARCH >= 200)
-    #define CubLog(format, ...) printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, __VA_ARGS__);
+#if !defined(CubLog)
+    #if (CUB_PTX_ARCH == 0)
+        #define CubLog(format, ...) printf(format,__VA_ARGS__);
+    #elif (CUB_PTX_ARCH >= 200)
+        #define CubLog(format, ...) printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, __VA_ARGS__);
+    #endif
 #endif
 
 

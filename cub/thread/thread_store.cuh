@@ -276,6 +276,15 @@ struct IterateThreadStore<MAX, MAX>
 #endif
 
 
+// Macro cleanup
+#undef CUB_STORE_ALL
+#undef CUB_STORE_1
+#undef CUB_STORE_2
+#undef CUB_STORE_4
+#undef CUB_STORE_8
+#undef CUB_STORE_16
+
+
 /**
  * ThreadStore definition for STORE_DEFAULT modifier on iterator types
  */
