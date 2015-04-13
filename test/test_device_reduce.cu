@@ -603,7 +603,7 @@ void TestPointer(
 
     // Allocate host arrays
     T* h_in = new T[num_items];
-    ItemOffsetPair<T, int> h_reference;
+    KeyValuePair<int, T> h_reference;
 
     // Initialize problem and solution
     printf("Initializing... "); fflush(stdout);
@@ -656,7 +656,7 @@ void TestPointer(
 
     // Allocate host arrays
     T* h_in = new T[num_items];
-    ItemOffsetPair<T, int> h_reference;
+    KeyValuePair<int, T> h_reference;
 
     // Initialize problem and solution
     printf("Initializing... "); fflush(stdout);
@@ -742,7 +742,7 @@ void TestIterator(
     // Use a constant iterator as the input
     T val = T();
     ConstantInputIterator<T, int> h_in(val);
-    ItemOffsetPair<T, int> h_reference;
+    KeyValuePair<int, T> h_reference;
 
     // Initialize problem and solution
     printf("Solving... "); fflush(stdout);
@@ -782,7 +782,7 @@ void TestIterator(
     // Use a constant iterator as the input
     T val = T();
     ConstantInputIterator<T, int> h_in(val);
-    ItemOffsetPair<T, int> h_reference;
+    KeyValuePair<int, T> h_reference;
 
     // Initialize problem and solution
     printf("Solving... "); fflush(stdout);

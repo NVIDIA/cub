@@ -62,7 +62,7 @@ namespace cub {
 
 
 /**
- * \brief A random-access input wrapper for pairing dereferenced values with their corresponding indices (forming \p ItemOffsetPair tuples).
+ * \brief A random-access input wrapper for pairing dereferenced values with their corresponding indices (forming \p KeyValuePair tuples).
  *
  * \par Overview
  * - ArgIndexInputIteratorTwraps a random access input iterator \p itr of type \p InputIteratorT.
