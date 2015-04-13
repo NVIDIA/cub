@@ -108,7 +108,10 @@ struct AgentReduceByKey
     typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type ValueT;
 
     // Tuple type for scanning (pairs accumulated segment-value with segment-index)
-    typedef KeyValuePair<OffsetT, ValueT> KeyValuePairT;
+    typedef KeyValuePair<OffsetT, ValueT> OffsetValuePairT;
+
+    // Tuple type for pairing keys and values
+    typedef KeyValuePair<KeyT, ValueT> KeyValuePairT;
 
     // Tile status descriptor interface type
     typedef ReduceByKeyScanTileState<ValueT, OffsetT> ScanTileStateT;
@@ -170,14 +173,14 @@ struct AgentReduceByKey
 
     // Parameterized BlockScan type
     typedef BlockScan<
-            KeyValuePairT,
+            OffsetValuePairT,
             BLOCK_THREADS,
             AgentReduceByKeyPolicyT::SCAN_ALGORITHM>
         BlockScanT;
 
     // Callback type for obtaining tile prefix during block scan
     typedef TilePrefixCallbackOp<
-            KeyValuePairT,
+            OffsetValuePairT,
             ReduceBySegmentOpT,
             ScanTileStateT>
         TilePrefixCallbackOpT;
@@ -264,11 +267,11 @@ struct AgentReduceByKey
      */
     __device__ __forceinline__
     void ScanTile(
-        KeyValuePairT     (&scan_items)[ITEMS_PER_THREAD],
-        KeyValuePairT&    tile_aggregate,
+        OffsetValuePairT     (&scan_items)[ITEMS_PER_THREAD],
+        OffsetValuePairT&    tile_aggregate,
         Int2Type<true>      has_identity)
     {
-        KeyValuePairT identity;
+        OffsetValuePairT identity;
         identity.value = 0;
         identity.key = 0;
         BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, identity, scan_op, tile_aggregate);
@@ -280,8 +283,8 @@ struct AgentReduceByKey
      */
     __device__ __forceinline__
     void ScanTile(
-        KeyValuePairT     (&scan_items)[ITEMS_PER_THREAD],
-        KeyValuePairT&    tile_aggregate,
+        OffsetValuePairT     (&scan_items)[ITEMS_PER_THREAD],
+        OffsetValuePairT&    tile_aggregate,
         Int2Type<false>     has_identity)
     {
         BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, tile_aggregate);
@@ -292,12 +295,12 @@ struct AgentReduceByKey
      */
     __device__ __forceinline__
     void ScanTile(
-        KeyValuePairT             (&scan_items)[ITEMS_PER_THREAD],
-        KeyValuePairT&            tile_aggregate,
+        OffsetValuePairT             (&scan_items)[ITEMS_PER_THREAD],
+        OffsetValuePairT&            tile_aggregate,
         TilePrefixCallbackOpT&      prefix_op,
         Int2Type<true>              has_identity)
     {
-        KeyValuePairT identity;
+        OffsetValuePairT identity;
         identity.value = 0;
         identity.key = 0;
         BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, identity, scan_op, tile_aggregate, prefix_op);
@@ -308,8 +311,8 @@ struct AgentReduceByKey
      */
     __device__ __forceinline__
     void ScanTile(
-        KeyValuePairT             (&scan_items)[ITEMS_PER_THREAD],
-        KeyValuePairT&            tile_aggregate,
+        OffsetValuePairT             (&scan_items)[ITEMS_PER_THREAD],
+        OffsetValuePairT&            tile_aggregate,
         TilePrefixCallbackOpT&      prefix_op,
         Int2Type<false>             has_identity)
     {
@@ -326,7 +329,7 @@ struct AgentReduceByKey
         OffsetT         num_remaining,
         ValueT          (&values)[ITEMS_PER_THREAD],
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
-        KeyValuePairT (&scan_items)[ITEMS_PER_THREAD])
+        OffsetValuePairT (&scan_items)[ITEMS_PER_THREAD])
     {
         // Zip values and segment_flags
         #pragma unroll
@@ -344,7 +347,7 @@ struct AgentReduceByKey
     __device__ __forceinline__ void ZipKeysAndValues(
         KeyT            (&keys)[ITEMS_PER_THREAD],                  ///< in
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],       ///< out
-        KeyValuePairT (&scan_items)[ITEMS_PER_THREAD],            ///< in
+        OffsetValuePairT   (&scan_items)[ITEMS_PER_THREAD],            ///< in
         KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD])         ///< out
     {
         // Zip values and segment_flags
@@ -502,7 +505,7 @@ struct AgentReduceByKey
         ValueT              values[ITEMS_PER_THREAD];           // Tile values
         OffsetT             segment_flags[ITEMS_PER_THREAD];    // Segment head flags
         OffsetT             segment_indices[ITEMS_PER_THREAD];  // Segment indices
-        KeyValuePairT     scan_items[ITEMS_PER_THREAD];       // Zipped values and segment flags|indices
+        OffsetValuePairT     scan_items[ITEMS_PER_THREAD];       // Zipped values and segment flags|indices
         KeyValuePairT       scatter_items[ITEMS_PER_THREAD];    // Zipped key value pairs for scattering
 
         // Load keys (last tile repeats final element)
@@ -532,7 +535,7 @@ struct AgentReduceByKey
         ZipValuesAndFlags<IS_LAST_TILE>(num_remaining, values, segment_flags, scan_items);
 
         // Exclusive scan of values and segment_flags
-        KeyValuePairT tile_aggregate;
+        OffsetValuePairT tile_aggregate;
         ScanTile(scan_items, tile_aggregate, Int2Type<HAS_IDENTITY_ZERO>());
 
         if (threadIdx.x == 0)
@@ -584,7 +587,7 @@ struct AgentReduceByKey
         ValueT              values[ITEMS_PER_THREAD];               // Tile values
         OffsetT             segment_flags[ITEMS_PER_THREAD];        // Segment head flags
         OffsetT             segment_indices[ITEMS_PER_THREAD];      // Segment indices
-        KeyValuePairT     scan_items[ITEMS_PER_THREAD];           // Zipped values and segment flags|indices
+        OffsetValuePairT     scan_items[ITEMS_PER_THREAD];           // Zipped values and segment flags|indices
         KeyValuePairT       scatter_items[ITEMS_PER_THREAD];    // Zipped key value pairs for scattering
 
         // Load keys (last tile repeats final element)
@@ -614,10 +617,10 @@ struct AgentReduceByKey
         ZipValuesAndFlags<IS_LAST_TILE>(num_remaining, values, segment_flags, scan_items);
 
         // Exclusive scan of values and segment_flags
-        KeyValuePairT tile_aggregate;
+        OffsetValuePairT tile_aggregate;
         TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
         ScanTile(scan_items, tile_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
-        KeyValuePairT tile_inclusive_prefix = prefix_op.GetInclusivePrefix();
+        OffsetValuePairT tile_inclusive_prefix = prefix_op.GetInclusivePrefix();
 
         // Unzip values and segment indices
         ZipKeysAndValues(pred_keys, segment_indices, scan_items, scatter_items);
