@@ -531,7 +531,7 @@ __host__ __device__ __forceinline__ void InitValue(
 
     // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
     RandomBits(value.key, 3);
-    value.offset = (value.key & 0x1);
+    value.key = (value.key & 0x1);
 }
 
 

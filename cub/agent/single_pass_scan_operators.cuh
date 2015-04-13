@@ -627,7 +627,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
         TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
         TileDescriptor tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-        while (WarpAny(tile_descriptor.status == SCAN_TILE_INVALID))
+        while (tile_descriptor.status == SCAN_TILE_INVALID)
         {
             alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);

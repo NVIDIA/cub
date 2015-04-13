@@ -245,16 +245,46 @@ struct WarpReduceShfl
             "  .reg .u32 lo;"
             "  .reg .u32 hi;"
             "  .reg .pred p;"
+            "  .reg .f64 r0;"
+            "  mov.b64 %0, %1;"
             "  mov.b64 {lo, hi}, %1;"
             "  shfl.down.b32 lo|p, lo, %2, %3;"
             "  shfl.down.b32 hi|p, hi, %2, %3;"
-            "  mov.b64 %0, {lo, hi};"
-            "  @p add.f64 %0, %0, %1;"
+            "  mov.b64 r0, {lo, hi};"
+            "  @p add.f64 %0, %0, r0;"
             "}"
             : "=d"(output) : "d"(input), "r"(offset), "r"(last_lane));
 
         return output;
     }
+
+
+    /// Reduction (specialized for swizzled ReduceByKeyOp<cub::Sum> across KeyValuePair<KeyT, ValueT> types)
+    template <typename ValueT, typename KeyT>
+    __device__ __forceinline__ KeyValuePair<KeyT, ValueT> ReduceStep(
+        KeyValuePair<KeyT, ValueT>                  input,              ///< [in] Calling thread's input item.
+        SwizzleScanOp<ReduceByKeyOp<cub::Sum> >     reduction_op,       ///< [in] Binary reduction operator
+        int                                         last_lane,          ///< [in] Index of last lane in segment
+        int                                         offset)             ///< [in] Up-offset to pull from
+    {
+        KeyValuePair<KeyT, ValueT> output;
+
+        KeyT other_key = ShuffleDown(input.key, offset, last_lane);
+        
+        output.key = input.key;
+        output.value = ReduceStep(
+            input.value, 
+            cub::Sum(), 
+            last_lane, 
+            offset, 
+            Int2Type<IsInteger<ValueT>::IS_SMALL_UNSIGNED>());
+
+        if (input.key != other_key)
+            output.value = input.value;
+
+        return output;
+    }
+
 
 
     /// Reduction (specialized for swizzled ReduceBySegmentOp<cub::Sum> across KeyValuePair<OffsetT, ValueT> types)
