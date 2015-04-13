@@ -36,9 +36,6 @@
 #include <iterator>
 #include <stdio.h>
 
-#include <cub/util_type.cuh>
-#include <cub/util_allocator.cuh>
-
 #include <cub/iterator/arg_index_input_iterator.cuh>
 #include <cub/iterator/cache_modified_input_iterator.cuh>
 #include <cub/iterator/cache_modified_output_iterator.cuh>
@@ -47,6 +44,9 @@
 #include <cub/iterator/tex_obj_input_iterator.cuh>
 #include <cub/iterator/tex_ref_input_iterator.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
+
+#include <cub/util_type.cuh>
+#include <cub/util_allocator.cuh>
 
 #include <thrust/device_ptr.h>
 #include <thrust/copy.h>

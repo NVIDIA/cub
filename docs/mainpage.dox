@@ -31,11 +31,11 @@
 /**
 
 \defgroup PrimitiveModule 	Primitives
-	\defgroup DeviceModule 	Device-wide
+	\defgroup WarpModule 	Warp-wide (collective)
 		\ingroup PrimitiveModule
 	\defgroup BlockModule 	Block-wide (collective)
 		\ingroup PrimitiveModule
-	\defgroup WarpModule 	Warp-wide (collective)
+	\defgroup DeviceModule 	Device-wide
 		\ingroup PrimitiveModule
 
 \defgroup UtilModule 	Utilities
@@ -58,7 +58,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.4.0</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.4.1</b></em></a>
 
 </td><td>
 
@@ -521,6 +521,13 @@ like access to such things.)
 The following table enumerates prior feature releases as well as update versions 
 for the current feature release.
 <table>
+
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
+04/13/2015<br>
+[<b>CUB v1.4.1</b>](download_cub.html)
+</td><td style="vertical-align:text-top;">
+  - CUDA 7.0 bug fixes and issue workarounds.  See the [change-log](CHANGE_LOG.TXT) for further details.
+</td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 03/18/2015<br>

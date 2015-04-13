@@ -36,11 +36,11 @@
 #include <iterator>
 #include <stdio.h>
 
-#include <cub/util_allocator.cuh>
-#include <cub/iterator/cache_modified_input_iterator.cuh>
-#include <cub/iterator/cache_modified_output_iterator.cuh>
 #include <cub/block/block_load.cuh>
 #include <cub/block/block_store.cuh>
+#include <cub/iterator/cache_modified_input_iterator.cuh>
+#include <cub/iterator/cache_modified_output_iterator.cuh>
+#include <cub/util_allocator.cuh>
 
 #include "test_util.h"
 

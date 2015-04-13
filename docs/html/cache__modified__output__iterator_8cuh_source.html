@@ -166,7 +166,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;</div>
 <div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        __host__ __device__ __forceinline__ Reference(ValueType* ptr) : ptr(ptr) {}</div>
 <div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;</div>
-<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        __host__ __device__ __forceinline__ ValueType operator =(ValueType val)</div>
+<div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;        __device__ __forceinline__ ValueType operator =(ValueType val)</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;        {</div>
 <div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;            ThreadStore&lt;MODIFIER&gt;(ptr, val);</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;            <span class="keywordflow">return</span> val;</div>
@@ -204,7 +204,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00158"></a><span class="lineno"><a class="code" href="classcub_1_1_cache_modified_output_iterator.html#a8d19a08f1fdc19bf71521beb5ccfd5c7">  158</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_cache_modified_output_iterator.html#a8d19a08f1fdc19bf71521beb5ccfd5c7" title="Constructor. ">CacheModifiedOutputIterator</a>(</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        QualifiedValueType* ptr)     </div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    :</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        ptr(const_cast&lt;typename RemoveQualifiers&lt;QualifiedValueType&gt;::Type *&gt;(ptr))</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        ptr(const_cast&lt;typename <a class="code" href="structcub_1_1_remove_qualifiers.html" title="Removes const and volatile qualifiers from type Tp. ">RemoveQualifiers</a>&lt;QualifiedValueType&gt;::Type *&gt;(ptr))</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    {}</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;</div>
 <div class="line"><a name="l00165"></a><span class="lineno"><a class="code" href="classcub_1_1_cache_modified_output_iterator.html#afda2ee755eb80af44533c80020e00bac">  165</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_cache_modified_output_iterator.html" title="A random-access output wrapper for storing array values using a PTX cache-modifier. ">self_type</a> <a class="code" href="classcub_1_1_cache_modified_output_iterator.html#afda2ee755eb80af44533c80020e00bac" title="Postfix increment. ">operator++</a>(<span class="keywordtype">int</span>)</div>
@@ -289,7 +289,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:28 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -35,8 +35,8 @@
 
 #include <stdio.h>
 
-#include <cub/util_allocator.cuh>
 #include <cub/warp/warp_scan.cuh>
+#include <cub/util_allocator.cuh>
 
 #include "test_util.h"
 

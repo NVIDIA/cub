@@ -216,7 +216,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative sum operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated exclusive sum performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively.</dd></dl>
@@ -353,7 +353,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a02b2d2e98f89f80813460f6a6ea1692b" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
@@ -486,7 +486,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative sum operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a02b2d2e98f89f80813460f6a6ea1692b" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
@@ -610,7 +610,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a02b2d2e98f89f80813460f6a6ea1692b" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
@@ -680,7 +680,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:38 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
