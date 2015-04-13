@@ -635,6 +635,7 @@ struct Log2
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 template <int N, int COUNT>
 struct Log2<N, 0, COUNT>
 {
@@ -642,6 +643,7 @@ struct Log2<N, 0, COUNT>
         COUNT :
         COUNT - 1 };
 };
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
@@ -654,8 +656,6 @@ struct PowerOfTwo
     enum { VALUE = ((N & (N - 1)) == 0) };
 };
 
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
 /******************************************************************************
@@ -744,8 +744,6 @@ struct RemoveQualifiers<Tp, const volatile Up>
     typedef Up Type;
 };
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 
 /******************************************************************************
@@ -786,12 +784,10 @@ struct EnableIf
     typedef T Type;
 };
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 template <class T>
 struct EnableIf<false, T> {};
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /******************************************************************************
@@ -834,7 +830,6 @@ public:
     static const bool HAS_PARAM = sizeof(Test<BinaryOp>(NULL)) == sizeof(char);
 };
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 
@@ -876,7 +871,6 @@ struct BaseTraits
     };
 };
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 /**
  * Basic type traits (unsigned primitive specialization)
@@ -973,15 +967,11 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits>
     };
 };
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 /**
  * \brief Numeric type traits
  */
 template <typename T> struct NumericTraits :            BaseTraits<NOT_A_NUMBER, false, false, T> {};
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 template <> struct NumericTraits<NullType> :            BaseTraits<NOT_A_NUMBER, false, true, NullType> {};
 
@@ -1001,7 +991,8 @@ template <> struct NumericTraits<unsigned long long> :  BaseTraits<UNSIGNED_INTE
 template <> struct NumericTraits<float> :               BaseTraits<FLOATING_POINT, true, false, unsigned int> {};
 template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POINT, true, false, unsigned long long> {};
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
+template <> struct NumericTraits<bool> :                BaseTraits<UNSIGNED_INTEGER, true, false, typename UnitWord<bool>::VolatileWord > {};
+
 
 
 /**
@@ -1010,6 +1001,8 @@ template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POIN
 template <typename T>
 struct Traits : NumericTraits<typename RemoveQualifiers<T>::Type> {};
 
+
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /** @} */       // end group UtilModule
