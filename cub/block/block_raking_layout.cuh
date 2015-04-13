@@ -36,6 +36,7 @@
 
 #include "../util_macro.cuh"
 #include "../util_arch.cuh"
+#include "../util_type.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
