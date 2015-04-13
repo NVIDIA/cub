@@ -89,16 +89,16 @@ namespace cub {
  *
  * // Within device code:
  * typedef typename cub::ArgIndexInputIterator<double*>::value_type Tuple;
- * Tuple item_offset_pair.offset = *itr;
+ * Tuple item_offset_pair.key = *itr;
  * printf("%f @ %d\n",
  *  item_offset_pair.value,
- *  item_offset_pair.offset);   // 8.0 @ 0
+ *  item_offset_pair.key);   // 8.0 @ 0
  *
  * itr = itr + 6;
- * item_offset_pair.offset = *itr;
+ * item_offset_pair.key = *itr;
  * printf("%f @ %d\n",
  *  item_offset_pair.value,
- *  item_offset_pair.offset);   // 9.0 @ 6
+ *  item_offset_pair.key);   // 9.0 @ 6
  *
  * \endcode
  *

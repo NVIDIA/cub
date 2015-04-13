@@ -614,7 +614,7 @@ void TestPointer(
     {
         if (!(h_reference.value != h_in[i]))
         {
-            h_reference.offset = i;
+            h_reference.key = i;
             break;
         }
     }
@@ -667,7 +667,7 @@ void TestPointer(
     {
         if (!(h_reference.value != h_in[i]))
         {
-            h_reference.offset = i;
+            h_reference.key = i;
             break;
         }
     }
@@ -751,7 +751,7 @@ void TestIterator(
     {
         if (!(h_reference.value != h_in[i]))
         {
-            h_reference.offset = i;
+            h_reference.key = i;
             break;
         }
     }
@@ -791,7 +791,7 @@ void TestIterator(
     {
         if (!(h_reference.value != h_in[i]))
         {
-            h_reference.offset = i;
+            h_reference.key = i;
             break;
         }
     }
