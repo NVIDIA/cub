@@ -232,14 +232,14 @@ public:
 /**
  * \brief Reduce-by-segment functor.
  *
- * Given two cub::ItemOffsetPair inputs \p a and \p b and a
+ * Given two cub::KeyValuePair inputs \p a and \p b and a
  * binary associative combining operator \p <tt>f(const T &x, const T &y)</tt>,
- * an instance of this functor returns a cub::ItemOffsetPair whose \p offset
+ * an instance of this functor returns a cub::KeyValuePair whose \p key
  * field is <tt>a.key</tt> + <tt>a.key</tt>, and whose \p value field
  * is either b.value if b.key is non-zero, or f(a.value, b.value) otherwise.
  *
  * ReduceBySegmentOp is an associative, non-commutative binary combining operator
- * for input sequences of cub::ItemOffsetPair pairings.  Such
+ * for input sequences of cub::KeyValuePair pairings.  Such
  * sequences are typically used to represent a segmented set of values to be reduced
  * and a corresponding set of {0,1}-valued integer "head flags" demarcating the
  * first value of each segment.

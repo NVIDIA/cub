@@ -223,7 +223,7 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         double output;
-
+/*
         // Use predicate set from SHFL to guard against invalid peers
         asm(
             "{"
@@ -239,24 +239,26 @@ struct WarpScanShfl
             "  @p add.f64 %0, %0, r0;"
             "}"
             : "=d"(output) : "d"(input), "r"(offset), "r"(first_lane));
+*/
 
-/*
         // Use predicate set from SHFL to guard against invalid peers
         asm(
             "{"
             "  .reg .f64 r0;"
-            "  .reg .u32 lo;"
-            "  .reg .u32 hi;"
             "  .reg .pred p;"
-            "  mov.b64 {lo, hi}, %1;"
-            "  shfl.up.b32 lo|p, lo, %2, %3;"
-            "  shfl.up.b32 hi|p, hi, %2, %3;"
-            "  mov.b64 r0, {lo, hi};"
-            "  @p add.f64 %0, r0, %4;"
+            "  {"
+            "    .reg .u32 lo;"
+            "    .reg .u32 hi;"
+            "    mov.b64 {lo, hi}, %1;"
+            "    shfl.up.b32 lo|p, lo, %2, %3;"
+            "    shfl.up.b32 hi|p, hi, %2, %3;"
+            "    mov.b64 r0, {lo, hi};"
+            "  }"
+            "  @p add.f64 r0, r0, %4;"
             "  mov.f64 %0, r0;"
             "}"
-            : "=d"(output) : "d"(input), "r"(offset), "r"(first_lane), "d"(input));
-*/
+            : "=d"(output) : "d"(input), "r"(offset), "r"(first_lane), "d"(input), "d"(0.0));
+
         return output;
     }
 
