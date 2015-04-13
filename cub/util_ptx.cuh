@@ -508,16 +508,17 @@ __device__ __forceinline__ T ShuffleUp(
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    unsigned int &shuffle_word = output_alias[0];
+    unsigned int shuffle_word;
     asm volatile("shfl.up.b32 %0, %1, %2, %3;"
-        : "=r"(shuffle_word) : "r"(input_alias[0]), "r"(src_offset), "r"(first_lane));
+        : "=r"(shuffle_word) : "r"((unsigned int) input_alias[0]), "r"(src_offset), "r"(first_lane));
+    output_alias[0] = shuffle_word;
 
     #pragma unroll
     for (int WORD = 1; WORD < WORDS; ++WORD)
     {
-        unsigned int &shuffle_word = output_alias[WORD];
         asm volatile("shfl.up.b32 %0, %1, %2, %3;"
-            : "=r"(shuffle_word) : "r"(input_alias[WORD]), "r"(src_offset), "r"(first_lane));
+            : "=r"(shuffle_word) : "r"((unsigned int) input_alias[WORD]), "r"(src_offset), "r"(first_lane));
+        output_alias[WORD] = shuffle_word;
     }
 
 //    ShuffleUp(input_alias, output_alias, src_offset, first_lane, Int2Type<WORDS - 1>());
@@ -568,16 +569,17 @@ __device__ __forceinline__ T ShuffleDown(
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    unsigned int &shuffle_word = output_alias[0];
+    unsigned int shuffle_word;
     asm volatile("shfl.down.b32 %0, %1, %2, %3;"
-        : "=r"(shuffle_word) : "r"(input_alias[0]), "r"(src_offset), "r"(last_lane));
+        : "=r"(shuffle_word) : "r"((unsigned int) input_alias[0]), "r"(src_offset), "r"(last_lane));
+    output_alias[0] = shuffle_word;
 
     #pragma unroll
     for (int WORD = 1; WORD < WORDS; ++WORD)
     {
-        unsigned int &shuffle_word = output_alias[WORD];
         asm volatile("shfl.down.b32 %0, %1, %2, %3;"
-            : "=r"(shuffle_word) : "r"(input_alias[WORD]), "r"(src_offset), "r"(last_lane));
+            : "=r"(shuffle_word) : "r"((unsigned int) input_alias[WORD]), "r"(src_offset), "r"(last_lane));
+        output_alias[WORD] = shuffle_word;
     }
 
 //    ShuffleDown(input_alias, output_alias, src_offset, last_lane, Int2Type<WORDS - 1>());
@@ -608,16 +610,17 @@ __device__ __forceinline__ T ShuffleIndex(
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
 
-    unsigned int &shuffle_word = output_alias[0];
+    unsigned int shuffle_word;
     asm volatile("shfl.idx.b32 %0, %1, %2, %3;"
-        : "=r"(shuffle_word) : "r"(input_alias[0]), "r"(src_lane), "r"(logical_warp_threads - 1));
+        : "=r"(shuffle_word) : "r"((unsigned int) input_alias[0]), "r"(src_lane), "r"(logical_warp_threads - 1));
+    output_alias[0] = shuffle_word;
 
     #pragma unroll
     for (int WORD = 1; WORD < WORDS; ++WORD)
     {
-        unsigned int &shuffle_word = output_alias[WORD];
         asm volatile("shfl.idx.b32 %0, %1, %2, %3;"
-            : "=r"(shuffle_word) : "r"(input_alias[WORD]), "r"(src_lane), "r"(logical_warp_threads - 1));
+            : "=r"(shuffle_word) : "r"((unsigned int) input_alias[WORD]), "r"(src_lane), "r"(logical_warp_threads - 1));
+        output_alias[WORD] = shuffle_word;
     }
 
 //    ShuffleIdx(input_alias, output_alias, src_lane, logical_warp_threads - 1, Int2Type<WORDS - 1>());
