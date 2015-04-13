@@ -262,7 +262,7 @@ template&lt;typename Key , typename Value &gt; </div>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrappers below.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated sorting performance across different CUDA architectures for uniform-random <code>uint32,uint32</code> and <code>uint64,uint64</code> pairs, respectively.</dd></dl>
@@ -412,7 +412,7 @@ template&lt;typename Key , typename Value &gt; </div>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<code>P</code>), where <code>P</code> is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size <code>N</code>).</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated sorting performance across different CUDA architectures for uniform-random <code>uint32,uint32</code> and <code>uint64,uint64</code> pairs, respectively.</dd></dl>
@@ -571,7 +571,7 @@ template&lt;typename Key , typename Value &gt; </div>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrappers below.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is similar to <a class="el" href="structcub_1_1_device_radix_sort.html#ad74ed926d2b879e6655746f142f86f58" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">DeviceRadixSort::SortPairs</a>.</dd></dl>
@@ -714,7 +714,7 @@ template&lt;typename Key , typename Value &gt; </div>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<code>P</code>), where <code>P</code> is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size <code>N</code>).</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is similar to <a class="el" href="structcub_1_1_device_radix_sort.html#ad74ed926d2b879e6655746f142f86f58" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">DeviceRadixSort::SortPairs</a>.</dd></dl>
@@ -855,7 +855,7 @@ template&lt;typename Key &gt; </div>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrappers below.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated sorting performance across different CUDA architectures for uniform-random <code>uint32</code> and <code>uint64</code> keys, respectively.</dd></dl>
@@ -990,7 +990,7 @@ template&lt;typename Key &gt; </div>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<code>P</code>), where <code>P</code> is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size <code>N</code>).</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated sorting performance across different CUDA architectures for uniform-random <code>uint32</code> and <code>uint64</code> keys, respectively.</dd></dl>
@@ -1131,7 +1131,7 @@ template&lt;typename Key &gt; </div>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrappers below.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is similar to <a class="el" href="structcub_1_1_device_radix_sort.html#aa4441b309e0208036b58fd231cb86da9" title="Sorts keys into ascending order. (~2N auxiliary storage required) ">DeviceRadixSort::SortKeys</a>.</dd></dl>
@@ -1263,7 +1263,7 @@ template&lt;typename Key &gt; </div>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<code>P</code>), where <code>P</code> is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size <code>N</code>).</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is similar to <a class="el" href="structcub_1_1_device_radix_sort.html#aa4441b309e0208036b58fd231cb86da9" title="Sorts keys into ascending order. (~2N auxiliary storage required) ">DeviceRadixSort::SortKeys</a>.</dd></dl>
@@ -1323,7 +1323,7 @@ template&lt;typename Key &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:38 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

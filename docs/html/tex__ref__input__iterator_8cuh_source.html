@@ -184,13 +184,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;        <span class="comment">// Texture reference</span></div>
 <div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keyword">static</span> TexRef ref;</div>
 <div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;</div>
-<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keyword">static</span> cudaError_t BindTexture(<span class="keywordtype">void</span> *d_in)</div>
+<div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keyword">static</span> cudaError_t BindTexture(<span class="keywordtype">void</span> *d_in, <span class="keywordtype">size_t</span> &amp;offset)</div>
 <div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        {</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;            <span class="keywordflow">if</span> (d_in)</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;            {</div>
 <div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;                cudaChannelFormatDesc tex_desc = cudaCreateChannelDesc&lt;TextureWord&gt;();</div>
 <div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;                ref.channelDesc = tex_desc;</div>
-<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                <span class="keywordflow">return</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaBindTexture(NULL, ref, d_in)));</div>
+<div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;                <span class="keywordflow">return</span> (<a class="code" href="group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236" title="Debug macro. ">CubDebug</a>(cudaBindTexture(&amp;offset, ref, d_in)));</div>
 <div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;            }</div>
 <div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;</div>
 <div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;            <span class="keywordflow">return</span> cudaSuccess;</div>
@@ -267,130 +267,133 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> IteratorTexRef&lt;T&gt;::template TexId&lt;UNIQUE_ID&gt; TexId;</div>
 <div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;</div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;</div>
-<div class="line"><a name="l00238"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a95d51be203bcde1b4bbb4344faff9e97">  238</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a95d51be203bcde1b4bbb4344faff9e97" title="Constructor. ">TexRefInputIterator</a>()</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;    :</div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        ptr(NULL),</div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        tex_offset(0)</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;    {}</div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;</div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="comment">/*</span></div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;<span class="comment">    __host__ __device__ __forceinline__ TexRefInputIterator()</span></div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;<span class="comment">    :</span></div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;<span class="comment">        ptr(NULL),</span></div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;<span class="comment">        tex_offset(0)</span></div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;<span class="comment">    {}</span></div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;<span class="comment">*/</span></div>
 <div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> QualifiedT&gt;</div>
-<div class="line"><a name="l00246"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a2478415f3ecdad9ae266ea3be43634d1">  246</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a2478415f3ecdad9ae266ea3be43634d1" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(</div>
+<div class="line"><a name="l00246"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a992d24ab41d940120b093589c5eaf132">  246</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a992d24ab41d940120b093589c5eaf132" title="Use this iterator to bind ptr with a texture reference. ">BindTexture</a>(</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        QualifiedT      *ptr,                   </div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <span class="keywordtype">size_t</span>          bytes,                  </div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;        <span class="keywordtype">size_t</span>          bytes = <span class="keywordtype">size_t</span>(-1),     </div>
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;        <span class="keywordtype">size_t</span>          tex_offset = 0)         </div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;    {</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        this-&gt;ptr = <span class="keyword">const_cast&lt;</span>typename RemoveQualifiers&lt;QualifiedT&gt;::Type *<span class="keyword">&gt;</span>(ptr);</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        this-&gt;tex_offset = (<a class="code" href="classcub_1_1_tex_ref_input_iterator.html#aff1afce146f69adb655e2ff7366b869f" title="Type to express the result of subtracting one iterator from another. ">difference_type</a>) tex_offset;</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        <span class="keywordflow">return</span> TexId::BindTexture(this-&gt;ptr);</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    }</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;</div>
-<div class="line"><a name="l00257"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a5f451683e1f40e5f702251b707e87956">  257</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a5f451683e1f40e5f702251b707e87956" title="Unbind this iterator from its texture reference. ">UnbindTexture</a>()</div>
-<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;    {</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;        <span class="keywordflow">return</span> TexId::UnbindTexture();</div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    }</div>
-<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;</div>
-<div class="line"><a name="l00263"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#ae2f075d6d0cc8972ee80b79d2e6b6ccb">  263</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#ae2f075d6d0cc8972ee80b79d2e6b6ccb" title="Postfix increment. ">operator++</a>(<span class="keywordtype">int</span>)</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;    {</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> retval = *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;        tex_offset++;</div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        <span class="keywordflow">return</span> retval;</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    }</div>
-<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;</div>
-<div class="line"><a name="l00271"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#ac8253bc71e110c918216060061470348">  271</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#ac8253bc71e110c918216060061470348" title="Prefix increment. ">operator++</a>()</div>
-<div class="line"><a name="l00272"></a><span class="lineno">  272</span>&#160;    {</div>
-<div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;        tex_offset++;</div>
-<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    }</div>
-<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;</div>
-<div class="line"><a name="l00278"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a78417e7a9f78ded354cc152997c2d7d1">  278</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a3a83e2e07ed33bf1449526e0fcc1d579" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a78417e7a9f78ded354cc152997c2d7d1" title="Indirection. ">operator*</a>()<span class="keyword"> const</span></div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
-<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
-<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;        <span class="keywordflow">return</span> ptr[tex_offset];</div>
-<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;<span class="preprocessor">#else</span></div>
-<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Use the texture reference</span></div>
-<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;        <span class="keywordflow">return</span> TexId::Fetch(tex_offset);</div>
-<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;<span class="preprocessor"></span>    }</div>
-<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;</div>
-<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00291"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a85fcecba8f3d7b4941b3fa446cddb50a">  291</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a85fcecba8f3d7b4941b3fa446cddb50a" title="Addition. ">operator+</a>(Distance n)<span class="keyword"> const</span></div>
-<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;        <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> retval;</div>
-<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;        retval.ptr = ptr;</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        retval.tex_offset = tex_offset + n;</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        <span class="keywordflow">return</span> retval;</div>
-<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;    }</div>
-<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;</div>
-<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00301"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a379e3ea1d52e95b96c25bed66e12ce0e">  301</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a379e3ea1d52e95b96c25bed66e12ce0e" title="Addition assignment. ">operator+=</a>(Distance n)</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    {</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        tex_offset += n;</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    }</div>
-<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;</div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00309"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a64841968b926b829e8eef247e111b57f">  309</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a64841968b926b829e8eef247e111b57f" title="Subtraction. ">operator-</a>(Distance n)<span class="keyword"> const</span></div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> retval;</div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;        retval.ptr = ptr;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        retval.tex_offset = tex_offset - n;</div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        <span class="keywordflow">return</span> retval;</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;    }</div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00319"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a509d3555cb5bad94484da7fde61a3147">  319</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a509d3555cb5bad94484da7fde61a3147" title="Subtraction assignment. ">operator-=</a>(Distance n)</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    {</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;        tex_offset -= n;</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;    }</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;</div>
-<div class="line"><a name="l00326"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a8081970b5bc9de1a13cd0e9a75915f48">  326</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#aff1afce146f69adb655e2ff7366b869f" title="Type to express the result of subtracting one iterator from another. ">difference_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a8081970b5bc9de1a13cd0e9a75915f48" title="Distance. ">operator-</a>(<a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> other)<span class="keyword"> const</span></div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;        <span class="keywordflow">return</span> tex_offset - other.tex_offset;</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    }</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;</div>
-<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
-<div class="line"><a name="l00333"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a626335c517f746941c188f0e71784b2e">  333</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a3a83e2e07ed33bf1449526e0fcc1d579" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a626335c517f746941c188f0e71784b2e" title="Array subscript. ">operator[]</a>(Distance n)<span class="keyword"> const</span></div>
-<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordflow">return</span> *(*<span class="keyword">this</span> + n);</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    }</div>
-<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;</div>
-<div class="line"><a name="l00339"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a6dc70a54c23f5d20c3b04a34b01309f9">  339</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#aa7a4c0041356c680bdc36d19c5f25572" title="The type of a pointer to an element the iterator can point to. ">pointer</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a6dc70a54c23f5d20c3b04a34b01309f9" title="Structure dereference. ">operator-&gt;</a>()</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    {</div>
-<div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        <span class="keywordflow">return</span> &amp;(*(*this));</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;    }</div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;</div>
-<div class="line"><a name="l00345"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a265939c1f71b392896a5fd07d1d189b9">  345</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a265939c1f71b392896a5fd07d1d189b9" title="Equal to. ">operator==</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; rhs)</div>
-<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;    {</div>
-<div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        <span class="keywordflow">return</span> ((ptr == rhs.ptr) &amp;&amp; (tex_offset == rhs.tex_offset));</div>
-<div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;    }</div>
-<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;</div>
-<div class="line"><a name="l00351"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a3be490820de8d3cc7968601fc0fe34ab">  351</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a3be490820de8d3cc7968601fc0fe34ab" title="Not equal to. ">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; rhs)</div>
-<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;    {</div>
-<div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;        <span class="keywordflow">return</span> ((ptr != rhs.ptr) || (tex_offset != rhs.tex_offset));</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;    }</div>
-<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;</div>
-<div class="line"><a name="l00357"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">  357</a></span>&#160;    <span class="keyword">friend</span> std::ostream&amp; <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80" title="ostream operator ">operator&lt;&lt;</a>(std::ostream&amp; os, <span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; itr)</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;    {</div>
-<div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;        <span class="keywordflow">return</span> os;</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    }</div>
-<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;</div>
-<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;};</div>
-<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        this-&gt;ptr = <span class="keyword">const_cast&lt;</span>typename <a class="code" href="structcub_1_1_remove_qualifiers.html#a9143e196ef5e6a0176b953f677e94671" title="Type without const and volatile qualifiers. ">RemoveQualifiers&lt;QualifiedT&gt;::Type</a> *<span class="keyword">&gt;</span>(ptr);</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        <span class="keywordtype">size_t</span> offset;</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        cudaError_t retval = TexId::BindTexture(this-&gt;ptr + tex_offset, offset);</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;        this-&gt;tex_offset = (<a class="code" href="classcub_1_1_tex_ref_input_iterator.html#aff1afce146f69adb655e2ff7366b869f" title="Type to express the result of subtracting one iterator from another. ">difference_type</a>) (offset / <span class="keyword">sizeof</span>(QualifiedT));</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        <span class="keywordflow">return</span> retval;</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;    }</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;</div>
+<div class="line"><a name="l00259"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a5f451683e1f40e5f702251b707e87956">  259</a></span>&#160;    cudaError_t <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a5f451683e1f40e5f702251b707e87956" title="Unbind this iterator from its texture reference. ">UnbindTexture</a>()</div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;    {</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;        <span class="keywordflow">return</span> TexId::UnbindTexture();</div>
+<div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    }</div>
+<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;</div>
+<div class="line"><a name="l00265"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#ae2f075d6d0cc8972ee80b79d2e6b6ccb">  265</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#ae2f075d6d0cc8972ee80b79d2e6b6ccb" title="Postfix increment. ">operator++</a>(<span class="keywordtype">int</span>)</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;    {</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;        <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> retval = *<span class="keyword">this</span>;</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        tex_offset++;</div>
+<div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;        <span class="keywordflow">return</span> retval;</div>
+<div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    }</div>
+<div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;</div>
+<div class="line"><a name="l00273"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#ac8253bc71e110c918216060061470348">  273</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#ac8253bc71e110c918216060061470348" title="Prefix increment. ">operator++</a>()</div>
+<div class="line"><a name="l00274"></a><span class="lineno">  274</span>&#160;    {</div>
+<div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;        tex_offset++;</div>
+<div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;    }</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;</div>
+<div class="line"><a name="l00280"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a78417e7a9f78ded354cc152997c2d7d1">  280</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a3a83e2e07ed33bf1449526e0fcc1d579" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a78417e7a9f78ded354cc152997c2d7d1" title="Indirection. ">operator*</a>()<span class="keyword"> const</span></div>
+<div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;<span class="preprocessor">#if (CUB_PTX_ARCH == 0)</span></div>
+<div class="line"><a name="l00283"></a><span class="lineno">  283</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Simply dereference the pointer on the host</span></div>
+<div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;        <span class="keywordflow">return</span> ptr[tex_offset];</div>
+<div class="line"><a name="l00285"></a><span class="lineno">  285</span>&#160;<span class="preprocessor">#else</span></div>
+<div class="line"><a name="l00286"></a><span class="lineno">  286</span>&#160;<span class="preprocessor"></span>        <span class="comment">// Use the texture reference</span></div>
+<div class="line"><a name="l00287"></a><span class="lineno">  287</span>&#160;        <span class="keywordflow">return</span> TexId::Fetch(tex_offset);</div>
+<div class="line"><a name="l00288"></a><span class="lineno">  288</span>&#160;<span class="preprocessor">#endif</span></div>
+<div class="line"><a name="l00289"></a><span class="lineno">  289</span>&#160;<span class="preprocessor"></span>    }</div>
+<div class="line"><a name="l00290"></a><span class="lineno">  290</span>&#160;</div>
+<div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00293"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a85fcecba8f3d7b4941b3fa446cddb50a">  293</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a85fcecba8f3d7b4941b3fa446cddb50a" title="Addition. ">operator+</a>(Distance n)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;        <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> retval;</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;        retval.ptr = ptr;</div>
+<div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;        retval.tex_offset = tex_offset + n;</div>
+<div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;        <span class="keywordflow">return</span> retval;</div>
+<div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;    }</div>
+<div class="line"><a name="l00300"></a><span class="lineno">  300</span>&#160;</div>
+<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00303"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a379e3ea1d52e95b96c25bed66e12ce0e">  303</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a379e3ea1d52e95b96c25bed66e12ce0e" title="Addition assignment. ">operator+=</a>(Distance n)</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    {</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        tex_offset += n;</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    }</div>
+<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00311"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a64841968b926b829e8eef247e111b57f">  311</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a64841968b926b829e8eef247e111b57f" title="Subtraction. ">operator-</a>(Distance n)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> retval;</div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        retval.ptr = ptr;</div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        retval.tex_offset = tex_offset - n;</div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <span class="keywordflow">return</span> retval;</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;    }</div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00321"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a509d3555cb5bad94484da7fde61a3147">  321</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a509d3555cb5bad94484da7fde61a3147" title="Subtraction assignment. ">operator-=</a>(Distance n)</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    {</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;        tex_offset -= n;</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    }</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;</div>
+<div class="line"><a name="l00328"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a8081970b5bc9de1a13cd0e9a75915f48">  328</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#aff1afce146f69adb655e2ff7366b869f" title="Type to express the result of subtracting one iterator from another. ">difference_type</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a8081970b5bc9de1a13cd0e9a75915f48" title="Distance. ">operator-</a>(<a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> other)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <span class="keywordflow">return</span> tex_offset - other.tex_offset;</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    }</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;</div>
+<div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
+<div class="line"><a name="l00335"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a626335c517f746941c188f0e71784b2e">  335</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a3a83e2e07ed33bf1449526e0fcc1d579" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a626335c517f746941c188f0e71784b2e" title="Array subscript. ">operator[]</a>(Distance n)<span class="keyword"> const</span></div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;<span class="keyword">    </span>{</div>
+<div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;        <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a> offset = (*this) + n;</div>
+<div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;        <span class="keywordflow">return</span> *offset;</div>
+<div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    }</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;</div>
+<div class="line"><a name="l00342"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a6dc70a54c23f5d20c3b04a34b01309f9">  342</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#aa7a4c0041356c680bdc36d19c5f25572" title="The type of a pointer to an element the iterator can point to. ">pointer</a> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a6dc70a54c23f5d20c3b04a34b01309f9" title="Structure dereference. ">operator-&gt;</a>()</div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;    {</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        <span class="keywordflow">return</span> &amp;(*(*this));</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;    }</div>
+<div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;</div>
+<div class="line"><a name="l00348"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a265939c1f71b392896a5fd07d1d189b9">  348</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a265939c1f71b392896a5fd07d1d189b9" title="Equal to. ">operator==</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; rhs)</div>
+<div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    {</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;        <span class="keywordflow">return</span> ((ptr == rhs.ptr) &amp;&amp; (tex_offset == rhs.tex_offset));</div>
+<div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    }</div>
+<div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;</div>
+<div class="line"><a name="l00354"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a3be490820de8d3cc7968601fc0fe34ab">  354</a></span>&#160;    __host__ __device__ __forceinline__ <span class="keywordtype">bool</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a3be490820de8d3cc7968601fc0fe34ab" title="Not equal to. ">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; rhs)</div>
+<div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;    {</div>
+<div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;        <span class="keywordflow">return</span> ((ptr != rhs.ptr) || (tex_offset != rhs.tex_offset));</div>
+<div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    }</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;</div>
+<div class="line"><a name="l00360"></a><span class="lineno"><a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80">  360</a></span>&#160;    <span class="keyword">friend</span> std::ostream&amp; <a class="code" href="classcub_1_1_tex_ref_input_iterator.html#a11b2073215294343bdc32f09c0bc5e80" title="ostream operator ">operator&lt;&lt;</a>(std::ostream&amp; os, <span class="keyword">const</span> <a class="code" href="classcub_1_1_tex_ref_input_iterator.html" title="A random-access input wrapper for dereferencing array values through texture cache. Uses older Tesla/Fermi-style texture references. ">self_type</a>&amp; itr)</div>
+<div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    {</div>
+<div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;        <span class="keywordflow">return</span> os;</div>
+<div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;    }</div>
 <div class="line"><a name="l00364"></a><span class="lineno">  364</span>&#160;</div>
-<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;       <span class="comment">// end group UtilIterator</span></div>
+<div class="line"><a name="l00365"></a><span class="lineno">  365</span>&#160;};</div>
+<div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;</div>
-<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;       <span class="comment">// end group UtilIterator</span></div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;</div>
-<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;<span class="preprocessor">#endif // CUDA_VERSION</span></div>
+<div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;<span class="preprocessor">#endif // CUDA_VERSION</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:29 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

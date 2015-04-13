@@ -241,7 +241,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename Reduct
 <dl class="section user"><dt></dt><dd><ul>
 <li>Does not support non-commutative reduction operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
@@ -282,7 +282,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename Reduct
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> (e.g., <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
   </table>
   </dd>
 </dl>
@@ -372,7 +372,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Does not support non-commutative reduction operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated reduction (sum) performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively.</dd></dl>
@@ -497,7 +497,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Does not support non-commutative minimum operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
@@ -612,11 +612,11 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 </div><div class="memdoc">
 
 <p>Finds the first device-wide minimum using the less-than ('&lt;') operator, also returning the index of that item. </p>
-<dl class="section user"><dt></dt><dd>Assuming the input <code>d_in</code> has value type <code>T</code>, the output <code>d_out</code> must have value type <code>ItemOffsetPair&lt;T, int&gt;</code>. The minimum value is written to <code>d_out.value</code> and its location in the input array is written to <code>d_out.offset</code>.</dd></dl>
+<dl class="section user"><dt></dt><dd>Assuming the input <code>d_in</code> has value type <code>T</code>, the output <code>d_out</code> must have value type <code>KeyValuePair&lt;int, T&gt;</code>. The minimum value is written to <code>d_out.value</code> and its location in the input array is written to <code>d_out.key</code>.</dd></dl>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Does not support non-commutative minimum operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
@@ -626,7 +626,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>                      num_items;      <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>                      *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line">ItemOffsetPair&lt;int, int&gt; *d_out;         <span class="comment">// e.g., [{ , }]</span></div>
+<div class="line">KeyValuePair&lt;int, int&gt;   *d_out;         <span class="comment">// e.g., [{ , }]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
@@ -645,7 +645,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (of some type <code>T</code>) (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <code>ItemOffsetPair&lt;T, int&gt;</code>) (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <code>KeyValuePair&lt;int, T&gt;</code>) (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -734,7 +734,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Does not support non-commutative maximum operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
@@ -849,11 +849,11 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 </div><div class="memdoc">
 
 <p>Finds the first device-wide maximum using the greater-than ('&gt;') operator, also returning the index of that item. </p>
-<dl class="section user"><dt></dt><dd>Assuming the input <code>d_in</code> has value type <code>T</code>, the output <code>d_out</code> must have value type <code>ItemOffsetPair&lt;T, int&gt;</code>. The maximum value is written to <code>d_out.value</code> and its location in the input array is written to <code>d_out.offset</code>.</dd></dl>
+<dl class="section user"><dt></dt><dd>Assuming the input <code>d_in</code> has value type <code>T</code>, the output <code>d_out</code> must have value type <code>KeyValuePair&lt;int, T&gt;</code>. The maximum value is written to <code>d_out.value</code> and its location in the input array is written to <code>d_out.key</code>.</dd></dl>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Does not support non-commutative maximum operators.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>.</dd></dl>
@@ -863,7 +863,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>                      num_items;      <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>                      *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line">ItemOffsetPair&lt;int, int&gt; *d_out;         <span class="comment">// e.g., [{ , }]</span></div>
+<div class="line">KeyValuePair&lt;int, int&gt;   *d_out;         <span class="comment">// e.g., [{ , }]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
@@ -882,7 +882,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (of some type <code>T</code>) (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <code>ItemOffsetPair&lt;T, int&gt;</code>) (may be a simple pointer type) </td></tr>
+    <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <code>KeyValuePair&lt;int, T&gt;</code>) (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -996,7 +996,7 @@ template&lt;typename KeysInputIteratorT , typename UniqueOutputIteratorT , typen
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>==</code> equality operator is used to determine whether keys are equivalent</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following chart illustrates reduction-by-key (sum) performance across different CUDA architectures for <code>fp32</code> and <code>fp64</code> values, respectively. Segments are identified by <code>int32</code> keys, and have lengths uniformly sampled from [1,1000].</dd></dl>
@@ -1058,7 +1058,7 @@ template&lt;typename KeysInputIteratorT , typename UniqueOutputIteratorT , typen
     <tr><td class="paramname">ValuesInputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input values (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">AggregatesOutputIterator</td><td><b>[inferred]</b> Random-access output iterator type for writing output value aggregates (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">NumRunsOutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the number of runs encountered (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> (e.g., <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
   </table>
   </dd>
 </dl>
@@ -1090,7 +1090,7 @@ template&lt;typename KeysInputIteratorT , typename UniqueOutputIteratorT , typen
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:38 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

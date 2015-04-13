@@ -112,9 +112,9 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
     typename OffsetT = ptrdiff_t&gt;<br/>
 class cub::ArgIndexInputIterator&lt; InputIteratorT, OffsetT &gt;</h3>
 
-<p>A random-access input wrapper for pairing dereferenced values with their corresponding indices (forming <code><a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a></code> tuples). </p>
+<p>A random-access input wrapper for pairing dereferenced values with their corresponding indices (forming <code><a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">KeyValuePair</a></code> tuples). </p>
 <dl class="section user"><dt>Overview</dt><dd><ul>
-<li>ArgIndexInputIteratorTwraps a random access input iterator <code>itr</code> of type <code>InputIteratorT</code>. Dereferencing an ArgIndexInputIteratorTat offset <code>i</code> produces a <code><a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a></code> value whose <code>offset</code> field is <code>i</code> and whose <code>item</code> field is <code>itr[i]</code>.</li>
+<li>ArgIndexInputIteratorTwraps a random access input iterator <code>itr</code> of type <code>InputIteratorT</code>. Dereferencing an ArgIndexInputIteratorTat offset <code>i</code> produces a <code><a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">KeyValuePair</a></code> value whose <code>key</code> field is <code>i</code> and whose <code>value</code> field is <code>itr[i]</code>.</li>
 <li>Can be used with any data type.</li>
 <li>Can be constructed, manipulated, and exchanged within and between host and device functions. Wrapped host memory can only be dereferenced on the host, and wrapped device memory can only be dereferenced on the device.</li>
 <li>Compatible with Thrust API v1.7 or newer.</li>
@@ -130,17 +130,17 @@ class cub::ArgIndexInputIterator&lt; InputIteratorT, OffsetT &gt;</h3>
 <div class="line"><a class="code" href="classcub_1_1_arg_index_input_iterator.html" title="A random-access input wrapper for pairing dereferenced values with their corresponding indices (formi...">cub::ArgIndexInputIterator&lt;double*&gt;</a> itr(d_in);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Within device code:</span></div>
-<div class="line"><span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ArgIndexInputIterator&lt;double*&gt;::value_type</a> Tuple;</div>
-<div class="line">Tuple item_offset_pair.<a class="code" href="structcub_1_1_item_offset_pair.html#a126c4181c8bf2f08ad781ad0c0f08cfb" title="OffsetT. ">offset</a> = *itr;</div>
+<div class="line"><span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">cub::ArgIndexInputIterator&lt;double*&gt;::value_type</a> Tuple;</div>
+<div class="line">Tuple item_offset_pair.<a class="code" href="structcub_1_1_key_value_pair.html#a648308be997ae9c79f47f6006ec7b494" title="Item key. ">key</a> = *itr;</div>
 <div class="line">printf(<span class="stringliteral">&quot;%f @ %d\n&quot;</span>,</div>
 <div class="line"> item_offset_pair.value,</div>
-<div class="line"> item_offset_pair.offset);   <span class="comment">// 8.0 @ 0</span></div>
+<div class="line"> item_offset_pair.key);   <span class="comment">// 8.0 @ 0</span></div>
 <div class="line"></div>
 <div class="line">itr = itr + 6;</div>
-<div class="line">item_offset_pair.offset = *itr;</div>
+<div class="line">item_offset_pair.key = *itr;</div>
 <div class="line">printf(<span class="stringliteral">&quot;%f @ %d\n&quot;</span>,</div>
 <div class="line"> item_offset_pair.value,</div>
-<div class="line"> item_offset_pair.offset);   <span class="comment">// 9.0 @ 6</span></div>
+<div class="line"> item_offset_pair.key);   <span class="comment">// 9.0 @ 6</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
@@ -162,17 +162,17 @@ typedef <a class="el" href="classcub_1_1_arg_index_input_iterator.html">ArgIndex
 typedef OffsetT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#acd5e39570dd51f4883547ef33f9ca8c6">difference_type</a></td></tr>
 <tr class="memdesc:acd5e39570dd51f4883547ef33f9ca8c6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type to express the result of subtracting one iterator from another. <br/></td></tr>
 <tr class="separator:acd5e39570dd51f4883547ef33f9ca8c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0740de9a2af5a101dd4240db501a9601"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a0740de9a2af5a101dd4240db501a9601"></a>
-typedef <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a>&lt; T, <br class="typebreak"/>
-<a class="el" href="classcub_1_1_arg_index_input_iterator.html#acd5e39570dd51f4883547ef33f9ca8c6">difference_type</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#a0740de9a2af5a101dd4240db501a9601">value_type</a></td></tr>
-<tr class="memdesc:a0740de9a2af5a101dd4240db501a9601"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the element the iterator can point to. <br/></td></tr>
-<tr class="separator:a0740de9a2af5a101dd4240db501a9601"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6c40ea1dc7c0923b9010f1e938e07d22"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6c40ea1dc7c0923b9010f1e938e07d22"></a>
+typedef <a class="el" href="structcub_1_1_key_value_pair.html">KeyValuePair</a><br class="typebreak"/>
+&lt; <a class="el" href="classcub_1_1_arg_index_input_iterator.html#acd5e39570dd51f4883547ef33f9ca8c6">difference_type</a>, T &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#a6c40ea1dc7c0923b9010f1e938e07d22">value_type</a></td></tr>
+<tr class="memdesc:a6c40ea1dc7c0923b9010f1e938e07d22"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of the element the iterator can point to. <br/></td></tr>
+<tr class="separator:a6c40ea1dc7c0923b9010f1e938e07d22"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afbc0675053718d968d81b1a16e28dc5c"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afbc0675053718d968d81b1a16e28dc5c"></a>
-typedef <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a0740de9a2af5a101dd4240db501a9601">value_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#afbc0675053718d968d81b1a16e28dc5c">pointer</a></td></tr>
+typedef <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a6c40ea1dc7c0923b9010f1e938e07d22">value_type</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#afbc0675053718d968d81b1a16e28dc5c">pointer</a></td></tr>
 <tr class="memdesc:afbc0675053718d968d81b1a16e28dc5c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a pointer to an element the iterator can point to. <br/></td></tr>
 <tr class="separator:afbc0675053718d968d81b1a16e28dc5c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8498b60c0f5f6b04caf6e3b18cfd825d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a8498b60c0f5f6b04caf6e3b18cfd825d"></a>
-typedef <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a0740de9a2af5a101dd4240db501a9601">value_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#a8498b60c0f5f6b04caf6e3b18cfd825d">reference</a></td></tr>
+typedef <a class="el" href="classcub_1_1_arg_index_input_iterator.html#a6c40ea1dc7c0923b9010f1e938e07d22">value_type</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_arg_index_input_iterator.html#a8498b60c0f5f6b04caf6e3b18cfd825d">reference</a></td></tr>
 <tr class="memdesc:a8498b60c0f5f6b04caf6e3b18cfd825d"><td class="mdescLeft">&#160;</td><td class="mdescRight">The type of a reference to an element the iterator can point to. <br/></td></tr>
 <tr class="separator:a8498b60c0f5f6b04caf6e3b18cfd825d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2cff9aacc1ba59ae9f74735c257261e5"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a2cff9aacc1ba59ae9f74735c257261e5"></a>
@@ -315,7 +315,7 @@ template&lt;typename InputIteratorT, typename OffsetT = ptrdiff_t&gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:32 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:51 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -248,7 +248,7 @@ template&lt;typename InputIteratorT , typename FlagIterator , typename OutputIte
 <li>The value type of <code>d_flags</code> must be castable to <code>bool</code> (e.g., <code>bool</code>, <code>char</code>, <code>int</code>, etc.).</li>
 <li>Copies of the selected items are compacted into <code>d_out</code> and maintain their original relative ordering.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
@@ -390,7 +390,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename NumSel
 <dl class="section user"><dt></dt><dd><ul>
 <li>Copies of the selected items are compacted into <code>d_out</code> and maintain their original relative ordering.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated select-if performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively. Items are selected with 50% probability.</dd></dl>
@@ -555,7 +555,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename NumSel
 <li>The <code>==</code> equality operator is used to determine whether keys are equivalent</li>
 <li>Copies of the selected items are compacted into <code>d_out</code> and maintain their original relative ordering.</li>
 <li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li>When calling this method from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li></li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated select-unique performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively. Segments have lengths uniformly sampled from [1,1000].</dd></dl>
@@ -630,7 +630,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename NumSel
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:38 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -1,5 +1,19 @@
 //-----------------------------------------------------------------------------
 
+1.4.1    04/13/2015
+    - Bug fixes: 
+        - Fixes for CUDA 7.0 issues with SHFL-based warp-scan and warp-reduction 
+          on non-primitive data types (e.g., user-defined structs)
+        - Fixes for minor CUDA 7.0 performance regressions in cub::DeviceScan,
+          DeviceReduceByKey
+        - Fixes to allow cub::DeviceRadixSort and cub::BlockRadixSort on bool types
+        - Remove requirement for callers to define the CUB_CDP macro 
+          when invoking CUB device-wide rountines using CUDA dynamic parallelism
+        - Fix for headers not being included in the proper order (or missing includes)
+          for some block-wide functions
+          
+//-----------------------------------------------------------------------------
+
 1.4.0    03/18/2015
     - New Features:
 		- Support and performance tuning for new Maxwell GPU architectures

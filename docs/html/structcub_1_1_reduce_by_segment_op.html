@@ -5,7 +5,7 @@
 <meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.8.4"/>
-<title>CUB: cub::ReduceBySegmentOp&lt; ReductionOp, ItemOffsetPair &gt; Class Template Reference</title>
+<title>CUB: cub::ReduceBySegmentOp&lt; ReductionOpT &gt; Struct Template Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -93,64 +93,74 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="classcub_1_1_reduce_by_segment_op.html">ReduceBySegmentOp</a></li>  </ul>
+<li class="navelem"><a class="el" href="namespacecub.html">cub</a></li><li class="navelem"><a class="el" href="structcub_1_1_reduce_by_segment_op.html">ReduceBySegmentOp</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
   <div class="summary">
 <a href="#pub-methods">Public Methods</a> &#124;
-<a href="classcub_1_1_reduce_by_segment_op-members.html">List of all members</a>  </div>
+<a href="#pub-attribs">Public Members</a> &#124;
+<a href="structcub_1_1_reduce_by_segment_op-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::ReduceBySegmentOp&lt; ReductionOp, ItemOffsetPair &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Utilities</a></div></div>  </div>
+<div class="title">cub::ReduceBySegmentOp&lt; ReductionOpT &gt; Struct Template Reference<div class="ingroups"><a class="el" href="group___util_module.html">Utilities</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
 <div class="textblock"><h3>template&lt;
-    typename ReductionOp, 
-    typename ItemOffsetPair&gt;<br/>
-class cub::ReduceBySegmentOp&lt; ReductionOp, ItemOffsetPair &gt;</h3>
+    typename ReductionOpT&gt;<br/>
+struct cub::ReduceBySegmentOp&lt; ReductionOpT &gt;</h3>
 
 <p>Reduce-by-segment functor. </p>
-<p>Given two <a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ItemOffsetPair</a> inputs <code>a</code> and <code>b</code> and a binary associative combining operator <code><code>f(const T &amp;x, const T &amp;y)</code></code>, an instance of this functor returns a <a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ItemOffsetPair</a> whose <code>offset</code> field is <code>a.offset</code> + <code>a.offset</code>, and whose <code>value</code> field is either b.value if b.offset is non-zero, or f(a.value, b.value) otherwise.</p>
-<p><a class="el" href="classcub_1_1_reduce_by_segment_op.html" title="Reduce-by-segment functor. ">ReduceBySegmentOp</a> is an associative, non-commutative binary combining operator for input sequences of <a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">cub::ItemOffsetPair</a> pairings. Such sequences are typically used to represent a segmented set of values to be reduced and a corresponding set of {0,1}-valued integer "head flags" demarcating the first value of each segment.&lt; <a class="el" href="structcub_1_1_item_offset_pair.html" title="An item value paired with a corresponding offset. ">ItemOffsetPair</a> pairing of T (value) and OffsetT (head flag) </p>
+<p>Given two <a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">cub::KeyValuePair</a> inputs <code>a</code> and <code>b</code> and a binary associative combining operator <code><code>f(const T &amp;x, const T &amp;y)</code></code>, an instance of this functor returns a <a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">cub::KeyValuePair</a> whose <code>key</code> field is <code>a.key</code> + <code>a.key</code>, and whose <code>value</code> field is either b.value if b.key is non-zero, or f(a.value, b.value) otherwise.</p>
+<p><a class="el" href="structcub_1_1_reduce_by_segment_op.html" title="Reduce-by-segment functor. ">ReduceBySegmentOp</a> is an associative, non-commutative binary combining operator for input sequences of <a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">cub::KeyValuePair</a> pairings. Such sequences are typically used to represent a segmented set of values to be reduced and a corresponding set of {0,1}-valued integer "head flags" demarcating the first value of each segment.&lt; Binary reduction operator to apply to values </p>
 
-<p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00251">251</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
+<p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00249">249</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
-<tr class="memitem:a11713ed9019612010c0680c1cc9abf35"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a11713ed9019612010c0680c1cc9abf35"></a>
-__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_reduce_by_segment_op.html#a11713ed9019612010c0680c1cc9abf35">ReduceBySegmentOp</a> ()</td></tr>
-<tr class="memdesc:a11713ed9019612010c0680c1cc9abf35"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
-<tr class="separator:a11713ed9019612010c0680c1cc9abf35"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afe9fea5e67755f66033b6473df0ba4fc"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="afe9fea5e67755f66033b6473df0ba4fc"></a>
-__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_reduce_by_segment_op.html#afe9fea5e67755f66033b6473df0ba4fc">ReduceBySegmentOp</a> (ReductionOp op)</td></tr>
-<tr class="memdesc:afe9fea5e67755f66033b6473df0ba4fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
-<tr class="separator:afe9fea5e67755f66033b6473df0ba4fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2b0dc8dc37809e37fc0a2f09c5c23d67"><td class="memItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
-__forceinline__ <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_reduce_by_segment_op.html#a2b0dc8dc37809e37fc0a2f09c5c23d67">operator()</a> (const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a> &amp;first, const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a> &amp;second)</td></tr>
-<tr class="memdesc:a2b0dc8dc37809e37fc0a2f09c5c23d67"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scan operator.  <a href="#a2b0dc8dc37809e37fc0a2f09c5c23d67">More...</a><br/></td></tr>
-<tr class="separator:a2b0dc8dc37809e37fc0a2f09c5c23d67"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f6fe38f76f8f50eff19ea20105cb1b3"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a6f6fe38f76f8f50eff19ea20105cb1b3"></a>
+__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_reduce_by_segment_op.html#a6f6fe38f76f8f50eff19ea20105cb1b3">ReduceBySegmentOp</a> ()</td></tr>
+<tr class="memdesc:a6f6fe38f76f8f50eff19ea20105cb1b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
+<tr class="separator:a6f6fe38f76f8f50eff19ea20105cb1b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa01e5bafddc8cf5b6df1601ba783b17e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aa01e5bafddc8cf5b6df1601ba783b17e"></a>
+__host__ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_reduce_by_segment_op.html#aa01e5bafddc8cf5b6df1601ba783b17e">ReduceBySegmentOp</a> (ReductionOpT <a class="el" href="structcub_1_1_reduce_by_segment_op.html#a562b1870ca14ca9886ad22535ca673f3">op</a>)</td></tr>
+<tr class="memdesc:aa01e5bafddc8cf5b6df1601ba783b17e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructor. <br/></td></tr>
+<tr class="separator:aa01e5bafddc8cf5b6df1601ba783b17e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aff56752999857ef68029cfa150d88d5e"><td class="memTemplParams" colspan="2">template&lt;typename KeyValuePairT &gt; </td></tr>
+<tr class="memitem:aff56752999857ef68029cfa150d88d5e"><td class="memTemplItemLeft" align="right" valign="top">__host__ __device__ <br class="typebreak"/>
+__forceinline__ KeyValuePairT&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_reduce_by_segment_op.html#aff56752999857ef68029cfa150d88d5e">operator()</a> (const KeyValuePairT &amp;first, const KeyValuePairT &amp;second)</td></tr>
+<tr class="memdesc:aff56752999857ef68029cfa150d88d5e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Scan operator.  <a href="#aff56752999857ef68029cfa150d88d5e">More...</a><br/></td></tr>
+<tr class="separator:aff56752999857ef68029cfa150d88d5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-attribs"></a>
+Public Members</h2></td></tr>
+<tr class="memitem:a562b1870ca14ca9886ad22535ca673f3"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a562b1870ca14ca9886ad22535ca673f3"></a>
+ReductionOpT&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_reduce_by_segment_op.html#a562b1870ca14ca9886ad22535ca673f3">op</a></td></tr>
+<tr class="memdesc:a562b1870ca14ca9886ad22535ca673f3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Wrapped reduction operator. <br/></td></tr>
+<tr class="separator:a562b1870ca14ca9886ad22535ca673f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a2b0dc8dc37809e37fc0a2f09c5c23d67"></a>
+<a class="anchor" id="aff56752999857ef68029cfa150d88d5e"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename ReductionOp , typename ItemOffsetPair &gt; </div>
+template&lt;typename ReductionOpT &gt; </div>
+<div class="memtemplate">
+template&lt;typename KeyValuePairT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">__host__ __device__ __forceinline__ <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a> <a class="el" href="classcub_1_1_reduce_by_segment_op.html">cub::ReduceBySegmentOp</a>&lt; ReductionOp, <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a> &gt;::operator() </td>
+          <td class="memname">__host__ __device__ __forceinline__ KeyValuePairT <a class="el" href="structcub_1_1_reduce_by_segment_op.html">cub::ReduceBySegmentOp</a>&lt; ReductionOpT &gt;::operator() </td>
           <td>(</td>
-          <td class="paramtype">const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a> &amp;&#160;</td>
+          <td class="paramtype">const KeyValuePairT &amp;&#160;</td>
           <td class="paramname"><em>first</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structcub_1_1_item_offset_pair.html">ItemOffsetPair</a> &amp;&#160;</td>
+          <td class="paramtype">const KeyValuePairT &amp;&#160;</td>
           <td class="paramname"><em>second</em>&#160;</td>
         </tr>
         <tr>
@@ -167,6 +177,7 @@ template&lt;typename ReductionOp , typename ItemOffsetPair &gt; </div>
 </div><div class="memdoc">
 
 <p>Scan operator. </p>
+<p>&lt; <a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">KeyValuePair</a> pairing of T (value) and OffsetT (head flag) </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">first</td><td>First partial reduction </td></tr>
@@ -175,18 +186,18 @@ template&lt;typename ReductionOp , typename ItemOffsetPair &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00267">267</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
+<p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00262">262</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
 
 </div>
 </div>
-<hr/>The documentation for this class was generated from the following file:<ul>
+<hr/>The documentation for this struct was generated from the following file:<ul>
 <li><a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a></li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 18 2015 18:50:33 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Apr 13 2015 13:56:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
