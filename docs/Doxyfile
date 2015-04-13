@@ -212,7 +212,7 @@ ALIASES                += devicestorageNP="This operation requires an allocation
 ALIASES                += devicestorageNCP="This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<tt>N/C + P</tt>), where \p N is the length of the input, \p C is the number of concurrent threads that can be actively scheduled on each streaming multiprocessor (typically several thousand), and \p P is the number of streaming multiprocessors on the device."
 
 ALIASES                += cdp_class{1}=" - <em>Dynamic parallelism</em>.  \1 methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported.  When calling these methods from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
-ALIASES                += cdp="When calling this method from kernel code, be sure to define the \p CUB_CDP macro in your compiler's macro definitions."
+ALIASES                += cdp=""
 ALIASES                += iterator="(may be a simple pointer type)"
 
 ALIASES                += offset_size1="(Consider using 32-bit values as offsets/lengths/etc. For example, \p int will typically yeild better performance than \p size_t in 64-bit memory mode.)"

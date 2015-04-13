@@ -295,6 +295,16 @@ struct IterateThreadLoad<MAX, MAX>
 #endif
 
 
+// Macro cleanup
+#undef CUB_LOAD_ALL
+#undef CUB_LOAD_1
+#undef CUB_LOAD_2
+#undef CUB_LOAD_4
+#undef CUB_LOAD_8
+#undef CUB_LOAD_16
+
+
+
 /**
  * ThreadLoad definition for LOAD_DEFAULT modifier on iterator types
  */
