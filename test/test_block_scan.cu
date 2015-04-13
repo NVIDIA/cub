@@ -37,11 +37,11 @@
 #include <iostream>
 #include <limits>
 
-#include <cub/util_ptx.cuh>
-#include <cub/util_allocator.cuh>
+#include <cub/block/block_scan.cuh>
 #include <cub/block/block_load.cuh>
 #include <cub/block/block_store.cuh>
-#include <cub/block/block_scan.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/util_allocator.cuh>
 
 #include "test_util.h"
 

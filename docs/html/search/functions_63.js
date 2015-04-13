@@ -6,6 +6,6 @@ var searchData=
   ['composite',['Composite',['../classcub_1_1_block_histogram.html#a90ef25b7af7ce819367eca662a47dd2d',1,'cub::BlockHistogram']]],
   ['constantinputiterator',['ConstantInputIterator',['../classcub_1_1_constant_input_iterator.html#a1237efdec602999d589afd3c898b7494',1,'cub::ConstantInputIterator']]],
   ['countinginputiterator',['CountingInputIterator',['../classcub_1_1_counting_input_iterator.html#ac51f0117505e3b13f5cf8771d99ea623',1,'cub::CountingInputIterator']]],
-  ['csrmv',['CsrMV',['../structcub_1_1_device_spmv.html#afe511ab3864d94e02a65b9dedb4de14d',1,'cub::DeviceSpmv']]],
+  ['csrmv',['CsrMV',['../structcub_1_1_device_spmv.html#a44cbd79db29a8a678eaca12c3c61910b',1,'cub::DeviceSpmv']]],
   ['current',['Current',['../structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724',1,'cub::DoubleBuffer']]]
 ];

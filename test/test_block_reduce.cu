@@ -37,10 +37,11 @@
 
 #include <device_functions.h>
 
+#include <cub/block/block_reduce.cuh>
+#include <cub/block/block_load.cuh>
 #include <cub/util_ptx.cuh>
 #include <cub/util_allocator.cuh>
-#include <cub/block/block_load.cuh>
-#include <cub/block/block_reduce.cuh>
+#include <cub/util_debug.cuh>
 
 #include "test_util.h"
 
