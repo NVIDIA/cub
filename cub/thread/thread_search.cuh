@@ -50,7 +50,7 @@ template <
     typename BIteratorT,
     typename OffsetT,
     typename CoordinateT>
-__device__ __forceinline__ void MergePathSearch(
+__host__ __device__ __forceinline__ void MergePathSearch(
     OffsetT         diagonal,
     AIteratorT      a,
     BIteratorT      b,

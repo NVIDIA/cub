@@ -36,6 +36,12 @@
 #include <cstdio>
 #include <fstream>
 
+#ifdef CUB_MKL
+    #include <mkl.h>
+#endif
+
+#include <omp.h>
+
 #include <cusparse.h>
 
 #include "sparse_matrix.h"
@@ -58,8 +64,10 @@ using namespace cub;
 bool                    g_quiet     = false;        // Whether to display stats in CSV format
 bool                    g_verbose   = false;        // Whether to display output to console
 bool                    g_verbose2  = false;        // Whether to display input to console
-bool                    g_cpu       = false;        // Whether to time the sequential CPU impl
+bool                    g_gpu       = false;        // Whether to time the CPU impls
+bool                    g_cpu       = false;        // Whether to time the GPU impls
 CachingDeviceAllocator  g_allocator(true);          // Caching allocator for device memory
+int                     g_omp_threads = -1;         // Number of openMP threads
 
 
 //---------------------------------------------------------------------
@@ -78,42 +86,23 @@ void SpmvGold(
     ValueT                          alpha,
     ValueT                          beta)
 {
-    if ((alpha == 1.0) && (beta == 0.0))
+    for (OffsetT row = 0; row < a.num_rows; ++row)
     {
-        for (OffsetT row = 0; row < a.num_rows; ++row)
+        ValueT partial = beta * vector_y_in[row];
+        for (
+            OffsetT offset = a.row_offsets[row];
+            offset < a.row_offsets[row + 1];
+            ++offset)
         {
-            ValueT partial = 0.0;
-            for (
-                OffsetT offset = a.row_offsets[row];
-                offset < a.row_offsets[row + 1];
-                ++offset)
-            {
-                 partial += a.values[offset] * vector_x[a.column_indices[offset]];
-            }
-            vector_y_out[row] = partial;
+            partial += alpha * a.values[offset] * vector_x[a.column_indices[offset]];
         }
+        vector_y_out[row] = partial;
     }
-    else
-    {
-        for (OffsetT row = 0; row < a.num_rows; ++row)
-        {
-            ValueT partial = beta * vector_y_in[row];
-            for (
-                OffsetT offset = a.row_offsets[row];
-                offset < a.row_offsets[row + 1];
-                ++offset)
-            {
-                partial += alpha * a.values[offset] * vector_x[a.column_indices[offset]];
-            }
-            vector_y_out[row] = partial;
-        }
-    }
-
 }
 
 
 //---------------------------------------------------------------------
-// SpMV I/O proxy
+// GPU I/O proxy
 //---------------------------------------------------------------------
 
 /**
@@ -125,7 +114,7 @@ template <
     typename    ValueT,
     typename    OffsetT,
     typename    VectorItr>
-__global__ void NonZeroIO(
+__global__ void NonZeroIoKernel(
     int                 num_nonzeros,
     ValueT*             d_values,
     OffsetT*            d_column_indices,
@@ -161,7 +150,7 @@ template <
     int         BLOCK_THREADS,
     typename    ValueT,
     typename    OffsetT>
-__global__ void RowIO(
+__global__ void RowIoKernel(
     int         num_rows,
     OffsetT*    d_row_offsets,
     ValueT*     d_vector_y)
@@ -178,7 +167,7 @@ __global__ void RowIO(
 template <
     typename ValueT,
     typename OffsetT>
-float IoSpmv(
+float TestGpuCsrIoProxy(
     SpmvParams<ValueT, OffsetT>&    params,
     int                             timing_iterations)
 {
@@ -195,7 +184,7 @@ float IoSpmv(
     CubDebugExit(x_itr.BindTexture(params.d_vector_x));
 
     // Warmup
-    NonZeroIO<BLOCK_THREADS, ITEMS_PER_THREAD><<<nonzero_blocks, BLOCK_THREADS>>>(
+    NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<nonzero_blocks, BLOCK_THREADS>>>(
         params.num_nonzeros,
         params.d_values,
         params.d_column_indices,
@@ -205,7 +194,7 @@ float IoSpmv(
     CubDebugExit(cudaPeekAtLastError());
     CubDebugExit(SyncStream(0));
 
-    RowIO<BLOCK_THREADS><<<row_blocks, BLOCK_THREADS>>>(
+    RowIoKernel<BLOCK_THREADS><<<row_blocks, BLOCK_THREADS>>>(
         params.num_rows,
         params.d_row_end_offsets,
         params.d_vector_y);
@@ -215,32 +204,334 @@ float IoSpmv(
     CubDebugExit(SyncStream(0));
 
     // Timing
-    GpuTimer gpu_timer;
+    GpuTimer timer;
     float elapsed_millis = 0.0;
-
-    // Reset input/output vector y
-    gpu_timer.Start();
+    timer.Start();
     for (int it = 0; it < timing_iterations; ++it)
     {
-
-        NonZeroIO<BLOCK_THREADS, ITEMS_PER_THREAD><<<nonzero_blocks, BLOCK_THREADS>>>(
+        NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<nonzero_blocks, BLOCK_THREADS>>>(
             params.num_nonzeros,
             params.d_values,
             params.d_column_indices,
             x_itr);
 
-        RowIO<BLOCK_THREADS><<<row_blocks, BLOCK_THREADS>>>(
+        RowIoKernel<BLOCK_THREADS><<<row_blocks, BLOCK_THREADS>>>(
             params.num_rows,
             params.d_row_end_offsets,
             params.d_vector_y);
     }
-    gpu_timer.Stop();
-    elapsed_millis += gpu_timer.ElapsedMillis();
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
 
     CubDebugExit(x_itr.UnbindTexture());
 
     return elapsed_millis / timing_iterations;
 }
+
+//---------------------------------------------------------------------
+// CPU merge-based SpMV
+//---------------------------------------------------------------------
+
+/**
+ * OpenMP CPU merge-based SpMV
+ */
+template <
+    typename ValueT,
+    typename OffsetT>
+void OmpCsrIoProxy(
+    int                             num_threads,
+    CsrMatrix<ValueT, OffsetT>&     a,
+    ValueT*                         vector_x,
+    ValueT*                         vector_y_out)
+{
+    volatile ValueT value_carry_out[256];
+
+    OffsetT nnz_per_thread = (a.num_nonzeros + num_threads - 1) / num_threads;
+    OffsetT nr_per_thread = (a.num_rows + num_threads - 1) / num_threads;
+
+    // Stream nonzeros
+    #pragma omp parallel for
+    for (int tid = 0; tid < num_threads; tid++)
+    {
+        int start_idx   = nnz_per_thread * tid;
+        int end_idx     = std::min(start_idx + nnz_per_thread, a.num_nonzeros);
+
+        ValueT running_total = ValueT(0.0);
+        for (int nonzero_idx = start_idx; nonzero_idx < end_idx; ++nonzero_idx)
+        {
+            running_total += a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]];
+        }
+
+        value_carry_out[tid] = running_total;
+    }
+
+    // Stream rows
+    #pragma omp parallel for
+    for (int tid = 0; tid < num_threads; tid++)
+    {
+        int start_idx   = nr_per_thread * tid;
+        int end_idx     = std::min(start_idx + nr_per_thread, a.num_rows);
+
+        for (int row_idx = start_idx; row_idx < end_idx; ++row_idx)
+        {
+            vector_y_out[row_idx] = (ValueT) a.row_offsets[row_idx];
+        }
+    }
+
+}
+
+
+/**
+ * Run OmpMergeCsrmv
+ */
+template <
+    typename ValueT,
+    typename OffsetT>
+float TestOmpCsrIoProxy(
+    CsrMatrix<ValueT, OffsetT>&     a,
+    ValueT*                         vector_x,
+    int                             timing_iterations)
+{
+    ValueT* vector_y_out = new ValueT[a.num_rows];
+
+    if (g_omp_threads == -1)
+        g_omp_threads = omp_get_num_procs() * 2;
+
+    omp_set_num_threads(g_omp_threads);
+    omp_set_dynamic(0);
+
+    if (!g_quiet)
+    {
+        printf("\tUsing %d threads on %d procs\n", g_omp_threads, omp_get_num_procs());
+    }
+
+    // Warmup
+    OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
+
+    // Timing
+    float elapsed_millis = 0.0;
+    CpuTimer timer;
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
+    }
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
+
+    delete[] vector_y_out;
+
+    return elapsed_millis / timing_iterations;
+}
+
+
+
+//---------------------------------------------------------------------
+// CPU merge-based SpMV
+//---------------------------------------------------------------------
+
+// OpenMP CPU merge-based SpMV
+template <
+    typename ValueT,
+    typename OffsetT>
+void OmpMergeCsrmv(
+    int                             num_threads,
+    CsrMatrix<ValueT, OffsetT>&     a,
+    ValueT*                         vector_x,
+    ValueT*                         vector_y_out)
+{
+    OffsetT row_carry_out[256];
+    ValueT value_carry_out[256];
+
+    OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
+    OffsetT                         items_per_thread    = (num_merge_items + num_threads - 1) / num_threads;
+    OffsetT*                        row_end_offsets     = a.row_offsets + 1;
+    CountingInputIterator<OffsetT>  nonzero_indices(0);
+
+    #pragma omp parallel for
+    for (int tid = 0; tid < num_threads; tid++)
+    {
+        int start_diagonal  = items_per_thread * tid;
+        int end_diagonal    = std::min(start_diagonal + items_per_thread, num_merge_items);
+
+        // Search for starting coordinates
+        int2 thread_coord;
+        MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
+
+        ValueT  running_total   = ValueT(0.0);
+        OffsetT row_end_offset  = row_end_offsets[thread_coord.x];
+        OffsetT nonzero_idx     = nonzero_indices[thread_coord.y];
+        ValueT  nonzero         = a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]];
+
+        // Merge items
+        for (int merge_item = start_diagonal; merge_item < end_diagonal; ++merge_item)
+        {
+            if (nonzero_idx < row_end_offset)
+            {
+                // Move down (accumulate)
+                running_total += nonzero;
+                ++thread_coord.y;
+                nonzero_idx = nonzero_indices[thread_coord.y];
+                nonzero = a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]];
+            }
+            else
+            {
+                // Move right (reset)
+                vector_y_out[thread_coord.x] = running_total;
+                running_total = ValueT(0.0);
+                ++thread_coord.x;
+                row_end_offset = row_end_offsets[thread_coord.x];
+            }
+        }
+
+        // Save carry-outs
+        row_carry_out[tid] = thread_coord.x;
+        value_carry_out[tid] = running_total;
+    }
+
+    // Carry-out fix-up
+    for (int tid = 0; tid < num_threads; ++tid)
+    {
+        vector_y_out[row_carry_out[tid]] += value_carry_out[tid];
+    }
+}
+
+
+/**
+ * Run OmpMergeCsrmv
+ */
+template <
+    typename ValueT,
+    typename OffsetT>
+float TestOmpMergeCsrmv(
+    CsrMatrix<ValueT, OffsetT>&     a,
+    ValueT*                         vector_x,
+    ValueT*                         reference_vector_y_out,
+    int                             timing_iterations)
+{
+    ValueT* vector_y_out = new ValueT[a.num_rows];
+
+    if (g_omp_threads == -1)
+        g_omp_threads = omp_get_num_procs() * 2;
+
+    omp_set_num_threads(g_omp_threads);
+    omp_set_dynamic(0);
+
+    if (!g_quiet)
+    {
+        printf("\tUsing %d threads on %d procs\n", g_omp_threads, omp_get_num_procs());
+    }
+
+    // Warmup
+    OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
+
+    if (!g_quiet)
+    {
+        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    // Timing
+    float elapsed_millis = 0.0;
+    CpuTimer timer;
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
+    }
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
+
+    delete[] vector_y_out;
+
+    return elapsed_millis / timing_iterations;
+}
+
+
+
+//---------------------------------------------------------------------
+// MKL SpMV
+//---------------------------------------------------------------------
+
+/**
+ * Run MKL SpMV (specialized for fp32)
+ */
+template <
+    typename OffsetT>
+float TestMklCsrmv(
+    CsrMatrix<float, OffsetT>&      a,
+    float*                          vector_x,
+    float*                          reference_vector_y_out,
+    int                             timing_iterations)
+{
+    float* vector_y_out = new float[a.num_rows];
+
+    // Warmup
+    mkl_cspblas_scsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
+
+    if (!g_quiet)
+    {
+        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    // Timing
+    float elapsed_millis    = 0.0;
+
+    CpuTimer timer;
+
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        mkl_cspblas_scsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
+    }
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
+
+    delete[] vector_y_out;
+
+    return elapsed_millis / timing_iterations;
+}
+
+
+/**
+ * Run MKL SpMV (specialized for fp64)
+ */
+template <
+    typename OffsetT>
+float TestMklCsrmv(
+    CsrMatrix<double, OffsetT>&     a,
+    double*                         vector_x,
+    double*                         reference_vector_y_out,
+    int                             timing_iterations)
+{
+    double* vector_y_out = new double[a.num_rows];
+
+    // Warmup
+    mkl_cspblas_dcsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
+
+    if (!g_quiet)
+    {
+        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    // Timing
+    float elapsed_millis = 0.0;
+    CpuTimer timer;
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        mkl_cspblas_dcsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
+    }
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
+
+    delete[] vector_y_out;
+
+    return elapsed_millis / timing_iterations;
+}
+
 
 //---------------------------------------------------------------------
 // cuSparse SpMV
@@ -251,9 +542,9 @@ float IoSpmv(
  */
 template <
     typename OffsetT>
-float CusparseSpmv(
+float TestCusparseCsrmv(
     float*                          vector_y_in,
-    float*                          vector_y_out,
+    float*                          reference_vector_y_out,
     SpmvParams<float, OffsetT>&     params,
     int                             timing_iterations,
     cusparseHandle_t                cusparse)
@@ -273,15 +564,15 @@ float CusparseSpmv(
 
     if (!g_quiet)
     {
-        int compare = CompareDeviceResults(vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
+        int compare = CompareDeviceResults(reference_vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
 
     // Timing
     float elapsed_millis    = 0.0;
-    GpuTimer gpu_timer;
+    GpuTimer timer;
 
-    gpu_timer.Start();
+    timer.Start();
     for(int it = 0; it < timing_iterations; ++it)
     {
         AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseScsrmv(
@@ -290,8 +581,8 @@ float CusparseSpmv(
             params.d_values, params.d_row_end_offsets, params.d_column_indices,
             params.d_vector_x, &params.beta, params.d_vector_y));
     }
-    gpu_timer.Stop();
-    elapsed_millis += gpu_timer.ElapsedMillis();
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
 
     cusparseDestroyMatDescr(desc);
     return elapsed_millis / timing_iterations;
@@ -303,9 +594,9 @@ float CusparseSpmv(
  */
 template <
     typename OffsetT>
-float CusparseSpmv(
+float TestCusparseCsrmv(
     double*                         vector_y_in,
-    double*                         vector_y_out,
+    double*                         reference_vector_y_out,
     SpmvParams<double, OffsetT>&    params,
     int                             timing_iterations,
     cusparseHandle_t                cusparse)
@@ -325,15 +616,14 @@ float CusparseSpmv(
 
     if (!g_quiet)
     {
-        int compare = CompareDeviceResults(vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
+        int compare = CompareDeviceResults(reference_vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
 
     // Timing
-    float elapsed_millis    = 0.0;
-    GpuTimer gpu_timer;
-
-    gpu_timer.Start();
+    float elapsed_millis = 0.0;
+    GpuTimer timer;
+    timer.Start();
     for(int it = 0; it < timing_iterations; ++it)
     {
         AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDcsrmv(
@@ -343,15 +633,15 @@ float CusparseSpmv(
             params.d_vector_x, &params.beta, params.d_vector_y));
 
     }
-    gpu_timer.Stop();
-    elapsed_millis += gpu_timer.ElapsedMillis();
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
 
     cusparseDestroyMatDescr(desc);
     return elapsed_millis / timing_iterations;
 }
 
 //---------------------------------------------------------------------
-// CUB SpMV
+// GPU Merge-based SpMV
 //---------------------------------------------------------------------
 
 /**
@@ -360,9 +650,9 @@ float CusparseSpmv(
 template <
     typename ValueT,
     typename OffsetT>
-float CubSpmv(
+float TestGpuMergeCsrmv(
     ValueT*                         vector_y_in,
-    ValueT*                         vector_y_out,
+    ValueT*                         reference_vector_y_out,
     SpmvParams<ValueT, OffsetT>&    params,
     int                             timing_iterations)
 {
@@ -394,15 +684,15 @@ float CubSpmv(
 
     if (!g_quiet)
     {
-        int compare = CompareDeviceResults(vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
+        int compare = CompareDeviceResults(reference_vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
 
     // Timing
-    GpuTimer gpu_timer;
+    GpuTimer timer;
     float elapsed_millis = 0.0;
 
-    gpu_timer.Start();
+    timer.Start();
     for(int it = 0; it < timing_iterations; ++it)
     {
         CubDebugExit(DeviceSpmv::CsrMV(
@@ -412,8 +702,8 @@ float CubSpmv(
             params.num_rows, params.num_cols, params.num_nonzeros, params.alpha, params.beta,
             (cudaStream_t) 0, false));
     }
-    gpu_timer.Stop();
-    elapsed_millis += gpu_timer.ElapsedMillis();
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
 
     return elapsed_millis / timing_iterations;
 }
@@ -452,6 +742,7 @@ void DisplayPerf(
             effective_bandwidth,
             effective_bandwidth / bandwidth_GBs * 100);
 
+    fflush(stdout);
 }
 
 
@@ -480,32 +771,32 @@ void RunTests(
     if (!mtx_filename.empty())
     {
         // Parse matrix market file
-        printf("%s, ", mtx_filename.c_str());
+        printf("%s, ", mtx_filename.c_str()); fflush(stdout);
         coo_matrix.InitMarket(mtx_filename, 1.0, !g_quiet);
     }
     else if (grid2d > 0)
     {
         // Generate 2D lattice
-        printf("grid2d_%d, ", grid2d);
+        printf("grid2d_%d, ", grid2d); fflush(stdout);
         coo_matrix.InitGrid2d(grid2d, false);
     }
     else if (grid3d > 0)
     {
         // Generate 3D lattice
-        printf("grid3d_%d, ", grid3d);
+        printf("grid3d_%d, ", grid3d); fflush(stdout);
         coo_matrix.InitGrid3d(grid3d, false);
     }
     else if (wheel > 0)
     {
         // Generate wheel graph
-        printf("wheel_%d, ", grid2d);
+        printf("wheel_%d, ", grid2d); fflush(stdout);
         coo_matrix.InitWheel(wheel);
     }
     else if (dense > 0)
     {
         // Generate dense graph
         OffsetT rows = (1<<24) / dense;               // 16M nnz
-        printf("dense_%d_x_%d, ", rows, dense);
+        printf("dense_%d_x_%d, ", rows, dense); fflush(stdout);
         coo_matrix.InitDense(rows, dense);
     }
     else
@@ -548,6 +839,7 @@ void RunTests(
             csr_matrix.Display();
         printf("\n");
     }
+    fflush(stdout);
 
     // Allocate input and output vectors
     ValueT* vector_x        = new ValueT[csr_matrix.num_cols];
@@ -562,65 +854,87 @@ void RunTests(
 
     // Compute reference answer
     SpmvGold(csr_matrix, vector_x, vector_y_in, vector_y_out, alpha, beta);
+
+    float avg_millis;
+
     if (g_cpu)
     {
-        CpuTimer cpu_timer;
-        cpu_timer.Start();
-        for (int it = 0; it < timing_iterations; ++it)
-        {
-            SpmvGold(csr_matrix, vector_x, vector_y_in, vector_y_out, alpha, beta);
+
+        if (!g_quiet) {
+            printf("\n\nCPU CSR I/O Proxy: "); fflush(stdout);
         }
-        cpu_timer.Stop();
-        float avg_millis = cpu_timer.ElapsedMillis() / timing_iterations;
+        avg_millis = TestOmpCsrIoProxy(csr_matrix, vector_x, timing_iterations);
         DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
+
+    #ifdef CUB_MKL
+
+        if (!g_quiet) {
+            printf("\n\nMKL SpMV: "); fflush(stdout);
+        }
+        avg_millis = TestMklCsrmv(csr_matrix, vector_x, vector_y_out, timing_iterations);
+        DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
+
+    #endif
+
+        if (!g_quiet) {
+            printf("\n\nOMP SpMV: "); fflush(stdout);
+        }
+        avg_millis = TestOmpMergeCsrmv(csr_matrix, vector_x, vector_y_out, timing_iterations);
+        DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
+
     }
 
-    // Allocate and initialize GPU problem
-    SpmvParams<ValueT, OffsetT> params;
+    if (g_gpu)
+    {
+        // Allocate and initialize GPU problem
+        SpmvParams<ValueT, OffsetT> params;
 
-    g_allocator.DeviceAllocate((void **) &params.d_values,          sizeof(ValueT) * csr_matrix.num_nonzeros);
-    g_allocator.DeviceAllocate((void **) &params.d_row_end_offsets, sizeof(OffsetT) * (csr_matrix.num_rows + 1));
-    g_allocator.DeviceAllocate((void **) &params.d_column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros);
-    g_allocator.DeviceAllocate((void **) &params.d_vector_x,        sizeof(ValueT) * csr_matrix.num_cols);
-    g_allocator.DeviceAllocate((void **) &params.d_vector_y,        sizeof(ValueT) * csr_matrix.num_rows);
-    params.num_rows = csr_matrix.num_rows;
-    params.num_cols = csr_matrix.num_cols;
-    params.num_nonzeros = csr_matrix.num_nonzeros;
-    params.alpha = alpha;
-    params.beta = beta;
+        g_allocator.DeviceAllocate((void **) &params.d_values,          sizeof(ValueT) * csr_matrix.num_nonzeros);
+        g_allocator.DeviceAllocate((void **) &params.d_row_end_offsets, sizeof(OffsetT) * (csr_matrix.num_rows + 1));
+        g_allocator.DeviceAllocate((void **) &params.d_column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros);
+        g_allocator.DeviceAllocate((void **) &params.d_vector_x,        sizeof(ValueT) * csr_matrix.num_cols);
+        g_allocator.DeviceAllocate((void **) &params.d_vector_y,        sizeof(ValueT) * csr_matrix.num_rows);
+        params.num_rows = csr_matrix.num_rows;
+        params.num_cols = csr_matrix.num_cols;
+        params.num_nonzeros = csr_matrix.num_nonzeros;
+        params.alpha = alpha;
+        params.beta = beta;
 
-    CubDebugExit(cudaMemcpy(params.d_values,            csr_matrix.values,          sizeof(ValueT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(params.d_row_end_offsets,   csr_matrix.row_offsets,     sizeof(OffsetT) * (csr_matrix.num_rows + 1), cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(params.d_column_indices,    csr_matrix.column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemcpy(params.d_vector_x,          vector_x,                   sizeof(ValueT) * csr_matrix.num_cols, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(params.d_values,            csr_matrix.values,          sizeof(ValueT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(params.d_row_end_offsets,   csr_matrix.row_offsets,     sizeof(OffsetT) * (csr_matrix.num_rows + 1), cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(params.d_column_indices,    csr_matrix.column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
+        CubDebugExit(cudaMemcpy(params.d_vector_x,          vector_x,                   sizeof(ValueT) * csr_matrix.num_cols, cudaMemcpyHostToDevice));
 
-    if (!g_quiet) {
-        printf("\n\nIO Proxy: "); fflush(stdout);
+        if (!g_quiet) {
+            printf("\n\nGPU CSR I/O Prox: "); fflush(stdout);
+        }
+        avg_millis = TestGpuCsrIoProxy(params, timing_iterations);
+        DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
+
+        if (!g_quiet) {
+            printf("\n\nCusparse: "); fflush(stdout);
+        }
+        avg_millis = TestCusparseCsrmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
+        DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
+
+        if (!g_quiet) {
+            printf("\n\nCUB: "); fflush(stdout);
+        }
+        avg_millis = TestGpuMergeCsrmv(vector_y_in, vector_y_out, params, timing_iterations);
+        DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
+
+
+        // Cleanup
+        if (params.d_values)            g_allocator.DeviceFree(params.d_values);
+        if (params.d_row_end_offsets)   g_allocator.DeviceFree(params.d_row_end_offsets);
+        if (params.d_column_indices)    g_allocator.DeviceFree(params.d_column_indices);
+        if (params.d_vector_x)          g_allocator.DeviceFree(params.d_vector_x);
+        if (params.d_vector_y)          g_allocator.DeviceFree(params.d_vector_y);
     }
-    float avg_millis = IoSpmv(params, timing_iterations);
-    DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
 
-    if (!g_quiet) {
-        printf("\n\nCusparse: "); fflush(stdout);
-    }
-    avg_millis = CusparseSpmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
-    DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
-
-    if (!g_quiet) {
-        printf("\n\nCUB: "); fflush(stdout);
-    }
-    avg_millis = CubSpmv(vector_y_in, vector_y_out, params, timing_iterations);
-    DisplayPerf(bandwidth_GBs, avg_millis, csr_matrix);
-
-    // Cleanup
     if (vector_x)                   delete[] vector_x;
     if (vector_y_in)                delete[] vector_y_in;
     if (vector_y_out)               delete[] vector_y_out;
-    if (params.d_values)            g_allocator.DeviceFree(params.d_values);
-    if (params.d_row_end_offsets)   g_allocator.DeviceFree(params.d_row_end_offsets);
-    if (params.d_column_indices)    g_allocator.DeviceFree(params.d_column_indices);
-    if (params.d_vector_x)          g_allocator.DeviceFree(params.d_vector_x);
-    if (params.d_vector_y)          g_allocator.DeviceFree(params.d_vector_y);
 }
 
 
@@ -673,6 +987,7 @@ int main(int argc, char **argv)
     g_verbose = args.CheckCmdLineFlag("v");
     g_verbose2 = args.CheckCmdLineFlag("v2");
     g_quiet = args.CheckCmdLineFlag("quiet");
+    g_gpu = args.CheckCmdLineFlag("gpu");
     g_cpu = args.CheckCmdLineFlag("cpu");
     fp64 = args.CheckCmdLineFlag("fp64");
     rcm_relabel = args.CheckCmdLineFlag("rcm");
@@ -684,6 +999,7 @@ int main(int argc, char **argv)
     args.GetCmdLineArgument("dense", dense);
     args.GetCmdLineArgument("alpha", alpha);
     args.GetCmdLineArgument("beta", beta);
+    args.GetCmdLineArgument("threads", g_omp_threads);
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
