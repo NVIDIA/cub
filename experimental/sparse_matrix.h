@@ -53,11 +53,9 @@ struct GraphStats
     int         num_cols;
     int         num_nonzeros;
 
-    long long   row_profile;
-    double      log_row_profile_occupancy;
-
-    long long   intersection_profile;
-    double      log_intersection_profile_occupancy;
+    double      avg_reuse_distance;
+    double      avg_disuse_distance;
+    double      avg_distance;
 
     double      row_length_mean;        // mean
     double      row_length_variance;    // sample variance
@@ -71,10 +69,9 @@ struct GraphStats
                 "\tnum_rows: %d\n"
                 "\tnum_cols: %d\n"
                 "\tnum_nonzeros: %d\n"
-                "\trow_profile: %lld\n"
-                "\tlog_row_profile_occupancy: %.10f\n"
-                "\tintersection_profile: %lld\n"
-                "\tlog_intersection_profile_occupancy: %.10f\n"
+                "\tavg_reuse_distance: %.2f\n"
+                "\tavg_disuse_distance: %.2f\n"
+                "\tavg_distance: %.2f\n"
                 "\trow_length_mean: %.5f\n"
                 "\trow_length_variance: %.5f\n"
                 "\trow_length_variation: %.5f\n"
@@ -82,10 +79,9 @@ struct GraphStats
                     num_rows,
                     num_cols,
                     num_nonzeros,
-                    row_profile,
-                    log_row_profile_occupancy,
-                    intersection_profile,
-                    log_intersection_profile_occupancy,
+                    avg_reuse_distance,
+                    avg_disuse_distance,
+                    avg_distance,
                     row_length_mean,
                     row_length_variance,
                     row_length_variation,
@@ -95,10 +91,9 @@ struct GraphStats
                 "%d, "
                 "%d, "
                 "%d, "
-//                "%lld, "
-                "%.10f, "
-//                "%lld, "
-                "%.10f, "
+                "%.2f, "
+                "%.2f, "
+                "%.2f, "
                 "%.5f, "
                 "%.5f, "
                 "%.5f, "
@@ -106,10 +101,9 @@ struct GraphStats
                     num_rows,
                     num_cols,
                     num_nonzeros,
-//                    row_profile,
-                    log_row_profile_occupancy,
-//                    intersection_profile,
-                    log_intersection_profile_occupancy,
+                    avg_reuse_distance,
+                    avg_disuse_distance,
+                    avg_distance,
                     row_length_mean,
                     row_length_variance,
                     row_length_variation,
@@ -736,108 +730,50 @@ struct CsrMatrix
         stats.num_cols = num_cols;
         stats.num_nonzeros = num_nonzeros;
 
-/*
-        // Compute diagonal profile
-
-        OffsetT num_diags = num_rows + num_cols;
-        OffsetT* diag_min = new OffsetT[num_diags];       // upper right
-        OffsetT* diag_max = new OffsetT[num_diags];       // lower left
-        for (OffsetT diag = 0; diag < num_diags; ++diag)
-        {
-            diag_min[diag] = num_rows;
-            diag_max[diag] = -1;
-        }
-        for (OffsetT row = 0; row < num_rows; ++row)
-        {
-            for (OffsetT column_idx = row_offsets[row]; column_idx < row_offsets[row + 1]; ++column_idx)
-            {
-                OffsetT nz_diag = row + column_indices[column_idx];
-                diag_min[nz_diag] = std::min(diag_min[nz_diag], row);
-                diag_max[nz_diag] = std::max(diag_max[nz_diag], row);
-            }
-        }
-        stats.counter_diagonal_profile = 0;
-        for (OffsetT diag = 0; diag < num_diags; ++diag)
-        {
-            OffsetT delta = diag_max[diag] - diag_min[diag];
-            if (delta > 0)
-            {
-                stats.counter_diagonal_profile += delta;
-            }
-        }
-        stats.log_counter_diagonal_occupancy = pow(2.0, double(num_nonzeros) / double(stats.counter_diagonal_profile));
-*/
-        // Compute row profile
-
-        stats.row_profile = 0;
-        for (OffsetT row = 0; row < num_rows; ++row)
-        {
-            if (row_offsets[row + 1] > row_offsets[row])
-            {
-                OffsetT row_segment = column_indices[row_offsets[row + 1] - 1] - column_indices[row_offsets[row]] + 1;
-                stats.row_profile += row_segment;
-            }
-        }
-        stats.log_row_profile_occupancy = pow(2.0, double(num_nonzeros) / double(stats.row_profile));
-
-        // Compute column profile
-
-        OffsetT* min_row = new OffsetT[num_cols];
-        OffsetT* max_row = new OffsetT[num_cols];
+        // Compute reuse distance stats
+        OffsetT*    last_row        = new OffsetT[num_cols];
+        OffsetT*    last_nz         = new OffsetT[num_cols];
 
         for (OffsetT col = 0; col < num_cols; ++col)
         {
-            min_row[col] = num_rows;
-            max_row[col] = -1;
+            last_row[col] = -1;
+            last_nz[col] = -1;
         }
+
+        long long total_reuse_distance = 0;
+        long long total_disuse_distance = 0;
+
+        OffsetT last_col = 0;
         for (OffsetT row = 0; row < num_rows; ++row)
         {
-            for (OffsetT column_idx = row_offsets[row]; column_idx < row_offsets[row + 1]; ++column_idx)
+            for (int nz_idx = row_offsets[row]; nz_idx < row_offsets[row + 1]; ++nz_idx)
             {
-                OffsetT col = column_indices[column_idx];
-                min_row[col] = std::min(min_row[col], row);
-                max_row[col] = std::max(max_row[col], row);
-            }
-        }
+                OffsetT col = column_indices[nz_idx];
 
-        long long col_profile = 0;
-        for (OffsetT col = 0; col < num_cols; ++col)
-        {
-            OffsetT delta = max_row[col] - min_row[col] + 1;
-            if (delta > 0)
-                col_profile += delta;
-        }
+                if (col > last_col)
+                    total_disuse_distance += (col - last_col);
+                else
+                    total_disuse_distance += (last_col - col);
 
-        // Compute average profile
-
-        stats.intersection_profile = (stats.row_profile + col_profile) / 2;
-        stats.log_intersection_profile_occupancy = pow(2.0, double(num_nonzeros) / double(stats.intersection_profile));
-
-/*
-        // Compute intersection profile
-
-        // Compute the min and max row for each column
-
-        stats.intersection_profile = 0;
-        for (OffsetT row = 0; row < num_rows; ++row)
-        {
-            if (row_offsets[row] < row_offsets[row + 1])
-            {
-                // Non-empty row
-                OffsetT first_col = column_indices[row_offsets[row]];
-                OffsetT last_col  = column_indices[row_offsets[row + 1] - 1];
-
-                for (OffsetT col = first_col; col <= last_col; ++col)
+                if (last_row[col] >= 0)
                 {
-                    if ((min_row[col] <= row) && (max_row[col] >= row))
-                    {
-                        ++stats.intersection_profile;
-                    }
+                    total_reuse_distance += (row - last_row[col]);
                 }
+                last_row[col] = row;
+
+                if (last_nz[col] >= 0)
+                {
+                    total_reuse_distance += (nz_idx - last_nz[col]);
+                }
+                last_nz[col] = nz_idx;
+
+                last_col = col;
             }
         }
-        stats.log_intersection_profile_occupancy = pow(2.0, double(num_nonzeros) / double(stats.intersection_profile));
-*/
+
+        stats.avg_reuse_distance = double(total_reuse_distance) / num_nonzeros;
+        stats.avg_disuse_distance = double(total_disuse_distance) / num_nonzeros;
+        stats.avg_distance = double(total_disuse_distance + total_reuse_distance) / num_nonzeros;
 
         // Compute row-length statistics
 
@@ -859,8 +795,8 @@ struct CsrMatrix
         stats.row_length_variation  = std_dev / stats.row_length_mean;
 
         // Cleanup
-        delete[] min_row;
-        delete[] max_row;
+        delete[] last_row;
+        delete[] last_nz;
 
         return stats;
     }
