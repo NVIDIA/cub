@@ -778,19 +778,19 @@ struct CsrMatrix
         // Compute row-length statistics
 
         // Sample mean
-        stats.row_length_mean       = float(num_nonzeros) / num_rows;
+        stats.row_length_mean       = double(num_nonzeros) / num_rows;
         stats.row_length_variance   = 0.0;
         stats.row_length_skewness   = 0.0;
         for (int row = 0; row < num_rows; ++row)
         {
             int length                  = row_offsets[row + 1] - row_offsets[row];
-            double delta                = length - stats.row_length_mean;
-            stats.row_length_variance   += delta * delta;
-            stats.row_length_skewness   += delta * delta * delta;
+            double delta                = double(length) - stats.row_length_mean;
+            stats.row_length_variance   += (delta * delta);
+            stats.row_length_skewness   += (delta * delta * delta);
         }
-        stats.row_length_variance   /= (num_rows - 1);
+        stats.row_length_variance   /= num_rows;
         double std_dev              = sqrt(stats.row_length_variance);
-        stats.row_length_skewness   /= (num_rows);
+        stats.row_length_skewness   /= num_rows;
         stats.row_length_skewness   = stats.row_length_skewness / pow(std_dev, 3.0);
         stats.row_length_variation  = std_dev / stats.row_length_mean;
 

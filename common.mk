@@ -175,6 +175,10 @@ ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
 	NVCCFLAGS += -Xcompiler /bigobj -Xcompiler /Zm500
 	CC = cl
 	NPPI = -lnppi
+	
+	# Multithreaded runtime
+	NVCCFLAGS += -Xcompiler /MT
+	
 ifneq ($(force32), 1)
 	CUDART_CYG = "$(shell dirname $(NVCC))/../lib/Win32/cudart.lib"
 else
