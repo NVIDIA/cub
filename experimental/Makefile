@@ -40,6 +40,20 @@ include ../common.mk
 # Commandline Options
 #-------------------------------------------------------------------------------
 
+# [mkl=<0|1>] compile against Intel MKL
+ifeq ($(mkl), 1)
+	DEFINES 	+= -DCUB_MKL
+
+ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
+	LIBS 		+=	mkl_intel_lp64.lib mkl_intel_thread.lib  mkl_core.lib libiomp5md.lib
+	NVCCFLAGS 	+= -Xcompiler /openmp
+else
+	LIBS		+= -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm
+	NVCCFLAGS 	+= -Xcompiler -fopenmp
+	
+endif	
+
+endif
 
 
 #-------------------------------------------------------------------------------
@@ -51,9 +65,6 @@ INC += -I$(CUB_DIR) -I$(CUB_DIR)test
 
 # detect OS
 OSUPPER = $(shell uname -s 2>/dev/null | tr [:lower:] [:upper:])
-
-
-
 
 #-------------------------------------------------------------------------------
 # Dependency Lists
@@ -69,6 +80,7 @@ DEPS =				$(CUB_DEPS) \
 					$(CUB_DIR)test/Makefile \
 					$(CUB_DIR)test/test_util.h \
 					$(CUB_DIR)test/mersenne.h \
+
 		
 
 #-------------------------------------------------------------------------------
@@ -108,6 +120,6 @@ spmv_compare: bin/spmv_compare_$(BIN_SUFFIX)
 
 bin/spmv_compare_$(BIN_SUFFIX) : spmv_compare.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/spmv_compare_$(BIN_SUFFIX) spmv_compare.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -lcusparse -O3
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/spmv_compare_$(BIN_SUFFIX) spmv_compare.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -lcusparse $(MKL_LIBS) -O3
 	
 
