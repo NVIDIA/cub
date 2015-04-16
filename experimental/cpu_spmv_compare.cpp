@@ -34,6 +34,8 @@
  * g++ cpu_spmv_compare.cpp -DCUB_MKL -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ffloat-store -O3 -fopenmp
  * g++ cpu_spmv_compare.cpp -lm -ffloat-store -O3 -fopenmp
  *
+ * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_omp.out -lrt
+ * export KMP_AFFINITY=granularity=core,scatter
  *
  *
  *
@@ -52,7 +54,7 @@
     #undef small     // Windows is terrible for polluting macro namespace
 #else
     #include <sys/resource.h>
-    #include <sys/time.h>
+    #include <time.h>
 #endif
 
 #include <omp.h>
@@ -411,25 +413,22 @@ struct CpuTimer
 
 #else
 
-    timeval start;
-    timeval stop;
+    timespec start;
+    timespec stop;
 
     void Start()
     {
-        gettimeofday(&start, NULL);
+        clock_gettime(CLOCK_MONOTONIC, &start);
     }
 
     void Stop()
     {
-        gettimeofday(&stop, NULL);
+        clock_gettime(CLOCK_MONOTONIC, &stop);
     }
 
     float ElapsedMillis()
     {
-        float sec = stop.tv_sec - start.tv_sec;
-        float usec = stop.tv_usec - start.tv_usec;
-
-        return (sec * 1000) + (usec / 1000);
+        return ((float(stop.tv_sec - start.tv_sec) * 1000) + (float(stop.tv_nsec - start.tv_nsec) / 1000000L));
     }
 
 #endif
@@ -661,6 +660,7 @@ float TestOmpCsrIoProxy(
     // Warmup
     OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
     OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
+    OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
 
     // Timing
     float elapsed_millis = 0.0;
@@ -715,20 +715,18 @@ void OmpMergeCsrmv(
         ValueT  running_total   = ValueT(0.0);
         OffsetT row_end_offset  = row_end_offsets[thread_coord.x];
         OffsetT nonzero_idx     = nonzero_indices[thread_coord.y];
-        ValueT  nonzero         = (nonzero_idx < a.num_nonzeros) ?
-                                    a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]] :
-                                    ValueT(0.0);
 
         // Merge items
         for (int merge_item = start_diagonal; merge_item < end_diagonal; ++merge_item)
         {
+
             if (nonzero_idx < row_end_offset)
             {
                 // Move down (accumulate)
+                ValueT nonzero = a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]];
                 running_total += nonzero;
                 ++thread_coord.y;
                 nonzero_idx = nonzero_indices[thread_coord.y];
-                nonzero = a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]];
             }
             else
             {
@@ -780,12 +778,12 @@ float TestOmpMergeCsrmv(
 
     // Warmup
     OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
-
     if (!g_quiet)
     {
         int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
+    OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
     OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
 
     // Timing
@@ -825,18 +823,17 @@ float TestMklCsrmv(
 
     // Warmup
     mkl_cspblas_scsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
-
     if (!g_quiet)
     {
         int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
+    mkl_cspblas_scsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
+    mkl_cspblas_scsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
 
     // Timing
     float elapsed_millis    = 0.0;
-
     CpuTimer timer;
-
     timer.Start();
     for(int it = 0; it < timing_iterations; ++it)
     {
@@ -871,6 +868,7 @@ float TestMklCsrmv(
         int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
+    mkl_cspblas_dcsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
     mkl_cspblas_dcsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
 
     // Timing
@@ -1024,7 +1022,7 @@ void RunTests(
     // Adaptive timing iterations: run two billion nonzeros through
     if (timing_iterations == -1)
     {
-        timing_iterations = std::max(5, std::min(OffsetT(1e4), (OffsetT(2e9) / csr_matrix.num_nonzeros)));
+        timing_iterations = std::max(5, std::min(OffsetT(1e5), (OffsetT(2e9) / csr_matrix.num_nonzeros)));
         if (!g_quiet)
             printf("\t%d timing iterations\n", timing_iterations);
     }
