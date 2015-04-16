@@ -125,11 +125,11 @@ __global__ void NonZeroIoKernel(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
-        OffsetT item_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
-        item_idx = CUB_MIN(item_idx, params.num_nonzeros - 1);
+        OffsetT nonzero_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
+        nonzero_idx = CUB_MIN(nonzero_idx, params.num_nonzeros - 1);
 
-        OffsetT     column_idx      = params.d_column_indices[item_idx];
-        ValueT      value           = params.d_values[item_idx];
+        OffsetT     column_idx      = ThreadLoad<LOAD_LDG>(params.d_column_indices + nonzero_idx);
+        ValueT      value           = ThreadLoad<LOAD_LDG>(params.d_values + nonzero_idx);
 
 #if (CUB_PTX_ARCH >= 350)
         ValueT      vector_value    = ThreadLoad<LOAD_LDG>(params.d_vector_x + column_idx);
@@ -148,7 +148,13 @@ __global__ void NonZeroIoKernel(
             OffsetT row_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
             row_idx = CUB_MIN(row_idx, params.num_rows - 1);
 
-            if (params.d_row_end_offsets[row_idx] > 0)
+#if (CUB_PTX_ARCH >= 350)
+            OffsetT nonzero_idx = ThreadLoad<LOAD_LDG>(params.d_row_end_offsets + row_idx);
+#else
+            OffsetT nonzero_idx = params.d_row_end_offsets[row_idx];
+#endif
+
+            if (nonzero_idx > 0)
                 params.d_vector_y[row_idx] = nonzero;
         }
     }
@@ -815,7 +821,7 @@ void RunTests(
     // Adaptive timing iterations: run two billion nonzeros through
     if (timing_iterations == -1)
     {
-        timing_iterations = std::max(5, std::min(OffsetT(1e5), (OffsetT(2e9) / csr_matrix.num_nonzeros)));
+        timing_iterations = std::max(5, std::min(OffsetT(1e4), (OffsetT(2e9) / csr_matrix.num_nonzeros)));
         if (!g_quiet)
             printf("\t%d timing iterations\n", timing_iterations);
     }
