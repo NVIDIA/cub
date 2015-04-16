@@ -32,6 +32,9 @@
 
 #pragma once
 
+#include <cmath>
+#include <cstring>
+
 #include <iterator>
 #include <string>
 #include <algorithm>
