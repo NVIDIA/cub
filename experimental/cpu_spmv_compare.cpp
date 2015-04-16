@@ -52,6 +52,7 @@
     #undef small     // Windows is terrible for polluting macro namespace
 #else
     #include <sys/resource.h>
+    #include <sys/time.h>
 #endif
 
 #include <omp.h>
@@ -410,23 +411,23 @@ struct CpuTimer
 
 #else
 
-    rusage start;
-    rusage stop;
+    timeval start;
+    timeval stop;
 
     void Start()
     {
-        getrusage(RUSAGE_SELF, &start);
+        gettimeofday(&start, NULL);
     }
 
     void Stop()
     {
-        getrusage(RUSAGE_SELF, &stop);
+        gettimeofday(&stop, NULL);
     }
 
     float ElapsedMillis()
     {
-        float sec = stop.ru_utime.tv_sec - start.ru_utime.tv_sec;
-        float usec = stop.ru_utime.tv_usec - start.ru_utime.tv_usec;
+        float sec = stop.tv_sec - start.tv_sec;
+        float usec = stop.tv_usec - start.tv_usec;
 
         return (sec * 1000) + (usec / 1000);
     }
@@ -647,7 +648,7 @@ float TestOmpCsrIoProxy(
     ValueT* vector_y_out = new ValueT[a.num_rows];
 
     if (g_omp_threads == -1)
-        g_omp_threads = omp_get_num_procs() * 2;
+        g_omp_threads = omp_get_num_procs();
 
     omp_set_num_threads(g_omp_threads);
     omp_set_dynamic(0);
@@ -658,6 +659,7 @@ float TestOmpCsrIoProxy(
     }
 
     // Warmup
+    OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
     OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
 
     // Timing
@@ -713,7 +715,9 @@ void OmpMergeCsrmv(
         ValueT  running_total   = ValueT(0.0);
         OffsetT row_end_offset  = row_end_offsets[thread_coord.x];
         OffsetT nonzero_idx     = nonzero_indices[thread_coord.y];
-        ValueT  nonzero         = a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]];
+        ValueT  nonzero         = (nonzero_idx < a.num_nonzeros) ?
+                                    a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]] :
+                                    ValueT(0.0);
 
         // Merge items
         for (int merge_item = start_diagonal; merge_item < end_diagonal; ++merge_item)
@@ -742,7 +746,7 @@ void OmpMergeCsrmv(
     }
 
     // Carry-out fix-up
-    for (int tid = 0; tid < num_threads; ++tid)
+    for (int tid = 0; tid < num_threads - 1; ++tid)
     {
         vector_y_out[row_carry_out[tid]] += value_carry_out[tid];
     }
@@ -764,7 +768,7 @@ float TestOmpMergeCsrmv(
     ValueT* vector_y_out = new ValueT[a.num_rows];
 
     if (g_omp_threads == -1)
-        g_omp_threads = omp_get_num_procs() * 2;
+        g_omp_threads = omp_get_num_procs();
 
     omp_set_num_threads(g_omp_threads);
     omp_set_dynamic(0);
@@ -782,6 +786,7 @@ float TestOmpMergeCsrmv(
         int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
+    OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
 
     // Timing
     float elapsed_millis = 0.0;
@@ -861,12 +866,12 @@ float TestMklCsrmv(
 
     // Warmup
     mkl_cspblas_dcsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
-
     if (!g_quiet)
     {
         int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
+    mkl_cspblas_dcsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
 
     // Timing
     float elapsed_millis = 0.0;
@@ -906,7 +911,7 @@ void DisplayPerf(
 
     if (!g_quiet)
         printf("fp%d: %.4f avg ms, %.5f gflops, %.3lf effective GB/s (%.2f%% peak)\n",
-            sizeof(ValueT) * 8,
+            int(sizeof(ValueT) * 8),
             avg_millis,
             2 * nz_throughput,
             effective_bandwidth,
@@ -1040,27 +1045,27 @@ void RunTests(
 
     float avg_millis;
 
-    if (!g_quiet) {
-        printf("\n\nCPU CSR I/O Proxy: "); fflush(stdout);
-    }
-    avg_millis = TestOmpCsrIoProxy(csr_matrix, vector_x, timing_iterations);
-    DisplayPerf(-1, avg_millis, csr_matrix);
-
 #ifdef CUB_MKL
 
     if (!g_quiet) {
         printf("\n\nMKL SpMV: "); fflush(stdout);
     }
     avg_millis = TestMklCsrmv(csr_matrix, vector_x, vector_y_out, timing_iterations);
-    DisplayPerf(-1, avg_millis, csr_matrix);
+    DisplayPerf(30, avg_millis, csr_matrix);
 
 #endif
+
+    if (!g_quiet) {
+        printf("\n\nCPU CSR I/O Proxy: "); fflush(stdout);
+    }
+    avg_millis = TestOmpCsrIoProxy(csr_matrix, vector_x, timing_iterations);
+    DisplayPerf(30, avg_millis, csr_matrix);
 
     if (!g_quiet) {
         printf("\n\nOMP SpMV: "); fflush(stdout);
     }
     avg_millis = TestOmpMergeCsrmv(csr_matrix, vector_x, vector_y_out, timing_iterations);
-    DisplayPerf(-1, avg_millis, csr_matrix);
+    DisplayPerf(30, avg_millis, csr_matrix);
 
     if (vector_x)                   delete[] vector_x;
     if (vector_y_in)                delete[] vector_y_in;
