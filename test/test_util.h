@@ -80,6 +80,8 @@ struct CommandLineArgs
     std::vector<std::string>    args;
     cudaDeviceProp              deviceProp;
     float                       device_giga_bandwidth;
+    size_t                      device_free_physmem;
+    size_t                      device_total_physmem;
 
     /**
      * Constructor
@@ -263,8 +265,7 @@ struct CommandLineArgs
             error = CubDebug(cudaSetDevice(dev));
             if (error) break;
 
-            size_t free_physmem, total_physmem;
-            CubDebugExit(cudaMemGetInfo(&free_physmem, &total_physmem));
+            CubDebugExit(cudaMemGetInfo(&device_free_physmem, &device_total_physmem));
 
             int ptx_version;
             error = CubDebug(cub::PtxVersion(ptx_version));
@@ -291,8 +292,8 @@ struct CommandLineArgs
                     ptx_version,
                     deviceProp.major * 100 + deviceProp.minor * 10,
                     deviceProp.multiProcessorCount,
-                    (unsigned long long) free_physmem / 1024 / 1024,
-                    (unsigned long long) total_physmem / 1024 / 1024,
+                    (unsigned long long) device_free_physmem / 1024 / 1024,
+                    (unsigned long long) device_total_physmem / 1024 / 1024,
                     device_giga_bandwidth,
                     deviceProp.memoryClockRate,
                     (deviceProp.ECCEnabled) ? "on" : "off");
