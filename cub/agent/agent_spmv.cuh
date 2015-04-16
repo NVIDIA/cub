@@ -63,7 +63,7 @@ namespace cub {
 template <
     int                             _BLOCK_THREADS,                         ///< Threads per thread block
     int                             _ITEMS_PER_THREAD,                      ///< Items per thread (per tile of input)
-    CacheLoadModifier               _SEARCH_ROW_OFFSETS_LOAD_MODIFIER,      ///< Cache load modifier for reading CSR row-offsets during search
+    CacheLoadModifier               _ROW_OFFSETS_SEARCH_LOAD_MODIFIER,      ///< Cache load modifier for reading CSR row-offsets during search
     CacheLoadModifier               _ROW_OFFSETS_LOAD_MODIFIER,             ///< Cache load modifier for reading CSR row-offsets
     CacheLoadModifier               _COLUMN_INDICES_LOAD_MODIFIER,          ///< Cache load modifier for reading CSR column-indices
     CacheLoadModifier               _VALUES_LOAD_MODIFIER,                  ///< Cache load modifier for reading CSR values
@@ -79,7 +79,7 @@ struct AgentSpmvPolicy
         DIRECT_LOAD_NONZEROS                                            = _DIRECT_LOAD_NONZEROS,                ///< Whether to load nonzeros directly from global during sequential merging (pre-staged through shared memory) 
     };
 
-    static const CacheLoadModifier  SEARCH_ROW_OFFSETS_LOAD_MODIFIER    = _SEARCH_ROW_OFFSETS_LOAD_MODIFIER;    ///< Cache load modifier for reading CSR row-offsets
+    static const CacheLoadModifier  ROW_OFFSETS_SEARCH_LOAD_MODIFIER    = _ROW_OFFSETS_SEARCH_LOAD_MODIFIER;    ///< Cache load modifier for reading CSR row-offsets
     static const CacheLoadModifier  ROW_OFFSETS_LOAD_MODIFIER           = _ROW_OFFSETS_LOAD_MODIFIER;           ///< Cache load modifier for reading CSR row-offsets
     static const CacheLoadModifier  COLUMN_INDICES_LOAD_MODIFIER        = _COLUMN_INDICES_LOAD_MODIFIER;        ///< Cache load modifier for reading CSR column-indices
     static const CacheLoadModifier  VALUES_LOAD_MODIFIER                = _VALUES_LOAD_MODIFIER;                ///< Cache load modifier for reading CSR values
@@ -141,6 +141,12 @@ struct AgentSpmv
     typedef typename CubVector<OffsetT, 2>::Type CoordinateT;
 
     /// Input iterator wrapper types (for applying cache modifiers)
+
+    typedef CacheModifiedInputIterator<
+            AgentSpmvPolicyT::ROW_OFFSETS_SEARCH_LOAD_MODIFIER,
+            OffsetT,
+            OffsetT>
+        RowOffsetsSearchIteratorT;
 
     typedef CacheModifiedInputIterator<
             AgentSpmvPolicyT::ROW_OFFSETS_LOAD_MODIFIER,
@@ -213,9 +219,10 @@ struct AgentSpmv
     /// Shared memory type required by this thread block
     struct _TempStorage
     {
+        CoordinateT tile_coords[2];
+
         union
         {
-
             // Smem needed for tile of merge items
             MergeItem merge_items[ITEMS_PER_THREAD + TILE_ITEMS + 1];
 
@@ -686,8 +693,37 @@ struct AgentSpmv
         if (tile_idx >= num_merge_tiles) 
             return;
 
-        CoordinateT tile_start_coord     = d_tile_coordinates[tile_idx + 0];
-        CoordinateT tile_end_coord       = d_tile_coordinates[tile_idx + 1];
+        // Read our starting coordinates
+        if (threadIdx.x < 2)
+        {
+            if (d_tile_coordinates == NULL)
+            {
+                // Search our starting coordinates
+                OffsetT                         diagonal = (tile_idx + threadIdx.x) * TILE_ITEMS;
+                CoordinateT                     tile_coord;
+                CountingInputIterator<OffsetT>  nonzero_indices(0);
+
+                // Search the merge path
+                MergePathSearch(
+                    diagonal,
+                    RowOffsetsSearchIteratorT(spmv_params.d_row_end_offsets),
+                    nonzero_indices,
+                    spmv_params.num_rows,
+                    spmv_params.num_nonzeros,
+                    tile_coord);
+
+                temp_storage.tile_coords[threadIdx.x] = tile_coord;
+            }
+            else
+            {
+                temp_storage.tile_coords[threadIdx.x] = d_tile_coordinates[tile_idx + threadIdx.x];
+            }
+        }
+
+        __syncthreads();
+
+        CoordinateT tile_start_coord     = temp_storage.tile_coords[0];
+        CoordinateT tile_end_coord       = temp_storage.tile_coords[1];
 
         // Consume multi-segment tile
         KeyValuePairT tile_carry = ConsumeTile(
