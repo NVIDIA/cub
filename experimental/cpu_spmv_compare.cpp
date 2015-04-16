@@ -35,7 +35,7 @@
  * g++ cpu_spmv_compare.cpp -lm -ffloat-store -O3 -fopenmp
  *
  * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_omp.out -lrt
- * export KMP_AFFINITY=granularity=core,scatter
+ * export KMP_AFFINITY=granularity=core,compact
  *
  *
  *
@@ -746,7 +746,8 @@ void OmpMergeCsrmv(
     // Carry-out fix-up
     for (int tid = 0; tid < num_threads - 1; ++tid)
     {
-        vector_y_out[row_carry_out[tid]] += value_carry_out[tid];
+        if (row_carry_out[tid] < a.num_rows)
+            vector_y_out[row_carry_out[tid]] += value_carry_out[tid];
     }
 }
 
