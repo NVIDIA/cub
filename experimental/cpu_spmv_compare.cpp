@@ -34,10 +34,8 @@
  * g++ cpu_spmv_compare.cpp -DCUB_MKL -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ffloat-store -O3 -fopenmp
  * g++ cpu_spmv_compare.cpp -lm -ffloat-store -O3 -fopenmp
  *
- * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_omp.out -lrt
- * export KMP_AFFINITY=granularity=core,compact
- *
- *
+ * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_omp.out -lrt -fno-alias -xHost
+ * export KMP_AFFINITY=granularity=core,scatter
  *
  *
  ******************************************************************************/
@@ -647,7 +645,9 @@ float TestOmpCsrIoProxy(
     ValueT* vector_y_out = new ValueT[a.num_rows];
 
     if (g_omp_threads == -1)
-        g_omp_threads = omp_get_num_procs();
+        g_omp_threads = (a.num_nonzeros < 2000000) ? 
+            omp_get_num_procs() / 2:
+            omp_get_num_procs();
 
     omp_set_num_threads(g_omp_threads);
     omp_set_dynamic(0);
@@ -694,8 +694,8 @@ void OmpMergeCsrmv(
     ValueT*                         vector_x,
     ValueT*                         vector_y_out)
 {
-    OffsetT row_carry_out[256];
-    ValueT value_carry_out[256];
+    OffsetT     row_carry_out[128];
+    ValueT      value_carry_out[128];
 
     OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
     OffsetT                         items_per_thread    = (num_merge_items + num_threads - 1) / num_threads;
@@ -705,41 +705,45 @@ void OmpMergeCsrmv(
     #pragma omp parallel for
     for (int tid = 0; tid < num_threads; tid++)
     {
-        int start_diagonal  = items_per_thread * tid;
-        int end_diagonal    = std::min(start_diagonal + items_per_thread, num_merge_items);
+        int start_diagonal      = std::min(items_per_thread * tid, num_merge_items);
+        int end_diagonal        = std::min(start_diagonal + items_per_thread, num_merge_items);
 
-        // Search for starting coordinates
         int2 thread_coord;
-        MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
+        int2 thread_end_coord;
 
-        ValueT  running_total   = ValueT(0.0);
-        OffsetT row_end_offset  = row_end_offsets[thread_coord.x];
-        OffsetT nonzero_idx     = nonzero_indices[thread_coord.y];
-
-        // Merge items
-        for (int merge_item = start_diagonal; merge_item < end_diagonal; ++merge_item)
+        if (a.num_rows != a.num_nonzeros)
         {
+            MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
+            MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_end_coord);
+        }
+        else
+        {
+            thread_coord = {start_diagonal >> 1, (start_diagonal + 1) >> 1};
+            thread_end_coord = {end_diagonal >> 1, (end_diagonal + 1) >> 1};
+        }
 
-            if (nonzero_idx < row_end_offset)
+        ValueT running_total = ValueT(0.0);
+
+        // Consume whole rows
+        for (; thread_coord.x < thread_end_coord.x; ++thread_coord.x)
+        {
+            for (; thread_coord.y < row_end_offsets[thread_coord.x]; ++thread_coord.y)
             {
-                // Move down (accumulate)
-                ValueT nonzero = a.values[nonzero_idx] * vector_x[a.column_indices[nonzero_idx]];
-                running_total += nonzero;
-                ++thread_coord.y;
-                nonzero_idx = nonzero_indices[thread_coord.y];
+                running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
             }
-            else
-            {
-                // Move right (reset)
-                vector_y_out[thread_coord.x] = running_total;
-                running_total = ValueT(0.0);
-                ++thread_coord.x;
-                row_end_offset = row_end_offsets[thread_coord.x];
-            }
+
+            vector_y_out[thread_coord.x] = running_total;
+            running_total = ValueT(0.0);
+        }
+
+        // Consume partial portion of thread's last row
+        for (; thread_coord.y < thread_end_coord.y; ++thread_coord.y)
+        {
+            running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
         }
 
         // Save carry-outs
-        row_carry_out[tid] = thread_coord.x;
+        row_carry_out[tid] = thread_end_coord.x;
         value_carry_out[tid] = running_total;
     }
 
@@ -767,7 +771,9 @@ float TestOmpMergeCsrmv(
     ValueT* vector_y_out = new ValueT[a.num_rows];
 
     if (g_omp_threads == -1)
-        g_omp_threads = omp_get_num_procs();
+        g_omp_threads = (a.num_nonzeros < 2000000) ? 
+            omp_get_num_procs() / 2:
+            omp_get_num_procs();
 
     omp_set_num_threads(g_omp_threads);
     omp_set_dynamic(0);
@@ -1023,7 +1029,7 @@ void RunTests(
     // Adaptive timing iterations: run two billion nonzeros through
     if (timing_iterations == -1)
     {
-        timing_iterations = std::max(5, std::min(OffsetT(1e5), (OffsetT(2e9) / csr_matrix.num_nonzeros)));
+        timing_iterations = std::max(10, std::min(OffsetT(1e4), (OffsetT(2e9) / csr_matrix.num_nonzeros)));
         if (!g_quiet)
             printf("\t%d timing iterations\n", timing_iterations);
     }
