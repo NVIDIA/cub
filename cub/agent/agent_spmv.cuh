@@ -726,19 +726,21 @@ struct AgentSpmv
         CoordinateT tile_end_coord       = temp_storage.tile_coords[1];
 
         // Consume multi-segment tile
-        KeyValuePairT tile_carry = ConsumeTile(
+        KeyValuePairT tile_carry;
+/*
+ = ConsumeTile(
             tile_idx,
             tile_start_coord,
             tile_end_coord,
             Int2Type<AgentSpmvPolicyT::DIRECT_LOAD_NONZEROS>());
-
+*/
         // Output the tile's carry-out
         if (threadIdx.x == 0)
         {
             if (HAS_ALPHA)
                 tile_carry.value *= spmv_params.alpha;
 
-            tile_carry.key += tile_start_coord.x;
+            tile_carry.key                  = tile_end_coord.x;
             d_tile_carry_pairs[tile_idx]    = tile_carry;
         }
     }

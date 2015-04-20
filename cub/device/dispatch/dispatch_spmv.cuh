@@ -674,7 +674,7 @@ struct DispatchSpmv
 
 #if (CUB_PTX_ARCH == 0)
             // Init textures
-            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
+//            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
 #endif
 
             if (num_merge_tiles < spmv_sm_occupancy * sm_count)
@@ -721,7 +721,7 @@ struct DispatchSpmv
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-
+/*
             // Run reduce-by-key fixup if necessary
             if (num_merge_tiles > 1)
             {
@@ -743,10 +743,10 @@ struct DispatchSpmv
                 // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
-
+*/
 #if (CUB_PTX_ARCH == 0)
             // Free textures
-            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
+//            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
 #endif
         }
         while (0);
