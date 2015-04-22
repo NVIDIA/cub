@@ -162,7 +162,6 @@ __global__ void DeviceSpmvKernel(
     int                             num_tiles,                  ///< [in] Number of merge tiles
     ScanTileStateT                  tile_state,                 ///< [in] Tile status interface for fixup reduce-by-key kernel
     int                             num_segment_fixup_tiles)    ///< [in] Number of reduce-by-key tiles (fixup grid size)
-
 {
     // Spmv agent type specialization
     typedef AgentSpmv<
@@ -183,6 +182,7 @@ __global__ void DeviceSpmvKernel(
 
     // Initialize fixup tile status
     tile_state.InitializeStatus(num_segment_fixup_tiles);
+
 }
 
 
@@ -674,6 +674,7 @@ struct DispatchSpmv
 
 #if (CUB_PTX_ARCH == 0)
             // Init textures
+            // Mooch
 //            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
 #endif
 
@@ -721,7 +722,7 @@ struct DispatchSpmv
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-/*
+
             // Run reduce-by-key fixup if necessary
             if (num_merge_tiles > 1)
             {
@@ -743,7 +744,7 @@ struct DispatchSpmv
                 // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
-*/
+
 #if (CUB_PTX_ARCH == 0)
             // Free textures
 //            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
@@ -782,13 +783,21 @@ struct DispatchSpmv
             // Get kernel kernel dispatch configurations
             KernelConfig spmv_config, segment_fixup_config;
             InitConfigs(ptx_version, spmv_config, segment_fixup_config);
+            
+            if (CubDebug(error = Dispatch(
+                d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
+                DeviceSpmv1ColKernel<PtxSpmvPolicyT, ValueT, OffsetT>,
+                DeviceSpmvSearchKernel<PtxSpmvPolicyT, OffsetT, CoordinateT, SpmvParamsT>,
+                DeviceSpmvKernel<PtxSpmvPolicyT, ScanTileStateT, ValueT, OffsetT, CoordinateT, false, false>,
+                DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
+                spmv_config, segment_fixup_config))) break;
+            
 /*
             // Dispatch
             if (spmv_params.beta == 0.0)
             {
                 if (spmv_params.alpha == 1.0)
                 {
-*/
                     // Dispatch y = A*x
                     if (CubDebug(error = Dispatch(
                         d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
@@ -797,7 +806,6 @@ struct DispatchSpmv
                         DeviceSpmvKernel<PtxSpmvPolicyT, ScanTileStateT, ValueT, OffsetT, CoordinateT, false, false>,
                         DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
                         spmv_config, segment_fixup_config))) break;
-/*
                 }
                 else
                 {
