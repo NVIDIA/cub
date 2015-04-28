@@ -110,27 +110,75 @@ __global__ void NonZeroIoKernel(
     SpmvParams<ValueT, OffsetT> params,
     VectorItr                   d_vector_x)
 {
-    OffsetT block_offset = blockIdx.x * BLOCK_THREADS * ITEMS_PER_THREAD;
+    enum
+    {
+        TILE_ITEMS      = BLOCK_THREADS * ITEMS_PER_THREAD,
+    };
+
 
     ValueT nonzero = 0.0;
+
+    OffsetT block_offset = blockIdx.x * TILE_ITEMS;
+
+
+    OffsetT column_indices[ITEMS_PER_THREAD];
+    OffsetT values[ITEMS_PER_THREAD];
+
+    OffsetT nonzero_idx = block_offset + (0 * BLOCK_THREADS) + threadIdx.x;
+
+    OffsetT* ci = params.d_column_indices + nonzero_idx;
+    ValueT* a = params.d_values + nonzero_idx;
+
+    column_indices[0]    = (nonzero_idx < params.num_nonzeros) ? *ci : 0;
+    values[0]            = (nonzero_idx < params.num_nonzeros) ? *a : 0.0;
+
+    OffsetT prev = ShuffleUp(column_indices[0], 1);
+
+//    OffsetT delta = CUB_MAX(column_indices[0] - prev, prev - column_indices[0]);
+//    if (delta > 1024 * 1024)
+    if (false)
+//    if (prev - column_indices[0] > 1024 * 1024)
+//    if (true)
+    {
+        #pragma unroll
+        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            nonzero_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
+
+            ci = params.d_column_indices + nonzero_idx;
+            a = params.d_values + nonzero_idx;
+
+            __threadfence();
+            column_indices[ITEM]    = (nonzero_idx < params.num_nonzeros) ? *ci : 0;
+            __threadfence();
+            values[ITEM]            = (nonzero_idx < params.num_nonzeros) ? *a : 0.0;
+        }
+    }
+    else
+    {
+        #pragma unroll
+        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            nonzero_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
+
+            ci = params.d_column_indices + nonzero_idx;
+            a = params.d_values + nonzero_idx;
+
+            column_indices[ITEM]    = (nonzero_idx < params.num_nonzeros) ? *ci : 0;
+            values[ITEM]            = (nonzero_idx < params.num_nonzeros) ? *a : 0.0;
+        }
+    }
+
+    __syncthreads();
 
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
-        OffsetT nonzero_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
-        nonzero_idx = CUB_MIN(nonzero_idx, params.num_nonzeros - 1);
-
-        OffsetT     column_idx      = ThreadLoad<LOAD_LDG>(params.d_column_indices + nonzero_idx);
-        ValueT      value           = ThreadLoad<LOAD_LDG>(params.d_values + nonzero_idx);
-
-#if (CUB_PTX_ARCH >= 350)
-        ValueT      vector_value    = ThreadLoad<LOAD_LDG>(params.d_vector_x + column_idx);
-#else
-        ValueT      vector_value    = d_vector_x[column_idx];
-#endif
-
-        nonzero                     += vector_value * value;
+        ValueT vector_value    = ThreadLoad<LOAD_LDG>(params.d_vector_x + column_indices[ITEM]);
+        nonzero                += vector_value * values[ITEM];
     }
+
+    __syncthreads();
 
     if (block_offset < params.num_rows)
     {
@@ -138,16 +186,13 @@ __global__ void NonZeroIoKernel(
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             OffsetT row_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
-            row_idx = CUB_MIN(row_idx, params.num_rows - 1);
+            if (row_idx < params.num_rows)
+            {
+                OffsetT row_end_offset = ThreadLoad<LOAD_DEFAULT>(params.d_row_end_offsets + row_idx);
 
-#if (CUB_PTX_ARCH >= 350)
-            OffsetT nonzero_idx = ThreadLoad<LOAD_LDG>(params.d_row_end_offsets + row_idx);
-#else
-            OffsetT nonzero_idx = params.d_row_end_offsets[row_idx];
-#endif
-
-            if (nonzero_idx > 0)
-                params.d_vector_y[row_idx] = nonzero;
+                if ((row_end_offset >= 0) && (nonzero == nonzero))
+                    params.d_vector_y[row_idx] = nonzero;
+            }
         }
     }
 }
@@ -169,17 +214,35 @@ float TestGpuCsrIoProxy(
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
+//    size_t smem = 1024 * 17;
+    size_t smem = 1024 * 0;
+
     unsigned int nonzero_blocks = (params.num_nonzeros + TILE_SIZE - 1) / TILE_SIZE;
     unsigned int row_blocks = (params.num_rows + TILE_SIZE - 1) / TILE_SIZE;
     unsigned int blocks = std::max(nonzero_blocks, row_blocks);
 
-    TexRefInputIterator<ValueT, 1234, int> x_itr;
+    typedef TexRefInputIterator<ValueT, 1234, int> TexItr;
+    TexItr x_itr;
     CubDebugExit(x_itr.BindTexture(params.d_vector_x));
 
+    // Get device ordinal
+    int device_ordinal;
+    CubDebugExit(cudaGetDevice(&device_ordinal));
+
+    // Get device SM version
+    int sm_version;
+    CubDebugExit(SmVersion(sm_version, device_ordinal));
+
+    void (*kernel)(SpmvParams<ValueT, OffsetT>, TexItr) = NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD>;
+
+
+    int spmv_sm_occupancy;
+    CubDebugExit(MaxSmOccupancy(spmv_sm_occupancy, sm_version, kernel, BLOCK_THREADS, smem));
+
+    printf("NonZeroIoKernel<%d,%d><<<%d, %d>>>, sm occupancy %d\n", BLOCK_THREADS, ITEMS_PER_THREAD, blocks, BLOCK_THREADS, spmv_sm_occupancy);
+
     // Warmup
-    NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<blocks, BLOCK_THREADS>>>(
-        params,
-        x_itr);
+    NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<blocks, BLOCK_THREADS, smem>>>(params, x_itr);
 
     // Check for failures
     CubDebugExit(cudaPeekAtLastError());
@@ -191,9 +254,7 @@ float TestGpuCsrIoProxy(
     timer.Start();
     for (int it = 0; it < timing_iterations; ++it)
     {
-        NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<blocks, BLOCK_THREADS>>>(
-            params,
-            x_itr);
+        NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<blocks, BLOCK_THREADS, smem>>>(params, x_itr);
     }
     timer.Stop();
     elapsed_millis += timer.ElapsedMillis();
@@ -433,8 +494,7 @@ void RunTests(
     int                 wheel,
     int                 dense,
     int                 timing_iterations,
-    CommandLineArgs&    args,
-    cusparseHandle_t    cusparse)
+    CommandLineArgs&    args)
 {
     // Initialize matrix in COO form
     CooMatrix<ValueT, OffsetT> coo_matrix;
@@ -580,15 +640,19 @@ void RunTests(
             DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
 
             if (!g_quiet) {
-                printf("\n\nCusparse: "); fflush(stdout);
-            }
-            avg_millis = TestCusparseCsrmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
-            DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-
-            if (!g_quiet) {
                 printf("\n\nCUB: "); fflush(stdout);
             }
             avg_millis = TestGpuMergeCsrmv(vector_y_in, vector_y_out, params, timing_iterations);
+            DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
+
+            // Initalize cuSparse
+            cusparseHandle_t cusparse;
+            AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreate(&cusparse));
+
+            if (!g_quiet) {
+                printf("\n\nCusparse: "); fflush(stdout);
+            }
+            avg_millis = TestCusparseCsrmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
             DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
 
             // Cleanup
@@ -669,18 +733,14 @@ int main(int argc, char **argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Initalize cuSparse
-    cusparseHandle_t cusparse;
-    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreate(&cusparse));
-
     // Run test(s)
     if (fp64)
     {
-        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args, cusparse);
+        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
     else
     {
-        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args, cusparse);
+        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
 
     CubDebugExit(cudaDeviceSynchronize());

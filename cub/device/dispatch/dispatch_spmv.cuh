@@ -783,7 +783,7 @@ struct DispatchSpmv
             // Get kernel kernel dispatch configurations
             KernelConfig spmv_config, segment_fixup_config;
             InitConfigs(ptx_version, spmv_config, segment_fixup_config);
-            
+
             if (CubDebug(error = Dispatch(
                 d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
                 DeviceSpmv1ColKernel<PtxSpmvPolicyT, ValueT, OffsetT>,
@@ -791,7 +791,7 @@ struct DispatchSpmv
                 DeviceSpmvKernel<PtxSpmvPolicyT, ScanTileStateT, ValueT, OffsetT, CoordinateT, false, false>,
                 DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
                 spmv_config, segment_fixup_config))) break;
-            
+
 /*
             // Dispatch
             if (spmv_params.beta == 0.0)

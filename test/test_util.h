@@ -1064,7 +1064,7 @@ int CompareResults(float* computed, float* reference, OffsetT len, bool verbose 
             if (fraction > 0.0001)
             {
                 if (verbose) std::cout << "INCORRECT: [" << i << "]: "
-                    << CoutCast(computed[i]) << " != "
+                    << "(computed) " << CoutCast(computed[i]) << " != "
                     << CoutCast(reference[i]) << " (difference:" << difference << ", fraction: " << fraction << ")";
                 return 1;
             }
