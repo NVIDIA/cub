@@ -119,7 +119,7 @@ struct WarpScanShfl
         unsigned int output;
 
         // Use predicate set from SHFL to guard against invalid peers
-        asm(
+        asm volatile(
             "{"
             "  .reg .u32 r0;"
             "  .reg .pred p;"
@@ -143,7 +143,7 @@ struct WarpScanShfl
         float output;
 
         // Use predicate set from SHFL to guard against invalid peers
-        asm(
+        asm volatile(
             "{"
             "  .reg .f32 r0;"
             "  .reg .pred p;"
@@ -167,7 +167,7 @@ struct WarpScanShfl
         unsigned long long output;
 
         // Use predicate set from SHFL to guard against invalid peers
-        asm(
+        asm volatile(
             "{"
             "  .reg .u64 r0;"
             "  .reg .u32 lo;"
@@ -196,7 +196,7 @@ struct WarpScanShfl
         long long output;
 
         // Use predicate set from SHFL to guard against invalid peers
-        asm(
+        asm volatile(
             "{"
             "  .reg .s64 r0;"
             "  .reg .u32 lo;"
@@ -225,7 +225,7 @@ struct WarpScanShfl
         double output;
 /*
         // Use predicate set from SHFL to guard against invalid peers
-        asm(
+        asm volatile(
             "{"
             "  .reg .u32 lo;"
             "  .reg .u32 hi;"
@@ -242,7 +242,7 @@ struct WarpScanShfl
 */
 
         // Use predicate set from SHFL to guard against invalid peers
-        asm(
+        asm volatile(
             "{"
             "  .reg .f64 r0;"
             "  .reg .pred p;"
