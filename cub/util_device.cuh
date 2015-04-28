@@ -213,7 +213,8 @@ cudaError_t MaxSmOccupancy(
     int                 &max_sm_occupancy,          ///< [out] maximum number of thread blocks that can reside on a single SM
     int                 sm_version,                 ///< [in] The SM architecture to run on
     KernelPtr           kernel_ptr,                 ///< [in] Kernel pointer for which to compute SM occupancy
-    int                 block_threads)              ///< [in] Number of threads per thread block
+    int                 block_threads,              ///< [in] Number of threads per thread block
+    int                 dynamic_smem_bytes = 0)
 {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -226,7 +227,7 @@ cudaError_t MaxSmOccupancy(
         &max_sm_occupancy,
         kernel_ptr,
         block_threads,
-        0);
+        dynamic_smem_bytes);
 /*
     cudaError_t error = cudaSuccess;
     do
