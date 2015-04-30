@@ -97,6 +97,31 @@ void SpmvGold(
 // GPU I/O proxy
 //---------------------------------------------------------------------
 
+__device__ __forceinline__ int4 Ld(int4* ptr)
+ {
+     int4 retval;
+     asm volatile ("ld.v4.s32 {%0, %1, %2, %3}, [%4];" :
+         "=r"(retval.x),
+         "=r"(retval.y),
+         "=r"(retval.z),
+         "=r"(retval.w) :
+         "l"(ptr));
+     return retval;
+}
+
+__device__ __forceinline__ float4 Ld(float4* ptr)
+ {
+     float4 retval;
+     asm volatile ("ld.v4.f32 {%0, %1, %2, %3}, [%4];" :
+         "=f"(retval.x),
+         "=f"(retval.y),
+         "=f"(retval.z),
+         "=f"(retval.w) :
+         "l"(ptr));
+     return retval;
+ }
+
+
 /**
  * Read every matrix nonzero value, read every corresponding vector value
  */
@@ -106,6 +131,7 @@ template <
     typename    ValueT,
     typename    OffsetT,
     typename    VectorItr>
+__launch_bounds__ (int(BLOCK_THREADS))
 __global__ void NonZeroIoKernel(
     SpmvParams<ValueT, OffsetT> params,
     VectorItr                   d_vector_x)
@@ -120,54 +146,48 @@ __global__ void NonZeroIoKernel(
 
     OffsetT block_offset = blockIdx.x * TILE_ITEMS;
 
+/*
+    OffsetT column_indices[ITEMS_PER_THREAD];
+    ValueT values[ITEMS_PER_THREAD];
+
+    OffsetT nonzero_idx = block_offset + (threadIdx.x * 4);
+
+    int4*   column_indices4 = (int4*) (params.d_column_indices + nonzero_idx);
+    float4* values_4 = (float4*) (params.d_values + block_offset + nonzero_idx);
+
+    int4 a = {0,0,0,0};
+    float4 b = {0.0,0.0,0.0,0.0};
+
+    *reinterpret_cast<int4*>(column_indices) = (nonzero_idx < params.num_nonzeros - 4) ? Ld(column_indices4) : a;
+    *reinterpret_cast<float4*>(values) = (nonzero_idx < params.num_nonzeros - 4) ? Ld(values_4) : b;
+
+    __syncthreads();
+//    __threadfence();
+
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+    {
+        ValueT vector_value    = ThreadLoad<LOAD_LDG>(params.d_vector_x + column_indices[ITEM]);
+        nonzero                += vector_value * values[ITEM];
+    }
+*/
+
 
     OffsetT column_indices[ITEMS_PER_THREAD];
-    OffsetT values[ITEMS_PER_THREAD];
+    ValueT values[ITEMS_PER_THREAD];
 
-    OffsetT nonzero_idx = block_offset + (0 * BLOCK_THREADS) + threadIdx.x;
-
-    OffsetT* ci = params.d_column_indices + nonzero_idx;
-    ValueT* a = params.d_values + nonzero_idx;
-
-    column_indices[0]    = (nonzero_idx < params.num_nonzeros) ? *ci : 0;
-    values[0]            = (nonzero_idx < params.num_nonzeros) ? *a : 0.0;
-
-    OffsetT prev = ShuffleUp(column_indices[0], 1);
-
-//    OffsetT delta = CUB_MAX(column_indices[0] - prev, prev - column_indices[0]);
-//    if (delta > 1024 * 1024)
-    if (false)
-//    if (prev - column_indices[0] > 1024 * 1024)
-//    if (true)
+    #pragma unroll
+    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
-        #pragma unroll
-        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            nonzero_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
+        OffsetT nonzero_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
 
-            ci = params.d_column_indices + nonzero_idx;
-            a = params.d_values + nonzero_idx;
+        OffsetT* ci = params.d_column_indices + nonzero_idx;
+        ValueT*a = params.d_values + nonzero_idx;
 
-            __threadfence();
-            column_indices[ITEM]    = (nonzero_idx < params.num_nonzeros) ? *ci : 0;
-            __threadfence();
-            values[ITEM]            = (nonzero_idx < params.num_nonzeros) ? *a : 0.0;
-        }
-    }
-    else
-    {
-        #pragma unroll
-        for (int ITEM = 1; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            nonzero_idx = block_offset + (ITEM * BLOCK_THREADS) + threadIdx.x;
+        column_indices[ITEM]    = (nonzero_idx < params.num_nonzeros) ? *ci : 0;
+        values[ITEM]            = (nonzero_idx < params.num_nonzeros) ? *a : 0.0;
+   }
 
-            ci = params.d_column_indices + nonzero_idx;
-            a = params.d_values + nonzero_idx;
-
-            column_indices[ITEM]    = (nonzero_idx < params.num_nonzeros) ? *ci : 0;
-            values[ITEM]            = (nonzero_idx < params.num_nonzeros) ? *a : 0.0;
-        }
-    }
 
     __syncthreads();
 
@@ -177,6 +197,16 @@ __global__ void NonZeroIoKernel(
         ValueT vector_value    = ThreadLoad<LOAD_LDG>(params.d_vector_x + column_indices[ITEM]);
         nonzero                += vector_value * values[ITEM];
     }
+
+
+/*
+    __shared__ volatile ValueT devnull;
+
+    devnull = nonzero;
+*/
+
+
+
 
     __syncthreads();
 
@@ -195,6 +225,7 @@ __global__ void NonZeroIoKernel(
             }
         }
     }
+
 }
 
 
@@ -210,11 +241,11 @@ float TestGpuCsrIoProxy(
 {
     enum {
         BLOCK_THREADS       = 128,
-        ITEMS_PER_THREAD    = 7,
+        ITEMS_PER_THREAD    = 4,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
-//    size_t smem = 1024 * 17;
+//    size_t smem = 1024 * 16;
     size_t smem = 1024 * 0;
 
     unsigned int nonzero_blocks = (params.num_nonzeros + TILE_SIZE - 1) / TILE_SIZE;
@@ -638,13 +669,13 @@ void RunTests(
             }
             avg_millis = TestGpuCsrIoProxy(params, timing_iterations);
             DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-
+/*
             if (!g_quiet) {
                 printf("\n\nCUB: "); fflush(stdout);
             }
             avg_millis = TestGpuMergeCsrmv(vector_y_in, vector_y_out, params, timing_iterations);
             DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-
+*/
             // Initalize cuSparse
             cusparseHandle_t cusparse;
             AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreate(&cusparse));
@@ -736,7 +767,7 @@ int main(int argc, char **argv)
     // Run test(s)
     if (fp64)
     {
-        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
+//        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
     else
     {
