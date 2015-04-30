@@ -56,12 +56,12 @@ struct GraphStats
     int         num_cols;
     int         num_nonzeros;
 
-    double      avg_reuse_distance;
-    double      avg_disuse_distance;
-    double      avg_distance;
+    double      diag_dist_mean;         // mean
+    double      diag_dist_std_dev;      // sample std dev
+    double      diag_coeff_det;    // coefficient of variation
 
     double      row_length_mean;        // mean
-    double      row_length_variance;    // sample variance
+    double      row_length_std_dev;     // sample std_dev
     double      row_length_variation;   // coefficient of variation
     double      row_length_skewness;    // skewness
 
@@ -69,24 +69,24 @@ struct GraphStats
     {
         if (show_labels)
             printf("\n"
-                "\tnum_rows: %d\n"
-                "\tnum_cols: %d\n"
-                "\tnum_nonzeros: %d\n"
-                "\tavg_reuse_distance: %.2f\n"
-                "\tavg_disuse_distance: %.2f\n"
-                "\tavg_distance: %.2f\n"
-                "\trow_length_mean: %.5f\n"
-                "\trow_length_variance: %.5f\n"
-                "\trow_length_variation: %.5f\n"
-                "\trow_length_skewness: %.5f\n",
+                "\t num_rows: %d\n"
+                "\t num_cols: %d\n"
+                "\t num_nonzeros: %d\n"
+                "\t diag_dist_mean: %.2f\n"
+                "\t diag_dist_std_dev: %.2f\n"
+                "\t diag_coeff_det: %f\n"
+                "\t row_length_mean: %.5f\n"
+                "\t row_length_std_dev: %.5f\n"
+                "\t row_length_variation: %.5f\n"
+                "\t row_length_skewness: %.5f\n",
                     num_rows,
                     num_cols,
                     num_nonzeros,
-                    avg_reuse_distance,
-                    avg_disuse_distance,
-                    avg_distance,
+                    diag_dist_mean,
+                    diag_dist_std_dev,
+                    diag_coeff_det,
                     row_length_mean,
-                    row_length_variance,
+                    row_length_std_dev,
                     row_length_variation,
                     row_length_skewness);
         else
@@ -96,7 +96,7 @@ struct GraphStats
                 "%d, "
                 "%.2f, "
                 "%.2f, "
-                "%.2f, "
+                "%f, "
                 "%.5f, "
                 "%.5f, "
                 "%.5f, "
@@ -104,11 +104,11 @@ struct GraphStats
                     num_rows,
                     num_cols,
                     num_nonzeros,
-                    avg_reuse_distance,
-                    avg_disuse_distance,
-                    avg_distance,
+                    diag_dist_mean,
+                    diag_dist_std_dev,
+                    diag_coeff_det,
                     row_length_mean,
-                    row_length_variance,
+                    row_length_std_dev,
                     row_length_variation,
                     row_length_skewness);
     }
@@ -763,73 +763,86 @@ struct CsrMatrix
         stats.num_cols = num_cols;
         stats.num_nonzeros = num_nonzeros;
 
-        // Compute reuse distance stats
-        OffsetT*    last_row        = new OffsetT[num_cols];
-        OffsetT*    last_nz         = new OffsetT[num_cols];
+        //
+        // Compute diag-distance statistics
+        //
 
-        for (OffsetT col = 0; col < num_cols; ++col)
-        {
-            last_row[col] = -1;
-            last_nz[col] = -1;
-        }
+        OffsetT samples     = 0;
+        double  mean        = 0.0;
+        double  ss_tot      = 0.0;
 
-        long long total_reuse_distance = 0;
-        long long total_disuse_distance = 0;
-
-        OffsetT last_col = 0;
         for (OffsetT row = 0; row < num_rows; ++row)
         {
-            for (int nz_idx = row_offsets[row]; nz_idx < row_offsets[row + 1]; ++nz_idx)
+            OffsetT nz_idx_start    = row_offsets[row];
+            OffsetT nz_idx_end      = row_offsets[row + 1];
+
+            for (int nz_idx = nz_idx_start; nz_idx < nz_idx_end; ++nz_idx)
             {
-                OffsetT col = column_indices[nz_idx];
+                OffsetT col             = column_indices[nz_idx];
+                double x                = (col > row) ? col - row : row - col;
 
-                if (col > last_col)
-                    total_disuse_distance += (col - last_col);
-                else
-                    total_disuse_distance += (last_col - col);
+                samples++;
+                double delta            = x - mean;
+                mean                    = mean + (delta / samples);
+                ss_tot             += delta * (x - mean);
+            }
+        }
+        stats.diag_dist_mean            = mean;
+        double variance                 = ss_tot / samples;
+        stats.diag_dist_std_dev         = sqrt(variance);
 
-                if (last_row[col] >= 0)
-                {
-                    total_reuse_distance += (row - last_row[col]);
-                }
-                last_row[col] = row;
 
-                if (last_nz[col] >= 0)
-                {
-                    total_reuse_distance += (nz_idx - last_nz[col]);
-                }
-                last_nz[col] = nz_idx;
+        //
+        // Compute diag-fit statistics
+        //
 
-                last_col = col;
+        samples         = 0;
+        mean            = 0.0;
+        ss_tot          = 0.0;
+        double ss_res   = 0.0;
+
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            OffsetT nz_idx_start    = row_offsets[row];
+            OffsetT nz_idx_end      = row_offsets[row + 1];
+
+            for (int nz_idx = nz_idx_start; nz_idx < nz_idx_end; ++nz_idx)
+            {
+                OffsetT col             = column_indices[nz_idx];
+                double  x               = col;
+
+                samples++;
+                double delta            = x - mean;
+                mean                    = mean + (delta / samples);
+                ss_tot                  += delta * (x - mean);
+
+                double residual         = x - row;
+                ss_res                  += residual * residual;
             }
         }
 
-        stats.avg_reuse_distance = double(total_reuse_distance) / num_nonzeros;
-        stats.avg_disuse_distance = double(total_disuse_distance) / num_nonzeros;
-        stats.avg_distance = double(total_disuse_distance + total_reuse_distance) / num_nonzeros;
+        stats.diag_coeff_det            = double(1.0) - (ss_res / ss_tot);
 
+
+        //
         // Compute row-length statistics
+        //
 
         // Sample mean
         stats.row_length_mean       = double(num_nonzeros) / num_rows;
-        stats.row_length_variance   = 0.0;
+        variance                    = 0.0;
         stats.row_length_skewness   = 0.0;
-        for (int row = 0; row < num_rows; ++row)
+        for (OffsetT row = 0; row < num_rows; ++row)
         {
-            int length                  = row_offsets[row + 1] - row_offsets[row];
+            OffsetT length              = row_offsets[row + 1] - row_offsets[row];
             double delta                = double(length) - stats.row_length_mean;
-            stats.row_length_variance   += (delta * delta);
+            variance   += (delta * delta);
             stats.row_length_skewness   += (delta * delta * delta);
         }
-        stats.row_length_variance   /= num_rows;
-        double std_dev              = sqrt(stats.row_length_variance);
-        stats.row_length_skewness   /= num_rows;
-        stats.row_length_skewness   = stats.row_length_skewness / pow(std_dev, 3.0);
-        stats.row_length_variation  = std_dev / stats.row_length_mean;
-
-        // Cleanup
-        delete[] last_row;
-        delete[] last_nz;
+        variance                    /= num_rows;
+        stats.row_length_std_dev    = sqrt(variance);
+        stats.row_length_skewness   = (stats.row_length_skewness / num_rows) / pow(stats.row_length_std_dev, 3.0);
+        stats.row_length_variation  = stats.row_length_std_dev / stats.row_length_mean;
 
         return stats;
     }
@@ -919,12 +932,18 @@ struct CsrMatrix
         printf("Input Matrix:\n");
         for (OffsetT row = 0; row < num_rows; row++)
         {
+            if (row < 100)
+            {
+
             printf("%d [@%d, #%d]: ", row, row_offsets[row], row_offsets[row + 1] - row_offsets[row]);
             for (OffsetT current_edge = row_offsets[row]; current_edge < row_offsets[row + 1]; current_edge++)
             {
-                printf("%d (%f), ", column_indices[current_edge], values[current_edge]);
+//                printf("%d (%f), ", column_indices[current_edge], values[current_edge]);
+                printf("%d, ", column_indices[current_edge]);
             }
             printf("\n");
+
+            }
         }
         fflush(stdout);
     }
