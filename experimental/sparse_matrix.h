@@ -824,6 +824,99 @@ struct CsrMatrix
         stats.diag_coeff_det            = double(1.0) - (ss_res / ss_tot);
 
 
+
+
+
+
+
+
+
+
+        //
+        // Compute deming statistics
+        //
+
+        samples         = 0;
+        double mean_x   = 0.0;
+        double mean_y   = 0.0;
+        double ss_x     = 0.0;
+        double ss_y     = 0.0;
+
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            OffsetT nz_idx_start    = row_offsets[row];
+            OffsetT nz_idx_end      = row_offsets[row + 1];
+
+            for (int nz_idx = nz_idx_start; nz_idx < nz_idx_end; ++nz_idx)
+            {
+                OffsetT col             = column_indices[nz_idx];
+
+                samples++;
+                double x                = col;
+                double y                = row;
+                double delta;
+
+                delta                   = x - mean_x;
+                mean_x                  = mean_x + (delta / samples);
+                ss_x                    += delta * (x - mean_x);
+
+                delta                   = y - mean_y;
+                mean_y                  = mean_y + (delta / samples);
+                ss_y                    += delta * (y - mean_y);
+            }
+        }
+
+        double s_xx     = ss_x / num_nonzeros;
+        double s_yy     = ss_y / num_nonzeros;
+
+        samples         = 0;
+        double s_xy     = 0.0;
+        double s_xxy    = 0.0;
+        double s_xyy    = 0.0;
+        for (OffsetT row = 0; row < num_rows; ++row)
+        {
+            OffsetT nz_idx_start    = row_offsets[row];
+            OffsetT nz_idx_end      = row_offsets[row + 1];
+
+            for (int nz_idx = nz_idx_start; nz_idx < nz_idx_end; ++nz_idx)
+            {
+                OffsetT col             = column_indices[nz_idx];
+
+                samples++;
+                double x                = col;
+                double y                = row;
+
+                double xy =             (x - mean_x) * (y - mean_y);
+                double xxy =            (x - mean_x) * (x - mean_x) * (y - mean_y);
+                double xyy =            (x - mean_x) * (y - mean_y) * (y - mean_y);
+                double delta;
+
+                printf("\t xxy %f xyy %f\n", xxy, xyy);
+
+                delta                   = xy - s_xy;
+                s_xy                    = s_xy + (delta / samples);
+
+                delta                   = xxy - s_xxy;
+                s_xxy                   = s_xxy + (delta / samples);
+                printf("\t\t delta %f s_xxy %f\n", delta, s_xxy);
+
+                delta                   = xyy - s_xyy;
+                s_xyy                   = s_xyy + (delta / samples);
+                printf("\t\t delta %f s_xyy %f\n", delta, s_xyy);
+            }
+        }
+
+        printf("\n s_xxy %f s_xyy %f\n", s_xxy, s_xyy);
+
+        double deming_slope = (s_yy - s_xx + sqrt(((s_yy - s_xx) * (s_yy - s_xx)) + (4 * s_xy * s_xy))) / (2 * s_xy);
+        double mom_slope    = s_xyy / s_xxy;
+
+        printf("\n deming slope %f, mom slope %f\n", deming_slope, mom_slope);
+
+
+
+
+
         //
         // Compute row-length statistics
         //
