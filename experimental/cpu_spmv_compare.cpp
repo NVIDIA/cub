@@ -81,7 +81,8 @@
 bool                    g_quiet         = false;        // Whether to display stats in CSV format
 bool                    g_verbose       = false;        // Whether to display output to console
 bool                    g_verbose2      = false;        // Whether to display input to console
-int                     g_omp_threads   = -1;         // Number of openMP threads
+int                     g_omp_threads   = -1;           // Number of openMP threads
+int                     g_omp_oversub       = 1;            // Factor of over-subscription
 
 
 
@@ -380,6 +381,7 @@ struct CommandLineArgs
  */
 struct CpuTimer
 {
+/*
 #if defined(_WIN32) || defined(_WIN64)
 
     LARGE_INTEGER ll_freq;
@@ -430,6 +432,26 @@ struct CpuTimer
     }
 
 #endif
+*/
+
+    double start;
+    double stop;
+
+    void Start()
+    {
+        start = omp_get_wtime();
+    }
+
+    void Stop()
+    {
+        stop = omp_get_wtime();
+    }
+
+    float ElapsedMillis()
+    {
+        return (stop - start) * 1000;
+    }
+
 };
 
 
@@ -697,13 +719,15 @@ void OmpMergeCsrmv(
     OffsetT     row_carry_out[128];
     ValueT      value_carry_out[128];
 
+    int                             slices              = num_threads * g_omp_oversub;
     OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
     OffsetT                         items_per_thread    = (num_merge_items + num_threads - 1) / num_threads;
     OffsetT*                        row_end_offsets     = a.row_offsets + 1;
     CountingInputIterator<OffsetT>  nonzero_indices(0);
 
+//    #pragma omp parallel for num_threads(num_threads)
     #pragma omp parallel for
-    for (int tid = 0; tid < num_threads; tid++)
+    for (int tid = 0; tid < slices; tid++)
     {
         int start_diagonal      = std::min(items_per_thread * tid, num_merge_items);
         int end_diagonal        = std::min(start_diagonal + items_per_thread, num_merge_items);
@@ -748,7 +772,7 @@ void OmpMergeCsrmv(
     }
 
     // Carry-out fix-up
-    for (int tid = 0; tid < num_threads - 1; ++tid)
+    for (int tid = 0; tid < slices - 1; ++tid)
     {
         if (row_carry_out[tid] < a.num_rows)
             vector_y_out[row_carry_out[tid]] += value_carry_out[tid];
@@ -1137,6 +1161,7 @@ int main(int argc, char **argv)
     args.GetCmdLineArgument("alpha", alpha);
     args.GetCmdLineArgument("beta", beta);
     args.GetCmdLineArgument("threads", g_omp_threads);
+    args.GetCmdLineArgument("oversub", g_omp_oversub);
 
     // Run test(s)
     if (fp64)

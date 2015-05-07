@@ -143,8 +143,21 @@ __global__ void NonZeroIoKernel(
 
 
     ValueT nonzero = 0.0;
+/*
+    if (blockIdx.x & 1)
+    {
+        for (int i = 0; i < 150; ++i)
+            __threadfence_block();
 
-    OffsetT block_offset = blockIdx.x * TILE_ITEMS;
+        return;
+    }
+    int tile_idx = blockIdx.x >> 1;
+
+*/
+
+    int tile_idx = blockIdx.x;
+
+    OffsetT block_offset = tile_idx * TILE_ITEMS;
 
 /*
     OffsetT column_indices[ITEMS_PER_THREAD];
@@ -186,27 +199,17 @@ __global__ void NonZeroIoKernel(
 
         column_indices[ITEM]    = (nonzero_idx < params.num_nonzeros) ? *ci : 0;
         values[ITEM]            = (nonzero_idx < params.num_nonzeros) ? *a : 0.0;
-   }
-
+    }
 
     __syncthreads();
 
+    // Read vector
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
         ValueT vector_value    = ThreadLoad<LOAD_LDG>(params.d_vector_x + column_indices[ITEM]);
         nonzero                += vector_value * values[ITEM];
     }
-
-
-/*
-    __shared__ volatile ValueT devnull;
-
-    devnull = nonzero;
-*/
-
-
-
 
     __syncthreads();
 
@@ -241,7 +244,7 @@ float TestGpuCsrIoProxy(
 {
     enum {
         BLOCK_THREADS       = 128,
-        ITEMS_PER_THREAD    = 4,
+        ITEMS_PER_THREAD    = 7,
         TILE_SIZE           = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
@@ -669,13 +672,13 @@ void RunTests(
             }
             avg_millis = TestGpuCsrIoProxy(params, timing_iterations);
             DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-/*
+
             if (!g_quiet) {
                 printf("\n\nCUB: "); fflush(stdout);
             }
             avg_millis = TestGpuMergeCsrmv(vector_y_in, vector_y_out, params, timing_iterations);
             DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-*/
+
             // Initalize cuSparse
             cusparseHandle_t cusparse;
             AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreate(&cusparse));
