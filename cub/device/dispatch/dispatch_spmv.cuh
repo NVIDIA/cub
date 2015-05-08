@@ -674,8 +674,7 @@ struct DispatchSpmv
 
 #if (CUB_PTX_ARCH == 0)
             // Init textures
-            // Mooch
-//            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
+            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
 #endif
 
             if (num_merge_tiles < spmv_sm_occupancy * sm_count)
@@ -747,7 +746,7 @@ struct DispatchSpmv
 
 #if (CUB_PTX_ARCH == 0)
             // Free textures
-//            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
+            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
 #endif
         }
         while (0);
