@@ -35,7 +35,7 @@
  * g++ cpu_spmv_compare.cpp -lm -ffloat-store -O3 -fopenmp
  *
  * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_omp.out -lrt -fno-alias -xHost
- * export KMP_AFFINITY=granularity=core,scatter
+ * export KMP_AFFINITY=granularity=fine,scatter
  *
  *
  ******************************************************************************/
@@ -82,8 +82,8 @@ bool                    g_quiet         = false;        // Whether to display st
 bool                    g_verbose       = false;        // Whether to display output to console
 bool                    g_verbose2      = false;        // Whether to display input to console
 int                     g_omp_threads   = -1;           // Number of openMP threads
-int                     g_omp_oversub       = 1;            // Factor of over-subscription
-
+int                     g_omp_oversub   = 1;            // Factor of over-subscription
+int                     g_ht_threshold  = 16*1024*1024; // Hyperthread threshold (num nonzeros)
 
 
 //---------------------------------------------------------------------
@@ -625,7 +625,7 @@ void OmpCsrIoProxy(
     OffsetT nnz_per_thread = (a.num_nonzeros + num_threads - 1) / num_threads;
     OffsetT nr_per_thread = (a.num_rows + num_threads - 1) / num_threads;
 
-    #pragma omp parallel for
+    #pragma omp parallel for schedule(static)
     for (int tid = 0; tid < num_threads; tid++)
     {
         // Stream nonzeros
@@ -667,7 +667,7 @@ float TestOmpCsrIoProxy(
     ValueT* vector_y_out = new ValueT[a.num_rows];
 
     if (g_omp_threads == -1)
-        g_omp_threads = (a.num_nonzeros < 2000000) ? 
+        g_omp_threads = (a.num_nonzeros < g_ht_threshold) ? 
             omp_get_num_procs() / 2:
             omp_get_num_procs();
 
@@ -716,8 +716,8 @@ void OmpMergeCsrmv(
     ValueT*                         vector_x,
     ValueT*                         vector_y_out)
 {
-    OffsetT     row_carry_out[128];
-    ValueT      value_carry_out[128];
+    OffsetT     row_carry_out[1024];
+    ValueT      value_carry_out[1024];
 
     int                             slices              = num_threads * g_omp_oversub;
     OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
@@ -725,50 +725,53 @@ void OmpMergeCsrmv(
     OffsetT*                        row_end_offsets     = a.row_offsets + 1;
     CountingInputIterator<OffsetT>  nonzero_indices(0);
 
-//    #pragma omp parallel for num_threads(num_threads)
-    #pragma omp parallel for
-    for (int tid = 0; tid < slices; tid++)
+    for (int pass = 0; pass < g_omp_oversub; ++pass)
     {
-        int start_diagonal      = std::min(items_per_thread * tid, num_merge_items);
-        int end_diagonal        = std::min(start_diagonal + items_per_thread, num_merge_items);
 
-        int2 thread_coord;
-        int2 thread_end_coord;
-
-        if (a.num_rows != a.num_nonzeros)
+        #pragma omp parallel for schedule(static)
+        for (int tid = pass * num_threads; tid < (pass + 1) * num_threads; tid++)
         {
-            MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
-            MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_end_coord);
-        }
-        else
-        {
-            thread_coord = {start_diagonal >> 1, (start_diagonal + 1) >> 1};
-            thread_end_coord = {end_diagonal >> 1, (end_diagonal + 1) >> 1};
-        }
+            int start_diagonal      = std::min(items_per_thread * tid, num_merge_items);
+            int end_diagonal        = std::min(start_diagonal + items_per_thread, num_merge_items);
 
-        ValueT running_total = ValueT(0.0);
+            int2 thread_coord;
+            int2 thread_end_coord;
 
-        // Consume whole rows
-        for (; thread_coord.x < thread_end_coord.x; ++thread_coord.x)
-        {
-            for (; thread_coord.y < row_end_offsets[thread_coord.x]; ++thread_coord.y)
+            if (a.num_rows != a.num_nonzeros)
+            {
+                MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
+                MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_end_coord);
+            }
+            else
+            {
+                thread_coord = {start_diagonal >> 1, (start_diagonal + 1) >> 1};
+                thread_end_coord = {end_diagonal >> 1, (end_diagonal + 1) >> 1};
+            }
+
+            ValueT running_total = ValueT(0.0);
+
+            // Consume whole rows
+            for (; thread_coord.x < thread_end_coord.x; ++thread_coord.x)
+            {
+                for (; thread_coord.y < row_end_offsets[thread_coord.x]; ++thread_coord.y)
+                {
+                    running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
+                }
+
+                vector_y_out[thread_coord.x] = running_total;
+                running_total = ValueT(0.0);
+            }
+
+            // Consume partial portion of thread's last row
+            for (; thread_coord.y < thread_end_coord.y; ++thread_coord.y)
             {
                 running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
             }
 
-            vector_y_out[thread_coord.x] = running_total;
-            running_total = ValueT(0.0);
+            // Save carry-outs
+            row_carry_out[tid] = thread_end_coord.x;
+            value_carry_out[tid] = running_total;
         }
-
-        // Consume partial portion of thread's last row
-        for (; thread_coord.y < thread_end_coord.y; ++thread_coord.y)
-        {
-            running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
-        }
-
-        // Save carry-outs
-        row_carry_out[tid] = thread_end_coord.x;
-        value_carry_out[tid] = running_total;
     }
 
     // Carry-out fix-up
@@ -795,7 +798,7 @@ float TestOmpMergeCsrmv(
     ValueT* vector_y_out = new ValueT[a.num_rows];
 
     if (g_omp_threads == -1)
-        g_omp_threads = (a.num_nonzeros < 2000000) ? 
+        g_omp_threads = (a.num_nonzeros < g_ht_threshold) ? 
             omp_get_num_procs() / 2:
             omp_get_num_procs();
 
@@ -1082,7 +1085,7 @@ void RunTests(
     avg_millis = TestMklCsrmv(csr_matrix, vector_x, vector_y_out, timing_iterations);
     DisplayPerf(30, avg_millis, csr_matrix);
 
-#endif
+#else
 
     if (!g_quiet) {
         printf("\n\nCPU CSR I/O Proxy: "); fflush(stdout);
@@ -1095,6 +1098,8 @@ void RunTests(
     }
     avg_millis = TestOmpMergeCsrmv(csr_matrix, vector_x, vector_y_out, timing_iterations);
     DisplayPerf(30, avg_millis, csr_matrix);
+
+#endif
 
     if (vector_x)                   delete[] vector_x;
     if (vector_y_in)                delete[] vector_y_in;
