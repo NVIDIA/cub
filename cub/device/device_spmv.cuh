@@ -75,7 +75,7 @@ struct DeviceSpmv
     //@{
 
     /**
-     * \brief This function performs the matrix-vector operation <em>y</em> = <em>alpha</em>*<b>A</b>*<em>x</em> + <em>beta</em>*<em>y</em>.
+     * \brief This function performs the matrix-vector operation <em>y</em> = <b>A</b>*<em>x</em>.
      *
      * \par Snippet
      * The code snippet below illustrates SpMV upon a 9x9 CSR matrix <b>A</b>
@@ -90,8 +90,6 @@ struct DeviceSpmv
      * int    num_rows = 9;
      * int    num_cols = 9;
      * int    num_nonzeros = 24;
-     * float  alpha = 1.0;
-     * float  beta = 0.0;
      *
      * float* d_values;  // e.g., [1, 1, 1, 1, 1, 1, 1, 1,
      *                   //        1, 1, 1, 1, 1, 1, 1, 1,
@@ -142,8 +140,6 @@ struct DeviceSpmv
         int                 num_rows,                           ///< [in] number of rows of matrix <b>A</b>.
         int                 num_cols,                           ///< [in] number of columns of matrix <b>A</b>.
         int                 num_nonzeros,                       ///< [in] number of nonzero elements of matrix <b>A</b>.
-        ValueT              alpha,                              ///< [in] Scalar used for multiplication of the matrix <b>A</b> nonzeros.
-        ValueT              beta,                               ///< [in] Scalar used for multiplication of the \p vector_y addend. (If \p beta is zero, vector_y need not comprise valid data elements.)
         cudaStream_t        stream                  = 0,        ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous       = false)    ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
@@ -156,8 +152,8 @@ struct DeviceSpmv
         spmv_params.num_rows             = num_rows;
         spmv_params.num_cols             = num_cols;
         spmv_params.num_nonzeros         = num_nonzeros;
-        spmv_params.alpha                = alpha;
-        spmv_params.beta                 = beta;
+        spmv_params.alpha                = 1.0;
+        spmv_params.beta                 = 0.0;
 
         return DispatchSpmv<ValueT, int>::Dispatch(
             d_temp_storage,
