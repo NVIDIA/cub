@@ -58,7 +58,7 @@ struct GraphStats
 
     double      diag_dist_mean;         // mean
     double      diag_dist_std_dev;      // sample std dev
-    double      diag_coeff_det;    // coefficient of variation
+    double      pearson_r;    // coefficient of variation
 
     double      row_length_mean;        // mean
     double      row_length_std_dev;     // sample std_dev
@@ -74,7 +74,7 @@ struct GraphStats
                 "\t num_nonzeros: %d\n"
                 "\t diag_dist_mean: %.2f\n"
                 "\t diag_dist_std_dev: %.2f\n"
-                "\t diag_coeff_det: %f\n"
+                "\t pearson_r: %f\n"
                 "\t row_length_mean: %.5f\n"
                 "\t row_length_std_dev: %.5f\n"
                 "\t row_length_variation: %.5f\n"
@@ -84,7 +84,7 @@ struct GraphStats
                     num_nonzeros,
                     diag_dist_mean,
                     diag_dist_std_dev,
-                    diag_coeff_det,
+                    pearson_r,
                     row_length_mean,
                     row_length_std_dev,
                     row_length_variation,
@@ -106,7 +106,7 @@ struct GraphStats
                     num_nonzeros,
                     diag_dist_mean,
                     diag_dist_std_dev,
-                    diag_coeff_det,
+                    pearson_r,
                     row_length_mean,
                     row_length_std_dev,
                     row_length_variation,
@@ -864,12 +864,7 @@ struct CsrMatrix
 
         double deming_slope = (s_yy - s_xx + sqrt(((s_yy - s_xx) * (s_yy - s_xx)) + (4 * s_xy * s_xy))) / (2 * s_xy);
 
-        double pearson_r = (num_nonzeros * s_xy) / (sqrt(ss_x) * sqrt(ss_y));
-
-        printf("\n deming slope %f, pearson %f\n", deming_slope, pearson_r);
-
-
-
+        stats.pearson_r = (num_nonzeros * s_xy) / (sqrt(ss_x) * sqrt(ss_y));
 
 
         //
