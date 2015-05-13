@@ -234,7 +234,8 @@ float TestGpuCsrIoProxy(
     int spmv_sm_occupancy;
     CubDebugExit(MaxSmOccupancy(spmv_sm_occupancy, sm_version, kernel, BLOCK_THREADS, smem));
 
-    printf("NonZeroIoKernel<%d,%d><<<%d, %d>>>, sm occupancy %d\n", BLOCK_THREADS, ITEMS_PER_THREAD, blocks, BLOCK_THREADS, spmv_sm_occupancy);
+    if (!g_quiet)
+        printf("NonZeroIoKernel<%d,%d><<<%d, %d>>>, sm occupancy %d\n", BLOCK_THREADS, ITEMS_PER_THREAD, blocks, BLOCK_THREADS, spmv_sm_occupancy);
 
     // Warmup
     NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD><<<blocks, BLOCK_THREADS, smem>>>(params, x_itr);
