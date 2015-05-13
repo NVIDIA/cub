@@ -44,6 +44,9 @@
 #include <fstream>
 #include <stdio.h>
 
+#ifdef CUB_MKL
+    #include <mkl.h>
+#endif
 
 using namespace std;
 
@@ -762,9 +765,15 @@ struct CsrMatrix
      */
     void Clear()
     {
+#ifdef CUB_MKL
+        if (row_offsets)    mkl_free(row_offsets);
+        if (column_indices) mkl_free(column_indices);
+        if (values)         mkl_free(values);
+#else
         if (row_offsets)    delete[] row_offsets;
         if (column_indices) delete[] column_indices;
         if (values)         delete[] values;
+#endif
 
         row_offsets = NULL;
         column_indices = NULL;
@@ -922,9 +931,15 @@ struct CsrMatrix
         num_cols        = coo_matrix.num_cols;
         num_nonzeros    = coo_matrix.num_nonzeros;
 
+#ifdef CUB_MKL
+        row_offsets     = (OffsetT*) mkl_malloc(sizeof(OffsetT) * (num_rows + 1), 4096);
+        column_indices  = (OffsetT*) mkl_malloc(sizeof(OffsetT) * num_nonzeros, 4096);
+        values          = (ValueT*) mkl_malloc(sizeof(ValueT) * num_nonzeros, 4096);
+#else
         row_offsets     = new OffsetT[num_rows + 1];
         column_indices  = new OffsetT[num_nonzeros];
         values          = new ValueT[num_nonzeros];
+#endif
 
         OffsetT prev_row = -1;
         for (OffsetT current_edge = 0; current_edge < num_nonzeros; current_edge++)
@@ -998,18 +1013,12 @@ struct CsrMatrix
         printf("Input Matrix:\n");
         for (OffsetT row = 0; row < num_rows; row++)
         {
-            if (row < 100)
-            {
-
             printf("%d [@%d, #%d]: ", row, row_offsets[row], row_offsets[row + 1] - row_offsets[row]);
             for (OffsetT current_edge = row_offsets[row]; current_edge < row_offsets[row + 1]; current_edge++)
             {
-//                printf("%d (%f), ", column_indices[current_edge], values[current_edge]);
-                printf("%d, ", column_indices[current_edge]);
+                printf("%d (%f), ", column_indices[current_edge], values[current_edge]);
             }
             printf("\n");
-
-            }
         }
         fflush(stdout);
     }
