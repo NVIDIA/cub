@@ -866,7 +866,6 @@ struct AgentSpmv
         // Read our starting coordinates
         if (threadIdx.x < 2)
         {
-/*
             if (d_tile_coordinates == NULL)
             {
                 // Search our starting coordinates
@@ -886,7 +885,7 @@ struct AgentSpmv
                 temp_storage.tile_coords[threadIdx.x] = tile_coord;
             }
             else
-*/            {
+            {
                 temp_storage.tile_coords[threadIdx.x] = d_tile_coordinates[tile_idx + threadIdx.x];
             }
         }

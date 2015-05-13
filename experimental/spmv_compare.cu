@@ -143,48 +143,10 @@ __global__ void NonZeroIoKernel(
 
 
     ValueT nonzero = 0.0;
-/*
-    if (blockIdx.x & 1)
-    {
-        for (int i = 0; i < 150; ++i)
-            __threadfence_block();
-
-        return;
-    }
-    int tile_idx = blockIdx.x >> 1;
-
-*/
 
     int tile_idx = blockIdx.x;
 
     OffsetT block_offset = tile_idx * TILE_ITEMS;
-
-/*
-    OffsetT column_indices[ITEMS_PER_THREAD];
-    ValueT values[ITEMS_PER_THREAD];
-
-    OffsetT nonzero_idx = block_offset + (threadIdx.x * 4);
-
-    int4*   column_indices4 = (int4*) (params.d_column_indices + nonzero_idx);
-    float4* values_4 = (float4*) (params.d_values + block_offset + nonzero_idx);
-
-    int4 a = {0,0,0,0};
-    float4 b = {0.0,0.0,0.0,0.0};
-
-    *reinterpret_cast<int4*>(column_indices) = (nonzero_idx < params.num_nonzeros - 4) ? Ld(column_indices4) : a;
-    *reinterpret_cast<float4*>(values) = (nonzero_idx < params.num_nonzeros - 4) ? Ld(values_4) : b;
-
-    __syncthreads();
-//    __threadfence();
-
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-    {
-        ValueT vector_value    = ThreadLoad<LOAD_LDG>(params.d_vector_x + column_indices[ITEM]);
-        nonzero                += vector_value * values[ITEM];
-    }
-*/
-
 
     OffsetT column_indices[ITEMS_PER_THREAD];
     ValueT values[ITEMS_PER_THREAD];
@@ -431,7 +393,8 @@ float TestGpuMergeCsrmv(
         d_temp_storage, temp_storage_bytes,
         params.d_values, params.d_row_end_offsets, params.d_column_indices,
         params.d_vector_x, params.d_vector_y,
-        params.num_rows, params.num_cols, params.num_nonzeros, params.alpha, params.beta,
+        params.num_rows, params.num_cols, params.num_nonzeros,
+// params.alpha, params.beta,
         (cudaStream_t) 0, false));
 
     // Allocate
@@ -445,7 +408,8 @@ float TestGpuMergeCsrmv(
         d_temp_storage, temp_storage_bytes,
         params.d_values, params.d_row_end_offsets, params.d_column_indices,
         params.d_vector_x, params.d_vector_y,
-        params.num_rows, params.num_cols, params.num_nonzeros, params.alpha, params.beta,
+        params.num_rows, params.num_cols, params.num_nonzeros, 
+// params.alpha, params.beta,
         (cudaStream_t) 0, !g_quiet));
 
     if (!g_quiet)
@@ -465,7 +429,8 @@ float TestGpuMergeCsrmv(
             d_temp_storage, temp_storage_bytes,
             params.d_values, params.d_row_end_offsets, params.d_column_indices,
             params.d_vector_x, params.d_vector_y,
-            params.num_rows, params.num_cols, params.num_nonzeros, params.alpha, params.beta,
+            params.num_rows, params.num_cols, params.num_nonzeros, 
+// params.alpha, params.beta,
             (cudaStream_t) 0, false));
     }
     timer.Stop();
@@ -770,7 +735,7 @@ int main(int argc, char **argv)
     // Run test(s)
     if (fp64)
     {
-//        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
+        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
     else
     {
