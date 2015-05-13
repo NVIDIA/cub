@@ -34,8 +34,9 @@
  * g++ cpu_spmv_compare.cpp -DCUB_MKL -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ffloat-store -O3 -fopenmp
  * g++ cpu_spmv_compare.cpp -lm -ffloat-store -O3 -fopenmp
  *
- * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_omp.out -lrt -fno-alias -xHost
- * export KMP_AFFINITY=granularity=fine,scatter
+ * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_mkl.out -lrt -fno-alias -xHost
+ * icpc cpu_spmv_compare.cpp -mkl -openmp -O3 -o spmv_omp.out -lrt -fno-alias -xHost
+ * export KMP_AFFINITY=granularity=core,scatter
  *
  *
  ******************************************************************************/
@@ -83,7 +84,7 @@ bool                    g_verbose       = false;        // Whether to display ou
 bool                    g_verbose2      = false;        // Whether to display input to console
 int                     g_omp_threads   = -1;           // Number of openMP threads
 int                     g_omp_oversub   = 1;            // Factor of over-subscription
-int                     g_ht_threshold  = 16*1024*1024; // Hyperthread threshold (num nonzeros)
+int                     g_ht_threshold  = 1*1024*1024;  // Hyperthread threshold (num nonzeros)
 
 
 //---------------------------------------------------------------------
@@ -381,59 +382,6 @@ struct CommandLineArgs
  */
 struct CpuTimer
 {
-/*
-#if defined(_WIN32) || defined(_WIN64)
-
-    LARGE_INTEGER ll_freq;
-    LARGE_INTEGER ll_start;
-    LARGE_INTEGER ll_stop;
-
-    CpuTimer()
-    {
-        QueryPerformanceFrequency(&ll_freq);
-    }
-
-    void Start()
-    {
-        QueryPerformanceCounter(&ll_start);
-    }
-
-    void Stop()
-    {
-        QueryPerformanceCounter(&ll_stop);
-    }
-
-    float ElapsedMillis()
-    {
-        double start = double(ll_start.QuadPart) / double(ll_freq.QuadPart);
-        double stop  = double(ll_stop.QuadPart) / double(ll_freq.QuadPart);
-
-        return float((stop - start) * 1000);
-    }
-
-#else
-
-    timespec start;
-    timespec stop;
-
-    void Start()
-    {
-        clock_gettime(CLOCK_MONOTONIC, &start);
-    }
-
-    void Stop()
-    {
-        clock_gettime(CLOCK_MONOTONIC, &stop);
-    }
-
-    float ElapsedMillis()
-    {
-        return ((float(stop.tv_sec - start.tv_sec) * 1000) + (float(stop.tv_nsec - start.tv_nsec) / 1000000L));
-    }
-
-#endif
-*/
-
     double start;
     double stop;
 
@@ -667,12 +615,11 @@ float TestOmpCsrIoProxy(
     ValueT* vector_y_out = new ValueT[a.num_rows];
 
     if (g_omp_threads == -1)
-        g_omp_threads = (a.num_nonzeros < g_ht_threshold) ? 
-            omp_get_num_procs() / 2:
-            omp_get_num_procs();
+        g_omp_threads = // (a.num_nonzeros < g_ht_threshold) ? 
+            omp_get_num_procs() / 2; //:
+//            omp_get_num_procs() - 1;
 
     omp_set_num_threads(g_omp_threads);
-    omp_set_dynamic(0);
 
     if (!g_quiet)
     {
@@ -727,7 +674,6 @@ void OmpMergeCsrmv(
 
     for (int pass = 0; pass < g_omp_oversub; ++pass)
     {
-
         #pragma omp parallel for schedule(static)
         for (int tid = pass * num_threads; tid < (pass + 1) * num_threads; tid++)
         {
@@ -737,16 +683,8 @@ void OmpMergeCsrmv(
             int2 thread_coord;
             int2 thread_end_coord;
 
-            if (a.num_rows != a.num_nonzeros)
-            {
-                MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
-                MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_end_coord);
-            }
-            else
-            {
-                thread_coord = {start_diagonal >> 1, (start_diagonal + 1) >> 1};
-                thread_end_coord = {end_diagonal >> 1, (end_diagonal + 1) >> 1};
-            }
+            MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
+            MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_end_coord);
 
             ValueT running_total = ValueT(0.0);
 
@@ -798,12 +736,11 @@ float TestOmpMergeCsrmv(
     ValueT* vector_y_out = new ValueT[a.num_rows];
 
     if (g_omp_threads == -1)
-        g_omp_threads = (a.num_nonzeros < g_ht_threshold) ? 
-            omp_get_num_procs() / 2:
-            omp_get_num_procs();
+        g_omp_threads = // (a.num_nonzeros < g_ht_threshold) ? 
+            omp_get_num_procs() / 2; //:
+//            omp_get_num_procs() - 1;
 
     omp_set_num_threads(g_omp_threads);
-    omp_set_dynamic(0);
 
     if (!g_quiet)
     {
@@ -1053,10 +990,10 @@ void RunTests(
     }
     fflush(stdout);
 
-    // Adaptive timing iterations: run two billion nonzeros through
+    // Adaptive timing iterations: run 16 billion nonzeros through
     if (timing_iterations == -1)
     {
-        timing_iterations = std::max(10, std::min(OffsetT(1e4), (OffsetT(2e9) / csr_matrix.num_nonzeros)));
+        timing_iterations = std::min(50000ull, std::max(10ull, ((16ull << 30) / csr_matrix.num_nonzeros)));
         if (!g_quiet)
             printf("\t%d timing iterations\n", timing_iterations);
     }
