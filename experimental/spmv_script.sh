@@ -7,10 +7,10 @@
 #	$1 --dense=$i $2 $3 $4 $5
 #done
 
-#for i in `ls ../../graphs/*.mtx ../../graphs/spmv/*.mtx`
-for i in `ls /cygdrive/w/Dev/UFget/mtx/*.mtx`
+for i in `ls /scratch/dumerrill/graphs/mtx/*.mtx`
+#for i in `ls /cygdrive/w/Dev/UFget/mtx/*.mtx`
 do 
-	$1 --mtx=`cygpath -w $i` $2 $3 $4 $5
+	$1 --mtx=$i $2 $3 $4 $5
 done 
 
 #$1 --grid3d=300 $2 $3 $4 $5

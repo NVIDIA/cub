@@ -677,7 +677,8 @@ struct DispatchSpmv
             if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
 #endif
 
-            if (num_merge_tiles < spmv_sm_occupancy * sm_count)
+            if (search_grid_size < sm_count)
+//            if (num_merge_tiles < spmv_sm_occupancy * sm_count)
             {
                 // Not enough spmv tiles to saturate the device: have spmv blocks search their own staring coords
                 d_tile_coordinates = NULL;

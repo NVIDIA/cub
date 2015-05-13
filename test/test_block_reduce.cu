@@ -148,59 +148,64 @@ __global__ void FullTileReduceKernel(
 
     // Load first tile of data
     int block_offset = 0;
-    LoadDirectBlocked(linear_tid, d_in + block_offset, data);
-    block_offset += TILE_SIZE;
 
-    // Start cycle timer
-    clock_t start = clock();
-
-    // Cooperative reduce first tile
-    BlockReduceT block_reduce(temp_storage) ;
-    T block_aggregate = DeviceTest(block_reduce, data, reduction_op);
-
-    // Stop cycle timer
-#if CUB_PTX_ARCH == 100
-    // Bug: recording stop clock causes mis-write of running prefix value
-    clock_t stop = 0;
-#else
-    clock_t stop = clock();
-#endif // CUB_PTX_ARCH == 100
-    clock_t elapsed = (start > stop) ? start - stop : stop - start;
-
-    // Loop over input tiles
-    while (block_offset < TILE_SIZE * tiles)
+    if (block_offset < TILE_SIZE * tiles)
     {
-        // TestBarrier between threadblock reductions
-        __syncthreads();
-
-        // Load tile of data
         LoadDirectBlocked(linear_tid, d_in + block_offset, data);
         block_offset += TILE_SIZE;
 
         // Start cycle timer
         clock_t start = clock();
 
-        // Cooperatively reduce the tile's aggregate
-        T tile_aggregate = DeviceTest(block_reduce, data, reduction_op);
+        // Cooperative reduce first tile
+        BlockReduceT block_reduce(temp_storage) ;
+        T block_aggregate = DeviceTest(block_reduce, data, reduction_op);
 
         // Stop cycle timer
-    #if CUB_PTX_ARCH == 100
+ #if CUB_PTX_ARCH == 100
         // Bug: recording stop clock causes mis-write of running prefix value
         clock_t stop = 0;
-    #else
+#else
         clock_t stop = clock();
-    #endif // CUB_PTX_ARCH == 100
-        elapsed += (start > stop) ? start - stop : stop - start;
+#endif // CUB_PTX_ARCH == 100
+        clock_t elapsed = (start > stop) ? start - stop : stop - start;
 
-        // Reduce threadblock aggregate
-        block_aggregate = reduction_op(block_aggregate, tile_aggregate);
-    }
+        // Loop over input tiles
+        while (block_offset < TILE_SIZE * tiles)
+        {
+            // TestBarrier between threadblock reductions
+            __syncthreads();
+    
+            // Load tile of data
+            LoadDirectBlocked(linear_tid, d_in + block_offset, data);
+            block_offset += TILE_SIZE;
 
-    // Store data
-    if (linear_tid == 0)
-    {
-        d_out[0] = block_aggregate;
-        *d_elapsed = elapsed;
+            // Start cycle timer
+            clock_t start = clock();
+
+            // Cooperatively reduce the tile's aggregate
+            BlockReduceT block_reduce(temp_storage) ;
+            T tile_aggregate = DeviceTest(block_reduce, data, reduction_op);
+
+            // Stop cycle timer
+#if CUB_PTX_ARCH == 100
+            // Bug: recording stop clock causes mis-write of running prefix value
+            clock_t stop = 0;
+#else
+            clock_t stop = clock();
+#endif // CUB_PTX_ARCH == 100
+            elapsed += (start > stop) ? start - stop : stop - start;
+
+            // Reduce threadblock aggregate
+            block_aggregate = reduction_op(block_aggregate, tile_aggregate);
+        }
+
+        // Store data
+        if (linear_tid == 0)
+        {
+            d_out[0] = block_aggregate;
+            *d_elapsed = elapsed;
+        }
     }
 }
 
@@ -766,19 +771,19 @@ int main(int argc, char** argv)
 
     printf("\n full tile ------------------------\n\n");
 
-    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 4, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 4, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 4, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 4, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
 
-    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 1, int>(UNIFORM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 1, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 1, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 1, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
 
     printf("\n partial tile ------------------------\n\n");
 
-    TestPartialTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, int>(UNIFORM, 7, Sum(), CUB_TYPE_STRING(int));
-    TestPartialTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, int>(UNIFORM, 7, Sum(), CUB_TYPE_STRING(int));
-    TestPartialTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, int>(UNIFORM, 7, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, int>(RANDOM, 7, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, int>(RANDOM, 7, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, int>(RANDOM, 7, Sum(), CUB_TYPE_STRING(int));
 
 #else
 
@@ -792,6 +797,8 @@ int main(int argc, char** argv)
         Test<long long>(CUB_TYPE_STRING(long long));
         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
             Test<double>(CUB_TYPE_STRING(double));
+
+        Test<float>(CUB_TYPE_STRING(float));
 
         // vector types
         Test<char2>(CUB_TYPE_STRING(char2));
