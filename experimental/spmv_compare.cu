@@ -59,7 +59,6 @@ bool                    g_quiet     = false;        // Whether to display stats 
 bool                    g_verbose   = false;        // Whether to display output to console
 bool                    g_verbose2  = false;        // Whether to display input to console
 CachingDeviceAllocator  g_allocator(true);          // Caching allocator for device memory
-int                     g_omp_threads = -1;         // Number of openMP threads
 
 
 //---------------------------------------------------------------------
@@ -477,66 +476,32 @@ void DisplayPerf(
 }
 
 
+
 /**
  * Run tests
  */
 template <
     typename ValueT,
     typename OffsetT>
-void RunTests(
-    bool                rcm_relabel,
-    ValueT              alpha,
-    ValueT              beta,
-    const std::string&  mtx_filename,
-    int                 grid2d,
-    int                 grid3d,
-    int                 wheel,
-    int                 dense,
-    int                 timing_iterations,
-    CommandLineArgs&    args)
+void RunTest(
+    bool                        rcm_relabel,
+    ValueT                      alpha,
+    ValueT                      beta,
+    CooMatrix<ValueT, OffsetT>& coo_matrix,
+    int                         timing_iterations,
+    CommandLineArgs&            args)
 {
-    // Initialize matrix in COO form
-    CooMatrix<ValueT, OffsetT> coo_matrix;
-
-    if (!mtx_filename.empty())
+    // Adaptive timing iterations: run 16 billion nonzeros through
+    if (timing_iterations == -1)
     {
-        // Parse matrix market file
-        printf("%s, ", mtx_filename.c_str()); fflush(stdout);
-        coo_matrix.InitMarket(mtx_filename, 1.0, !g_quiet);
-    }
-    else if (grid2d > 0)
-    {
-        // Generate 2D lattice
-        printf("grid2d_%d, ", grid2d); fflush(stdout);
-        coo_matrix.InitGrid2d(grid2d, false);
-    }
-    else if (grid3d > 0)
-    {
-        // Generate 3D lattice
-        printf("grid3d_%d, ", grid3d); fflush(stdout);
-        coo_matrix.InitGrid3d(grid3d, false);
-    }
-    else if (wheel > 0)
-    {
-        // Generate wheel graph
-        printf("wheel_%d, ", grid2d); fflush(stdout);
-        coo_matrix.InitWheel(wheel);
-    }
-    else if (dense > 0)
-    {
-        // Generate dense graph
-        OffsetT rows = (1<<24) / dense;               // 16M nnz
-        printf("dense_%d_x_%d, ", rows, dense); fflush(stdout);
-        coo_matrix.InitDense(rows, dense);
-    }
-    else
-    {
-        fprintf(stderr, "No graph type specified.\n");
-        exit(1);
+        timing_iterations = std::min(50000ull, std::max(100ull, ((16ull << 30) / coo_matrix.num_nonzeros)));
+        if (!g_quiet)
+            printf("\t%d timing iterations\n", timing_iterations);
     }
 
     CsrMatrix<ValueT, OffsetT> csr_matrix;
     csr_matrix.FromCoo(coo_matrix);
+    coo_matrix.Clear();
 
     // Relabel
     if (rcm_relabel)
@@ -570,14 +535,6 @@ void RunTests(
         printf("\n");
     }
     fflush(stdout);
-
-    // Adaptive timing iterations: run two billion nonzeros through
-    if (timing_iterations == -1)
-    {
-        timing_iterations = std::max(5, std::min(OffsetT(1e4), (OffsetT(2e9) / csr_matrix.num_nonzeros)));
-        if (!g_quiet)
-            printf("\t%d timing iterations\n", timing_iterations);
-    }
 
     // Allocate input and output vectors
     ValueT* vector_x        = new ValueT[csr_matrix.num_cols];
@@ -668,6 +625,73 @@ void RunTests(
     if (vector_y_out)               delete[] vector_y_out;
 }
 
+/**
+ * Run tests
+ */
+template <
+    typename ValueT,
+    typename OffsetT>
+void RunTests(
+    bool                rcm_relabel,
+    ValueT              alpha,
+    ValueT              beta,
+    const std::string&  mtx_filename,
+    int                 grid2d,
+    int                 grid3d,
+    int                 wheel,
+    int                 dense,
+    int                 timing_iterations,
+    CommandLineArgs&    args)
+{
+    // Initialize matrix in COO form
+    CooMatrix<ValueT, OffsetT> coo_matrix;
+
+    if (!mtx_filename.empty())
+    {
+        // Parse matrix market file
+        printf("%s, ", mtx_filename.c_str()); fflush(stdout);
+        coo_matrix.InitMarket(mtx_filename, 1.0, !g_quiet);
+    }
+    else if (grid2d > 0)
+    {
+        // Generate 2D lattice
+        printf("grid2d_%d, ", grid2d); fflush(stdout);
+        coo_matrix.InitGrid2d(grid2d, false);
+    }
+    else if (grid3d > 0)
+    {
+        // Generate 3D lattice
+        printf("grid3d_%d, ", grid3d); fflush(stdout);
+        coo_matrix.InitGrid3d(grid3d, false);
+    }
+    else if (wheel > 0)
+    {
+        // Generate wheel graph
+        printf("wheel_%d, ", grid2d); fflush(stdout);
+        coo_matrix.InitWheel(wheel);
+    }
+    else if (dense > 0)
+    {
+        // Generate dense graph
+        OffsetT rows = (1<<24) / dense;               // 16M nnz
+        printf("dense_%d_x_%d, ", rows, dense); fflush(stdout);
+        coo_matrix.InitDense(rows, dense);
+    }
+    else
+    {
+        fprintf(stderr, "No graph type specified.\n");
+        exit(1);
+    }
+
+    RunTest(
+        rcm_relabel,
+        alpha,
+        beta,
+        coo_matrix,
+        timing_iterations,
+        args);
+}
+
 
 
 /**
@@ -727,7 +751,6 @@ int main(int argc, char **argv)
     args.GetCmdLineArgument("dense", dense);
     args.GetCmdLineArgument("alpha", alpha);
     args.GetCmdLineArgument("beta", beta);
-    args.GetCmdLineArgument("threads", g_omp_threads);
 
     // Initialize device
     CubDebugExit(args.DeviceInit());
