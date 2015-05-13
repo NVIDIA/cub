@@ -44,6 +44,7 @@
 #include <fstream>
 #include <stdio.h>
 
+
 using namespace std;
 
 /******************************************************************************
@@ -307,17 +308,13 @@ struct CooMatrix
             exit(1);
         }
 
-        // Read from file
-/*
-        FILE *f_in = fopen(market_filename.c_str(), "r");
-        if (!f_in)
-        {
-            fprintf(stderr, "Could not open input file\n");
-            exit(1);
-        }
-*/
         std::ifstream ifs;
         ifs.open(market_filename.c_str(), std::ifstream::in);
+        if (!ifs.good())
+        {
+            fprintf(stderr, "Error opening file\n");
+            exit(1);
+        }
 
         bool    array = false;
         bool    symmetric = false;
@@ -337,13 +334,7 @@ struct CooMatrix
                 // Done
                 break;
             }
-/*
-            if (fscanf(f_in, "%[^\n]\n", line) <= 0)
-            {
-                // Done
-                break;
-            }
-*/
+
             if (line[0] == '%')
             {
                 // Comment
@@ -413,18 +404,51 @@ struct CooMatrix
                 }
                 else
                 {
+                    // Parse nonzero (note: using strtol and strtod is 2x faster than sscanf or istream parsing)
+                    char *l = line;
+                    char *t = NULL;
+
+                    // parse row
+                    row = strtol(l, &t, 0);
+                    if (t == l)
+                    {
+                        fprintf(stderr, "Error parsing MARKET matrix: badly formed row at edge %d\n", current_edge);
+                        exit(1);
+                    }
+                    l = t;
+
+                    // parse col
+                    col = strtol(l, &t, 0);
+                    if (t == l)
+                    {
+                        fprintf(stderr, "Error parsing MARKET matrix: badly formed col at edge %d\n", current_edge);
+                        exit(1);
+                    }
+                    l = t;
+
+                    // parse val
+                    val = strtod(l, &t);
+                    if (t == l)
+                    {
+                        val = default_value;
+                    }
+/*
                     int nparsed = sscanf(line, "%d %d %lf", &row, &col, &val);
                     if (nparsed == 2)
                     {
                         // No value specified
                         val = default_value;
+                        
                     }
                     else if (nparsed != 3)
                     {
-                        fprintf(stderr, "Error parsing MARKET matrix: badly formed current_edge: %d parsed at edge %d\n", nparsed, current_edge);
+                        fprintf(stderr, "Error parsing MARKET matrix 1: badly formed current_edge: %d parsed at edge %d\n", nparsed, current_edge);
                         exit(1);
                     }
+*/
+
                     coo_tuples[current_edge] = CooTuple(row - 1, col - 1, val);    // Convert indices to zero-based
+
                 }
 
                 current_edge++;
@@ -453,7 +477,6 @@ struct CooMatrix
             printf("done. "); fflush(stdout);
         }
 
-//        fclose(f_in);
         ifs.close();
     }
 
