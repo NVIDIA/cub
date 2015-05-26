@@ -430,7 +430,7 @@ struct DispatchReduceByKey
 
             // Get grid dimensions
             dim3 scan_grid_size(
-                CUB_MIN(num_tiles, max_dim_x),
+                CUB_MIN(int(num_tiles), max_dim_x),
                 (num_tiles + max_dim_x - 1) / max_dim_x,
                 1);
 
