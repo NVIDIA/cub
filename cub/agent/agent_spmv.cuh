@@ -221,6 +221,9 @@ struct AgentSpmv
     {
         CoordinateT tile_coords[2];
 
+        OffsetT tile_nonzero_idx;
+        OffsetT tile_nonzero_idx_end;
+
         union
         {
             // Smem needed for tile of merge items
@@ -640,216 +643,6 @@ struct AgentSpmv
 
 
 
-
-
-
-
-    /**
-     * Consume a merge tile, specialized for indirect load of nonzeros
-     * /
-    template <typename IsDirectLoadT>
-    __device__ __forceinline__ KeyValuePairT ConsumeTile1(
-        int             tile_idx,
-        CoordinateT     tile_start_coord,
-        CoordinateT     tile_end_coord,
-        IsDirectLoadT   is_direct_load)     ///< Marker type indicating whether to load nonzeros directly during path-discovery or beforehand in batch
-    {
-        int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
-        int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
-
-        OffsetT*    s_tile_row_end_offsets  = &temp_storage.merge_items[0].row_end_offset;
-
-        int warp_idx                        = threadIdx.x / WARP_THREADS;
-        int lane_idx                        = LaneId();
-
-        // Gather the row end-offsets for the merge tile into shared memory
-        #pragma unroll 1
-        for (int item = threadIdx.x; item <= tile_num_rows; item += BLOCK_THREADS)
-        {
-            s_tile_row_end_offsets[item] = wd_row_end_offsets[tile_start_coord.x + item];
-        }
-
-        __syncthreads();
-
-        // Search for warp start/end coords
-        if (lane_idx == 0)
-        {
-            MergePathSearch(
-                OffsetT(warp_idx * ITEMS_PER_WARP),                 // Diagonal
-                s_tile_row_end_offsets,                             // List A
-                CountingInputIterator<OffsetT>(tile_start_coord.y), // List B
-                tile_num_rows,
-                tile_num_nonzeros,
-                temp_storage.warp_coords[warp_idx]);
-
-            CoordinateT last = {tile_num_rows, tile_num_nonzeros};
-            temp_storage.warp_coords[WARPS] = last;
-        }
-
-        __syncthreads();
-
-        CoordinateT     warp_coord          = temp_storage.warp_coords[warp_idx];
-        CoordinateT     warp_end_coord      = temp_storage.warp_coords[warp_idx + 1];
-        OffsetT         warp_nonzero_idx    = tile_start_coord.y + warp_coord.y;
-
-        // Consume whole rows
-        #pragma unroll 1
-        for (; warp_coord.x < warp_end_coord.x; ++warp_coord.x)
-        {
-            ValueT  row_total       = 0.0;
-            OffsetT row_end_offset  = s_tile_row_end_offsets[warp_coord.x];
-
-            #pragma unroll 1
-            for (OffsetT nonzero_idx = warp_nonzero_idx + lane_idx;
-                nonzero_idx < row_end_offset;
-                nonzero_idx += WARP_THREADS)
-            {
-                OffsetT column_idx          = wd_column_indices[nonzero_idx];
-                ValueT  value               = wd_values[nonzero_idx];
-                ValueT  vector_value        = wd_vector_x[column_idx];
-                row_total                   += value * vector_value;
-            }
-
-            // Warp reduce
-            row_total = WarpReduceT(temp_storage.warp_reduce[warp_idx]).Sum(row_total);
-
-            // Output
-            if (lane_idx == 0)
-            {
-                spmv_params.d_vector_y[tile_start_coord.x + warp_coord.x] = row_total;
-            }
-
-            warp_nonzero_idx = row_end_offset;
-        }
-
-        // Consume partial portion of thread's last row
-        if (warp_nonzero_idx < tile_start_coord.y + warp_end_coord.y)
-        {
-            ValueT row_total = 0.0;
-            for (OffsetT nonzero_idx = warp_nonzero_idx + lane_idx;
-                nonzero_idx < tile_start_coord.y + warp_end_coord.y;
-                nonzero_idx += WARP_THREADS)
-            {
-
-                OffsetT column_idx          = wd_column_indices[nonzero_idx];
-                ValueT  value               = wd_values[nonzero_idx];
-                ValueT  vector_value        = wd_vector_x[column_idx];
-                row_total                   += value * vector_value;
-            }
-
-            // Warp reduce
-            row_total = WarpReduceT(temp_storage.warp_reduce[warp_idx]).Sum(row_total);
-
-            // Output
-            if (lane_idx == 0)
-            {
-                spmv_params.d_vector_y[tile_start_coord.x + warp_coord.x] = row_total;
-            }
-        }
-
-        // Return the tile's running carry-out
-        KeyValuePairT tile_carry = {tile_num_rows, 0.0};
-        return tile_carry;
-    }
-*/
-
-
-
-
-
-
-
-    /**
-     * Consume a merge tile, specialized for indirect load of nonzeros
-     * /
-    __device__ __forceinline__ KeyValuePairT ConsumeTile2(
-        int             tile_idx,
-        CoordinateT     tile_start_coord,
-        CoordinateT     tile_end_coord,
-        Int2Type<false> is_direct_load)     ///< Marker type indicating whether to load nonzeros directly during path-discovery or beforehand in batch
-    {
-        int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
-        int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
-
-        ValueT*     s_tile_nonzeros         = &temp_storage.merge_items[0].nonzero;
-
-        ValueT      nonzeros[ITEMS_PER_THREAD];
-
-        // Gather the nonzeros for the merge tile into shared memory
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            int     nonzero_idx         = threadIdx.x + (ITEM * BLOCK_THREADS);
-            nonzero_idx                 = CUB_MIN(nonzero_idx, tile_num_nonzeros - 1);
-
-            OffsetT column_idx          = wd_column_indices[tile_start_coord.y + nonzero_idx];
-            ValueT  value               = wd_values[tile_start_coord.y + nonzero_idx];
-
-            ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
-#if (CUB_PTX_ARCH >= 350)
-            vector_value                = wd_vector_x[column_idx];
-#endif
-
-            nonzeros[ITEM]              = value * vector_value;
-        }
-
-        // Exchange striped->blocked
-        BlockExchangeT(temp_storage.exchange).StripedToBlocked(nonzeros);
-
-        __syncthreads();
-
-        // Compute an inclusive prefix sum
-        BlockPrefixSumT(temp_storage.prefix_sum).InclusiveSum(nonzeros, nonzeros);
-
-        __syncthreads();
-
-        if (threadIdx.x == 0)
-            s_tile_nonzeros[0] = 0.0;
-
-        // Scatter back to smem
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            int item_idx = (threadIdx.x * ITEMS_PER_THREAD) + ITEM + 1;
-            s_tile_nonzeros[item_idx] = nonzeros[ITEM];
-        }
-
-        __syncthreads();
-
-        // Gather the row end-offsets for the merge tile into shared memory
-        #pragma unroll 1
-        for (int item = threadIdx.x; item < tile_num_rows; item += BLOCK_THREADS)
-        {
-            OffsetT start = CUB_MAX(wd_row_end_offsets[tile_start_coord.x + item - 1], tile_start_coord.y);
-            OffsetT end = wd_row_end_offsets[tile_start_coord.x + item];
-
-            start -= tile_start_coord.y;
-            end -= tile_start_coord.y;
-
-            ValueT row_partial = s_tile_nonzeros[end] - s_tile_nonzeros[start];
-
-            spmv_params.d_vector_y[tile_start_coord.x + item] = row_partial;
-        }
-
-        // Get the tile's carry-out
-        KeyValuePairT tile_carry;
-        if (threadIdx.x == 0)
-        {
-            tile_carry.key = tile_num_rows;
-
-            OffsetT start = CUB_MAX(wd_row_end_offsets[tile_end_coord.x - 1], tile_start_coord.y);
-            start -= tile_start_coord.y;
-            OffsetT end = tile_num_nonzeros;
-
-            tile_carry.value = s_tile_nonzeros[end] - s_tile_nonzeros[start];
-        }
-
-        // Return the tile's running carry-out
-        return tile_carry;
-    }
-*/
-
-
     /**
      * Consume input tile
      */
@@ -912,6 +705,163 @@ struct AgentSpmv
             d_tile_carry_pairs[tile_idx]    = tile_carry;
         }
     }
+
+
+    /**
+     * Consume input tile
+     */
+    __device__ __forceinline__ void ConsumeTile(
+        int     tile_idx,
+        int     rows_per_tile)
+    {
+        //
+        // Read in strip of row descriptors
+        //
+
+        OffsetT row_nonzero_idx     = -1;
+        OffsetT row_nonzero_idx_end = -1;
+
+        int tile_row_idx        = (tile_idx * rows_per_tile);
+        int tile_row_idx_end    = CUB_MIN(tile_row_idx + rows_per_tile, spmv_params.num_rows);
+        int row_idx             = tile_row_idx + threadIdx.x;
+
+        if (row_idx < tile_row_idx_end)
+        {
+            row_nonzero_idx     = wd_row_end_offsets[row_idx - 1];
+            row_nonzero_idx_end = wd_row_end_offsets[row_idx];
+
+            if (threadIdx.x == 0)
+                temp_storage.tile_nonzero_idx = row_nonzero_idx;
+
+            if (row_idx == tile_row_idx_end - 1)
+                temp_storage.tile_nonzero_idx_end = row_nonzero_idx_end;
+        }
+
+        __syncthreads();
+
+
+        //
+        // Process tiles of nonzeros
+        //
+
+        OffsetT tile_nonzero_idx        = temp_storage.tile_nonzero_idx;
+        OffsetT tile_nonzero_idx_end    = temp_storage.tile_nonzero_idx_end;
+        ValueT* s_tile_nonzeros         = &temp_storage.merge_items[0].nonzero;
+
+        BlockScanRunningPrefixOp<ValueT, cub::Sum> prefix_op(0.0, cub::Sum());
+
+        while (tile_nonzero_idx < tile_nonzero_idx_end)
+        {
+            //
+            // Gather a tile of nonzeros into shared memory
+            //
+
+            #pragma unroll
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+            {
+                OffsetT local_nonzero_idx       = (ITEM * BLOCK_THREADS) + threadIdx.x;
+                OffsetT nonzero_idx             = tile_nonzero_idx + local_nonzero_idx;
+
+                ValueIteratorT a                = wd_values + nonzero_idx;
+                ColumnIndicesIteratorT ci       = wd_column_indices + nonzero_idx;
+                ValueT* s                       = s_tile_nonzeros + local_nonzero_idx;
+
+                if (nonzero_idx < tile_nonzero_idx_end)
+                {
+                    OffsetT column_idx              = *ci;
+                    ValueT  value                   = *a;
+                    ValueT  vector_value            = spmv_params.t_vector_x[column_idx];
+                    vector_value                    = wd_vector_x[column_idx];
+                    ValueT  nonzero                 = value * vector_value;
+                    *s                              = nonzero;
+                }
+            }
+
+            __syncthreads();
+
+            //
+            // Swap in NANs
+            //
+
+            int local_row_idx = row_nonzero_idx - tile_nonzero_idx;
+
+            ValueT NAN_TOKEN = ValueT(0) / ValueT(0);
+            ValueT row_end_value = NAN_TOKEN;
+
+            if ((local_row_idx >= 0) && (local_row_idx < TILE_ITEMS))
+            {
+                row_end_value                   = s_tile_nonzeros[local_row_idx];
+                s_tile_nonzeros[local_row_idx]  = NAN_TOKEN;
+            }
+
+            __syncthreads();
+
+            //
+            // Segmented scan
+            //
+
+            KeyValuePairT scan_items[ITEMS_PER_THREAD];
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+            {
+                int     local_nonzero_idx   = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+                ValueT  value               = s_tile_nonzeros[local_nonzero_idx];
+                bool    is_nan              = (value != value);
+
+                scan_items[ITEM].value  = (is_nan) ? ValueT(0) : value;
+                scan_items[ITEM].key    = (is_nan) ? 0 : local_nonzero_idx;
+            }
+
+            ReduceBySegmentOpT  scan_op;
+            KeyValuePairT       tile_aggregate;
+            KeyValuePairT       scan_items_out[ITEMS_PER_THREAD];
+
+            BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items_out, scan_op, tile_aggregate, prefix_op);
+
+            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+            {
+                if (scan_items[ITEM].key)
+                    s_tile_nonzeros[scan_items[ITEM].key] = scan_items_out[ITEM].value;
+            }
+
+            __syncthreads();
+
+            // Swap out values
+
+
+            //
+            // Next
+            //
+
+            tile_nonzero_idx += TILE_ITEMS;
+        }
+
+
+
+
+
+
+
+
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 };
