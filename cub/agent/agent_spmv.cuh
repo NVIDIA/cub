@@ -718,21 +718,21 @@ struct AgentSpmv
         // Read in strip of row descriptors
         //
 
+        OffsetT tile_row_idx        = tile_idx * rows_per_tile;
+        OffsetT tile_row_idx_end    = CUB_MIN(tile_row_idx + rows_per_tile, spmv_params.num_rows);
+        OffsetT row_idx             = tile_row_idx + threadIdx.x;
+
         OffsetT row_nonzero_idx     = -1;
         OffsetT row_nonzero_idx_end = -1;
-
-        int tile_row_idx        = (tile_idx * rows_per_tile);
-        int tile_row_idx_end    = CUB_MIN(tile_row_idx + rows_per_tile, spmv_params.num_rows);
-        int row_idx             = tile_row_idx + threadIdx.x;
 
         if (row_idx < tile_row_idx_end)
         {
             row_nonzero_idx     = wd_row_end_offsets[row_idx - 1];
             row_nonzero_idx_end = wd_row_end_offsets[row_idx];
 
+            // Share the tile's first and last nonzero indices
             if (threadIdx.x == 0)
                 temp_storage.tile_nonzero_idx = row_nonzero_idx;
-
             if (row_idx == tile_row_idx_end - 1)
                 temp_storage.tile_nonzero_idx_end = row_nonzero_idx_end;
         }
@@ -748,10 +748,14 @@ struct AgentSpmv
         OffsetT tile_nonzero_idx_end    = temp_storage.tile_nonzero_idx_end;
         ValueT* s_tile_nonzeros         = &temp_storage.merge_items[0].nonzero;
 
-        BlockScanRunningPrefixOp<ValueT, cub::Sum> prefix_op(0.0, cub::Sum());
+        ReduceBySegmentOpT                                      scan_op;
+        KeyValuePairT                                           tile_prefix = {0, 0};
+        BlockScanRunningPrefixOp<ValueT, ReduceBySegmentOpT>    prefix_op(tile_prefix, scan_op);
 
         while (tile_nonzero_idx < tile_nonzero_idx_end)
         {
+            OffsetT local_row_nonzero_idx = row_nonzero_idx - tile_nonzero_idx;
+
             //
             // Gather a tile of nonzeros into shared memory
             //
@@ -759,12 +763,11 @@ struct AgentSpmv
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
-                OffsetT local_nonzero_idx       = (ITEM * BLOCK_THREADS) + threadIdx.x;
-                OffsetT nonzero_idx             = tile_nonzero_idx + local_nonzero_idx;
-
-                ValueIteratorT a                = wd_values + nonzero_idx;
-                ColumnIndicesIteratorT ci       = wd_column_indices + nonzero_idx;
-                ValueT* s                       = s_tile_nonzeros + local_nonzero_idx;
+                OffsetT                 local_nonzero_idx   = (ITEM * BLOCK_THREADS) + threadIdx.x;
+                OffsetT                 nonzero_idx         = tile_nonzero_idx + local_nonzero_idx;
+                ValueIteratorT          a                   = wd_values + nonzero_idx;
+                ColumnIndicesIteratorT  ci                  = wd_column_indices + nonzero_idx;
+                ValueT*                 s                   = s_tile_nonzeros + local_nonzero_idx;
 
                 if (nonzero_idx < tile_nonzero_idx_end)
                 {
@@ -783,15 +786,12 @@ struct AgentSpmv
             // Swap in NANs
             //
 
-            int local_row_idx = row_nonzero_idx - tile_nonzero_idx;
-
-            ValueT NAN_TOKEN = ValueT(0) / ValueT(0);
-            ValueT row_end_value = NAN_TOKEN;
-
-            if ((local_row_idx >= 0) && (local_row_idx < TILE_ITEMS))
+            ValueT  NAN_TOKEN           = ValueT(0) / ValueT(0);
+            ValueT  row_end_value       = NAN_TOKEN;
+            if ((local_row_nonzero_idx >= 0) && (local_row_nonzero_idx < TILE_ITEMS))
             {
-                row_end_value                   = s_tile_nonzeros[local_row_idx];
-                s_tile_nonzeros[local_row_idx]  = NAN_TOKEN;
+                row_end_value                           = s_tile_nonzeros[local_row_nonzero_idx];
+                s_tile_nonzeros[local_row_nonzero_idx]  = NAN_TOKEN;
             }
 
             __syncthreads();
@@ -808,25 +808,31 @@ struct AgentSpmv
                 bool    is_nan              = (value != value);
 
                 scan_items[ITEM].value  = (is_nan) ? ValueT(0) : value;
-                scan_items[ITEM].key    = (is_nan) ? 0 : local_nonzero_idx;
+                scan_items[ITEM].key    = (is_nan) ? 0 : 1;
             }
 
-            ReduceBySegmentOpT  scan_op;
             KeyValuePairT       tile_aggregate;
             KeyValuePairT       scan_items_out[ITEMS_PER_THREAD];
-
             BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items_out, scan_op, tile_aggregate, prefix_op);
 
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
+                int local_nonzero_idx = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
                 if (scan_items[ITEM].key)
-                    s_tile_nonzeros[scan_items[ITEM].key] = scan_items_out[ITEM].value;
+                    s_tile_nonzeros[local_nonzero_idx] = scan_items_out[ITEM].value;
             }
 
             __syncthreads();
 
+            //
             // Swap out values
+            //
 
+            if (row_end_value == row_end_value)
+            {
+                row_end_value                       += s_tile_nonzeros[local_row_nonzero_idx];
+                spmv_params.d_vector_y[row_idx]     = row_end_value;
+            }
 
             //
             // Next
@@ -834,35 +840,7 @@ struct AgentSpmv
 
             tile_nonzero_idx += TILE_ITEMS;
         }
-
-
-
-
-
-
-
-
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 };
 
