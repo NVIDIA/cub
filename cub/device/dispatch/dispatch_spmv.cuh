@@ -161,7 +161,8 @@ __global__ void DeviceSpmvKernel(
     KeyValuePair<OffsetT,ValueT>*   d_tile_carry_pairs,         ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
     int                             num_tiles,                  ///< [in] Number of merge tiles
     ScanTileStateT                  tile_state,                 ///< [in] Tile status interface for fixup reduce-by-key kernel
-    int                             num_segment_fixup_tiles)    ///< [in] Number of reduce-by-key tiles (fixup grid size)
+    int                             num_segment_fixup_tiles,    ///< [in] Number of reduce-by-key tiles (fixup grid size)
+    int                             rows_per_tile)              ///< [in] Number of rows per tile
 {
     // Spmv agent type specialization
     typedef AgentSpmv<
@@ -176,13 +177,18 @@ __global__ void DeviceSpmvKernel(
     __shared__ typename AgentSpmvT::TempStorage temp_storage;
 
     AgentSpmvT(temp_storage, spmv_params).ConsumeTile(
+        blockIdx.x,
+        rows_per_tile);
+
+/*
+    AgentSpmvT(temp_storage, spmv_params).ConsumeTile(
         d_tile_coordinates,
         d_tile_carry_pairs,
         num_tiles);
 
     // Initialize fixup tile status
     tile_state.InitializeStatus(num_segment_fixup_tiles);
-
+*/
 }
 
 
@@ -677,12 +683,12 @@ struct DispatchSpmv
             if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
 #endif
 
-            if (search_grid_size < sm_count)
-//            if (num_merge_tiles < spmv_sm_occupancy * sm_count)
+//            if (search_grid_size < sm_count)
             {
                 // Not enough spmv tiles to saturate the device: have spmv blocks search their own staring coords
                 d_tile_coordinates = NULL;
             }
+/*
             else
             {
                 // Use separate search kernel if we have enough spmv tiles to saturate the device
@@ -703,7 +709,7 @@ struct DispatchSpmv
                 // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
-
+*/
             // Log spmv_kernel configuration
             if (debug_synchronous) CubLog("Invoking spmv_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 spmv_grid_size.x, spmv_grid_size.y, spmv_grid_size.z, spmv_config.block_threads, (long long) stream, spmv_config.items_per_thread, spmv_sm_occupancy);
@@ -722,7 +728,7 @@ struct DispatchSpmv
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-
+/*
             // Run reduce-by-key fixup if necessary
             if (num_merge_tiles > 1)
             {
@@ -744,7 +750,7 @@ struct DispatchSpmv
                 // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
-
+*/
 #if (CUB_PTX_ARCH == 0)
             // Free textures
             if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
