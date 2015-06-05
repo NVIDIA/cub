@@ -715,13 +715,17 @@ struct AgentSpmv
         int     rows_per_tile)
     {
         //
-        // Read in strip of row descriptors
+        // Read in tile of row ranges
         //
 
+        // Row range for the thread block
         OffsetT tile_row_idx        = tile_idx * rows_per_tile;
         OffsetT tile_row_idx_end    = CUB_MIN(tile_row_idx + rows_per_tile, spmv_params.num_rows);
+
+        // Thread's row
         OffsetT row_idx             = tile_row_idx + threadIdx.x;
 
+        // Nonzero range for the thread's row
         OffsetT row_nonzero_idx     = -1;
         OffsetT row_nonzero_idx_end = -1;
 
@@ -730,7 +734,7 @@ struct AgentSpmv
             row_nonzero_idx     = wd_row_end_offsets[row_idx - 1];
             row_nonzero_idx_end = wd_row_end_offsets[row_idx];
 
-            // Share the tile's first and last nonzero indices
+            // Share nonzero range for the thread block
             if (threadIdx.x == 0)
                 temp_storage.tile_nonzero_idx = row_nonzero_idx;
             if (row_idx == tile_row_idx_end - 1)
@@ -741,23 +745,23 @@ struct AgentSpmv
 
 
         //
-        // Process tiles of nonzeros
+        // Process strips of nonzeros
         //
 
+        // Nonzero range for the thread block
         OffsetT tile_nonzero_idx        = temp_storage.tile_nonzero_idx;
         OffsetT tile_nonzero_idx_end    = temp_storage.tile_nonzero_idx_end;
-        ValueT* s_tile_nonzeros         = &temp_storage.merge_items[0].nonzero;
 
         ReduceBySegmentOpT                                      scan_op;
-        KeyValuePairT                                           tile_prefix = {0, 0};
+        KeyValuePairT                                           tile_prefix = {0, ValueT(0)};
         BlockScanRunningPrefixOp<ValueT, ReduceBySegmentOpT>    prefix_op(tile_prefix, scan_op);
 
-        while (tile_nonzero_idx < tile_nonzero_idx_end)
-        {
-            OffsetT local_row_nonzero_idx = row_nonzero_idx - tile_nonzero_idx;
+        ValueT* s_strip_nonzeros = &temp_storage.merge_items[0].nonzero;
 
+        for (; tile_nonzero_idx < tile_nonzero_idx_end; tile_nonzero_idx += TILE_ITEMS)
+        {
             //
-            // Gather a tile of nonzeros into shared memory
+            // Gather a strip of nonzeros into shared memory
             //
 
             #pragma unroll
@@ -767,31 +771,39 @@ struct AgentSpmv
                 OffsetT                 nonzero_idx         = tile_nonzero_idx + local_nonzero_idx;
                 ValueIteratorT          a                   = wd_values + nonzero_idx;
                 ColumnIndicesIteratorT  ci                  = wd_column_indices + nonzero_idx;
-                ValueT*                 s                   = s_tile_nonzeros + local_nonzero_idx;
+                ValueT*                 s                   = s_strip_nonzeros + local_nonzero_idx;
 
                 if (nonzero_idx < tile_nonzero_idx_end)
                 {
-                    OffsetT column_idx              = *ci;
-                    ValueT  value                   = *a;
-                    ValueT  vector_value            = spmv_params.t_vector_x[column_idx];
-                    vector_value                    = wd_vector_x[column_idx];
-                    ValueT  nonzero                 = value * vector_value;
-                    *s                              = nonzero;
+                    OffsetT column_idx          = *ci;
+                    ValueT  value               = *a;
+                    ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
+                    vector_value                = wd_vector_x[column_idx];
+                    ValueT  nonzero             = value * vector_value;
+                    *s                          = nonzero;
                 }
             }
 
             __syncthreads();
 
             //
-            // Swap in NANs
+            // Swap in NANs at local row end offsets
             //
 
-            ValueT  NAN_TOKEN           = ValueT(0) / ValueT(0);
-            ValueT  row_end_value       = NAN_TOKEN;
-            if ((local_row_nonzero_idx >= 0) && (local_row_nonzero_idx < TILE_ITEMS))
+            ValueT  NAN_TOKEN                   = ValueT(0) / ValueT(0);
+            ValueT  row_end_value               = NAN_TOKEN;
+            OffsetT local_row_nonzero_idx_end   = row_nonzero_idx_end - tile_nonzero_idx;
+
+            if ((local_row_nonzero_idx_end >= 0) && (local_row_nonzero_idx_end < TILE_ITEMS))
             {
-                row_end_value                           = s_tile_nonzeros[local_row_nonzero_idx];
-                s_tile_nonzeros[local_row_nonzero_idx]  = NAN_TOKEN;
+                row_end_value = s_strip_nonzeros[local_row_nonzero_idx_end];
+            }
+
+            __syncthreads();
+
+            if (row_end_value == row_end_value)
+            {
+                s_strip_nonzeros[local_row_nonzero_idx_end]  = NAN_TOKEN;
             }
 
             __syncthreads();
@@ -800,45 +812,43 @@ struct AgentSpmv
             // Segmented scan
             //
 
+            // Read strip of nonzeros into thread-blocked order, setup segment flags
             KeyValuePairT scan_items[ITEMS_PER_THREAD];
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
                 int     local_nonzero_idx   = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                ValueT  value               = s_tile_nonzeros[local_nonzero_idx];
+                ValueT  value               = s_strip_nonzeros[local_nonzero_idx];
                 bool    is_nan              = (value != value);
 
                 scan_items[ITEM].value  = (is_nan) ? ValueT(0) : value;
                 scan_items[ITEM].key    = (is_nan) ? 0 : 1;
             }
 
-            KeyValuePairT       tile_aggregate;
-            KeyValuePairT       scan_items_out[ITEMS_PER_THREAD];
+            KeyValuePairT tile_aggregate;
+            KeyValuePairT scan_items_out[ITEMS_PER_THREAD];
             BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items_out, scan_op, tile_aggregate, prefix_op);
 
+            // Store segment totals
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
                 int local_nonzero_idx = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
                 if (scan_items[ITEM].key)
-                    s_tile_nonzeros[local_nonzero_idx] = scan_items_out[ITEM].value;
+                    s_strip_nonzeros[local_nonzero_idx] = scan_items_out[ITEM].value;
             }
 
             __syncthreads();
 
             //
-            // Swap out values
+            // Update row-end values and store to y
             //
 
             if (row_end_value == row_end_value)
             {
-                row_end_value                       += s_tile_nonzeros[local_row_nonzero_idx];
+                row_end_value                       += s_strip_nonzeros[local_row_nonzero_idx_end];
                 spmv_params.d_vector_y[row_idx]     = row_end_value;
             }
 
-            //
-            // Next
-            //
-
-            tile_nonzero_idx += TILE_ITEMS;
+            __syncthreads();
         }
     }
 
