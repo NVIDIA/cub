@@ -759,7 +759,7 @@ int main(int argc, char **argv)
     // Run test(s)
     if (fp64)
     {
-        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
+//        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
     else
     {
