@@ -752,11 +752,22 @@ struct AgentSpmv
         OffsetT tile_nonzero_idx        = temp_storage.tile_nonzero_idx;
         OffsetT tile_nonzero_idx_end    = temp_storage.tile_nonzero_idx_end;
 
-        ReduceBySegmentOpT                                      scan_op;
-        KeyValuePairT                                           tile_prefix = {0, ValueT(0)};
-        BlockScanRunningPrefixOp<ValueT, ReduceBySegmentOpT>    prefix_op(tile_prefix, scan_op);
+        if (row_nonzero_idx != -1)
+            CubLog("Row %d, nz range [%d,%d), tile range [%d,%d)\n",
+                row_idx,
+                row_nonzero_idx,
+                row_nonzero_idx_end,
+                tile_nonzero_idx,
+                tile_nonzero_idx_end);
+
+        ReduceBySegmentOpT                                              scan_op;
+        KeyValuePairT                                                   tile_prefix = {0, ValueT(0)};
+        BlockScanRunningPrefixOp<KeyValuePairT, ReduceBySegmentOpT>     prefix_op(tile_prefix, scan_op);
 
         ValueT* s_strip_nonzeros = &temp_storage.merge_items[0].nonzero;
+
+        ValueT  NAN_TOKEN                   = ValueT(0) / ValueT(0);
+        ValueT  row_start_value             = NAN_TOKEN;
 
         for (; tile_nonzero_idx < tile_nonzero_idx_end; tile_nonzero_idx += TILE_ITEMS)
         {
@@ -780,6 +791,10 @@ struct AgentSpmv
                     ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
                     vector_value                = wd_vector_x[column_idx];
                     ValueT  nonzero             = value * vector_value;
+
+                    if (blockIdx.x == 0)
+                        CubLog ("Loaded nonzero %f\n", nonzero);
+
                     *s                          = nonzero;
                 }
             }
@@ -790,20 +805,24 @@ struct AgentSpmv
             // Swap in NANs at local row end offsets
             //
 
-            ValueT  NAN_TOKEN                   = ValueT(0) / ValueT(0);
-            ValueT  row_end_value               = NAN_TOKEN;
+            OffsetT local_row_nonzero_idx       = row_nonzero_idx - tile_nonzero_idx;
             OffsetT local_row_nonzero_idx_end   = row_nonzero_idx_end - tile_nonzero_idx;
 
-            if ((local_row_nonzero_idx_end >= 0) && (local_row_nonzero_idx_end < TILE_ITEMS))
+            bool starts_in_strip = (local_row_nonzero_idx >= 0) && (local_row_nonzero_idx < TILE_ITEMS);
+
+            if (starts_in_strip)
             {
-                row_end_value = s_strip_nonzeros[local_row_nonzero_idx_end];
+                row_start_value = s_strip_nonzeros[local_row_nonzero_idx];
             }
 
             __syncthreads();
 
-            if (row_end_value == row_end_value)
+            if (starts_in_strip)
             {
-                s_strip_nonzeros[local_row_nonzero_idx_end]  = NAN_TOKEN;
+                s_strip_nonzeros[local_row_nonzero_idx] = NAN_TOKEN;
+
+                if (blockIdx.x == 0)
+                    CubLog ("\t row start value %f @ , token %f\n", local_row_nonzero_idx, row_start_value, NAN_TOKEN);
             }
 
             __syncthreads();
@@ -822,6 +841,9 @@ struct AgentSpmv
 
                 scan_items[ITEM].value  = (is_nan) ? ValueT(0) : value;
                 scan_items[ITEM].key    = (is_nan) ? 0 : 1;
+
+                if ((blockIdx.x == 0) && (threadIdx.x == 0))
+                    CubLog("ITEM %d: (%d, %f)\n", ITEM, scan_items[ITEM].key, scan_items[ITEM].value);
             }
 
             KeyValuePairT tile_aggregate;
@@ -842,10 +864,11 @@ struct AgentSpmv
             // Update row-end values and store to y
             //
 
-            if (row_end_value == row_end_value)
+            bool ends_in_strip = (local_row_nonzero_idx_end >= 0) && (local_row_nonzero_idx_end < TILE_ITEMS);
+            if (ends_in_strip)
             {
-                row_end_value                       += s_strip_nonzeros[local_row_nonzero_idx_end];
-                spmv_params.d_vector_y[row_idx]     = row_end_value;
+                row_start_value                       += s_strip_nonzeros[local_row_nonzero_idx_end];
+                spmv_params.d_vector_y[row_idx]     = row_start_value;
             }
 
             __syncthreads();
