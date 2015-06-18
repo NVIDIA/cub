@@ -227,6 +227,9 @@ struct AgentSpmv
         OffsetT tile_nonzero_idx;
         OffsetT tile_nonzero_idx_end;
 
+        // Smem needed for tile scanning
+        typename BlockScanT::TempStorage scan;
+
         union
         {
             // Smem needed for tile of merge items
@@ -238,8 +241,6 @@ struct AgentSpmv
             // Smem needed for block-wide reduction
             typename BlockReduceT::TempStorage reduce;
 
-            // Smem needed for tile scanning
-            typename BlockScanT::TempStorage scan;
 
             // Smem needed for tile prefix sum
             typename BlockPrefixSumT::TempStorage prefix_sum;
@@ -727,6 +728,8 @@ struct AgentSpmv
 
         // Thread's row
         OffsetT row_idx             = tile_row_idx + threadIdx.x;
+        ValueT  row_total           = ValueT(0);
+        ValueT  row_start           = ValueT(0);
 
         // Nonzero range for the thread's row
         OffsetT row_nonzero_idx     = -1;
@@ -737,15 +740,18 @@ struct AgentSpmv
             row_nonzero_idx     = wd_row_end_offsets[row_idx - 1];
             row_nonzero_idx_end = wd_row_end_offsets[row_idx];
 
-            // Share nonzero range for the thread block
+            // Share block's starting nonzero offset
             if (threadIdx.x == 0)
                 temp_storage.tile_nonzero_idx = row_nonzero_idx;
 
+            // Share block's ending nonzero offset
             if (row_idx == tile_row_idx_end - 1)
-            {
                 temp_storage.tile_nonzero_idx_end = row_nonzero_idx_end;
 
-                // Unset last row's index because we will instead grab it from the running prefix op
+            // Zero-length rows don't participate
+            if (row_nonzero_idx == row_nonzero_idx_end)
+            {
+                row_nonzero_idx = -1;
                 row_nonzero_idx_end = -1;
             }
         }
@@ -760,24 +766,14 @@ struct AgentSpmv
         OffsetT tile_nonzero_idx        = temp_storage.tile_nonzero_idx;
         OffsetT tile_nonzero_idx_end    = temp_storage.tile_nonzero_idx_end;
 
-/*
-        if (row_nonzero_idx != -1)
-            CubLog("Row %d, nz range [%d,%d), tile range [%d,%d)\n",
-                row_idx,
-                row_nonzero_idx,
-                row_nonzero_idx_end,
-                tile_nonzero_idx,
-                tile_nonzero_idx_end);
-*/
-
         ReduceBySegmentOpT                                          scan_op;
         KeyValuePairT                                               tile_prefix = {0, ValueT(0)};
         BlockScanRunningPrefixOp<KeyValuePairT, ReduceBySegmentOpT> prefix_op(tile_prefix, scan_op);
 
         ValueT  NAN_TOKEN           = ValueT(0) / ValueT(0);
         ValueT* s_strip_nonzeros    = &temp_storage.merge_items[0].nonzero;
-        ValueT  row_total           = NAN_TOKEN;
 
+        #pragma unroll 1
         for (; tile_nonzero_idx < tile_nonzero_idx_end; tile_nonzero_idx += TILE_ITEMS)
         {
             //
@@ -799,8 +795,8 @@ struct AgentSpmv
                     // Load nonzero if in range
                     OffsetT column_idx          = *ci;
                     ValueT  value               = *a;
-                    ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
-                    vector_value                = wd_vector_x[column_idx];
+//                    ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
+                    ValueT vector_value         = wd_vector_x[column_idx];
                     nonzero                     = value * vector_value;
                 }
 
@@ -813,23 +809,12 @@ struct AgentSpmv
             // Swap in NANs at local row start offsets
             //
 
-            OffsetT local_row_nonzero_idx       = row_nonzero_idx - tile_nonzero_idx;
-            OffsetT local_row_nonzero_idx_end   = row_nonzero_idx_end - tile_nonzero_idx;
-
-            bool starts_in_strip = (local_row_nonzero_idx >= 0) && (local_row_nonzero_idx < TILE_ITEMS);
-
-            if (starts_in_strip)
+            OffsetT local_row_nonzero_idx = row_nonzero_idx - tile_nonzero_idx;
+            if ((local_row_nonzero_idx >= 0) && (local_row_nonzero_idx < TILE_ITEMS))
             {
-                row_total = s_strip_nonzeros[local_row_nonzero_idx];
-            }
-
-            __syncthreads();
-
-            if (starts_in_strip)
-            {
+                // Thread's row starts in this strip
+                row_start = s_strip_nonzeros[local_row_nonzero_idx];
                 s_strip_nonzeros[local_row_nonzero_idx] = NAN_TOKEN;
-
-//                CubLog ("\t row start value %f @ %d, token %f\n", row_total, local_row_nonzero_idx, NAN_TOKEN);
             }
 
             __syncthreads();
@@ -847,18 +832,16 @@ struct AgentSpmv
                 bool    is_nan              = (value != value);
 
                 scan_items[ITEM].value  = (is_nan) ? ValueT(0) : value;
-                scan_items[ITEM].key    = (is_nan) ? 1 : 0;
+                scan_items[ITEM].key    = is_nan;
             }
 
             KeyValuePairT tile_aggregate;
             KeyValuePairT scan_items_out[ITEMS_PER_THREAD];
             BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items_out, scan_op, tile_aggregate, prefix_op);
 
-            // Save running prefix (inclusive) for thread owning last row
+            // Save the inclusive sum for the last row
             if (threadIdx.x == 0)
             {
-//                CubLog("Running prefix %d, %.1f\n", prefix_op.running_total.key, prefix_op.running_total.value);
-
                 s_strip_nonzeros[TILE_ITEMS] = prefix_op.running_total.value;
             }
 
@@ -867,26 +850,21 @@ struct AgentSpmv
             {
                 int local_nonzero_idx = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
 
-                if (scan_items[ITEM].key)
-                {
+//                if (scan_items[ITEM].key)
                     s_strip_nonzeros[local_nonzero_idx] = scan_items_out[ITEM].value;
-
-//                    CubLog("Storing %.1f to %d\n", scan_items_out[ITEM].value, local_nonzero_idx);
-                }
             }
 
             __syncthreads();
 
             //
-            // Update row-end values and store to y
+            // Update row totals
             //
 
-            bool ends_in_strip = (local_row_nonzero_idx_end >= 0) && (local_row_nonzero_idx_end < TILE_ITEMS);
-            if (ends_in_strip)
+            OffsetT local_row_nonzero_idx_end = row_nonzero_idx_end - tile_nonzero_idx;
+            if ((local_row_nonzero_idx_end >= 0) && (local_row_nonzero_idx_end < TILE_ITEMS))
             {
-//                CubLog("Row %d total = %.1f + %.1f @ %d\n", row_idx, row_total, s_strip_nonzeros[local_row_nonzero_idx_end], local_row_nonzero_idx_end);
-
-                row_total += s_strip_nonzeros[local_row_nonzero_idx_end];
+                // Thread's row ends in this strip
+                row_total = s_strip_nonzeros[local_row_nonzero_idx_end];
             }
 
             __syncthreads();
@@ -898,16 +876,13 @@ struct AgentSpmv
 
         if (row_idx < tile_row_idx_end)
         {
-//            CubLog("y[%d] = %.1f\n", row_idx, row_total);
-
-            if (row_idx == tile_row_idx_end - 1)
+            if (row_nonzero_idx_end == tile_nonzero_idx_end)
             {
-                // Last row grabs the running prefix stored after the scan op
-//                CubLog("\tRow %d total = %.1f + %.1f @ %d\n", row_idx, row_total, s_strip_nonzeros[TILE_ITEMS], TILE_ITEMS);
-                row_total += s_strip_nonzeros[TILE_ITEMS];
+                // Last row grabs the inclusive sum
+                row_total = s_strip_nonzeros[TILE_ITEMS];
             }
 
-            spmv_params.d_vector_y[row_idx] = row_total;
+            spmv_params.d_vector_y[row_idx] = row_start + row_total;
         }
     }
 
