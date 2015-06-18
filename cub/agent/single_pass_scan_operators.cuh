@@ -64,8 +64,8 @@ template <
     typename ScanOpT>            ///< Wrapped scan operator type
 struct BlockScanRunningPrefixOp
 {
-    ScanOpT  op;                 ///< Wrapped scan operator
-    T       running_total;      ///< Running block-wide prefix
+    ScanOpT     op;                 ///< Wrapped scan operator
+    T           running_total;      ///< Running block-wide prefix
 
     /// Constructor
     __device__ __forceinline__ BlockScanRunningPrefixOp(ScanOpT op)

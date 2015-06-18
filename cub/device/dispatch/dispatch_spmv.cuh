@@ -398,6 +398,7 @@ struct DispatchSpmv
     /// SM50
     struct Policy500
     {
+/*
         typedef AgentSpmvPolicy<
                 (sizeof(ValueT) > 4) ? 64 : 128,
                 (sizeof(ValueT) > 4) ? 6 : 7,
@@ -409,7 +410,18 @@ struct DispatchSpmv
                 (sizeof(ValueT) > 4) ? true : false,
                 (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
             SpmvPolicyT;
-
+*/
+        typedef AgentSpmvPolicy<
+                128,
+                7,
+                LOAD_LDG,
+                LOAD_DEFAULT,
+                LOAD_DEFAULT,
+                LOAD_DEFAULT,
+                LOAD_LDG,
+                false,
+                BLOCK_SCAN_WARP_SCANS>
+            SpmvPolicyT;
 
         typedef AgentSegmentFixupPolicy<
                 128,
@@ -542,10 +554,10 @@ struct DispatchSpmv
      * kernel invocations.
      */
     template <
-        typename                Spmv1ColKernelT,                    ///< Function type of cub::DeviceSpmv1ColKernel
-        typename                SpmvSearchKernelT,                  ///< Function type of cub::AgentSpmvSearchKernel
-        typename                SpmvKernelT,                        ///< Function type of cub::AgentSpmvKernel
-        typename                SegmentFixupKernelT>                 ///< Function type of cub::DeviceSegmentFixupKernelT
+//        typename                Spmv1ColKernelT,                    ///< Function type of cub::DeviceSpmv1ColKernel
+//        typename                SpmvSearchKernelT,                  ///< Function type of cub::AgentSpmvSearchKernel
+        typename                SpmvKernelT>                        ///< Function type of cub::AgentSpmvKernel
+//        typename                SegmentFixupKernelT>                 ///< Function type of cub::DeviceSegmentFixupKernelT
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
         void*                   d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -553,10 +565,10 @@ struct DispatchSpmv
         SpmvParamsT&            spmv_params,                        ///< SpMV input parameter bundle
         cudaStream_t            stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
-        Spmv1ColKernelT         spmv_1col_kernel,                   ///< [in] Kernel function pointer to parameterization of DeviceSpmv1ColKernel
-        SpmvSearchKernelT       spmv_search_kernel,                 ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
+//        Spmv1ColKernelT         spmv_1col_kernel,                   ///< [in] Kernel function pointer to parameterization of DeviceSpmv1ColKernel
+//        SpmvSearchKernelT       spmv_search_kernel,                 ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
         SpmvKernelT             spmv_kernel,                        ///< [in] Kernel function pointer to parameterization of AgentSpmvKernel
-        SegmentFixupKernelT     fixup_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentFixupKernel
+//        SegmentFixupKernelT     fixup_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentFixupKernel
         KernelConfig            spmv_config,                        ///< [in] Dispatch parameters that match the policy that \p spmv_kernel was compiled for
         KernelConfig            fixup_config)               ///< [in] Dispatch parameters that match the policy that \p fixup_kernel was compiled for
     {
@@ -569,6 +581,7 @@ struct DispatchSpmv
         cudaError error = cudaSuccess;
         do
         {
+/*
             if (spmv_params.num_cols == 1)
             {
                 if (d_temp_storage == NULL)
@@ -597,7 +610,7 @@ struct DispatchSpmv
 
                 break;
             }
-
+*/
             // Get device ordinal
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
@@ -639,11 +652,13 @@ struct DispatchSpmv
 */
 
             unsigned int rows_per_tile = spmv_config.block_threads;
+/*
             if (spmv_params.num_rows < spmv_device_occupancy * rows_per_tile)
             {
                 // Spread more CTAs across the device and fewer rows per CTA
                 rows_per_tile = (spmv_params.num_rows + spmv_device_occupancy - 1) / spmv_device_occupancy;
             }
+*/
 
             // Number of tiles for kernels
             unsigned int num_spmv_tiles     = (spmv_params.num_rows + rows_per_tile - 1) / rows_per_tile;
@@ -810,10 +825,10 @@ struct DispatchSpmv
 
             if (CubDebug(error = Dispatch(
                 d_temp_storage, temp_storage_bytes, spmv_params, stream, debug_synchronous,
-                DeviceSpmv1ColKernel<PtxSpmvPolicyT, ValueT, OffsetT>,
-                DeviceSpmvSearchKernel<PtxSpmvPolicyT, OffsetT, CoordinateT, SpmvParamsT>,
+//                DeviceSpmv1ColKernel<PtxSpmvPolicyT, ValueT, OffsetT>,
+//                DeviceSpmvSearchKernel<PtxSpmvPolicyT, OffsetT, CoordinateT, SpmvParamsT>,
                 DeviceSpmvKernel<PtxSpmvPolicyT, ScanTileStateT, ValueT, OffsetT, CoordinateT, false, false>,
-                DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
+//                DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
                 spmv_config, fixup_config))) break;
 
 /*
