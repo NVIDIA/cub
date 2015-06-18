@@ -275,7 +275,7 @@ struct WarpScanShfl
         KeyValuePair<OffsetT, Value> output;
 
         output.value = InclusiveScanStep(input.value, cub::Sum(), first_lane, offset, Int2Type<IsInteger<Value>::IS_SMALL_UNSIGNED>());
-        output.key = InclusiveScanStep(input.offset, cub::Sum(), first_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_UNSIGNED>());
+        output.key = InclusiveScanStep(input.key, cub::Sum(), first_lane, offset, Int2Type<IsInteger<OffsetT>::IS_SMALL_UNSIGNED>());
 
         if (input.key > 0)
             output.value = input.value;
