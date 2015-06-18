@@ -412,15 +412,15 @@ struct DispatchSpmv
             SpmvPolicyT;
 */
         typedef AgentSpmvPolicy<
-                128,
+                (sizeof(ValueT) > 4) ? 64 : 128,
                 7,
-                LOAD_LDG,
                 LOAD_DEFAULT,
+                LOAD_CA,
                 LOAD_DEFAULT,
                 LOAD_DEFAULT,
                 LOAD_LDG,
                 false,
-                BLOCK_SCAN_WARP_SCANS>
+                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
             SpmvPolicyT;
 
         typedef AgentSegmentFixupPolicy<
@@ -652,13 +652,12 @@ struct DispatchSpmv
 */
 
             unsigned int rows_per_tile = spmv_config.block_threads;
-/*
-            if (spmv_params.num_rows < spmv_device_occupancy * rows_per_tile)
+            if ((spmv_params.num_rows < spmv_device_occupancy * rows_per_tile) &&
+                (spmv_params.num_rows * spmv_config.block_threads * spmv_config.items_per_thread < spmv_params.num_nonzeros))
             {
                 // Spread more CTAs across the device and fewer rows per CTA
                 rows_per_tile = (spmv_params.num_rows + spmv_device_occupancy - 1) / spmv_device_occupancy;
             }
-*/
 
             // Number of tiles for kernels
             unsigned int num_spmv_tiles     = (spmv_params.num_rows + rows_per_tile - 1) / rows_per_tile;
@@ -712,7 +711,7 @@ struct DispatchSpmv
 
 #if (CUB_PTX_ARCH == 0)
             // Init textures
-            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
+//            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
 #endif
 
 /*
@@ -786,7 +785,7 @@ struct DispatchSpmv
 */
 #if (CUB_PTX_ARCH == 0)
             // Free textures
-            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
+//            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
 #endif
         }
         while (0);
