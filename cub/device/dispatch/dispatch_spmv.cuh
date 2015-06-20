@@ -350,7 +350,7 @@ struct DispatchSpmv
     {
         typedef AgentSpmvPolicy<
                 (sizeof(ValueT) > 4) ? 96 : 128,
-                (sizeof(ValueT) > 4) ? 4 : 7,
+                (sizeof(ValueT) > 4) ? 7 : 7,
                 LOAD_LDG,
                 LOAD_CA,
                 LOAD_LDG,
@@ -412,7 +412,8 @@ struct DispatchSpmv
             SpmvPolicyT;
 */
         typedef AgentSpmvPolicy<
-                (sizeof(ValueT) > 4) ? 64 : 128,
+//                (sizeof(ValueT) > 4) ? 64 : 128,
+                (sizeof(ValueT) > 4) ? 128 : 128,
                 7,
                 LOAD_DEFAULT,
                 LOAD_CA,
@@ -420,7 +421,8 @@ struct DispatchSpmv
                 LOAD_DEFAULT,
                 LOAD_LDG,
                 false,
-                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
+//                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
             SpmvPolicyT;
 
         typedef AgentSegmentFixupPolicy<
@@ -634,7 +636,7 @@ struct DispatchSpmv
                 sm_version,
                 spmv_kernel,
                 spmv_config.block_threads))) break;
-            int spmv_device_occupancy = spmv_sm_occupancy * sm_count;
+  
 /*
             int fixup_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
@@ -645,19 +647,33 @@ struct DispatchSpmv
 
             // Total number of spmv work items
             int num_spmv_items      = spmv_params.num_rows + spmv_params.num_nonzeros;
-
+*/
             // Tile sizes of kernels
             int spmv_tile_size      = spmv_config.block_threads * spmv_config.items_per_thread;
             int fixup_tile_size     = fixup_config.block_threads * fixup_config.items_per_thread;
-*/
+
+
+
 
             unsigned int rows_per_tile = spmv_config.block_threads;
-            if ((spmv_params.num_rows < spmv_device_occupancy * rows_per_tile) &&
-                (spmv_params.num_rows * spmv_config.block_threads * spmv_config.items_per_thread < spmv_params.num_nonzeros))
+            if (rows_per_tile * spmv_sm_occupancy * sm_count > spmv_params.num_rows)
             {
-                // Spread more CTAs across the device and fewer rows per CTA
-                rows_per_tile = (spmv_params.num_rows + spmv_device_occupancy - 1) / spmv_device_occupancy;
+                // Decrease rows per tile if needed to accomodate high expansion factor
+                unsigned int expansion_factor = (spmv_params.num_nonzeros + spmv_params.num_rows - 1) / spmv_params.num_rows;
+                if (expansion_factor > spmv_config.items_per_thread)
+                    rows_per_tile = (spmv_tile_size + expansion_factor - 1) / expansion_factor;
+
+                // Decrease rows per tile if needed to accomodate minimum parallelism
+                unsigned int spmv_device_occupancy = sm_count * 2;
+//                  unsigned int spmv_device_occupancy = spmv_sm_occupancy * sm_count;
+                if (spmv_params.num_rows < spmv_device_occupancy * rows_per_tile)
+                    rows_per_tile = (spmv_params.num_rows + spmv_device_occupancy - 1) / spmv_device_occupancy;
             }
+
+            rows_per_tile = 6;
+
+            if (debug_synchronous) CubLog("Rows per tile: %d\n", rows_per_tile);
+
 
             // Number of tiles for kernels
             unsigned int num_spmv_tiles     = (spmv_params.num_rows + rows_per_tile - 1) / rows_per_tile;
