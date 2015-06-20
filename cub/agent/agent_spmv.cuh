@@ -199,6 +199,7 @@ struct AgentSpmv
 
         // Smem needed for tile of merge items
         ValueT nonzeros[TILE_ITEMS + 1];
+
     };
 
     /// Temporary storage type (unionable)
@@ -242,6 +243,20 @@ struct AgentSpmv
     {}
 
 
+    __device__ __forceinline__ void InitNan(double& nan_token)
+    {
+        long long NAN_BITS  = 0xFFF0000000000001;
+        nan_token           = reinterpret_cast<ValueT&>(NAN_BITS); // ValueT(0.0) / ValueT(0.0);
+    } 
+
+
+    __device__ __forceinline__ void InitNan(float& nan_token)
+    {
+        int NAN_BITS        = 0xFF800001;
+        nan_token           = reinterpret_cast<ValueT&>(NAN_BITS); // ValueT(0.0) / ValueT(0.0);
+    } 
+
+
     /**
      *
      */
@@ -256,7 +271,9 @@ struct AgentSpmv
         OffsetT             row_nonzero_idx,
         OffsetT             row_nonzero_idx_end)
     {
-        ValueT  NAN_TOKEN = ValueT(0) / ValueT(0);
+        ValueT NAN_TOKEN;
+        InitNan(NAN_TOKEN);
+
 
         //
         // Gather a strip of nonzeros into shared memory
@@ -265,12 +282,13 @@ struct AgentSpmv
         #pragma unroll
         for (int ITEM = 0; ITEM < NNZ_PER_THREAD; ++ITEM)
         {
+
+            ValueT nonzero = 0.0;
+
             OffsetT                 local_nonzero_idx   = (ITEM * BLOCK_THREADS) + threadIdx.x;
             OffsetT                 nonzero_idx         = tile_nonzero_idx + local_nonzero_idx;
             ValueIteratorT          a                   = wd_values + nonzero_idx;
             ColumnIndicesIteratorT  ci                  = wd_column_indices + nonzero_idx;
-
-            ValueT nonzero = ValueT(0);
 
             if (nonzero_idx < tile_nonzero_idx_end)
             {
@@ -313,7 +331,7 @@ struct AgentSpmv
             ValueT  value               = temp_storage.nonzeros[local_nonzero_idx];
             bool    is_nan              = (value != value);
 
-            scan_items[ITEM].value  = (is_nan) ? ValueT(0) : value;
+            scan_items[ITEM].value  = (is_nan) ? 0.0 : value;
             scan_items[ITEM].key    = is_nan;
         }
 
@@ -333,7 +351,7 @@ struct AgentSpmv
         {
             int local_nonzero_idx = (threadIdx.x * NNZ_PER_THREAD) + ITEM;
 
-//                if (scan_items[ITEM].key)
+//            if (scan_items[ITEM].key)
                 temp_storage.nonzeros[local_nonzero_idx] = scan_items_out[ITEM].value;
         }
 
@@ -372,8 +390,8 @@ struct AgentSpmv
 
         // Thread's row
         OffsetT row_idx             = tile_row_idx + threadIdx.x;
-        ValueT  row_total           = ValueT(0);
-        ValueT  row_start           = ValueT(0);
+        ValueT  row_total           = 0.0;
+        ValueT  row_start           = 0.0;
 
         // Nonzero range for the thread's row
         OffsetT row_nonzero_idx     = -1;
@@ -410,17 +428,33 @@ struct AgentSpmv
         OffsetT tile_nonzero_idx        = temp_storage.tile_nonzero_idx;
         OffsetT tile_nonzero_idx_end    = temp_storage.tile_nonzero_idx_end;
 
-        KeyValuePairT       tile_prefix = {0, ValueT(0)};
+        KeyValuePairT       tile_prefix = {0, 0.0};
         ReduceBySegmentOpT  scan_op;
         PrefixOpT           prefix_op(tile_prefix, scan_op);
 
         #pragma unroll 1
         while (tile_nonzero_idx < tile_nonzero_idx_end)
         {
-//            OffsetT items_left_per_thread = (tile_nonzero_idx_end - tile_nonzero_idx + BLOCK_THREADS - 1) / BLOCK_THREADS;
 
-            ConsumeStrip<ITEMS_PER_THREAD>(prefix_op, scan_op, row_total, row_start,
-                tile_nonzero_idx, tile_nonzero_idx_end, row_nonzero_idx, row_nonzero_idx_end);
+            OffsetT items_remaining = tile_nonzero_idx_end - tile_nonzero_idx;
+
+            if (items_remaining <= 3 * BLOCK_THREADS)
+            {
+                ConsumeStrip<3>(prefix_op, scan_op, row_total, row_start,
+                    tile_nonzero_idx, tile_nonzero_idx_end, row_nonzero_idx, row_nonzero_idx_end);
+
+            }
+            else if (items_remaining <= 5 * BLOCK_THREADS)
+            {
+                ConsumeStrip<5>(prefix_op, scan_op, row_total, row_start,
+                    tile_nonzero_idx, tile_nonzero_idx_end, row_nonzero_idx, row_nonzero_idx_end);
+
+            }
+            else
+            {  
+                ConsumeStrip<ITEMS_PER_THREAD>(prefix_op, scan_op, row_total, row_start,
+                    tile_nonzero_idx, tile_nonzero_idx_end, row_nonzero_idx, row_nonzero_idx_end);
+            }
 
             __syncthreads();
         }
