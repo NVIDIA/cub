@@ -263,7 +263,7 @@ struct WarpScanShfl
     }
 
 
-/*
+
     /// Inclusive prefix scan (specialized for ReduceBySegmentOp<cub::Sum> across KeyValuePair<OffsetT, Value> types)
     template <typename Value, typename OffsetT>
     __device__ __forceinline__ KeyValuePair<OffsetT, Value>InclusiveScanStep(
@@ -282,7 +282,7 @@ struct WarpScanShfl
 
         return output;
     }
-*/
+
 
     /// Inclusive prefix scan step (generic)
     template <typename _T, typename ScanOp>
