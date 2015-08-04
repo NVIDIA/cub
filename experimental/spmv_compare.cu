@@ -494,11 +494,10 @@ void RunTest(
 {
     // Adaptive timing iterations: run 16 billion nonzeros through
     if (timing_iterations == -1)
-    {
         timing_iterations = std::min(50000ull, std::max(100ull, ((16ull << 30) / coo_matrix.num_nonzeros)));
-        if (!g_quiet)
-            printf("\t%d timing iterations\n", timing_iterations);
-    }
+
+    if (!g_quiet)
+        printf("\t%d timing iterations\n", timing_iterations);
 
     CsrMatrix<ValueT, OffsetT> csr_matrix;
     csr_matrix.FromCoo(coo_matrix);
