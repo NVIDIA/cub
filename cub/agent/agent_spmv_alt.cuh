@@ -287,18 +287,20 @@ struct AgentSpmv
 
             OffsetT                 local_nonzero_idx   = (ITEM * BLOCK_THREADS) + threadIdx.x;
             OffsetT                 nonzero_idx         = tile_nonzero_idx + local_nonzero_idx;
-            ValueIteratorT          a                   = wd_values + nonzero_idx;
-            ColumnIndicesIteratorT  ci                  = wd_column_indices + nonzero_idx;
 
-            if (nonzero_idx < tile_nonzero_idx_end)
-            {
-                // Load nonzero if in range
-                OffsetT column_idx          = *ci;
-                ValueT  value               = *a;
-//                    ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
-                ValueT vector_value         = wd_vector_x[column_idx];
-                nonzero                     = value * vector_value;
-            }
+            bool in_range = nonzero_idx < tile_nonzero_idx_end;
+
+            OffsetT nonzero_idx2 = (in_range) ?
+                nonzero_idx :
+                tile_nonzero_idx_end - 1;
+
+            OffsetT column_idx          = wd_column_indices[nonzero_idx2];
+            ValueT  value               = wd_values[nonzero_idx2];
+            ValueT  vector_value        = wd_vector_x[column_idx];
+            nonzero                     = value * vector_value;
+
+            if (!in_range)
+                nonzero = 0.0;
 
             temp_storage.nonzeros[local_nonzero_idx] = nonzero;
         }
@@ -351,7 +353,7 @@ struct AgentSpmv
         {
             int local_nonzero_idx = (threadIdx.x * NNZ_PER_THREAD) + ITEM;
 
-//            if (scan_items[ITEM].key)
+            if (scan_items[ITEM].key)
                 temp_storage.nonzeros[local_nonzero_idx] = scan_items_out[ITEM].value;
         }
 
@@ -435,26 +437,8 @@ struct AgentSpmv
         #pragma unroll 1
         while (tile_nonzero_idx < tile_nonzero_idx_end)
         {
-
-            OffsetT items_remaining = tile_nonzero_idx_end - tile_nonzero_idx;
-
-            if (items_remaining <= 3 * BLOCK_THREADS)
-            {
-                ConsumeStrip<3>(prefix_op, scan_op, row_total, row_start,
-                    tile_nonzero_idx, tile_nonzero_idx_end, row_nonzero_idx, row_nonzero_idx_end);
-
-            }
-            else if (items_remaining <= 5 * BLOCK_THREADS)
-            {
-                ConsumeStrip<5>(prefix_op, scan_op, row_total, row_start,
-                    tile_nonzero_idx, tile_nonzero_idx_end, row_nonzero_idx, row_nonzero_idx_end);
-
-            }
-            else
-            {  
-                ConsumeStrip<ITEMS_PER_THREAD>(prefix_op, scan_op, row_total, row_start,
-                    tile_nonzero_idx, tile_nonzero_idx_end, row_nonzero_idx, row_nonzero_idx_end);
-            }
+            ConsumeStrip<ITEMS_PER_THREAD>(prefix_op, scan_op, row_total, row_start,
+                tile_nonzero_idx, tile_nonzero_idx_end, row_nonzero_idx, row_nonzero_idx_end);
 
             __syncthreads();
         }
