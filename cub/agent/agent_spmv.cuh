@@ -178,6 +178,9 @@ struct AgentSpmv
     // Reduce-value-by-segment scan operator
     typedef ReduceBySegmentOp<cub::Sum> ReduceBySegmentOpT;
 
+    // Prefix functor type
+    typedef BlockScanRunningPrefixOp<KeyValuePairT, ReduceBySegmentOpT> PrefixOpT;
+
     // BlockReduce specialization
     typedef BlockReduce<
             ValueT,
@@ -194,12 +197,12 @@ struct AgentSpmv
     /// Shared memory type required by this thread block
     struct _TempStorage
     {
-        union
-        {
+            ValueT running_total;
+
+//        union
+//        {
             // Smem needed for tile of merge items
             ValueT values[TILE_ITEMS + 1];
-
-            CoordinateT tile_coords[BLOCK_THREADS];
 
 /*
             // Smem needed for block exchange
@@ -211,7 +214,7 @@ struct AgentSpmv
             // Smem needed for tile scanning
             typename BlockScanT::TempStorage scan;
 
-        };
+//        };
     };
 
     /// Temporary storage type (unionable)
@@ -274,44 +277,49 @@ struct AgentSpmv
      * Consume input range
      */
     __device__ __forceinline__ void ConsumeRange(
+        CoordinateT*    d_tile_coordinates,     ///< [in] Pointer to the temporary array of tile starting coordinates
         KeyValuePairT*  d_tile_carry_pairs,
-        OffsetT         items_per_block)            ///< [in] Merge items per block
+        OffsetT         tiles_per_block,
+        OffsetT         num_merge_tiles)
     {
         ValueT NAN_TOKEN;
         InitNan(NAN_TOKEN);
 
-        OffsetT num_merge_items     = spmv_params.num_rows + spmv_params.num_nonzeros;
-        OffsetT merge_items_begin   = blockIdx.x * items_per_block;
-        OffsetT merge_items_end     = CUB_MIN(num_merge_items, merge_items_begin + items_per_block);
-        OffsetT block_merge_items   = merge_items_end - merge_items_begin;
+        if (threadIdx.x == 0)
+            temp_storage.running_total = 0.0;
 
-        // Search for tile coordinates
-        CoordinateT lookahead_tile_coord;
-        MergePathSearch(
-            OffsetT(merge_items_begin + (threadIdx.x * CUB_MIN(items_per_block, TILE_ITEMS))),
-            RowOffsetsSearchIteratorT(spmv_params.d_row_end_offsets),
-            CountingInputIterator<OffsetT>(0),
-            spmv_params.num_rows,
-            spmv_params.num_nonzeros,
-            lookahead_tile_coord);
+        KeyValuePairT       tile_prefix = {0, 0.0};
+        ReduceBySegmentOpT  scan_op;
+        PrefixOpT           prefix_op(tile_prefix, scan_op);
 
-        temp_storage.tile_coords[threadIdx.x] = lookahead_tile_coord;
-
-        __syncthreads();
-
-        CoordinateT tile_coord      = temp_storage.tile_coords[0];
-        CoordinateT tile_coord_end  = temp_storage.tile_coords[1];
-
+        // Read our starting coordinates
+        int tile_idx_begin      = blockIdx.x * tiles_per_block;
+        int tile_idx_end        = CUB_MIN(tile_idx_begin + tiles_per_block, num_merge_tiles);
+        CoordinateT tile_coord  = d_tile_coordinates[tile_idx_begin];
 
         #pragma unroll 1
-        for (int tile_idx = 0; tile_idx * TILE_ITEMS < block_merge_items; ++tile_idx)
+        for (int tile_idx = tile_idx_begin; tile_idx < tile_idx_end; ++tile_idx)
         {
-            int tile_num_nonzeros   = tile_coord_end.y - tile_coord.y;
-            int tile_num_rows       = tile_coord_end.x - tile_coord.x;
+            CoordinateT tile_coord_end      = d_tile_coordinates[tile_idx + 1];
 
-            __syncthreads();
+            int         tile_num_rows       = tile_coord_end.x - tile_coord.x;
+            int         tile_num_nonzeros   = tile_coord_end.y - tile_coord.y;
 
-            // NNZ tile
+            ValueT *s_saved = temp_storage.values + TILE_ITEMS + 1 - tile_num_rows;
+//            ValueT *s_saved = temp_storage.values + tile_num_nonzeros + 1;
+
+/*
+            if (threadIdx.x == 0)
+                CubLog("\n\nTile %d tile_coord(%d,%d), tile_coord_end(%d,%d), tile_num_rows%d, tile_num_nonzeros %d\n\n",
+                    tile_idx,
+                    tile_coord.x, tile_coord.y,
+                    tile_coord_end.x, tile_coord_end.y,
+                    tile_num_rows, tile_num_nonzeros);
+*/
+            // Nonzeros tile
+
+            ValueT nonzeros[ITEMS_PER_THREAD];
+
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
@@ -322,25 +330,35 @@ struct AgentSpmv
                 OffsetT column_idx          = wd_column_indices[nonzero_idx];
                 ValueT  value               = wd_values[nonzero_idx];
                 ValueT  vector_value        = wd_vector_x[column_idx];
-                ValueT  nonzero             = value * vector_value;
+                nonzeros[ITEM]              = value * vector_value;
 
-                temp_storage.values[local_nonzero_idx] = nonzero;
+                temp_storage.values[local_nonzero_idx] = nonzeros[ITEM];
             }
 
             __syncthreads();
+
 
             // Replace row-ends with NAN tokens
             #pragma unroll 1
             for (int row = threadIdx.x; row < tile_num_rows; row += BLOCK_THREADS)
             {
-                OffsetT row_end_offset = wd_row_end_offsets[tile_coord.x + row];
-                int local_row_end_offset = row_end_offset - tile_coord.y;
+                OffsetT row_offset              = wd_row_end_offsets[tile_coord.x + row - 1];
+                OffsetT row_end_offset          = wd_row_end_offsets[tile_coord.x + row];
+                int     local_row_end_offset    = row_end_offset - tile_coord.y - 1;
 
                 ValueT value = temp_storage.values[local_row_end_offset];
                 temp_storage.values[local_row_end_offset] = NAN_TOKEN;
 
-                OffsetT save_offset = TILE_ITEMS - tile_num_rows + row;
-                temp_storage.values[save_offset] = value;
+                if (local_row_end_offset < 0)
+                {
+                    prefix_op.running_total.key = 1;
+                    prefix_op.running_total.value = 0.0;
+                }
+
+                s_saved[row] = (row_offset != row_end_offset) ? value : 0.0;
+
+//                CubLog("\tlocal_row_end_offset %d: %f, save_offset %d: %f\n",
+//                    local_row_end_offset, NAN_TOKEN, row, value);
             }
 
             __syncthreads();
@@ -359,29 +377,29 @@ struct AgentSpmv
                                             value;
             }
 
-            __syncthreads();
+            KeyValuePairT tile_aggregate;
+            KeyValuePairT scan_items_out[ITEMS_PER_THREAD];
 
-            KeyValuePairT       tile_aggregate;
-            KeyValuePairT       scan_items_out[ITEMS_PER_THREAD];
-            ReduceBySegmentOpT  scan_op;
             BlockScanT(temp_storage.scan).ExclusiveScan(
                 scan_items,
                 scan_items_out,
                 scan_op,
-                tile_aggregate);
+                tile_aggregate,
+                prefix_op);
 
-            __syncthreads();
+            // Reset running key
+            if (threadIdx.x == 0)
+            {
+                prefix_op.running_total.key = 0;
+                temp_storage.running_total = prefix_op.running_total.value;
+            }
 
             // Compact segment totals
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
                 if (scan_items[ITEM].key)
                 {
-                    OffsetT save_offset = TILE_ITEMS - tile_num_rows + scan_items_out[ITEM].key;
-                    ValueT saved = temp_storage.values[save_offset];
-
-                    scan_items_out[ITEM].value += saved;
-                    temp_storage.values[scan_items_out[ITEM].key] = scan_items_out[ITEM].value;
+                    s_saved[scan_items_out[ITEM].key] += scan_items_out[ITEM].value;
                 }
             }
 
@@ -391,33 +409,13 @@ struct AgentSpmv
             #pragma unroll 1
             for (int row = threadIdx.x; row < tile_num_rows; row += BLOCK_THREADS)
             {
-                ValueT value = temp_storage.values[row];
-                spmv_params.d_vector_y[row] = value;
+//                CubLog("Storing row %d: %f\n", tile_coord.x + row, value);
+                spmv_params.d_vector_y[tile_coord.x + row] = s_saved[row];
             }
 
             __syncthreads();
 
-            temp_storage.tile_coords[threadIdx.x] = lookahead_tile_coord;
-
-            __syncthreads();
-
-/*
-            if (tile_idx >= BLOCK_THREADS)
-                break;
-*/
             tile_coord = tile_coord_end;
-            tile_coord_end = temp_storage.tile_coords[tile_idx + 2];
-        }
-
-
-
-
-        if (threadIdx.x == 0)
-        {
-            KeyValuePairT tile_carry;
-            tile_carry.key = tile_coord.x;
-            tile_carry.value = temp_storage.values[0];
-            d_tile_carry_pairs[blockIdx.x] = tile_carry;
         }
     }
 

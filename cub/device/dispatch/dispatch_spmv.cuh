@@ -58,6 +58,54 @@ namespace cub {
  * SpMV kernel entry points
  *****************************************************************************/
 
+/**
+ * Spmv search kernel. Identifies merge path starting coordinates for each tile.
+ */
+template <
+    typename    SpmvPolicyT,                    ///< Parameterized SpmvPolicy tuning policy type
+    typename    OffsetT,                        ///< Signed integer type for sequence offsets
+    typename    CoordinateT,                    ///< Merge path coordinate type
+    typename    SpmvParamsT>                    ///< SpmvParams type
+__global__ void DeviceSpmvSearchKernel(
+    int             num_merge_tiles,            ///< [in] Number of SpMV merge tiles (spmv grid size)
+    CoordinateT*    d_tile_coordinates,         ///< [out] Pointer to the temporary array of tile starting coordinates
+    SpmvParamsT     spmv_params)                ///< [in] SpMV input parameter bundle
+{
+    /// Constants
+    enum
+    {
+        BLOCK_THREADS           = SpmvPolicyT::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = SpmvPolicyT::ITEMS_PER_THREAD,
+        TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
+    };
+
+    typedef CacheModifiedInputIterator<
+            SpmvPolicyT::ROW_OFFSETS_SEARCH_LOAD_MODIFIER,
+            OffsetT,
+            OffsetT>
+        RowOffsetsSearchIteratorT;
+
+    // Find the starting coordinate for all tiles (plus the end coordinate of the last one)
+    int tile_idx = (blockIdx.x * blockDim.x) + threadIdx.x;
+    if (tile_idx < num_merge_tiles + 1)
+    {
+        OffsetT                         diagonal = (tile_idx * TILE_ITEMS);
+        CoordinateT                     tile_coordinate;
+        CountingInputIterator<OffsetT>  nonzero_indices(0);
+
+        // Search the merge path
+        MergePathSearch(
+            diagonal,
+            RowOffsetsSearchIteratorT(spmv_params.d_row_end_offsets),
+            nonzero_indices,
+            spmv_params.num_rows,
+            spmv_params.num_nonzeros,
+            tile_coordinate);
+
+        // Output starting offset
+        d_tile_coordinates[tile_idx] = tile_coordinate;
+    }
+}
 
 /**
  * Spmv agent entry point
@@ -73,8 +121,10 @@ template <
 __launch_bounds__ (int(SpmvPolicyT::BLOCK_THREADS))
 __global__ void DeviceSpmvKernel(
     SpmvParams<ValueT, OffsetT>     spmv_params,                ///< [in] SpMV input parameter bundle
+    CoordinateT*                    d_tile_coordinates,         ///< [out] Pointer to the temporary array of tile starting coordinates
     KeyValuePair<OffsetT,ValueT>*   d_tile_carry_pairs,         ///< [out] Pointer to the temporary array carry-out dot product row-ids, one per block
-    OffsetT                         items_per_block)            ///< [in] Merge items per block
+    OffsetT                         tiles_per_block,            ///< [in] Merge tiles per block
+    OffsetT                         num_merge_tiles)
 {
     // Spmv agent type specialization
     typedef AgentSpmv<
@@ -88,7 +138,11 @@ __global__ void DeviceSpmvKernel(
     // Shared memory for AgentSpmv
     __shared__ typename AgentSpmvT::TempStorage temp_storage;
 
-    AgentSpmvT(temp_storage, spmv_params).ConsumeRange(d_tile_carry_pairs, items_per_block);
+    AgentSpmvT(temp_storage, spmv_params).ConsumeRange(
+        d_tile_coordinates,
+        d_tile_carry_pairs,
+        tiles_per_block,
+        num_merge_tiles);
 }
 
 
@@ -405,6 +459,7 @@ struct DispatchSpmv
      * kernel invocations.
      */
     template <
+        typename                SpmvSearchKernelT,                  ///< Function type of cub::AgentSpmvSearchKernel
         typename                SpmvKernelT>                        ///< Function type of cub::AgentSpmvKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
@@ -413,6 +468,7 @@ struct DispatchSpmv
         SpmvParamsT&            spmv_params,                        ///< SpMV input parameter bundle
         cudaStream_t            stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous,                  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+        SpmvSearchKernelT       spmv_search_kernel,                 ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
         SpmvKernelT             spmv_kernel,                        ///< [in] Kernel function pointer to parameterization of AgentSpmvKernel
         KernelConfig            spmv_config)                        ///< [in] Dispatch parameters that match the policy that \p spmv_kernel was compiled for
     {
@@ -446,40 +502,66 @@ struct DispatchSpmv
                 spmv_config.block_threads))) break;
             int spmv_occupancy = sm_count * spmv_sm_occupancy;
 
+            // Total number of work items
+            OffsetT num_merge_items = spmv_params.num_rows + spmv_params.num_nonzeros;
+
+            // Number of merge tiles
+            int     tile_items = spmv_config.block_threads* spmv_config.items_per_thread;
+            OffsetT num_merge_tiles = (num_merge_items + tile_items - 1) / tile_items;
+
+            // Grid size
+            dim3    spmv_grid_size(CUB_MIN(num_merge_tiles, spmv_occupancy), 1, 1);
+
+            // Tiles per block
+            OffsetT tiles_per_block = (num_merge_tiles + spmv_grid_size.x - 1) / spmv_grid_size.x;
+
             // Get the temporary storage allocation requirements
-            size_t allocation_sizes[1];
-            allocation_sizes[0] = spmv_occupancy * sizeof(KeyValuePairT);       // bytes needed for block carry-out pairs
+            size_t allocation_sizes[2];
+            allocation_sizes[0] = (num_merge_tiles + 1) * sizeof(CoordinateT);  // bytes needed for tile starting coordinates
+            allocation_sizes[1] = spmv_occupancy * sizeof(KeyValuePairT);       // bytes needed for block carry-out pairs
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-            void* allocations[1];
+            void* allocations[2];
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {
                 // Return if the caller is simply requesting the size of the storage allocation
                 return cudaSuccess;
             }
+            CoordinateT*    d_tile_coordinates  = (CoordinateT*) allocations[0];    // Tile starting coordinates
+            KeyValuePairT*  d_tile_carry_pairs  = (KeyValuePairT*) allocations[1];  // Agent carry-out pairs
 
-            // Alias the allocations
-            KeyValuePairT* d_tile_carry_pairs = (KeyValuePairT*) allocations[0];  // Agent carry-out pairs
+            // Use separate search kernel if we have enough spmv tiles to saturate the device
+            int search_block_size   = INIT_KERNEL_THREADS;
+            int search_grid_size    = (num_merge_tiles + 1 + search_block_size - 1) / search_block_size;
 
-            // Grid size
-            dim3 spmv_grid_size(spmv_occupancy, 1, 1);
+            // Log spmv_search_kernel configuration
+            if (debug_synchronous) CubLog("Invoking spmv_search_kernel<<<%d, %d, 0, %lld>>>()\n",
+                search_grid_size, search_block_size, (long long) stream);
 
-            // Total number of work items
-            OffsetT num_merge_items = spmv_params.num_rows + spmv_params.num_nonzeros;
+            // Invoke spmv_search_kernel
+            spmv_search_kernel<<<search_grid_size, search_block_size, 0, stream>>>(
+                num_merge_tiles,
+                d_tile_coordinates,
+                spmv_params);
 
-            // Work items per thread block
-            OffsetT items_per_block = (num_merge_items + spmv_grid_size.x - 1) / spmv_grid_size.x;
+            // Check for failure to launch
+            if (CubDebug(error = cudaPeekAtLastError())) break;
+
+            // Sync the stream if specified to flush runtime errors
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Log spmv_kernel configuration
-            if (debug_synchronous) CubLog("Invoking spmv_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, %d items per block\n",
-                spmv_grid_size.x, spmv_grid_size.y, spmv_grid_size.z, spmv_config.block_threads, (long long) stream, spmv_config.items_per_thread, spmv_sm_occupancy, items_per_block);
+            if (debug_synchronous) CubLog("Invoking spmv_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, %d tiles per block\n",
+                spmv_grid_size.x, spmv_grid_size.y, spmv_grid_size.z, spmv_config.block_threads, (long long) stream, spmv_config.items_per_thread, spmv_sm_occupancy, tiles_per_block);
 
             // Invoke spmv_kernel
             spmv_kernel<<<spmv_grid_size, spmv_config.block_threads, 0, stream>>>(
                 spmv_params,
+                d_tile_coordinates,
                 d_tile_carry_pairs,
-                items_per_block);
+                tiles_per_block,
+                num_merge_tiles);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -528,6 +610,7 @@ struct DispatchSpmv
                 spmv_params,
                 stream,
                 debug_synchronous,
+                DeviceSpmvSearchKernel<PtxSpmvPolicyT, OffsetT, CoordinateT, SpmvParamsT>,
                 DeviceSpmvKernel<PtxSpmvPolicyT, ScanTileStateT, ValueT, OffsetT, CoordinateT, false, false>,
                 spmv_config))) break;
 
