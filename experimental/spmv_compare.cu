@@ -762,7 +762,7 @@ int main(int argc, char **argv)
     }
     else
     {
-//        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
+        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
 
     CubDebugExit(cudaDeviceSynchronize());
