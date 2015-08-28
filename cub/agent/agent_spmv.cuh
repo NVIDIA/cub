@@ -199,8 +199,8 @@ struct AgentSpmv
     {
             ValueT running_total;
 
-//        union
-//        {
+        union
+        {
             // Smem needed for tile of merge items
             ValueT values[TILE_ITEMS + 1];
 
@@ -214,7 +214,7 @@ struct AgentSpmv
             // Smem needed for tile scanning
             typename BlockScanT::TempStorage scan;
 
-//        };
+        };
     };
 
     /// Temporary storage type (unionable)
@@ -288,134 +288,109 @@ struct AgentSpmv
         if (threadIdx.x == 0)
             temp_storage.running_total = 0.0;
 
-        KeyValuePairT       tile_prefix = {0, 0.0};
         ReduceBySegmentOpT  scan_op;
-        PrefixOpT           prefix_op(tile_prefix, scan_op);
 
         // Read our starting coordinates
-        int tile_idx_begin      = blockIdx.x * tiles_per_block;
-        int tile_idx_end        = CUB_MIN(tile_idx_begin + tiles_per_block, num_merge_tiles);
-        CoordinateT tile_coord  = d_tile_coordinates[tile_idx_begin];
+        int         tile_idx            = blockIdx.x * tiles_per_block;
+        CoordinateT tile_coord          = d_tile_coordinates[tile_idx];
+        CoordinateT tile_coord_end      = d_tile_coordinates[tile_idx + 1];
+        int         tile_num_rows       = tile_coord_end.x - tile_coord.x;
+        int         tile_num_nonzeros   = tile_coord_end.y - tile_coord.y;
 
-        #pragma unroll 1
-        for (int tile_idx = tile_idx_begin; tile_idx < tile_idx_end; ++tile_idx)
+        ValueT *s_saved = temp_storage.values + tile_num_nonzeros + 1;
+
+        // Nonzeros tile
+        #pragma unroll
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            CoordinateT tile_coord_end      = d_tile_coordinates[tile_idx + 1];
+            OffsetT local_nonzero_idx   = (ITEM * BLOCK_THREADS) + threadIdx.x;
+            local_nonzero_idx           = CUB_MIN(local_nonzero_idx, tile_num_nonzeros - 1);
+            OffsetT nonzero_idx         = tile_coord.y + local_nonzero_idx;
 
-            int         tile_num_rows       = tile_coord_end.x - tile_coord.x;
-            int         tile_num_nonzeros   = tile_coord_end.y - tile_coord.y;
+            OffsetT column_idx          = wd_column_indices[nonzero_idx];
+            ValueT  value               = wd_values[nonzero_idx];
+            ValueT  vector_value        = wd_vector_x[column_idx];
 
-            ValueT *s_saved = temp_storage.values + TILE_ITEMS + 1 - tile_num_rows;
-//            ValueT *s_saved = temp_storage.values + tile_num_nonzeros + 1;
+            temp_storage.values[local_nonzero_idx] = value * vector_value;
+        }
 
-/*
-            if (threadIdx.x == 0)
-                CubLog("\n\nTile %d tile_coord(%d,%d), tile_coord_end(%d,%d), tile_num_rows%d, tile_num_nonzeros %d\n\n",
-                    tile_idx,
-                    tile_coord.x, tile_coord.y,
-                    tile_coord_end.x, tile_coord_end.y,
-                    tile_num_rows, tile_num_nonzeros);
-*/
-            // Nonzeros tile
+        __syncthreads();
 
-            ValueT nonzeros[ITEMS_PER_THREAD];
+        // Replace row-ends with NAN tokens
+        #pragma unroll 1
+        for (int row = threadIdx.x; row < tile_num_rows; row += BLOCK_THREADS)
+        {
+            OffsetT row_offset              = wd_row_end_offsets[tile_coord.x + row - 1];
+            OffsetT row_end_offset          = wd_row_end_offsets[tile_coord.x + row];
+            int     local_row_end_offset    = row_end_offset - tile_coord.y - 1;
 
-            #pragma unroll
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-            {
-                OffsetT local_nonzero_idx   = (ITEM * BLOCK_THREADS) + threadIdx.x;
-                OffsetT nonzero_idx         = tile_coord.y + local_nonzero_idx;
-                nonzero_idx = CUB_MIN(nonzero_idx, tile_coord_end.y - 1);
+            ValueT value = temp_storage.values[local_row_end_offset];
+            temp_storage.values[local_row_end_offset] = NAN_TOKEN;
 
-                OffsetT column_idx          = wd_column_indices[nonzero_idx];
-                ValueT  value               = wd_values[nonzero_idx];
-                ValueT  vector_value        = wd_vector_x[column_idx];
-                nonzeros[ITEM]              = value * vector_value;
-
-                temp_storage.values[local_nonzero_idx] = nonzeros[ITEM];
-            }
-
-            __syncthreads();
-
-
-            // Replace row-ends with NAN tokens
-            #pragma unroll 1
-            for (int row = threadIdx.x; row < tile_num_rows; row += BLOCK_THREADS)
-            {
-                OffsetT row_offset              = wd_row_end_offsets[tile_coord.x + row - 1];
-                OffsetT row_end_offset          = wd_row_end_offsets[tile_coord.x + row];
-                int     local_row_end_offset    = row_end_offset - tile_coord.y - 1;
-
-                ValueT value = temp_storage.values[local_row_end_offset];
-                temp_storage.values[local_row_end_offset] = NAN_TOKEN;
-
-                if (local_row_end_offset < 0)
-                {
-                    prefix_op.running_total.key = 1;
-                    prefix_op.running_total.value = 0.0;
-                }
-
-                s_saved[row] = (row_offset != row_end_offset) ? value : 0.0;
+            s_saved[row] = (row_offset != row_end_offset) ? value : 0.0;
 
 //                CubLog("\tlocal_row_end_offset %d: %f, save_offset %d: %f\n",
 //                    local_row_end_offset, NAN_TOKEN, row, value);
-            }
+        }
 
-            __syncthreads();
+        __syncthreads();
 
-            // Read nonzeros into thread-blocked order, setup segment flags
-            KeyValuePairT scan_items[ITEMS_PER_THREAD];
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        // Read nonzeros into thread-blocked order, setup segment flags
+        KeyValuePairT scan_items[ITEMS_PER_THREAD];
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            scan_items[ITEM].key        = 0;
+            scan_items[ITEM].value      = 0.0;
+            int local_nonzero_idx       = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
+
+            if (local_nonzero_idx < tile_num_nonzeros)
             {
-                int     local_nonzero_idx   = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
-                ValueT  value               = temp_storage.values[local_nonzero_idx];
-                bool    is_nan              = (value != value);
+                ValueT value = temp_storage.values[local_nonzero_idx];
+                if (value != value)
+                    scan_items[ITEM].key = 1;
+                else
+                    scan_items[ITEM].value = value;
 
-                scan_items[ITEM].key    = is_nan;
-                scan_items[ITEM].value  = (is_nan || (local_nonzero_idx >= tile_num_nonzeros)) ?
-                                            0.0 :
-                                            value;
             }
+        }
 
-            KeyValuePairT tile_aggregate;
-            KeyValuePairT scan_items_out[ITEMS_PER_THREAD];
 
-            BlockScanT(temp_storage.scan).ExclusiveScan(
-                scan_items,
-                scan_items_out,
-                scan_op,
-                tile_aggregate,
-                prefix_op);
+        // Reduce consecutive thread items in registers
+        KeyValuePairT thread_partial = ThreadReduce(scan_items, scan_op);
 
-            // Reset running key
-            if (threadIdx.x == 0)
+        __syncthreads();
+
+        KeyValuePairT tile_aggregate;
+        BlockScanT(temp_storage.scan).ExclusiveScan(
+            thread_partial,
+            thread_partial,
+            scan_op,
+            tile_aggregate);
+
+        __syncthreads();
+
+        KeyValuePairT scan_items_out[ITEMS_PER_THREAD];
+
+        // Exclusive scan in registers with prefix
+        ThreadScanExclusive(scan_items, scan_items_out, scan_op, thread_partial);
+
+        // Compact segment totals
+        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
+        {
+            if (scan_items[ITEM].key)
             {
-                prefix_op.running_total.key = 0;
-                temp_storage.running_total = prefix_op.running_total.value;
+                s_saved[scan_items_out[ITEM].key] += scan_items_out[ITEM].value;
             }
+        }
 
-            // Compact segment totals
-            for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-            {
-                if (scan_items[ITEM].key)
-                {
-                    s_saved[scan_items_out[ITEM].key] += scan_items_out[ITEM].value;
-                }
-            }
+        __syncthreads();
 
-            __syncthreads();
-
-            // Store row totals
-            #pragma unroll 1
-            for (int row = threadIdx.x; row < tile_num_rows; row += BLOCK_THREADS)
-            {
+        // Store row totals
+        #pragma unroll 1
+        for (int row = threadIdx.x; row < tile_num_rows; row += BLOCK_THREADS)
+        {
 //                CubLog("Storing row %d: %f\n", tile_coord.x + row, value);
-                spmv_params.d_vector_y[tile_coord.x + row] = s_saved[row];
-            }
-
-            __syncthreads();
-
-            tile_coord = tile_coord_end;
+            spmv_params.d_vector_y[tile_coord.x + row] = s_saved[row];
         }
     }
 

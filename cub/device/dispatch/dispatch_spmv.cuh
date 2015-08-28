@@ -510,7 +510,8 @@ struct DispatchSpmv
             OffsetT num_merge_tiles = (num_merge_items + tile_items - 1) / tile_items;
 
             // Grid size
-            dim3    spmv_grid_size(CUB_MIN(num_merge_tiles, spmv_occupancy), 1, 1);
+//            dim3    spmv_grid_size(CUB_MIN(num_merge_tiles, spmv_occupancy), 1, 1);
+            dim3    spmv_grid_size(num_merge_tiles, 1, 1);
 
             // Tiles per block
             OffsetT tiles_per_block = (num_merge_tiles + spmv_grid_size.x - 1) / spmv_grid_size.x;
