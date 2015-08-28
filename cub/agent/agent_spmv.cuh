@@ -269,28 +269,25 @@ struct AgentSpmv
     /**
      * Consume input range
      */
-    __device__ __forceinline__ void ConsumeRange(
+    __device__ __forceinline__ KeyValuePairT ConsumeRange(
+        OffsetT         tile_idx,
         CoordinateT*    d_tile_coordinates,     ///< [in] Pointer to the temporary array of tile starting coordinates
-        KeyValuePairT*  d_tile_carry_pairs,
-        OffsetT         tiles_per_block,
         OffsetT         num_merge_tiles)
     {
+        // Read our starting coordinates
+        CoordinateT tile_coord          = d_tile_coordinates[tile_idx];
+        CoordinateT tile_coord_end      = d_tile_coordinates[tile_idx + 1];
+
+        int         tile_num_rows       = tile_coord_end.x - tile_coord.x;
+        int         tile_num_nonzeros   = tile_coord_end.y - tile_coord.y;
+
+        ValueT *s_saved = temp_storage.values + tile_num_nonzeros + 1;
+
         ValueT NAN_TOKEN;
         InitNan(NAN_TOKEN);
 
         if (threadIdx.x == 0)
             temp_storage.running_total = 0.0;
-
-        ReduceBySegmentOpT  scan_op;
-
-        // Read our starting coordinates
-        int         tile_idx            = blockIdx.x * tiles_per_block;
-        CoordinateT tile_coord          = d_tile_coordinates[tile_idx];
-        CoordinateT tile_coord_end      = d_tile_coordinates[tile_idx + 1];
-        int         tile_num_rows       = tile_coord_end.x - tile_coord.x;
-        int         tile_num_nonzeros   = tile_coord_end.y - tile_coord.y;
-
-        ValueT *s_saved = temp_storage.values + tile_num_nonzeros + 1;
 
         // Nonzeros tile
         #pragma unroll
@@ -315,15 +312,12 @@ struct AgentSpmv
         {
             OffsetT row_offset              = wd_row_end_offsets[tile_coord.x + row - 1];
             OffsetT row_end_offset          = wd_row_end_offsets[tile_coord.x + row];
-            int     local_row_end_offset    = row_end_offset - (tile_coord.y - 1);
+            int     local_row_end_offset    = row_end_offset - tile_coord.y - 1;
 
             ValueT value = temp_storage.values[local_row_end_offset];
             temp_storage.values[local_row_end_offset] = NAN_TOKEN;
 
             s_saved[row] = (row_offset != row_end_offset) ? value : 0.0;
-
-//                CubLog("\tlocal_row_end_offset %d: %f, save_offset %d: %f\n",
-//                    local_row_end_offset, NAN_TOKEN, row, value);
         }
 
         __syncthreads();
@@ -347,16 +341,18 @@ struct AgentSpmv
             }
         }
 
-
         // Reduce consecutive thread items in registers
+        ReduceBySegmentOpT scan_op;
         KeyValuePairT thread_partial = ThreadReduce(scan_items, scan_op);
 
         __syncthreads();
 
+        KeyValuePairT identity = {0, 0.0};
         KeyValuePairT tile_aggregate;
         BlockScanT(temp_storage.scan).ExclusiveScan(
             thread_partial,
             thread_partial,
+            identity,
             scan_op,
             tile_aggregate);
 
@@ -364,9 +360,12 @@ struct AgentSpmv
         {
             __syncthreads();
 
-            KeyValuePairT scan_items_out[ITEMS_PER_THREAD];
+            ValueT prefix = temp_storage.running_total;
+            if (prefix != prefix)
+                ++thread_partial.key;
 
             // Exclusive scan in registers with prefix
+            KeyValuePairT scan_items_out[ITEMS_PER_THREAD];
             ThreadScanExclusive(scan_items, scan_items_out, scan_op, thread_partial);
 
             // Compact segment totals
@@ -384,10 +383,20 @@ struct AgentSpmv
             #pragma unroll 1
             for (int row = threadIdx.x; row < tile_num_rows; row += BLOCK_THREADS)
             {
-    //                CubLog("Storing row %d: %f\n", tile_coord.x + row, value);
-                spmv_params.d_vector_y[tile_coord.x + row] = s_saved[row];
+                ValueT row_total = s_saved[row];
+                if (HAS_ALPHA)
+                    row_total *= spmv_params.alpha;
+
+                spmv_params.d_vector_y[tile_coord.x + row] = row_total;
             }
         }
+
+
+        if (HAS_ALPHA)
+            tile_aggregate.value *= spmv_params.alpha;
+        tile_aggregate.key = tile_coord_end.x;
+
+        return tile_aggregate;
     }
 
 };
