@@ -39,7 +39,7 @@
 
 #include "../../agent/single_pass_scan_operators.cuh"
 #include "../../agent/agent_segment_fixup.cuh"
-#include "../../agent/agent_spmv.cuh"
+#include "../../agent/agent_spmv_orig.cuh"
 #include "../../util_type.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
