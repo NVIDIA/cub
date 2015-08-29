@@ -262,7 +262,148 @@ float TestGpuCsrIoProxy(
 
 
 //---------------------------------------------------------------------
-// cuSparse SpMV
+// cuSparse HybMV
+//---------------------------------------------------------------------
+
+/**
+ * Run cuSparse HYB SpMV (specialized for fp32)
+ */
+template <
+    typename OffsetT>
+float TestCusparseHybmv(
+    float*                          vector_y_in,
+    float*                          reference_vector_y_out,
+    SpmvParams<float, OffsetT>&     params,
+    int                             timing_iterations,
+    cusparseHandle_t                cusparse)
+{
+    // Construct Hyb matrix
+    cusparseMatDescr_t mat_desc;
+    cusparseHybMat_t hyb_desc;
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreateMatDescr(&mat_desc));
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreateHybMat(&hyb_desc));
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseScsr2hyb(
+        cusparse,
+        params.num_cols, params.num_rows,
+        mat_desc,
+        params.d_values, params.d_row_end_offsets, params.d_column_indices,
+        hyb_desc,
+        0,
+        CUSPARSE_HYB_PARTITION_AUTO));
+
+    // Reset input/output vector y
+    CubDebugExit(cudaMemcpy(params.d_vector_y, vector_y_in, sizeof(float) * params.num_rows, cudaMemcpyHostToDevice));
+
+    // Warmup
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseShybmv(
+        cusparse,
+        CUSPARSE_OPERATION_NON_TRANSPOSE,
+        &params.alpha, mat_desc,
+        hyb_desc,
+        params.d_vector_x, &params.beta, params.d_vector_y));
+
+    if (!g_quiet)
+    {
+        int compare = CompareDeviceResults(reference_vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    // Timing
+    float elapsed_millis    = 0.0;
+    GpuTimer timer;
+
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseShybmv(
+            cusparse,
+            CUSPARSE_OPERATION_NON_TRANSPOSE,
+            &params.alpha, mat_desc,
+            hyb_desc,
+            params.d_vector_x, &params.beta, params.d_vector_y));
+    }
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
+
+    // Cleanup
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDestroyHybMat(hyb_desc));
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDestroyMatDescr(mat_desc));
+
+    return elapsed_millis / timing_iterations;
+}
+
+
+/**
+ * Run cuSparse HYB SpMV (specialized for fp64)
+ */
+template <
+    typename OffsetT>
+float TestCusparseHybmv(
+    double*                         vector_y_in,
+    double*                         reference_vector_y_out,
+    SpmvParams<double, OffsetT>&    params,
+    int                             timing_iterations,
+    cusparseHandle_t                cusparse)
+{
+    // Construct Hyb matrix
+    cusparseMatDescr_t mat_desc;
+    cusparseHybMat_t hyb_desc;
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreateMatDescr(&mat_desc));
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreateHybMat(&hyb_desc));
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDcsr2hyb(
+        cusparse,
+        params.num_cols, params.num_rows,
+        mat_desc,
+        params.d_values, params.d_row_end_offsets, params.d_column_indices,
+        hyb_desc,
+        0,
+        CUSPARSE_HYB_PARTITION_AUTO));
+
+    // Reset input/output vector y
+    CubDebugExit(cudaMemcpy(params.d_vector_y, vector_y_in, sizeof(float) * params.num_rows, cudaMemcpyHostToDevice));
+
+    // Warmup
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDhybmv(
+        cusparse,
+        CUSPARSE_OPERATION_NON_TRANSPOSE,
+        &params.alpha, mat_desc,
+        hyb_desc,
+        params.d_vector_x, &params.beta, params.d_vector_y));
+
+    if (!g_quiet)
+    {
+        int compare = CompareDeviceResults(reference_vector_y_out, params.d_vector_y, params.num_rows, true, g_verbose);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    // Timing
+    float elapsed_millis    = 0.0;
+    GpuTimer timer;
+
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDhybmv(
+            cusparse,
+            CUSPARSE_OPERATION_NON_TRANSPOSE,
+            &params.alpha, mat_desc,
+            hyb_desc,
+            params.d_vector_x, &params.beta, params.d_vector_y));
+    }
+    timer.Stop();
+    elapsed_millis += timer.ElapsedMillis();
+
+    // Cleanup
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDestroyHybMat(hyb_desc));
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDestroyMatDescr(mat_desc));
+
+    return elapsed_millis / timing_iterations;
+}
+
+
+
+//---------------------------------------------------------------------
+// cuSparse CsrMV
 //---------------------------------------------------------------------
 
 /**
@@ -578,11 +719,11 @@ void RunTest(
             g_allocator.DeviceAllocate((void **) &params.d_column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros);
             g_allocator.DeviceAllocate((void **) &params.d_vector_x,        sizeof(ValueT) * csr_matrix.num_cols);
             g_allocator.DeviceAllocate((void **) &params.d_vector_y,        sizeof(ValueT) * csr_matrix.num_rows);
-            params.num_rows = csr_matrix.num_rows;
-            params.num_cols = csr_matrix.num_cols;
-            params.num_nonzeros = csr_matrix.num_nonzeros;
-            params.alpha = alpha;
-            params.beta = beta;
+            params.num_rows         = csr_matrix.num_rows;
+            params.num_cols         = csr_matrix.num_cols;
+            params.num_nonzeros     = csr_matrix.num_nonzeros;
+            params.alpha            = alpha;
+            params.beta             = beta;
 
             CubDebugExit(cudaMemcpy(params.d_values,            csr_matrix.values,          sizeof(ValueT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
             CubDebugExit(cudaMemcpy(params.d_row_end_offsets,   csr_matrix.row_offsets,     sizeof(OffsetT) * (csr_matrix.num_rows + 1), cudaMemcpyHostToDevice));
@@ -601,14 +742,20 @@ void RunTest(
             avg_millis = TestGpuMergeCsrmv(vector_y_in, vector_y_out, params, timing_iterations);
             DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
 
-            // Initalize cuSparse
+            // Initialize cuSparse
             cusparseHandle_t cusparse;
             AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreate(&cusparse));
 
             if (!g_quiet) {
-                printf("\n\nCusparse: "); fflush(stdout);
+                printf("\n\nCusparse CsrMV: "); fflush(stdout);
             }
             avg_millis = TestCusparseCsrmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
+            DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
+
+            if (!g_quiet) {
+                printf("\n\nCusparse HybMV: "); fflush(stdout);
+            }
+            avg_millis = TestCusparseHybmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
             DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
 
             // Cleanup
@@ -762,7 +909,7 @@ int main(int argc, char **argv)
     }
     else
     {
-//        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
+        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
 
     CubDebugExit(cudaDeviceSynchronize());
