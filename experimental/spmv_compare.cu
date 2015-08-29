@@ -96,31 +96,6 @@ void SpmvGold(
 // GPU I/O proxy
 //---------------------------------------------------------------------
 
-__device__ __forceinline__ int4 Ld(int4* ptr)
- {
-     int4 retval;
-     asm volatile ("ld.v4.s32 {%0, %1, %2, %3}, [%4];" :
-         "=r"(retval.x),
-         "=r"(retval.y),
-         "=r"(retval.z),
-         "=r"(retval.w) :
-         "l"(ptr));
-     return retval;
-}
-
-__device__ __forceinline__ float4 Ld(float4* ptr)
- {
-     float4 retval;
-     asm volatile ("ld.v4.f32 {%0, %1, %2, %3}, [%4];" :
-         "=f"(retval.x),
-         "=f"(retval.y),
-         "=f"(retval.z),
-         "=f"(retval.w) :
-         "l"(ptr));
-     return retval;
- }
-
-
 /**
  * Read every matrix nonzero value, read every corresponding vector value
  */
@@ -259,6 +234,7 @@ float TestGpuCsrIoProxy(
 
     return elapsed_millis / timing_iterations;
 }
+
 
 
 //---------------------------------------------------------------------
@@ -419,7 +395,7 @@ float TestCusparseCsrmv(
     cusparseHandle_t                cusparse)
 {
     cusparseMatDescr_t desc;
-    cusparseCreateMatDescr(&desc);
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreateMatDescr(&desc));
 
     // Reset input/output vector y
     CubDebugExit(cudaMemcpy(params.d_vector_y, vector_y_in, sizeof(float) * params.num_rows, cudaMemcpyHostToDevice));
@@ -453,7 +429,7 @@ float TestCusparseCsrmv(
     timer.Stop();
     elapsed_millis += timer.ElapsedMillis();
 
-    cusparseDestroyMatDescr(desc);
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDestroyMatDescr(desc));
     return elapsed_millis / timing_iterations;
 }
 
@@ -471,7 +447,7 @@ float TestCusparseCsrmv(
     cusparseHandle_t                cusparse)
 {
     cusparseMatDescr_t desc;
-    cusparseCreateMatDescr(&desc);
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreateMatDescr(&desc));
 
     // Reset input/output vector y
     CubDebugExit(cudaMemcpy(params.d_vector_y, vector_y_in, sizeof(float) * params.num_rows, cudaMemcpyHostToDevice));
@@ -505,7 +481,7 @@ float TestCusparseCsrmv(
     timer.Stop();
     elapsed_millis += timer.ElapsedMillis();
 
-    cusparseDestroyMatDescr(desc);
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDestroyMatDescr(desc));
     return elapsed_millis / timing_iterations;
 }
 
@@ -640,9 +616,11 @@ void RunTest(
     if (!g_quiet)
         printf("\t%d timing iterations\n", timing_iterations);
 
+    // Convert to CSR
     CsrMatrix<ValueT, OffsetT> csr_matrix;
     csr_matrix.FromCoo(coo_matrix);
-    coo_matrix.Clear();
+    if (!args.CheckCmdLineFlag("csrmv"))
+        coo_matrix.Clear();
 
     // Relabel
     if (rcm_relabel)
@@ -660,8 +638,7 @@ void RunTest(
 
         RcmRelabel(csr_matrix, !g_quiet);
 
-        if (!g_quiet)
-        printf("\n");
+        if (!g_quiet) printf("\n");
     }
 
     // Display matrix info
@@ -693,79 +670,76 @@ void RunTest(
 
     float avg_millis;
 
-    {
-        if (g_quiet) {
-            printf("%s, %s, ", args.deviceProp.name, (sizeof(ValueT) > 4) ? "fp64" : "fp32"); fflush(stdout);
-        }
-
-        // Get GPU device bandwidth (GB/s)
-        float device_giga_bandwidth = args.device_giga_bandwidth;
-
-        if (((size_t(csr_matrix.num_rows) * (sizeof(OffsetT) + (sizeof(ValueT) * 2))) +
-            (size_t(csr_matrix.num_nonzeros) * (sizeof(OffsetT) + sizeof(ValueT)))) > args.device_free_physmem)
-        {
-            // Won't fit
-            printf("Too big\n"); fflush(stdout);
-        }
-        else
-        {
-            // Will fit
-
-            // Allocate and initialize GPU problem
-            SpmvParams<ValueT, OffsetT> params;
-
-            g_allocator.DeviceAllocate((void **) &params.d_values,          sizeof(ValueT) * csr_matrix.num_nonzeros);
-            g_allocator.DeviceAllocate((void **) &params.d_row_end_offsets, sizeof(OffsetT) * (csr_matrix.num_rows + 1));
-            g_allocator.DeviceAllocate((void **) &params.d_column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros);
-            g_allocator.DeviceAllocate((void **) &params.d_vector_x,        sizeof(ValueT) * csr_matrix.num_cols);
-            g_allocator.DeviceAllocate((void **) &params.d_vector_y,        sizeof(ValueT) * csr_matrix.num_rows);
-            params.num_rows         = csr_matrix.num_rows;
-            params.num_cols         = csr_matrix.num_cols;
-            params.num_nonzeros     = csr_matrix.num_nonzeros;
-            params.alpha            = alpha;
-            params.beta             = beta;
-
-            CubDebugExit(cudaMemcpy(params.d_values,            csr_matrix.values,          sizeof(ValueT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
-            CubDebugExit(cudaMemcpy(params.d_row_end_offsets,   csr_matrix.row_offsets,     sizeof(OffsetT) * (csr_matrix.num_rows + 1), cudaMemcpyHostToDevice));
-            CubDebugExit(cudaMemcpy(params.d_column_indices,    csr_matrix.column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
-            CubDebugExit(cudaMemcpy(params.d_vector_x,          vector_x,                   sizeof(ValueT) * csr_matrix.num_cols, cudaMemcpyHostToDevice));
-
-            if (!g_quiet) {
-                printf("\n\nGPU CSR I/O Prox: "); fflush(stdout);
-            }
-            avg_millis = TestGpuCsrIoProxy(params, timing_iterations);
-            DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-
-            if (!g_quiet) {
-                printf("\n\nCUB: "); fflush(stdout);
-            }
-            avg_millis = TestGpuMergeCsrmv(vector_y_in, vector_y_out, params, timing_iterations);
-            DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-
-            // Initialize cuSparse
-            cusparseHandle_t cusparse;
-            AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreate(&cusparse));
-
-            if (!g_quiet) {
-                printf("\n\nCusparse CsrMV: "); fflush(stdout);
-            }
-            avg_millis = TestCusparseCsrmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
-            DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-
-            if (!g_quiet) {
-                printf("\n\nCusparse HybMV: "); fflush(stdout);
-            }
-            avg_millis = TestCusparseHybmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
-            DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-
-            // Cleanup
-            if (params.d_values)            g_allocator.DeviceFree(params.d_values);
-            if (params.d_row_end_offsets)   g_allocator.DeviceFree(params.d_row_end_offsets);
-            if (params.d_column_indices)    g_allocator.DeviceFree(params.d_column_indices);
-            if (params.d_vector_x)          g_allocator.DeviceFree(params.d_vector_x);
-            if (params.d_vector_y)          g_allocator.DeviceFree(params.d_vector_y);
-        }
+    if (g_quiet) {
+        printf("%s, %s, ", args.deviceProp.name, (sizeof(ValueT) > 4) ? "fp64" : "fp32"); fflush(stdout);
     }
+
+    // Get GPU device bandwidth (GB/s)
+    float device_giga_bandwidth = args.device_giga_bandwidth;
+
+    // Allocate and initialize GPU problem
+    SpmvParams<ValueT, OffsetT> params;
+
+    CubDebugExit(g_allocator.DeviceAllocate((void **) &params.d_values,          sizeof(ValueT) * csr_matrix.num_nonzeros));
+    CubDebugExit(g_allocator.DeviceAllocate((void **) &params.d_row_end_offsets, sizeof(OffsetT) * (csr_matrix.num_rows + 1)));
+    CubDebugExit(g_allocator.DeviceAllocate((void **) &params.d_column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros));
+    CubDebugExit(g_allocator.DeviceAllocate((void **) &params.d_vector_x,        sizeof(ValueT) * csr_matrix.num_cols));
+    CubDebugExit(g_allocator.DeviceAllocate((void **) &params.d_vector_y,        sizeof(ValueT) * csr_matrix.num_rows));
+    params.num_rows         = csr_matrix.num_rows;
+    params.num_cols         = csr_matrix.num_cols;
+    params.num_nonzeros     = csr_matrix.num_nonzeros;
+    params.alpha            = alpha;
+    params.beta             = beta;
+
+    CubDebugExit(cudaMemcpy(params.d_values,            csr_matrix.values,          sizeof(ValueT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(params.d_row_end_offsets,   csr_matrix.row_offsets,     sizeof(OffsetT) * (csr_matrix.num_rows + 1), cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(params.d_column_indices,    csr_matrix.column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(params.d_vector_x,          vector_x,                   sizeof(ValueT) * csr_matrix.num_cols, cudaMemcpyHostToDevice));
+
+    if (!g_quiet) {
+        printf("\n\nGPU CSR I/O Prox: "); fflush(stdout);
+    }
+    avg_millis = TestGpuCsrIoProxy(params, timing_iterations);
+    DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
+
+    if (args.CheckCmdLineFlag("csrmv"))
+    {
+        if (!g_quiet) {
+            printf("\n\nCUB: "); fflush(stdout);
+        }
+        avg_millis = TestGpuMergeCsrmv(vector_y_in, vector_y_out, params, timing_iterations);
+        DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
+    }
+
+    // Initialize cuSparse
+    cusparseHandle_t cusparse;
+    AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreate(&cusparse));
+
+    if (args.CheckCmdLineFlag("csrmv"))
+    {
+        if (!g_quiet) {
+            printf("\n\nCusparse CsrMV: "); fflush(stdout);
+        }
+        avg_millis = TestCusparseCsrmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
+        DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
+    }
+
+    if (args.CheckCmdLineFlag("hybmv"))
+    {
+        if (!g_quiet) {
+            printf("\n\nCusparse HybMV: "); fflush(stdout);
+        }
+        avg_millis = TestCusparseHybmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
+        DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
+    }
+
+
+    // Cleanup
+    if (params.d_values)            CubDebugExit(g_allocator.DeviceFree(params.d_values));
+    if (params.d_row_end_offsets)   CubDebugExit(g_allocator.DeviceFree(params.d_row_end_offsets));
+    if (params.d_column_indices)    CubDebugExit(g_allocator.DeviceFree(params.d_column_indices));
+    if (params.d_vector_x)          CubDebugExit(g_allocator.DeviceFree(params.d_vector_x));
+    if (params.d_vector_y)          CubDebugExit(g_allocator.DeviceFree(params.d_vector_y));
 
     if (vector_x)                   delete[] vector_x;
     if (vector_y_in)                delete[] vector_y_in;
@@ -852,6 +826,7 @@ int main(int argc, char **argv)
     {
         printf(
             "%s "
+            "[--csrmv | --hybmv | --bsrmv ] "
             "[--device=<device-id>] "
             "[--quiet] "
             "[--v] "
