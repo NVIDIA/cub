@@ -38,7 +38,7 @@
 #include <iterator>
 #include <limits>
 
-#include "dispatch/dispatch_spmv.cuh"
+#include "dispatch/dispatch_spmv_orig.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
