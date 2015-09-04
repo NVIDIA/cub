@@ -2,16 +2,29 @@
 
 for i in 1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768 65536 131072 262144 524288 1048576 2097152 4194304 8388608 16777216
 do
-	$1 --dense=$i $2 $3 $4 $5 $6 $7
+	echo `date`, `$1 --dense=$i $2 $3 $4 $5 $6 $7`
 done
 
+echo
+echo
+
+for i in `ls /home/dumerrill/graphs/spmv/*.mtx`
+do
+    if [ "`head -n 50 $i | grep complex`" = "" ]
+    then
+    	echo `date`, `$1 --mtx=$i $2 $3 $4 $5 $6 $7`
+    fi
+done
+
+echo
 echo
 
 for i in `ls /scratch/dumerrill/graphs/mtx/*.mtx`
 #for i in `ls /cygdrive/w/Dev/UFget/mtx/*.mtx`
 do 
-	$1 --mtx=$i $2 $3 $4 $5 $6 $7
+    if [ "`head -n 50 $i | grep complex`" = "" ]
+    then
+    	echo `date`, `$1 --mtx=$i $2 $3 $4 $5 $6 $7`
+    fi
 done 
 
-#$1 --grid3d=300 $2 $3 $4 $5 $6 $7
-#$1 --grid2d=4000 $2 $3 $4 $5 $6 $7

@@ -266,7 +266,6 @@ float TestCusparseHybmv(
         hyb_desc,
         0,
         CUSPARSE_HYB_PARTITION_AUTO);
-    printf("Status %d %d\n", status, CUSPARSE_STATUS_EXECUTION_FAILED);
     AssertEquals(CUSPARSE_STATUS_SUCCESS, status);
 
 
