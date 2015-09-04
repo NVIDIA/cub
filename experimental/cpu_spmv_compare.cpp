@@ -646,6 +646,7 @@ float TestOmpCsrIoProxy(
 // CPU merge-based SpMV
 //---------------------------------------------------------------------
 
+/*
 // Doc version
 template <typename CsrMatrix>
 // OpenMP CPU merge-based SpMV (y = Ax)
@@ -695,7 +696,7 @@ void OmpMergeCsrmv(int num_threads, CsrMatrix& A, double* x, double* y)
         if (row_carry_out[tid] < A.num_rows)
             y[row_carry_out[tid]] += value_carry_out[tid];
 }
-
+*/
 
 
 // OpenMP CPU merge-based SpMV
