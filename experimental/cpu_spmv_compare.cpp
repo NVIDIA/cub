@@ -819,6 +819,176 @@ float TestOmpMergeCsrmv(
 }
 
 
+//---------------------------------------------------------------------
+// Autotuned MKL SpMV
+//---------------------------------------------------------------------
+
+int g_expected_calls = 1000000;
+
+/**
+ * Run MKL SpMV (specialized for fp32)
+ */
+template <
+    typename OffsetT>
+float TestMklCsrmvTuned(
+    CsrMatrix<float, OffsetT>&      a,
+    float*                          vector_x,
+    float*                          reference_vector_y_out,
+    float*                          vector_y_out,
+    int                             timing_iterations)
+{
+    float alpha = 1.0;
+    float beta = 0.0;
+
+    sparse_status_t status;
+
+    CpuTimer timer;
+    timer.Start();
+
+    // Create CSR handle
+    sparse_matrix_t mkl_a;
+    status = mkl_sparse_s_create_csr(
+        &mkl_a,
+        SPARSE_INDEX_BASE_ZERO,
+        a.num_rows,
+        a.num_cols,
+        a.row_offsets,
+        a.row_offsets + 1,
+        a.column_indices,
+        a.values);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Could not create handle: %d\n", status); exit(1);
+    }
+
+    // Set MV hint
+    matrix_descr mkl_a_desc;
+    mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
+    status = mkl_sparse_set_mv_hint(mkl_a, SPARSE_OPERATION_NON_TRANSPOSE, mkl_a_desc, g_expected_calls);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Could not set hint: %d\n", status); exit(1);
+    }
+
+    // Optimize
+    status = mkl_sparse_optimize(mkl_a);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Could not optimize: %d\n", status); exit(1);
+    }
+
+    timer.Stop();
+    float elapsed_millis = timer.ElapsedMillis();
+    printf("mkl tune ms, %.5f, ", elapsed_millis);
+
+    // Warmup
+    status = mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("SpMV failed: %d\n", status); exit(1);
+    }
+    if (!g_quiet)
+    {
+        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    // Timing
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        status = mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
+    }
+    timer.Stop();
+    elapsed_millis = timer.ElapsedMillis();
+
+    // Cleanup
+    status = mkl_sparse_destroy(mkl_a);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Cleanup failed: %d\n", status); exit(1);
+    }
+
+    return elapsed_millis / timing_iterations;
+}
+
+/**
+ * Run MKL SpMV (specialized for fp64)
+ */
+template <
+    typename OffsetT>
+float TestMklCsrmvTuned(
+    CsrMatrix<double, OffsetT>&      a,
+    double*                          vector_x,
+    double*                          reference_vector_y_out,
+    double*                          vector_y_out,
+    int                             timing_iterations)
+{
+    double alpha = 1.0;
+    double beta = 0.0;
+
+    sparse_status_t status;
+
+    CpuTimer timer;
+    timer.Start();
+
+    // Create CSR handle
+    matrix_descr mkl_a_desc;
+    mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
+    sparse_matrix_t mkl_a;
+    status = mkl_sparse_d_create_csr(
+        &mkl_a,
+        SPARSE_INDEX_BASE_ZERO,
+        a.num_rows,
+        a.num_cols,
+        a.row_offsets,
+        a.row_offsets + 1,
+        a.column_indices,
+        a.values);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Could not create handle: %d\n", status); exit(1);
+    }
+
+    // Set MV hint
+    status = mkl_sparse_set_mv_hint(mkl_a, SPARSE_OPERATION_NON_TRANSPOSE, mkl_a_desc, g_expected_calls);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Could not set hint: %d\n", status); exit(1);
+    }
+
+    // Optimize
+    status = mkl_sparse_optimize(mkl_a);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Could not optimize: %d\n", status); exit(1);
+    }
+
+    timer.Stop();
+    float elapsed_millis = timer.ElapsedMillis();
+    printf("mkl tune ms, %.5f, ", elapsed_millis);
+
+    // Warmup
+    status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("SpMV failed: %d\n", status); exit(1);
+    }
+    if (!g_quiet)
+    {
+        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    // Timing
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
+    }
+    timer.Stop();
+    elapsed_millis = timer.ElapsedMillis();
+
+    // Cleanup
+    status = mkl_sparse_destroy(mkl_a);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Cleanup failed: %d\n", status); exit(1);
+    }
+
+    return elapsed_millis / timing_iterations;
+}
+
 
 //---------------------------------------------------------------------
 // MKL SpMV
@@ -906,7 +1076,6 @@ float TestMklCsrmv(
  */
 template <typename ValueT, typename OffsetT>
 void DisplayPerf(
-    float                           device_giga_bandwidth,
     double                          avg_millis,
     CsrMatrix<ValueT, OffsetT>&     csr_matrix)
 {
@@ -918,18 +1087,16 @@ void DisplayPerf(
     effective_bandwidth = double(total_bytes) / avg_millis / 1.0e6;
 
     if (!g_quiet)
-        printf("fp%d: %.4f avg ms, %.5f gflops, %.3lf effective GB/s (%.2f%% peak)\n",
+        printf("fp%d: %.4f avg ms, %.5f gflops, %.3lf effective GB/s\n",
             int(sizeof(ValueT) * 8),
             avg_millis,
             2 * nz_throughput,
-            effective_bandwidth,
-            effective_bandwidth / device_giga_bandwidth * 100);
+            effective_bandwidth);
     else
-        printf("%.5f, %.6f, %.3lf, %.2f%%, ",
+        printf("%.5f, %.6f, %.3lf, ",
             avg_millis,
             2 * nz_throughput,
-            effective_bandwidth,
-            effective_bandwidth / device_giga_bandwidth * 100);
+            effective_bandwidth);
 
     fflush(stdout);
 }
@@ -1054,23 +1221,33 @@ void RunTests(
 
     float avg_millis;
 
+    // MKL SpMV Tuned
+    if (!g_quiet) {
+        printf("\n\nTuned MKL SpMV: "); fflush(stdout);
+    }
+    avg_millis = TestMklCsrmvTuned(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
+    DisplayPerf(avg_millis, csr_matrix);
+
+    // MKL SpMV
     if (!g_quiet) {
         printf("\n\nMKL SpMV: "); fflush(stdout);
     }
     avg_millis = TestMklCsrmv(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
-    DisplayPerf(30, avg_millis, csr_matrix);
+    DisplayPerf(avg_millis, csr_matrix);
 
+    //  IO Proxy
     if (!g_quiet) {
         printf("\n\nCPU CSR I/O Proxy: "); fflush(stdout);
     }
     avg_millis = TestOmpCsrIoProxy(csr_matrix, vector_x, timing_iterations);
-    DisplayPerf(30, avg_millis, csr_matrix);
+    DisplayPerf(avg_millis, csr_matrix);
 
+    // Merge SpMV
     if (!g_quiet) {
         printf("\n\nOMP SpMV: "); fflush(stdout);
     }
     avg_millis = TestOmpMergeCsrmv(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
-    DisplayPerf(30, avg_millis, csr_matrix);
+    DisplayPerf(avg_millis, csr_matrix);
 
     if (vector_x)                   mkl_free(vector_x);
     if (vector_y_in)                mkl_free(vector_y_in);
