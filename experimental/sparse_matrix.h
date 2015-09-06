@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <numa.h>
 #include <cmath>
 #include <cstring>
 
@@ -766,9 +767,14 @@ struct CsrMatrix
     void Clear()
     {
 #ifdef CUB_MKL
-        if (row_offsets)    mkl_free(row_offsets);
-        if (column_indices) mkl_free(column_indices);
-        if (values)         mkl_free(values);
+//        if (row_offsets)    mkl_free(row_offsets);
+//        if (column_indices) mkl_free(column_indices);
+//        if (values)         mkl_free(values);
+
+        numa_free(row_offsets, sizeof(OffsetT) * (num_rows + 1));
+        numa_free(values, sizeof(ValueT) * num_nonzeros);
+        numa_free(column_indices, sizeof(OffsetT) * num_nonzeros);
+
 #else
         if (row_offsets)    delete[] row_offsets;
         if (column_indices) delete[] column_indices;
@@ -932,9 +938,19 @@ struct CsrMatrix
         num_nonzeros    = coo_matrix.num_nonzeros;
 
 #ifdef CUB_MKL
-        row_offsets     = (OffsetT*) mkl_malloc(sizeof(OffsetT) * (num_rows + 1), 4096);
-        column_indices  = (OffsetT*) mkl_malloc(sizeof(OffsetT) * num_nonzeros, 4096);
-        values          = (ValueT*) mkl_malloc(sizeof(ValueT) * num_nonzeros, 4096);
+
+//        values          = (ValueT*) mkl_malloc(sizeof(ValueT) * num_nonzeros, 4096);
+//        row_offsets     = (OffsetT*) mkl_malloc(sizeof(OffsetT) * (num_rows + 1), 4096);
+//        column_indices  = (OffsetT*) mkl_malloc(sizeof(OffsetT) * num_nonzeros, 4096);
+
+//        values          = (ValueT*) numa_alloc_interleaved(sizeof(ValueT) * num_nonzeros);
+//        row_offsets     = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * (num_rows + 1));
+//        column_indices  = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * num_nonzeros);
+
+        row_offsets     = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * (num_rows + 1));
+        column_indices  = (OffsetT*) numa_alloc_onnode(sizeof(OffsetT) * num_nonzeros, 0);
+        values          = (ValueT*) numa_alloc_onnode(sizeof(ValueT) * num_nonzeros, 1);
+
 #else
         row_offsets     = new OffsetT[num_rows + 1];
         column_indices  = new OffsetT[num_nonzeros];

@@ -614,7 +614,7 @@ float TestOmpCsrIoProxy(
     ValueT* vector_y_out = (ValueT*) mkl_malloc(sizeof(ValueT) * a.num_rows, 4096);
 
     if (g_omp_threads == -1)
-        g_omp_threads = omp_get_num_procs() / 2; 
+        g_omp_threads = omp_get_num_procs(); 
 
     if (!g_quiet)
         printf("\tUsing %d threads on %d procs\n", g_omp_threads, omp_get_num_procs());
@@ -789,7 +789,7 @@ float TestOmpMergeCsrmv(
     int                             timing_iterations)
 {
     if (g_omp_threads == -1)
-        g_omp_threads = omp_get_num_procs() / 2; 
+        g_omp_threads = omp_get_num_procs(); 
 
     if (!g_quiet)
         printf("\tUsing %d threads on %d procs\n", g_omp_threads, omp_get_num_procs());
