@@ -947,7 +947,8 @@ struct CsrMatrix
 //        row_offsets     = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * (num_rows + 1));
 //        column_indices  = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * num_nonzeros);
 
-        row_offsets     = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * (num_rows + 1));
+//        row_offsets     = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * (num_rows + 1));
+        row_offsets     = (OffsetT*) numa_alloc_onnode(sizeof(OffsetT) * (num_rows + 1), 0);
         column_indices  = (OffsetT*) numa_alloc_onnode(sizeof(OffsetT) * num_nonzeros, 0);
         values          = (ValueT*) numa_alloc_onnode(sizeof(ValueT) * num_nonzeros, 1);
 

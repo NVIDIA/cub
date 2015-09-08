@@ -519,6 +519,7 @@ int CompareResults(float* computed, float* reference, OffsetT len, bool verbose 
                 if (verbose) std::cout << "INCORRECT: [" << i << "]: "
                     << computed[i] << " != "
                     << reference[i] << " (difference:" << difference << ", fraction: " << fraction << ")";
+
                 return 1;
             }
         }
@@ -709,13 +710,11 @@ void OmpMergeCsrmv(
     ValueT*                         vector_x,
     ValueT*                         vector_y_out)
 {
-    OffsetT     row_carry_out[1024];
-    ValueT      value_carry_out[1024];
-
-    int         slices = num_threads * g_omp_oversub;
+    OffsetT     row_carry_out[256];
+    ValueT      value_carry_out[256];
 
     #pragma omp parallel for schedule(static) num_threads(num_threads)
-    for (int tid = 0; tid < slices; tid++)
+    for (int tid = 0; tid < num_threads; tid++)
     {
         OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
         OffsetT                         items_per_thread    = (num_merge_items + num_threads - 1) / num_threads;
@@ -731,31 +730,20 @@ void OmpMergeCsrmv(
         MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
         MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord_end);
 
-        ValueT running_total = ValueT(0.0);
-
         // Consume whole rows
         for (; thread_coord.x < thread_coord_end.x; ++thread_coord.x)
         {
-            for (; thread_coord.y + 4 <= row_end_offsets[thread_coord.x]; thread_coord.y += 4)
-            {
-                ValueT v0 = a.values[thread_coord.y + 0] * vector_x[a.column_indices[thread_coord.y + 0]];
-                ValueT v1 = a.values[thread_coord.y + 1] * vector_x[a.column_indices[thread_coord.y + 1]];
-                ValueT v2 = a.values[thread_coord.y + 2] * vector_x[a.column_indices[thread_coord.y + 2]];
-                ValueT v3 = a.values[thread_coord.y + 3] * vector_x[a.column_indices[thread_coord.y + 3]];
-
-                running_total += v0 + v1 + v2 + v3;
-            }
-
+            ValueT running_total = 0.0;
             for (; thread_coord.y < row_end_offsets[thread_coord.x]; ++thread_coord.y)
             {
                 running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
             }
 
             vector_y_out[thread_coord.x] = running_total;
-            running_total = ValueT(0.0);
         }
 
         // Consume partial portion of thread's last row
+        ValueT running_total = 0.0;
         for (; thread_coord.y < thread_coord_end.y; ++thread_coord.y)
         {
             running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
@@ -767,7 +755,7 @@ void OmpMergeCsrmv(
     }
 
     // Carry-out fix-up
-    for (int tid = 0; tid < slices - 1; ++tid)
+    for (int tid = 0; tid < num_threads - 1; ++tid)
     {
         if (row_carry_out[tid] < a.num_rows)
             vector_y_out[row_carry_out[tid]] += value_carry_out[tid];
@@ -790,9 +778,28 @@ float TestOmpMergeCsrmv(
 {
     if (g_omp_threads == -1)
         g_omp_threads = omp_get_num_procs(); 
+    int num_threads = g_omp_threads;
 
     if (!g_quiet)
         printf("\tUsing %d threads on %d procs\n", g_omp_threads, omp_get_num_procs());
+
+    #pragma omp parallel for schedule(static) num_threads(num_threads)
+    for (int tid = 0; tid < num_threads; tid++)
+    {
+        OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
+        OffsetT                         items_per_thread    = (num_merge_items + num_threads - 1) / num_threads;
+        OffsetT*                        row_end_offsets     = a.row_offsets + 1;
+        CountingInputIterator<OffsetT>  nonzero_indices(0);
+
+        int start_diagonal      = std::min(items_per_thread * tid, num_merge_items);
+        int end_diagonal        = std::min(start_diagonal + items_per_thread, num_merge_items);
+
+        int2 thread_coord;
+        int2 thread_coord_end;
+
+        MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
+        MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord_end);
+    }
 
     // Warmup
     OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
@@ -814,6 +821,182 @@ float TestOmpMergeCsrmv(
     }
     timer.Stop();
     elapsed_millis += timer.ElapsedMillis();
+
+    return elapsed_millis / timing_iterations;
+}
+
+
+
+//---------------------------------------------------------------------
+// CPU merge-based SpMV (NUMA)
+//---------------------------------------------------------------------
+
+
+// OpenMP CPU merge-based SpMV NUMA
+template <
+    typename ValueT,
+    typename OffsetT>
+void OmpMergeCsrmvNuma(
+    int                             num_threads,
+    CsrMatrix<ValueT, OffsetT>&     a,
+    int2*       __restrict__        coordinates,
+    OffsetT*    __restrict__        row_end_offsets,
+    OffsetT**   __restrict__        column_indices,
+    ValueT**    __restrict__        values,
+    ValueT*     __restrict__        vector_x,
+    ValueT*     __restrict__        vector_y_out)
+{
+    OffsetT     row_carry_out[256];
+    ValueT      value_carry_out[256];
+
+    #pragma omp parallel for schedule(static) num_threads(num_threads)
+    for (int tid = 0; tid < num_threads; tid++)
+    {
+        CountingInputIterator<OffsetT>  nonzero_indices(0);
+
+        int2                            thread_coord        = coordinates[tid];
+        int2                            thread_coord_end    = coordinates[tid + 1];
+
+        OffsetT                         num_rows            = thread_coord_end.x - thread_coord.x;
+        OffsetT                         num_nonzeros        = thread_coord_end.y - thread_coord.y;
+        OffsetT                         local_nonzero       = 0;
+
+        OffsetT* __restrict__ ci = column_indices[tid];
+        ValueT* __restrict__ v = values[tid];
+
+        // Consume whole rows
+        for (OffsetT local_row = 0; local_row < num_rows; ++local_row)
+        {
+            ValueT  running_total       = 0.0;
+            OffsetT nonzero_end         = row_end_offsets[thread_coord.x + local_row];
+            OffsetT local_nonzero_end   = nonzero_end - thread_coord.y;
+
+            for (; local_nonzero < local_nonzero_end; ++local_nonzero)
+            {
+                running_total += v[local_nonzero] * vector_x[ci[local_nonzero]];
+            }
+
+            vector_y_out[thread_coord.x + local_row] = running_total;
+        }
+
+        // Consume partial portion of thread's last row
+        ValueT running_total = 0.0;
+        for (; local_nonzero < num_nonzeros; ++local_nonzero)
+        {
+            running_total += v[local_nonzero] * vector_x[ci[local_nonzero]];
+        }
+
+        // Save carry-outs
+        row_carry_out[tid]      = thread_coord_end.x;
+        value_carry_out[tid]    = running_total;
+    }
+
+    // Carry-out fix-up
+    for (int tid = 0; tid < num_threads - 1; ++tid)
+    {
+        if (row_carry_out[tid] < a.num_rows)
+            vector_y_out[row_carry_out[tid]] += value_carry_out[tid];
+    }
+}
+
+
+/**
+ * Run OmpMergeCsrmv NUMA
+ */
+template <
+    typename ValueT,
+    typename OffsetT>
+float TestOmpMergeCsrmvNuma(
+    CsrMatrix<ValueT, OffsetT>&     a,
+    ValueT*                         vector_x,
+    ValueT*                         reference_vector_y_out,
+    ValueT*                         vector_y_out,
+    int                             timing_iterations)
+{
+    if (g_omp_threads == -1)
+        g_omp_threads = omp_get_num_procs(); 
+
+    int num_threads = g_omp_threads;
+
+    if (!g_quiet)
+        printf("\tUsing %d threads on %d procs\n", g_omp_threads, omp_get_num_procs());
+
+    int2        coordinates[256];
+    OffsetT*    column_indices[256];
+    ValueT*     values[256];
+
+    OffsetT*    row_end_offsets = a.row_offsets + 1;
+
+    coordinates[0] = {0,0};
+    
+    CpuTimer timer;
+    timer.Start();
+
+    // Initialize coordinates and local memory
+    #pragma omp parallel for schedule(static) num_threads(num_threads)
+    for (int tid = 0; tid < num_threads; tid++)
+    {
+        OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
+        OffsetT                         items_per_thread    = (num_merge_items + num_threads - 1) / num_threads;
+        CountingInputIterator<OffsetT>  nonzero_indices(0);
+
+        int start_diagonal      = std::min(items_per_thread * tid, num_merge_items);
+        int end_diagonal        = std::min(start_diagonal + items_per_thread, num_merge_items);
+
+        int2 thread_coord, thread_coord_end;
+        MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
+        MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord_end);
+
+        coordinates[tid + 1] = thread_coord_end;
+        
+        OffsetT num_rows            = thread_coord_end.x - thread_coord.x;
+        OffsetT num_nonzeros        = thread_coord_end.y - thread_coord.y;
+
+        int num_nodes = numa_num_task_nodes();
+        int my_node;
+        struct bitmask *bm = numa_get_run_node_mask();
+        for (int node = 0; node < num_nodes; ++node) {
+            if (numa_bitmask_isbitset(bm, node)) {
+                my_node = node;
+            }
+        }
+
+        char* mem               = (char*) numa_alloc_onnode((sizeof(OffsetT) + sizeof(ValueT)) * num_nonzeros + 4096, my_node);
+        size_t value_pages      = ((sizeof(ValueT) * num_nonzeros) + 4096 - 1) / 4096;
+        values[tid]             = (ValueT*) mem;
+        column_indices[tid]     = (OffsetT*) (mem + (value_pages * 4096));
+
+        for (int i = 0; i < num_nonzeros; ++i) {
+            column_indices[tid][i] = a.column_indices[thread_coord.y + i];
+            values[tid][i] = a.values[thread_coord.y + i];
+        }
+    }
+
+    timer.Stop();
+    float elapsed_millis = timer.ElapsedMillis();
+    printf("Numa setup ms, %.5f, ", elapsed_millis); 
+
+    // Warmup
+    OmpMergeCsrmvNuma(g_omp_threads, a, coordinates, row_end_offsets, column_indices, values, vector_x, vector_y_out);
+    if (!g_quiet)
+    {
+        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+    OmpMergeCsrmvNuma(g_omp_threads, a, coordinates, row_end_offsets, column_indices, values, vector_x, vector_y_out);
+    OmpMergeCsrmvNuma(g_omp_threads, a, coordinates, row_end_offsets, column_indices, values, vector_x, vector_y_out);
+
+    // Timing
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        OmpMergeCsrmvNuma(g_omp_threads, a, coordinates, row_end_offsets, column_indices, values, vector_x, vector_y_out);
+    }
+    timer.Stop();
+    elapsed_millis = timer.ElapsedMillis();
+
+    // Cleanup
+    // Todo.
 
     return elapsed_millis / timing_iterations;
 }
@@ -845,8 +1028,19 @@ float TestMklCsrmvTuned(
     CpuTimer timer;
     timer.Start();
 
+
+
+    for (int i = 0; i < a.num_rows; ++i)
+        if (a.row_offsets[i] == a.row_offsets[i + 1]) { 
+            printf("\n\tHAS ZERO-LENGTH ROWS!!\n"); break;
+        }
+        
+    matrix_descr mkl_a_desc;
+    memset(&mkl_a_desc, 0, sizeof(matrix_descr));
+    mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
+
     // Create CSR handle
-    sparse_matrix_t mkl_a;
+    sparse_matrix_t mkl_a, mkl_b;
     status = mkl_sparse_s_create_csr(
         &mkl_a,
         SPARSE_INDEX_BASE_ZERO,
@@ -856,13 +1050,8 @@ float TestMklCsrmvTuned(
         a.row_offsets + 1,
         a.column_indices,
         a.values);
-    if (status != SPARSE_STATUS_SUCCESS) {
-        printf("Could not create handle: %d\n", status); exit(1);
-    }
 
     // Set MV hint
-    matrix_descr mkl_a_desc;
-    mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
     status = mkl_sparse_set_mv_hint(mkl_a, SPARSE_OPERATION_NON_TRANSPOSE, mkl_a_desc, g_expected_calls);
     if (status != SPARSE_STATUS_SUCCESS) {
         printf("Could not set hint: %d\n", status); exit(1);
@@ -927,9 +1116,11 @@ float TestMklCsrmvTuned(
     CpuTimer timer;
     timer.Start();
 
-    // Create CSR handle
     matrix_descr mkl_a_desc;
-    mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
+//    mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
+    memset(&mkl_a_desc, 0, sizeof(matrix_descr));
+
+    // Create CSR handle
     sparse_matrix_t mkl_a;
     status = mkl_sparse_d_create_csr(
         &mkl_a,
@@ -1220,14 +1411,14 @@ void RunTests(
     SpmvGold(csr_matrix, vector_x, vector_y_in, reference_vector_y_out, alpha, beta);
 
     float avg_millis;
-
+/*
     // MKL SpMV Tuned
     if (!g_quiet) {
         printf("\n\nTuned MKL SpMV: "); fflush(stdout);
     }
     avg_millis = TestMklCsrmvTuned(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
-
+*/
     // MKL SpMV
     if (!g_quiet) {
         printf("\n\nMKL SpMV: "); fflush(stdout);
@@ -1244,9 +1435,16 @@ void RunTests(
 
     // Merge SpMV
     if (!g_quiet) {
-        printf("\n\nOMP SpMV: "); fflush(stdout);
+        printf("\nMerge SpMV: "); fflush(stdout);
     }
     avg_millis = TestOmpMergeCsrmv(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
+    DisplayPerf(avg_millis, csr_matrix);
+
+    // Merge SpMV NUMA
+    if (!g_quiet) {
+        printf("\nMerge SpMV NUMA: "); fflush(stdout);
+    }
+    avg_millis = TestOmpMergeCsrmvNuma(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
 
     if (vector_x)                   mkl_free(vector_x);
@@ -1316,6 +1514,10 @@ int main(int argc, char **argv)
     args.GetCmdLineArgument("beta", beta);
     args.GetCmdLineArgument("threads", g_omp_threads);
     args.GetCmdLineArgument("oversub", g_omp_oversub);
+
+    int is_numa = numa_available();
+    if (!g_quiet)
+        printf("NUMA: %d\n", (is_numa >= 0));
 
     // Run test(s)
     if (fp64)
