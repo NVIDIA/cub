@@ -32,7 +32,6 @@
 
 #pragma once
 
-#include <numa.h>
 #include <cmath>
 #include <cstring>
 
@@ -46,6 +45,7 @@
 #include <stdio.h>
 
 #ifdef CUB_MKL
+    #include <numa.h>
     #include <mkl.h>
 #endif
 
@@ -754,11 +754,19 @@ struct CsrMatrix
     OffsetT*    row_offsets;
     OffsetT*    column_indices;
     ValueT*     values;
+    bool        numa_malloc;
 
     /**
      * Constructor
      */
-    CsrMatrix() : num_rows(0), num_cols(0), num_nonzeros(0), row_offsets(NULL), column_indices(NULL), values(NULL) {}
+    CsrMatrix() : num_rows(0), num_cols(0), num_nonzeros(0), row_offsets(NULL), column_indices(NULL), values(NULL) 
+    {
+#ifdef CUB_MKL
+        numa_malloc = ((numa_available() >= 0) && (numa_num_task_nodes() > 1));
+#else
+        numa_malloc = false;
+#endif
+    }
 
 
     /**
@@ -767,13 +775,18 @@ struct CsrMatrix
     void Clear()
     {
 #ifdef CUB_MKL
-//        if (row_offsets)    mkl_free(row_offsets);
-//        if (column_indices) mkl_free(column_indices);
-//        if (values)         mkl_free(values);
-
-        numa_free(row_offsets, sizeof(OffsetT) * (num_rows + 1));
-        numa_free(values, sizeof(ValueT) * num_nonzeros);
-        numa_free(column_indices, sizeof(OffsetT) * num_nonzeros);
+        if (numa_malloc) 
+        {
+            numa_free(row_offsets, sizeof(OffsetT) * (num_rows + 1));
+            numa_free(values, sizeof(ValueT) * num_nonzeros);
+            numa_free(column_indices, sizeof(OffsetT) * num_nonzeros);
+        }
+        else
+        {
+            if (row_offsets)    mkl_free(row_offsets);
+            if (column_indices) mkl_free(column_indices);
+            if (values)         mkl_free(values);
+        }
 
 #else
         if (row_offsets)    delete[] row_offsets;
@@ -939,18 +952,26 @@ struct CsrMatrix
 
 #ifdef CUB_MKL
 
-//        values          = (ValueT*) mkl_malloc(sizeof(ValueT) * num_nonzeros, 4096);
-//        row_offsets     = (OffsetT*) mkl_malloc(sizeof(OffsetT) * (num_rows + 1), 4096);
-//        column_indices  = (OffsetT*) mkl_malloc(sizeof(OffsetT) * num_nonzeros, 4096);
+        if (numa_malloc)
+        {
+            numa_set_strict(1);
+//            numa_set_bind_policy(1);
 
 //        values          = (ValueT*) numa_alloc_interleaved(sizeof(ValueT) * num_nonzeros);
 //        row_offsets     = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * (num_rows + 1));
 //        column_indices  = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * num_nonzeros);
 
-//        row_offsets     = (OffsetT*) numa_alloc_interleaved(sizeof(OffsetT) * (num_rows + 1));
-        row_offsets     = (OffsetT*) numa_alloc_onnode(sizeof(OffsetT) * (num_rows + 1), 0);
-        column_indices  = (OffsetT*) numa_alloc_onnode(sizeof(OffsetT) * num_nonzeros, 0);
-        values          = (ValueT*) numa_alloc_onnode(sizeof(ValueT) * num_nonzeros, 1);
+            row_offsets     = (OffsetT*) numa_alloc_onnode(sizeof(OffsetT) * (num_rows + 1), 0);
+            column_indices  = (OffsetT*) numa_alloc_onnode(sizeof(OffsetT) * num_nonzeros, 0);
+            values          = (ValueT*) numa_alloc_onnode(sizeof(ValueT) * num_nonzeros, 1);
+        }
+        else
+        {
+            values          = (ValueT*) mkl_malloc(sizeof(ValueT) * num_nonzeros, 4096);
+            row_offsets     = (OffsetT*) mkl_malloc(sizeof(OffsetT) * (num_rows + 1), 4096);
+            column_indices  = (OffsetT*) mkl_malloc(sizeof(OffsetT) * num_nonzeros, 4096);
+
+        }
 
 #else
         row_offsets     = new OffsetT[num_rows + 1];

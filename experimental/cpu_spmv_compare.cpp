@@ -34,7 +34,7 @@
  * g++ cpu_spmv_compare.cpp -DCUB_MKL -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ffloat-store -O3 -fopenmp
  * g++ cpu_spmv_compare.cpp -lm -ffloat-store -O3 -fopenmp
  *
- * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_omp.out -lrt -fno-alias -xHost
+ * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_icc_test.out -lrt -fno-alias -xHost -lnuma -I$POSKIDIR/include/poski -I$POSKIDIR/build_oski/include -L$POSKIDIR/lib -lposki
  * export KMP_AFFINITY=granularity=core,scatter
  *
  *
@@ -51,8 +51,13 @@
     #undef max       // Windows is terrible for polluting macro namespace
     #undef small     // Windows is terrible for polluting macro namespace
 #else
+
     #include <sys/resource.h>
     #include <time.h>
+
+    #include <poski.h>
+
+
 #endif
 
 #include <omp.h>
@@ -84,6 +89,7 @@ bool                    g_verbose2      = false;        // Whether to display in
 int                     g_omp_threads   = -1;           // Number of openMP threads
 int                     g_omp_oversub   = 1;            // Factor of over-subscription
 int                     g_ht_threshold  = 1*1024*1024;  // Hyperthread threshold (num nonzeros)
+int                     g_expected_calls = 1000000;
 
 
 //---------------------------------------------------------------------
@@ -610,10 +616,9 @@ template <
 float TestOmpCsrIoProxy(
     CsrMatrix<ValueT, OffsetT>&     a,
     ValueT*                         vector_x,
+    ValueT*                         vector_y_out,
     int                             timing_iterations)
 {
-    ValueT* vector_y_out = (ValueT*) mkl_malloc(sizeof(ValueT) * a.num_rows, 4096);
-
     if (g_omp_threads == -1)
         g_omp_threads = omp_get_num_procs(); 
 
@@ -621,7 +626,6 @@ float TestOmpCsrIoProxy(
         printf("\tUsing %d threads on %d procs\n", g_omp_threads, omp_get_num_procs());
 
     // Warmup
-    OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
     OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
     OmpCsrIoProxy(g_omp_threads, a, vector_x, vector_y_out);
 
@@ -635,8 +639,6 @@ float TestOmpCsrIoProxy(
     }
     timer.Stop();
     elapsed_millis += timer.ElapsedMillis();
-
-    mkl_free(vector_y_out);
 
     return elapsed_millis / timing_iterations;
 }
@@ -707,8 +709,11 @@ template <
 void OmpMergeCsrmv(
     int                             num_threads,
     CsrMatrix<ValueT, OffsetT>&     a,
-    ValueT*                         vector_x,
-    ValueT*                         vector_y_out)
+    OffsetT*    __restrict__        row_end_offsets,
+    OffsetT*    __restrict__        column_indices,
+    ValueT*     __restrict__        values,
+    ValueT*     __restrict__        vector_x,
+    ValueT*     __restrict__        vector_y_out)
 {
     OffsetT     row_carry_out[256];
     ValueT      value_carry_out[256];
@@ -718,7 +723,6 @@ void OmpMergeCsrmv(
     {
         OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
         OffsetT                         items_per_thread    = (num_merge_items + num_threads - 1) / num_threads;
-        OffsetT*                        row_end_offsets     = a.row_offsets + 1;
         CountingInputIterator<OffsetT>  nonzero_indices(0);
 
         int start_diagonal      = std::min(items_per_thread * tid, num_merge_items);
@@ -736,7 +740,7 @@ void OmpMergeCsrmv(
             ValueT running_total = 0.0;
             for (; thread_coord.y < row_end_offsets[thread_coord.x]; ++thread_coord.y)
             {
-                running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
+                running_total += values[thread_coord.y] * vector_x[column_indices[thread_coord.y]];
             }
 
             vector_y_out[thread_coord.x] = running_total;
@@ -746,7 +750,7 @@ void OmpMergeCsrmv(
         ValueT running_total = 0.0;
         for (; thread_coord.y < thread_coord_end.y; ++thread_coord.y)
         {
-            running_total += a.values[thread_coord.y] * vector_x[a.column_indices[thread_coord.y]];
+            running_total += values[thread_coord.y] * vector_x[column_indices[thread_coord.y]];
         }
 
         // Save carry-outs
@@ -783,33 +787,16 @@ float TestOmpMergeCsrmv(
     if (!g_quiet)
         printf("\tUsing %d threads on %d procs\n", g_omp_threads, omp_get_num_procs());
 
-    #pragma omp parallel for schedule(static) num_threads(num_threads)
-    for (int tid = 0; tid < num_threads; tid++)
-    {
-        OffsetT                         num_merge_items     = a.num_rows + a.num_nonzeros;
-        OffsetT                         items_per_thread    = (num_merge_items + num_threads - 1) / num_threads;
-        OffsetT*                        row_end_offsets     = a.row_offsets + 1;
-        CountingInputIterator<OffsetT>  nonzero_indices(0);
-
-        int start_diagonal      = std::min(items_per_thread * tid, num_merge_items);
-        int end_diagonal        = std::min(start_diagonal + items_per_thread, num_merge_items);
-
-        int2 thread_coord;
-        int2 thread_coord_end;
-
-        MergePathSearch(start_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord);
-        MergePathSearch(end_diagonal, row_end_offsets, nonzero_indices, a.num_rows, a.num_nonzeros, thread_coord_end);
-    }
-
     // Warmup
-    OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
+    memset(vector_y_out, -1, sizeof(double) * a.num_rows);
+    OmpMergeCsrmv(g_omp_threads, a, a.row_offsets + 1, a.column_indices, a.values, vector_x, vector_y_out);
     if (!g_quiet)
     {
         int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
         printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
     }
-    OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
-    OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
+    OmpMergeCsrmv(g_omp_threads, a, a.row_offsets + 1, a.column_indices, a.values, vector_x, vector_y_out);
+    OmpMergeCsrmv(g_omp_threads, a, a.row_offsets + 1, a.column_indices, a.values, vector_x, vector_y_out);
 
     // Timing
     float elapsed_millis = 0.0;
@@ -817,7 +804,7 @@ float TestOmpMergeCsrmv(
     timer.Start();
     for(int it = 0; it < timing_iterations; ++it)
     {
-        OmpMergeCsrmv(g_omp_threads, a, vector_x, vector_y_out);
+        OmpMergeCsrmv(g_omp_threads, a, a.row_offsets + 1, a.column_indices, a.values, vector_x, vector_y_out);
     }
     timer.Stop();
     elapsed_millis += timer.ElapsedMillis();
@@ -977,6 +964,7 @@ float TestOmpMergeCsrmvNuma(
     printf("Numa setup ms, %.5f, ", elapsed_millis); 
 
     // Warmup
+    memset(vector_y_out, -1, sizeof(double) * a.num_rows);
     OmpMergeCsrmvNuma(g_omp_threads, a, coordinates, row_end_offsets, column_indices, values, vector_x, vector_y_out);
     if (!g_quiet)
     {
@@ -996,7 +984,115 @@ float TestOmpMergeCsrmvNuma(
     elapsed_millis = timer.ElapsedMillis();
 
     // Cleanup
-    // Todo.
+    for (int tid = 0; tid < num_threads; tid++)
+    {
+        int2                            thread_coord        = coordinates[tid];
+        int2                            thread_coord_end    = coordinates[tid + 1];
+        OffsetT                         num_nonzeros        = thread_coord_end.y - thread_coord.y;
+
+        numa_free(values[tid], (sizeof(OffsetT) + sizeof(ValueT)) * num_nonzeros + 4096);
+    }
+
+    return elapsed_millis / timing_iterations;
+}
+
+
+//---------------------------------------------------------------------
+// Autotuned Poski SpMV
+//---------------------------------------------------------------------
+
+
+/**
+ * Run Poski SpMV (specialized for fp32)
+ */
+template <
+    typename OffsetT>
+float TestPoskiCsrmv(
+    CsrMatrix<float, OffsetT>&      a,
+    float*                          vector_x,
+    float*                          reference_vector_y_out,
+    float*                          vector_y_out,
+    int                             timing_iterations)
+{
+    return 0.0;
+}
+
+
+/**
+ * Run Poski SpMV (specialized for fp64)
+ */
+template <
+    typename OffsetT>
+float TestPoskiCsrmv(
+    CsrMatrix<double, OffsetT>&      a,
+    double*                          vector_x,
+    double*                          reference_vector_y_out,
+    double*                          vector_y_out,
+    int                             timing_iterations)
+{
+    double alpha = 1.0;
+    double beta = 0.0;
+
+    // Init poski
+    poski_Init();
+
+    // Create default thread object
+    poski_threadarg_t *poski_thread = poski_InitThreads();
+
+    // Create tunable matrix object
+    poski_mat_t A_tunable =
+        poski_CreateMatCSR (a.row_offsets, a.column_indices, a.values, a.num_rows, a.num_cols, a.num_nonzeros,
+        SHARE_INPUTMAT,
+        poski_thread,                       // <thread object> 
+        NULL,                               // <partition-matrix object> (NULL: default) 
+        2,  INDEX_ZERO_BASED, MAT_GENERAL); // Matrix properties
+
+    // Create wrappers around the dense vectors with <partition-vector object> (NULL: default) 
+    poski_vec_t x_view = poski_CreateVec(vector_x, a.num_cols, STRIDE_UNIT, NULL);
+    poski_vec_t y_view = poski_CreateVec(vector_y_out, a.num_rows, STRIDE_UNIT, NULL);
+
+    // Kick the tires (otherwise segfaults, e.g., grid3d=30)
+    poski_MatMult(A_tunable, OP_NORMAL, alpha, x_view, beta, y_view);
+
+    // Optimize
+    CpuTimer timer;
+    timer.Start();
+
+//    poski_TuneHint_MatMult(A_tunable, OP_NORMAL, alpha, x_view, beta, y_view, ALWAYS_TUNE_AGGRESSIVELY);
+    poski_TuneHint_MatMult(A_tunable, OP_NORMAL, alpha, x_view, beta, y_view, ALWAYS_TUNE);
+    poski_TuneMat(A_tunable);
+
+    timer.Stop();
+    float elapsed_millis = timer.ElapsedMillis();
+    printf("poski tune ms, %.5f, ", elapsed_millis);
+
+    // Warmup
+    memset(vector_y_out, -1, sizeof(double) * a.num_rows);
+    poski_MatMult(A_tunable, OP_NORMAL, alpha, x_view, beta, y_view);
+    if (!g_quiet)
+    {
+        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    poski_MatMult(A_tunable, OP_NORMAL, alpha, x_view, beta, y_view);
+    poski_MatMult(A_tunable, OP_NORMAL, alpha, x_view, beta, y_view);
+
+    // Timing
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        poski_MatMult(A_tunable, OP_NORMAL, alpha, x_view, beta, y_view);
+    }
+    timer.Stop();
+    elapsed_millis = timer.ElapsedMillis();
+
+    // Cleanup
+    poski_DestroyMat(A_tunable); 
+    poski_DestroyVec(x_view); 
+    poski_DestroyVec(y_view);
+    poski_DestroyThreads(poski_thread);
+    poski_Close();
 
     return elapsed_millis / timing_iterations;
 }
@@ -1006,7 +1102,6 @@ float TestOmpMergeCsrmvNuma(
 // Autotuned MKL SpMV
 //---------------------------------------------------------------------
 
-int g_expected_calls = 1000000;
 
 /**
  * Run MKL SpMV (specialized for fp32)
@@ -1068,6 +1163,7 @@ float TestMklCsrmvTuned(
     printf("mkl tune ms, %.5f, ", elapsed_millis);
 
     // Warmup
+    memset(vector_y_out, -1, sizeof(double) * a.num_rows);
     status = mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
     if (status != SPARSE_STATUS_SUCCESS) {
         printf("SpMV failed: %d\n", status); exit(1);
@@ -1106,79 +1202,12 @@ float TestMklCsrmvTuned(
     double*                          vector_x,
     double*                          reference_vector_y_out,
     double*                          vector_y_out,
-    int                             timing_iterations)
+    int                              timing_iterations)
 {
-    double alpha = 1.0;
-    double beta = 0.0;
-
-    sparse_status_t status;
-
-    CpuTimer timer;
-    timer.Start();
-
-    matrix_descr mkl_a_desc;
-//    mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
-    memset(&mkl_a_desc, 0, sizeof(matrix_descr));
-
-    // Create CSR handle
-    sparse_matrix_t mkl_a;
-    status = mkl_sparse_d_create_csr(
-        &mkl_a,
-        SPARSE_INDEX_BASE_ZERO,
-        a.num_rows,
-        a.num_cols,
-        a.row_offsets,
-        a.row_offsets + 1,
-        a.column_indices,
-        a.values);
-    if (status != SPARSE_STATUS_SUCCESS) {
-        printf("Could not create handle: %d\n", status); exit(1);
-    }
-
-    // Set MV hint
-    status = mkl_sparse_set_mv_hint(mkl_a, SPARSE_OPERATION_NON_TRANSPOSE, mkl_a_desc, g_expected_calls);
-    if (status != SPARSE_STATUS_SUCCESS) {
-        printf("Could not set hint: %d\n", status); exit(1);
-    }
-
-    // Optimize
-    status = mkl_sparse_optimize(mkl_a);
-    if (status != SPARSE_STATUS_SUCCESS) {
-        printf("Could not optimize: %d\n", status); exit(1);
-    }
-
-    timer.Stop();
-    float elapsed_millis = timer.ElapsedMillis();
-    printf("mkl tune ms, %.5f, ", elapsed_millis);
-
-    // Warmup
-    status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
-    if (status != SPARSE_STATUS_SUCCESS) {
-        printf("SpMV failed: %d\n", status); exit(1);
-    }
-    if (!g_quiet)
-    {
-        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
-        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
-    }
-
-    // Timing
-    timer.Start();
-    for(int it = 0; it < timing_iterations; ++it)
-    {
-        status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
-    }
-    timer.Stop();
-    elapsed_millis = timer.ElapsedMillis();
-
-    // Cleanup
-    status = mkl_sparse_destroy(mkl_a);
-    if (status != SPARSE_STATUS_SUCCESS) {
-        printf("Cleanup failed: %d\n", status); exit(1);
-    }
-
-    return elapsed_millis / timing_iterations;
+    // Crib from above when MKL fixes their bugs
+    return 0.0;
 }
+
 
 
 //---------------------------------------------------------------------
@@ -1198,6 +1227,7 @@ float TestMklCsrmv(
     int                             timing_iterations)
 {
     // Warmup
+    memset(vector_y_out, -1, sizeof(double) * a.num_rows);
     mkl_cspblas_scsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
     if (!g_quiet)
     {
@@ -1235,6 +1265,7 @@ float TestMklCsrmv(
     int                             timing_iterations)
 {
     // Warmup
+    memset(vector_y_out, -1, sizeof(double) * a.num_rows);
     mkl_cspblas_dcsrgemv("n", &a.num_rows, a.values, a.row_offsets, a.column_indices, vector_x, vector_y_out);
     if (!g_quiet)
     {
@@ -1395,11 +1426,22 @@ void RunTests(
             printf("\t%d timing iterations\n", timing_iterations);
     }
 
-    // Allocate input and output vectors
-    ValueT* vector_x                = (ValueT*) mkl_malloc(sizeof(ValueT) * csr_matrix.num_cols, 4096);
-    ValueT* vector_y_in             = (ValueT*) mkl_malloc(sizeof(ValueT) * csr_matrix.num_rows, 4096);
-    ValueT* reference_vector_y_out  = (ValueT*) mkl_malloc(sizeof(ValueT) * csr_matrix.num_rows, 4096);
-    ValueT* vector_y_out            = (ValueT*) mkl_malloc(sizeof(ValueT) * csr_matrix.num_rows, 4096);
+    // Allocate input and output vectors (Use NUMA force if availabe to get consistent perf results)
+    ValueT *vector_x, *vector_y_in, *reference_vector_y_out, *vector_y_out;
+    if (csr_matrix.numa_malloc)
+    {
+        vector_x                = (ValueT*) numa_alloc_onnode(sizeof(ValueT) * csr_matrix.num_cols, 0);
+        vector_y_in             = (ValueT*) numa_alloc_onnode(sizeof(ValueT) * csr_matrix.num_rows, 0);
+        reference_vector_y_out  = (ValueT*) numa_alloc_onnode(sizeof(ValueT) * csr_matrix.num_rows, 0);
+        vector_y_out            = (ValueT*) numa_alloc_onnode(sizeof(ValueT) * csr_matrix.num_rows, 0);
+    }
+    else
+    {
+        vector_x                = (ValueT*) mkl_malloc(sizeof(ValueT) * csr_matrix.num_cols, 4096);
+        vector_y_in             = (ValueT*) mkl_malloc(sizeof(ValueT) * csr_matrix.num_rows, 4096);
+        reference_vector_y_out  = (ValueT*) mkl_malloc(sizeof(ValueT) * csr_matrix.num_rows, 4096);
+        vector_y_out            = (ValueT*) mkl_malloc(sizeof(ValueT) * csr_matrix.num_rows, 4096);
+    }
 
     for (int col = 0; col < csr_matrix.num_cols; ++col)
         vector_x[col] = 1.0;
@@ -1411,46 +1453,60 @@ void RunTests(
     SpmvGold(csr_matrix, vector_x, vector_y_in, reference_vector_y_out, alpha, beta);
 
     float avg_millis;
-/*
+
+/* MKL two-phase is incorrect
     // MKL SpMV Tuned
-    if (!g_quiet) {
-        printf("\n\nTuned MKL SpMV: "); fflush(stdout);
-    }
+    if (!g_quiet) printf("\n\n");
+    printf("Tuned MKL SpMV, "); fflush(stdout);
     avg_millis = TestMklCsrmvTuned(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
 */
+
     // MKL SpMV
-    if (!g_quiet) {
-        printf("\n\nMKL SpMV: "); fflush(stdout);
-    }
+    if (!g_quiet) printf("\n\n");
+    printf("MKL SpMV, "); fflush(stdout);
     avg_millis = TestMklCsrmv(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
 
     //  IO Proxy
-    if (!g_quiet) {
-        printf("\n\nCPU CSR I/O Proxy: "); fflush(stdout);
-    }
-    avg_millis = TestOmpCsrIoProxy(csr_matrix, vector_x, timing_iterations);
+    if (!g_quiet) printf("\n\n");
+    printf("\n\nCPU CSR I/O Proxy, "); fflush(stdout);
+    avg_millis = TestOmpCsrIoProxy(csr_matrix, vector_x, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
 
     // Merge SpMV
-    if (!g_quiet) {
-        printf("\nMerge SpMV: "); fflush(stdout);
-    }
+    if (!g_quiet) printf("\n\n");
+    printf("Merge SpMV, "); fflush(stdout);
     avg_millis = TestOmpMergeCsrmv(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
 
     // Merge SpMV NUMA
-    if (!g_quiet) {
-        printf("\nMerge SpMV NUMA: "); fflush(stdout);
-    }
+    if (!g_quiet) printf("\n\n");
+    printf("Merge SpMV NUMA, "); fflush(stdout);
     avg_millis = TestOmpMergeCsrmvNuma(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
 
-    if (vector_x)                   mkl_free(vector_x);
-    if (vector_y_in)                mkl_free(vector_y_in);
-    if (reference_vector_y_out)     mkl_free(reference_vector_y_out);
-    if (vector_y_out)               mkl_free(vector_y_out);
+    // POSKI SpMV Tuned
+    if (!g_quiet) printf("\n\n");
+    printf("POSKI Tuned SpMV, "); fflush(stdout);
+    avg_millis = TestPoskiCsrmv(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
+    DisplayPerf(avg_millis, csr_matrix);
+
+    // Cleanup
+    if (csr_matrix.numa_malloc)
+    {
+        if (vector_x)                   numa_free(vector_x, sizeof(ValueT) * csr_matrix.num_cols);
+        if (vector_y_in)                numa_free(vector_y_in, sizeof(ValueT) * csr_matrix.num_rows);
+        if (reference_vector_y_out)     numa_free(reference_vector_y_out, sizeof(ValueT) * csr_matrix.num_rows);
+        if (vector_y_out)               numa_free(vector_y_out, sizeof(ValueT) * csr_matrix.num_rows);
+    }
+    else
+    {
+        if (vector_x)                   mkl_free(vector_x);
+        if (vector_y_in)                mkl_free(vector_y_in);
+        if (reference_vector_y_out)     mkl_free(reference_vector_y_out);
+        if (vector_y_out)               mkl_free(vector_y_out);
+    }
 }
 
 
