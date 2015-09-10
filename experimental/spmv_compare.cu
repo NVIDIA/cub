@@ -698,17 +698,15 @@ void RunTest(
     CubDebugExit(cudaMemcpy(params.d_column_indices,    csr_matrix.column_indices,  sizeof(OffsetT) * csr_matrix.num_nonzeros, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemcpy(params.d_vector_x,          vector_x,                   sizeof(ValueT) * csr_matrix.num_cols, cudaMemcpyHostToDevice));
 
-    if (!g_quiet) {
-        printf("\n\nGPU CSR I/O Prox: "); fflush(stdout);
-    }
+    if (!g_quiet) printf("\n\n");
+    printf("GPU CSR I/O Prox, "); fflush(stdout);
     avg_millis = TestGpuCsrIoProxy(params, timing_iterations);
     DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
 
     if (args.CheckCmdLineFlag("csrmv"))
     {
-        if (!g_quiet) {
-            printf("\n\nCUB: "); fflush(stdout);
-        }
+        if (!g_quiet) printf("\n\n");
+        printf("CUB, "); fflush(stdout);
         avg_millis = TestGpuMergeCsrmv(vector_y_in, vector_y_out, params, timing_iterations);
         DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
     }
@@ -719,18 +717,16 @@ void RunTest(
 
     if (args.CheckCmdLineFlag("csrmv"))
     {
-        if (!g_quiet) {
-            printf("\n\nCusparse CsrMV: "); fflush(stdout);
-        }
+        if (!g_quiet) printf("\n\n");
+        printf("Cusparse CsrMV, "); fflush(stdout);
         avg_millis = TestCusparseCsrmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
         DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
     }
 
     if (args.CheckCmdLineFlag("hybmv"))
     {
-        if (!g_quiet) {
-            printf("\n\nCusparse HybMV: "); fflush(stdout);
-        }
+        if (!g_quiet) printf("\n\n");
+        printf("Cusparse HybMV, "); fflush(stdout);
 
         if (params.num_rows == params.num_cols)
         {
@@ -783,6 +779,12 @@ void RunTests(
         // Parse matrix market file
         printf("%s, ", mtx_filename.c_str()); fflush(stdout);
         coo_matrix.InitMarket(mtx_filename, 1.0, !g_quiet);
+
+        if ((coo_matrix.num_rows == 1) || (coo_matrix.num_cols == 1) || (coo_matrix.num_nonzeros == 1))
+        {
+            if (!g_quiet) printf("Trivial dataset\n");
+            exit(0);
+        }
     }
     else if (grid2d > 0)
     {

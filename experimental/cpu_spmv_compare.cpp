@@ -1350,6 +1350,12 @@ void RunTests(
         // Parse matrix market file
         printf("%s, ", mtx_filename.c_str()); fflush(stdout);
         coo_matrix.InitMarket(mtx_filename, 1.0, !g_quiet);
+
+        if ((coo_matrix.num_rows == 1) || (coo_matrix.num_cols == 1) || (coo_matrix.num_nonzeros == 1))
+        {
+            if (!g_quiet) printf("Trivial dataset\n");
+            exit(0);
+        }
     }
     else if (grid2d > 0)
     {
@@ -1384,6 +1390,7 @@ void RunTests(
 
     CsrMatrix<ValueT, OffsetT> csr_matrix;
     csr_matrix.FromCoo(coo_matrix);
+    coo_matrix.Clear();
 
     // Relabel
     if (rcm_relabel)
@@ -1470,7 +1477,7 @@ void RunTests(
 
     //  IO Proxy
     if (!g_quiet) printf("\n\n");
-    printf("\n\nCPU CSR I/O Proxy, "); fflush(stdout);
+    printf("CPU CSR I/O Proxy, "); fflush(stdout);
     avg_millis = TestOmpCsrIoProxy(csr_matrix, vector_x, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
 
@@ -1526,7 +1533,7 @@ int main(int argc, char **argv)
             "[--quiet] "
             "[--v] "
             "[--i=<timing iterations>] "
-            "[--fp64] "
+            "[--fp64 (default) | --fp32] "
             "[--rcm] "
             "[--alpha=<alpha scalar (default: 1.0)>] "
             "[--beta=<beta scalar (default: 0.0)>] "
@@ -1544,7 +1551,7 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    bool                fp64;
+    bool                fp32;
     bool                rcm_relabel;
     std::string         mtx_filename;
     int                 grid2d              = -1;
@@ -1558,7 +1565,7 @@ int main(int argc, char **argv)
     g_verbose = args.CheckCmdLineFlag("v");
     g_verbose2 = args.CheckCmdLineFlag("v2");
     g_quiet = args.CheckCmdLineFlag("quiet");
-    fp64 = args.CheckCmdLineFlag("fp64");
+    fp32 = args.CheckCmdLineFlag("fp32");
     rcm_relabel = args.CheckCmdLineFlag("rcm");
     args.GetCmdLineArgument("i", timing_iterations);
     args.GetCmdLineArgument("mtx", mtx_filename);
@@ -1576,13 +1583,13 @@ int main(int argc, char **argv)
         printf("NUMA: %d\n", (is_numa >= 0));
 
     // Run test(s)
-    if (fp64)
+    if (fp32)
     {
-        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
+        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
     else
     {
-        RunTests<float, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
+        RunTests<double, int>(rcm_relabel, alpha, beta, mtx_filename, grid2d, grid3d, wheel, dense, timing_iterations, args);
     }
 
     printf("\n");
