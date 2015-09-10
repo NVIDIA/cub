@@ -34,7 +34,7 @@
  * g++ cpu_spmv_compare.cpp -DCUB_MKL -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ffloat-store -O3 -fopenmp
  * g++ cpu_spmv_compare.cpp -lm -ffloat-store -O3 -fopenmp
  *
- * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -O3 -o spmv_icc_test.out -lrt -fno-alias -xHost -lnuma -I$POSKIDIR/include/poski -I$POSKIDIR/build_oski/include -L$POSKIDIR/lib -lposki
+ * icpc cpu_spmv_compare.cpp -mkl -openmp -DCUB_MKL -DCUB_POSKI -O3 -o spmv_icc_test.out -lrt -fno-alias -xHost -lnuma -I$POSKIDIR/include/poski -I$POSKIDIR/build_oski/include -L$POSKIDIR/lib -lposki
  * export KMP_AFFINITY=granularity=core,scatter
  *
  *
@@ -55,8 +55,9 @@
     #include <sys/resource.h>
     #include <time.h>
 
-    #include <poski.h>
-
+    #ifdef CUB_POSKI
+        #include <poski.h>
+    #endif
 
 #endif
 
@@ -70,13 +71,14 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <limits>
 
 #ifdef CUB_MKL
     #include <mkl.h>
 #endif
 
-
 #include "sparse_matrix.h"
+
 
 
 //---------------------------------------------------------------------
@@ -101,6 +103,7 @@ struct int2
     int x;
     int y;
 };
+
 
 
 /**
@@ -513,21 +516,21 @@ int CompareResults(T* computed, S* reference, OffsetT len, bool verbose = true)
 template <typename OffsetT>
 int CompareResults(float* computed, float* reference, OffsetT len, bool verbose = true)
 {
+    float meps = std::numeric_limits<float>::epsilon();
+ 
     for (OffsetT i = 0; i < len; i++)
     {
-        if (computed[i] != reference[i])
+        float difference = std::abs(computed[i]-reference[i]);
+        float allow = sqrt(len) * (meps + std::abs(reference[i]));
+        
+        if (difference > allow)
         {
-            float difference = std::abs(computed[i]-reference[i]);
-            float fraction = difference / std::abs(reference[i]);
+            printf("%f < %f\n", allow, difference);
 
-            if (fraction > 0.0001)
-            {
-                if (verbose) std::cout << "INCORRECT: [" << i << "]: "
-                    << computed[i] << " != "
-                    << reference[i] << " (difference:" << difference << ", fraction: " << fraction << ")";
-
-                return 1;
-            }
+            if (verbose) std::cout << "INCORRECT: [" << i << "]: "
+                 << computed[i] << " != "
+                 << reference[i]; 
+            return 1;
         }
     }
     return 0;
@@ -540,20 +543,21 @@ int CompareResults(float* computed, float* reference, OffsetT len, bool verbose 
 template <typename OffsetT>
 int CompareResults(double* computed, double* reference, OffsetT len, bool verbose = true)
 {
+    double meps = std::numeric_limits<double>::epsilon();
+ 
     for (OffsetT i = 0; i < len; i++)
     {
-        if (computed[i] != reference[i])
+        double difference = std::abs(computed[i]-reference[i]);
+        double allow = sqrt(len) * (meps + std::abs(reference[i]));
+        
+        if (difference > allow)
         {
-            double difference = std::abs(computed[i]-reference[i]);
-            double fraction = difference / std::abs(reference[i]);
+            printf("%f < %f\n", allow, difference);
 
-            if (fraction > 0.0001)
-            {
-                if (verbose) std::cout << "INCORRECT: [" << i << "]: "
-                    << computed[i] << " != "
-                    << reference[i] << " (difference:" << difference << ", fraction: " << fraction << ")";
-                return 1;
-            }
+            if (verbose) std::cout << "INCORRECT: [" << i << "]: "
+                 << computed[i] << " != "
+                 << reference[i]; 
+            return 1;
         }
     }
     return 0;
@@ -1105,7 +1109,7 @@ float TestPoskiCsrmv(
 
 /**
  * Run MKL SpMV (specialized for fp32)
- */
+ * /
 template <
     typename OffsetT>
 float TestMklCsrmvTuned(
@@ -1123,13 +1127,6 @@ float TestMklCsrmvTuned(
     CpuTimer timer;
     timer.Start();
 
-
-
-    for (int i = 0; i < a.num_rows; ++i)
-        if (a.row_offsets[i] == a.row_offsets[i + 1]) { 
-            printf("\n\tHAS ZERO-LENGTH ROWS!!\n"); break;
-        }
-        
     matrix_descr mkl_a_desc;
     memset(&mkl_a_desc, 0, sizeof(matrix_descr));
     mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
@@ -1192,9 +1189,11 @@ float TestMklCsrmvTuned(
     return elapsed_millis / timing_iterations;
 }
 
-/**
+
+
+/ **
  * Run MKL SpMV (specialized for fp64)
- */
+ * /
 template <
     typename OffsetT>
 float TestMklCsrmvTuned(
@@ -1202,12 +1201,78 @@ float TestMklCsrmvTuned(
     double*                          vector_x,
     double*                          reference_vector_y_out,
     double*                          vector_y_out,
-    int                              timing_iterations)
+    int                             timing_iterations)
 {
-    // Crib from above when MKL fixes their bugs
-    return 0.0;
-}
+    double alpha = 1.0;
+    double beta = 0.0;
 
+    sparse_status_t status;
+
+    CpuTimer timer;
+    timer.Start();
+
+    matrix_descr mkl_a_desc;
+    memset(&mkl_a_desc, 0, sizeof(matrix_descr));
+    mkl_a_desc.type = SPARSE_MATRIX_TYPE_GENERAL;
+
+    // Create CSR handle
+    sparse_matrix_t mkl_a, mkl_b;
+    status = mkl_sparse_d_create_csr(
+        &mkl_a,
+        SPARSE_INDEX_BASE_ZERO,
+        a.num_rows,
+        a.num_cols,
+        a.row_offsets,
+        a.row_offsets + 1,
+        a.column_indices,
+        a.values);
+
+    // Set MV hint
+    status = mkl_sparse_set_mv_hint(mkl_a, SPARSE_OPERATION_NON_TRANSPOSE, mkl_a_desc, g_expected_calls);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Could not set hint: %d\n", status); exit(1);
+    }
+
+    // Optimize
+    status = mkl_sparse_optimize(mkl_a);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Could not optimize: %d\n", status); exit(1);
+    }
+
+    timer.Stop();
+    float elapsed_millis = timer.ElapsedMillis();
+    printf("mkl tune ms, %.5f, ", elapsed_millis);
+
+    // Warmup
+    memset(vector_y_out, -1, sizeof(double) * a.num_rows);
+    status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("SpMV failed: %d\n", status); exit(1);
+    }
+    if (!g_quiet)
+    {
+        int compare = CompareResults(reference_vector_y_out, vector_y_out, a.num_rows, true);
+        printf("\t%s\n", compare ? "FAIL" : "PASS"); fflush(stdout);
+    }
+
+    // Timing
+    timer.Start();
+    for(int it = 0; it < timing_iterations; ++it)
+    {
+        status = mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, mkl_a, mkl_a_desc, vector_x, beta, vector_y_out);
+    }
+    timer.Stop();
+    elapsed_millis = timer.ElapsedMillis();
+
+    // Cleanup
+    status = mkl_sparse_destroy(mkl_a);
+    if (status != SPARSE_STATUS_SUCCESS) {
+        printf("Cleanup failed: %d\n", status); exit(1);
+    }
+
+    return elapsed_millis / timing_iterations;
+}
+*/
 
 
 //---------------------------------------------------------------------
@@ -1461,7 +1526,8 @@ void RunTests(
 
     float avg_millis;
 
-/* MKL two-phase is incorrect
+// MKL two-phase is incorrect
+/*
     // MKL SpMV Tuned
     if (!g_quiet) printf("\n\n");
     printf("Tuned MKL SpMV, "); fflush(stdout);
@@ -1493,11 +1559,13 @@ void RunTests(
     avg_millis = TestOmpMergeCsrmvNuma(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
 
+#ifdef CUB_POSKI
     // POSKI SpMV Tuned
     if (!g_quiet) printf("\n\n");
     printf("POSKI Tuned SpMV, "); fflush(stdout);
     avg_millis = TestPoskiCsrmv(csr_matrix, vector_x, reference_vector_y_out, vector_y_out, timing_iterations);
     DisplayPerf(avg_millis, csr_matrix);
+#endif
 
     // Cleanup
     if (csr_matrix.numa_malloc)
