@@ -12,7 +12,7 @@ for i in `ls /home/dumerrill/graphs/spmv/*.mtx`
 do
     if [[ ( "`head -n 50 $i | grep complex`" = "" ) && ( "`head -n 50 $i | grep array`" = "" ) ]] 
     then
-    	echo `date`, `$1 --mtx=$i $2 $3 $4 $5 $6 $7`
+    	echo `date`, `$1 --mtx=$i $2 $3 $4 $5 $6 $7 2>/dev/null`
     fi
 done
 
@@ -24,7 +24,7 @@ for i in `ls /scratch/dumerrill/graphs/mtx/*.mtx`
 do 
     if [[ ( "`head -n 50 $i | grep complex`" = "" ) && ( "`head -n 50 $i | grep array`" = "" ) ]] 
     then
-    	echo `date`, `$1 --mtx=$i $2 $3 $4 $5 $6 $7`
+    	echo `date`, `$1 --mtx=$i $2 $3 $4 $5 $6 $7 2>/dev/null`
     fi
 done 
 
