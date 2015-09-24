@@ -253,6 +253,9 @@ float TestCusparseHybmv(
     int                             timing_iterations,
     cusparseHandle_t                cusparse)
 {
+    CpuTimer cpu_timer;
+    cpu_timer.Start();
+
     // Construct Hyb matrix
     cusparseMatDescr_t mat_desc;
     cusparseHybMat_t hyb_desc;
@@ -260,7 +263,7 @@ float TestCusparseHybmv(
     AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreateHybMat(&hyb_desc));
     cusparseStatus_t status = cusparseScsr2hyb(
         cusparse,
-        params.num_cols, params.num_rows,
+        params.num_rows, params.num_cols,
         mat_desc,
         params.d_values, params.d_row_end_offsets, params.d_column_indices,
         hyb_desc,
@@ -268,6 +271,10 @@ float TestCusparseHybmv(
         CUSPARSE_HYB_PARTITION_AUTO);
     AssertEquals(CUSPARSE_STATUS_SUCCESS, status);
 
+    cudaDeviceSynchronize();
+    cpu_timer.Stop();
+    float elapsed_millis = cpu_timer.ElapsedMillis();
+    printf("HYB setup ms, %.5f, ", elapsed_millis);
 
     // Reset input/output vector y
     CubDebugExit(cudaMemcpy(params.d_vector_y, vector_y_in, sizeof(float) * params.num_rows, cudaMemcpyHostToDevice));
@@ -287,7 +294,7 @@ float TestCusparseHybmv(
     }
 
     // Timing
-    float elapsed_millis    = 0.0;
+    elapsed_millis    = 0.0;
     GpuTimer timer;
 
     timer.Start();
@@ -323,6 +330,9 @@ float TestCusparseHybmv(
     int                             timing_iterations,
     cusparseHandle_t                cusparse)
 {
+    CpuTimer cpu_timer;
+    cpu_timer.Start();
+
     // Construct Hyb matrix
     cusparseMatDescr_t mat_desc;
     cusparseHybMat_t hyb_desc;
@@ -330,12 +340,17 @@ float TestCusparseHybmv(
     AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseCreateHybMat(&hyb_desc));
     AssertEquals(CUSPARSE_STATUS_SUCCESS, cusparseDcsr2hyb(
         cusparse,
-        params.num_cols, params.num_rows,
+        params.num_rows, params.num_cols,
         mat_desc,
         params.d_values, params.d_row_end_offsets, params.d_column_indices,
         hyb_desc,
         0,
         CUSPARSE_HYB_PARTITION_AUTO));
+
+    cudaDeviceSynchronize();
+    cpu_timer.Stop();
+    float elapsed_millis = cpu_timer.ElapsedMillis();
+    printf("HYB setup ms, %.5f, ", elapsed_millis);
 
     // Reset input/output vector y
     CubDebugExit(cudaMemcpy(params.d_vector_y, vector_y_in, sizeof(float) * params.num_rows, cudaMemcpyHostToDevice));
@@ -355,7 +370,7 @@ float TestCusparseHybmv(
     }
 
     // Timing
-    float elapsed_millis    = 0.0;
+    elapsed_millis    = 0.0;
     GpuTimer timer;
 
     timer.Start();
@@ -728,16 +743,8 @@ void RunTest(
         if (!g_quiet) printf("\n\n");
         printf("Cusparse HybMV, "); fflush(stdout);
 
-        if (params.num_rows == params.num_cols)
-        {
-            // BUG: HYB crashes/incorrect on non-square matrices (dense_20971_x_800)
-            avg_millis = TestCusparseHybmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
-            DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
-        }
-        else if (!g_quiet)
-        {
-            printf("Unsupported for non-square matrices\n"); fflush(stdout);
-        }
+        avg_millis = TestCusparseHybmv(vector_y_in, vector_y_out, params, timing_iterations, cusparse);
+        DisplayPerf(device_giga_bandwidth, avg_millis, csr_matrix);
     }
 
 
