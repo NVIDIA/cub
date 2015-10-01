@@ -68,7 +68,7 @@ namespace cub {
  *   - Transposing between [<em>blocked</em>](index.html#sec5sec3) and [<em>warp-striped</em>](index.html#sec5sec3) arrangements
  *   - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec5sec3)
  *   - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec5sec3)
- * - \blocked
+ * - \rowmajor
  *
  * \par A Simple Example
  * \blockcollective{BlockExchange}
