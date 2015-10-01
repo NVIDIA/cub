@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging data partitioned across a CUDA thread block.
+ * The cub::BlockReduceByKey class provides [<em>collective</em>](index.html#sec0) methods for reducing segments of values, where segments are demarcated by corresponding runs of identical keys.
  */
 
 #pragma once
@@ -46,60 +46,64 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief The BlockExchange class provides [<em>collective</em>](index.html#sec0) methods for rearranging data partitioned across a CUDA thread block. ![](transpose_logo.png)
+ * \brief The BlockReduceByKey class provides [<em>collective</em>](index.html#sec0) methods for reducing segments of values, where segments are demarcated by corresponding runs of identical keys.
  * \ingroup BlockModule
  *
  * \tparam T                    The data type to be exchanged.
  * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
- * \tparam ITEMS_PER_THREAD     The number of items partitioned onto each thread.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds.  Yields a smaller memory footprint at the expense of decreased parallelism.  (Default: false)
+ * \tparam SCAN_ALGORITHM       <b>[optional]</b> cub::BlockScanAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_SCAN_RAKING)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
  *
  * \par Overview
- * - It is commonplace for blocks of threads to rearrange data items between
- *   threads.  For example, the global memory subsystem prefers access patterns
- *   where data items are "striped" across threads (where consecutive threads access consecutive items),
- *   yet most block-wide operations prefer a "blocked" partitioning of items across threads
- *   (where consecutive items belong to a single thread).
- * - BlockExchange supports the following types of data exchanges:
+ * - A reduction-by-key computes a segmented reduction of values across a thread block.  Value
+ *   segments are identified by "runs" of corresponding keys, where runs are maximal ranges of
+ *   consecutive, identical keys.
+ * - BlockReduceByKey supports the following types of data exchanges:
  *   - Transposing between [<em>blocked</em>](index.html#sec5sec3) and [<em>striped</em>](index.html#sec5sec3) arrangements
  *   - Transposing between [<em>blocked</em>](index.html#sec5sec3) and [<em>warp-striped</em>](index.html#sec5sec3) arrangements
  *   - Scattering ranked items to a [<em>blocked arrangement</em>](index.html#sec5sec3)
  *   - Scattering ranked items to a [<em>striped arrangement</em>](index.html#sec5sec3)
  * - \rowmajor
+ * - BlockReduceByKey can be optionally specialized by algorithm to accommodate different workload profiles:
+ *   -# <b>cub::BLOCK_SCAN_RAKING</b>.  An efficient (high throughput) "raking reduce-then-scan" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
+ *   -# <b>cub::BLOCK_SCAN_RAKING_MEMOIZE</b>.  Similar to cub::BLOCK_SCAN_RAKING, but having higher throughput at the expense of additional register pressure for intermediate storage. [More...](\ref cub::BlockScanAlgorithm)
+ *   -# <b>cub::BLOCK_SCAN_WARP_SCANS</b>.  A quick (low latency) "tiled warpscans" prefix scan algorithm. [More...](\ref cub::BlockScanAlgorithm)
+ *
  *
  * \par A Simple Example
- * \blockcollective{BlockExchange}
+ * \blockcollective{BlockReduceByKey}
  * \par
- * The code snippet below illustrates the conversion from a "blocked" to a "striped" arrangement
- * of 512 integer items partitioned across 128 threads where each thread owns 4 items.
+ * The code snippet below illustrates an segmented sum-reduction of 512 float values that
+ * are partitioned in a [<em>blocked arrangement</em>](index.html#sec5sec3) across 128 threads
+ * where each thread owns 4 consecutive key-value pairs.
  * \par
  * \code
- * #include <cub/cub.cuh>   // or equivalently <cub/block/block_exchange.cuh>
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_reduce_by_key.cuh>
  *
- * __global__ void ExampleKernel(int *d_data, ...)
+ * __global__ void ExampleKernel(...)
  * {
- *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
- *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+ *     // Specialize BlockReduceByKey for a 1D block of 128 threads on int keys and float values
+ *     typedef cub::BlockReduceByKey<int, 128> BlockReduceByKey;
  *
- *     // Allocate shared memory for BlockExchange
- *     __shared__ typename BlockExchange::TempStorage temp_storage;
+ *     // Allocate shared memory for BlockReduceByKey
+ *     __shared__ typename BlockReduceByKey::TempStorage temp_storage;
  *
- *     // Load a tile of data striped across threads
- *     int thread_data[4];
- *     cub::LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
+ *     // Obtain consecutive key-value items that are blocked across threads
+ *     int thread_keys[4];
+ *     float thread_values[4];
+ *     ...
  *
- *     // Collectively exchange data into a blocked arrangement across threads
- *     BlockExchange(temp_storage).StripedToBlocked(thread_data);
+ *     // Collectively compute the block-wide segmented reduction
+ *     BlockReduceByKey(temp_storage).ExclusiveSum(thread_data, thread_data);
  *
  * \endcode
  * \par
- * Suppose the set of striped input \p thread_data across the block of threads is
- * <tt>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</tt>.
+ * Suppose the set of input \p thread_data across the block of threads is
+ * <tt>{[1,1,1,1], [1,1,1,1], ..., [1,1,1,1]}</tt>.
  * The corresponding output \p thread_data in those threads will be
- * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
+ * <tt>{[0,1,2,3], [4,5,6,7], ..., [508,509,510,511]}</tt>.
  *
  * \par Performance Considerations
  * - Proper device-specific padding ensures zero bank conflicts for most types.
@@ -113,7 +117,7 @@ template <
     int         BLOCK_DIM_Y         = 1,
     int         BLOCK_DIM_Z         = 1,
     int         PTX_ARCH            = CUB_PTX_ARCH>
-class BlockExchange
+class BlockReduceByKey
 {
 private:
 
@@ -159,7 +163,7 @@ private:
 
 public:
 
-    /// \smemstorage{BlockExchange}
+    /// \smemstorage{BlockReduceByKey}
     struct TempStorage : Uninitialized<_TempStorage> {};
 
 private:
@@ -688,7 +692,7 @@ public:
     /**
      * \brief Collective constructor using a private static allocation of shared memory as temporary storage.
      */
-    __device__ __forceinline__ BlockExchange()
+    __device__ __forceinline__ BlockReduceByKey()
     :
         temp_storage(PrivateStorage()),
         linear_tid(RowMajorTid(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z)),
@@ -701,7 +705,7 @@ public:
     /**
      * \brief Collective constructor using the specified memory allocation as temporary storage.
      */
-    __device__ __forceinline__ BlockExchange(
+    __device__ __forceinline__ BlockReduceByKey(
         TempStorage &temp_storage)             ///< [in] Reference to memory allocation having layout type TempStorage
     :
         temp_storage(temp_storage.Alias()),
@@ -733,18 +737,18 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
-     *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+     *     // Specialize BlockReduceByKey for a 1D block of 128 threads owning 4 integer items each
+     *     typedef cub::BlockReduceByKey<int, 128, 4> BlockReduceByKey;
      *
-     *     // Allocate shared memory for BlockExchange
-     *     __shared__ typename BlockExchange::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockReduceByKey
+     *     __shared__ typename BlockReduceByKey::TempStorage temp_storage;
      *
      *     // Load a tile of ordered data into a striped arrangement across block threads
      *     int thread_data[4];
      *     cub::LoadDirectStriped<128>(threadIdx.x, d_data, thread_data);
      *
      *     // Collectively exchange data into a blocked arrangement across threads
-     *     BlockExchange(temp_storage).StripedToBlocked(thread_data);
+     *     BlockReduceByKey(temp_storage).StripedToBlocked(thread_data);
      *
      * \endcode
      * \par
@@ -775,18 +779,18 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
-     *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+     *     // Specialize BlockReduceByKey for a 1D block of 128 threads owning 4 integer items each
+     *     typedef cub::BlockReduceByKey<int, 128, 4> BlockReduceByKey;
      *
-     *     // Allocate shared memory for BlockExchange
-     *     __shared__ typename BlockExchange::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockReduceByKey
+     *     __shared__ typename BlockReduceByKey::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
      *     // Collectively exchange data into a striped arrangement across threads
-     *     BlockExchange(temp_storage).BlockedToStriped(thread_data);
+     *     BlockReduceByKey(temp_storage).BlockedToStriped(thread_data);
      *
      *     // Store data striped across block threads into an ordered tile
      *     cub::StoreDirectStriped<STORE_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
@@ -822,18 +826,18 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
-     *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+     *     // Specialize BlockReduceByKey for a 1D block of 128 threads owning 4 integer items each
+     *     typedef cub::BlockReduceByKey<int, 128, 4> BlockReduceByKey;
      *
-     *     // Allocate shared memory for BlockExchange
-     *     __shared__ typename BlockExchange::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockReduceByKey
+     *     __shared__ typename BlockReduceByKey::TempStorage temp_storage;
      *
      *     // Load a tile of ordered data into a warp-striped arrangement across warp threads
      *     int thread_data[4];
      *     cub::LoadSWarptriped<LOAD_DEFAULT>(threadIdx.x, d_data, thread_data);
      *
      *     // Collectively exchange data into a blocked arrangement across threads
-     *     BlockExchange(temp_storage).WarpStripedToBlocked(thread_data);
+     *     BlockReduceByKey(temp_storage).WarpStripedToBlocked(thread_data);
      *
      * \endcode
      * \par
@@ -866,18 +870,18 @@ public:
      *
      * __global__ void ExampleKernel(int *d_data, ...)
      * {
-     *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
-     *     typedef cub::BlockExchange<int, 128, 4> BlockExchange;
+     *     // Specialize BlockReduceByKey for a 1D block of 128 threads owning 4 integer items each
+     *     typedef cub::BlockReduceByKey<int, 128, 4> BlockReduceByKey;
      *
-     *     // Allocate shared memory for BlockExchange
-     *     __shared__ typename BlockExchange::TempStorage temp_storage;
+     *     // Allocate shared memory for BlockReduceByKey
+     *     __shared__ typename BlockReduceByKey::TempStorage temp_storage;
      *
      *     // Obtain a segment of consecutive items that are blocked across threads
      *     int thread_data[4];
      *     ...
      *
      *     // Collectively exchange data into a warp-striped arrangement across threads
-     *     BlockExchange(temp_storage).BlockedToWarpStriped(thread_data);
+     *     BlockReduceByKey(temp_storage).BlockedToWarpStriped(thread_data);
      *
      *     // Store data striped across warp threads into an ordered tile
      *     cub::StoreDirectStriped<STORE_DEFAULT, 128>(threadIdx.x, d_data, thread_data);
