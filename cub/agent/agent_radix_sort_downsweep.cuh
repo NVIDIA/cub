@@ -266,7 +266,7 @@ struct AgentRadixSortDownsweep
 
 
     /**
-     * Scatter ranked items to global memory
+     * Scatter ranked items to device-accessible memory
      */
     template <bool FULL_TILE, typename T>
     __device__ __forceinline__ void ScatterItems(
@@ -289,7 +289,7 @@ struct AgentRadixSortDownsweep
 
 
     /**
-     * Scatter ranked keys directly to global memory
+     * Scatter ranked keys directly to device-accessible memory
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ScatterKeys(
@@ -317,7 +317,7 @@ struct AgentRadixSortDownsweep
 
 
     /**
-     * Scatter ranked keys through shared memory, then to global memory
+     * Scatter ranked keys through shared memory, then to device-accessible memory
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ScatterKeys(
@@ -350,7 +350,7 @@ struct AgentRadixSortDownsweep
 
 
     /**
-     * Scatter ranked values directly to global memory
+     * Scatter ranked values directly to device-accessible memory
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ScatterValues(
@@ -366,7 +366,7 @@ struct AgentRadixSortDownsweep
 
 
     /**
-     * Scatter ranked values through shared memory, then to global memory
+     * Scatter ranked values through shared memory, then to device-accessible memory
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void ScatterValues(

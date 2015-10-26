@@ -59,7 +59,7 @@ namespace cub {
  *
  * \par Overview
  * - It is commonplace for blocks of threads to rearrange data items between
- *   threads.  For example, the global memory subsystem prefers access patterns
+ *   threads.  For example, the device-accessible memory subsystem prefers access patterns
  *   where data items are "striped" across threads (where consecutive threads access consecutive items),
  *   yet most block-wide operations prefer a "blocked" partitioning of items across threads
  *   (where consecutive items belong to a single thread).
@@ -749,7 +749,7 @@ public:
      * \endcode
      * \par
      * Suppose the set of striped input \p thread_data across the block of threads is
-     * <tt>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</tt> after loading from global memory.
+     * <tt>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</tt> after loading from device-accessible memory.
      * The corresponding output \p thread_data in those threads will be
      * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      *
@@ -797,7 +797,7 @@ public:
      * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      * The corresponding output \p thread_data in those threads will be
      * <tt>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</tt> in
-     * preparation for storing to global memory.
+     * preparation for storing to device-accessible memory.
      *
      */
     __device__ __forceinline__ void BlockedToStriped(
@@ -839,7 +839,7 @@ public:
      * \par
      * Suppose the set of warp-striped input \p thread_data across the block of threads is
      * <tt>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</tt>
-     * after loading from global memory.  (The first 128 items are striped across
+     * after loading from device-accessible memory.  (The first 128 items are striped across
      * the first warp of 32 threads, the second 128 items are striped across the second warp, etc.)
      * The corresponding output \p thread_data in those threads will be
      * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
@@ -888,7 +888,7 @@ public:
      * <tt>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</tt>.
      * The corresponding output \p thread_data in those threads will be
      * <tt>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</tt>
-     * in preparation for storing to global memory. (The first 128 items are striped across
+     * in preparation for storing to device-accessible memory. (The first 128 items are striped across
      * the first warp of 32 threads, the second 128 items are striped across the second warp, etc.)
      *
      */

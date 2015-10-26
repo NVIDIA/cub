@@ -714,6 +714,7 @@ INPUT                  += ../cub/device/device_radix_sort.cuh
 INPUT                  += ../cub/device/device_reduce.cuh 
 INPUT                  += ../cub/device/device_run_length_encode.cuh 
 INPUT                  += ../cub/device/device_scan.cuh 
+INPUT                  += ../cub/device/device_segmented_radix_sort.cuh 
 INPUT                  += ../cub/device/device_select.cuh 
 INPUT                  += ../cub/device/device_spmv.cuh 
 # INPUT                  += ../cub/grid/grid_even_share.cuh 
