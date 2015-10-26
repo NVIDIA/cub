@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceRunLengthEncode provides device-wide, parallel operations for computing a run-length encoding across a sequence of data items residing within global memory.
+ * cub::DeviceRunLengthEncode provides device-wide, parallel operations for computing a run-length encoding across a sequence of data items residing within device-accessible memory.
  */
 
 #pragma once
@@ -49,7 +49,7 @@ namespace cub {
 
 
 /**
- * \brief DeviceRunLengthEncode provides device-wide, parallel operations for demarcating "runs" of same-valued items within a sequence residing within global memory. ![](run_length_encode_logo.png)
+ * \brief DeviceRunLengthEncode provides device-wide, parallel operations for demarcating "runs" of same-valued items within a sequence residing within device-accessible memory. ![](run_length_encode_logo.png)
  * \ingroup DeviceModule
  *
  * \par Overview
@@ -110,7 +110,7 @@ struct DeviceRunLengthEncode
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_run_length_encode.cuh>
      *
-     * // Declare, allocate, and initialize device pointers for input and output
+     * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int          num_items;          // e.g., 8
      * int          *d_in;              // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
      * int          *d_unique_out;      // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
@@ -147,7 +147,7 @@ struct DeviceRunLengthEncode
         typename                    NumRunsOutputIteratorT>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Encode(
-        void*               d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of keys
         UniqueOutputIteratorT       d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
@@ -208,7 +208,7 @@ struct DeviceRunLengthEncode
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_run_length_encode.cuh>
      *
-     * // Declare, allocate, and initialize device pointers for input and output
+     * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int          num_items;          // e.g., 8
      * int          *d_in;              // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
      * int          *d_offsets_out;     // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
@@ -245,7 +245,7 @@ struct DeviceRunLengthEncode
         typename                NumRunsOutputIteratorT>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t NonTrivialRuns(
-        void*               d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT          d_in,                           ///< [in] Pointer to input sequence of data items
         OffsetsOutputIteratorT  d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets (one offset per non-trivial run)

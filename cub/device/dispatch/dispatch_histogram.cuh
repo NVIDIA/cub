@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequence of samples data residing within global memory.
+ * cub::DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequence of samples data residing within device-accessible memory.
  */
 
 #pragma once
@@ -516,7 +516,7 @@ struct DipatchHistogram
         typename                            DeviceHistogramSweepKernelT>                    ///< Function type of cub::DeviceHistogramSweepKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t PrivatizedDispatch(
-        void*                               d_temp_storage,                                 ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                               d_temp_storage,                                 ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                             temp_storage_bytes,                             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT                     d_samples,                                      ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
         CounterT*                           d_output_histograms[NUM_ACTIVE_CHANNELS],       ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.
@@ -692,7 +692,7 @@ struct DipatchHistogram
      */
     CUB_RUNTIME_FUNCTION
     static cudaError_t DispatchRange(
-        void*               d_temp_storage,                            ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                            ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&             temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
         CounterT*           d_output_histograms[NUM_ACTIVE_CHANNELS],  ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.
@@ -800,7 +800,7 @@ struct DipatchHistogram
      */
     CUB_RUNTIME_FUNCTION
     static cudaError_t DispatchRange(
-        void*               d_temp_storage,                             ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                             ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&             temp_storage_bytes,                         ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
         CounterT*           d_output_histograms[NUM_ACTIVE_CHANNELS],   ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.
@@ -882,7 +882,7 @@ struct DipatchHistogram
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t DispatchEven(
-        void*               d_temp_storage,                            ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                            ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&             temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
         CounterT*           d_output_histograms[NUM_ACTIVE_CHANNELS],  ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.
@@ -994,7 +994,7 @@ struct DipatchHistogram
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t DispatchEven(
-        void*               d_temp_storage,                            ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                            ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&             temp_storage_bytes,                        ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         SampleIteratorT     d_samples,                                  ///< [in] The pointer to the input sequence of sample items. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
         CounterT*           d_output_histograms[NUM_ACTIVE_CHANNELS],  ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_output_levels[i]</tt> - 1.

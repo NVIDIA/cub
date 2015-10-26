@@ -85,7 +85,7 @@ struct DeviceSpmv
      * \code
      * #include <cub/cub.cuh>   // or equivalently <cub/device/device_spmv.cuh>
      *
-     * // Declare, allocate, and initialize device pointers for input matrix A, input vector x,
+     * // Declare, allocate, and initialize device-accessible pointers for input matrix A, input vector x,
      * // and output vector y
      * int    num_rows = 9;
      * int    num_cols = 9;
@@ -130,7 +130,7 @@ struct DeviceSpmv
         typename            ValueT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t CsrMV(
-        void*               d_temp_storage,                     ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                     ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&             temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         ValueT*             d_values,                           ///< [in] Pointer to the array of \p num_nonzeros values of the corresponding nonzero elements of matrix <b>A</b>.
         int*                d_row_offsets,                      ///< [in] Pointer to the array of \p m + 1 offsets demarcating the start of every row in \p d_column_indices and \p d_values (with the final entry being equal to \p num_nonzeros)

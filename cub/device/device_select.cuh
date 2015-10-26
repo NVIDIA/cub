@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within global memory.
+ * cub::DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within device-accessible memory.
  */
 
 #pragma once
@@ -48,7 +48,7 @@ namespace cub {
 
 
 /**
- * \brief DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences of data items residing within global memory. ![](select_logo.png)
+ * \brief DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences of data items residing within device-accessible memory. ![](select_logo.png)
  * \ingroup DeviceModule
  *
  * \par Overview
@@ -96,7 +96,7 @@ struct DeviceSelect
      * \code
      * #include <cub/cub.cuh>       // or equivalently <cub/device/device_select.cuh>
      *
-     * // Declare, allocate, and initialize device pointers for input, flags, and output
+     * // Declare, allocate, and initialize device-accessible pointers for input, flags, and output
      * int  num_items;              // e.g., 8
      * int  *d_in;                  // e.g., [1, 2, 3, 4, 5, 6, 7, 8]
      * char *d_flags;               // e.g., [1, 0, 0, 1, 0, 1, 1, 0]
@@ -132,7 +132,7 @@ struct DeviceSelect
         typename                    NumSelectedIteratorT>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Flagged(
-        void*               d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
         FlagIterator                d_flags,                        ///< [in] Pointer to the input sequence of selection flags
@@ -203,7 +203,7 @@ struct DeviceSelect
      *     }
      * };
      *
-     * // Declare, allocate, and initialize device pointers for input and output
+     * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int      num_items;              // e.g., 8
      * int      *d_in;                  // e.g., [0, 2, 3, 9, 5, 2, 81, 8]
      * int      *d_out;                 // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
@@ -239,7 +239,7 @@ struct DeviceSelect
         typename                    SelectOp>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t If(
-        void*               d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                          ///< [out] Pointer to the output sequence of selected data items
@@ -297,7 +297,7 @@ struct DeviceSelect
      * \code
      * #include <cub/cub.cuh>       // or equivalently <cub/device/device_select.cuh>
      *
-     * // Declare, allocate, and initialize device pointers for input and output
+     * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int  num_items;              // e.g., 8
      * int  *d_in;                  // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
      * int  *d_out;                 // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
@@ -330,7 +330,7 @@ struct DeviceSelect
         typename                    NumSelectedIteratorT>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Unique(
-        void*               d_temp_storage,                ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*               d_temp_storage,                ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                          ///< [out] Pointer to the output sequence of selected data items

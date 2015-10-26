@@ -179,7 +179,7 @@ struct ScanTileState<T, true>
     __host__ __device__ __forceinline__
     cudaError_t Init(
         int     num_tiles,                          ///< [in] Number of tiles
-        void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void    *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t  temp_storage_bytes)                 ///< [in] Size in bytes of \t d_temp_storage allocation
     {
         d_tile_status = reinterpret_cast<TileDescriptor*>(d_temp_storage);
@@ -308,7 +308,7 @@ struct ScanTileState<T, false>
     __host__ __device__ __forceinline__
     cudaError_t Init(
         int     num_tiles,                          ///< [in] Number of tiles
-        void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void    *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t  temp_storage_bytes)                 ///< [in] Size in bytes of \t d_temp_storage allocation
     {
         cudaError_t error = cudaSuccess;
@@ -536,7 +536,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     __host__ __device__ __forceinline__
     cudaError_t Init(
         int     num_tiles,                          ///< [in] Number of tiles
-        void    *d_temp_storage,                    ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void    *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t  temp_storage_bytes)                 ///< [in] Size in bytes of \t d_temp_storage allocation
     {
         d_tile_status = reinterpret_cast<TileDescriptor*>(d_temp_storage);
