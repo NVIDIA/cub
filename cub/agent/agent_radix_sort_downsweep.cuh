@@ -238,11 +238,6 @@ struct AgentRadixSortDownsweep
     // Number of bits in current digit
     int             num_bits;
 
-    // Whether to short-ciruit
-    bool            short_circuit;
-
-
-
     //---------------------------------------------------------------------
     // Utility methods
     //---------------------------------------------------------------------
@@ -662,7 +657,8 @@ struct AgentRadixSortDownsweep
      */
     __device__ __forceinline__ AgentRadixSortDownsweep(
         TempStorage &temp_storage,
-        OffsetT      bin_offset,
+        OffsetT     num_items,
+        OffsetT     bin_offset,
         KeyT        *d_keys_in,
         KeyT        *d_keys_out,
         ValueT      *d_values_in,
@@ -677,9 +673,17 @@ struct AgentRadixSortDownsweep
         d_values_in(d_values_in),
         d_values_out(d_values_out),
         current_bit(current_bit),
-        num_bits(num_bits),
-        short_circuit(false)
-    {}
+        num_bits(num_bits)
+    {
+        if (threadIdx.x < RADIX_DIGITS)
+        {
+            // Short circuit if the histogram has only bin counts of only zeros or problem-size
+            int predicate = ((bin_offset == 0) || (bin_offset == num_items));
+            this->temp_storage.short_circuit = WarpAll(predicate);
+        }
+
+        __syncthreads();
+    }
 
 
     /**
@@ -721,8 +725,6 @@ struct AgentRadixSortDownsweep
         }
 
         __syncthreads();
-
-        short_circuit = this->temp_storage.short_circuit;
     }
 
 
@@ -730,10 +732,10 @@ struct AgentRadixSortDownsweep
      * Distribute keys from a segment of input tiles.
      */
     __device__ __forceinline__ void ProcessRegion(
-        OffsetT         block_offset,
-        const OffsetT   &block_end)
+        OffsetT   block_offset,
+        OffsetT   block_end)
     {
-        if (short_circuit)
+        if (temp_storage.short_circuit)
         {
             // Copy keys
             Copy(d_keys_in, d_keys_out, block_offset, block_end);
