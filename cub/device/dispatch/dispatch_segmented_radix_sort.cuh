@@ -37,10 +37,10 @@
 #include <stdio.h>
 #include <iterator>
 
+#include "dispatch_radix_sort.cuh"
 #include "../../agent/agent_radix_sort_upsweep.cuh"
 #include "../../agent/agent_radix_sort_downsweep.cuh"
-#include "../../block/block_scan.cuh"
-#include "../../block/block_radix_sort.cuh"
+#include "../../warp/warp_scan.cuh"
 #include "../../util_type.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
@@ -56,12 +56,10 @@ namespace cub {
  * Kernel entry points
  *****************************************************************************/
 
-
 /**
- * Radix sorting passes (one segment per block)
+ * Radix sorting pass (one segment per block)
  */
 template <
-    typename    AgentRadixSortUpsweepPolicyT,           ///< Parameterized AgentRadixSortUpsweepPolicy tuning policy type
     typename    AgentRadixSortDownsweepPolicyT,         ///< Parameterized AgentRadixSortDownsweepPolicy tuning policy type
     bool        DESCENDING,                             ///< Whether or not the sorted-order is high-to-low
     typename    KeyT,                                   ///< Key type
@@ -76,8 +74,8 @@ __global__ void DeviceSegmentedRadixSortKernel(
     int         *d_begin_offsets,                       ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
     int         *d_end_offsets,                         ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
     int         num_segments,                           ///< [in] The number of segments that comprise the sorting data
-    int         begin_bit,                              ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
-    int         end_bit)                                ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+    int         current_bit,                            ///< [in] Bit position of current radix digit
+    int         pass_bits)                              ///< [in] Number of bits of current radix digit
 {
     //
     // Constants
@@ -87,8 +85,9 @@ __global__ void DeviceSegmentedRadixSortKernel(
     {
         BLOCK_THREADS       = AgentRadixSortDownsweepPolicyT::BLOCK_THREADS,
         ITEMS_PER_THREAD    = AgentRadixSortDownsweepPolicyT::ITEMS_PER_THREAD,
-        TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         RADIX_BITS          = AgentRadixSortDownsweepPolicyT::RADIX_BITS,
+        TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
+        RADIX_DIGITS        = 1 << RADIX_BITS,
         KEYS_ONLY           = Equals<ValueT, NullType>::VALUE,
     };
 
@@ -96,28 +95,21 @@ __global__ void DeviceSegmentedRadixSortKernel(
     static const BlockLoadAlgorithm     LOAD_ALGORITHM  = AgentRadixSortDownsweepPolicyT::LOAD_ALGORITHM;
     static const CacheLoadModifier      LOAD_MODIFIER   = AgentRadixSortDownsweepPolicyT::LOAD_MODIFIER;
 
-
     //
     // Parameterize collective types
     //
 
+    // Upsweep policy
+    typedef AgentRadixSortUpsweepPolicy <BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_MODIFIER, RADIX_BITS> UpsweepPolicyT;
+
     // Upsweep type
-    typedef AgentRadixSortUpsweep<AgentRadixSortUpsweepPolicyT, KeyT, OffsetT> BlockUpsweepT;
+    typedef AgentRadixSortUpsweep<UpsweepPolicyT, KeyT, OffsetT> BlockUpsweepT;
 
     // Digit-scan type
-    typedef BlockScan<OffsetT, BLOCK_THREADS, SCAN_ALGORITHM> BlockScanT;
+    typedef WarpScan<OffsetT, RADIX_DIGITS> DigitScanT;
 
     // Downsweep type
     typedef AgentRadixSortDownsweep<AgentRadixSortDownsweepPolicyT, DESCENDING, KeyT, ValueT, OffsetT> BlockDownsweepT;
-
-    // BlockLoad type (keys)
-    typedef BlockLoad<KeyT*, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoadKeysT;
-
-    // BlockLoad type (values)
-    typedef BlockLoad<ValueT*, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoadValuesT;
-
-    // In-core block sort type
-    typedef BlockRadixSort<KeyT, BLOCK_THREADS, ITEMS_PER_THREAD, ValueT, RADIX_BITS, AgentRadixSortDownsweepPolicyT::MEMOIZE_OUTER_SCAN, SCAN_ALGORITHM> BlockRadixSortT;
 
     //
     // Shared memory storage
@@ -126,14 +118,10 @@ __global__ void DeviceSegmentedRadixSortKernel(
     __shared__ union
     {
         typename BlockUpsweepT::TempStorage     upsweep;
+        typename DigitScanT::TempStorage        scan;
         typename BlockDownsweepT::TempStorage   downsweep;
-        typename BlockScanT::TempStorage        scan;
-        typename BlockRadixSortT::TempStorage   single_sort;
-        typename BlockLoadKeysT::TempStorage    load_keys;
-        typename BlockLoadValuesT::TempStorage  load_values;
 
     } temp_storage;
-
 
     //
     // Process input tiles
@@ -143,196 +131,28 @@ __global__ void DeviceSegmentedRadixSortKernel(
     OffsetT segment_end     = d_end_offsets[blockIdx.x];
     OffsetT num_items       = segment_end - segment_begin;
 
+    // Check if empty segment
     if (num_items <= 0)
-    {
-        // Empty segment
         return;
-    }
-    else if (num_items < TILE_ITEMS)
-    {
-        // Small enough to sort the segment in-core
 
-        // Keys and values for the block
-        KeyT            keys[ITEMS_PER_THREAD];
-        ValueT          values[ITEMS_PER_THREAD];
-
-        // Get default (min/max) value for out-of-bounds keys
-        typedef typename Traits<KeyT>::UnsignedBits UnsignedBitsT;
-        UnsignedBitsT default_key_bits = (DESCENDING) ? Traits<KeyT>::MIN_KEY : Traits<KeyT>::MAX_KEY;
-        KeyT default_key = reinterpret_cast<KeyT&>(default_key_bits);
-
-        // Load keys
-        BlockLoadKeysT(temp_storage.load_keys).Load(d_keys_in + segment_begin, keys, num_items, default_key);
-
-        __syncthreads();
-
-        // Load values
-        if (!KEYS_ONLY)
-        {
-            BlockLoadValuesT(temp_storage.load_values).Load(d_values_in + segment_begin, values, num_items);
-
-            __syncthreads();
-        }
-
-        // Sort tile
-        BlockRadixSortT(temp_storage.single_sort).SortBlockedToStriped(
-            keys, values, begin_bit, end_bit, Int2Type<DESCENDING>(), Int2Type<KEYS_ONLY>());
-
-        // Store keys and values
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            int item_offset = ITEM * BLOCK_THREADS + threadIdx.x;
-            if (item_offset < num_items)
-            {
-                d_keys_out[item_offset] = keys[ITEM];
-                if (!KEYS_ONLY)
-                    d_values_out[item_offset] = values[ITEM];
-            }
-        }
-    }
-    else
-    {
-        // Radix sorting passes per digit place
-        for (int current_bit = begin_bit; current_bit < end_bit; current_bit += RADIX_BITS)
-        {
-            int pass_bits = CUB_MIN(RADIX_BITS, end_bit - current_bit);
-
-            // Upsweep
-            OffsetT bin_count;      // The count of each digit value in this pass (valid in the first RADIX_DIGITS threads)
-            BlockUpsweepT(temp_storage.upsweep, d_keys_in, current_bit, pass_bits).ProcessRegion(
-                segment_begin,
-                segment_end,
-                bin_count);
-
-            __syncthreads();
-
-            // Scan
-            OffsetT bin_offset;     // The global scatter base offset for each digit value in this pass (valid in the first RADIX_DIGITS threads)
-            BlockScanT(temp_storage.scan).ExclusiveSum(bin_count, bin_offset);
-
-            __syncthreads();
-
-            // Downsweep
-            BlockDownsweepT(temp_storage.downsweep, num_items, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit, pass_bits).ProcessRegion(
-                segment_begin,
-                segment_end);
-
-            __syncthreads();
-
-        }
-    }
-
-}
-
-
-/**
- * Single pass kernel entry point (single-block).  Fully sorts a tile of input.
- */
-template <
-    typename                AgentRadixSortDownsweepPolicy,          ///< Parameterizable tuning policy type for cub::AgentRadixSortUpsweep abstraction
-    bool                    DESCENDING,                             ///< Whether or not the sorted-order is high-to-low
-    typename                KeyT,                                   ///< Key type
-    typename                ValueT,                                 ///< Value type
-    typename                OffsetT>                                ///< Signed integer type for global offsets
-__launch_bounds__ (int(AgentRadixSortDownsweepPolicy::BLOCK_THREADS), 1)
-__global__ void DeviceRadixSortSingleKernel(
-    KeyT                    *d_keys_in,                             ///< [in] Input keys ping buffer
-    KeyT                    *d_keys_out,                            ///< [in] Output keys pong buffer
-    ValueT                  *d_values_in,                           ///< [in] Input values ping buffer
-    ValueT                  *d_values_out,                          ///< [in] Output values pong buffer
-    OffsetT                 num_items,                              ///< [in] Total number of input data items
-    int                     current_bit,                            ///< [in] Bit position of current radix digit
-    int                     end_bit)                                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
-{
-    // Constants
-    enum
-    {
-        BLOCK_THREADS           = AgentRadixSortDownsweepPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = AgentRadixSortDownsweepPolicy::ITEMS_PER_THREAD,
-        KEYS_ONLY               = Equals<ValueT, NullType>::VALUE,
-    };
-
-    // BlockRadixSort type
-    typedef BlockRadixSort<
-            KeyT,
-            BLOCK_THREADS,
-            ITEMS_PER_THREAD,
-            ValueT,
-            AgentRadixSortDownsweepPolicy::RADIX_BITS,
-            AgentRadixSortDownsweepPolicy::MEMOIZE_OUTER_SCAN,
-            AgentRadixSortDownsweepPolicy::INNER_SCAN_ALGORITHM,
-            AgentRadixSortDownsweepPolicy::SMEM_CONFIG>
-        BlockRadixSortT;
-
-    // BlockLoad type (keys)
-    typedef BlockLoad<
-        KeyT*,
-        BLOCK_THREADS,
-        ITEMS_PER_THREAD,
-        AgentRadixSortDownsweepPolicy::LOAD_ALGORITHM> BlockLoadKeys;
-
-    // BlockLoad type (values)
-    typedef BlockLoad<
-        ValueT*,
-        BLOCK_THREADS,
-        ITEMS_PER_THREAD,
-        AgentRadixSortDownsweepPolicy::LOAD_ALGORITHM> BlockLoadValues;
-
-
-    // Shared memory storage
-    __shared__ union
-    {
-        typename BlockRadixSortT::TempStorage       sort;
-        typename BlockLoadKeys::TempStorage         load_keys;
-        typename BlockLoadValues::TempStorage       load_values;
-
-    } temp_storage;
-
-    // Keys and values for the block
-    KeyT            keys[ITEMS_PER_THREAD];
-    ValueT          values[ITEMS_PER_THREAD];
-
-    // Get default (min/max) value for out-of-bounds keys
-    typedef typename Traits<KeyT>::UnsignedBits UnsignedBitsT;
-    UnsignedBitsT default_key_bits = (DESCENDING) ? Traits<KeyT>::MIN_KEY : Traits<KeyT>::MAX_KEY;
-    KeyT default_key = reinterpret_cast<KeyT&>(default_key_bits);
-
-    // Load keys
-    BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in, keys, num_items, default_key);
+    // Upsweep
+    OffsetT bin_count;      // The count of each digit value in this pass (valid in the first RADIX_DIGITS threads)
+    BlockUpsweepT(temp_storage.upsweep, d_keys_in, current_bit, pass_bits).ProcessRegion(
+        segment_begin, segment_end, bin_count);
 
     __syncthreads();
 
-    // Load values
-    if (!KEYS_ONLY)
-    {
-        BlockLoadValues(temp_storage.load_values).Load(d_values_in, values, num_items);
+    // Scan
+    OffsetT bin_offset;     // The global scatter base offset for each digit value in this pass (valid in the first RADIX_DIGITS threads)
+    DigitScanT(temp_storage.scan).ExclusiveSum(bin_count, bin_offset);
 
-        __syncthreads();
-    }
+    __syncthreads();
 
-    // Sort tile
-    BlockRadixSortT(temp_storage.sort).SortBlockedToStriped(
-        keys,
-        values,
-        current_bit,
-        end_bit,
-        Int2Type<DESCENDING>(),
-        Int2Type<KEYS_ONLY>());
-
-    // Store keys and values
-    #pragma unroll
-    for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-    {
-        int item_offset = ITEM * BLOCK_THREADS + threadIdx.x;
-        if (item_offset < num_items)
-        {
-            d_keys_out[item_offset] = keys[ITEM];
-            if (!KEYS_ONLY)
-                d_values_out[item_offset] = values[ITEM];
-        }
-    }
+    // Downsweep
+    BlockDownsweepT(temp_storage.downsweep, num_items, bin_offset, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit, pass_bits).ProcessRegion(
+        segment_begin, segment_end);
 }
+
 
 
 
@@ -346,10 +166,10 @@ __global__ void DeviceRadixSortSingleKernel(
 template <
     bool     DESCENDING,    ///< Whether or not the sorted-order is high-to-low
     bool     ALT_STORAGE,   ///< Whether or not we need a third buffer to either (a) prevent modification to input buffer, or (b) place output into a specific buffer (instead of a pointer to one of the double buffers)
-    typename KeyT,           ///< Key type
-    typename ValueT,         ///< Value type
+    typename KeyT,          ///< Key type
+    typename ValueT,        ///< Value type
     typename OffsetT>       ///< Signed integer type for global offsets
-struct DispatchRadixSort
+struct DispatchSegmentedRadixSort : DispatchRadixSort<DESCENDING, ALT_STORAGE, KeyT, ValueT, OffsetT>
 {
     /******************************************************************************
      * Constants
