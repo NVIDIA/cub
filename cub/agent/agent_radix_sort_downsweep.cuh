@@ -75,7 +75,6 @@ template <
     bool                        _MEMOIZE_OUTER_SCAN,        ///< Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure.  See BlockScanAlgorithm::BLOCK_SCAN_RAKING_MEMOIZE for more details.
     BlockScanAlgorithm          _INNER_SCAN_ALGORITHM,      ///< The BlockScan algorithm algorithm to use
     RadixSortScatterAlgorithm   _SCATTER_ALGORITHM,         ///< The scattering strategy to use
-    cudaSharedMemConfig         _SMEM_CONFIG,               ///< Shared memory bank mode
     int                         _RADIX_BITS>                ///< The number of radix bits, i.e., log2(bins)
 struct AgentRadixSortDownsweepPolicy
 {
@@ -91,7 +90,6 @@ struct AgentRadixSortDownsweepPolicy
     static const CacheLoadModifier          LOAD_MODIFIER           = _LOAD_MODIFIER;           ///< Cache load modifier for reading keys (and values)
     static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = _INNER_SCAN_ALGORITHM;    ///< The BlockScan algorithm algorithm to use
     static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = _SCATTER_ALGORITHM;       ///< The scattering strategy to use
-    static const cudaSharedMemConfig        SMEM_CONFIG             = _SMEM_CONFIG;             ///< Shared memory bank mode
 };
 
 
@@ -103,11 +101,11 @@ struct AgentRadixSortDownsweepPolicy
  * \brief AgentRadixSortDownsweep implements a stateful abstraction of CUDA thread blocks for participating in device-wide radix sort downsweep .
  */
 template <
-    typename AgentRadixSortDownsweepPolicy,             ///< Parameterized AgentRadixSortDownsweepPolicy tuning policy type
-    bool     DESCENDING,                                ///< Whether or not the sorted-order is high-to-low
-    typename KeyT,                                       ///< KeyT type
-    typename ValueT,                                     ///< ValueT type
-    typename OffsetT>                                   ///< Signed integer type for global offsets
+    typename AgentRadixSortDownsweepPolicy,     ///< Parameterized AgentRadixSortDownsweepPolicy tuning policy type
+    bool     DESCENDING,                        ///< Whether or not the sorted-order is high-to-low
+    typename KeyT,                              ///< KeyT type
+    typename ValueT,                            ///< ValueT type
+    typename OffsetT>                           ///< Signed integer type for global offsets
 struct AgentRadixSortDownsweep
 {
     //---------------------------------------------------------------------
@@ -163,8 +161,7 @@ struct AgentRadixSortDownsweep
         RADIX_BITS,
         DESCENDING,
         MEMOIZE_OUTER_SCAN,
-        INNER_SCAN_ALGORITHM,
-        SMEM_CONFIG> BlockRadixRank;
+        INNER_SCAN_ALGORITHM> BlockRadixRank;
 
     // BlockLoad type (keys)
     typedef BlockLoad<
