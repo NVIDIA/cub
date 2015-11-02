@@ -38,6 +38,7 @@
 #include <iterator>
 
 #include "dispatch/dispatch_segmented_radix_sort.cuh"
+#include "../util_arch.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -134,7 +135,8 @@ struct DeviceSegmentedRadixSort
      */
     template <
         typename            KeyT,
-        typename            ValueT>
+        typename            ValueT,
+        typename            OffsetT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairs(
         void*               d_temp_storage,                         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -143,9 +145,9 @@ struct DeviceSegmentedRadixSort
         KeyT                *d_keys_out,                            ///< [out] %Device-accessible pointer to the sorted output sequence of key data
         ValueT              *d_values_in,                           ///< [in] %Device-accessible pointer to the corresponding input sequence of associated value items
         ValueT              *d_values_out,                          ///< [out] %Device-accessible pointer to the correspondingly-reordered output sequence of associated value items
-        int                 *d_begin_offsets,                       ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-        int                 *d_end_offsets,                         ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
-        int                 num_segments,                           ///< [in] The number of segments that comprise the sorting data
+        OffsetT             *d_begin_offsets,                       ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
+        OffsetT             *d_end_offsets,                         ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
+        OffsetT             num_segments,                           ///< [in] The number of segments that comprise the sorting data
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
         int                 end_bit             = sizeof(KeyT) * 8, ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
