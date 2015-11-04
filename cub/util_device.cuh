@@ -296,12 +296,12 @@ struct ChainedPolicy
 
    /// Specializes and dispatches op in accordance to the first policy in the chain of adequate PTX version
    template <typename FunctorT>
-   static cudaError_t Invoke(int ptx_version, FunctorT op)
+   static cudaError_t Invoke(int ptx_version, FunctorT *op)
    {
        if (ptx_version < PTX_VERSION) {
            return PrevPolicyT::Invoke(ptx_version, op);
        }
-       return op.template Invoke<PolicyT>();
+       return op->template Invoke<PolicyT>();
    }
 };
 
@@ -314,8 +314,8 @@ struct ChainedPolicy<PTX_VERSION, PolicyT, PolicyT>
 
     /// Specializes and dispatches op in accordance to the first policy in the chain of adequate PTX version
     template <typename FunctorT>
-    static cudaError_t Invoke(int ptx_version, FunctorT op) {
-        return op.template Invoke<PolicyT>();
+    static cudaError_t Invoke(int ptx_version, FunctorT *op) {
+        return op->template Invoke<PolicyT>();
     }
 };
 
