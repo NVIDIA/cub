@@ -20,7 +20,7 @@
 					<folderInfo id="cdt.managedbuild.toolchain.gnu.cygwin.base.1260156311.1722659113" name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.gnu.cygwin.base.64885081" name="Cygwin GCC" nonInternalBuilderId="cdt.managedbuild.target.gnu.builder.cygwin.base" superClass="cdt.managedbuild.toolchain.gnu.cygwin.base">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.Cygwin_PE" id="cdt.managedbuild.target.gnu.platform.cygwin.base.1441704627" name="Debug Platform" osList="win32" superClass="cdt.managedbuild.target.gnu.platform.cygwin.base"/>
-							<builder buildPath="${workspace_loc:/PrivateCub}/Default" id="cdt.managedbuild.target.gnu.builder.cygwin.base.176112000" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.cygwin.base"/>
+							<builder buildPath="${workspace_loc:/PrivateCub}/Default" id="cdt.managedbuild.target.gnu.builder.cygwin.base.176112000" keepEnvironmentInBuildfile="false" name="Gnu Make Builder" superClass="cdt.managedbuild.target.gnu.builder.cygwin.base"/>
 							<tool id="cdt.managedbuild.tool.gnu.assembler.cygwin.base.1332700493" name="GCC Assembler" superClass="cdt.managedbuild.tool.gnu.assembler.cygwin.base">
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.390576750" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -35,13 +35,13 @@
 									<listOptionValue builtIn="false" value="__shared__"/>
 									<listOptionValue builtIn="false" value="__forceinline__"/>
 									<listOptionValue builtIn="false" value="__host__"/>
-									<listOptionValue builtIn="false" value="__launch_bounds__(a,b)"/>
 									<listOptionValue builtIn="false" value="__CUDACC__"/>
 									<listOptionValue builtIn="false" value="__device_builtin__"/>
 									<listOptionValue builtIn="false" value="__device_builtin_texture_type__"/>
 									<listOptionValue builtIn="false" value="TEST_ARCH=200"/>
+									<listOptionValue builtIn="false" value="__launch_bounds__(...)"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.dialect.std.1769492109" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++11" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.dialect.std.1769492109" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" value="gnu.cpp.compiler.dialect.c++11" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.cygwin.1752562149" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input.cygwin"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.compiler.cygwin.base.2110267806" name="Cygwin C Compiler" superClass="cdt.managedbuild.tool.gnu.c.compiler.cygwin.base">
@@ -54,13 +54,13 @@
 									<listOptionValue builtIn="false" value="__shared__"/>
 									<listOptionValue builtIn="false" value="__forceinline__"/>
 									<listOptionValue builtIn="false" value="__host__"/>
-									<listOptionValue builtIn="false" value="__launch_bounds__(a,b)"/>
 									<listOptionValue builtIn="false" value="__CUDACC__"/>
 									<listOptionValue builtIn="false" value="__device_builtin__"/>
 									<listOptionValue builtIn="false" value="__device_builtin_texture_type__"/>
 									<listOptionValue builtIn="false" value="TEST_ARCH=200"/>
+									<listOptionValue builtIn="false" value="__launch_bounds__(...)"/>
 								</option>
-								<option id="gnu.c.compiler.option.dialect.std.149725848" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
+								<option id="gnu.c.compiler.option.dialect.std.149725848" name="Language standard" superClass="gnu.c.compiler.option.dialect.std" value="gnu.c.compiler.dialect.c11" valueType="enumerated"/>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin.903720746" superClass="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.c.linker.cygwin.base.1766812805" name="Cygwin C Linker" superClass="cdt.managedbuild.tool.gnu.c.linker.cygwin.base"/>
