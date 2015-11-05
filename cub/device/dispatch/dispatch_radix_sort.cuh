@@ -872,19 +872,13 @@ struct DispatchRadixSort
         typename                ScanKernelPtrT,         ///< Function type of cub::SpineScanKernel
         typename                DownsweepKernelPtrT>    ///< Function type of cub::DeviceRadixSortDownsweepKernel
     CUB_RUNTIME_FUNCTION __forceinline__
-    cudaError_t Invoke(
+    cudaError_t InvokePasses(
         UpsweepKernelPtrT       upsweep_kernel,        ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
         UpsweepKernelPtrT       alt_upsweep_kernel,    ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
         ScanKernelPtrT          scan_kernel,           ///< [in] Kernel function pointer to parameterization of cub::SpineScanKernel
         DownsweepKernelPtrT     downsweep_kernel,      ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
         DownsweepKernelPtrT     alt_downsweep_kernel)  ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
-
         // Kernels data structure
         struct Kernels
         {
@@ -1056,11 +1050,128 @@ struct DispatchRadixSort
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 
+    /// Invocation (run multiple digit passes)
+    template <
+        typename                ActivePolicyT,          ///< Umbrella policy active for the target device
+        typename                SegmentedKernelPtrT>    ///< Function type of cub::DeviceSegmentedRadixSortKernel
+    CUB_RUNTIME_FUNCTION __forceinline__
+    cudaError_t InvokeSegmentedPasses(
+        SegmentedKernelPtrT     segmented_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
+        SegmentedKernelPtrT     alt_segmented_kernel)   ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
+    {
+        cudaError error = cudaSuccess;
+        do
+        {
+            // Get SM occupancies
+            int segmented_sm_occupancy, alt_segmented_sm_occupancy;
+            if (CubDebug(error = MaxSmOccupancy(segmented_sm_occupancy, segmented_kernel, ActivePolicyT::SegmentedPolicy::BLOCK_THREADS))) break;
+            if (CubDebug(error = MaxSmOccupancy(alt_segmented_sm_occupancy, alt_segmented_kernel, ActivePolicyT::AltSegmentedPolicy::BLOCK_THREADS))) break;
+
+            // Temporary storage allocation requirements
+            void* allocations[2];
+            size_t allocation_sizes[2] =
+            {
+                (!ALT_STORAGE) ? 0 : num_items * sizeof(KeyT),                      // bytes needed for 3rd keys buffer
+                (!ALT_STORAGE || (KEYS_ONLY)) ? 0 : num_items * sizeof(ValueT),     // bytes needed for 3rd values buffer
+            };
+
+            // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
+            if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
+
+            // Return if the caller is simply requesting the size of the storage allocation
+            if (d_temp_storage == NULL)
+            {
+                if (temp_storage_bytes)
+                return cudaSuccess;
+            }
+
+            // Pass planning.  Run passes of the alternate digit-size configuration until we have an even multiple of our preferred digit size
+            int num_bits            = end_bit - begin_bit;
+            int num_passes          = (num_bits + kernels.radix_bits - 1) / kernels.radix_bits;
+            bool is_num_passes_odd  = num_passes & 1;
+            int max_alt_passes      = (num_passes * kernels.radix_bits) - num_bits;
+            int alt_end_bit         = CUB_MIN(end_bit, begin_bit + (max_alt_passes * alt_kernels.radix_bits));
+
+            // Alias the temporary storage allocations
+            OffsetT *d_spine = static_cast<OffsetT*>(allocations[0]);
+
+            DoubleBuffer<KeyT> d_keys_remaining_passes(
+                (!ALT_STORAGE || is_num_passes_odd) ? d_keys.Alternate() : static_cast<KeyT*>(allocations[1]),
+                (!ALT_STORAGE) ? d_keys.Current() : (is_num_passes_odd) ? static_cast<KeyT*>(allocations[1]) : d_keys.Alternate());
+
+            DoubleBuffer<ValueT> d_values_remaining_passes(
+                (!ALT_STORAGE || is_num_passes_odd) ? d_values.Alternate() : static_cast<ValueT*>(allocations[2]),
+                (!ALT_STORAGE) ? d_values.Current() : (is_num_passes_odd) ? static_cast<ValueT*>(allocations[2]) : d_values.Alternate());
+
+            // Run first pass, consuming from the input's current buffers
+            int current_bit = begin_bit;
+            if (current_bit < alt_end_bit)
+            {
+                // Alternate digit-length pass
+                DispatchPass(
+                    d_keys.Current(), d_keys_remaining_passes.Current(),
+                    d_values.Current(), d_values_remaining_passes.Current(),
+                    d_spine, spine_length, current_bit, alt_kernels);
+                current_bit += alt_kernels.radix_bits;
+            }
+            else
+            {
+                // Preferred digit-length pass
+                DispatchPass(
+                    d_keys.Current(), d_keys_remaining_passes.Current(),
+                    d_values.Current(), d_values_remaining_passes.Current(),
+                    d_spine, spine_length, current_bit, kernels);
+                current_bit += kernels.radix_bits;
+            }
+
+            // Run remaining passes
+            while (current_bit < end_bit)
+            {
+                if (current_bit < alt_end_bit)
+                {
+                    // Alternate digit-length pass
+                    DispatchPass(
+                        d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
+                        d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
+                        d_spine, spine_length, current_bit, alt_kernels);
+                    current_bit += alt_kernels.radix_bits;
+                }
+                else
+                {
+                    // Preferred digit-length pass
+                    DispatchPass(
+                        d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
+                        d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
+                        d_spine, spine_length, current_bit, kernels);
+                    current_bit += kernels.radix_bits;
+                }
+
+                // Invert selectors and update current bit
+                d_keys_remaining_passes.selector ^= 1;
+                d_values_remaining_passes.selector ^= 1;
+            }
+
+            // Update selector
+            if (ALT_STORAGE)
+            {
+                // Sorted data always ends up in the other vector
+                d_keys.selector ^= 1;
+                d_values.selector ^= 1;
+            }
+            else
+            {
+                // Where sorted data ends up depends on the number of passes
+                d_keys.selector = (d_keys.selector + num_passes) & 1;
+                d_values.selector = (d_values.selector + num_passes) & 1;
+            }
+        }
+        while (0);
+
+        return error;
+    }
 
 
 
@@ -1082,14 +1193,14 @@ struct DispatchRadixSort
         typename                SegmentedKernelPtrT>    ///< Function type of cub::DeviceSegmentedRadixSortKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Invoke(
-        UpsweepKernelPtrT       upsweep_kernel,        ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
-        UpsweepKernelPtrT       alt_upsweep_kernel,    ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
-        ScanKernelPtrT          scan_kernel,           ///< [in] Kernel function pointer to parameterization of cub::SpineScanKernel
-        DownsweepKernelPtrT     downsweep_kernel,      ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
-        DownsweepKernelPtrT     alt_downsweep_kernel,  ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
-        SingleKernelPtrT        single_tile_kernel,         ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortSingleKernel
-        SegmentedKernelPtrT     segmented_kernel,      ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
-        SegmentedKernelPtrT     alt_segmented_kernel)  ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
+        UpsweepKernelPtrT       upsweep_kernel,         ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
+        UpsweepKernelPtrT       alt_upsweep_kernel,     ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortUpsweepKernel
+        ScanKernelPtrT          scan_kernel,            ///< [in] Kernel function pointer to parameterization of cub::SpineScanKernel
+        DownsweepKernelPtrT     downsweep_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
+        DownsweepKernelPtrT     alt_downsweep_kernel,   ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
+        SingleKernelPtrT        single_tile_kernel,     ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortSingleKernel
+        SegmentedKernelPtrT     segmented_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
+        SegmentedKernelPtrT     alt_segmented_kernel)   ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
     {
 #ifndef CUB_RUNTIME_ENABLED
 
