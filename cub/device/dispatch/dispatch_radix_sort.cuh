@@ -727,7 +727,7 @@ struct DispatchRadixSort
 
 
     /******************************************************************************
-     * Invocation
+     * Single-tile invocation
      ******************************************************************************/
 
     /// Invoke a single thread block to sort in-core
@@ -736,7 +736,7 @@ struct DispatchRadixSort
         typename                SingleKernelPtrT>       ///< Function type of cub::DeviceRadixSortSingleKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t InvokeSingleTile(
-        SingleKernelPtrT        single_tile_kernel)          ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortSingleKernel
+        SingleKernelPtrT        single_tile_kernel)     ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortSingleKernel
     {
         cudaError error = cudaSuccess;
         do
@@ -780,6 +780,10 @@ struct DispatchRadixSort
     }
 
 
+    /******************************************************************************
+     * Single-segment invocation
+     ******************************************************************************/
+
     /**
      * Invoke a three-kernel sorting pass at the current bit.
      */
@@ -792,7 +796,7 @@ struct DispatchRadixSort
         ValueT                  *d_values_out,
         OffsetT                 *d_spine,
         int                     spine_length,
-        int                     current_bit,
+        int                     &current_bit,
         KernelsT                &kernels)
     {
         cudaError error = cudaSuccess;
@@ -858,6 +862,9 @@ struct DispatchRadixSort
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+            // Update current bit
+            current_bit += pass_bits;
         }
         while (0);
 
@@ -893,6 +900,8 @@ struct DispatchRadixSort
 
             int                     radix_bits;
             int                     radix_digits;
+
+            int                     max_downsweep_grid_size;
             GridEvenShare<OffsetT>  even_share;
 
             template <typename UpsweepPolicyT, typename ScanPolicyT, typename DownsweepPolicyT>
@@ -910,22 +919,24 @@ struct DispatchRadixSort
                     this->scan_kernel       = scan_kernel;
                     this->downsweep_kernel  = downsweep_kernel;
 
-                    radix_bits              = ActivePolicyT::DownsweepPolicy::RADIX_BITS;
+                    radix_bits              = DownsweepPolicyT::RADIX_BITS;
                     radix_digits            = 1 << radix_bits;
 
-                    if (CubDebug(error = upsweep_config.Init<   typename ActivePolicyT::UpsweepPolicy>(     ptx_version, sm_count, upsweep_kernel))) break;
-                    if (CubDebug(error = scan_config.Init<      typename ActivePolicyT::ScanPolicy>(        ptx_version, sm_count, scan_kernel))) break;
-                    if (CubDebug(error = downsweep_config.Init< typename ActivePolicyT::DownsweepPolicy>(   ptx_version, sm_count, downsweep_kernel))) break;
+                    if (CubDebug(error = upsweep_config.Init<UpsweepPolicyT>(upsweep_kernel))) break;
+                    if (CubDebug(error = scan_config.Init<ScanPolicyT>(scan_kernel))) break;
+                    if (CubDebug(error = downsweep_config.Init<DownsweepPolicyT>(downsweep_kernel))) break;
+
+                    max_downsweep_grid_size = (downsweep_config.sm_occupancy * sm_count) * CUB_SUBSCRIPTION_FACTOR(ptx_version);
 
                     even_share = GridEvenShare<OffsetT>(
-                        num_items, downsweep_config.max_grid_size,
+                        num_items,
+                        max_downsweep_grid_size,
                         CUB_MAX(downsweep_config.tile_size, upsweep_config.tile_size));
                 }
                 while (0);
                 return error;
             }
         };
-
 
         cudaError error = cudaSuccess;
         do
@@ -938,17 +949,17 @@ struct DispatchRadixSort
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
-            // Init kernel configurations
+            // Init regular and alternate kernel configurations
             Kernels kernels, alt_kernels;
 
             if ((error = kernels.Init<ActivePolicyT::UpsweepPolicy, ActivePolicyT::ScanPolicy, ActivePolicyT::DownsweepPolicy>(
                 upsweep_kernel, scan_kernel, downsweep_kernel, ptx_version, sm_count))) break;
 
-            if ((error = kernels.Init<ActivePolicyT::AltUpsweepPolicy, ActivePolicyT::ScanPolicy, ActivePolicyT::AltDownsweepPolicy>(
+            if ((error = alt_kernels.Init<ActivePolicyT::AltUpsweepPolicy, ActivePolicyT::ScanPolicy, ActivePolicyT::AltDownsweepPolicy>(
                 alt_upsweep_kernel, scan_kernel, alt_downsweep_kernel, ptx_version, sm_count))) break;
 
             // Get maximum spine length
-            int max_grid_size       = CUB_MAX(kernels.downsweep_config.max_grid_size, alt_kernels.downsweep_config.max_grid_size);
+            int max_grid_size       = CUB_MAX(kernels.max_downsweep_grid_size, alt_kernels.max_downsweep_grid_size);
             int spine_length        = (max_grid_size * kernels.radix_digits) + kernels.scan_config.tile_size;
 
             // Temporary storage allocation requirements
@@ -987,65 +998,76 @@ struct DispatchRadixSort
 
             // Run first pass, consuming from the input's current buffers
             int current_bit = begin_bit;
-            if (current_bit < alt_end_bit)
-            {
-                // Alternate digit-length pass
-                DispatchPass(
-                    d_keys.Current(), d_keys_remaining_passes.Current(),
-                    d_values.Current(), d_values_remaining_passes.Current(),
-                    d_spine, spine_length, current_bit, alt_kernels);
-                current_bit += alt_kernels.radix_bits;
-            }
-            else
-            {
-                // Preferred digit-length pass
-                DispatchPass(
-                    d_keys.Current(), d_keys_remaining_passes.Current(),
-                    d_values.Current(), d_values_remaining_passes.Current(),
-                    d_spine, spine_length, current_bit, kernels);
-                current_bit += kernels.radix_bits;
-            }
+            if (CubDebug(error = DispatchPass(
+                d_keys.Current(), d_keys_remaining_passes.Current(),
+                d_values.Current(), d_values_remaining_passes.Current(),
+                d_spine, spine_length, current_bit,
+                (current_bit < alt_end_bit) ? alt_kernels : kernels))) break;
 
             // Run remaining passes
             while (current_bit < end_bit)
             {
-                if (current_bit < alt_end_bit)
-                {
-                    // Alternate digit-length pass
-                    DispatchPass(
-                        d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
-                        d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
-                        d_spine, spine_length, current_bit, alt_kernels);
-                    current_bit += alt_kernels.radix_bits;
-                }
-                else
-                {
-                    // Preferred digit-length pass
-                    DispatchPass(
-                        d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
-                        d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
-                        d_spine, spine_length, current_bit, kernels);
-                    current_bit += kernels.radix_bits;
-                }
+                if (CubDebug(error = DispatchPass(
+                    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
+                    d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
+                    d_spine, spine_length, current_bit,
+                    (current_bit < alt_end_bit) ? alt_kernels : kernels))) break;;
 
-                // Invert selectors and update current bit
+                // Invert selectors
                 d_keys_remaining_passes.selector ^= 1;
                 d_values_remaining_passes.selector ^= 1;
             }
 
             // Update selector
-            if (ALT_STORAGE)
-            {
-                // Sorted data always ends up in the other vector
-                d_keys.selector ^= 1;
-                d_values.selector ^= 1;
+            if (ALT_STORAGE) {
+                num_passes = 1; // Sorted data always ends up in the other vector
             }
-            else
-            {
-                // Where sorted data ends up depends on the number of passes
-                d_keys.selector = (d_keys.selector + num_passes) & 1;
-                d_values.selector = (d_values.selector + num_passes) & 1;
-            }
+
+            d_keys.selector = (d_keys.selector + num_passes) & 1;
+            d_values.selector = (d_values.selector + num_passes) & 1;
+        }
+        while (0);
+
+        return error;
+    }
+
+
+    /******************************************************************************
+     * Multi-segment invocation
+     ******************************************************************************/
+
+    /**
+     * Invoke a three-kernel sorting pass at the current bit.
+     */
+    template <typename KernelsT>
+    CUB_RUNTIME_FUNCTION __forceinline__
+    static cudaError_t InvokeSegmentedPass(
+        KeyT                    *d_keys_in,
+        KeyT                    *d_keys_out,
+        ValueT                  *d_values_in,
+        ValueT                  *d_values_out,
+        int                     &current_bit,
+        KernelsT                &kernels)
+    {
+        cudaError error = cudaSuccess;
+        do
+        {
+            int pass_bits = CUB_MIN(kernels.radix_bits, (end_bit - current_bit));
+
+            // Log upsweep_kernel configuration
+            if (debug_synchronous)
+                CubLog("Invoking segmented_kernels<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d, bit_grain %d\n",
+                    num_segments, kernels.segmented_config.block_threads, (long long) stream,
+                kernels.segmented_config.items_per_thread, kernels.segmented_config.sm_occupancy, current_bit, pass_bits);
+
+            // Check for failure to launch
+            if (CubDebug(error = cudaPeekAtLastError())) break;
+
+            // Sync the stream if specified to flush runtime errors
+            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+            // Update current bit
+            current_bit += pass_bits;
         }
         while (0);
 
@@ -1062,13 +1084,32 @@ struct DispatchRadixSort
         SegmentedKernelPtrT     segmented_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
         SegmentedKernelPtrT     alt_segmented_kernel)   ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
     {
+        // Kernels data structure
+        struct Kernels
+        {
+            SegmentedKernelPtrT     segmented_kernel;
+            KernelConfig            segmented_config;
+            int                     radix_bits;
+            int                     radix_digits;
+
+            template <typename SegmentedPolicyT>
+            CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Init(SegmentedKernelPtrT segmented_kernel)
+            {
+                this->segmented_kernel  = segmented_kernel;
+                radix_bits              = SegmentedPolicyT::RADIX_BITS;
+                radix_digits            = 1 << radix_bits;
+
+                return CubDebug(segmented_config.Init<SegmentedPolicyT>(segmented_kernel));
+            }
+        };
+
         cudaError error = cudaSuccess;
         do
         {
-            // Get SM occupancies
-            int segmented_sm_occupancy, alt_segmented_sm_occupancy;
-            if (CubDebug(error = MaxSmOccupancy(segmented_sm_occupancy, segmented_kernel, ActivePolicyT::SegmentedPolicy::BLOCK_THREADS))) break;
-            if (CubDebug(error = MaxSmOccupancy(alt_segmented_sm_occupancy, alt_segmented_kernel, ActivePolicyT::AltSegmentedPolicy::BLOCK_THREADS))) break;
+            // Init regular and alternate kernel configurations
+            Kernels kernels, alt_kernels;
+            if ((error = kernels.Init<ActivePolicyT::SegmentedPolicy>(segmented_kernel))) break;
+            if ((error = alt_kernels.Init<ActivePolicyT::AltSegmentedPolicy>(alt_segmented_kernel))) break;
 
             // Temporary storage allocation requirements
             void* allocations[2];
@@ -1084,19 +1125,19 @@ struct DispatchRadixSort
             // Return if the caller is simply requesting the size of the storage allocation
             if (d_temp_storage == NULL)
             {
-                if (temp_storage_bytes)
+                if (temp_storage_bytes == 0)
+                    temp_storage_bytes = 1;
                 return cudaSuccess;
             }
 
             // Pass planning.  Run passes of the alternate digit-size configuration until we have an even multiple of our preferred digit size
+            int radix_bits          = ActivePolicyT::SegmentedPolicy::RADIX_BITS;
+            int alt_radix_bits      = ActivePolicyT::AltSegmentedPolicy::RADIX_BITS;
             int num_bits            = end_bit - begin_bit;
-            int num_passes          = (num_bits + kernels.radix_bits - 1) / kernels.radix_bits;
+            int num_passes          = (num_bits + radix_bits - 1) / radix_bits;
             bool is_num_passes_odd  = num_passes & 1;
-            int max_alt_passes      = (num_passes * kernels.radix_bits) - num_bits;
-            int alt_end_bit         = CUB_MIN(end_bit, begin_bit + (max_alt_passes * alt_kernels.radix_bits));
-
-            // Alias the temporary storage allocations
-            OffsetT *d_spine = static_cast<OffsetT*>(allocations[0]);
+            int max_alt_passes      = (num_passes * radix_bits) - num_bits;
+            int alt_end_bit         = CUB_MIN(end_bit, begin_bit + (max_alt_passes * alt_radix_bits));
 
             DoubleBuffer<KeyT> d_keys_remaining_passes(
                 (!ALT_STORAGE || is_num_passes_odd) ? d_keys.Alternate() : static_cast<KeyT*>(allocations[1]),
@@ -1108,46 +1149,21 @@ struct DispatchRadixSort
 
             // Run first pass, consuming from the input's current buffers
             int current_bit = begin_bit;
-            if (current_bit < alt_end_bit)
-            {
-                // Alternate digit-length pass
-                DispatchPass(
-                    d_keys.Current(), d_keys_remaining_passes.Current(),
-                    d_values.Current(), d_values_remaining_passes.Current(),
-                    d_spine, spine_length, current_bit, alt_kernels);
-                current_bit += alt_kernels.radix_bits;
-            }
-            else
-            {
-                // Preferred digit-length pass
-                DispatchPass(
-                    d_keys.Current(), d_keys_remaining_passes.Current(),
-                    d_values.Current(), d_values_remaining_passes.Current(),
-                    d_spine, spine_length, current_bit, kernels);
-                current_bit += kernels.radix_bits;
-            }
+
+            if (CubDebug(error = InvokeSegmentedPass(
+                d_keys.Current(), d_keys_remaining_passes.Current(),
+                d_values.Current(), d_values_remaining_passes.Current(),
+                current_bit,
+                (current_bit < alt_end_bit) ? alt_kernels : kernels))) break;
 
             // Run remaining passes
             while (current_bit < end_bit)
             {
-                if (current_bit < alt_end_bit)
-                {
-                    // Alternate digit-length pass
-                    DispatchPass(
-                        d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
-                        d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
-                        d_spine, spine_length, current_bit, alt_kernels);
-                    current_bit += alt_kernels.radix_bits;
-                }
-                else
-                {
-                    // Preferred digit-length pass
-                    DispatchPass(
-                        d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
-                        d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
-                        d_spine, spine_length, current_bit, kernels);
-                    current_bit += kernels.radix_bits;
-                }
+                if (CubDebug(error = InvokeSegmentedPass(
+                    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
+                    d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
+                    current_bit,
+                    (current_bit < alt_end_bit) ? alt_kernels : kernels))) break;
 
                 // Invert selectors and update current bit
                 d_keys_remaining_passes.selector ^= 1;
@@ -1155,18 +1171,12 @@ struct DispatchRadixSort
             }
 
             // Update selector
-            if (ALT_STORAGE)
-            {
-                // Sorted data always ends up in the other vector
-                d_keys.selector ^= 1;
-                d_values.selector ^= 1;
+            if (ALT_STORAGE) {
+                num_passes = 1; // Sorted data always ends up in the other vector
             }
-            else
-            {
-                // Where sorted data ends up depends on the number of passes
-                d_keys.selector = (d_keys.selector + num_passes) & 1;
-                d_values.selector = (d_values.selector + num_passes) & 1;
-            }
+
+            d_keys.selector = (d_keys.selector + num_passes) & 1;
+            d_values.selector = (d_values.selector + num_passes) & 1;
         }
         while (0);
 
