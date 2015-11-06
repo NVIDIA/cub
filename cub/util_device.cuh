@@ -270,17 +270,15 @@ struct KernelConfig
     int items_per_thread;
     int tile_size;
     int sm_occupancy;
-    int max_grid_size;
 
     template <typename AgentPolicyT, typename KernelPtrT>
     CUB_RUNTIME_FUNCTION __forceinline__
-    cudaError_t Init(int sm_version, int sm_count, KernelPtrT kernel_ptr)
+    cudaError_t Init(KernelPtrT kernel_ptr)
     {
         block_threads        = AgentPolicyT::BLOCK_THREADS;
         items_per_thread     = AgentPolicyT::ITEMS_PER_THREAD;
         tile_size            = block_threads * items_per_thread;
         cudaError_t retval   = MaxSmOccupancy(sm_occupancy, kernel_ptr, block_threads);
-        max_grid_size        = (sm_occupancy * sm_count) * CUB_SUBSCRIPTION_FACTOR(sm_version);
         return retval;
     }
 };
