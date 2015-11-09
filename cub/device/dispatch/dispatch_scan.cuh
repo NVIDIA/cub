@@ -506,11 +506,7 @@ struct DispatchScan
         {
             // Get PTX version
             int ptx_version;
-    #if (CUB_PTX_ARCH == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
-    #else
-            ptx_version = CUB_PTX_ARCH;
-    #endif
 
             // Get kernel kernel dispatch configurations
             KernelConfig scan_sweep_config;
