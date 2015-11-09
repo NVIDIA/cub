@@ -882,10 +882,12 @@ int main(int argc, char** argv)
     if (num_items < 0) num_items = 32000000;
 
     Test<CUB, unsigned int, NullType, false> (num_items, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+/*
     Test<CUB, unsigned long long, NullType, false> (num_items, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
 
     Test<CUB, unsigned int, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
     Test<CUB, unsigned long long, unsigned int, false> (num_items, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+*/
 
 #elif defined(QUICK_TEST)
 

@@ -164,7 +164,7 @@ struct DeviceRadixSort
         DoubleBuffer<Key>       d_keys(d_keys_in, d_keys_out);
         DoubleBuffer<Value>     d_values(d_values_in, d_values_out);
 
-        return DispatchRadixSort<false, true, Key, Value, OffsetT>::Dispatch(
+        return DispatchRadixSort<false, Key, Value, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -172,6 +172,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
+            false,
             stream,
             debug_synchronous);
     }
@@ -260,7 +261,7 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DispatchRadixSort<false, false, Key, Value, OffsetT>::Dispatch(
+        return DispatchRadixSort<false, Key, Value, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -268,6 +269,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
+            true,
             stream,
             debug_synchronous);
     }
@@ -345,7 +347,7 @@ struct DeviceRadixSort
         DoubleBuffer<Key>       d_keys(d_keys_in, d_keys_out);
         DoubleBuffer<Value>     d_values(d_values_in, d_values_out);
 
-        return DispatchRadixSort<true, true, Key, Value, OffsetT>::Dispatch(
+        return DispatchRadixSort<true, Key, Value, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -353,6 +355,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
+            false,
             stream,
             debug_synchronous);
     }
@@ -436,7 +439,7 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DispatchRadixSort<true, false, Key, Value, OffsetT>::Dispatch(
+        return DispatchRadixSort<true, Key, Value, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -444,6 +447,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
+            true,
             stream,
             debug_synchronous);
     }
@@ -522,7 +526,7 @@ struct DeviceRadixSort
         DoubleBuffer<Key>       d_keys(d_keys_in, d_keys_out);
         DoubleBuffer<NullType>  d_values;
 
-        return DispatchRadixSort<false, true, Key, NullType, OffsetT>::Dispatch(
+        return DispatchRadixSort<false, Key, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -530,6 +534,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
+            false,
             stream,
             debug_synchronous);
     }
@@ -609,7 +614,7 @@ struct DeviceRadixSort
         // Null value type
         DoubleBuffer<NullType> d_values;
 
-        return DispatchRadixSort<false, false, Key, NullType, OffsetT>::Dispatch(
+        return DispatchRadixSort<false, Key, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -617,6 +622,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
+            true,
             stream,
             debug_synchronous);
     }
@@ -685,7 +691,7 @@ struct DeviceRadixSort
         DoubleBuffer<Key>       d_keys(d_keys_in, d_keys_out);
         DoubleBuffer<NullType>  d_values;
 
-        return DispatchRadixSort<true, false, Key, NullType, OffsetT>::Dispatch(
+        return DispatchRadixSort<true, Key, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -693,6 +699,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
+            false,
             stream,
             debug_synchronous);
     }
@@ -768,7 +775,7 @@ struct DeviceRadixSort
         // Null value type
         DoubleBuffer<NullType> d_values;
 
-        return DispatchRadixSort<true, false, Key, NullType, OffsetT>::Dispatch(
+        return DispatchRadixSort<true, Key, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_keys,
@@ -776,6 +783,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
+            true,
             stream,
             debug_synchronous);
     }
