@@ -50,7 +50,7 @@ namespace cub {
 
 /**
  * \brief DeviceReduce provides device-wide, parallel operations for computing a reduction across a sequence of data items residing within device-accessible memory. ![](reduce_logo.png)
- * \ingroup DeviceModule
+ * \ingroup SingleModule
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Reduce_(higher-order_function)"><em>reduction</em></a> (or <em>fold</em>)

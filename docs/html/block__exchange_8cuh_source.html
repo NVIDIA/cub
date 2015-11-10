@@ -161,11 +161,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;    {</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;        BLOCK_THREADS               = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;</div>
-<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        LOG_WARP_THREADS            = <a class="code" href="group___util_mgmt.html#ga07eedb9de4a50680067c2d51eb438f69" title="Number of threads per warp (log) ">CUB_LOG_WARP_THREADS</a>(PTX_ARCH),</div>
+<div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(PTX_ARCH),</div>
 <div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;        WARP_THREADS                = 1 &lt;&lt; LOG_WARP_THREADS,</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;        WARPS                       = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        LOG_SMEM_BANKS              = <a class="code" href="group___util_mgmt.html#ga2863430ef147807280c593c89658a52c" title="Number of smem banks (log) ">CUB_LOG_SMEM_BANKS</a>(PTX_ARCH),</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        LOG_SMEM_BANKS              = CUB_LOG_SMEM_BANKS(PTX_ARCH),</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;        SMEM_BANKS                  = 1 &lt;&lt; LOG_SMEM_BANKS,</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;        TILE_ITEMS                  = BLOCK_THREADS * ITEMS_PER_THREAD,</div>
@@ -819,11 +819,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l01033"></a><span class="lineno"> 1033</span>&#160;    <span class="keyword">enum</span></div>
 <div class="line"><a name="l01034"></a><span class="lineno"> 1034</span>&#160;    {</div>
 <div class="line"><a name="l01035"></a><span class="lineno"> 1035</span>&#160;        <span class="comment">// Whether the logical warp size and the PTX warp size coincide</span></div>
-<div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160;        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == <a class="code" href="group___util_mgmt.html#gabfbb84b4dfe9567e3a5bd8216e2acbb4" title="Number of threads per warp. ">CUB_WARP_THREADS</a>(PTX_ARCH)),</div>
+<div class="line"><a name="l01036"></a><span class="lineno"> 1036</span>&#160;        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),</div>
 <div class="line"><a name="l01037"></a><span class="lineno"> 1037</span>&#160;</div>
 <div class="line"><a name="l01038"></a><span class="lineno"> 1038</span>&#160;        WARP_ITEMS                  = (ITEMS_PER_THREAD * LOGICAL_WARP_THREADS) + 1,</div>
 <div class="line"><a name="l01039"></a><span class="lineno"> 1039</span>&#160;</div>
-<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;        LOG_SMEM_BANKS              = <a class="code" href="group___util_mgmt.html#ga2863430ef147807280c593c89658a52c" title="Number of smem banks (log) ">CUB_LOG_SMEM_BANKS</a>(PTX_ARCH),</div>
+<div class="line"><a name="l01040"></a><span class="lineno"> 1040</span>&#160;        LOG_SMEM_BANKS              = CUB_LOG_SMEM_BANKS(PTX_ARCH),</div>
 <div class="line"><a name="l01041"></a><span class="lineno"> 1041</span>&#160;        SMEM_BANKS                  = 1 &lt;&lt; LOG_SMEM_BANKS,</div>
 <div class="line"><a name="l01042"></a><span class="lineno"> 1042</span>&#160;</div>
 <div class="line"><a name="l01043"></a><span class="lineno"> 1043</span>&#160;        <span class="comment">// Insert padding if the number of items per thread is a power of two</span></div>
@@ -912,7 +912,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 10 2015 13:58:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

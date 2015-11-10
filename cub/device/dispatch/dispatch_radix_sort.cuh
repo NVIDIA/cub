@@ -369,6 +369,7 @@ __global__ void DeviceSegmentedRadixSortKernel(
     __shared__ union
     {
         typename BlockUpsweepT::TempStorage     upsweep;
+        volatile KeyT                           reverse_counts[RADIX_DIGITS];
         typename DigitScanT::TempStorage        scan;
         typename BlockDownsweepT::TempStorage   downsweep;
 
@@ -391,7 +392,30 @@ __global__ void DeviceSegmentedRadixSortKernel(
 
     // Scan
     OffsetT bin_offset;     // The global scatter base offset for each digit value in this pass (valid in the first RADIX_DIGITS threads)
-    DigitScanT(temp_storage.scan).ExclusiveSum(bin_count, bin_offset);
+    if (threadIdx.x < RADIX_DIGITS)
+    {
+        if (IS_DESCENDING)
+        {
+#if CUB_PTX_ARCH >= 300
+            bin_count = ShuffleIndex(bin_count, RADIX_DIGITS - threadIdx.x - 1);
+#else
+            temp_storage.reverse_counts[threadIdx.x] = bin_count;
+            bin_count = temp_storage.reverse_counts[RADIX_DIGITS - threadIdx.x - 1];
+#endif
+        }
+        DigitScanT(temp_storage.scan).ExclusiveSum(bin_count, bin_offset);
+        bin_offset += segment_begin;
+
+        if (IS_DESCENDING)
+        {
+#if CUB_PTX_ARCH >= 300
+            bin_offset = ShuffleIndex(bin_offset, RADIX_DIGITS - threadIdx.x - 1);
+#else
+            temp_storage.reverse_counts[threadIdx.x] = bin_offset;
+            bin_offset = temp_storage.reverse_counts[RADIX_DIGITS - threadIdx.x - 1];
+#endif
+        }
+    }
 
     __syncthreads();
 
@@ -676,13 +700,13 @@ struct DispatchRadixSort :
     size_t                  &temp_storage_bytes;    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
     DoubleBuffer<KeyT>      &d_keys;                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
     DoubleBuffer<ValueT>    &d_values;              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
+    OffsetT                 num_items;              ///< [in] Number of items to sort
     int                     begin_bit;              ///< [in] The beginning (least-significant) bit index needed for key comparison
     int                     end_bit;                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
     cudaStream_t            stream;                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     bool                    debug_synchronous;      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                     ptx_version;            ///< [in] PTX version
     bool                    is_overwrite_okay;      ///< [in] Whether is okay to overwrite source buffers
-    OffsetT                 num_items;              ///< [in] Number of items to reduce
 
 
     //------------------------------------------------------------------------------
@@ -1090,7 +1114,7 @@ struct DispatchRadixSort :
         size_t                  &temp_storage_bytes,    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         DoubleBuffer<KeyT>      &d_keys,                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<ValueT>    &d_values,              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
-        OffsetT                 num_items,              ///< [in] Number of items to reduce
+        OffsetT                 num_items,              ///< [in] Number of items to sort
         int                     begin_bit,              ///< [in] The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
         bool                    is_overwrite_okay,      ///< [in] Whether is okay to overwrite source buffers
@@ -1159,15 +1183,16 @@ struct DispatchSegmentedRadixSort :
     size_t                  &temp_storage_bytes;    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
     DoubleBuffer<KeyT>      &d_keys;                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
     DoubleBuffer<ValueT>    &d_values;              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
+    OffsetT                 num_segments;           ///< [in] The number of segments that comprise the sorting data
+    OffsetT                 num_items;              ///< [in] Number of items to sort
+    OffsetT                 *d_begin_offsets;       ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
+    OffsetT                 *d_end_offsets;         ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
     int                     begin_bit;              ///< [in] The beginning (least-significant) bit index needed for key comparison
     int                     end_bit;                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
     cudaStream_t            stream;                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     bool                    debug_synchronous;      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                     ptx_version;            ///< [in] PTX version
     bool                    is_overwrite_okay;      ///< [in] Whether is okay to overwrite source buffers
-    OffsetT                 *d_begin_offsets;       ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-    OffsetT                 *d_end_offsets;         ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
-    OffsetT                 num_segments;           ///< [in] The number of segments that comprise the sorting data
 
 
     //------------------------------------------------------------------------------
@@ -1181,9 +1206,10 @@ struct DispatchSegmentedRadixSort :
         size_t                  &temp_storage_bytes,
         DoubleBuffer<KeyT>      &d_keys,
         DoubleBuffer<ValueT>    &d_values,
+        OffsetT                 num_items,
+        OffsetT                 num_segments,
         OffsetT                 *d_begin_offsets,
         OffsetT                 *d_end_offsets,
-        OffsetT                 num_segments,
         int                     begin_bit,
         int                     end_bit,
         bool                    is_overwrite_okay,
@@ -1201,9 +1227,10 @@ struct DispatchSegmentedRadixSort :
         debug_synchronous(debug_synchronous),
         is_overwrite_okay(is_overwrite_okay),
         ptx_version(ptx_version),
+        num_items(num_items),
+        num_segments(num_segments),
         d_begin_offsets(d_begin_offsets),
-        d_end_offsets(d_end_offsets),
-        num_segments(num_segments)
+        d_end_offsets(d_end_offsets)
     {}
 
 
@@ -1407,9 +1434,10 @@ struct DispatchSegmentedRadixSort :
         size_t                  &temp_storage_bytes,    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         DoubleBuffer<KeyT>      &d_keys,                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<ValueT>    &d_values,              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
-        int                     *d_begin_offsets,                       ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-        int                     *d_end_offsets,                         ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
-        int                     num_segments,                           ///< [in] The number of segments that comprise the sorting data
+        int                     num_items,              ///< [in] Number of items to sort
+        int                     num_segments,           ///< [in] The number of segments that comprise the sorting data
+        int                     *d_begin_offsets,       ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
+        int                     *d_end_offsets,         ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
         int                     begin_bit,              ///< [in] The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
         bool                    is_overwrite_okay,      ///< [in] Whether is okay to overwrite source buffers
@@ -1426,7 +1454,7 @@ struct DispatchSegmentedRadixSort :
             DispatchSegmentedRadixSort dispatch(
                 d_temp_storage, temp_storage_bytes,
                 d_keys, d_values,
-                d_begin_offsets, d_end_offsets, num_segments,
+                num_items, num_segments, d_begin_offsets, d_end_offsets,
                 begin_bit, end_bit, is_overwrite_okay,
                 stream, debug_synchronous, ptx_version);
 

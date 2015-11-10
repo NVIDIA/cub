@@ -41,7 +41,7 @@ var searchData=
   ['blockload',['BlockLoad',['../classcub_1_1_block_load.html#a63ca21a7d0a53bcff4f10b165859d9b1',1,'cub::BlockLoad::BlockLoad()'],['../classcub_1_1_block_load.html#ae412a81afb577ba1f4f86beb9b69ba27',1,'cub::BlockLoad::BlockLoad(TempStorage &amp;temp_storage)']]],
   ['blockload',['BlockLoad',['../classcub_1_1_block_load.html',1,'cub']]],
   ['blockloadalgorithm',['BlockLoadAlgorithm',['../namespacecub.html#a9d7e37497fdd99864c57adecda710401',1,'cub']]],
-  ['block_2dwide_20_28collective_29',['Block-wide (collective)',['../group___block_module.html',1,'']]],
+  ['block_2dwide',['Block-wide',['../group___block_module.html',1,'']]],
   ['blockradixsort',['BlockRadixSort',['../classcub_1_1_block_radix_sort.html#abaccdf539c5a4d3ec0eea3f080650f65',1,'cub::BlockRadixSort::BlockRadixSort()'],['../classcub_1_1_block_radix_sort.html#afec22300c3b4b119e18ecac33373a14c',1,'cub::BlockRadixSort::BlockRadixSort(TempStorage &amp;temp_storage)']]],
   ['blockradixsort',['BlockRadixSort',['../classcub_1_1_block_radix_sort.html',1,'cub']]],
   ['blockreduce',['BlockReduce',['../classcub_1_1_block_reduce.html',1,'cub']]],

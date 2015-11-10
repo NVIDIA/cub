@@ -277,13 +277,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line">    <span class="comment">// Kernel props</span></div>
 <div class="line">    <span class="keywordtype">int</span> max_sm_occupancy;</div>
-<div class="line">    <a name="a3"></a><a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a4"></a><a class="code" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(max_sm_occupancy, BlockPrefixSumKernel&lt;BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM&gt;, BLOCK_THREADS));</div>
+<div class="line">    <a name="a3"></a><a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(MaxSmOccupancy(max_sm_occupancy, BlockPrefixSumKernel&lt;BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM&gt;, BLOCK_THREADS));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Copy problem to device</span></div>
 <div class="line">    cudaMemcpy(d_in, h_in, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>) * TILE_SIZE, cudaMemcpyHostToDevice);</div>
 <div class="line"></div>
 <div class="line">    printf(<span class="stringliteral">&quot;BlockScan algorithm %s on %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n&quot;</span>,</div>
-<div class="line">        (ALGORITHM == <a name="a5"></a><a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c">BLOCK_SCAN_RAKING</a>) ? <span class="stringliteral">&quot;BLOCK_SCAN_RAKING&quot;</span> : (ALGORITHM == <a name="a6"></a><a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f">BLOCK_SCAN_RAKING_MEMOIZE</a>) ? <span class="stringliteral">&quot;BLOCK_SCAN_RAKING_MEMOIZE&quot;</span> : <span class="stringliteral">&quot;BLOCK_SCAN_WARP_SCANS&quot;</span>,</div>
+<div class="line">        (ALGORITHM == <a name="a4"></a><a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba0fa6cac57b7df2f475a67af053b9371c">BLOCK_SCAN_RAKING</a>) ? <span class="stringliteral">&quot;BLOCK_SCAN_RAKING&quot;</span> : (ALGORITHM == <a name="a5"></a><a class="code" href="namespacecub.html#abec44bba36037c547e7e84906d0d23abadc8dfe7760ac97ddde467ecf1070674f">BLOCK_SCAN_RAKING_MEMOIZE</a>) ? <span class="stringliteral">&quot;BLOCK_SCAN_RAKING_MEMOIZE&quot;</span> : <span class="stringliteral">&quot;BLOCK_SCAN_WARP_SCANS&quot;</span>,</div>
 <div class="line">        TILE_SIZE, g_timing_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Run aggregate/prefix kernel</span></div>
@@ -414,7 +414,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 10 2015 13:58:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

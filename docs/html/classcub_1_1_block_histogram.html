@@ -101,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_histogram-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockHistogram&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a></div></div>  </div>
+<div class="title">cub::BlockHistogram&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -170,7 +170,7 @@ class cub::BlockHistogram&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, ALGORITHM,
 <div class="line">    <a class="code" href="classcub_1_1_block_histogram.html#a0cebf0947dda55b487e33ca63d900d7b" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockHistogram</a>(temp_storage).Histogram(data, smem_histogram);</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt>Performance and Usage Considerations</dt><dd><ul>
-<li>The histogram output can be constructed in shared or global memory</li>
+<li>The histogram output can be constructed in shared or device-accessible memory</li>
 <li>See <a class="el" href="namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2" title="BlockHistogramAlgorithm enumerates alternative algorithms for the parallel construction of block-wide...">cub::BlockHistogramAlgorithm</a> for performance details regarding algorithmic alternatives </li>
 </ul>
 </dd></dl>
@@ -200,11 +200,11 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="separator:a080faf88a47e73e8bfa9964cd8f26feb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="memTemplParams" colspan="2">template&lt;typename CounterT &gt; </td></tr>
 <tr class="memitem:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a0e4be5c1f7a90fb1d6b4e2519d6be8d3">Histogram</a> (T(&amp;items)[ITEMS_PER_THREAD], CounterT histogram[BINS])</td></tr>
-<tr class="memdesc:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input elements.  <a href="#a0e4be5c1f7a90fb1d6b4e2519d6be8d3">More...</a><br/></td></tr>
+<tr class="memdesc:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a block-wide histogram in shared/device-accessible memory. Each thread contributes an array of input elements.  <a href="#a0e4be5c1f7a90fb1d6b4e2519d6be8d3">More...</a><br/></td></tr>
 <tr class="separator:a0e4be5c1f7a90fb1d6b4e2519d6be8d3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a90ef25b7af7ce819367eca662a47dd2d"><td class="memTemplParams" colspan="2">template&lt;typename CounterT &gt; </td></tr>
 <tr class="memitem:a90ef25b7af7ce819367eca662a47dd2d"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_histogram.html#a90ef25b7af7ce819367eca662a47dd2d">Composite</a> (T(&amp;items)[ITEMS_PER_THREAD], CounterT histogram[BINS])</td></tr>
-<tr class="memdesc:a90ef25b7af7ce819367eca662a47dd2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of input elements.  <a href="#a90ef25b7af7ce819367eca662a47dd2d">More...</a><br/></td></tr>
+<tr class="memdesc:a90ef25b7af7ce819367eca662a47dd2d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Updates an existing block-wide histogram in shared/device-accessible memory. Each thread composites an array of input elements.  <a href="#a90ef25b7af7ce819367eca662a47dd2d">More...</a><br/></td></tr>
 <tr class="separator:a90ef25b7af7ce819367eca662a47dd2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
@@ -343,7 +343,7 @@ template&lt;typename CounterT &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Constructs a block-wide histogram in shared/global memory. Each thread contributes an array of input elements. </p>
+<p>Constructs a block-wide histogram in shared/device-accessible memory. Each thread contributes an array of input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
@@ -379,7 +379,7 @@ template&lt;typename CounterT &gt; </div>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">items</td><td>Calling thread's input values to histogram </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">histogram</td><td>Reference to shared/global memory histogram </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">histogram</td><td>Reference to shared/device-accessible memory histogram </td></tr>
   </table>
   </dd>
 </dl>
@@ -424,7 +424,7 @@ template&lt;typename CounterT &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Updates an existing block-wide histogram in shared/global memory. Each thread composites an array of input elements. </p>
+<p>Updates an existing block-wide histogram in shared/device-accessible memory. Each thread composites an array of input elements. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Efficiency is increased with increased granularity <code>ITEMS_PER_THREAD</code>. Performance is also typically increased until the additional register pressure or shared memory allocation size causes SM occupancy to fall too low. Consider variants of <a class="el" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">cub::BlockLoad</a> for efficiently gathering a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of elements across threads.</li>
 <li>A subsequent <code>__syncthreads()</code> threadblock barrier should be invoked after calling this method if the collective's temporary storage (e.g., <code>temp_storage</code>) is to be reused or repurposed.</li>
@@ -463,7 +463,7 @@ template&lt;typename CounterT &gt; </div>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">items</td><td>Calling thread's input values to histogram </td></tr>
-    <tr><td class="paramdir">[out]</td><td class="paramname">histogram</td><td>Reference to shared/global memory histogram </td></tr>
+    <tr><td class="paramdir">[out]</td><td class="paramname">histogram</td><td>Reference to shared/device-accessible memory histogram </td></tr>
   </table>
   </dd>
 </dl>
@@ -479,7 +479,7 @@ template&lt;typename CounterT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 10 2015 13:58:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
