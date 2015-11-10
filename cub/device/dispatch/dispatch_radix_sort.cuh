@@ -811,7 +811,7 @@ struct DispatchRadixSort :
                 pass_config.upsweep_config.items_per_thread, pass_config.upsweep_config.sm_occupancy, current_bit, pass_bits);
 
             // Invoke upsweep_kernel with same grid size as downsweep_kernel
-            upsweep_kernel<<<pass_config.even_share.grid_size, pass_config.upsweep_config.block_threads, 0, stream>>>(
+            pass_config.upsweep_kernel<<<pass_config.even_share.grid_size, pass_config.upsweep_config.block_threads, 0, stream>>>(
                 d_keys_in,
                 d_spine,
                 num_items,
@@ -830,7 +830,7 @@ struct DispatchRadixSort :
                 1, pass_config.scan_config.block_threads, (long long) stream, pass_config.scan_config.items_per_thread);
 
             // Invoke scan_kernel
-            scan_kernel<<<1, pass_config.scan_config.block_threads, 0, stream>>>(
+            pass_config.scan_kernel<<<1, pass_config.scan_config.block_threads, 0, stream>>>(
                 d_spine,
                 spine_length);
 
@@ -846,7 +846,7 @@ struct DispatchRadixSort :
                 pass_config.downsweep_config.items_per_thread, pass_config.downsweep_config.sm_occupancy);
 
             // Invoke downsweep_kernel
-            downsweep_kernel<<<pass_config.even_share.grid_size, pass_config.downsweep_config.block_threads, 0, stream>>>(
+            pass_config.downsweep_kernel<<<pass_config.even_share.grid_size, pass_config.downsweep_config.block_threads, 0, stream>>>(
                 d_keys_in,
                 d_keys_out,
                 d_values_in,
@@ -897,7 +897,7 @@ struct DispatchRadixSort :
             pass_config.scan_kernel         = scan_kernel;
             pass_config.downsweep_kernel    = downsweep_kernel;
             pass_config.radix_bits          = DownsweepPolicyT::RADIX_BITS;
-            pass_config.radix_digits        = 1 << radix_bits;
+            pass_config.radix_digits        = 1 << pass_config.radix_bits;
 
             if (CubDebug(error = pass_config.upsweep_config.template    Init<UpsweepPolicyT>(upsweep_kernel))) break;
             if (CubDebug(error = pass_config.scan_config.template       Init<ScanPolicyT>(scan_kernel))) break;
@@ -929,7 +929,6 @@ struct DispatchRadixSort :
         DownsweepKernelT    downsweep_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
         DownsweepKernelT    alt_downsweep_kernel)   ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
     {
-
 #ifndef CUB_RUNTIME_ENABLED
 
         // Kernel launch not supported from this device
@@ -1011,7 +1010,7 @@ struct DispatchRadixSort :
 
             // Run first pass, consuming from the input's current buffers
             int current_bit = begin_bit;
-            if (CubDebug(error = DispatchPass(
+            if (CubDebug(error = InvokePass(
                 d_keys.Current(), d_keys_remaining_passes.Current(),
                 d_values.Current(), d_values_remaining_passes.Current(),
                 d_spine, spine_length, current_bit,
@@ -1020,7 +1019,7 @@ struct DispatchRadixSort :
             // Run remaining passes
             while (current_bit < end_bit)
             {
-                if (CubDebug(error = DispatchPass(
+                if (CubDebug(error = InvokePass(
                     d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
                     d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
                     d_spine, spine_length, current_bit,
@@ -1067,16 +1066,13 @@ struct DispatchRadixSort :
         }
         else
         {
-/*
             // Regular size
-            return Invoke<ActivePolicyT>(
+            return InvokePasses<ActivePolicyT>(
                 DeviceRadixSortUpsweepKernel<   MaxPolicy, false,   IS_DESCENDING, KeyT, OffsetT>,
                 DeviceRadixSortUpsweepKernel<   MaxPolicy, true,    IS_DESCENDING, KeyT, OffsetT>,
                 RadixSortScanBinsKernel<        MaxPolicy, OffsetT>,
                 DeviceRadixSortDownsweepKernel< MaxPolicy, false,   IS_DESCENDING, KeyT, ValueT, OffsetT>,
                 DeviceRadixSortDownsweepKernel< MaxPolicy, true,    IS_DESCENDING, KeyT, ValueT, OffsetT>);
-*/
-            return cudaSuccess;
         }
     }
 
@@ -1218,7 +1214,7 @@ struct DispatchSegmentedRadixSort :
     /// Invoke a three-kernel sorting pass at the current bit.
     template <typename PassConfigT>
     CUB_RUNTIME_FUNCTION __forceinline__
-    cudaError_t InvokeSegmentedPass(
+    cudaError_t InvokePass(
         KeyT            *d_keys_in,
         KeyT            *d_keys_out,
         ValueT          *d_values_in,
@@ -1231,11 +1227,17 @@ struct DispatchSegmentedRadixSort :
         {
             int pass_bits = CUB_MIN(pass_config.radix_bits, (end_bit - current_bit));
 
-            // Log upsweep_kernel configuration
+            // Log kernel configuration
             if (debug_synchronous)
                 CubLog("Invoking segmented_kernels<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d, bit_grain %d\n",
                     num_segments, pass_config.segmented_config.block_threads, (long long) stream,
                 pass_config.segmented_config.items_per_thread, pass_config.segmented_config.sm_occupancy, current_bit, pass_bits);
+
+            pass_config.segmented_kernel<<<num_segments, pass_config.segmented_config.block_threads, 0, stream>>>(
+                d_keys_in, d_keys_out,
+                d_values_in,  d_values_out,
+                d_begin_offsets, d_end_offsets, num_segments,
+                current_bit, pass_bits);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
@@ -1275,7 +1277,7 @@ struct DispatchSegmentedRadixSort :
         typename                ActivePolicyT,          ///< Umbrella policy active for the target device
         typename                SegmentedKernelT>       ///< Function type of cub::DeviceSegmentedRadixSortKernel
     CUB_RUNTIME_FUNCTION __forceinline__
-    cudaError_t InvokeSegmentedPasses(
+    cudaError_t InvokePasses(
         SegmentedKernelT     segmented_kernel,          ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
         SegmentedKernelT     alt_segmented_kernel)      ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
     {
@@ -1341,7 +1343,7 @@ struct DispatchSegmentedRadixSort :
             // Run first pass, consuming from the input's current buffers
             int current_bit = begin_bit;
 
-            if (CubDebug(error = InvokeSegmentedPass(
+            if (CubDebug(error = InvokePass(
                 d_keys.Current(), d_keys_remaining_passes.Current(),
                 d_values.Current(), d_values_remaining_passes.Current(),
                 current_bit,
@@ -1350,7 +1352,7 @@ struct DispatchSegmentedRadixSort :
             // Run remaining passes
             while (current_bit < end_bit)
             {
-                if (CubDebug(error = InvokeSegmentedPass(
+                if (CubDebug(error = InvokePass(
                     d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector],    d_keys_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
                     d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector],  d_values_remaining_passes.d_buffers[d_keys_remaining_passes.selector ^ 1],
                     current_bit,
@@ -1387,7 +1389,7 @@ struct DispatchSegmentedRadixSort :
     cudaError_t Invoke()
     {
         // Force kernel code-generation in all compiler passes
-        return InvokeSegmentedPasses<ActivePolicyT>(
+        return InvokePasses<ActivePolicyT>(
             DeviceSegmentedRadixSortKernel< MaxPolicy, false,   IS_DESCENDING, KeyT, ValueT, OffsetT>,
             DeviceSegmentedRadixSortKernel< MaxPolicy, true,    IS_DESCENDING, KeyT, ValueT, OffsetT>);
     }

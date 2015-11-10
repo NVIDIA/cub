@@ -679,7 +679,7 @@ __device__ __forceinline__ int WarpAll(int cond)
 {
 #if CUB_PTX_ARCH < 120
 
-    __shared__ volatile int warp_signals[CUB_PTX_MAX_SM_THREADS / CUB_PTX_WARP_THREADS];
+    __shared__ volatile int warp_signals[32];
 
     if (LaneId() == 0)
         warp_signals[WarpId()] = 1;
@@ -705,7 +705,7 @@ __device__ __forceinline__ int WarpAny(int cond)
 {
 #if CUB_PTX_ARCH < 120
 
-    __shared__ volatile int warp_signals[CUB_PTX_MAX_SM_THREADS / CUB_PTX_WARP_THREADS];
+    __shared__ volatile int warp_signals[32];
 
     if (LaneId() == 0)
         warp_signals[WarpId()] = 0;
