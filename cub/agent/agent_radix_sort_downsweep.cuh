@@ -122,7 +122,6 @@ struct AgentRadixSortDownsweep
     static const CacheLoadModifier          LOAD_MODIFIER           = AgentRadixSortDownsweepPolicy::LOAD_MODIFIER;
     static const BlockScanAlgorithm         INNER_SCAN_ALGORITHM    = AgentRadixSortDownsweepPolicy::INNER_SCAN_ALGORITHM;
     static const RadixSortScatterAlgorithm  SCATTER_ALGORITHM       = AgentRadixSortDownsweepPolicy::SCATTER_ALGORITHM;
-    static const cudaSharedMemConfig        SMEM_CONFIG             = AgentRadixSortDownsweepPolicy::SMEM_CONFIG;
 
     enum
     {
