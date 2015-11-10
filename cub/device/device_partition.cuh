@@ -49,7 +49,7 @@ namespace cub {
 
 /**
  * \brief DevicePartition provides device-wide, parallel operations for partitioning sequences of data items residing within device-accessible memory. ![](partition_logo.png)
- * \ingroup DeviceModule
+ * \ingroup SingleModule
  *
  * \par Overview
  * These operations apply a selection criterion to construct a partitioned output sequence from items selected/unselected from

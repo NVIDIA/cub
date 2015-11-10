@@ -102,7 +102,7 @@ struct AgentRadixSortDownsweepPolicy
  */
 template <
     typename AgentRadixSortDownsweepPolicy,     ///< Parameterized AgentRadixSortDownsweepPolicy tuning policy type
-    bool     DESCENDING,                        ///< Whether or not the sorted-order is high-to-low
+    bool     IS_DESCENDING,                        ///< Whether or not the sorted-order is high-to-low
     typename KeyT,                              ///< KeyT type
     typename ValueT,                            ///< ValueT type
     typename OffsetT>                           ///< Signed integer type for global offsets
@@ -158,7 +158,7 @@ struct AgentRadixSortDownsweep
     typedef BlockRadixRank<
         BLOCK_THREADS,
         RADIX_BITS,
-        DESCENDING,
+        IS_DESCENDING,
         MEMOIZE_OUTER_SCAN,
         INNER_SCAN_ALGORITHM> BlockRadixRank;
 
@@ -510,7 +510,7 @@ struct AgentRadixSortDownsweep
         OffsetT         relative_bin_offsets[ITEMS_PER_THREAD];     // For each key, the global scatter base offset of the corresponding digit
 
         // Assign default (min/max) value to all keys
-        UnsignedBits default_key = (DESCENDING) ? MIN_KEY : MAX_KEY;
+        UnsignedBits default_key = (IS_DESCENDING) ? MIN_KEY : MAX_KEY;
 
         // Load tile of keys
         BlockLoadKeys loader(temp_storage.load_keys);
@@ -546,7 +546,7 @@ struct AgentRadixSortDownsweep
             int exclusive_digit_prefix;
 
             // Get exclusive digit prefix from inclusive prefix
-            if (DESCENDING)
+            if (IS_DESCENDING)
             {
                 // Get the prefix from the next thread (higher bins come first)
 #if CUB_PTX_ARCH >= 300
@@ -707,7 +707,7 @@ struct AgentRadixSortDownsweep
         // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
         if (threadIdx.x < RADIX_DIGITS)
         {
-            int bin_idx = (DESCENDING) ?
+            int bin_idx = (IS_DESCENDING) ?
                 RADIX_DIGITS - threadIdx.x - 1 :
                 threadIdx.x;
 
