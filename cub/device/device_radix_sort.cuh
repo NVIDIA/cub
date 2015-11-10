@@ -50,7 +50,7 @@ namespace cub {
 
 /**
  * \brief DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequence of data items residing within device-accessible memory. ![](sorting_logo.png)
- * \ingroup DeviceModule
+ * \ingroup SingleModule
  *
  * \par Overview
  * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges

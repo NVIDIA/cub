@@ -50,7 +50,7 @@ namespace cub {
 
 /**
  * \brief DeviceSpmv provides device-wide parallel operations for performing sparse-matrix * dense-vector multiplication (SpMV).
- * \ingroup DeviceModule
+ * \ingroup SingleModule
  *
  * \par Overview
  * The [<em>SpMV computation</em>](http://en.wikipedia.org/wiki/Sparse_matrix-vector_multiplication)

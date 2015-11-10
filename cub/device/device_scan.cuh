@@ -49,7 +49,7 @@ namespace cub {
 
 /**
  * \brief DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of data items residing within device-accessible memory. ![](device_scan.png)
- * \ingroup DeviceModule
+ * \ingroup SingleModule
  *
  * \par Overview
  * Given a sequence of input elements and a binary reduction operator, a [<em>prefix scan</em>](http://en.wikipedia.org/wiki/Prefix_sum)

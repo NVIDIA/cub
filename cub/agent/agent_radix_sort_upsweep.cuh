@@ -186,8 +186,8 @@ struct AgentRadixSortUpsweep
     {
         // BucketKeys
         static __device__ __forceinline__ void BucketKeys(
-            AgentRadixSortUpsweep     &cta,
-            UnsignedBits                    keys[KEYS_PER_THREAD])
+            AgentRadixSortUpsweep       &cta,
+            UnsignedBits                keys[KEYS_PER_THREAD])
         {
             cta.Bucket(keys[COUNT]);
 

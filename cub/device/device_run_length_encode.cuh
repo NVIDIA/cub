@@ -50,7 +50,7 @@ namespace cub {
 
 /**
  * \brief DeviceRunLengthEncode provides device-wide, parallel operations for demarcating "runs" of same-valued items within a sequence residing within device-accessible memory. ![](run_length_encode_logo.png)
- * \ingroup DeviceModule
+ * \ingroup SingleModule
  *
  * \par Overview
  * A <a href="http://en.wikipedia.org/wiki/Run-length_encoding"><em>run-length encoding</em></a>

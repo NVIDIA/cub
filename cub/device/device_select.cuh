@@ -49,7 +49,7 @@ namespace cub {
 
 /**
  * \brief DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences of data items residing within device-accessible memory. ![](select_logo.png)
- * \ingroup DeviceModule
+ * \ingroup SingleModule
  *
  * \par Overview
  * These operations apply a selection criterion to selectively copy

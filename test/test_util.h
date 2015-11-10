@@ -382,6 +382,7 @@ __noinline__ bool IsNaN<double4>(double4 val)
     return (IsNaN(val.y) || IsNaN(val.x) || IsNaN(val.w) || IsNaN(val.z));
 }
 
+
 /**
  * Generates random keys.
  *
@@ -455,6 +456,17 @@ void RandomBits(
     }
 }
 
+/// Randomly select number between [0:max)
+void RandomValue(unsigned int &key, unsigned int max)
+{
+    unsigned int max_int = (unsigned int) -1;
+
+    do {
+        RandomBits(key);
+    } while (key == max_int);
+
+    key = (unsigned int) ((double(key) / double(max_int)) * double(max));
+}
 
 /******************************************************************************
  * Console printing utilities

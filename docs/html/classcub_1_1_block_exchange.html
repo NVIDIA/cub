@@ -101,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_exchange-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a></div></div>  </div>
+<div class="title">cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -133,7 +133,7 @@ class cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING
   </dd>
 </dl>
 <dl class="section user"><dt>Overview</dt><dd><ul>
-<li>It is commonplace for blocks of threads to rearrange data items between threads. For example, the global memory subsystem prefers access patterns where data items are "striped" across threads (where consecutive threads access consecutive items), yet most block-wide operations prefer a "blocked" partitioning of items across threads (where consecutive items belong to a single thread).</li>
+<li>It is commonplace for blocks of threads to rearrange data items between threads. For example, the device-accessible memory subsystem prefers access patterns where data items are "striped" across threads (where consecutive threads access consecutive items), yet most block-wide operations prefer a "blocked" partitioning of items across threads (where consecutive items belong to a single thread).</li>
 <li><a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> supports the following types of data exchanges:<ul>
 <li>Transposing between <a href="index.html#sec5sec3"><em>blocked</em></a> and <a href="index.html#sec5sec3"><em>striped</em></a> arrangements</li>
 <li>Transposing between <a href="index.html#sec5sec3"><em>blocked</em></a> and <a href="index.html#sec5sec3"><em>warp-striped</em></a> arrangements</li>
@@ -141,7 +141,7 @@ class cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING
 <li>Scattering ranked items to a <a href="index.html#sec5sec3"><em>striped arrangement</em></a></li>
 </ul>
 </li>
-<li>Assumes a <a href="index.html#sec4sec3"><em>blocked arrangement</em></a> of (<em>block-threads</em>*<em>items-per-thread</em>) items across the thread block, where thread<sub><em>i</em></sub> owns the <em>i</em><sup>th</sup> range of <em>items-per-thread</em> contiguous items. For multi-dimensional thread blocks, a row-major thread ordering is assumed.</li>
+<li>For multi-dimensional blocks, threads are linearly ranked in row-major order.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>A Simple Example</dt><dd>Every thread in the block uses the <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> class by first specializing the <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> type, then instantiating an instance with parameters for communication, and finally invoking one or more collective member functions. </dd></dl>
@@ -303,7 +303,7 @@ template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_S
 <div class="line">    <span class="comment">// Collectively exchange data into a blocked arrangement across threads</span></div>
 <div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>(temp_storage).StripedToBlocked(thread_data);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of striped input <code>thread_data</code> across the block of threads is <code>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</code> after loading from global memory. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of striped input <code>thread_data</code> across the block of threads is <code>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</code> after loading from device-accessible memory. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange, converting between <em>striped</em> and <em>blocked</em> arrangements. </td></tr>
@@ -365,7 +365,7 @@ template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_S
 <div class="line">    <span class="comment">// Store data striped across block threads into an ordered tile</span></div>
 <div class="line">    cub::StoreDirectStriped&lt;STORE_DEFAULT, 128&gt;(threadIdx.x, d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of blocked input <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</code> in preparation for storing to global memory. </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of blocked input <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,128,256,384], [1,129,257,385], ..., [127,255,383,511] }</code> in preparation for storing to device-accessible memory. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements. </td></tr>
@@ -424,7 +424,7 @@ template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_S
 <div class="line">    <span class="comment">// Collectively exchange data into a blocked arrangement across threads</span></div>
 <div class="line">    <a class="code" href="classcub_1_1_block_exchange.html#a4157ecd7ca5c2fedfb06a8c4cfd6ead8" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockExchange</a>(temp_storage).WarpStripedToBlocked(thread_data);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of warp-striped input <code>thread_data</code> across the block of threads is <code>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</code> after loading from global memory. (The first 128 items are striped across the first warp of 32 threads, the second 128 items are striped across the second warp, etc.) The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of warp-striped input <code>thread_data</code> across the block of threads is <code>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</code> after loading from device-accessible memory. (The first 128 items are striped across the first warp of 32 threads, the second 128 items are striped across the second warp, etc.) The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange, converting between <em>warp-striped</em> and <em>blocked</em> arrangements. </td></tr>
@@ -486,7 +486,7 @@ template&lt;typename T , int BLOCK_DIM_X, int ITEMS_PER_THREAD, bool WARP_TIME_S
 <div class="line">    <span class="comment">// Store data striped across warp threads into an ordered tile</span></div>
 <div class="line">    cub::StoreDirectStriped&lt;STORE_DEFAULT, 128&gt;(threadIdx.x, d_data, thread_data);</div>
 </div><!-- fragment --> </dd></dl>
-<dl class="section user"><dt></dt><dd>Suppose the set of blocked input <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</code> in preparation for storing to global memory. (The first 128 items are striped across the first warp of 32 threads, the second 128 items are striped across the second warp, etc.) </dd></dl>
+<dl class="section user"><dt></dt><dd>Suppose the set of blocked input <code>thread_data</code> across the block of threads is <code>{ [0,1,2,3], [4,5,6,7], [8,9,10,11], ..., [508,509,510,511] }</code>. The corresponding output <code>thread_data</code> in those threads will be <code>{ [0,32,64,96], [1,33,65,97], [2,34,66,98], ..., [415,447,479,511] }</code> in preparation for storing to device-accessible memory. (The first 128 items are striped across the first warp of 32 threads, the second 128 items are striped across the second warp, etc.) </dd></dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in,out]</td><td class="paramname">items</td><td>Items to exchange, converting between <em>blocked</em> and <em>warp-striped</em> arrangements. </td></tr>
@@ -749,7 +749,7 @@ template&lt;typename OffsetT , typename ValidFlag &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 10 2015 13:58:05 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

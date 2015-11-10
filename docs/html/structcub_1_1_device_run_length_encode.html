@@ -101,11 +101,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#pub-static-methods">Static Public Methods</a> &#124;
 <a href="structcub_1_1_device_run_length_encode-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::DeviceRunLengthEncode Struct Reference<div class="ingroups"><a class="el" href="group___device_module.html">Device-wide</a></div></div>  </div>
+<div class="title">cub::DeviceRunLengthEncode Struct Reference<div class="ingroups"><a class="el" href="group___single_module.html">Single-problem</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><p><a class="el" href="structcub_1_1_device_run_length_encode.html" title="DeviceRunLengthEncode provides device-wide, parallel operations for demarcating &quot;runs&quot; of same-valued...">DeviceRunLengthEncode</a> provides device-wide, parallel operations for demarcating "runs" of same-valued items within a sequence residing within global memory. </p>
+<div class="textblock"><p><a class="el" href="structcub_1_1_device_run_length_encode.html" title="DeviceRunLengthEncode provides device-wide, parallel operations for demarcating &quot;runs&quot; of same-valued...">DeviceRunLengthEncode</a> provides device-wide, parallel operations for demarcating "runs" of same-valued items within a sequence residing within device-accessible memory. </p>
 <div class="image">
 <img src="run_length_encode_logo.png" alt="run_length_encode_logo.png"/>
 <div class="caption">
@@ -240,7 +240,7 @@ template&lt;typename InputIteratorT , typename UniqueOutputIteratorT , typename 
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the run-length encoding of a sequence of <code>int</code> values. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_run_length_encode.cuh&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>          num_items;          <span class="comment">// e.g., 8</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_in;              <span class="comment">// e.g., [0, 2, 2, 9, 5, 5, 5, 8]</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_unique_out;      <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
@@ -274,7 +274,7 @@ template&lt;typename InputIteratorT , typename UniqueOutputIteratorT , typename 
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device-accessible allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of keys </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_unique_out</td><td>Pointer to the output sequence of unique keys (one key per run) </td></tr>
@@ -380,7 +380,7 @@ template&lt;typename InputIteratorT , typename OffsetsOutputIteratorT , typename
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the identification of non-trivial runs within a sequence of <code>int</code> values. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_run_length_encode.cuh&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>          num_items;          <span class="comment">// e.g., 8</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_in;              <span class="comment">// e.g., [0, 2, 2, 9, 5, 5, 5, 8]</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_offsets_out;     <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ,  ]</span></div>
@@ -414,7 +414,7 @@ template&lt;typename InputIteratorT , typename OffsetsOutputIteratorT , typename
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device-accessible allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to input sequence of data items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_offsets_out</td><td>Pointer to output sequence of run-offsets (one offset per non-trivial run) </td></tr>
@@ -438,7 +438,7 @@ template&lt;typename InputIteratorT , typename OffsetsOutputIteratorT , typename
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 10 2015 13:58:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
