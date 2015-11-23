@@ -1103,7 +1103,7 @@ void Test(
     int         entropy_reduction,
     int         begin_bit,
     int         end_bit,
-    char        *type_string)
+    const char  *type_string)
 {
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
