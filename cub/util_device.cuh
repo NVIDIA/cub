@@ -290,7 +290,7 @@ template <int PTX_VERSION, typename PolicyT, typename PrevPolicyT>
 struct ChainedPolicy
 {
    /// The policy for the active compiler pass
-   typedef typename If<(CUB_PTX_ARCH < PTX_VERSION), PrevPolicyT::ActivePolicy, PolicyT>::Type ActivePolicy;
+   typedef typename If<(CUB_PTX_ARCH < PTX_VERSION), typename PrevPolicyT::ActivePolicy, PolicyT>::Type ActivePolicy;
 
    /// Specializes and dispatches op in accordance to the first policy in the chain of adequate PTX version
    template <typename FunctorT>
