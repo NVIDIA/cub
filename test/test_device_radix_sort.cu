@@ -608,35 +608,6 @@ void InitializeKeyBits(
 
 
 /**
- * Initialize segments
- */
-void InitializeSegments(
-    int num_items,
-    int num_segments,
-    int *h_segment_offsets)
-{
-    unsigned int expected_segment_length = (num_items + num_segments - 1) / num_segments;
-    int offset = 0;
-    for (int i = 0; i < num_segments; ++i)
-    {
-        h_segment_offsets[i] = offset;
-
-        unsigned int segment_length;
-        RandomValue(segment_length, (expected_segment_length * 2) + 1);
-        offset += segment_length;
-        offset = CUB_MIN(offset, num_items);
-    }
-    h_segment_offsets[num_segments] = num_items;
-
-    if (g_verbose)
-    {
-        printf("Segment offsets: ");
-        DisplayResults(h_segment_offsets, num_segments + 1);
-    }
-}
-
-
-/**
  * Initialize solution
  */
 template <bool IS_DESCENDING, typename KeyT>
