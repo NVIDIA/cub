@@ -88,7 +88,6 @@ struct DeviceRunLengthEncode
      * - The total number of runs encountered is written to \p d_num_runs_out.
      * - The <tt>==</tt> equality operator is used to determine whether values are equivalent
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated encode performance across different
@@ -198,7 +197,6 @@ struct DeviceRunLengthEncode
      * - The total number of runs encountered is written to \p d_num_runs_out.
      * - The <tt>==</tt> equality operator is used to determine whether values are equivalent
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      *

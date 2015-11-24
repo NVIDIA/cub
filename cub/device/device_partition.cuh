@@ -81,7 +81,6 @@ struct DevicePartition
      *   relative ordering, however copies of the unselected items are compacted into the
      *   rear of \p d_out in reverse order.
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
@@ -162,7 +161,6 @@ struct DevicePartition
      *   relative ordering, however copies of the unselected items are compacted into the
      *   rear of \p d_out in reverse order.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated partition-if performance across different
