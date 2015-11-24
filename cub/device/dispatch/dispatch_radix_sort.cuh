@@ -851,6 +851,9 @@ struct DispatchRadixSort :
 
             // Invoke scan_kernel
             pass_config.scan_kernel<<<1, pass_config.scan_config.block_threads, 0, stream>>>(
+//                    ActivePolicyT::UpsweepPolicy, 
+//                    ActivePolicyT::ScanPolicy, 
+//                    ActivePolicyT::DownsweepPolicy>(
                 d_spine,
                 spine_length);
 
@@ -892,47 +895,65 @@ struct DispatchRadixSort :
     }
 
 
-    /// Initialize pass configuration
+
+    /// Pass configuration structure
     template <
-        typename UpsweepPolicyT,
-        typename ScanPolicyT,
-        typename DownsweepPolicyT,
-        typename PassConfigT,
         typename UpsweepKernelT,
         typename ScanKernelT,
         typename DownsweepKernelT>
-    CUB_RUNTIME_FUNCTION __forceinline__
-    cudaError_t InitPassConfig(
-        PassConfigT         &pass_config,
-        UpsweepKernelT      upsweep_kernel,
-        ScanKernelT         scan_kernel,
-        DownsweepKernelT    downsweep_kernel,
-        int                 ptx_version,
-        int                 sm_count)
+    struct PassConfig
     {
-        cudaError error = cudaSuccess;
-        do
+        UpsweepKernelT          upsweep_kernel;
+        KernelConfig            upsweep_config;
+        ScanKernelT             scan_kernel;
+        KernelConfig            scan_config;
+        DownsweepKernelT        downsweep_kernel;
+        KernelConfig            downsweep_config;
+        int                     radix_bits;
+        int                     radix_digits;
+        int                     max_downsweep_grid_size;
+        GridEvenShare<OffsetT>  even_share;
+
+        /// Initialize pass configuration
+        template <
+            typename UpsweepPolicyT,
+            typename ScanPolicyT,
+            typename DownsweepPolicyT>
+        CUB_RUNTIME_FUNCTION __forceinline__
+        cudaError_t InitPassConfig(
+            UpsweepKernelT      upsweep_kernel,
+            ScanKernelT         scan_kernel,
+            DownsweepKernelT    downsweep_kernel,
+            int                 ptx_version,
+            int                 sm_count,
+            int                 num_items)
         {
-            pass_config.upsweep_kernel      = upsweep_kernel;
-            pass_config.scan_kernel         = scan_kernel;
-            pass_config.downsweep_kernel    = downsweep_kernel;
-            pass_config.radix_bits          = DownsweepPolicyT::RADIX_BITS;
-            pass_config.radix_digits        = 1 << pass_config.radix_bits;
+            cudaError error = cudaSuccess;
+            do
+            {
+                this->upsweep_kernel    = upsweep_kernel;
+                this->scan_kernel       = scan_kernel;
+                this->downsweep_kernel  = downsweep_kernel;
+                radix_bits              = DownsweepPolicyT::RADIX_BITS;
+                radix_digits            = 1 << radix_bits;
 
-            if (CubDebug(error = pass_config.upsweep_config.template    Init<UpsweepPolicyT>(upsweep_kernel))) break;
-            if (CubDebug(error = pass_config.scan_config.template       Init<ScanPolicyT>(scan_kernel))) break;
-            if (CubDebug(error = pass_config.downsweep_config.template  Init<DownsweepPolicyT>(downsweep_kernel))) break;
+                if (CubDebug(error = upsweep_config.template    Init<UpsweepPolicyT>(upsweep_kernel))) break;
+                if (CubDebug(error = scan_config.template       Init<ScanPolicyT>(scan_kernel))) break;
+                if (CubDebug(error = downsweep_config.template  Init<DownsweepPolicyT>(downsweep_kernel))) break;
 
-            pass_config.max_downsweep_grid_size = (pass_config.downsweep_config.sm_occupancy * sm_count) * CUB_SUBSCRIPTION_FACTOR(ptx_version);
+                max_downsweep_grid_size = (downsweep_config.sm_occupancy * sm_count) * CUB_SUBSCRIPTION_FACTOR(ptx_version);
 
-            pass_config.even_share = GridEvenShare<OffsetT>(
-                num_items,
-                pass_config.max_downsweep_grid_size,
-                CUB_MAX(pass_config.downsweep_config.tile_size, pass_config.upsweep_config.tile_size));
+                even_share = GridEvenShare<OffsetT>(
+                    num_items,
+                    max_downsweep_grid_size,
+                    CUB_MAX(downsweep_config.tile_size, upsweep_config.tile_size));
+
+            }
+            while (0);
+            return error;
         }
-        while (0);
-        return error;
-    }
+
+    };
 
 
     /// Invocation (run multiple digit passes)
@@ -955,21 +976,6 @@ struct DispatchRadixSort :
         return CubDebug(cudaErrorNotSupported );
 #else
 
-        // Kernel-pass data structure
-        struct PassConfig
-        {
-            UpsweepKernelT          upsweep_kernel;
-            KernelConfig            upsweep_config;
-            ScanKernelT             scan_kernel;
-            KernelConfig            scan_config;
-            DownsweepKernelT        downsweep_kernel;
-            KernelConfig            downsweep_config;
-            int                     radix_bits;
-            int                     radix_digits;
-            int                     max_downsweep_grid_size;
-            GridEvenShare<OffsetT>  even_share;
-        };
-
         cudaError error = cudaSuccess;
         do
         {
@@ -982,19 +988,18 @@ struct DispatchRadixSort :
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Init regular and alternate-digit kernel configurations
-            PassConfig pass_config, alt_pass_config;
-
-            if ((error = InitPassConfig<
-                    typename ActivePolicyT::UpsweepPolicy,
-                    typename ActivePolicyT::ScanPolicy,
+            PassConfig<UpsweepKernelT, ScanKernelT, DownsweepKernelT> pass_config, alt_pass_config;
+            if ((error = pass_config.template InitPassConfig<
+                    typename ActivePolicyT::UpsweepPolicy, 
+                    typename ActivePolicyT::ScanPolicy, 
                     typename ActivePolicyT::DownsweepPolicy>(
-                pass_config, upsweep_kernel, scan_kernel, downsweep_kernel, ptx_version, sm_count))) break;
+                upsweep_kernel, scan_kernel, downsweep_kernel, ptx_version, sm_count, num_items))) break;
 
-            if ((error = InitPassConfig<
-                    typename ActivePolicyT::AltUpsweepPolicy,
-                    typename ActivePolicyT::ScanPolicy,
+            if ((error = alt_pass_config.template InitPassConfig<
+                    typename ActivePolicyT::AltUpsweepPolicy, 
+                    typename ActivePolicyT::ScanPolicy, 
                     typename ActivePolicyT::AltDownsweepPolicy>(
-                alt_pass_config, alt_upsweep_kernel, scan_kernel, alt_downsweep_kernel, ptx_version, sm_count))) break;
+                alt_upsweep_kernel, scan_kernel, alt_downsweep_kernel, ptx_version, sm_count, num_items))) break;
 
             // Get maximum spine length
             int max_grid_size       = CUB_MAX(pass_config.max_downsweep_grid_size, alt_pass_config.max_downsweep_grid_size);
@@ -1081,24 +1086,25 @@ struct DispatchRadixSort :
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Invoke()
     {
-        typedef typename ActivePolicyT::SingleTilePolicy SingleTilePolicyT;
+        typedef typename DispatchRadixSort::MaxPolicy       MaxPolicyT;
+        typedef typename ActivePolicyT::SingleTilePolicy    SingleTilePolicyT;
 
         // Force kernel code-generation in all compiler passes
         if (num_items <= (SingleTilePolicyT::BLOCK_THREADS * SingleTilePolicyT::ITEMS_PER_THREAD))
         {
             // Small, single tile size
             return InvokeSingleTile<ActivePolicyT>(
-                DeviceRadixSortSingleTileKernel<MaxPolicy, IS_DESCENDING, KeyT, ValueT, OffsetT>);
+                DeviceRadixSortSingleTileKernel<MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT>);
         }
         else
         {
             // Regular size
             return InvokePasses<ActivePolicyT>(
-                DeviceRadixSortUpsweepKernel<   MaxPolicy, false,   IS_DESCENDING, KeyT, OffsetT>,
-                DeviceRadixSortUpsweepKernel<   MaxPolicy, true,    IS_DESCENDING, KeyT, OffsetT>,
-                RadixSortScanBinsKernel<        MaxPolicy, OffsetT>,
-                DeviceRadixSortDownsweepKernel< MaxPolicy, false,   IS_DESCENDING, KeyT, ValueT, OffsetT>,
-                DeviceRadixSortDownsweepKernel< MaxPolicy, true,    IS_DESCENDING, KeyT, ValueT, OffsetT>);
+                DeviceRadixSortUpsweepKernel<   MaxPolicyT, false,   IS_DESCENDING, KeyT, OffsetT>,
+                DeviceRadixSortUpsweepKernel<   MaxPolicyT, true,    IS_DESCENDING, KeyT, OffsetT>,
+                RadixSortScanBinsKernel<        MaxPolicyT, OffsetT>,
+                DeviceRadixSortDownsweepKernel< MaxPolicyT, false,   IS_DESCENDING, KeyT, ValueT, OffsetT>,
+                DeviceRadixSortDownsweepKernel< MaxPolicyT, true,    IS_DESCENDING, KeyT, ValueT, OffsetT>);
         }
     }
 
@@ -1123,6 +1129,8 @@ struct DispatchRadixSort :
         cudaStream_t            stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous)      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
+        typedef typename DispatchRadixSort::MaxPolicy MaxPolicyT;
+
         cudaError_t error;
         do {
             // Get PTX version
@@ -1137,7 +1145,7 @@ struct DispatchRadixSort :
                 stream, debug_synchronous, ptx_version);
 
             // Dispatch to chained policy
-            if (CubDebug(error = MaxPolicy::Invoke(ptx_version, dispatch))) break;
+            if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
 
         } while (0);
 
@@ -1280,22 +1288,27 @@ struct DispatchSegmentedRadixSort :
     }
 
 
-    /// Initialize pass configuration
-    template <
-        typename SegmentedPolicyT,
-        typename PassConfigT,
-        typename SegmentedKernelT>
-    CUB_RUNTIME_FUNCTION __forceinline__
-    cudaError_t InitPassConfig(
-        PassConfigT         &pass_config,
-        SegmentedKernelT    segmented_kernel)
+    /// PassConfig data structure
+    template <typename SegmentedKernelT>
+    struct PassConfig
     {
-        pass_config.segmented_kernel    = segmented_kernel;
-        pass_config.radix_bits          = SegmentedPolicyT::RADIX_BITS;
-        pass_config.radix_digits        = 1 << pass_config.radix_bits;
+        SegmentedKernelT    segmented_kernel;
+        KernelConfig        segmented_config;
+        int                 radix_bits;
+        int                 radix_digits;
 
-        return CubDebug(pass_config.segmented_config.template Init<SegmentedPolicyT>(segmented_kernel));
-    }
+        /// Initialize pass configuration
+        template <typename SegmentedPolicyT>
+        CUB_RUNTIME_FUNCTION __forceinline__
+        cudaError_t InitPassConfig(SegmentedKernelT segmented_kernel)
+        {
+            this->segmented_kernel  = segmented_kernel;
+            this->radix_bits        = SegmentedPolicyT::RADIX_BITS;
+            this->radix_digits      = 1 << radix_bits;
+
+            return CubDebug(segmented_config.template Init<SegmentedPolicyT>(segmented_kernel));
+        }
+    };
 
 
     /// Invocation (run multiple digit passes)
@@ -1313,24 +1326,13 @@ struct DispatchSegmentedRadixSort :
         return CubDebug(cudaErrorNotSupported );
 #else
 
-        // PassConfig data structure
-        struct PassConfig
-        {
-            SegmentedKernelT    segmented_kernel;
-            KernelConfig        segmented_config;
-            int                 radix_bits;
-            int                 radix_digits;
-        };
-
         cudaError error = cudaSuccess;
         do
         {
             // Init regular and alternate kernel configurations
-            PassConfig pass_config, alt_pass_config;
-            if ((error = InitPassConfig<typename ActivePolicyT::SegmentedPolicy>(
-                pass_config, segmented_kernel))) break;
-            if ((error = InitPassConfig<typename ActivePolicyT::AltSegmentedPolicy>(
-                alt_pass_config, alt_segmented_kernel))) break;
+            PassConfig<SegmentedKernelT> pass_config, alt_pass_config;
+            if ((error = pass_config.template       InitPassConfig<typename ActivePolicyT::SegmentedPolicy>(segmented_kernel))) break;
+            if ((error = alt_pass_config.template   InitPassConfig<typename ActivePolicyT::AltSegmentedPolicy>(alt_segmented_kernel))) break;
 
             // Temporary storage allocation requirements
             void* allocations[2];
@@ -1416,10 +1418,12 @@ struct DispatchSegmentedRadixSort :
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Invoke()
     {
+        typedef typename DispatchSegmentedRadixSort::MaxPolicy MaxPolicyT;
+
         // Force kernel code-generation in all compiler passes
         return InvokePasses<ActivePolicyT>(
-            DeviceSegmentedRadixSortKernel< MaxPolicy, false,   IS_DESCENDING, KeyT, ValueT, OffsetT>,
-            DeviceSegmentedRadixSortKernel< MaxPolicy, true,    IS_DESCENDING, KeyT, ValueT, OffsetT>);
+            DeviceSegmentedRadixSortKernel<MaxPolicyT, false,   IS_DESCENDING, KeyT, ValueT, OffsetT>,
+            DeviceSegmentedRadixSortKernel<MaxPolicyT, true,    IS_DESCENDING, KeyT, ValueT, OffsetT>);
     }
 
 
@@ -1445,6 +1449,8 @@ struct DispatchSegmentedRadixSort :
         cudaStream_t            stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous)      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
+        typedef typename DispatchSegmentedRadixSort::MaxPolicy MaxPolicyT;
+
         cudaError_t error;
         do {
             // Get PTX version
@@ -1460,7 +1466,7 @@ struct DispatchSegmentedRadixSort :
                 stream, debug_synchronous, ptx_version);
 
             // Dispatch to chained policy
-            if (CubDebug(error = MaxPolicy::Invoke(ptx_version, dispatch))) break;
+            if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
 
         } while (0);
 
