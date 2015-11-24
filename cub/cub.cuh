@@ -53,6 +53,8 @@
 #include "device/device_reduce.cuh"
 #include "device/device_run_length_encode.cuh"
 #include "device/device_scan.cuh"
+#include "device/device_segmented_radix_sort.cuh"
+#include "device/device_segmented_reduce.cuh"
 #include "device/device_select.cuh"
 #include "device/device_spmv.cuh"
 

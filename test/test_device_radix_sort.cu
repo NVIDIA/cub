@@ -64,8 +64,8 @@ enum Backend
     CUB,                        // CUB method (allows overwriting of input)
     CUB_NO_OVERWRITE,           // CUB method (disallows overwriting of input)
 
-    CUB_SEGMENTED,              // CUB method (allows overwriting of input)
-    CUB_SEGMENTED_NO_OVERWRITE, // CUB method (disallows overwriting of input)
+    CUB_SEGMENTED,              // CUB segmented method (allows overwriting of input)
+    CUB_SEGMENTED_NO_OVERWRITE, // CUB segmented method (disallows overwriting of input)
 
     THRUST,                     // Thrust method
     CDP,                        // GPU-based (dynamic parallelism) dispatch to CUB method
@@ -608,35 +608,6 @@ void InitializeKeyBits(
 
 
 /**
- * Initialize segments
- */
-void InitializeSegments(
-    int num_items,
-    int num_segments,
-    int *h_segment_offsets)
-{
-    unsigned int expected_segment_length = (num_items + num_segments - 1) / num_segments;
-    int offset = 0;
-    for (int i = 0; i < num_segments; ++i)
-    {
-        h_segment_offsets[i] = offset;
-
-        unsigned int segment_length;
-        RandomValue(segment_length, (expected_segment_length * 2) + 1);
-        offset += segment_length;
-        offset = CUB_MIN(offset, num_items);
-    }
-    h_segment_offsets[num_segments] = num_items;
-
-    if (g_verbose)
-    {
-        printf("Segment offsets: ");
-        DisplayResults(h_segment_offsets, num_segments + 1);
-    }
-}
-
-
-/**
  * Initialize solution
  */
 template <bool IS_DESCENDING, typename KeyT>
@@ -1010,18 +981,22 @@ void TestSegments(
     int     num_items,
     int     max_segments)
 {
+    // Limit slow tests by setting maximum number of items per block
+    int max_items_per_segment = 128000;
+
     int *h_segment_offsets = new int[max_segments + 1];
 
     for (int num_segments = max_segments; num_segments > 1; num_segments = (num_segments + 32 - 1) / 32)
     {
-        if (num_items / num_segments < 128 * 1000) {
+        if (num_items / num_segments < max_items_per_segment) {
             // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
-            InitializeSegments(num_items, num_segments, h_segment_offsets);
+            InitializeSegments(num_items, num_segments, h_segment_offsets, g_verbose);
             TestBits(h_keys, num_items, num_segments, h_segment_offsets);
         }
     }
 
-    if (num_items < 128 * 1000) {
+    // Test single-segment
+    if (num_items < max_items_per_segment) {
         // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
         InitializeSegments(num_items, 1, h_segment_offsets);
         TestBits(h_keys, num_items, 1, h_segment_offsets);
@@ -1103,7 +1078,7 @@ void Test(
     int         entropy_reduction,
     int         begin_bit,
     int         end_bit,
-    char        *type_string)
+    const char  *type_string)
 {
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
@@ -1205,8 +1180,8 @@ int main(int argc, char** argv)
     };
 
     // Compile/run basic CUB test
-    if (num_items < 0)      num_items       = 48000000;
-    if (num_segments < 0)   num_segments    = 5000;
+    if (num_items < 0) num_items = 48000000;
+    if (num_segments < 0) num_segments = 5000;
 
 
     Test<CUB_SEGMENTED, unsigned int,       NullType, IS_DESCENDING>(       num_items, num_segments,    RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
@@ -1219,26 +1194,26 @@ int main(int argc, char** argv)
 
 #elif defined(QUICK_TEST)
 
-    // Compile/run quick tests
-    if (num_items < 0)      num_items       = 48000000;
-    if (num_segments < 0)   num_segments    = 5000;
+    // Compile/run quick comparison tests
+    if (num_items < 0) num_items = 48000000;
+    num_segments = 1;
 
     // Compare CUB and thrust on 32b keys-only
-    Test<CUB, unsigned int, NullType, false> (                      num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
-    Test<THRUST, unsigned int, NullType, false> (                   num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+    Test<CUB, unsigned int, NullType, false> (                      num_items, num_segments, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+    Test<THRUST, unsigned int, NullType, false> (                   num_items, num_segments, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
 
     // Compare CUB and thrust on 64b keys-only
-    Test<CUB, unsigned long long, NullType, false> (                num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
-    Test<THRUST, unsigned long long, NullType, false> (             num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+    Test<CUB, unsigned long long, NullType, false> (                num_items, num_segments, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+    Test<THRUST, unsigned long long, NullType, false> (             num_items, num_segments, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
 
 
     // Compare CUB and thrust on 32b key-value pairs
-    Test<CUB, unsigned int, unsigned int, false> (                  num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
-    Test<THRUST, unsigned int, unsigned int, false> (               num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+    Test<CUB, unsigned int, unsigned int, false> (                  num_items, num_segments, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+    Test<THRUST, unsigned int, unsigned int, false> (               num_items, num_segments, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
 
     // Compare CUB and thrust on 64b key-value pairs
-    Test<CUB, unsigned long long, unsigned long long, false> (      num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
-    Test<THRUST, unsigned long long, unsigned long long, false> (   num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+    Test<CUB, unsigned long long, unsigned long long, false> (      num_items, num_segments, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+    Test<THRUST, unsigned long long, unsigned long long, false> (   num_items, num_segments, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
 
 
 #else

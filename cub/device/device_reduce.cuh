@@ -87,7 +87,6 @@ struct DeviceReduce
      * \par
      * - Does not support non-commutative reduction operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is typically similar to DeviceReduce::Sum.
@@ -111,7 +110,7 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int          num_items;  // e.g., 7
      * int          *d_in;      // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int          *d_out;     // e.g., [ ]
+     * int          *d_out;     // e.g., [-]
      * CustomMin    min_op;
      * ...
      *
@@ -140,7 +139,7 @@ struct DeviceReduce
         typename                    ReductionOp>
     CUB_RUNTIME_FUNCTION
     static cudaError_t Reduce(
-        void*                       d_temp_storage,                     ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                        *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
@@ -173,7 +172,6 @@ struct DeviceReduce
      * \par
      * - Does not support non-commutative reduction operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated reduction (sum) performance across different
@@ -191,19 +189,19 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int  num_items;      // e.g., 7
      * int  *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int  *d_out;         // e.g., [ ]
+     * int  *d_out;         // e.g., [-]
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_sum, num_items);
+     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run sum-reduction
-     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_sum, num_items);
+     * cub::DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
      *
      * // d_out <-- [38]
      *
@@ -217,7 +215,7 @@ struct DeviceReduce
         typename                    OutputIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t Sum(
-        void*                       d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                        *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
@@ -249,7 +247,6 @@ struct DeviceReduce
      * \par
      * - Does not support non-commutative minimum operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is typically similar to DeviceReduce::Sum.
@@ -263,19 +260,19 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int  num_items;      // e.g., 7
      * int  *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int  *d_out;         // e.g., [ ]
+     * int  *d_out;         // e.g., [-]
      * ...
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
      * size_t   temp_storage_bytes = 0;
-     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_min, num_items);
+     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
      *
      * // Run min-reduction
-     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_min, num_items);
+     * cub::DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items);
      *
      * // d_out <-- [0]
      *
@@ -289,7 +286,7 @@ struct DeviceReduce
         typename                    OutputIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t Min(
-        void*                       d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                        *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
@@ -326,7 +323,6 @@ struct DeviceReduce
      * \par
      * - Does not support non-commutative minimum operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is typically similar to DeviceReduce::Sum.
@@ -340,7 +336,7 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int                      num_items;      // e.g., 7
      * int                      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * KeyValuePair<int, int>   *d_out;         // e.g., [{ , }]
+     * KeyValuePair<int, int>   *d_out;         // e.g., [{-,-}]
      * ...
      *
      * // Determine temporary device storage requirements
@@ -354,7 +350,7 @@ struct DeviceReduce
      * // Run argmin-reduction
      * cub::DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_in, d_argmin, num_items);
      *
-     * // d_out <-- [{0, 5}]
+     * // d_out <-- [{5, 0}]
      *
      * \endcode
      *
@@ -366,7 +362,7 @@ struct DeviceReduce
         typename                    OutputIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t ArgMin(
-        void*               d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                        *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT             d_out,                              ///< [out] Pointer to the output aggregate
@@ -402,7 +398,6 @@ struct DeviceReduce
      * \par
      * - Does not support non-commutative maximum operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is typically similar to DeviceReduce::Sum.
@@ -416,7 +411,7 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int  num_items;      // e.g., 7
      * int  *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * int  *d_out;         // e.g., [ ]
+     * int  *d_out;         // e.g., [-]
      * ...
      *
      * // Determine temporary device storage requirements
@@ -479,7 +474,6 @@ struct DeviceReduce
      * \par
      * - Does not support non-commutative maximum operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is typically similar to DeviceReduce::Sum.
@@ -493,7 +487,7 @@ struct DeviceReduce
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int                      num_items;      // e.g., 7
      * int                      *d_in;          // e.g., [8, 6, 7, 5, 3, 0, 9]
-     * KeyValuePair<int, int>   *d_out;         // e.g., [{ , }]
+     * KeyValuePair<int, int>   *d_out;         // e.g., [{-,-}]
      * ...
      *
      * // Determine temporary device storage requirements
@@ -507,7 +501,7 @@ struct DeviceReduce
      * // Run argmax-reduction
      * cub::DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_argmax, num_items);
      *
-     * // d_out <-- [{9, 6}]
+     * // d_out <-- [{6, 9}]
      *
      * \endcode
      *
@@ -564,7 +558,6 @@ struct DeviceReduce
      * \par
      * - The <tt>==</tt> equality operator is used to determine whether keys are equivalent
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following chart illustrates reduction-by-key (sum) performance across
@@ -601,9 +594,9 @@ struct DeviceReduce
      * int          num_items;          // e.g., 8
      * int          *d_keys_in;         // e.g., [0, 2, 2, 9, 5, 5, 5, 8]
      * int          *d_values_in;       // e.g., [0, 7, 1, 6, 2, 5, 3, 4]
-     * int          *d_unique_out;      // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int          *d_aggregates_out;  // e.g., [ ,  ,  ,  ,  ,  ,  ,  ]
-     * int          *d_num_runs_out;        // e.g., [ ]
+     * int          *d_unique_out;      // e.g., [-, -, -, -, -, -, -, -]
+     * int          *d_aggregates_out;  // e.g., [-, -, -, -, -, -, -, -]
+     * int          *d_num_runs_out;    // e.g., [-]
      * CustomMin    reduction_op;
      * ...
      *
@@ -620,7 +613,7 @@ struct DeviceReduce
      *
      * // d_unique_out      <-- [0, 2, 9, 5, 8]
      * // d_aggregates_out  <-- [0, 1, 6, 2, 4]
-     * // d_num_runs_out        <-- [5]
+     * // d_num_runs_out    <-- [5]
      *
      * \endcode
      *

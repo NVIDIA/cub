@@ -87,7 +87,6 @@ struct DeviceScan
      * \par
      * - Supports non-commutative sum operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated exclusive sum performance across different
@@ -164,7 +163,6 @@ struct DeviceScan
      * \par
      * - Supports non-commutative scan operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is typically similar to DeviceScan::ExclusiveSum.
@@ -258,7 +256,6 @@ struct DeviceScan
      * \par
      * - Supports non-commutative sum operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is typically similar to DeviceScan::ExclusiveSum.
@@ -328,7 +325,6 @@ struct DeviceScan
      * \par
      * - Supports non-commutative scan operators.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is typically similar to DeviceScan::ExclusiveSum.

@@ -29,7 +29,7 @@
 
 /**
  * \file
- * cub::DeviceSelect provides device-wide, parallel operations for selecting items from sequences of data items residing within device-accessible memory.
+ * cub::DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences of data items residing within device-accessible memory.
  */
 
 #pragma once
@@ -88,7 +88,6 @@ struct DeviceSelect
      * - The value type of \p d_flags must be castable to \p bool (e.g., \p bool, \p char, \p int, etc.).
      * - Copies of the selected items are compacted into \p d_out and maintain their original relative ordering.
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the compaction of items selected from an \p int device vector.
@@ -167,7 +166,6 @@ struct DeviceSelect
      * \par
      * - Copies of the selected items are compacted into \p d_out and maintain their original relative ordering.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated select-if performance across different
@@ -275,7 +273,6 @@ struct DeviceSelect
      * - The <tt>==</tt> equality operator is used to determine whether keys are equivalent
      * - Copies of the selected items are compacted into \p d_out and maintain their original relative ordering.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated select-unique performance across different
