@@ -126,7 +126,9 @@ struct AgentReduce
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
-        CAN_VECTORIZE       = (VECTOR_LOAD_LENGTH > 1) && (IsPointer<InputIteratorT>::VALUE) && Traits<T>::PRIMITIVE,
+        CAN_VECTORIZE       = (VECTOR_LOAD_LENGTH > 1) &&
+                                (ITEMS_PER_THREAD % VECTOR_LOAD_LENGTH == 0) &&
+                                (IsPointer<InputIteratorT>::VALUE) && Traits<T>::PRIMITIVE,
 
     };
 

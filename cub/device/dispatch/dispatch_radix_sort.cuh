@@ -307,12 +307,12 @@ __global__ void DeviceRadixSortSingleTileKernel(
 
 
 /**
- * Segmented radix sorting pass (one segment per block)
+ * Segmented radix sorting pass (one block per segment)
  */
 template <
     typename                ChainedPolicyT,                 ///< Chained tuning policy
     bool                    ALT_DIGIT_BITS,                 ///< Whether or not to use the alternate (lower-bits) policy
-    bool                    IS_DESCENDING,                     ///< Whether or not the sorted-order is high-to-low
+    bool                    IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
     typename                KeyT,                           ///< Key type
     typename                ValueT,                         ///< Value type
     typename                OffsetT>                        ///< Signed integer type for global offsets
@@ -437,7 +437,7 @@ template <
     typename KeyT,          ///< Key type
     typename ValueT,        ///< Value type
     typename OffsetT>       ///< Signed integer type for global offsets
-struct RadixSortPolicy
+struct DeviceRadixSortPolicy
 {
     //------------------------------------------------------------------------------
     // Constants
@@ -676,7 +676,7 @@ template <
     typename ValueT,        ///< Value type
     typename OffsetT>       ///< Signed integer type for global offsets
 struct DispatchRadixSort :
-    RadixSortPolicy<KeyT, ValueT, OffsetT>
+    DeviceRadixSortPolicy<KeyT, ValueT, OffsetT>
 {
     //------------------------------------------------------------------------------
     // Constants
@@ -686,9 +686,6 @@ struct DispatchRadixSort :
     {
         // Whether this is a keys-only (or key-value) sort
         KEYS_ONLY = (Equals<ValueT, NullType>::VALUE),
-
-        // Relative size of KeyT type to a 4-byte word
-        SCALE_FACTOR_4B = (CUB_MAX(sizeof(KeyT), sizeof(ValueT)) + 3) / 4,
     };
 
 
@@ -746,13 +743,13 @@ struct DispatchRadixSort :
     // Small-problem (single tile) invocation
     //------------------------------------------------------------------------------
 
-    /// Invoke a single thread block to sort in-core
+    /// Invoke a single block to sort in-core
     template <
         typename                ActivePolicyT,          ///< Umbrella policy active for the target device
-        typename                SingleTileKernelT>      ///< Function type of cub::DeviceRadixSortSingleKernel
+        typename                SingleTileKernelT>      ///< Function type of cub::DeviceRadixSortSingleTileKernel
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t InvokeSingleTile(
-        SingleTileKernelT       single_tile_kernel)     ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortSingleKernel
+        SingleTileKernelT       single_tile_kernel)     ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortSingleTileKernel
     {
 #ifndef CUB_RUNTIME_ENABLED
 
@@ -760,7 +757,6 @@ struct DispatchRadixSort :
         return CubDebug(cudaErrorNotSupported );
 #else
         cudaError error = cudaSuccess;
-
         do
         {
             // Return if the caller is simply requesting the size of the storage allocation
@@ -988,10 +984,16 @@ struct DispatchRadixSort :
             // Init regular and alternate-digit kernel configurations
             PassConfig pass_config, alt_pass_config;
 
-            if ((error = InitPassConfig<ActivePolicyT::UpsweepPolicy, ActivePolicyT::ScanPolicy, ActivePolicyT::DownsweepPolicy>(
+            if ((error = InitPassConfig<
+                    typename ActivePolicyT::UpsweepPolicy,
+                    typename ActivePolicyT::ScanPolicy,
+                    typename ActivePolicyT::DownsweepPolicy>(
                 pass_config, upsweep_kernel, scan_kernel, downsweep_kernel, ptx_version, sm_count))) break;
 
-            if ((error = InitPassConfig<ActivePolicyT::AltUpsweepPolicy, ActivePolicyT::ScanPolicy, ActivePolicyT::AltDownsweepPolicy>(
+            if ((error = InitPassConfig<
+                    typename ActivePolicyT::AltUpsweepPolicy,
+                    typename ActivePolicyT::ScanPolicy,
+                    typename ActivePolicyT::AltDownsweepPolicy>(
                 alt_pass_config, alt_upsweep_kernel, scan_kernel, alt_downsweep_kernel, ptx_version, sm_count))) break;
 
             // Get maximum spine length
@@ -1159,7 +1161,7 @@ template <
     typename ValueT,        ///< Value type
     typename OffsetT>       ///< Signed integer type for global offsets
 struct DispatchSegmentedRadixSort :
-    RadixSortPolicy<KeyT, ValueT, OffsetT>
+    DeviceRadixSortPolicy<KeyT, ValueT, OffsetT>
 {
     //------------------------------------------------------------------------------
     // Constants
@@ -1169,9 +1171,6 @@ struct DispatchSegmentedRadixSort :
     {
         // Whether this is a keys-only (or key-value) sort
         KEYS_ONLY = (Equals<ValueT, NullType>::VALUE),
-
-        // Relative size of KeyT type to a 4-byte word
-        SCALE_FACTOR_4B = (CUB_MAX(sizeof(KeyT), sizeof(ValueT)) + 3) / 4,
     };
 
 
@@ -1183,8 +1182,8 @@ struct DispatchSegmentedRadixSort :
     size_t                  &temp_storage_bytes;    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
     DoubleBuffer<KeyT>      &d_keys;                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
     DoubleBuffer<ValueT>    &d_values;              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
-    OffsetT                 num_segments;           ///< [in] The number of segments that comprise the sorting data
     OffsetT                 num_items;              ///< [in] Number of items to sort
+    OffsetT                 num_segments;           ///< [in] The number of segments that comprise the sorting data
     OffsetT                 *d_begin_offsets;       ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
     OffsetT                 *d_end_offsets;         ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
     int                     begin_bit;              ///< [in] The beginning (least-significant) bit index needed for key comparison
@@ -1221,16 +1220,16 @@ struct DispatchSegmentedRadixSort :
         temp_storage_bytes(temp_storage_bytes),
         d_keys(d_keys),
         d_values(d_values),
-        begin_bit(begin_bit),
-        end_bit(end_bit),
-        stream(stream),
-        debug_synchronous(debug_synchronous),
-        is_overwrite_okay(is_overwrite_okay),
-        ptx_version(ptx_version),
         num_items(num_items),
         num_segments(num_segments),
         d_begin_offsets(d_begin_offsets),
-        d_end_offsets(d_end_offsets)
+        d_end_offsets(d_end_offsets),
+        begin_bit(begin_bit),
+        end_bit(end_bit),
+        is_overwrite_okay(is_overwrite_okay),
+        stream(stream),
+        debug_synchronous(debug_synchronous),
+        ptx_version(ptx_version)
     {}
 
 
@@ -1328,8 +1327,10 @@ struct DispatchSegmentedRadixSort :
         {
             // Init regular and alternate kernel configurations
             PassConfig pass_config, alt_pass_config;
-            if ((error = InitPassConfig<ActivePolicyT::SegmentedPolicy>(pass_config, segmented_kernel))) break;
-            if ((error = InitPassConfig<ActivePolicyT::AltSegmentedPolicy>(alt_pass_config, alt_segmented_kernel))) break;
+            if ((error = InitPassConfig<typename ActivePolicyT::SegmentedPolicy>(
+                pass_config, segmented_kernel))) break;
+            if ((error = InitPassConfig<typename ActivePolicyT::AltSegmentedPolicy>(
+                alt_pass_config, alt_segmented_kernel))) break;
 
             // Temporary storage allocation requirements
             void* allocations[2];

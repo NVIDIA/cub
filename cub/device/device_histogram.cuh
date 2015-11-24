@@ -74,7 +74,6 @@ struct DeviceHistogram
      * - The number of histogram bins is (\p num_levels - 1)
      * - All bins comprise the same width of sample values: (\p upper_level - \p lower_level) / (\p num_levels - 1)
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the computation of a six-bin histogram
@@ -169,7 +168,6 @@ struct DeviceHistogram
      * - The number of histogram bins is (\p num_levels - 1)
      * - All bins comprise the same width of sample values: (\p upper_level - \p lower_level) / (\p num_levels - 1)
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the computation of a six-bin histogram
@@ -269,7 +267,6 @@ struct DeviceHistogram
      * - For channel<sub><em>i</em></sub>, the range of values for all histogram bins
      *   have the same width: (<tt>upper_level[i]</tt> - <tt>lower_level[i]</tt>) / (<tt> num_levels[i]</tt> - 1)
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the computation of three 256-bin <em>RGB</em> histograms
@@ -373,7 +370,6 @@ struct DeviceHistogram
      * - For channel<sub><em>i</em></sub>, the range of values for all histogram bins
      *   have the same width: (<tt>upper_level[i]</tt> - <tt>lower_level[i]</tt>) / (<tt> num_levels[i]</tt> - 1)
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the computation of three 256-bin <em>RGB</em> histograms from a 2x3 region of
@@ -482,7 +478,6 @@ struct DeviceHistogram
      * - The number of histogram bins is (\p num_levels - 1)
      * - The value range for bin<sub><em>i</em></sub> is [<tt>level[i]</tt>, <tt>level[i+1]</tt>)
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the computation of an six-bin histogram
@@ -573,7 +568,6 @@ struct DeviceHistogram
      * - The number of histogram bins is (\p num_levels - 1)
      * - The value range for bin<sub><em>i</em></sub> is [<tt>level[i]</tt>, <tt>level[i+1]</tt>)
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the computation of a six-bin histogram
@@ -669,7 +663,6 @@ struct DeviceHistogram
      * - For channel<sub><em>i</em></sub>, the range of values for all histogram bins
      *   have the same width: (<tt>upper_level[i]</tt> - <tt>lower_level[i]</tt>) / (<tt> num_levels[i]</tt> - 1)
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the computation of three 4-bin <em>RGB</em> histograms
@@ -771,7 +764,6 @@ struct DeviceHistogram
      * - For channel<sub><em>i</em></sub>, the range of values for all histogram bins
      *   have the same width: (<tt>upper_level[i]</tt> - <tt>lower_level[i]</tt>) / (<tt> num_levels[i]</tt> - 1)
      * - \devicestorage
-     * - \cdp
      *
      * \par Snippet
      * The code snippet below illustrates the computation of three 4-bin <em>RGB</em> histograms from a 2x3 region of

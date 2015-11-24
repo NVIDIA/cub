@@ -95,7 +95,6 @@ struct DeviceRadixSort
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated sorting performance across different
@@ -195,7 +194,6 @@ struct DeviceRadixSort
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageP
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated sorting performance across different
@@ -283,7 +281,6 @@ struct DeviceRadixSort
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is similar to DeviceRadixSort::SortPairs.
@@ -378,7 +375,6 @@ struct DeviceRadixSort
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageP
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is similar to DeviceRadixSort::SortPairs.
@@ -468,7 +464,6 @@ struct DeviceRadixSort
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated sorting performance across different
@@ -555,7 +550,6 @@ struct DeviceRadixSort
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageP
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * The following charts illustrate saturated sorting performance across different
@@ -635,7 +629,6 @@ struct DeviceRadixSort
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is similar to DeviceRadixSort::SortKeys.
@@ -720,7 +713,6 @@ struct DeviceRadixSort
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageP
      * - \devicestorage
-     * - \cdp
      *
      * \par Performance
      * Performance is similar to DeviceRadixSort::SortKeys.
