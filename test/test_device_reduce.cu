@@ -34,9 +34,11 @@
 #define CUB_STDERR
 
 #include <stdio.h>
+#include <limits>
 
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_reduce.cuh>
+#include <cub/device/device_segmented_reduce.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 
 #include <thrust/device_ptr.h>
@@ -111,7 +113,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, 0, debug_synchronous);
+        error = DeviceReduce::Reduce(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, reduction_op, stream, debug_synchronous);
     }
     return error;
 }
@@ -142,7 +144,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, 0, debug_synchronous);
+        error = DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -173,7 +175,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, 0, debug_synchronous);
+        error = DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -204,7 +206,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, 0, debug_synchronous);
+        error = DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -235,7 +237,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, 0, debug_synchronous);
+        error = DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -266,7 +268,233 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, 0, debug_synchronous);
+        error = DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
+    }
+    return error;
+}
+
+
+//---------------------------------------------------------------------
+// Dispatch to different CUB DeviceSegmentedReduce entrypoints
+//---------------------------------------------------------------------
+
+/**
+ * Dispatch to reduce entrypoint
+ */
+template <typename InputIteratorT, typename OutputIteratorT, typename ReductionOpT>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t Dispatch(
+    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    int                 timing_timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void*               d_temp_storage,
+    size_t&             temp_storage_bytes,
+    InputIteratorT      d_in,
+    OutputIteratorT     d_out,
+    int                 num_items,
+    int                 max_segments,
+    int                 *d_segment_offsets,
+    ReductionOpT        reduction_op,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    // Max-identity
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    T identity = std::numeric_limits<T>::max();
+
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_timing_iterations; ++i)
+    {
+        error = DeviceSegmentedReduce::Reduce(d_temp_storage, temp_storage_bytes,
+            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1, reduction_op, identity,
+            stream, debug_synchronous);
+    }
+    return error;
+}
+
+/**
+ * Dispatch to sum entrypoint
+ */
+template <typename InputIteratorT, typename OutputIteratorT>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t Dispatch(
+    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    int                 timing_timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void*               d_temp_storage,
+    size_t&             temp_storage_bytes,
+    InputIteratorT      d_in,
+    OutputIteratorT     d_out,
+    int                 num_items,
+    int                 max_segments,
+    int                 *d_segment_offsets,
+    cub::Sum            reduction_op,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    // Zero-identity
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    T identity;
+    InitValue(INTEGER_SEED, identity, 0);
+
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_timing_iterations; ++i)
+    {
+        error = DeviceSegmentedReduce::Sum(d_temp_storage, temp_storage_bytes,
+            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1, identity,
+            stream, debug_synchronous);
+    }
+    return error;
+}
+
+/**
+ * Dispatch to min entrypoint
+ */
+template <typename InputIteratorT, typename OutputIteratorT>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t Dispatch(
+    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    int                 timing_timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void*               d_temp_storage,
+    size_t&             temp_storage_bytes,
+    InputIteratorT      d_in,
+    OutputIteratorT     d_out,
+    int                 num_items,
+    int                 max_segments,
+    int                 *d_segment_offsets,
+    cub::Min            reduction_op,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    // Max-identity
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    T identity = std::numeric_limits<T>::max();
+
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_timing_iterations; ++i)
+    {
+        error = DeviceSegmentedReduce::Min(d_temp_storage, temp_storage_bytes,
+            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1, identity,
+            stream, debug_synchronous);
+    }
+    return error;
+}
+
+/**
+ * Dispatch to max entrypoint
+ */
+template <typename InputIteratorT, typename OutputIteratorT>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t Dispatch(
+    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    int                 timing_timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void*               d_temp_storage,
+    size_t&             temp_storage_bytes,
+    InputIteratorT      d_in,
+    OutputIteratorT     d_out,
+    int                 num_items,
+    int                 max_segments,
+    int                 *d_segment_offsets,
+    cub::Max            reduction_op,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    // Min-identity
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    T identity = std::numeric_limits<T>::lowest();
+
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_timing_iterations; ++i)
+    {
+        error = DeviceSegmentedReduce::Max(d_temp_storage, temp_storage_bytes,
+            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1, identity,
+            stream, debug_synchronous);
+    }
+    return error;
+}
+
+/**
+ * Dispatch to argmin entrypoint
+ */
+template <typename InputIteratorT, typename OutputIteratorT>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t Dispatch(
+    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    int                 timing_timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void*               d_temp_storage,
+    size_t&             temp_storage_bytes,
+    InputIteratorT      d_in,
+    OutputIteratorT     d_out,
+    int                 num_items,
+    int                 max_segments,
+    int                 *d_segment_offsets,
+    cub::ArgMin         reduction_op,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    T identity = std::numeric_limits<T>::max();
+
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_timing_iterations; ++i)
+    {
+        error = DeviceSegmentedReduce::ArgMin(d_temp_storage, temp_storage_bytes,
+            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1, identity,
+            stream, debug_synchronous);
+    }
+    return error;
+}
+
+/**
+ * Dispatch to argmax entrypoint
+ */
+template <typename InputIteratorT, typename OutputIteratorT>
+CUB_RUNTIME_FUNCTION __forceinline__
+cudaError_t Dispatch(
+    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    int                 timing_timing_iterations,
+    size_t              *d_temp_storage_bytes,
+    cudaError_t         *d_cdp_error,
+
+    void*               d_temp_storage,
+    size_t&             temp_storage_bytes,
+    InputIteratorT      d_in,
+    OutputIteratorT     d_out,
+    int                 num_items,
+    int                 max_segments,
+    int                 *d_segment_offsets,
+    cub::ArgMax         reduction_op,
+    cudaStream_t        stream,
+    bool                debug_synchronous)
+{
+    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    T identity = std::numeric_limits<T>::lowest();
+
+    // Invoke kernel to device reduction directly
+    cudaError_t error = cudaSuccess;
+    for (int i = 0; i < timing_timing_iterations; ++i)
+    {
+        error = DeviceSegmentedReduce::ArgMax(d_temp_storage, temp_storage_bytes,
+            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1, identity,
+            stream, debug_synchronous);
     }
     return error;
 }
@@ -441,12 +669,10 @@ cudaError_t Dispatch(
 
 
 //---------------------------------------------------------------------
-// Test generation
+// Problem generation
 //---------------------------------------------------------------------
 
-/**
- * Initialize problem
- */
+/// Initialize problem
 template <typename T>
 void Initialize(
     GenMode         gen_mode,
@@ -464,6 +690,74 @@ void Initialize(
     }
 }
 
+
+/// Solve problem (min/custom-min functor)
+template <
+    typename                ReductionOpT,
+    typename                T>
+struct Solution
+{
+    typedef T Output;
+
+    static void Solve(T *h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
+        cub::Min reduction_op)
+    {
+        for (int i = 0; i < num_segments; ++i)
+        {
+            T aggregate = std::numeric_limits<T>::max();
+            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+                aggregate = reduction_op(aggregate, h_in[j]);
+            h_reference[i] = aggregate;
+        }
+    }
+};
+
+
+/// Solve problem (sum functor)
+template <typename T>
+struct Solution<cub::Sum, T>
+{
+    typedef T Output;
+
+    static void Solve(T *h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
+        cub::Sum reduction_op)
+    {
+        for (int i = 0; i < num_segments; ++i)
+        {
+            T aggregate;
+            InitValue(INTEGER_SEED, aggregate, 0);
+            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+                aggregate = reduction_op(aggregate, h_in[j]);
+            h_reference[i] = aggregate;
+        }
+    }
+};
+
+/// Solve problem (max functor)
+template <typename T>
+struct Solution<cub::Max, T>
+{
+    typedef T Output;
+
+    static void Solve(T *h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
+        cub::Max reduction_op)
+    {
+        for (int i = 0; i < num_segments; ++i)
+        {
+            T aggregate = std::numeric_limits<T>::lowest();
+            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+                aggregate = reduction_op(aggregate, h_in[j]);
+            h_reference[i] = aggregate;
+        }
+    }
+};
+
+
+
+
+//---------------------------------------------------------------------
+// Problem generation
+//---------------------------------------------------------------------
 
 /// Test DeviceReduce for a given problem input
 template <
@@ -499,7 +793,8 @@ void Test(
     size_t          temp_storage_bytes = 0;
     CubDebugExit(Dispatch(backend, 1,
         d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, d_out, num_items, reduction_op, 0, true));
+        d_in, d_out, num_items, num_segments, d_segment_offsets,
+        reduction_op, 0, true));
 
     // Allocate temp device storage
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
@@ -510,7 +805,8 @@ void Test(
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(backend, 1,
         d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, d_out, num_items, reduction_op, 0, true));
+        d_in, d_out, num_items, num_segments, d_segment_offsets,
+        reduction_op, 0, true));
 
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_segments, g_verbose, g_verbose);
@@ -528,7 +824,8 @@ void Test(
 
         CubDebugExit(Dispatch(backend, g_timing_iterations,
             d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-            d_in, d_out, num_items, reduction_op, 0, false));
+            d_in, d_out, num_items, num_segments, d_segment_offsets,
+            reduction_op, 0, false));
 
         gpu_timer.Stop();
         float elapsed_millis = gpu_timer.ElapsedMillis();
@@ -574,21 +871,11 @@ void SolveAndTest(
         num_items, num_segments);
     fflush(stdout);
 
-    // Allocate host arrays
-    T* h_reference = new T[num_segments];
-
-    // Solve solution
-    for (int i = 0; i < num_segments; ++i)
-    {
-        for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
-        {
-            if (j == 0)
-                h_reference[i] = h_in[j];
-            else
-                h_reference[i] = reduction_op(h_reference[i], h_in[j]);
-        }
-    }
-    printf("Reference done\n"); fflush(stdout);
+    // Allocate and solve solution
+    typedef Solution<ReductionOpT, T> SolutionT;
+    typedef typename SolutionT::Output OutputT;
+    OutputT *h_reference = new OutputT[num_segments];
+    SolutionT::Solve(h_in, h_reference, num_segments, h_segment_offsets, reduction_op);
 
     // Run test
     Test(Int2Type<BACKEND>(), d_in, num_items, num_segments, d_segment_offsets, reduction_op, h_reference);
@@ -596,112 +883,6 @@ void SolveAndTest(
     // Cleanup
     if (h_reference) delete[] h_reference;
 }
-
-
-/// Test DeviceReduce (argmin specialization)
-/*
-template <
-    Backend             BACKEND,
-    typename            HostInputIteratorT,
-    typename            DeviceInputIteratorT,
-    typename            ReductionOpT>
-void SolveAndTest(
-    HostInputIteratorT      h_in,
-    DeviceInputIteratorT    d_in,
-    int                     num_items,
-    int                     num_segments,
-    int                     *h_segment_offsets,
-    int                     *d_segment_offsets,
-    ReductionOpT            reduction_op,
-    const char              *type_string)
-{
-    // Data type of input iterator
-    typedef typename std::iterator_traits<HostInputIteratorT>::value_type T;
-
-    printf("\n\n%s cub::DeviceReduce::%s %d items, %d segments, %s %d-byte elements\n",
-        (BACKEND == CUB_CDP) ? "CUB_CDP" : (BACKEND == THRUST) ? "Thrust" : (BACKEND == CUB_SEGMENTED) ? "CUB_SEGMENTED" : "CUB",
-        (Equals<ReductionOpT, Sum>::VALUE) ? "Sum" : (Equals<ReductionOpT, Min>::VALUE) ? "Min" : "Max",
-        num_items, num_segments, type_string, (int) sizeof(T));
-    fflush(stdout);
-
-    // Allocate host arrays
-    typedef KeyValuePair<int, T> KeyValuePairT;
-    KeyValuePairT *h_reference = new KeyValuePairT[num_segments];
-
-    // Solve solution
-    for (int i = 0; i < num_segments; ++i)
-    {
-        for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
-        {
-            if (j == 0)
-                h_reference[i] = h_in[j];
-            else
-                h_reference[i] = reduction_op(h_reference[i], h_in[j]);
-        }
-    }
-    printf("Reference done\n"); fflush(stdout);
-
-    // Run test
-    Test<BACKEND>(d_in, h_reference, num_items, num_segments, d_segment_offsets, reduction_op);
-
-    // Cleanup
-    if (h_reference) delete[] h_reference;
-}
-*/
-
-
-/*
-/// Test DeviceReduce on pointer type (argmax specialization)
-template <
-    Backend     BACKEND,
-    typename    T>
-void SolveAndTest(
-    int         num_items,
-    GenMode     gen_mode,
-    ArgMax      reduction_op,
-    const char* type_string)
-{
-    printf("\n\n%s cub::DeviceReduce::%s %d items, %s %d-byte elements, gen-mode %s\n",
-        (BACKEND == CUB_CDP) ? "CUB_CDP" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        "ArgMax", num_items, type_string, (int) sizeof(T),
-        (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS");
-    fflush(stdout);
-
-    // Allocate host arrays
-    T* h_in = new T[num_items];
-    KeyValuePair<int, T> h_reference;
-
-    // Initialize problem and solution
-    printf("Initializing... "); fflush(stdout);
-    Initialize(gen_mode, h_in, num_items);
-    printf("Solving... "); fflush(stdout);
-    Solve(h_in, h_reference.value, Max(), num_items);
-    for (int i = 0; i < num_items; ++i)
-    {
-        if (!(h_reference.value != h_in[i]))
-        {
-            h_reference.key = i;
-            break;
-        }
-    }
-    printf("Reference done\n"); fflush(stdout);
-
-    // Allocate problem device arrays
-    T *d_in = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
-
-    // Initialize device input
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
-
-    // Run test
-    Test<BACKEND>(d_in, h_reference, num_items, reduction_op);
-
-    // Cleanup
-    if (h_in) delete[] h_in;
-    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
-}
-*/
-
 
 
 /// Test specific problem type
@@ -717,7 +898,7 @@ void TestProblem(
     const char*     type_string)
 {
     // Initialize host data
-    printf("Initializing %s (gen mode %d)... ", type_string, gen_mode); fflush(stdout);
+    printf("\n\nInitializing %s (gen mode %d)... ", type_string, gen_mode); fflush(stdout);
     T* h_in = new T[num_items];
     Initialize(gen_mode, h_in, num_items);
 
@@ -782,21 +963,26 @@ void TestByBackend(
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
 
+    //
     // Test single-segment implementations
+    //
 
     TestByOp<CUB, T>(h_in, d_in, num_items, 1, NULL);
 #ifdef CUB_CDP
     TestByOp<CUB_CDP, T>(h_in, d_in, num_items, 1, NULL);
 #endif
 
+    //
     // Test segmented implementation
+    //
+
+    // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
+    int max_items_per_segment   = 128000;
     if (max_segments > 0)
     {
-
-        // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
-        int max_items_per_segment   = 128000;
         int *h_segment_offsets      = new int[max_segments + 1];
         int *d_segment_offsets      = NULL;
+
         CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(int) * (max_segments + 1)));
 
         for (int num_segments = (num_items + max_items_per_segment - 1) / max_items_per_segment;
@@ -839,66 +1025,56 @@ void TestByGenMode(
 }
 
 
-/// Test differnet problem sizes
+/// Test different problem sizes
 template <typename T>
-void TestBySize(
-    int             num_items,
-    int             max_segments,
-    const char*     type_string)
+struct TestBySize
 {
-    // Policy dispatch functor
-    struct DispatchPolicy
+    int             max_items;
+    int             max_segments;
+    const char*     type_string;
+
+    TestBySize(int max_items, int max_segments, const char* type_string) :
+        max_items(max_items), max_segments(max_segments), type_string(type_string) {}
+
+    template <typename ActivePolicyT>
+    CUB_RUNTIME_FUNCTION __forceinline__
+    cudaError_t Invoke()
     {
-        int             max_items;
-        int             max_segments;
-        const char*     type_string;
+        // Black-box testing on all backends
 
-        DispatchPolicy(int max_items, int max_segments, const char* type_string) :
-            max_items(max_items), max_segments(max_segments), type_string(type_string) {}
+        // Test 0, 1, many
+        TestByGenMode<T>(0,           max_segments, type_string);
+        TestByGenMode<T>(1,           max_segments, type_string);
+        TestByGenMode<T>(max_items,   max_segments, type_string);
 
-        template <typename ActivePolicyT>
-        CUB_RUNTIME_FUNCTION __forceinline__
-        cudaError_t Invoke()
+        // Test random sizes
+        int num_iterations = 8;
+        for (int i = 0; i < num_iterations; ++i)
         {
-            // Black-box testing on all backends
-
-            // Test 0, 1, many
-            TestByGenMode<T>(0,           max_segments, type_string);
-            TestByGenMode<T>(1,           max_segments, type_string);
-            TestByGenMode<T>(max_items,   max_segments, type_string);
-
-            // Test random sizes
-            int num_iterations = 8;
-            for (int i = 0; i < num_iterations; ++i)
-            {
-                unsigned int num_items;
-                RandomValue((unsigned int&) num_items, max_items);
-                TestByGenMode<T>(num_items, max_segments, type_string);
-            }
-
-            // White-box testing of single-segment problems around specific sizes
-
-            // multiple blocks, one tile per block
-            int tile_size = ActivePolicyT::ReducePolicy::BLOCK_THREADS * ActivePolicyT::ReducePolicy::ITEMS_PER_THREAD;
-            TestByGenMode<T>(tile_size * 4,     -1, type_string);
-            TestByGenMode<T>(tile_size * 4 + 1, -1, type_string);
-            TestByGenMode<T>(tile_size * 4 - 1, -1, type_string);
-
-            // multiple blocks, multiple tiles per block
-            int sm_occupancy = 32;
-            int occupancy = tile_size * sm_occupancy * g_sm_count;
-            TestByGenMode<T>(occupancy,         -1, type_string);
-            TestByGenMode<T>(occupancy + 1,     -1, type_string);
-            TestByGenMode<T>(occupancy - 1,     -1, type_string);
-
-            return cudaSuccess;
+            unsigned int num_items;
+            RandomValue((unsigned int&) num_items, max_items);
+            TestByGenMode<T>(num_items, max_segments, type_string);
         }
-    };
 
-    DeviceReducePolicy::MaxPolicy::Invoke(
-        g_ptx_version,
-        DispatchPolicy<T>(num_items, max_segments, type_string));
-}
+        // White-box testing of single-segment problems around specific sizes
+
+        // multiple blocks, one tile per block
+        int tile_size = ActivePolicyT::ReducePolicy::BLOCK_THREADS * ActivePolicyT::ReducePolicy::ITEMS_PER_THREAD;
+        TestByGenMode<T>(tile_size * 4,     -1, type_string);
+        TestByGenMode<T>(tile_size * 4 + 1, -1, type_string);
+        TestByGenMode<T>(tile_size * 4 - 1, -1, type_string);
+
+        // multiple blocks, multiple tiles per block
+        int sm_occupancy = 32;
+        int occupancy = tile_size * sm_occupancy * g_sm_count;
+        TestByGenMode<T>(occupancy,         -1, type_string);
+        TestByGenMode<T>(occupancy + 1,     -1, type_string);
+        TestByGenMode<T>(occupancy - 1,     -1, type_string);
+
+        return cudaSuccess;
+    }
+};
+
 
 
 //---------------------------------------------------------------------
@@ -911,8 +1087,8 @@ void TestBySize(
  */
 int main(int argc, char** argv)
 {
-    unsigned int max_items       = 48000000;
-    unsigned int max_segments    = 5000;
+    int max_items      = 48000000;
+    int max_segments   = -1;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -946,20 +1122,16 @@ int main(int argc, char** argv)
     // Get SM count
     g_sm_count = args.deviceProp.multiProcessorCount;
 
-    printf("\n");
-
 #ifdef QUICKER_TEST
 
+    if (max_segments < 0)
+        max_segments = 1;
+
     // Compile/run basic test
-    TestProblem<CUB, int>(max_items, 1, RANDOM, Sum(), CUB_TYPE_STRING(int));
-
-/*
-    TestPointer<CUB, int>(          max_items, 1,            RANDOM, Sum(), CUB_TYPE_STRING(int));
-    TestPointer<CUB, int>(          max_items, 1,            RANDOM, ArgMax(), CUB_TYPE_STRING(int));
-
-    TestPointer<CUB, float>(        max_items, 1,            RANDOM, Sum(), CUB_TYPE_STRING(float));
-    TestPointer<CUB, float>(        max_items, 1,            RANDOM, ArgMax(), CUB_TYPE_STRING(float));
-*/
+    TestProblem<CUB_SEGMENTED, int>(    max_items, max_segments, UNIFORM, Sum(),     CUB_TYPE_STRING(int));
+//    TestProblem<CUB, int>(              max_items, 1,            RANDOM, Sum(),     CUB_TYPE_STRING(int));
+//    TestProblem<CUB, int>(              max_items, 1,            RANDOM, ArgMax(),     CUB_TYPE_STRING(int));
+//    TestProblem<CUB, float>(            max_items, 1,            UNIFORM, Sum(), CUB_TYPE_STRING(float));
 
 #elif defined(QUICK_TEST)
 
@@ -987,9 +1159,16 @@ int main(int argc, char** argv)
 #else
 
     // Compile/run thorough tests
+    if (max_segments < 0)
+        max_segments = 5000;
+
     for (int i = 0; i <= g_repeat; ++i)
     {
         // Test different input types
+        DeviceReducePolicy::MaxPolicy::Invoke(g_ptx_version,
+            TestBySize<unsigned char>(num_items, max_segments, CUB_TYPE_STRING(unsigned char));
+
+/*
         Test<unsigned char>(        max_items, max_segments, CUB_TYPE_STRING(unsigned char));
         Test<unsigned short>(       max_items, max_segments, CUB_TYPE_STRING(unsigned short));
         Test<unsigned int>(         max_items, max_segments, CUB_TYPE_STRING(unsigned int));
@@ -1002,6 +1181,7 @@ int main(int argc, char** argv)
 
         Test<TestFoo>(              max_items, max_segments, CUB_TYPE_STRING(TestFoo));
         Test<TestBar>(              max_items, max_segments, CUB_TYPE_STRING(TestBar));
+*/
     }
 
 #endif
