@@ -126,7 +126,7 @@ struct AgentReduce
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
-        CAN_VECTORIZE       = (VECTOR_LOAD_LENGTH > 1) &&
+        ATTEMPT_VECTORIZATION       = (VECTOR_LOAD_LENGTH > 1) &&
                                 (ITEMS_PER_THREAD % VECTOR_LOAD_LENGTH == 0) &&
                                 (IsPointer<InputIteratorT>::VALUE) && Traits<T>::PRIMITIVE,
 
@@ -139,7 +139,11 @@ struct AgentReduce
     typedef BlockReduce<T, BLOCK_THREADS, AgentReducePolicy::BLOCK_ALGORITHM> BlockReduceT;
 
     /// Shared memory type required by this thread block
-    typedef typename BlockReduceT::TempStorage _TempStorage;
+    struct _TempStorage
+    {
+        typename BlockReduceT::TempStorage  reduce;
+        OffsetT                             dequeue_offset;
+    };
 
     /// Alias wrapper allowing storage to be unioned
     struct TempStorage : Uninitialized<_TempStorage> {};
@@ -149,13 +153,10 @@ struct AgentReduce
     // Per-thread fields
     //---------------------------------------------------------------------
 
-    T                       thread_aggregate;   ///< Each thread's partial reduction
     _TempStorage&           temp_storage;       ///< Reference to temp_storage
     InputIteratorT          d_in;               ///< Input data to reduce
     WrappedInputIteratorT   d_wrapped_in;       ///< Wrapped input data to reduce
     ReductionOp             reduction_op;       ///< Binary reduction operator
-    int                     first_tile_size;    ///< Size of first tile consumed
-    bool                    is_aligned;         ///< Whether or not input is vector-aligned
 
 
     //---------------------------------------------------------------------
@@ -183,7 +184,7 @@ struct AgentReduce
 
 
     //---------------------------------------------------------------------
-    // Interface
+    // Constructor
     //---------------------------------------------------------------------
 
     /**
@@ -197,19 +198,24 @@ struct AgentReduce
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_wrapped_in(d_in),
-        reduction_op(reduction_op),
-        first_tile_size(0),
-        is_aligned(IsAligned(d_in, Int2Type<CAN_VECTORIZE>()))
+        reduction_op(reduction_op)
     {}
 
 
+    //---------------------------------------------------------------------
+    // Tile consumption
+    //---------------------------------------------------------------------
+
     /**
-     * Consume a full tile of input (specialized for cases where we cannot vectorize)
+     * Consume a full tile of input (non-vectorized)
      */
-    template <typename _OffsetT>
-    __device__ __forceinline__ T ConsumeFullTile(
-        _OffsetT            block_offset,            ///< The offset the tile to consume
-        Int2Type<false>     can_vectorize)           ///< Whether or not we can vectorize loads
+    template <bool IS_FIRST_TILE>
+    __device__ __forceinline__ void ConsumeTile(
+        T                       &thread_aggregate,
+        OffsetT                 block_offset,       ///< The offset the tile to consume
+        int                     valid_items,        ///< The number of valid items in the tile
+        Int2Type<true>          is_full_tile,       ///< Whether or not this is a full tile
+        Int2Type<false>         can_vectorize)      ///< Whether or not we can vectorize loads
     {
         T items[ITEMS_PER_THREAD];
 
@@ -217,90 +223,76 @@ struct AgentReduce
         LoadDirectStriped<BLOCK_THREADS>(threadIdx.x, d_wrapped_in + block_offset, items);
 
         // Reduce items within each thread stripe
-        return ThreadReduce(items, reduction_op);
+        thread_aggregate = (IS_FIRST_TILE) ?
+            ThreadReduce(items, reduction_op) :
+            ThreadReduce(items, reduction_op, thread_aggregate);
     }
 
 
     /**
-     * Consume a full tile of input (specialized for cases where we can vectorize)
+     * Consume a full tile of input (vectorized)
      */
-    template <typename _OffsetT>
-    __device__ __forceinline__ T ConsumeFullTile(
-        _OffsetT            block_offset,            ///< The offset the tile to consume
-        Int2Type<true>      can_vectorize)           ///< Whether or not we can vectorize loads
-    {
-        if (!is_aligned)
-        {
-            // Not aligned
-            return ConsumeFullTile(block_offset, Int2Type<false>());
-        }
-        else
-        {
-            // Alias items as an array of VectorT and load it in striped fashion
-            enum { WORDS =  ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH };
-
-            T items[ITEMS_PER_THREAD];
-
-            VectorT *vec_items = reinterpret_cast<VectorT*>(items);
-
-            // Vector Input iterator wrapper type (for applying cache modifier)
-            T *d_in_unqualified = const_cast<T*>(d_in) + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
-            CacheModifiedInputIterator<AgentReducePolicy::LOAD_MODIFIER, VectorT, OffsetT> d_vec_in(
-                reinterpret_cast<VectorT*>(d_in_unqualified));
-
-            #pragma unroll
-            for (int i = 0; i < WORDS; ++i)
-                vec_items[i] = d_vec_in[BLOCK_THREADS * i];
-
-            // Reduce items within each thread stripe
-            return ThreadReduce(items, reduction_op);
-        }
-    }
-
-
-
-    /**
-     * Process a single tile of input
-     */
-    template <bool FULL_TILE>
+    template <bool IS_FIRST_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        OffsetT block_offset,                   ///< The offset the tile to consume
-        int     valid_items = TILE_ITEMS)       ///< The number of valid items in the tile
+        T                       &thread_aggregate,
+        OffsetT                 block_offset,       ///< The offset the tile to consume
+        int                     valid_items,        ///< The number of valid items in the tile
+        Int2Type<true>          is_full_tile,       ///< Whether or not this is a full tile
+        Int2Type<true>          can_vectorize)      ///< Whether or not we can vectorize loads
     {
-        if (FULL_TILE)
+        // Alias items as an array of VectorT and load it in striped fashion
+        enum { WORDS =  ITEMS_PER_THREAD / VECTOR_LOAD_LENGTH };
+
+        T items[ITEMS_PER_THREAD];
+
+        VectorT *vec_items = reinterpret_cast<VectorT*>(items);
+
+        // Vector Input iterator wrapper type (for applying cache modifier)
+        T *d_in_unqualified = const_cast<T*>(d_in) + block_offset + (threadIdx.x * VECTOR_LOAD_LENGTH);
+        CacheModifiedInputIterator<AgentReducePolicy::LOAD_MODIFIER, VectorT, OffsetT> d_vec_in(
+            reinterpret_cast<VectorT*>(d_in_unqualified));
+
+        #pragma unroll
+        for (int i = 0; i < WORDS; ++i)
+            vec_items[i] = d_vec_in[BLOCK_THREADS * i];
+
+        // Reduce items within each thread stripe
+        thread_aggregate = (IS_FIRST_TILE) ?
+            ThreadReduce(items, reduction_op) :
+            ThreadReduce(items, reduction_op, thread_aggregate);
+    }
+
+
+    /**
+     * Consume a partial tile of input
+     */
+    template <bool IS_FIRST_TILE, bool CAN_VECTORIZE>
+    __device__ __forceinline__ void ConsumeTile(
+        T                       &thread_aggregate,
+        OffsetT                 block_offset,       ///< The offset the tile to consume
+        int                     valid_items,        ///< The number of valid items in the tile
+        Int2Type<false>         is_full_tile,       ///< Whether or not this is a full tile
+        Int2Type<CAN_VECTORIZE> can_vectorize)      ///< Whether or not we can vectorize loads
+    {
+        // Partial tile
+        int thread_offset = threadIdx.x;
+
+        // Read first item
+        if ((IS_FIRST_TILE) && (thread_offset < valid_items))
         {
-            // Full tile
-            T partial = ConsumeFullTile(block_offset, Int2Type<CAN_VECTORIZE>());
-
-            if (first_tile_size != 0)
-                partial = reduction_op(thread_aggregate, partial);
-
-            thread_aggregate = partial;
+            thread_aggregate = d_wrapped_in[block_offset + thread_offset];
+            thread_offset += BLOCK_THREADS;
         }
-        else
+
+        // Continue reading items (block-striped)
+        #pragma unroll 1
+        while (thread_offset < valid_items)
         {
-            // Partial tile
-            int thread_offset = threadIdx.x;
-
-            if (!first_tile_size && (thread_offset < valid_items))
-            {
-                // Assign thread_aggregate
-                thread_aggregate = d_wrapped_in[block_offset + thread_offset];
-                thread_offset += BLOCK_THREADS;
-            }
-
-            while (thread_offset < valid_items)
-            {
-                // Update thread aggregate
-                T item = d_wrapped_in[block_offset + thread_offset];
-                thread_aggregate = reduction_op(thread_aggregate, item);
-                thread_offset += BLOCK_THREADS;
-            }
+            thread_aggregate = reduction_op(
+                thread_aggregate,
+                d_wrapped_in[block_offset + thread_offset]);
+            thread_offset += BLOCK_THREADS;
         }
-
-        // Set first tile size if necessary
-        if (first_tile_size == 0)
-            first_tile_size = valid_items;
     }
 
 
@@ -311,15 +303,31 @@ struct AgentReduce
     /**
      * \brief Reduce a contiguous segment of input tiles
      */
-    __device__ __forceinline__ void ConsumeRange(
+    template <bool CAN_VECTORIZE>
+    __device__ __forceinline__ T ConsumeRange(
         OffsetT block_offset,                       ///< [in] Threadblock begin offset (inclusive)
         OffsetT block_end,                          ///< [in] Threadblock end offset (exclusive)
-        T       &block_aggregate)                   ///< [out] Running total
+        Int2Type<CAN_VECTORIZE> can_vectorize)      ///< Whether or not we can vectorize loads
     {
+        T thread_aggregate;
+
+        if (block_offset + TILE_ITEMS > block_end)
+        {
+            // First tile isn't full (not all threads have valid items)
+            int valid_items = block_end - block_offset;
+            ConsumeTile<true>(thread_aggregate, block_offset, valid_items, Int2Type<false>(), can_vectorize);
+            return BlockReduceT(temp_storage.reduce).Reduce(thread_aggregate, reduction_op, valid_items);
+        }
+
+        // At least one full block
+        ConsumeTile<true>(thread_aggregate, block_offset, TILE_ITEMS, Int2Type<true>(), can_vectorize);
+        block_offset += TILE_ITEMS;
+
         // Consume subsequent full tiles of input
+        #pragma unroll 1
         while (block_offset + TILE_ITEMS <= block_end)
         {
-            ConsumeTile<true>(block_offset);
+            ConsumeTile<false>(thread_aggregate, block_offset, TILE_ITEMS, Int2Type<true>(), can_vectorize);
             block_offset += TILE_ITEMS;
         }
 
@@ -327,31 +335,43 @@ struct AgentReduce
         if (block_offset < block_end)
         {
             int valid_items = block_end - block_offset;
-            ConsumeTile<false>(block_offset, valid_items);
+            ConsumeTile<false>(thread_aggregate, block_offset, valid_items, Int2Type<false>(), can_vectorize);
         }
 
-        // Compute block-wide reduction
-        block_aggregate = (first_tile_size < TILE_ITEMS) ?
-            BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op, first_tile_size) :
-            BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op);
+        // Compute block-wide reduction (all threads have valid items)
+        return BlockReduceT(temp_storage.reduce).Reduce(thread_aggregate, reduction_op);
+    }
+
+
+    /**
+     * \brief Reduce a contiguous segment of input tiles
+     */
+    __device__ __forceinline__ T ConsumeRange(
+        OffsetT block_offset,                       ///< [in] Threadblock begin offset (inclusive)
+        OffsetT block_end)                          ///< [in] Threadblock end offset (exclusive)
+    {
+        return (IsAligned(d_in + block_offset, Int2Type<ATTEMPT_VECTORIZATION>())) ?
+            ConsumeRange(block_offset, block_end, Int2Type<true>()) :
+            ConsumeRange(block_offset, block_end, Int2Type<false>());
     }
 
 
     /**
      * Reduce a contiguous segment of input tiles
      */
-    __device__ __forceinline__ void ConsumeRange(
+    __device__ __forceinline__ T ConsumeTiles(
         OffsetT                             num_items,          ///< [in] Total number of global input items
         GridEvenShare<OffsetT>              &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<OffsetT>                  &queue,             ///< [in,out] GridQueue descriptor
-        T                                   &block_aggregate,   ///< [out] Running total
         Int2Type<GRID_MAPPING_EVEN_SHARE>   is_even_share)      ///< [in] Marker type indicating this is an even-share mapping
     {
         // Initialize even-share descriptor for this thread block
         even_share.BlockInit();
 
-        // Consume input tiles
-        ConsumeRange(even_share.block_offset, even_share.block_end, block_aggregate);
+        return (IsAligned(d_in, Int2Type<ATTEMPT_VECTORIZATION>())) ?
+            ConsumeRange(even_share.block_offset, even_share.block_end, Int2Type<true>()) :
+            ConsumeRange(even_share.block_offset, even_share.block_end, Int2Type<false>());
+
     }
 
 
@@ -362,59 +382,82 @@ struct AgentReduce
     /**
      * Dequeue and reduce tiles of items as part of a inter-block reduction
      */
-    __device__ __forceinline__ void ConsumeRange(
-        int                 num_items,          ///< Total number of input items
-        GridQueue<OffsetT>  queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
-        T                   &block_aggregate)   ///< [out] Running total
+    template <bool CAN_VECTORIZE>
+    __device__ __forceinline__ T ConsumeTiles(
+        int                     num_items,          ///< Total number of input items
+        GridQueue<OffsetT>      queue,              ///< Queue descriptor for assigning tiles of work to thread blocks
+        Int2Type<CAN_VECTORIZE> can_vectorize)      ///< Whether or not we can vectorize loads
     {
-        // Shared dequeue offset
-        __shared__ OffsetT dequeue_offset;
-
         // We give each thread block at least one tile of input.
+        T thread_aggregate;
         OffsetT block_offset = blockIdx.x * TILE_ITEMS;
         OffsetT even_share_base = gridDim.x * TILE_ITEMS;
 
-        while (block_offset + TILE_ITEMS <= num_items)
+        if (block_offset + TILE_ITEMS > num_items)
         {
-            // Consume full tile of input
-            ConsumeTile<true>(block_offset);
+            // First tile isn't full (not all threads have valid items)
+            int valid_items = num_items - block_offset;
+            ConsumeTile<true>(thread_aggregate, block_offset, valid_items, Int2Type<false>(), can_vectorize);
+            return BlockReduceT(temp_storage.reduce).Reduce(thread_aggregate, reduction_op, valid_items);
+        }
 
+        // Consume first full tile of input
+        ConsumeTile<true>(thread_aggregate, block_offset, TILE_ITEMS, Int2Type<true>(), can_vectorize);
+
+        if (num_items > even_share_base)
+        {
             // Dequeue a tile of items
             if (threadIdx.x == 0)
-                dequeue_offset = queue.Drain(TILE_ITEMS) + even_share_base;
+                temp_storage.dequeue_offset = queue.Drain(TILE_ITEMS) + even_share_base;
 
             __syncthreads();
 
             // Grab tile offset and check if we're done with full tiles
-            block_offset = dequeue_offset;
+            block_offset = temp_storage.dequeue_offset;
 
-            __syncthreads();
+            // Consume more full tiles
+            #pragma unroll 1
+            while (block_offset + TILE_ITEMS <= num_items)
+            {
+                ConsumeTile<false>(thread_aggregate, block_offset, TILE_ITEMS, Int2Type<true>(), can_vectorize);
+
+                __syncthreads();
+
+                // Dequeue a tile of items
+                if (threadIdx.x == 0)
+                    temp_storage.dequeue_offset = queue.Drain(TILE_ITEMS) + even_share_base;
+
+                __syncthreads();
+
+                // Grab tile offset and check if we're done with full tiles
+                block_offset = temp_storage.dequeue_offset;
+            }
+
+            // Consume partial tile
+            if (block_offset < num_items)
+            {
+                int valid_items = num_items - block_offset;
+                ConsumeTile<false>(thread_aggregate, block_offset, valid_items, Int2Type<false>(), can_vectorize);
+            }
         }
 
-        if (block_offset < num_items)
-        {
-            int valid_items = num_items - block_offset;
-            ConsumeTile<false>(block_offset, valid_items);
-        }
+        // Compute block-wide reduction (all threads have valid items)
+        return BlockReduceT(temp_storage.reduce).Reduce(thread_aggregate, reduction_op);
 
-        // Compute block-wide reduction
-        block_aggregate = (first_tile_size < TILE_ITEMS) ?
-            BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op, first_tile_size) :
-            BlockReduceT(temp_storage).Reduce(thread_aggregate, reduction_op);
     }
-
 
     /**
      * Dequeue and reduce tiles of items as part of a inter-block reduction
      */
-    __device__ __forceinline__ void ConsumeRange(
+    __device__ __forceinline__ T ConsumeTiles(
         OffsetT                         num_items,          ///< [in] Total number of global input items
         GridEvenShare<OffsetT>          &even_share,        ///< [in] GridEvenShare descriptor
         GridQueue<OffsetT>              &queue,             ///< [in,out] GridQueue descriptor
-        T                               &block_aggregate,   ///< [out] Running total
         Int2Type<GRID_MAPPING_DYNAMIC>  is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
     {
-        ConsumeRange(num_items, queue, block_aggregate);
+        return (IsAligned(d_in, Int2Type<ATTEMPT_VECTORIZATION>())) ?
+            ConsumeTiles(num_items, queue, Int2Type<true>()) :
+            ConsumeTiles(num_items, queue, Int2Type<false>());
     }
 
 };

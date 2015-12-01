@@ -164,9 +164,6 @@ struct DeviceScan
      * - Supports non-commutative scan operators.
      * - \devicestorage
      *
-     * \par Performance
-     * Performance is typically similar to DeviceScan::ExclusiveSum.
-     *
      * \par Snippet
      * The code snippet below illustrates the exclusive prefix min-scan of an \p int device vector
      * \par
@@ -221,7 +218,7 @@ struct DeviceScan
         size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT  d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT d_out,                              ///< [out] Pointer to the output sequence of data items
-        ScanOp          scan_op,                            ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        ScanOp          scan_op,                            ///< [in] Binary scan functor 
         Identity        identity,                           ///< [in] Identity element
         int             num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -256,9 +253,6 @@ struct DeviceScan
      * \par
      * - Supports non-commutative sum operators.
      * - \devicestorage
-     *
-     * \par Performance
-     * Performance is typically similar to DeviceScan::ExclusiveSum.
      *
      * \par Snippet
      * The code snippet below illustrates the inclusive prefix sum of an \p int device vector.
@@ -326,9 +320,6 @@ struct DeviceScan
      * - Supports non-commutative scan operators.
      * - \devicestorage
      *
-     * \par Performance
-     * Performance is typically similar to DeviceScan::ExclusiveSum.
-     *
      * \par Snippet
      * The code snippet below illustrates the inclusive prefix min-scan of an \p int device vector.
      * \par
@@ -381,7 +372,7 @@ struct DeviceScan
         size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT  d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT d_out,                              ///< [out] Pointer to the output sequence of data items
-        ScanOp          scan_op,                            ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        ScanOp          scan_op,                            ///< [in] Binary scan functor 
         int             num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream             = 0,             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
