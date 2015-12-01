@@ -138,7 +138,7 @@ __device__ __forceinline__ T ThreadReduce(
     ReductionOp reduction_op,           ///< [in] Binary reduction operator
     T           prefix)                 ///< [in] Prefix to seed reduction with
 {
-    return ThreadReduce<LENGTH>(input, reduction_op, prefix);
+    return ThreadReduce(input, reduction_op, prefix, Int2Type<LENGTH>());
 }
 
 

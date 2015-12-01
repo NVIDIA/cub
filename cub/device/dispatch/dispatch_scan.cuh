@@ -86,7 +86,7 @@ __global__ void DeviceScanSweepKernel(
     InputIteratorT      d_in,               ///< Input data
     OutputIteratorT     d_out,              ///< Output data
     ScanTileStateT      tile_state,         ///< [in] Tile status interface
-    ScanOpT             scan_op,            ///< Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+    ScanOpT             scan_op,            ///< Binary scan functor 
     IdentityT           identity,           ///< The identity element for ScanOpT
     OffsetT             num_items)          ///< Total number of scan items for the entire problem
 {
@@ -373,7 +373,7 @@ struct DispatchScan
         size_t&             temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                   ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                  ///< [out] Pointer to the output sequence of data items
-        ScanOpT             scan_op,                ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        ScanOpT             scan_op,                ///< [in] Binary scan functor 
         IdentityT           identity,               ///< [in] The identity element for ScanOpT
         OffsetT             num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t        stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -495,7 +495,7 @@ struct DispatchScan
         size_t&         temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT  d_in,                   ///< [in] Pointer to the input sequence of data items
         OutputIteratorT d_out,                  ///< [out] Pointer to the output sequence of data items
-        ScanOpT         scan_op,                ///< [in] Binary scan functor (e.g., an instance of cub::Sum, cub::Min, cub::Max, etc.)
+        ScanOpT         scan_op,                ///< [in] Binary scan functor 
         IdentityT       identity,               ///< [in] The identity element for ScanOpT
         OffsetT         num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.

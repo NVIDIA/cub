@@ -282,12 +282,11 @@ __device__ __forceinline__ void LoadDirectStriped(
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
-
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        int offset = linear_tid + (ITEM * BLOCK_THREADS);
-        items[ITEM] = block_itr[offset];
+//        items[ITEM] = block_itr[linear_tid + (ITEM * BLOCK_THREADS)];
+        items[ITEM] = *(block_itr + linear_tid + (ITEM * BLOCK_THREADS));
     }
 
 //    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, Int2Type<0>());
