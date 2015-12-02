@@ -233,7 +233,7 @@ struct DeviceReduce
             d_out,
             num_items,
             cub::Sum(),
-            (T) 0,
+            T(),            // zero-initialize
             stream,
             debug_synchronous);
     }
