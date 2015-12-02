@@ -454,7 +454,7 @@ struct DeviceReduce
      * - Uses <tt>std::numeric_limits<T>::min()</tt> as the initial value of the reduction.
      * - The output value type of \p d_out is cub::KeyValuePair <tt><int, T></tt> (assuming the value type of \p d_in is \p T)
      *   - The maximum is written to <tt>d_out.value</tt> and its offset in the input array is written to <tt>d_out.key</tt>.
-     *   - The <tt>{-1, std::numeric_limits<T>::min()}</tt> tuple is produced for zero-length inputs
+     *   - The <tt>{1, std::numeric_limits<T>::min()}</tt> tuple is produced for zero-length inputs
      * - Does not support \p > operators that are non-commutative.
      * - \devicestorage
      *
@@ -506,7 +506,7 @@ struct DeviceReduce
         typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;      // Wrapped input iterator
 
         ArgIndexInputIteratorT      d_argmax_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {-1, std::numeric_limits<T>::min()};
+        KeyValuePair<OffsetT, T>    init = {1, std::numeric_limits<T>::min()};
 
         return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
             d_temp_storage,

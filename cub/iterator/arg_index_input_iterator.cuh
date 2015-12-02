@@ -241,6 +241,13 @@ public:
         return ((itr != rhs.itr) || (offset != rhs.offset));
     }
 
+    /// Normalize
+    __host__ __device__ __forceinline__ void normalize()
+    {
+        itr += offset;
+        offset = 0;
+    }
+
     /// ostream operator
     friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
     {
