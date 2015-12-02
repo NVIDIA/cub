@@ -623,14 +623,12 @@ struct DispatchSpmv
             int spmv_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
                 spmv_sm_occupancy,
-                sm_version,
                 spmv_kernel,
                 spmv_config.block_threads))) break;
 
             int segment_fixup_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
                 segment_fixup_sm_occupancy,
-                sm_version,
                 segment_fixup_kernel,
                 segment_fixup_config.block_threads))) break;
 

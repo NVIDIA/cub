@@ -126,9 +126,9 @@ struct AgentReduce
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
-        ATTEMPT_VECTORIZATION       = (VECTOR_LOAD_LENGTH > 1) &&
-                                (ITEMS_PER_THREAD % VECTOR_LOAD_LENGTH == 0) &&
-                                (IsPointer<InputIteratorT>::VALUE) && Traits<T>::PRIMITIVE,
+        ATTEMPT_VECTORIZATION   = (VECTOR_LOAD_LENGTH > 1) &&
+                                    (ITEMS_PER_THREAD % VECTOR_LOAD_LENGTH == 0) &&
+                                    (IsPointer<InputIteratorT>::VALUE) && Traits<T>::PRIMITIVE,
 
     };
 
@@ -285,7 +285,6 @@ struct AgentReduce
         }
 
         // Continue reading items (block-striped)
-        #pragma unroll 1
         while (thread_offset < valid_items)
         {
             thread_aggregate = reduction_op(
@@ -324,7 +323,6 @@ struct AgentReduce
         block_offset += TILE_ITEMS;
 
         // Consume subsequent full tiles of input
-        #pragma unroll 1
         while (block_offset + TILE_ITEMS <= block_end)
         {
             ConsumeTile<false>(thread_aggregate, block_offset, TILE_ITEMS, Int2Type<true>(), can_vectorize);
@@ -351,8 +349,8 @@ struct AgentReduce
         OffsetT block_end)                          ///< [in] Threadblock end offset (exclusive)
     {
         return (IsAligned(d_in + block_offset, Int2Type<ATTEMPT_VECTORIZATION>())) ?
-            ConsumeRange(block_offset, block_end, Int2Type<true>()) :
-            ConsumeRange(block_offset, block_end, Int2Type<false>());
+            ConsumeRange(block_offset, block_end, Int2Type<true && ATTEMPT_VECTORIZATION>()) :
+            ConsumeRange(block_offset, block_end, Int2Type<false && ATTEMPT_VECTORIZATION>());
     }
 
 
@@ -369,8 +367,8 @@ struct AgentReduce
         even_share.BlockInit();
 
         return (IsAligned(d_in, Int2Type<ATTEMPT_VECTORIZATION>())) ?
-            ConsumeRange(even_share.block_offset, even_share.block_end, Int2Type<true>()) :
-            ConsumeRange(even_share.block_offset, even_share.block_end, Int2Type<false>());
+            ConsumeRange(even_share.block_offset, even_share.block_end, Int2Type<true && ATTEMPT_VECTORIZATION>()) :
+            ConsumeRange(even_share.block_offset, even_share.block_end, Int2Type<false && ATTEMPT_VECTORIZATION>());
 
     }
 
@@ -416,7 +414,6 @@ struct AgentReduce
             block_offset = temp_storage.dequeue_offset;
 
             // Consume more full tiles
-            #pragma unroll 1
             while (block_offset + TILE_ITEMS <= num_items)
             {
                 ConsumeTile<false>(thread_aggregate, block_offset, TILE_ITEMS, Int2Type<true>(), can_vectorize);
@@ -456,8 +453,8 @@ struct AgentReduce
         Int2Type<GRID_MAPPING_DYNAMIC>  is_dynamic)         ///< [in] Marker type indicating this is a dynamic mapping
     {
         return (IsAligned(d_in, Int2Type<ATTEMPT_VECTORIZATION>())) ?
-            ConsumeTiles(num_items, queue, Int2Type<true>()) :
-            ConsumeTiles(num_items, queue, Int2Type<false>());
+            ConsumeTiles(num_items, queue, Int2Type<true && ATTEMPT_VECTORIZATION>()) :
+            ConsumeTiles(num_items, queue, Int2Type<false && ATTEMPT_VECTORIZATION>());
     }
 
 };

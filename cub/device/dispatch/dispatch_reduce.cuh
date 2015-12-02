@@ -38,7 +38,7 @@
 #include <iterator>
 
 #include "../../agent/agent_reduce.cuh"
-#include "../../iterator/constant_input_iterator.cuh"
+#include "../../iterator/arg_index_input_iterator.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../grid/grid_queue.cuh"
@@ -153,6 +153,28 @@ __global__ void DeviceReduceSingleTileKernel(
 }
 
 
+/// Normalize input iterator to segment offset
+template <typename T, typename OffsetT, typename IteratorT>
+__device__ __forceinline__
+void NormalizeReductionOutput(
+    T &val,
+    OffsetT base_offset,
+    IteratorT itr)
+{}
+
+
+/// Normalize input iterator to segment offset (specialized for arg-index)
+template <typename KeyValuePairT, typename OffsetT, typename WrappedIteratorT>
+__device__ __forceinline__
+void NormalizeReductionOutput(
+    KeyValuePairT &val,
+    OffsetT base_offset,
+    ArgIndexInputIterator<WrappedIteratorT, OffsetT> itr)
+{
+    val.key -= base_offset;
+}
+
+
 /**
  * Segmented reduction (one block per segment)
  */
@@ -203,8 +225,11 @@ __global__ void DeviceSegmentedReduceKernel(
         segment_begin,
         segment_end);
 
+    // Normalize as needed
+    NormalizeReductionOutput(block_aggregate, segment_begin, d_in);
+
     if (threadIdx.x == 0)
-        d_out[blockIdx.x] = block_aggregate;
+        d_out[blockIdx.x] = reduction_op(init, block_aggregate);;
 }
 
 
@@ -305,8 +330,8 @@ struct DeviceReducePolicy
         // ReducePolicy (GTX670: 154.0 @ 48M 4B items)
         typedef AgentReducePolicy<
                 256,                                ///< Threads per thread block
-                CUB_MAX(1, 2 / SCALE_FACTOR_4B),    ///< Items per thread per tile of input
-                1,                                  ///< Number of items per vectorized load
+                CUB_MAX(1, 20 / SCALE_FACTOR_4B),    ///< Items per thread per tile of input
+                2,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_EVEN_SHARE>            ///< How to map tiles of input onto thread blocks
@@ -885,6 +910,9 @@ struct DispatchSegmentedReduce :
         cudaStream_t    stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
+        if (num_segments <= 0)
+            return cudaSuccess;
+
         cudaError error = cudaSuccess;
         do
         {
