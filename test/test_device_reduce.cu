@@ -1094,12 +1094,12 @@ struct TestBySize
         TestByGenMode<T>(1,           max_segments);
         TestByGenMode<T>(max_items,   max_segments);
 
-        // Test random sizes
-        int num_iterations = 8;
+        // Test random problem sizes from a log-distribution [8, max_items-ish)
+        int     num_iterations = 8;
+        double  max_exp = log(double(max_items)) / log(double(2.0));
         for (int i = 0; i < num_iterations; ++i)
         {
-            unsigned int num_items;
-            RandomValue((unsigned int&) num_items, max_items);
+            int num_items = (int) pow(2.0, RandomValue(max_exp - 3.0) + 3.0);
             TestByGenMode<T>(num_items, max_segments);
         }
 
@@ -1107,13 +1107,13 @@ struct TestBySize
         // White-box testing of single-segment problems around specific sizes
         //
 
-        // multiple blocks, one tile per block
+        // Tile-boundaries: multiple blocks, one tile per block
         int tile_size = ActivePolicyT::ReducePolicy::BLOCK_THREADS * ActivePolicyT::ReducePolicy::ITEMS_PER_THREAD;
         TestProblem<CUB, T>(tile_size * 4,  1,      RANDOM, Sum());
         TestProblem<CUB, T>(tile_size * 4 + 1, 1,   RANDOM, Sum());
         TestProblem<CUB, T>(tile_size * 4 - 1, 1,   RANDOM, Sum());
 
-        // multiple blocks, multiple tiles per block
+        // Tile-boundaries: multiple blocks, multiple tiles per block
         int sm_occupancy = 32;
         int occupancy = tile_size * sm_occupancy * g_sm_count;
         TestProblem<CUB, T>(occupancy,  1,      RANDOM, Sum());
@@ -1230,15 +1230,14 @@ int main(int argc, char** argv)
         TestType<unsigned int>(max_items, max_segments);
         TestType<unsigned long>(max_items, max_segments);
         TestType<unsigned long long>(max_items, max_segments);
-/*
+
         TestType<uchar2>(max_items, max_segments);
         TestType<uint2>(max_items, max_segments);
         TestType<ulonglong2>(max_items, max_segments);
         TestType<ulonglong4>(max_items, max_segments);
-*/
-//        TestType<TestFoo>(max_items, max_segments);
-//        TestType<TestBar>(max_items, max_segments);
 
+        TestType<TestFoo>(max_items, max_segments);
+        TestType<TestBar>(max_items, max_segments);
     }
 
 #endif
