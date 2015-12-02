@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <limits>
+#include <typeinfo>
 
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_reduce.cuh>
@@ -89,7 +90,7 @@ struct CustomMax
 //---------------------------------------------------------------------
 
 /**
- * Dispatch to reduce entrypoint (custom-min)
+ * Dispatch to reduce entrypoint (custom-max)
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename ReductionOpT>
 CUB_RUNTIME_FUNCTION __forceinline__
@@ -112,7 +113,7 @@ cudaError_t Dispatch(
 {
     // Max-identity
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-    T identity = std::numeric_limits<T>::max();
+    T identity = std::numeric_limits<T>::min();
 
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;
@@ -286,7 +287,7 @@ cudaError_t Dispatch(
 //---------------------------------------------------------------------
 
 /**
- * Dispatch to reduce entrypoint (custom-min)
+ * Dispatch to reduce entrypoint (custom-max)
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename ReductionOpT>
 CUB_RUNTIME_FUNCTION __forceinline__
@@ -309,7 +310,7 @@ cudaError_t Dispatch(
 {
     // Max-identity
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-    T identity = std::numeric_limits<T>::max();
+    T identity = std::numeric_limits<T>::min();
 
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;
@@ -679,20 +680,39 @@ void Initialize(
 }
 
 
-/// Solve problem (min/custom-min functor)
-template <
-    typename                ReductionOpT,
-    typename                T>
+/// Solve problem (max/custom-max functor)
+template <typename ReductionOpT, typename T>
 struct Solution
 {
     typedef T Output;
 
-    static void Solve(T *h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
+    template <typename HostInputIteratorT>
+    static void Solve(HostInputIteratorT h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
+        ReductionOpT reduction_op)
+    {
+        for (int i = 0; i < num_segments; ++i)
+        {
+            T aggregate = std::numeric_limits<T>::lowest();
+            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+                aggregate = reduction_op(aggregate, h_in[j]);
+            h_reference[i] = aggregate;
+        }
+    }
+};
+
+/// Solve problem (min functor)
+template <typename T>
+struct Solution<cub::Min, T>
+{
+    typedef T Output;
+
+    template <typename HostInputIteratorT>
+    static void Solve(HostInputIteratorT h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
         cub::Min reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            T aggregate = std::numeric_limits<T>::max();
+            Output aggregate = std::numeric_limits<T>::max();
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
                 aggregate = reduction_op(aggregate, h_in[j]);
             h_reference[i] = aggregate;
@@ -707,12 +727,13 @@ struct Solution<cub::Sum, T>
 {
     typedef T Output;
 
-    static void Solve(T *h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
+    template <typename HostInputIteratorT>
+    static void Solve(HostInputIteratorT h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
         cub::Sum reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            T aggregate;
+            Output aggregate;
             InitValue(INTEGER_SEED, aggregate, 0);
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
                 aggregate = reduction_op(aggregate, h_in[j]);
@@ -721,26 +742,52 @@ struct Solution<cub::Sum, T>
     }
 };
 
-/// Solve problem (max functor)
+/// Solve problem (argmin functor)
 template <typename T>
-struct Solution<cub::Max, T>
+struct Solution<cub::ArgMin, T>
 {
-    typedef T Output;
+    typedef KeyValuePair<int, T> Output;
 
-    static void Solve(T *h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
-        cub::Max reduction_op)
+    template <typename HostInputIteratorT>
+    static void Solve(HostInputIteratorT h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
+        cub::ArgMin reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            T aggregate = std::numeric_limits<T>::lowest();
+            Output aggregate = {1, std::numeric_limits<T>::max()};
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
-                aggregate = reduction_op(aggregate, h_in[j]);
+            {
+                Output item = {j - h_segment_offsets[i], h_in[j]};
+                aggregate = reduction_op(aggregate, item);
+            }
             h_reference[i] = aggregate;
         }
     }
 };
 
 
+/// Solve problem (argmax functor)
+template <typename T>
+struct Solution<cub::ArgMax, T>
+{
+    typedef KeyValuePair<int, T> Output;
+
+    template <typename HostInputIteratorT>
+    static void Solve(HostInputIteratorT h_in, Output *h_reference, int num_segments, int *h_segment_offsets,
+        cub::ArgMax reduction_op)
+    {
+        for (int i = 0; i < num_segments; ++i)
+        {
+            Output aggregate = {1, std::numeric_limits<T>::lowest()};
+            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+            {
+                Output item = {j - h_segment_offsets[i], h_in[j]};
+                aggregate = reduction_op(aggregate, item);
+            }
+            h_reference[i] = aggregate;
+        }
+    }
+};
 
 
 //---------------------------------------------------------------------
@@ -853,10 +900,9 @@ void SolveAndTest(
     // Data type of input iterator
     typedef typename std::iterator_traits<HostInputIteratorT>::value_type T;
 
-    printf("\n\n%s cub::DeviceReduce::%s %d items, %d segments\n",
+    printf("\n\n%s cub::DeviceReduce<%s> %d items (%s), %d segments\n",
         (BACKEND == CUB_CDP) ? "CUB_CDP" : (BACKEND == THRUST) ? "Thrust" : (BACKEND == CUB_SEGMENTED) ? "CUB_SEGMENTED" : "CUB",
-        (Equals<ReductionOpT, Sum>::VALUE) ? "Sum" : (Equals<ReductionOpT, Min>::VALUE) ? "Min" : "Max",
-        num_items, num_segments);
+        typeid(ReductionOpT).name(), num_items, typeid(HostInputIteratorT).name(), num_segments);
     fflush(stdout);
 
     // Allocate and solve solution
@@ -882,17 +928,16 @@ void TestProblem(
     int             num_items,
     int             num_segments,
     GenMode         gen_mode,
-    ReductionOpT    reduction_op,
-    const char*     type_string)
+    ReductionOpT    reduction_op)
 {
     // Initialize host data
-    printf("\n\nInitializing %s (gen mode %d)... ", type_string, gen_mode); fflush(stdout);
+    printf("\n\nInitializing %s (gen mode %d)... ", typeid(T).name(), gen_mode); fflush(stdout);
     T* h_in = new T[num_items];
     Initialize(gen_mode, h_in, num_items);
 
     // Initialize segment data
     int *h_segment_offsets = new int[num_segments + 1];
-    InitializeSegments(num_items, num_segments, h_segment_offsets, g_verbose);
+    InitializeSegments(num_items, num_segments, h_segment_offsets, g_verbose_input);
 
     // Initialize device data
     int *d_segment_offsets      = NULL;
@@ -938,31 +983,36 @@ template <typename T>
 void TestByBackend(
     int             num_items,
     int             max_segments,
-    GenMode         gen_mode,
-    const char*     type_string)
+    GenMode         gen_mode)
 {
     // Initialize host data
-    printf("Initializing %s (gen mode %d)... ", type_string, gen_mode); fflush(stdout);
-    T* h_in = new T[num_items];
+    printf("\n\nInitializing %s (gen mode %d)... ", typeid(T).name(), gen_mode); fflush(stdout);
+    T       *h_in               = new T[num_items];
+    int     *h_segment_offsets  = new int[max_segments + 1];
     Initialize(gen_mode, h_in, num_items);
 
     // Initialize device data
-    T *d_in = NULL;
+    T       *d_in               = NULL;
+    int     *d_segment_offsets  = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(int) * (max_segments + 1)));
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
 
     //
     // Test single-segment implementations
     //
 
-    TestByOp<CUB, T>(h_in, d_in, num_items, 1, NULL);                   // Host-dispatch (page-aligned)
+    InitializeSegments(num_items, 1, h_segment_offsets, g_verbose_input);
 
-    if (num_items > 1)
-        TestByOp<CUB, T>(h_in + 1, d_in - 1, num_items - 1, 1, NULL);   // Host-dispatch (non-page-aligned)
-
+    TestByOp<CUB>(h_in, d_in, num_items, 1, h_segment_offsets, NULL);                   // Host-dispatch (page-aligned)
 #ifdef CUB_CDP
-    TestByOp<CUB_CDP, T>(h_in, d_in, num_items, 1, NULL);               // Device-dispatch
+    TestByOp<CUB_CDP, T>(h_in, d_in, num_items, 1, h_segment_offsets, NULL);            // Device-dispatch
 #endif
+    if (num_items > 1)
+    {
+        InitializeSegments(num_items - 1, 1, h_segment_offsets, g_verbose_input);
+        TestByOp<CUB>(h_in + 1, d_in + 1, num_items - 1, 1, h_segment_offsets, NULL);   // Host-dispatch (non-page-aligned)
+    }
 
     //
     // Test segmented implementation
@@ -970,28 +1020,20 @@ void TestByBackend(
 
     // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
     int max_items_per_segment = 128000;
-    if (max_segments > 0)
+
+    for (int num_segments = (num_items + max_items_per_segment - 1) / max_items_per_segment;
+        num_segments < max_segments;
+        num_segments = (num_segments * 32) + 1)
     {
-        int *h_segment_offsets      = new int[max_segments + 1];
-        int *d_segment_offsets      = NULL;
-
-        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(int) * (max_segments + 1)));
-
-        for (int num_segments = (num_items + max_items_per_segment - 1) / max_items_per_segment;
-            num_segments < max_segments;
-            num_segments *= 32)
-        {
-            InitializeSegments(num_items, num_segments, h_segment_offsets);
-            CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(int) * (num_segments + 1), cudaMemcpyHostToDevice));
-            TestByOp<CUB_SEGMENTED, T>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets);
-        }
-
-        if (h_segment_offsets)  delete[] h_segment_offsets;
-        if (d_segment_offsets)  CubDebugExit(g_allocator.DeviceFree(d_segment_offsets));
+        InitializeSegments(num_items, num_segments, h_segment_offsets, g_verbose_input);
+        CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(int) * (num_segments + 1), cudaMemcpyHostToDevice));
+        TestByOp<CUB_SEGMENTED>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets);
     }
 
-    if (h_in)   delete[] h_in;
-    if (d_in)   CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (h_in)               delete[] h_in;
+    if (h_segment_offsets)  delete[] h_segment_offsets;
+    if (d_in)               CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (d_segment_offsets)  CubDebugExit(g_allocator.DeviceFree(d_segment_offsets));
 }
 
 
@@ -999,21 +1041,34 @@ void TestByBackend(
 template <typename T>
 void TestByGenMode(
     int             num_items,
-    int             max_segments,
-    const char*     type_string)
+    int             max_segments)
 {
-    TestByBackend<T>(num_items, max_segments, UNIFORM,         type_string);
-    TestByBackend<T>(num_items, max_segments, INTEGER_SEED,    type_string);
-    TestByBackend<T>(num_items, max_segments, RANDOM,          type_string);
+    //
+    // Test pointer support using different input-generation modes
+    //
 
+    TestByBackend<T>(num_items, max_segments, UNIFORM);
+    TestByBackend<T>(num_items, max_segments, INTEGER_SEED);
+    TestByBackend<T>(num_items, max_segments, RANDOM);
+
+    //
     // Test iterator support using a constant-iterator and SUM
+    //
+
     T val;
     InitValue(UNIFORM, val, 0);
     ConstantInputIterator<T, int> h_in(val);
-    Test<CUB>(      h_in, h_in, num_items, 1, NULL, NULL, Sum(), UNIFORM, type_string);
+
+    int *h_segment_offsets = new int[1 + 1];
+    InitializeSegments(num_items, 1, h_segment_offsets, g_verbose_input);
+
+    SolveAndTest<CUB>(h_in, h_in, num_items, 1, h_segment_offsets, NULL, Sum());
 #ifdef CUB_CDP
-    Test<CUB_CDP>(  h_in, h_in, num_items, 1, NULL, NULL, Sum(), UNIFORM, type_string);
+    SolveAndTest<CUB_CDP>(h_in, h_in, num_items, 1, h_segment_offsets, NULL, Sum());
 #endif
+
+    if (h_segment_offsets) delete[] h_segment_offsets;
+
 }
 
 
@@ -1023,13 +1078,11 @@ struct TestBySize
 {
     int             max_items;
     int             max_segments;
-    const char*     type_string;
 
-    TestBySize(int max_items, int max_segments, const char* type_string) :
-        max_items(max_items), max_segments(max_segments), type_string(type_string) {}
+    TestBySize(int max_items, int max_segments) :
+        max_items(max_items), max_segments(max_segments) {}
 
     template <typename ActivePolicyT>
-    CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Invoke()
     {
         //
@@ -1037,9 +1090,9 @@ struct TestBySize
         //
 
         // Test 0, 1, many
-        TestByGenMode<T>(0,           max_segments, type_string);
-        TestByGenMode<T>(1,           max_segments, type_string);
-        TestByGenMode<T>(max_items,   max_segments, type_string);
+        TestByGenMode<T>(0,           max_segments);
+        TestByGenMode<T>(1,           max_segments);
+        TestByGenMode<T>(max_items,   max_segments);
 
         // Test random sizes
         int num_iterations = 8;
@@ -1047,7 +1100,7 @@ struct TestBySize
         {
             unsigned int num_items;
             RandomValue((unsigned int&) num_items, max_items);
-            TestByGenMode<T>(num_items, max_segments, type_string);
+            TestByGenMode<T>(num_items, max_segments);
         }
 
         //
@@ -1056,21 +1109,32 @@ struct TestBySize
 
         // multiple blocks, one tile per block
         int tile_size = ActivePolicyT::ReducePolicy::BLOCK_THREADS * ActivePolicyT::ReducePolicy::ITEMS_PER_THREAD;
-        TestProblem<CUB, T>(tile_size * 4,  1,      RANDOM, Sum(), type_string);
-        TestProblem<CUB, T>(tile_size * 4 + 1, 1,   RANDOM, Sum(), type_string);
-        TestProblem<CUB, T>(tile_size * 4 - 1, 1,   RANDOM, Sum(), type_string);
+        TestProblem<CUB, T>(tile_size * 4,  1,      RANDOM, Sum());
+        TestProblem<CUB, T>(tile_size * 4 + 1, 1,   RANDOM, Sum());
+        TestProblem<CUB, T>(tile_size * 4 - 1, 1,   RANDOM, Sum());
 
         // multiple blocks, multiple tiles per block
         int sm_occupancy = 32;
         int occupancy = tile_size * sm_occupancy * g_sm_count;
-        TestProblem<CUB, T>(occupancy,  1,      RANDOM, Sum(), type_string);
-        TestProblem<CUB, T>(occupancy + 1, 1,   RANDOM, Sum(), type_string);
-        TestProblem<CUB, T>(occupancy - 1, 1,   RANDOM, Sum(), type_string);
+        TestProblem<CUB, T>(occupancy,  1,      RANDOM, Sum());
+        TestProblem<CUB, T>(occupancy + 1, 1,   RANDOM, Sum());
+        TestProblem<CUB, T>(occupancy - 1, 1,   RANDOM, Sum());
 
         return cudaSuccess;
     }
 };
 
+
+/// Test problem type
+template <typename T>
+void TestType(
+    int             max_items,
+    int             max_segments)
+{
+    DeviceReducePolicy<T, int, cub::Sum>::MaxPolicy::Invoke(
+        g_ptx_version,
+        TestBySize<T>(max_items, max_segments));
+}
 
 
 //---------------------------------------------------------------------
@@ -1084,7 +1148,7 @@ struct TestBySize
 int main(int argc, char** argv)
 {
     int max_items      = 48000000;
-    int max_segments   = -1;
+    int max_segments   = 34000;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -1119,68 +1183,62 @@ int main(int argc, char** argv)
     // Get SM count
     g_sm_count = args.deviceProp.multiProcessorCount;
 
+    std::numeric_limits<float>::max();
+
 #ifdef QUICKER_TEST
 
-    if (max_segments < 0)
-        max_segments = 1;
-
     // Compile/run basic test
-    TestProblem<CUB_SEGMENTED, int>(    max_items, max_segments, RANDOM, Sum(),     CUB_TYPE_STRING(int));
+    TestProblem<CUB_SEGMENTED, int>(    max_items, max_segments,    RANDOM, Sum());
 
-    TestProblem<CUB, int>(              max_items, 1,            RANDOM, Sum(),     CUB_TYPE_STRING(int));
-//    TestProblem<CUB, int>(              max_items, 1,            RANDOM, ArgMax(),     CUB_TYPE_STRING(int));
+    TestProblem<CUB, int>(              max_items, 1,               RANDOM, Sum());
+    TestProblem<CUB, int>(              max_items, 1,               RANDOM, ArgMax());
 
-//    TestProblem<CUB, float>(            max_items, 1,            UNIFORM, Sum(), CUB_TYPE_STRING(float));
+    TestProblem<CUB, float>(            max_items, 1,               RANDOM, Sum());
+    TestProblem<CUB, float>(            max_items, 1,               RANDOM, ArgMax());
 
 #elif defined(QUICK_TEST)
 
     // Compile/run quick comparison tests
 
-    TestPointer<CUB, char>(         max_items * 4, 1, UNIFORM, Sum(), CUB_TYPE_STRING(char));
-    TestPointer<THRUST, char>(      max_items * 4, 1, UNIFORM, Sum(), CUB_TYPE_STRING(char));
+    TestProblem<CUB, char>(         max_items * 4, 1, UNIFORM, Sum());
+    TestProblem<THRUST, char>(      max_items * 4, 1, UNIFORM, Sum());
 
     printf("\n----------------------------\n");
-    TestPointer<CUB, short>(        max_items * 2, 1, UNIFORM, Sum(), CUB_TYPE_STRING(short));
-    TestPointer<THRUST, short>(     max_items * 2, 1, UNIFORM, Sum(), CUB_TYPE_STRING(short));
+    TestProblem<CUB, short>(        max_items * 2, 1, UNIFORM, Sum());
+    TestProblem<THRUST, short>(     max_items * 2, 1, UNIFORM, Sum());
 
     printf("\n----------------------------\n");
-    TestPointer<CUB, int>(          max_items,     1, UNIFORM, Sum(), CUB_TYPE_STRING(int));
-    TestPointer<THRUST, int>(       max_items,     1, UNIFORM, Sum(), CUB_TYPE_STRING(int));
+    TestProblem<CUB, int>(          max_items,     1, UNIFORM, Sum());
+    TestProblem<THRUST, int>(       max_items,     1, UNIFORM, Sum());
 
     printf("\n----------------------------\n");
-    TestPointer<CUB, long long>(    max_items / 2, 1, UNIFORM, Sum(), CUB_TYPE_STRING(long long));
-    TestPointer<THRUST, long long>( max_items / 2, 1, UNIFORM, Sum(), CUB_TYPE_STRING(long long));
+    TestProblem<CUB, long long>(    max_items / 2, 1, UNIFORM, Sum());
+    TestProblem<THRUST, long long>( max_items / 2, 1, UNIFORM, Sum());
 
     printf("\n----------------------------\n");
-    TestPointer<CUB, TestFoo>(      max_items / 4, 1, UNIFORM, Max(), CUB_TYPE_STRING(TestFoo));
-    TestPointer<THRUST, TestFoo>(   max_items / 4, 1, UNIFORM, Max(), CUB_TYPE_STRING(TestFoo));
+    TestProblem<CUB, TestFoo>(      max_items / 4, 1, UNIFORM, Max());
+    TestProblem<THRUST, TestFoo>(   max_items / 4, 1, UNIFORM, Max());
 
 #else
 
     // Compile/run thorough tests
-    if (max_segments < 0)
-        max_segments = 5000;
-
     for (int i = 0; i <= g_repeat; ++i)
     {
         // Test different input types
-        DeviceReducePolicy::MaxPolicy::Invoke(g_ptx_version,
-            TestBySize<unsigned char>(num_items, max_segments, CUB_TYPE_STRING(unsigned char));
-
+        TestType<unsigned char>(max_items, max_segments);
+        TestType<unsigned short>(max_items, max_segments);
+        TestType<unsigned int>(max_items, max_segments);
+        TestType<unsigned long>(max_items, max_segments);
+        TestType<unsigned long long>(max_items, max_segments);
 /*
-        Test<unsigned char>(        max_items, max_segments, CUB_TYPE_STRING(unsigned char));
-        Test<unsigned short>(       max_items, max_segments, CUB_TYPE_STRING(unsigned short));
-        Test<unsigned int>(         max_items, max_segments, CUB_TYPE_STRING(unsigned int));
-        Test<unsigned long long>(   max_items, max_segments, CUB_TYPE_STRING(unsigned long long));
-
-        Test<uchar2>(               max_items, max_segments, CUB_TYPE_STRING(uchar2));
-        Test<uint2>(                max_items, max_segments, CUB_TYPE_STRING(uint2));
-        Test<ulonglong2>(           max_items, max_segments, CUB_TYPE_STRING(ulonglong2));
-        Test<ulonglong4>(           max_items, max_segments, CUB_TYPE_STRING(ulonglong4));
-
-        Test<TestFoo>(              max_items, max_segments, CUB_TYPE_STRING(TestFoo));
-        Test<TestBar>(              max_items, max_segments, CUB_TYPE_STRING(TestBar));
+        TestType<uchar2>(max_items, max_segments);
+        TestType<uint2>(max_items, max_segments);
+        TestType<ulonglong2>(max_items, max_segments);
+        TestType<ulonglong4>(max_items, max_segments);
 */
+//        TestType<TestFoo>(max_items, max_segments);
+//        TestType<TestBar>(max_items, max_segments);
+
     }
 
 #endif

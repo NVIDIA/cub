@@ -559,7 +559,7 @@ __host__ __device__ __forceinline__ void InitValue(
 template <typename Key, typename Value>
 std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &val)
 {
-    os << '(' << val.key << ',' << val.value << ')';
+    os << '(' << CoutCast(val.key) << ',' << CoutCast(val.value) << ')';
     return os;
 }
 
@@ -949,6 +949,45 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestFoo &va
 }
 
 
+namespace std {
+
+/// numeric_limits<TestFoo> specialization
+template<>
+struct numeric_limits<TestFoo>
+{
+    static const bool is_specialized = true;
+
+    static TestFoo min()
+    {
+        return TestFoo::MakeTestFoo(
+            numeric_limits<long long>::min(),
+            numeric_limits<int>::min(),
+            numeric_limits<short>::min(),
+            numeric_limits<char>::min());
+    }
+
+    static TestFoo max()
+    {
+        return TestFoo::MakeTestFoo(
+            numeric_limits<long long>::max(),
+            numeric_limits<int>::max(),
+            numeric_limits<short>::max(),
+            numeric_limits<char>::max());
+    }
+
+    static TestFoo lowest()
+    {
+        return TestFoo::MakeTestFoo(
+            numeric_limits<long long>::lowest(),
+            numeric_limits<int>::lowest(),
+            numeric_limits<short>::lowest(),
+            numeric_limits<char>::lowest());
+    }
+};
+
+} // namespace std
+
+
 //---------------------------------------------------------------------
 // Complex data type TestBar (with optimizations for fence-free warp-synchrony)
 //---------------------------------------------------------------------
@@ -1286,6 +1325,9 @@ void InitializeSegments(
     int     *h_segment_offsets,
     bool    verbose = false)
 {
+    if (num_segments <= 0)
+        return;
+
     unsigned int expected_segment_length = (num_items + num_segments - 1) / num_segments;
     int offset = 0;
     for (int i = 0; i < num_segments; ++i)

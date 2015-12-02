@@ -515,7 +515,7 @@ struct DeviceSegmentedReduce
      * cub::DeviceSegmentedReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_out,
      *     num_segments, d_offsets, d_offsets + 1);
      *
-     * // d_out <-- [{0,8}, {-1,INT_MIN}, {3,9}]
+     * // d_out <-- [{0,8}, {1,INT_MIN}, {3,9}]
      *
      * \endcode
      *
@@ -542,7 +542,7 @@ struct DeviceSegmentedReduce
         typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;      // Wrapped input iterator
 
         ArgIndexInputIteratorT      d_argmax_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {-1, std::numeric_limits<T>::min()};
+        KeyValuePair<OffsetT, T>    init = {1, std::numeric_limits<T>::min()};
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
             d_temp_storage,
