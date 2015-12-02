@@ -457,16 +457,18 @@ void RandomBits(
 }
 
 /// Randomly select number between [0:max)
-void RandomValue(unsigned int &key, unsigned int max)
+template <typename T>
+T RandomValue(T max)
 {
+    unsigned int bits;
     unsigned int max_int = (unsigned int) -1;
-
     do {
-        RandomBits(key);
-    } while (key == max_int);
+        RandomBits(bits);
+    } while (bits == max_int);
 
-    key = (unsigned int) ((double(key) / double(max_int)) * double(max));
+    return (T) ((double(bits) / double(max_int)) * double(max));
 }
+
 
 /******************************************************************************
  * Console printing utilities
@@ -613,14 +615,42 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     {                                                       \
         return (a.x < b.x);                                 \
     }                                                       \
-    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
+    /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                       \
     __host__ __device__ __forceinline__ T operator+(        \
-        T a,                                         \
-        T b)                                         \
+        T a,                                                \
+        T b)                                                \
     {                                                       \
         T retval = {a.x + b.x};                             \
         return retval;                                      \
-    }
+    }                                                       \
+    /* numeric_limits specialization */                     \
+    namespace std {                                         \
+    template<>                                              \
+    struct numeric_limits<T>                                \
+    {                                                       \
+        static const bool is_specialized = true;            \
+        static T min()                                      \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::min()};    \
+            return retval;                                  \
+        }                                                   \
+        static T max()                                      \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::max()};    \
+            return retval;                                  \
+        }                                                   \
+        static T lowest()                                   \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::lowest()}; \
+            return retval;                                  \
+        }                                                   \
+    };                                                      \
+    } /* namespace std */
+
+
 
 /**
  * Vector2 overloads
@@ -683,7 +713,37 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             a.x + b.x,                                      \
             a.y + b.y};                                     \
         return retval;                                      \
-    }
+    }                                                       \
+    /* numeric_limits specialization */                     \
+    namespace std {                                         \
+    template<>                                              \
+    struct numeric_limits<T>                                \
+    {                                                       \
+        static const bool is_specialized = true;            \
+        static T min()                                      \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::min(),     \
+                numeric_limits<decltype(T().y)>::min()};    \
+            return retval;                                  \
+        }                                                   \
+        static T max()                                      \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::max(),     \
+                numeric_limits<decltype(T().y)>::max()};    \
+            return retval;                                  \
+        }                                                   \
+        static T lowest()                                   \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::lowest(),  \
+                numeric_limits<decltype(T().y)>::lowest()}; \
+            return retval;                                  \
+        }                                                   \
+    };                                                      \
+    } /* namespace std */
+
 
 
 /**
@@ -746,15 +806,48 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     }                                                       \
     /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
-        T a,                                         \
-        T b)                                         \
+        T a,                                                \
+        T b)                                                \
     {                                                       \
         T retval = {                                        \
             a.x + b.x,                                      \
             a.y + b.y,                                      \
             a.z + b.z};                                     \
         return retval;                                      \
-    }
+    }                                                       \
+    /* numeric_limits specialization */                     \
+    namespace std {                                         \
+    template<>                                              \
+    struct numeric_limits<T>                                \
+    {                                                       \
+        static const bool is_specialized = true;            \
+        static T min()                                      \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::min(),     \
+                numeric_limits<decltype(T().y)>::min(),     \
+                numeric_limits<decltype(T().z)>::min()};    \
+            return retval;                                  \
+        }                                                   \
+        static T max()                                      \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::max(),     \
+                numeric_limits<decltype(T().y)>::max(),     \
+                numeric_limits<decltype(T().z)>::max()};    \
+            return retval;                                  \
+        }                                                   \
+        static T lowest()                                   \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::lowest(),  \
+                numeric_limits<decltype(T().y)>::lowest(),  \
+                numeric_limits<decltype(T().z)>::lowest()}; \
+            return retval;                                  \
+        }                                                   \
+    };                                                      \
+    } /* namespace std */
+
 
 /**
  * Vector4 overloads
@@ -822,8 +915,8 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     }                                                       \
     /* Summation (non-reference addends for VS2003 -O3 warpscan workaround */                                         \
     __host__ __device__ __forceinline__ T operator+(        \
-        T a,                                         \
-        T b)                                         \
+        T a,                                                \
+        T b)                                                \
     {                                                       \
         T retval = {                                        \
             a.x + b.x,                                      \
@@ -831,7 +924,42 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             a.z + b.z,                                      \
             a.w + b.w};                                     \
         return retval;                                      \
-    }
+    }                                                       \
+    /* numeric_limits specialization */                     \
+    namespace std {                                         \
+    template<>                                              \
+    struct numeric_limits<T>                                \
+    {                                                       \
+        static const bool is_specialized = true;            \
+        static T min()                                      \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::min(),     \
+                numeric_limits<decltype(T().y)>::min(),     \
+                numeric_limits<decltype(T().z)>::min(),     \
+                numeric_limits<decltype(T().w)>::min()};    \
+            return retval;                                  \
+        }                                                   \
+        static T max()                                      \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::max(),     \
+                numeric_limits<decltype(T().y)>::max(),     \
+                numeric_limits<decltype(T().z)>::max(),     \
+                numeric_limits<decltype(T().w)>::max()};    \
+            return retval;                                  \
+        }                                                   \
+        static T lowest()                                   \
+        {                                                   \
+            T retval = {                                    \
+                numeric_limits<decltype(T().x)>::lowest(),  \
+                numeric_limits<decltype(T().y)>::lowest(),  \
+                numeric_limits<decltype(T().z)>::lowest(),  \
+                numeric_limits<decltype(T().w)>::lowest()}; \
+            return retval;                                  \
+        }                                                   \
+    };                                                      \
+    } /* namespace std */
 
 /**
  * All vector overloads
@@ -881,7 +1009,7 @@ struct TestFoo
     }
 
     // Assignment from int operator
-    __host__ __device__ __forceinline__ TestFoo operator =(int b)
+    __host__ __device__ __forceinline__ TestFoo& operator =(int b)
     {
         x = b;
         y = b;
@@ -1013,7 +1141,7 @@ struct TestBar
     {}
 
     // Assignment from int operator
-    __host__ __device__ __forceinline__ TestBar operator =(int b)
+    __host__ __device__ __forceinline__ TestBar& operator =(int b)
     {
         x = b;
         y = b;
@@ -1072,6 +1200,38 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &va
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);
 }
+
+namespace std {
+
+/// numeric_limits<TestFoo> specialization
+template<>
+struct numeric_limits<TestBar>
+{
+    static const bool is_specialized = true;
+
+    static TestBar min()
+    {
+        return TestBar(
+            numeric_limits<long long>::min(),
+            numeric_limits<int>::min());
+    }
+
+    static TestBar max()
+    {
+        return TestBar(
+            numeric_limits<long long>::max(),
+            numeric_limits<int>::max());
+    }
+
+    static TestBar lowest()
+    {
+        return TestBar(
+            numeric_limits<long long>::lowest(),
+            numeric_limits<int>::lowest());
+    }
+};
+
+} // namespace std
 
 
 /******************************************************************************
@@ -1334,8 +1494,7 @@ void InitializeSegments(
     {
         h_segment_offsets[i] = offset;
 
-        unsigned int segment_length;
-        RandomValue(segment_length, (expected_segment_length * 2) + 1);
+        unsigned int segment_length = RandomValue((expected_segment_length * 2) + 1);
         offset += segment_length;
         offset = CUB_MIN(offset, num_items);
     }

@@ -229,7 +229,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Sum(),
-            (T) 0,
+            T(),            // zero-initialize
             stream,
             debug_synchronous);
     }
