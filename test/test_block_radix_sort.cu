@@ -511,9 +511,9 @@ void Test()
     typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixSortT;
 
 #if defined(SM100) || defined(SM110) || defined(SM130)
-    Int2Type<sizeof(typename BlockRadixSortT::TempStorage) <= CUB_SMEM_BYTES(100)> fits_smem_capacity;
+    Int2Type<sizeof(typename BlockRadixSortT::TempStorage) <= 16 * 1024> fits_smem_capacity;
 #else
-    Int2Type<(sizeof(typename BlockRadixSortT::TempStorage) <= CUB_SMEM_BYTES(200))> fits_smem_capacity;
+    Int2Type<(sizeof(typename BlockRadixSortT::TempStorage) <= 48 * 1024)> fits_smem_capacity;
 #endif
 
     // Sort-ascending, to-striped

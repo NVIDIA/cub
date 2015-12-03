@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include "util_type.cuh"
 #include "util_arch.cuh"
 #include "util_debug.cuh"
 #include "util_namespace.cuh"
