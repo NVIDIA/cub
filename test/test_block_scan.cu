@@ -652,8 +652,13 @@ void Test(
 
     enum
     {
-        sufficient_smem         = (sizeof(typename BlockScanT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH)),
-        sufficient_threads      = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH)),
+#if defined(SM100) || defined(SM110) || defined(SM130)
+        sufficient_smem         = (sizeof(typename BlockScanT::TempStorage)     <= 16 * 1024),
+        sufficient_threads      = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)    <= 512),
+#else
+        sufficient_smem         = (sizeof(typename BlockScanT::TempStorage)     <= 16 * 1024),
+        sufficient_threads      = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)    <= 1024),
+#endif
 
 #if defined(_WIN32) || defined(_WIN64)
         // Accommodate ptxas crash bug (access violation) on Windows

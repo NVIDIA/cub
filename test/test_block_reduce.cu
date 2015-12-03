@@ -435,8 +435,13 @@ void TestFullTile(
 
     enum 
     {
-        sufficient_smem       = (sizeof(typename BlockReduceT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH)),
-        sufficient_threads    = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH)),
+#if defined(SM100) || defined(SM110) || defined(SM130)
+        sufficient_smem       = (sizeof(typename BlockReduceT::TempStorage) <= 16 * 1024),
+        sufficient_threads    = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= 512),
+#else
+        sufficient_smem       = (sizeof(typename BlockReduceT::TempStorage) <= 48 * 1024),
+        sufficient_threads    = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= 1024),
+#endif
     };
 
     TestFullTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, type_string, Int2Type<sufficient_smem && sufficient_threads>());
@@ -620,8 +625,13 @@ void TestPartialTile(
 
     enum 
     {
-        sufficient_smem       = sizeof(typename BlockReduceT::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH),
-        sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= CUB_MAX_BLOCK_THREADS(TEST_ARCH),
+#if defined(SM100) || defined(SM110) || defined(SM130)
+        sufficient_smem       = sizeof(typename BlockReduceT::TempStorage)  <= 16 * 1024,
+        sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)   <= 512,
+#else
+        sufficient_smem       = sizeof(typename BlockReduceT::TempStorage)  <= 48 * 1024,
+        sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)   <= 1024,
+#endif
     };
 
     TestPartialTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, T>(gen_mode, num_items, reduction_op, type_string, Int2Type<sufficient_smem && sufficient_threads>());
