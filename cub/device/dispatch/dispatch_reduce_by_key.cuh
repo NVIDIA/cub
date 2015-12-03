@@ -372,10 +372,6 @@ struct DispatchReduceByKey
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
-            // Get device SM version
-            int sm_version;
-            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
-
             // Get SM count
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
@@ -420,7 +416,6 @@ struct DispatchReduceByKey
             int reduce_by_key_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
                 reduce_by_key_sm_occupancy,            // out
-                sm_version,
                 reduce_by_key_kernel,
                 reduce_by_key_config.block_threads))) break;
 

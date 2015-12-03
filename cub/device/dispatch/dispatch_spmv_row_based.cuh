@@ -602,10 +602,6 @@ struct DispatchSpmv
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
-            // Get device SM version
-            int sm_version;
-            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
-
             // Get SM count
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
@@ -618,22 +614,9 @@ struct DispatchSpmv
             int spmv_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
                 spmv_sm_occupancy,
-                sm_version,
                 spmv_kernel,
                 spmv_config.block_threads))) break;
   
-/*
-            int fixup_sm_occupancy;
-            if (CubDebug(error = MaxSmOccupancy(
-                fixup_sm_occupancy,
-                sm_version,
-                fixup_kernel,
-                fixup_config.block_threads))) break;
-
-            // Total number of spmv work items
-            int num_spmv_items      = spmv_params.num_rows + spmv_params.num_nonzeros;
-*/
-
             // Tile sizes of kernels
             int spmv_tile_size      = spmv_config.block_threads * spmv_config.items_per_thread;
             int fixup_tile_size     = fixup_config.block_threads * fixup_config.items_per_thread;

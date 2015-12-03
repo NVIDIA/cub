@@ -370,10 +370,6 @@ struct DispatchSelectIf
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
-            // Get device SM version
-            int sm_version;
-            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
-
             // Get SM count
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
@@ -418,7 +414,6 @@ struct DispatchSelectIf
             int range_select_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
                 range_select_sm_occupancy,            // out
-                sm_version,
                 select_if_kernel,
                 select_if_config.block_threads))) break;
 

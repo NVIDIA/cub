@@ -368,10 +368,6 @@ struct DispatchSpmv
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
-            // Get device SM version
-            int sm_version;
-            if (CubDebug(error = SmVersion(sm_version, device_ordinal))) break;
-
             // Get SM count
             int sm_count;
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
@@ -383,7 +379,6 @@ struct DispatchSpmv
             int spmv_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
                 spmv_sm_occupancy,
-                sm_version,
                 spmv_kernel,
                 spmv_config.block_threads))) break;
             int spmv_device_occupancy = spmv_sm_occupancy * sm_count;
