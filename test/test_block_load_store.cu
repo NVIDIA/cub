@@ -235,7 +235,7 @@ void TestNative(
 
     TestKernel<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>(
         h_in,
-        d_in,
+        (T const *) d_in,   // Test const
         d_out_unguarded,
         d_out_guarded,
         d_out_unguarded,
@@ -371,9 +371,16 @@ void TestPointerType(
     typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
     typedef BlockStore<T*, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
-    static const bool sufficient_load_smem  = sizeof(typename BlockLoad::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
-    static const bool sufficient_store_smem = sizeof(typename BlockStore::TempStorage) <= CUB_SMEM_BYTES(TEST_ARCH);
-    static const bool sufficient_threads    = BLOCK_THREADS <= CUB_MAX_BLOCK_THREADS(TEST_ARCH);
+#if defined(SM100) || defined(SM110) || defined(SM130)
+    static const bool sufficient_load_smem  = sizeof(typename BlockLoad::TempStorage)   <= 1024 * 16;
+    static const bool sufficient_store_smem = sizeof(typename BlockStore::TempStorage)  <= 1024 * 16;
+    static const bool sufficient_threads    = BLOCK_THREADS <= 512;
+#else
+    static const bool sufficient_load_smem  = sizeof(typename BlockLoad::TempStorage)   <= 1024 * 48;
+    static const bool sufficient_store_smem = sizeof(typename BlockStore::TempStorage)  <= 1024 * 48;
+    static const bool sufficient_threads    = BLOCK_THREADS <= 1024;
+#endif
+
     static const bool sufficient_resources  = sufficient_load_smem && sufficient_store_smem && sufficient_threads;
 
     TestNative<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>(grid_size, fraction_valid, Int2Type<sufficient_resources>());

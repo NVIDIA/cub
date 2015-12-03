@@ -420,7 +420,7 @@ __device__ __forceinline__ T ThreadLoad(
     DeviceWord words[DEVICE_MULTIPLE];
 
     IterateThreadLoad<0, DEVICE_MULTIPLE>::template Load<CacheLoadModifier(MODIFIER)>(
-        reinterpret_cast<DeviceWord*>(ptr),
+        reinterpret_cast<DeviceWord*>(const_cast<T*>(ptr)),
         words);
 
     return *reinterpret_cast<T*>(words);

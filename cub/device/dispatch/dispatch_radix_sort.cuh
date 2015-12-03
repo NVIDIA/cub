@@ -937,9 +937,9 @@ struct DispatchRadixSort :
                 radix_bits              = DownsweepPolicyT::RADIX_BITS;
                 radix_digits            = 1 << radix_bits;
 
-                if (CubDebug(error = upsweep_config.template    Init<UpsweepPolicyT>(upsweep_kernel))) break;
-                if (CubDebug(error = scan_config.template       Init<ScanPolicyT>(scan_kernel))) break;
-                if (CubDebug(error = downsweep_config.template  Init<DownsweepPolicyT>(downsweep_kernel))) break;
+                if (CubDebug(error = upsweep_config.Init<UpsweepPolicyT>(upsweep_kernel))) break;
+                if (CubDebug(error = scan_config.Init<ScanPolicyT>(scan_kernel))) break;
+                if (CubDebug(error = downsweep_config.Init<DownsweepPolicyT>(downsweep_kernel))) break;
 
                 max_downsweep_grid_size = (downsweep_config.sm_occupancy * sm_count) * CUB_SUBSCRIPTION_FACTOR(ptx_version);
 
@@ -1306,7 +1306,7 @@ struct DispatchSegmentedRadixSort :
             this->radix_bits        = SegmentedPolicyT::RADIX_BITS;
             this->radix_digits      = 1 << radix_bits;
 
-            return CubDebug(segmented_config.template Init<SegmentedPolicyT>(segmented_kernel));
+            return CubDebug(segmented_config.Init<SegmentedPolicyT>(segmented_kernel));
         }
     };
 
