@@ -113,7 +113,7 @@ cudaError_t Dispatch(
 {
     // Max-identity
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-    T identity = NumericTraits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
+    T identity = Traits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
 
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;
@@ -310,7 +310,7 @@ cudaError_t Dispatch(
 {
     // Max-identity
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-    T identity = NumericTraits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
+    T identity = Traits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
 
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;
@@ -692,7 +692,7 @@ struct Solution
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            T aggregate = NumericTraits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
+            Output aggregate = Traits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
                 aggregate = reduction_op(aggregate, h_in[j]);
             h_reference[i] = aggregate;
@@ -712,7 +712,7 @@ struct Solution<cub::Min, T>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            Output aggregate = std::numeric_limits<T>::max();
+            Output aggregate = Traits<T>::Max();    // replace with std::numeric_limits<T>::max() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
                 aggregate = reduction_op(aggregate, h_in[j]);
             h_reference[i] = aggregate;
@@ -754,7 +754,7 @@ struct Solution<cub::ArgMin, T>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            Output aggregate = {1, std::numeric_limits<T>::max()};
+            Output aggregate = {1, Traits<T>::Max()}; // replace with std::numeric_limits<T>::max() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
             {
                 Output item = {j - h_segment_offsets[i], h_in[j]};
@@ -778,7 +778,7 @@ struct Solution<cub::ArgMax, T>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            Output aggregate = {1, NumericTraits<T>::Lowest()}; // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
+            Output aggregate = {1, Traits<T>::Lowest()}; // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
             {
                 Output item = {j - h_segment_offsets[i], h_in[j]};

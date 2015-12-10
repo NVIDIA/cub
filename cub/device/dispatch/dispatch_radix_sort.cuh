@@ -851,9 +851,6 @@ struct DispatchRadixSort :
 
             // Invoke scan_kernel
             pass_config.scan_kernel<<<1, pass_config.scan_config.block_threads, 0, stream>>>(
-//                    ActivePolicyT::UpsweepPolicy, 
-//                    ActivePolicyT::ScanPolicy, 
-//                    ActivePolicyT::DownsweepPolicy>(
                 d_spine,
                 spine_length);
 

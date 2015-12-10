@@ -627,10 +627,15 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     template<>                                              \
     struct NumericTraits<T>                                 \
     {                                                       \
+        static const Category CATEGORY = NOT_A_NUMBER;      \
+        enum {                                              \
+            PRIMITIVE       = false,                        \
+            NULL_TYPE       = false,                        \
+        };                                                  \
         static T Max()                                      \
         {                                                   \
             T retval = {                                    \
-                NumericTraits<BaseT>::Max()};                 \
+                NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
         static T Lowest()                                   \
@@ -710,6 +715,11 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     template<>                                              \
     struct NumericTraits<T>                                 \
     {                                                       \
+        static const Category CATEGORY = NOT_A_NUMBER;      \
+        enum {                                              \
+            PRIMITIVE       = false,                        \
+            NULL_TYPE       = false,                        \
+        };                                                  \
         static T Max()                                      \
         {                                                   \
             T retval = {                                    \
@@ -802,6 +812,11 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     template<>                                              \
     struct NumericTraits<T>                                 \
     {                                                       \
+        static const Category CATEGORY = NOT_A_NUMBER;      \
+        enum {                                              \
+            PRIMITIVE       = false,                        \
+            NULL_TYPE       = false,                        \
+        };                                                  \
         static T Max()                                      \
         {                                                   \
             T retval = {                                    \
@@ -900,8 +915,13 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
     }                                                       \
     namespace cub {                                         \
     template<>                                              \
-    struct NumericTraits<T>                                \
+    struct NumericTraits<T>                                 \
     {                                                       \
+        static const Category CATEGORY = NOT_A_NUMBER;      \
+        enum {                                              \
+            PRIMITIVE       = false,                        \
+            NULL_TYPE       = false,                        \
+        };                                                  \
         static T Max()                                      \
         {                                                   \
             T retval = {                                    \
@@ -1044,6 +1064,11 @@ namespace cub {
 template<>
 struct NumericTraits<TestFoo>
 {
+    static const Category CATEGORY = NOT_A_NUMBER;
+    enum {
+        PRIMITIVE       = false,
+        NULL_TYPE       = false,
+    };
     static TestFoo Max()
     {
         return TestFoo::MakeTestFoo(
@@ -1155,6 +1180,11 @@ namespace cub {
 template<>
 struct NumericTraits<TestBar>
 {
+    static const Category CATEGORY = NOT_A_NUMBER;
+    enum {
+        PRIMITIVE       = false,
+        NULL_TYPE       = false,
+    };
     static TestBar Max()
     {
         return TestBar(

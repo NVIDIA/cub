@@ -693,10 +693,11 @@ void Test(
 {
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
-    printf("%s %s cub::DeviceRadixSort %d items, %d segments, %d-byte keys %d-byte values, descending %d, begin_bit %d, end_bit %d\n",
+    printf("%s %s cub::DeviceRadixSort %d items, %d segments, %d-byte keys (%s) %d-byte values (%s), descending %d, begin_bit %d, end_bit %d\n",
         (BACKEND == CUB_NO_OVERWRITE) ? "CUB_NO_OVERWRITE" : (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (KEYS_ONLY) ? "keys-only" : "key-value",
-        num_items, num_segments, (int) sizeof(KeyT), (KEYS_ONLY) ? 0 : (int) sizeof(ValueT),
+        num_items, num_segments,
+        (int) sizeof(KeyT), typeid(KeyT).name(), (KEYS_ONLY) ? 0 : (int) sizeof(ValueT), typeid(ValueT).name(),
         IS_DESCENDING, begin_bit, end_bit);
     fflush(stdout);
 
@@ -1025,8 +1026,7 @@ void TestSizes(
 template <typename KeyT>
 void TestGen(
     int             max_items,
-    int             max_segments,
-    const char      *type_string)
+    int             max_segments)
 {
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
@@ -1041,16 +1041,16 @@ void TestGen(
 
     for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
     {
-        printf("\nTesting random %s keys with entropy reduction factor %d\n", type_string, entropy_reduction); fflush(stdout);
+        printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
         InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
         TestSizes(h_keys, max_items, max_segments);
     }
 
-    printf("\nTesting uniform %s keys\n", type_string); fflush(stdout);
+    printf("\nTesting uniform %s keys\n", typeid(KeyT).name()); fflush(stdout);
     InitializeKeyBits(UNIFORM, h_keys, max_items, 0);
     TestSizes(h_keys, max_items, max_segments);
 
-    printf("\nTesting natural number %s keys\n", type_string); fflush(stdout);
+    printf("\nTesting natural number %s keys\n", typeid(KeyT).name()); fflush(stdout);
     InitializeKeyBits(INTEGER_SEED, h_keys, max_items, 0);
     TestSizes(h_keys, max_items, max_segments);
 
@@ -1073,8 +1073,7 @@ void Test(
     GenMode     gen_mode,
     int         entropy_reduction,
     int         begin_bit,
-    int         end_bit,
-    const char  *type_string)
+    int         end_bit)
 {
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
@@ -1107,7 +1106,7 @@ void Test(
     }
     if (h_reference_ranks) delete[] h_reference_ranks;
 
-    printf("\nTesting bits [%d,%d) of %s keys with gen-mode %d\n", begin_bit, end_bit, type_string, gen_mode); fflush(stdout);
+    printf("\nTesting bits [%d,%d) of %s keys with gen-mode %d\n", begin_bit, end_bit, typeid(KeyT).name(), gen_mode); fflush(stdout);
     Test<BACKEND, IS_DESCENDING>(
         h_keys, h_values,
         num_items, num_segments, h_segment_offsets,
@@ -1180,13 +1179,13 @@ int main(int argc, char** argv)
     if (num_segments < 0)   num_segments    = 5000;
 
 
-    Test<CUB_SEGMENTED, unsigned int,       NullType, IS_DESCENDING>(       num_items, num_segments,    RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+    Test<CUB_SEGMENTED, unsigned int,       NullType, IS_DESCENDING>(       num_items, num_segments,    RANDOM, entropy_reduction, 0, bits);
 
-    Test<CUB,           unsigned int,       NullType, IS_DESCENDING>(       num_items, 1,               RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
-    Test<CUB,           unsigned long long, NullType, IS_DESCENDING>(       num_items, 1,               RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+    Test<CUB,           unsigned int,       NullType, IS_DESCENDING>(       num_items, 1,               RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned long long, NullType, IS_DESCENDING>(       num_items, 1,               RANDOM, entropy_reduction, 0, bits);
 
-    Test<CUB,           unsigned int,       unsigned int, IS_DESCENDING>(   num_items, 1,               RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
-    Test<CUB,           unsigned long long, unsigned int, IS_DESCENDING>(   num_items, 1,               RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+    Test<CUB,           unsigned int,       unsigned int, IS_DESCENDING>(   num_items, 1,               RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned long long, unsigned int, IS_DESCENDING>(   num_items, 1,               RANDOM, entropy_reduction, 0, bits);
 
 #elif defined(QUICK_TEST)
 
@@ -1195,21 +1194,21 @@ int main(int argc, char** argv)
     if (num_segments < 0)   num_segments    = 5000;
 
     // Compare CUB and thrust on 32b keys-only
-    Test<CUB, unsigned int, NullType, false> (                      num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
-    Test<THRUST, unsigned int, NullType, false> (                   num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+    Test<CUB, unsigned int, NullType, false> (                      num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<THRUST, unsigned int, NullType, false> (                   num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
     // Compare CUB and thrust on 64b keys-only
-    Test<CUB, unsigned long long, NullType, false> (                num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
-    Test<THRUST, unsigned long long, NullType, false> (             num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+    Test<CUB, unsigned long long, NullType, false> (                num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<THRUST, unsigned long long, NullType, false> (             num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
 
     // Compare CUB and thrust on 32b key-value pairs
-    Test<CUB, unsigned int, unsigned int, false> (                  num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
-    Test<THRUST, unsigned int, unsigned int, false> (               num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned int));
+    Test<CUB, unsigned int, unsigned int, false> (                  num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<THRUST, unsigned int, unsigned int, false> (               num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
     // Compare CUB and thrust on 64b key-value pairs
-    Test<CUB, unsigned long long, unsigned long long, false> (      num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
-    Test<THRUST, unsigned long long, unsigned long long, false> (   num_items, 1, RANDOM, entropy_reduction, 0, bits, CUB_TYPE_STRING(unsigned long long));
+    Test<CUB, unsigned long long, unsigned long long, false> (      num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<THRUST, unsigned long long, unsigned long long, false> (   num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
 
 #else
@@ -1217,26 +1216,26 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
-        TestGen<char>                 (num_items, num_segments, CUB_TYPE_STRING(char));
-        TestGen<signed char>          (num_items, num_segments, CUB_TYPE_STRING(signed char));
-        TestGen<unsigned char>        (num_items, num_segments, CUB_TYPE_STRING(unsigned char));
+        TestGen<char>                 (num_items, num_segments);
+        TestGen<signed char>          (num_items, num_segments);
+        TestGen<unsigned char>        (num_items, num_segments);
 
-        TestGen<short>                (num_items, num_segments, CUB_TYPE_STRING(short));
-        TestGen<unsigned short>       (num_items, num_segments, CUB_TYPE_STRING(unsigned short));
+        TestGen<short>                (num_items, num_segments);
+        TestGen<unsigned short>       (num_items, num_segments);
 
-        TestGen<int>                  (num_items, num_segments, CUB_TYPE_STRING(int));
-        TestGen<unsigned int>         (num_items, num_segments, CUB_TYPE_STRING(unsigned int));
+        TestGen<int>                  (num_items, num_segments);
+        TestGen<unsigned int>         (num_items, num_segments);
 
-        TestGen<long>                 (num_items, num_segments, CUB_TYPE_STRING(long));
-        TestGen<unsigned long>        (num_items, num_segments, CUB_TYPE_STRING(unsigned long));
+        TestGen<long>                 (num_items, num_segments);
+        TestGen<unsigned long>        (num_items, num_segments);
 
-        TestGen<long long>            (num_items, num_segments, CUB_TYPE_STRING(long long));
-        TestGen<unsigned long long>   (num_items, num_segments, CUB_TYPE_STRING(unsigned long long));
+        TestGen<long long>            (num_items, num_segments);
+        TestGen<unsigned long long>   (num_items, num_segments);
 
-        TestGen<float>                (num_items, num_segments, CUB_TYPE_STRING(float));
+        TestGen<float>                (num_items, num_segments);
 
         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-            TestGen<double>           (num_items, num_segments, CUB_TYPE_STRING(double));
+            TestGen<double>           (num_items, num_segments);
 
     }
 
