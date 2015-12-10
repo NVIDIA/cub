@@ -102,7 +102,7 @@ __device__ __forceinline__ void ParallelMergePathSearch(
         int move_up = (a[a_split_pivot] <= b[diagonal - a_split_pivot - 1]);
         int num_up = __syncthreads_count(move_up);
 /*
-        CubLog("a_split_min(%d), a_split_max(%d) a_distance(%d), a_slice(%d), a_split_pivot(%d), move_up(%d), num_up(%d), a_begin(%d), a_end(%d)\n",
+        _CubLog("a_split_min(%d), a_split_max(%d) a_distance(%d), a_slice(%d), a_split_pivot(%d), move_up(%d), num_up(%d), a_begin(%d), a_end(%d)\n",
             a_split_min, a_split_max, a_distance, a_slice, a_split_pivot, move_up, num_up, a_begin, a_end);
 */
         a_split_max = CUB_MIN(num_up * a_slice, end.a_idx);
@@ -550,7 +550,7 @@ struct BlockSegReduceRegion
                 // Consume this segment index
                 d_output[segment_ids[ITEM]] = running_total.value;
 
-//                CubLog("Updating segment %d with value %lld\n", segment_ids[ITEM], running_total.value)
+//                _CubLog("Updating segment %d with value %lld\n", segment_ids[ITEM], running_total.value)
 
                 if (first_partial.key == segment_ids[ITEM])
                     first_partial.value = running_total.value;
@@ -1630,7 +1630,7 @@ struct DeviceSegReduceDispatch
             if (seg_reduce_region_grid_size > 1)
             {
                 // Log seg_reduce_partition_kernel configuration
-                if (debug_synchronous) CubLog("Invoking seg_reduce_partition_kernel<<<%d, %d, 0, %lld>>>()\n",
+                if (debug_synchronous) _CubLog("Invoking seg_reduce_partition_kernel<<<%d, %d, 0, %lld>>>()\n",
                     partition_grid_size, partition_block_size, (long long) stream);
 
                 // Invoke seg_reduce_partition_kernel
@@ -1647,7 +1647,7 @@ struct DeviceSegReduceDispatch
             }
 
             // Log seg_reduce_region_kernel configuration
-            if (debug_synchronous) CubLog("Invoking seg_reduce_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) _CubLog("Invoking seg_reduce_region_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 seg_reduce_region_grid_size, seg_reduce_region_config.block_threads, (long long) stream, seg_reduce_region_config.items_per_thread, seg_reduce_region_sm_occupancy);
 
             // Mooch
@@ -1673,7 +1673,7 @@ struct DeviceSegReduceDispatch
             if (seg_reduce_region_grid_size > 1)
             {
                 // Log seg_reduce_region_by_key_kernel configuration
-                if (debug_synchronous) CubLog("Invoking seg_reduce_region_by_key_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
+                if (debug_synchronous) _CubLog("Invoking seg_reduce_region_by_key_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread\n",
                     1, seg_reduce_region_by_key_config.block_threads, (long long) stream, seg_reduce_region_by_key_config.items_per_thread);
 
                 // Invoke seg_reduce_region_by_key_kernel
