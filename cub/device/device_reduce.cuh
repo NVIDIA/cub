@@ -300,7 +300,7 @@ struct DeviceReduce
             d_out,
             num_items,
             cub::Min(),
-            std::numeric_limits<T>::max(),
+            NumericTraits<T>::Max(),    // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -310,7 +310,6 @@ struct DeviceReduce
      * \brief Finds the first device-wide minimum using the less-than ('<') operator, also returning the index of that item.
      *
      * \par
-     * - Uses <tt>std::numeric_limits<T>::max()</tt> as the initial value of the reduction.
      * - The output value type of \p d_out is cub::KeyValuePair <tt><int, T></tt> (assuming the value type of \p d_in is \p T)
      *   - The minimum is written to <tt>d_out.value</tt> and its offset in the input array is written to <tt>d_out.key</tt>.
      *   - The <tt>{1, std::numeric_limits<T>::max()}</tt> tuple is produced for zero-length inputs
@@ -365,7 +364,7 @@ struct DeviceReduce
         typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;  // Wrapped input iterator type
 
         ArgIndexInputIteratorT      d_argmin_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {1, std::numeric_limits<T>::max()};
+        KeyValuePair<OffsetT, T>    init = {1, NumericTraits<T>::Max()};   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
 
         return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin>::Dispatch(
             d_temp_storage,
@@ -384,7 +383,7 @@ struct DeviceReduce
      * \brief Computes a device-wide maximum using the greater-than ('>') operator.
      *
      * \par
-     * - Uses <tt>std::numeric_limits<T>::min()</tt> as the initial value of the reduction.
+     * - Uses <tt>std::numeric_limits<T>::lowest()</tt> as the initial value of the reduction.
      * - Does not support \p > operators that are non-commutative.
      * - \devicestorage
      *
@@ -441,7 +440,7 @@ struct DeviceReduce
             d_out,
             num_items,
             cub::Max(),
-            std::numeric_limits<T>::min(),
+            NumericTraits<T>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -451,10 +450,9 @@ struct DeviceReduce
      * \brief Finds the first device-wide maximum using the greater-than ('>') operator, also returning the index of that item
      *
      * \par
-     * - Uses <tt>std::numeric_limits<T>::min()</tt> as the initial value of the reduction.
      * - The output value type of \p d_out is cub::KeyValuePair <tt><int, T></tt> (assuming the value type of \p d_in is \p T)
      *   - The maximum is written to <tt>d_out.value</tt> and its offset in the input array is written to <tt>d_out.key</tt>.
-     *   - The <tt>{1, std::numeric_limits<T>::min()}</tt> tuple is produced for zero-length inputs
+     *   - The <tt>{1, std::numeric_limits<T>::lowest()}</tt> tuple is produced for zero-length inputs
      * - Does not support \p > operators that are non-commutative.
      * - \devicestorage
      *
@@ -506,7 +504,7 @@ struct DeviceReduce
         typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;      // Wrapped input iterator
 
         ArgIndexInputIteratorT      d_argmax_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {1, std::numeric_limits<T>::min()};
+        KeyValuePair<OffsetT, T>    init = {1, NumericTraits<T>::Lowest()};     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
 
         return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
             d_temp_storage,

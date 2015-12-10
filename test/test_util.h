@@ -573,7 +573,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
 /**
  * Vector1 overloads
  */
-#define CUB_VEC_OVERLOAD_1(T)                               \
+#define CUB_VEC_OVERLOAD_1(T, BaseT)                        \
     /* Ostream output */                                    \
     std::ostream& operator<<(                               \
         std::ostream& os,                                   \
@@ -623,28 +623,20 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         T retval = {a.x + b.x};                             \
         return retval;                                      \
     }                                                       \
-    /* numeric_limits specialization */                     \
-    namespace std {                                         \
+    namespace cub {                                         \
     template<>                                              \
-    struct numeric_limits<T>                                \
+    struct NumericTraits<T>                                 \
     {                                                       \
-        static const bool is_specialized = true;            \
-        static T min()                                      \
+        static T Max()                                      \
         {                                                   \
             T retval = {                                    \
-                numeric_limits<decltype(T().x)>::min()};    \
+                NumericTraits<BaseT>::Max()};                 \
             return retval;                                  \
         }                                                   \
-        static T max()                                      \
+        static T Lowest()                                   \
         {                                                   \
             T retval = {                                    \
-                numeric_limits<decltype(T().x)>::max()};    \
-            return retval;                                  \
-        }                                                   \
-        static T lowest()                                   \
-        {                                                   \
-            T retval = {                                    \
-                numeric_limits<decltype(T().x)>::lowest()}; \
+                NumericTraits<BaseT>::Lowest()};            \
             return retval;                                  \
         }                                                   \
     };                                                      \
@@ -655,7 +647,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
 /**
  * Vector2 overloads
  */
-#define CUB_VEC_OVERLOAD_2(T)                               \
+#define CUB_VEC_OVERLOAD_2(T, BaseT)                        \
     /* Ostream output */                                    \
     std::ostream& operator<<(                               \
         std::ostream& os,                                   \
@@ -714,42 +706,33 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             a.y + b.y};                                     \
         return retval;                                      \
     }                                                       \
-    /* numeric_limits specialization */                     \
-    namespace std {                                         \
+    namespace cub {                                         \
     template<>                                              \
-    struct numeric_limits<T>                                \
+    struct NumericTraits<T>                                 \
     {                                                       \
-        static const bool is_specialized = true;            \
-        static T min()                                      \
+        static T Max()                                      \
         {                                                   \
             T retval = {                                    \
-                numeric_limits<decltype(T().x)>::min(),     \
-                numeric_limits<decltype(T().y)>::min()};    \
+                NumericTraits<BaseT>::Max(),                \
+                NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T max()                                      \
+        static T Lowest()                                   \
         {                                                   \
             T retval = {                                    \
-                numeric_limits<decltype(T().x)>::max(),     \
-                numeric_limits<decltype(T().y)>::max()};    \
-            return retval;                                  \
-        }                                                   \
-        static T lowest()                                   \
-        {                                                   \
-            T retval = {                                    \
-                numeric_limits<decltype(T().x)>::lowest(),  \
-                numeric_limits<decltype(T().y)>::lowest()}; \
+                NumericTraits<BaseT>::Lowest(),             \
+                NumericTraits<BaseT>::Lowest()};            \
             return retval;                                  \
         }                                                   \
     };                                                      \
-    } /* namespace std */
+    } /* namespace cub */
 
 
 
 /**
  * Vector3 overloads
  */
-#define CUB_VEC_OVERLOAD_3(T)                               \
+#define CUB_VEC_OVERLOAD_3(T, BaseT)                        \
     /* Ostream output */                                    \
     std::ostream& operator<<(                               \
         std::ostream& os,                                   \
@@ -815,44 +798,34 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             a.z + b.z};                                     \
         return retval;                                      \
     }                                                       \
-    /* numeric_limits specialization */                     \
-    namespace std {                                         \
+    namespace cub {                                         \
     template<>                                              \
-    struct numeric_limits<T>                                \
+    struct NumericTraits<T>                                 \
     {                                                       \
-        static const bool is_specialized = true;            \
-        static T min()                                      \
+        static T Max()                                      \
         {                                                   \
             T retval = {                                    \
-                numeric_limits<decltype(T().x)>::min(),     \
-                numeric_limits<decltype(T().y)>::min(),     \
-                numeric_limits<decltype(T().z)>::min()};    \
+                NumericTraits<BaseT>::Max(),                \
+                NumericTraits<BaseT>::Max(),                \
+                NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T max()                                      \
+        static T Lowest()                                   \
         {                                                   \
             T retval = {                                    \
-                numeric_limits<decltype(T().x)>::max(),     \
-                numeric_limits<decltype(T().y)>::max(),     \
-                numeric_limits<decltype(T().z)>::max()};    \
-            return retval;                                  \
-        }                                                   \
-        static T lowest()                                   \
-        {                                                   \
-            T retval = {                                    \
-                numeric_limits<decltype(T().x)>::lowest(),  \
-                numeric_limits<decltype(T().y)>::lowest(),  \
-                numeric_limits<decltype(T().z)>::lowest()}; \
+                NumericTraits<BaseT>::Lowest(),             \
+                NumericTraits<BaseT>::Lowest(),             \
+                NumericTraits<BaseT>::Lowest()};            \
             return retval;                                  \
         }                                                   \
     };                                                      \
-    } /* namespace std */
+    } /* namespace cub */
 
 
 /**
  * Vector4 overloads
  */
-#define CUB_VEC_OVERLOAD_4(T)                               \
+#define CUB_VEC_OVERLOAD_4(T, BaseT)                        \
     /* Ostream output */                                    \
     std::ostream& operator<<(                               \
         std::ostream& os,                                   \
@@ -925,66 +898,55 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             a.w + b.w};                                     \
         return retval;                                      \
     }                                                       \
-    /* numeric_limits specialization */                     \
-    namespace std {                                         \
+    namespace cub {                                         \
     template<>                                              \
-    struct numeric_limits<T>                                \
+    struct NumericTraits<T>                                \
     {                                                       \
-        static const bool is_specialized = true;            \
-        static T min()                                      \
+        static T Max()                                      \
         {                                                   \
             T retval = {                                    \
-                numeric_limits<decltype(T().x)>::min(),     \
-                numeric_limits<decltype(T().y)>::min(),     \
-                numeric_limits<decltype(T().z)>::min(),     \
-                numeric_limits<decltype(T().w)>::min()};    \
+                NumericTraits<BaseT>::Max(),                \
+                NumericTraits<BaseT>::Max(),                \
+                NumericTraits<BaseT>::Max(),                \
+                NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T max()                                      \
+        static T Lowest()                                   \
         {                                                   \
             T retval = {                                    \
-                numeric_limits<decltype(T().x)>::max(),     \
-                numeric_limits<decltype(T().y)>::max(),     \
-                numeric_limits<decltype(T().z)>::max(),     \
-                numeric_limits<decltype(T().w)>::max()};    \
-            return retval;                                  \
-        }                                                   \
-        static T lowest()                                   \
-        {                                                   \
-            T retval = {                                    \
-                numeric_limits<decltype(T().x)>::lowest(),  \
-                numeric_limits<decltype(T().y)>::lowest(),  \
-                numeric_limits<decltype(T().z)>::lowest(),  \
-                numeric_limits<decltype(T().w)>::lowest()}; \
+                NumericTraits<BaseT>::Lowest(),             \
+                NumericTraits<BaseT>::Lowest(),             \
+                NumericTraits<BaseT>::Lowest(),             \
+                NumericTraits<BaseT>::Lowest()};            \
             return retval;                                  \
         }                                                   \
     };                                                      \
-    } /* namespace std */
+    } /* namespace cub */
 
 /**
  * All vector overloads
  */
-#define CUB_VEC_OVERLOAD(BASE_T)                            \
-    CUB_VEC_OVERLOAD_1(BASE_T##1)                           \
-    CUB_VEC_OVERLOAD_2(BASE_T##2)                           \
-    CUB_VEC_OVERLOAD_3(BASE_T##3)                           \
-    CUB_VEC_OVERLOAD_4(BASE_T##4)
+#define CUB_VEC_OVERLOAD(COMPONENT_T, BaseT)                    \
+    CUB_VEC_OVERLOAD_1(COMPONENT_T##1, BaseT)                   \
+    CUB_VEC_OVERLOAD_2(COMPONENT_T##2, BaseT)                   \
+    CUB_VEC_OVERLOAD_3(COMPONENT_T##3, BaseT)                   \
+    CUB_VEC_OVERLOAD_4(COMPONENT_T##4, BaseT)
 
 /**
  * Define for types
  */
-CUB_VEC_OVERLOAD(char)
-CUB_VEC_OVERLOAD(short)
-CUB_VEC_OVERLOAD(int)
-CUB_VEC_OVERLOAD(long)
-CUB_VEC_OVERLOAD(longlong)
-CUB_VEC_OVERLOAD(uchar)
-CUB_VEC_OVERLOAD(ushort)
-CUB_VEC_OVERLOAD(uint)
-CUB_VEC_OVERLOAD(ulong)
-CUB_VEC_OVERLOAD(ulonglong)
-CUB_VEC_OVERLOAD(float)
-CUB_VEC_OVERLOAD(double)
+CUB_VEC_OVERLOAD(char, char)
+CUB_VEC_OVERLOAD(short, short)
+CUB_VEC_OVERLOAD(int, int)
+CUB_VEC_OVERLOAD(long, long)
+CUB_VEC_OVERLOAD(longlong, long long)
+CUB_VEC_OVERLOAD(uchar, unsigned char)
+CUB_VEC_OVERLOAD(ushort, unsigned short)
+CUB_VEC_OVERLOAD(uint, unsigned int)
+CUB_VEC_OVERLOAD(ulong, unsigned long)
+CUB_VEC_OVERLOAD(ulonglong, unsigned long long)
+CUB_VEC_OVERLOAD(float, float)
+CUB_VEC_OVERLOAD(double, double)
 
 
 //---------------------------------------------------------------------
@@ -1077,43 +1039,30 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestFoo &va
 }
 
 
-namespace std {
-
 /// numeric_limits<TestFoo> specialization
+namespace cub {
 template<>
-struct numeric_limits<TestFoo>
+struct NumericTraits<TestFoo>
 {
-    static const bool is_specialized = true;
-
-    static TestFoo min()
+    static TestFoo Max()
     {
         return TestFoo::MakeTestFoo(
-            numeric_limits<long long>::min(),
-            numeric_limits<int>::min(),
-            numeric_limits<short>::min(),
-            numeric_limits<char>::min());
+            NumericTraits<long long>::Max(),
+            NumericTraits<int>::Max(),
+            NumericTraits<short>::Max(),
+            NumericTraits<char>::Max());
     }
 
-    static TestFoo max()
+    static TestFoo Lowest()
     {
         return TestFoo::MakeTestFoo(
-            numeric_limits<long long>::max(),
-            numeric_limits<int>::max(),
-            numeric_limits<short>::max(),
-            numeric_limits<char>::max());
-    }
-
-    static TestFoo lowest()
-    {
-        return TestFoo::MakeTestFoo(
-            numeric_limits<long long>::lowest(),
-            numeric_limits<int>::lowest(),
-            numeric_limits<short>::lowest(),
-            numeric_limits<char>::lowest());
+            NumericTraits<long long>::Lowest(),
+            NumericTraits<int>::Lowest(),
+            NumericTraits<short>::Lowest(),
+            NumericTraits<char>::Lowest());
     }
 };
-
-} // namespace std
+} // namespace cub
 
 
 //---------------------------------------------------------------------
@@ -1201,37 +1150,26 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &va
     InitValue(gen_mode, value.y, index);
 }
 
-namespace std {
-
-/// numeric_limits<TestFoo> specialization
+/// numeric_limits<TestBar> specialization
+namespace cub {
 template<>
-struct numeric_limits<TestBar>
+struct NumericTraits<TestBar>
 {
-    static const bool is_specialized = true;
-
-    static TestBar min()
+    static TestBar Max()
     {
         return TestBar(
-            numeric_limits<long long>::min(),
-            numeric_limits<int>::min());
+            NumericTraits<long long>::Max(),
+            NumericTraits<int>::Max());
     }
 
-    static TestBar max()
+    static TestBar Lowest()
     {
         return TestBar(
-            numeric_limits<long long>::max(),
-            numeric_limits<int>::max());
-    }
-
-    static TestBar lowest()
-    {
-        return TestBar(
-            numeric_limits<long long>::lowest(),
-            numeric_limits<int>::lowest());
+            NumericTraits<long long>::Lowest(),
+            NumericTraits<int>::Lowest());
     }
 };
-
-} // namespace std
+} // namespace cub
 
 
 /******************************************************************************

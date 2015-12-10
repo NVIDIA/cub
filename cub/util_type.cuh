@@ -868,7 +868,7 @@ enum Category
 /**
  * \brief Basic type traits
  */
-template <Category _CATEGORY, bool _PRIMITIVE, bool _NULL_TYPE, typename _UnsignedBits>
+template <Category _CATEGORY, bool _PRIMITIVE, bool _NULL_TYPE, typename _UnsignedBits, typename T>
 struct BaseTraits
 {
     /// Category
@@ -884,13 +884,13 @@ struct BaseTraits
 /**
  * Basic type traits (unsigned primitive specialization)
  */
-template <typename _UnsignedBits>
-struct BaseTraits<UNSIGNED_INTEGER, true, false, _UnsignedBits>
+template <typename _UnsignedBits, typename T>
+struct BaseTraits<UNSIGNED_INTEGER, true, false, _UnsignedBits, T>
 {
     typedef _UnsignedBits       UnsignedBits;
 
     static const Category       CATEGORY    = UNSIGNED_INTEGER;
-    static const UnsignedBits   MIN_KEY     = UnsignedBits(0);
+    static const UnsignedBits   LOWEST_KEY  = UnsignedBits(0);
     static const UnsignedBits   MAX_KEY     = UnsignedBits(-1);
 
     enum
@@ -909,20 +909,32 @@ struct BaseTraits<UNSIGNED_INTEGER, true, false, _UnsignedBits>
     {
         return key;
     }
+
+    static __host__ __device__ __forceinline__ T Max()
+    {
+        UnsignedBits retval = MAX_KEY;
+        return reinterpret_cast<T&>(retval);
+    }
+
+    static __host__ __device__ __forceinline__ T Lowest()
+    {
+        UnsignedBits retval = LOWEST_KEY;
+        return reinterpret_cast<T&>(retval);
+    }
 };
 
 
 /**
  * Basic type traits (signed primitive specialization)
  */
-template <typename _UnsignedBits>
-struct BaseTraits<SIGNED_INTEGER, true, false, _UnsignedBits>
+template <typename _UnsignedBits, typename T>
+struct BaseTraits<SIGNED_INTEGER, true, false, _UnsignedBits, T>
 {
     typedef _UnsignedBits       UnsignedBits;
 
     static const Category       CATEGORY    = SIGNED_INTEGER;
     static const UnsignedBits   HIGH_BIT    = UnsignedBits(1) << ((sizeof(UnsignedBits) * 8) - 1);
-    static const UnsignedBits   MIN_KEY     = HIGH_BIT;
+    static const UnsignedBits   LOWEST_KEY  = HIGH_BIT;
     static const UnsignedBits   MAX_KEY     = UnsignedBits(-1) ^ HIGH_BIT;
 
     enum
@@ -941,21 +953,38 @@ struct BaseTraits<SIGNED_INTEGER, true, false, _UnsignedBits>
         return key ^ HIGH_BIT;
     };
 
+    static __host__ __device__ __forceinline__ T Max()
+    {
+        UnsignedBits retval = MAX_KEY;
+        return reinterpret_cast<T&>(retval);
+    }
+
+    static __host__ __device__ __forceinline__ T Lowest()
+    {
+        UnsignedBits retval = LOWEST_KEY;
+        return reinterpret_cast<T&>(retval);
+    }
 };
 
 
 /**
  * Basic type traits (fp primitive specialization)
  */
-template <typename _UnsignedBits>
-struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits>
+template <typename _UnsignedBits, typename T>
+struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
 {
     typedef _UnsignedBits       UnsignedBits;
 
     static const Category       CATEGORY    = FLOATING_POINT;
     static const UnsignedBits   HIGH_BIT    = UnsignedBits(1) << ((sizeof(UnsignedBits) * 8) - 1);
-    static const UnsignedBits   MIN_KEY     = UnsignedBits(-1);
+    static const UnsignedBits   LOWEST_KEY  = UnsignedBits(-1);
     static const UnsignedBits   MAX_KEY     = UnsignedBits(-1) ^ HIGH_BIT;
+
+    enum
+    {
+        PRIMITIVE       = true,
+        NULL_TYPE       = false,
+    };
 
     static __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
     {
@@ -969,38 +998,44 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits>
         return key ^ mask;
     };
 
-    enum
+    static __host__ __device__ __forceinline__ T Max()
     {
-        PRIMITIVE       = true,
-        NULL_TYPE       = false,
-    };
+        UnsignedBits retval = MAX_KEY;
+        return reinterpret_cast<T&>(retval);
+    }
+
+    static __host__ __device__ __forceinline__ T Lowest()
+    {
+        UnsignedBits retval = LOWEST_KEY;
+        return reinterpret_cast<T&>(retval);
+    }
 };
 
 
 /**
  * \brief Numeric type traits
  */
-template <typename T> struct NumericTraits :            BaseTraits<NOT_A_NUMBER, false, false, T> {};
+template <typename T> struct NumericTraits :            BaseTraits<NOT_A_NUMBER, false, false, T, T> {};
 
-template <> struct NumericTraits<NullType> :            BaseTraits<NOT_A_NUMBER, false, true, NullType> {};
+template <> struct NumericTraits<NullType> :            BaseTraits<NOT_A_NUMBER, false, true, NullType, NullType> {};
 
-template <> struct NumericTraits<char> :                BaseTraits<(std::numeric_limits<char>::is_signed) ? SIGNED_INTEGER : UNSIGNED_INTEGER, true, false, unsigned char> {};
-template <> struct NumericTraits<signed char> :         BaseTraits<SIGNED_INTEGER, true, false, unsigned char> {};
-template <> struct NumericTraits<short> :               BaseTraits<SIGNED_INTEGER, true, false, unsigned short> {};
-template <> struct NumericTraits<int> :                 BaseTraits<SIGNED_INTEGER, true, false, unsigned int> {};
-template <> struct NumericTraits<long> :                BaseTraits<SIGNED_INTEGER, true, false, unsigned long> {};
-template <> struct NumericTraits<long long> :           BaseTraits<SIGNED_INTEGER, true, false, unsigned long long> {};
+template <> struct NumericTraits<char> :                BaseTraits<(std::numeric_limits<char>::is_signed) ? SIGNED_INTEGER : UNSIGNED_INTEGER, true, false, unsigned char, char> {};
+template <> struct NumericTraits<signed char> :         BaseTraits<SIGNED_INTEGER, true, false, unsigned char, signed char> {};
+template <> struct NumericTraits<short> :               BaseTraits<SIGNED_INTEGER, true, false, unsigned short, short> {};
+template <> struct NumericTraits<int> :                 BaseTraits<SIGNED_INTEGER, true, false, unsigned int, int> {};
+template <> struct NumericTraits<long> :                BaseTraits<SIGNED_INTEGER, true, false, unsigned long, long> {};
+template <> struct NumericTraits<long long> :           BaseTraits<SIGNED_INTEGER, true, false, unsigned long long, long long> {};
 
-template <> struct NumericTraits<unsigned char> :       BaseTraits<UNSIGNED_INTEGER, true, false, unsigned char> {};
-template <> struct NumericTraits<unsigned short> :      BaseTraits<UNSIGNED_INTEGER, true, false, unsigned short> {};
-template <> struct NumericTraits<unsigned int> :        BaseTraits<UNSIGNED_INTEGER, true, false, unsigned int> {};
-template <> struct NumericTraits<unsigned long> :       BaseTraits<UNSIGNED_INTEGER, true, false, unsigned long> {};
-template <> struct NumericTraits<unsigned long long> :  BaseTraits<UNSIGNED_INTEGER, true, false, unsigned long long> {};
+template <> struct NumericTraits<unsigned char> :       BaseTraits<UNSIGNED_INTEGER, true, false, unsigned char, unsigned char> {};
+template <> struct NumericTraits<unsigned short> :      BaseTraits<UNSIGNED_INTEGER, true, false, unsigned short, unsigned short> {};
+template <> struct NumericTraits<unsigned int> :        BaseTraits<UNSIGNED_INTEGER, true, false, unsigned int, unsigned int> {};
+template <> struct NumericTraits<unsigned long> :       BaseTraits<UNSIGNED_INTEGER, true, false, unsigned long, unsigned long> {};
+template <> struct NumericTraits<unsigned long long> :  BaseTraits<UNSIGNED_INTEGER, true, false, unsigned long long, unsigned long long> {};
 
-template <> struct NumericTraits<float> :               BaseTraits<FLOATING_POINT, true, false, unsigned int> {};
-template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POINT, true, false, unsigned long long> {};
+template <> struct NumericTraits<float> :               BaseTraits<FLOATING_POINT, true, false, unsigned int, float> {};
+template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POINT, true, false, unsigned long long, double> {};
 
-template <> struct NumericTraits<bool> :                BaseTraits<UNSIGNED_INTEGER, true, false, typename UnitWord<bool>::VolatileWord > {};
+template <> struct NumericTraits<bool> :                BaseTraits<UNSIGNED_INTEGER, true, false, typename UnitWord<bool>::VolatileWord, bool> {};
 
 
 
