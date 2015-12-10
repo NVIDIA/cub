@@ -120,9 +120,6 @@ __global__ void DeviceReduceSingleTileKernel(
     ReductionOpT            reduction_op,               ///< [in] Binary reduction functor
     T                       init)                       ///< [in] The initial value of the reduction
 {
-    // Data type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-
     // Thread block type for reducing input tiles
     typedef AgentReduce<
             typename ChainedPolicyT::ActivePolicy::ReducePolicy,
@@ -195,9 +192,6 @@ __global__ void DeviceSegmentedReduceKernel(
     ReductionOpT            reduction_op,               ///< [in] Binary reduction functor 
     T                       init)                       ///< [in] The initial value of the reduction
 {
-    // Data type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-
     // Thread block type for reducing input tiles
     typedef AgentReduce<
             typename ChainedPolicyT::ActivePolicy::ReducePolicy,
@@ -672,21 +666,22 @@ struct DispatchReduce :
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Invoke()
     {
-        typedef typename ActivePolicyT::SingleTilePolicy SingleTilePolicyT;
+        typedef typename ActivePolicyT::SingleTilePolicy    SingleTilePolicyT;
+        typedef typename DispatchReduce::MaxPolicy          MaxPolicyT;
 
         // Force kernel code-generation in all compiler passes
         if (num_items <= (SingleTilePolicyT::BLOCK_THREADS * SingleTilePolicyT::ITEMS_PER_THREAD))
         {
             // Small, single tile size
             return InvokeSingleTile<ActivePolicyT>(
-                DeviceReduceSingleTileKernel<MaxPolicy, InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT, T>);
+                DeviceReduceSingleTileKernel<MaxPolicyT, InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT, T>);
         }
         else
         {
             // Regular size
             return InvokePasses<ActivePolicyT>(
-                DeviceReduceKernel<MaxPolicy, InputIteratorT, T*, OffsetT, ReductionOpT>,
-                DeviceReduceSingleTileKernel<MaxPolicy, T*, OutputIteratorT, OffsetT, ReductionOpT, T>,
+                DeviceReduceKernel<typename DispatchReduce::MaxPolicy, InputIteratorT, T*, OffsetT, ReductionOpT>,
+                DeviceReduceSingleTileKernel<MaxPolicyT, T*, OutputIteratorT, OffsetT, ReductionOpT, T>,
                 FillAndResetDrainKernel<OffsetT>);
         }
     }
@@ -725,7 +720,7 @@ struct DispatchReduce :
                 stream, debug_synchronous, ptx_version);
 
             // Dispatch to chained policy
-            if (CubDebug(error = MaxPolicy::Invoke(ptx_version, dispatch))) break;
+            if (CubDebug(error = DispatchReduce::MaxPolicy::Invoke(ptx_version, dispatch))) break;
         }
         while (0);
 
@@ -883,9 +878,11 @@ struct DispatchSegmentedReduce :
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Invoke()
     {
+        typedef typename DispatchSegmentedReduce::MaxPolicy MaxPolicyT;
+
         // Force kernel code-generation in all compiler passes
         return InvokePasses<ActivePolicyT>(
-            DeviceSegmentedReduceKernel<MaxPolicy, InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT, T>);
+            DeviceSegmentedReduceKernel<MaxPolicyT, InputIteratorT, OutputIteratorT, OffsetT, ReductionOpT, T>);
     }
 
 
@@ -929,7 +926,7 @@ struct DispatchSegmentedReduce :
                 stream, debug_synchronous, ptx_version);
 
             // Dispatch to chained policy
-            if (CubDebug(error = MaxPolicy::Invoke(ptx_version, dispatch))) break;
+            if (CubDebug(error = DispatchSegmentedReduce::MaxPolicy::Invoke(ptx_version, dispatch))) break;
         }
         while (0);
 

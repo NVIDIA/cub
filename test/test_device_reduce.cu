@@ -692,7 +692,7 @@ struct Solution
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            T aggregate = std::numeric_limits<T>::lowest();
+            T aggregate = NumericTraits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
                 aggregate = reduction_op(aggregate, h_in[j]);
             h_reference[i] = aggregate;
@@ -778,7 +778,7 @@ struct Solution<cub::ArgMax, T>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            Output aggregate = {1, std::numeric_limits<T>::lowest()};
+            Output aggregate = {1, NumericTraits<T>::Lowest()}; // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
             {
                 Output item = {j - h_segment_offsets[i], h_in[j]};
@@ -1242,6 +1242,8 @@ int main(int argc, char** argv)
 
 #endif
 
+
+    printf("\n");
     return 0;
 }
 
