@@ -209,7 +209,7 @@ struct AgentReduce
     /**
      * Consume a full tile of input (non-vectorized)
      */
-    template <bool IS_FIRST_TILE>
+    template <int IS_FIRST_TILE>
     __device__ __forceinline__ void ConsumeTile(
         T                       &thread_aggregate,
         OffsetT                 block_offset,       ///< The offset the tile to consume
@@ -232,7 +232,7 @@ struct AgentReduce
     /**
      * Consume a full tile of input (vectorized)
      */
-    template <bool IS_FIRST_TILE>
+    template <int IS_FIRST_TILE>
     __device__ __forceinline__ void ConsumeTile(
         T                       &thread_aggregate,
         OffsetT                 block_offset,       ///< The offset the tile to consume
@@ -266,7 +266,7 @@ struct AgentReduce
     /**
      * Consume a partial tile of input
      */
-    template <bool IS_FIRST_TILE, bool CAN_VECTORIZE>
+    template <int IS_FIRST_TILE, int CAN_VECTORIZE>
     __device__ __forceinline__ void ConsumeTile(
         T                       &thread_aggregate,
         OffsetT                 block_offset,       ///< The offset the tile to consume
@@ -302,7 +302,7 @@ struct AgentReduce
     /**
      * \brief Reduce a contiguous segment of input tiles
      */
-    template <bool CAN_VECTORIZE>
+    template <int CAN_VECTORIZE>
     __device__ __forceinline__ T ConsumeRange(
         OffsetT block_offset,                       ///< [in] Threadblock begin offset (inclusive)
         OffsetT block_end,                          ///< [in] Threadblock end offset (exclusive)
@@ -380,7 +380,7 @@ struct AgentReduce
     /**
      * Dequeue and reduce tiles of items as part of a inter-block reduction
      */
-    template <bool CAN_VECTORIZE>
+    template <int CAN_VECTORIZE>
     __device__ __forceinline__ T ConsumeTiles(
         int                     num_items,          ///< Total number of input items
         GridQueue<OffsetT>      queue,              ///< Queue descriptor for assigning tiles of work to thread blocks

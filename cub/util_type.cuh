@@ -987,11 +987,11 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
         NULL_TYPE       = false,
     };
 
-    template <typename _T>
+    template <typename _T, int DUMMY = 0>
     struct Limits;
 
-    template <>
-    struct Limits<float>
+    template <int DUMMY>
+    struct Limits<float, DUMMY>
     {
         static __host__ __device__ __forceinline__ T Max() {
             return FLT_MAX;
@@ -1002,8 +1002,8 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
         }
     };
 
-    template <>
-    struct Limits<double>
+    template <int DUMMY>
+    struct Limits<double, DUMMY>
     {
         static __host__ __device__ __forceinline__ double Max() {
             return DBL_MAX;
