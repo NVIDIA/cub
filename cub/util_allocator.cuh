@@ -326,7 +326,7 @@ struct CachingDeviceAllocator
 
         this->max_cached_bytes = max_cached_bytes;
 
-        if (debug) CubLog("New max_cached_bytes(%lld)\n", (long long) max_cached_bytes);
+        if (debug) _CubLog("New max_cached_bytes(%lld)\n", (long long) max_cached_bytes);
 
         // Unlock
         Unlock(&spin_lock);
@@ -413,7 +413,7 @@ struct CachingDeviceAllocator
                     cached_blocks.erase(block_itr);
                     cached_bytes[device] -= search_key.bytes;
 
-                    if (debug) CubLog("\tdevice %d reused cached block for stream %lld (%lld bytes, previously associated with stream %lld).\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    if (debug) _CubLog("\tdevice %d reused cached block for stream %lld (%lld bytes, previously associated with stream %lld).\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                         device, (long long) active_stream, (long long) search_key.bytes, (long long) prev_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
 
                     break;
@@ -448,7 +448,7 @@ struct CachingDeviceAllocator
                 // Insert into live blocks
                 live_blocks.insert(search_key);
 
-                if (debug) CubLog("\tdevice %d allocating new device block %lld bytes associated with stream %lld.\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                if (debug) _CubLog("\tdevice %d allocating new device block %lld bytes associated with stream %lld.\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                     device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
             }
 
@@ -556,7 +556,7 @@ struct CachingDeviceAllocator
                     cached_blocks.insert(search_key);
                     cached_bytes[device] += search_key.bytes;
 
-                    if (debug) CubLog("\tdevice %d returned %lld bytes from associated stream %lld.\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    if (debug) _CubLog("\tdevice %d returned %lld bytes from associated stream %lld.\n\t\t %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                         device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
                 }
                 else
@@ -571,7 +571,7 @@ struct CachingDeviceAllocator
                     if (CubDebug(error = cudaFree(d_ptr))) break;
                     if (CubDebug(error = cudaEventDestroy(search_key.ready_event))) break;
 
-                    if (debug) CubLog("\tdevice %d freed %lld bytes from associated stream %lld.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+                    if (debug) _CubLog("\tdevice %d freed %lld bytes from associated stream %lld.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                         device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device], (long long) live_blocks.size());
                 }
             }
@@ -660,7 +660,7 @@ struct CachingDeviceAllocator
             cached_bytes[current_device] -= begin->bytes;
             cached_blocks.erase(begin);
 
-            if (debug) CubLog("\tdevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
+            if (debug) _CubLog("\tdevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks outstanding.\n",
                 current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device], (long long) live_blocks.size());
         }
 

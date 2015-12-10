@@ -397,7 +397,7 @@ struct DispatchSelectIf
 
             // Log scan_init_kernel configuration
             int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
-            if (debug_synchronous) CubLog("Invoking scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            if (debug_synchronous) _CubLog("Invoking scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke scan_init_kernel to initialize tile descriptors
             scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
@@ -428,7 +428,7 @@ struct DispatchSelectIf
             scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
             // Log select_if_kernel configuration
-            if (debug_synchronous) CubLog("Invoking select_if_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) _CubLog("Invoking select_if_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, select_if_config.block_threads, (long long) stream, select_if_config.items_per_thread, range_select_sm_occupancy);
 
             // Invoke select_if_kernel

@@ -35,6 +35,7 @@
 
 #include <iostream>
 #include <limits>
+#include <cfloat>
 
 #include "util_macro.cuh"
 #include "util_arch.cuh"
@@ -986,6 +987,33 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
         NULL_TYPE       = false,
     };
 
+    template <typename _T>
+    struct Limits;
+
+    template <>
+    struct Limits<float>
+    {
+        static __host__ __device__ __forceinline__ T Max() {
+            return FLT_MAX;
+        }
+
+        static __host__ __device__ __forceinline__ T Lowest() {
+            return FLT_MAX * float(-1);
+        }
+    };
+
+    template <>
+    struct Limits<double>
+    {
+        static __host__ __device__ __forceinline__ double Max() {
+            return DBL_MAX;
+        }
+
+        static __host__ __device__ __forceinline__ double Lowest() {
+            return DBL_MAX  * double(-1);
+        }
+    };
+
     static __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
     {
         UnsignedBits mask = (key & HIGH_BIT) ? UnsignedBits(-1) : HIGH_BIT;
@@ -998,16 +1026,12 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
         return key ^ mask;
     };
 
-    static __host__ __device__ __forceinline__ T Max()
-    {
-        UnsignedBits retval = MAX_KEY;
-        return reinterpret_cast<T&>(retval);
+    static __host__ __device__ __forceinline__ T Max() {
+        return Limits<T>::Max();
     }
 
-    static __host__ __device__ __forceinline__ T Lowest()
-    {
-        UnsignedBits retval = LOWEST_KEY;
-        return reinterpret_cast<T&>(retval);
+    static __host__ __device__ __forceinline__ T Lowest() {
+        return Limits<T>::Lowest();
     }
 };
 

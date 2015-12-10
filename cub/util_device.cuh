@@ -272,6 +272,9 @@ struct KernelConfig
     int tile_size;
     int sm_occupancy;
 
+    CUB_RUNTIME_FUNCTION __forceinline__
+    KernelConfig() : block_threads(0), items_per_thread(0), tile_size(0), sm_occupancy(0) {}
+
     template <typename AgentPolicyT, typename KernelPtrT>
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t Init(KernelPtrT kernel_ptr)

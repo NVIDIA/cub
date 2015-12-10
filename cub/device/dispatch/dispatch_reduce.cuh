@@ -488,7 +488,7 @@ struct DispatchReduce :
             }
 
             // Log single_reduce_sweep_kernel configuration
-            if (debug_synchronous) CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
+            if (debug_synchronous) _CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
                 ActivePolicyT::SingleTilePolicy::BLOCK_THREADS,
                 (long long) stream,
                 ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD);
@@ -595,7 +595,7 @@ struct DispatchReduce :
                                         reduce_device_occupancy;    // Fill the device with threadblocks
 
                 // Prepare the dynamic queue descriptor if necessary
-                if (debug_synchronous) CubLog("Invoking prepare_drain_kernel<<<1, 1, 0, %lld>>>()\n", (long long) stream);
+                if (debug_synchronous) _CubLog("Invoking prepare_drain_kernel<<<1, 1, 0, %lld>>>()\n", (long long) stream);
 
                 // Invoke prepare_drain_kernel
                 prepare_drain_kernel<<<1, 1, 0, stream>>>(queue, num_items);
@@ -612,7 +612,7 @@ struct DispatchReduce :
             }
 
             // Log device_reduce_sweep_kernel configuration
-            if (debug_synchronous) CubLog("Invoking DeviceReduceKernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) _CubLog("Invoking DeviceReduceKernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 reduce_grid_size,
                 ActivePolicyT::ReducePolicy::BLOCK_THREADS,
                 (long long) stream,
@@ -635,7 +635,7 @@ struct DispatchReduce :
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Log single_reduce_sweep_kernel configuration
-            if (debug_synchronous) CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
+            if (debug_synchronous) _CubLog("Invoking DeviceReduceSingleTileKernel<<<1, %d, 0, %lld>>>(), %d items per thread\n",
                 ActivePolicyT::SingleTilePolicy::BLOCK_THREADS,
                 (long long) stream,
                 ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD);
@@ -846,7 +846,7 @@ struct DispatchSegmentedReduce :
             if (CubDebug(error = segmented_reduce_config.Init<typename ActivePolicyT::SegmentedReducePolicy>(segmented_reduce_kernel))) break;
 
             // Log device_reduce_sweep_kernel configuration
-            if (debug_synchronous) CubLog("Invoking SegmentedDeviceReduceKernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) _CubLog("Invoking SegmentedDeviceReduceKernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 num_segments,
                 ActivePolicyT::SegmentedReducePolicy::BLOCK_THREADS,
                 (long long) stream,
