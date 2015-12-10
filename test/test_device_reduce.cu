@@ -113,7 +113,7 @@ cudaError_t Dispatch(
 {
     // Max-identity
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-    T identity = std::numeric_limits<T>::min();
+    T identity = NumericTraits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
 
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;
@@ -310,7 +310,7 @@ cudaError_t Dispatch(
 {
     // Max-identity
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-    T identity = std::numeric_limits<T>::min();
+    T identity = NumericTraits<T>::Lowest(); // replace with std::numeric_limits<T>::lowest() when C++ support is more prevalent
 
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;

@@ -115,7 +115,7 @@ struct AgentRadixSortDownsweep
     // Appropriate unsigned-bits representation of KeyT
     typedef typename Traits<KeyT>::UnsignedBits UnsignedBits;
 
-    static const UnsignedBits MIN_KEY = Traits<KeyT>::MIN_KEY;
+    static const UnsignedBits LOWEST_KEY = Traits<KeyT>::LOWEST_KEY;
     static const UnsignedBits MAX_KEY = Traits<KeyT>::MAX_KEY;
 
     static const BlockLoadAlgorithm         LOAD_ALGORITHM          = AgentRadixSortDownsweepPolicy::LOAD_ALGORITHM;
@@ -510,7 +510,7 @@ struct AgentRadixSortDownsweep
         OffsetT         relative_bin_offsets[ITEMS_PER_THREAD];     // For each key, the global scatter base offset of the corresponding digit
 
         // Assign default (min/max) value to all keys
-        UnsignedBits default_key = (IS_DESCENDING) ? MIN_KEY : MAX_KEY;
+        UnsignedBits default_key = (IS_DESCENDING) ? LOWEST_KEY : MAX_KEY;
 
         // Load tile of keys
         BlockLoadKeys loader(temp_storage.load_keys);

@@ -266,7 +266,7 @@ __global__ void DeviceRadixSortSingleTileKernel(
 
     // Get default (min/max) value for out-of-bounds keys
     typedef typename Traits<KeyT>::UnsignedBits UnsignedBitsT;
-    UnsignedBitsT default_key_bits = (IS_DESCENDING) ? Traits<KeyT>::MIN_KEY : Traits<KeyT>::MAX_KEY;
+    UnsignedBitsT default_key_bits = (IS_DESCENDING) ? Traits<KeyT>::LOWEST_KEY : Traits<KeyT>::MAX_KEY;
     KeyT default_key = reinterpret_cast<KeyT&>(default_key_bits);
 
     // Load keys
