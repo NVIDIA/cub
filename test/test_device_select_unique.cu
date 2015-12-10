@@ -318,8 +318,7 @@ void Test(
     DeviceInputIteratorT d_in,
     T                   *h_reference,
     int                 num_selected,
-    int                 num_items,
-    const char*         type_string)
+    int                 num_items)
 {
     // Allocate device output array and num selected
     T       *d_out            = NULL;
@@ -399,8 +398,7 @@ template <
 void TestPointer(
     int             num_items,
     int             entropy_reduction,
-    int             max_segment,
-    const char*     type_string)
+    int             max_segment)
 {
     // Allocate host arrays
     T*  h_in        = new T[num_items];
@@ -413,7 +411,7 @@ void TestPointer(
     printf("\nPointer %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, float(num_items) / num_selected,
-        type_string,
+        typeid(T).name(),
         (int) sizeof(T),
         entropy_reduction);
     fflush(stdout);
@@ -426,7 +424,7 @@ void TestPointer(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_in, h_reference, num_selected, num_items, type_string);
+    Test<BACKEND>(d_in, h_reference, num_selected, num_items);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -442,8 +440,7 @@ template <
     Backend         BACKEND,
     typename        T>
 void TestIterator(
-    int             num_items,
-    const char*     type_string)
+    int             num_items)
 {
     // Use a counting iterator as the input
     CountingInputIterator<T, int> h_in(0);
@@ -457,12 +454,12 @@ void TestIterator(
     printf("\nIterator %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         num_items, num_selected, float(num_items) / num_selected,
-        type_string,
+        typeid(T).name(),
         (int) sizeof(T));
     fflush(stdout);
 
     // Run Test
-    Test<BACKEND>(h_in, h_reference, num_selected, num_items, type_string);
+    Test<BACKEND>(h_in, h_reference, num_selected, num_items);
 
     // Cleanup
     if (h_reference) delete[] h_reference;
@@ -476,14 +473,13 @@ template <
     Backend         BACKEND,
     typename        T>
 void Test(
-    int             num_items,
-    const char*     type_string)
+    int             num_items)
 {
     for (int max_segment = 1; max_segment < CUB_MIN(num_items, (unsigned int) -1); max_segment *= 11)
     {
-        TestPointer<BACKEND, T>(num_items, 0, max_segment, type_string);
-        TestPointer<BACKEND, T>(num_items, 2, max_segment, type_string);
-        TestPointer<BACKEND, T>(num_items, 7, max_segment, type_string);
+        TestPointer<BACKEND, T>(num_items, 0, max_segment);
+        TestPointer<BACKEND, T>(num_items, 2, max_segment);
+        TestPointer<BACKEND, T>(num_items, 7, max_segment);
     }
 }
 
@@ -494,12 +490,11 @@ void Test(
 template <
     typename        T>
 void TestOp(
-    int             num_items,
-    const char*     type_string)
+    int             num_items)
 {
-    Test<CUB, T>(num_items, type_string);
+    Test<CUB, T>(num_items);
 #ifdef CUB_CDP
-    Test<CDP, T>(num_items, type_string);
+    Test<CDP, T>(num_items);
 #endif
 }
 
@@ -509,19 +504,18 @@ void TestOp(
  */
 template <typename T>
 void Test(
-    int             num_items,
-    const char*     type_string)
+    int             num_items)
 {
     if (num_items < 0)
     {
-        TestOp<T>(1,        type_string);
-        TestOp<T>(100,      type_string);
-        TestOp<T>(10000,    type_string);
-        TestOp<T>(1000000,  type_string);
+        TestOp<T>(1);
+        TestOp<T>(100);
+        TestOp<T>(10000);
+        TestOp<T>(1000000);
     }
     else
     {
-        TestOp<T>(num_items, type_string);
+        TestOp<T>(num_items);
     }
 }
 
@@ -574,7 +568,7 @@ int main(int argc, char** argv)
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
-    TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+    TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg);
 
 #elif defined(QUICK_TEST)
 
@@ -590,27 +584,27 @@ int main(int argc, char** argv)
     if (num_items < 0) num_items = 32000000;
 
     printf("-- Iterator ----------------------------\n");
-    TestIterator<CUB, int>(        num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+    TestIterator<CUB, int>(        num_items,                                 entropy_reduction, maxseg);
 
     printf("----------------------------\n");
-    TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
-    TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg, CUB_TYPE_STRING(char));
+    TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg);
+    TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg);
 
     printf("----------------------------\n");
-    TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
-    TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg, CUB_TYPE_STRING(short));
+    TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg);
+    TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg);
 
     printf("----------------------------\n");
-    TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
-    TestPointer<THRUST, int>(      num_items,                                 entropy_reduction, maxseg, CUB_TYPE_STRING(int));
+    TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg);
+    TestPointer<THRUST, int>(      num_items,                                 entropy_reduction, maxseg);
 
     printf("----------------------------\n");
-    TestPointer<CUB, long long>(   num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
-    TestPointer<THRUST, long long>(num_items / 2,                             entropy_reduction, maxseg, CUB_TYPE_STRING(long long));
+    TestPointer<CUB, long long>(   num_items / 2,                             entropy_reduction, maxseg);
+    TestPointer<THRUST, long long>(num_items / 2,                             entropy_reduction, maxseg);
 
     printf("----------------------------\n");
-    TestPointer<CUB, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
-    TestPointer<THRUST, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg, CUB_TYPE_STRING(TestFoo));
+    TestPointer<CUB, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg);
+    TestPointer<THRUST, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg);
 
 #else
 
@@ -618,23 +612,23 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         // Test different input types
-        Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
-        Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
-        Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
-        Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
+        Test<unsigned char>(num_items);
+        Test<unsigned short>(num_items);
+        Test<unsigned int>(num_items);
+        Test<unsigned long long>(num_items);
 
-        Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
-        Test<ushort2>(num_items, CUB_TYPE_STRING(ushort2));
-        Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
-        Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
+        Test<uchar2>(num_items);
+        Test<ushort2>(num_items);
+        Test<uint2>(num_items);
+        Test<ulonglong2>(num_items);
 
-        Test<uchar4>(num_items, CUB_TYPE_STRING(uchar4));
-        Test<ushort4>(num_items, CUB_TYPE_STRING(ushort4));
-        Test<uint4>(num_items, CUB_TYPE_STRING(uint4));
-        Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
+        Test<uchar4>(num_items);
+        Test<ushort4>(num_items);
+        Test<uint4>(num_items);
+        Test<ulonglong4>(num_items);
 
-        Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
-        Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
+        Test<TestFoo>(num_items);
+        Test<TestBar>(num_items);
     }
 
 #endif

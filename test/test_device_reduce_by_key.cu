@@ -91,7 +91,7 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void*               d_temp_storage,
+    void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     KeyInputIteratorT           d_keys_in,
     KeyOutputIteratorT          d_keys_out,
@@ -146,15 +146,15 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void*               d_temp_storage,
+    void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     KeyInputIteratorT           d_keys_in,
     KeyOutputIteratorT          d_keys_out,
     ValueInputIteratorT         d_values_in,
     ValueOutputIteratorT        d_values_out,
-    NumRunsIteratorT             d_num_runs,
-    EqualityOpT                  equality_op,
-    ReductionOpT                 reduction_op,
+    NumRunsIteratorT            d_num_runs,
+    EqualityOpT                 equality_op,
+    ReductionOpT                reduction_op,
     OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
@@ -217,15 +217,15 @@ __global__ void CnpDispatchKernel(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void*               d_temp_storage,
+    void                        *d_temp_storage,
     size_t                      temp_storage_bytes,
     KeyInputIteratorT           d_keys_in,
     KeyOutputIteratorT          d_keys_out,
     ValueInputIteratorT         d_values_in,
     ValueOutputIteratorT        d_values_out,
-    NumRunsIteratorT             d_num_runs,
-    EqualityOpT                  equality_op,
-    ReductionOpT                 reduction_op,
+    NumRunsIteratorT            d_num_runs,
+    EqualityOpT                 equality_op,
+    ReductionOpT                reduction_op,
     OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
@@ -261,7 +261,7 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void*               d_temp_storage,
+    void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     KeyInputIteratorT           d_keys_in,
     KeyOutputIteratorT          d_keys_out,
@@ -360,13 +360,13 @@ template <
     typename        EqualityOpT,
     typename        ReductionOpT>
 int Solve(
-    KeyInputIteratorT   h_keys_in,
-    KeyT                 *h_keys_reference,
-    ValueInputIteratorT h_values_in,
-    ValueT               *h_values_reference,
-    EqualityOpT          equality_op,
-    ReductionOpT         reduction_op,
-    int                 num_items)
+    KeyInputIteratorT       h_keys_in,
+    KeyT                    *h_keys_reference,
+    ValueInputIteratorT     h_values_in,
+    ValueT                  *h_values_reference,
+    EqualityOpT             equality_op,
+    ReductionOpT            reduction_op,
+    int                     num_items)
 {
     // First item
     KeyT previous        = h_keys_in[0];
@@ -418,9 +418,7 @@ void Test(
     EqualityOpT                 equality_op,
     ReductionOpT                reduction_op,
     int                         num_segments,
-    int                         num_items,
-    const char*                 key_type_string,
-    const char*                 value_type_string)
+    int                         num_items)
 {
     // Allocate device output arrays and number of segments
     KeyT*   d_keys_out             = NULL;
@@ -511,9 +509,7 @@ void TestPointer(
     int             num_items,
     int             entropy_reduction,
     int             max_segment,
-    ReductionOpT    reduction_op,
-    const char*     key_type_string,
-    const char*     value_type_string)
+    ReductionOpT    reduction_op)
 {
     // Allocate host arrays
     KeyT* h_keys_in        = new KeyT[num_items];
@@ -534,7 +530,7 @@ void TestPointer(
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (Equals<ReductionOpT, Sum>::VALUE) ? "Sum" : "Max",
         num_items, num_segments, float(num_items) / num_segments,
-        key_type_string, value_type_string,
+        typeid(KeyT).name(), typeid(ValueT).name(),
         max_segment, entropy_reduction);
     fflush(stdout);
 
@@ -549,7 +545,7 @@ void TestPointer(
     CubDebugExit(cudaMemcpy(d_values_in, h_values_in, sizeof(ValueT) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_keys_in, d_values_in, h_keys_reference, h_values_reference, equality_op, reduction_op, num_segments, num_items, key_type_string, value_type_string);
+    Test<BACKEND>(d_keys_in, d_values_in, h_keys_reference, h_values_reference, equality_op, reduction_op, num_segments, num_items);
 
     // Cleanup
     if (h_keys_in) delete[] h_keys_in;
@@ -573,9 +569,7 @@ void TestIterator(
     int             num_items,
     int             entropy_reduction,
     int             max_segment,
-    ReductionOpT    reduction_op,
-    const char*     key_type_string,
-    const char*     value_type_string)
+    ReductionOpT    reduction_op)
 {
     // Allocate host arrays
     KeyT* h_keys_in        = new KeyT[num_items];
@@ -595,7 +589,7 @@ void TestIterator(
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
         (Equals<ReductionOpT, Sum>::VALUE) ? "Sum" : "Max",
         num_items, num_segments, float(num_items) / num_segments,
-        key_type_string, value_type_string,
+        typeid(KeyT).name(), typeid(ValueT).name(),
         max_segment, entropy_reduction);
     fflush(stdout);
 
@@ -607,7 +601,7 @@ void TestIterator(
     CubDebugExit(cudaMemcpy(d_keys_in, h_keys_in, sizeof(KeyT) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_keys_in, h_values_in, h_keys_reference, h_values_reference, equality_op, reduction_op, num_segments, num_items, key_type_string, value_type_string);
+    Test<BACKEND>(d_keys_in, h_values_in, h_keys_reference, h_values_reference, equality_op, reduction_op, num_segments, num_items);
 
     // Cleanup
     if (h_keys_in) delete[] h_keys_in;
@@ -628,20 +622,18 @@ template <
 void Test(
     int             num_items,
     ReductionOpT    reduction_op,
-    int             max_segment,
-    const char*     key_type_string,
-    const char*     value_type_string)
+    int             max_segment)
 {
     // 0 key-bit entropy reduction rounds
-    TestPointer<BACKEND, KeyT, ValueT>(num_items, 0, max_segment, reduction_op, key_type_string, value_type_string);
+    TestPointer<BACKEND, KeyT, ValueT>(num_items, 0, max_segment, reduction_op);
 
     if (max_segment > 1)
     {
         // 2 key-bit entropy reduction rounds
-        TestPointer<BACKEND, KeyT, ValueT>(num_items, 2, max_segment, reduction_op, key_type_string, value_type_string);
+        TestPointer<BACKEND, KeyT, ValueT>(num_items, 2, max_segment, reduction_op);
 
         // 7 key-bit entropy reduction rounds
-        TestPointer<BACKEND, KeyT, ValueT>(num_items, 7, max_segment, reduction_op, key_type_string, value_type_string);
+        TestPointer<BACKEND, KeyT, ValueT>(num_items, 7, max_segment, reduction_op);
     }
 }
 
@@ -656,17 +648,15 @@ template <
     typename        ReductionOpT>
 void Test(
     int             num_items,
-    ReductionOpT    reduction_op,
-    const char*     key_type_string,
-    const char*     value_type_string)
+    ReductionOpT    reduction_op)
 {
-    Test<BACKEND, KeyT, ValueT>(num_items, reduction_op, -1, key_type_string, value_type_string);
-    Test<BACKEND, KeyT, ValueT>(num_items, reduction_op, 1, key_type_string, value_type_string);
+    Test<BACKEND, KeyT, ValueT>(num_items, reduction_op, -1);
+    Test<BACKEND, KeyT, ValueT>(num_items, reduction_op, 1);
 
     // Evaluate different max-segment lengths
     for (int max_segment = 3; max_segment < CUB_MIN(num_items, (unsigned short) -1); max_segment *= 11)
     {
-        Test<BACKEND, KeyT, ValueT>(num_items, reduction_op, max_segment, key_type_string, value_type_string);
+        Test<BACKEND, KeyT, ValueT>(num_items, reduction_op, max_segment);
     }
 }
 
@@ -681,13 +671,11 @@ template <
     typename        ReductionOpT>
 void TestDispatch(
     int             num_items,
-    ReductionOpT    reduction_op,
-    const char*     key_type_string,
-    const char*     value_type_string)
+    ReductionOpT    reduction_op)
 {
-    Test<CUB, KeyT, ValueT>(num_items, reduction_op, key_type_string, value_type_string);
+    Test<CUB, KeyT, ValueT>(num_items, reduction_op);
 #ifdef CUB_CDP
-    Test<CDP, KeyT, ValueT>(num_items, reduction_op, key_type_string, value_type_string);
+    Test<CDP, KeyT, ValueT>(num_items, reduction_op);
 #endif
 }
 
@@ -701,20 +689,18 @@ template <
     typename        ReductionOpT>
 void TestSize(
     int             num_items,
-    ReductionOpT    reduction_op,
-    const char*     key_type_string,
-    const char*     value_type_string)
+    ReductionOpT    reduction_op)
 {
     if (num_items < 0)
     {
-        TestDispatch<KeyT, ValueT>(1,        reduction_op, key_type_string, value_type_string);
-        TestDispatch<KeyT, ValueT>(100,      reduction_op, key_type_string, value_type_string);
-        TestDispatch<KeyT, ValueT>(10000,    reduction_op, key_type_string, value_type_string);
-        TestDispatch<KeyT, ValueT>(1000000,  reduction_op, key_type_string, value_type_string);
+        TestDispatch<KeyT, ValueT>(1,        reduction_op);
+        TestDispatch<KeyT, ValueT>(100,      reduction_op);
+        TestDispatch<KeyT, ValueT>(10000,    reduction_op);
+        TestDispatch<KeyT, ValueT>(1000000,  reduction_op);
     }
     else
     {
-        TestDispatch<KeyT, ValueT>(num_items, reduction_op, key_type_string, value_type_string);
+        TestDispatch<KeyT, ValueT>(num_items, reduction_op);
     }
 
 }
@@ -724,12 +710,10 @@ template <
     typename        KeyT,
     typename        ValueT>
 void TestOp(
-    int             num_items,
-    const char*     key_type_string,
-    const char*     value_type_string)
+    int             num_items)
 {
-    TestSize<KeyT, ValueT>(num_items, cub::Sum(), key_type_string, value_type_string);
-    TestSize<KeyT, ValueT>(num_items, cub::Max(), key_type_string, value_type_string);
+    TestSize<KeyT, ValueT>(num_items, cub::Sum());
+    TestSize<KeyT, ValueT>(num_items, cub::Max());
 }
 
 
@@ -785,9 +769,9 @@ int main(int argc, char** argv)
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
 
-    TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
-    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+    TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum());
+    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
+    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
 
 #elif defined(QUICK_TEST)
 
@@ -795,24 +779,24 @@ int main(int argc, char** argv)
     if (num_items < 0) num_items = 32000000;
 
     printf("---- RLE int ---- \n");
-    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
 
     printf("---- RLE long long ---- \n");
-    TestIterator<CUB, long long, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int));
+    TestIterator<CUB, long long, int>(num_items, entropy_reduction, maxseg, cub::Sum());
 
     printf("---- int ---- \n");
-    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
+    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
+    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
 
     printf("---- float ---- \n");
-    TestPointer<CUB, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
-    TestPointer<THRUST, int, float>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
+    TestPointer<CUB, int, float>(num_items, entropy_reduction, maxseg, cub::Sum());
+    TestPointer<THRUST, int, float>(num_items, entropy_reduction, maxseg, cub::Sum());
 
     if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
     {
         printf("---- double ---- \n");
-        TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
-        TestPointer<THRUST, int, double>(num_items, entropy_reduction, maxseg, cub::Sum(), CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
+        TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum());
+        TestPointer<THRUST, int, double>(num_items, entropy_reduction, maxseg, cub::Sum());
     }
 
 #else
@@ -822,27 +806,27 @@ int main(int argc, char** argv)
     {
 
         // Test different input types
-        TestOp<int, char>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(char));
-        TestOp<int, short>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(short));
-        TestOp<int, int>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(int));
-        TestOp<int, long>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(long));
-        TestOp<int, long long>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(long long));
-        TestOp<int, float>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(float));
+        TestOp<int, char>(num_items);
+        TestOp<int, short>(num_items);
+        TestOp<int, int>(num_items);
+        TestOp<int, long>(num_items);
+        TestOp<int, long long>(num_items);
+        TestOp<int, float>(num_items);
         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-            TestOp<int, double>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(double));
+            TestOp<int, double>(num_items);
 
-        TestOp<int, uchar2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uchar2));
-        TestOp<int, uint2>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint2));
-        TestOp<int, uint3>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint3));
-        TestOp<int, uint4>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(uint4));
-        TestOp<int, ulonglong4>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(ulonglong4));
-        TestOp<int, TestFoo>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(TestFoo));
-        TestOp<int, TestBar>(num_items, CUB_TYPE_STRING(int), CUB_TYPE_STRING(TestBar));
+        TestOp<int, uchar2>(num_items);
+        TestOp<int, uint2>(num_items);
+        TestOp<int, uint3>(num_items);
+        TestOp<int, uint4>(num_items);
+        TestOp<int, ulonglong4>(num_items);
+        TestOp<int, TestFoo>(num_items);
+        TestOp<int, TestBar>(num_items);
 
-        TestOp<char, int>(num_items, CUB_TYPE_STRING(char), CUB_TYPE_STRING(int));
-        TestOp<long long, int>(num_items, CUB_TYPE_STRING(long long), CUB_TYPE_STRING(int));
-        TestOp<TestFoo, int>(num_items, CUB_TYPE_STRING(TestFoo), CUB_TYPE_STRING(int));
-        TestOp<TestBar, int>(num_items, CUB_TYPE_STRING(TestBar), CUB_TYPE_STRING(int));
+        TestOp<char, int>(num_items);
+        TestOp<long long, int>(num_items);
+        TestOp<TestFoo, int>(num_items);
+        TestOp<TestBar, int>(num_items);
 
     }
 

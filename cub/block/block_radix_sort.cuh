@@ -146,7 +146,7 @@ private:
     };
 
     // KeyT traits and unsigned bits type
-    typedef NumericTraits<KeyT>                  KeyTraits;
+    typedef Traits<KeyT>                        KeyTraits;
     typedef typename KeyTraits::UnsignedBits    UnsignedBits;
 
     /// Ascending BlockRadixRank utility type

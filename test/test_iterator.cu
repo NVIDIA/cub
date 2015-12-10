@@ -187,9 +187,9 @@ void Test(
  * Test constant iterator
  */
 template <typename T>
-void TestConstant(T base, const char *type_string)
+void TestConstant(T base)
 {
-    printf("\nTesting constant iterator on type %s (base: %d)\n", type_string, int(base)); fflush(stdout);
+    printf("\nTesting constant iterator on type %s (base: %d)\n", typeid(T).name(), int(base)); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -232,9 +232,9 @@ void TestConstant(T base, const char *type_string)
  * Test counting iterator
  */
 template <typename T>
-void TestCounting(T base, const char *type_string)
+void TestCounting(T base)
 {
-    printf("\nTesting counting iterator on type %s (base: %d) \n", type_string, int(base)); fflush(stdout);
+    printf("\nTesting counting iterator on type %s (base: %d) \n", typeid(T).name(), int(base)); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -287,9 +287,9 @@ void TestCounting(T base, const char *type_string)
  * Test modified iterator
  */
 template <typename T, typename CastT>
-void TestModified(const char *type_string)
+void TestModified()
 {
-    printf("\nTesting cache-modified iterator on type %s\n", type_string); fflush(stdout);
+    printf("\nTesting cache-modified iterator on type %s\n", typeid(T).name()); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -359,9 +359,9 @@ void TestModified(const char *type_string)
  * Test transform iterator
  */
 template <typename T, typename CastT>
-void TestTransform(const char *type_string)
+void TestTransform()
 {
-    printf("\nTesting transform iterator on type %s\n", type_string); fflush(stdout);
+    printf("\nTesting transform iterator on type %s\n", typeid(T).name()); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -431,9 +431,9 @@ void TestTransform(const char *type_string)
  * Test tex-obj texture iterator
  */
 template <typename T, typename CastT>
-void TestTexObj(const char *type_string)
+void TestTexObj()
 {
-    printf("\nTesting tex-obj iterator on type %s\n", type_string); fflush(stdout);
+    printf("\nTesting tex-obj iterator on type %s\n", typeid(T).name()); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -511,9 +511,9 @@ void TestTexObj(const char *type_string)
  * Test tex-ref texture iterator
  */
 template <typename T, typename CastT>
-void TestTexRef(const char *type_string)
+void TestTexRef()
 {
-    printf("\nTesting tex-ref iterator on type %s\n", type_string); fflush(stdout);
+    printf("\nTesting tex-ref iterator on type %s\n", typeid(T).name()); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -593,9 +593,9 @@ void TestTexRef(const char *type_string)
  * Test texture transform iterator
  */
 template <typename T, typename CastT>
-void TestTexTransform(const char *type_string)
+void TestTexTransform()
 {
-    printf("\nTesting tex-transform iterator on type %s\n", type_string); fflush(stdout);
+    printf("\nTesting tex-transform iterator on type %s\n", typeid(T).name()); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -678,10 +678,10 @@ void TestTexTransform(const char *type_string)
  * Run non-integer tests
  */
 template <typename T, typename CastT>
-void Test(Int2Type<false> is_integer, const char *type_string)
+void Test(Int2Type<false> is_integer)
 {
-    TestModified<T, CastT>(type_string);
-    TestTransform<T, CastT>(type_string);
+    TestModified<T, CastT>();
+    TestTransform<T, CastT>();
 
 #if CUB_CDP
     // Test tex-obj iterators if CUDA dynamic parallelism enabled
@@ -690,8 +690,8 @@ void Test(Int2Type<false> is_integer, const char *type_string)
 
 #if CUDA_VERSION >= 5050
     // Test tex-ref iterators for CUDA 5.5
-    TestTexRef<T, CastT>(type_string);
-    TestTexTransform<T, CastT>(type_string);
+    TestTexRef<T, CastT>();
+    TestTexTransform<T, CastT>();
 #endif  // CUDA_VERSION
 }
 
@@ -699,33 +699,33 @@ void Test(Int2Type<false> is_integer, const char *type_string)
  * Run integer tests
  */
 template <typename T, typename CastT>
-void Test(Int2Type<true> is_integer, const char *type_string)
+void Test(Int2Type<true> is_integer)
 {
-    TestConstant<T>(0, type_string);
-    TestConstant<T>(99, type_string);
+    TestConstant<T>(0);
+    TestConstant<T>(99);
 
-    TestCounting<T>(0, type_string);
-    TestCounting<T>(99, type_string);
+    TestCounting<T>(0);
+    TestCounting<T>(99);
 
     // Run non-integer tests
-    Test<T, CastT>(Int2Type<false>(), type_string);
+    Test<T, CastT>(Int2Type<false>());
 }
 
 /**
  * Run tests
  */
 template <typename T>
-void Test(const char *type_string)
+void Test()
 {
     enum {
         IS_INTEGER = (Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER)
     };
 
     // Test non-const type
-    Test<T, T>(Int2Type<IS_INTEGER>(), type_string);
+    Test<T, T>(Int2Type<IS_INTEGER>());
 
     // Test non-const type
-    Test<T, const T>(Int2Type<IS_INTEGER>(), type_string);
+    Test<T, const T>(Int2Type<IS_INTEGER>());
 }
 
 
@@ -756,44 +756,44 @@ int main(int argc, char** argv)
     CubDebugExit(PtxVersion(ptx_version));
 
     // Evaluate different data types
-    Test<char>(CUB_TYPE_STRING(char));
-    Test<short>(CUB_TYPE_STRING(short));
-    Test<int>(CUB_TYPE_STRING(int));
-    Test<long>(CUB_TYPE_STRING(long));
-    Test<long long>(CUB_TYPE_STRING(long long));
-    Test<float>(CUB_TYPE_STRING(float));
+    Test<char>();
+    Test<short>();
+    Test<int>();
+    Test<long>();
+    Test<long long>();
+    Test<float>();
     if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-        Test<double>(CUB_TYPE_STRING(double));
+        Test<double>();
 
-    Test<char2>(CUB_TYPE_STRING(char2));
-    Test<short2>(CUB_TYPE_STRING(short2));
-    Test<int2>(CUB_TYPE_STRING(int2));
-    Test<long2>(CUB_TYPE_STRING(long2));
-    Test<longlong2>(CUB_TYPE_STRING(longlong2));
-    Test<float2>(CUB_TYPE_STRING(float2));
+    Test<char2>();
+    Test<short2>();
+    Test<int2>();
+    Test<long2>();
+    Test<longlong2>();
+    Test<float2>();
     if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-        Test<double2>(CUB_TYPE_STRING(double2));
+        Test<double2>();
 
-    Test<char3>(CUB_TYPE_STRING(char3));
-    Test<short3>(CUB_TYPE_STRING(short3));
-    Test<int3>(CUB_TYPE_STRING(int3));
-    Test<long3>(CUB_TYPE_STRING(long3));
-    Test<longlong3>(CUB_TYPE_STRING(longlong3));
-    Test<float3>(CUB_TYPE_STRING(float3));
+    Test<char3>();
+    Test<short3>();
+    Test<int3>();
+    Test<long3>();
+    Test<longlong3>();
+    Test<float3>();
     if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-        Test<double3>(CUB_TYPE_STRING(double3));
+        Test<double3>();
 
-    Test<char4>(CUB_TYPE_STRING(char4));
-    Test<short4>(CUB_TYPE_STRING(short4));
-    Test<int4>(CUB_TYPE_STRING(int4));
-    Test<long4>(CUB_TYPE_STRING(long4));
-    Test<longlong4>(CUB_TYPE_STRING(longlong4));
-    Test<float4>(CUB_TYPE_STRING(float4));
+    Test<char4>();
+    Test<short4>();
+    Test<int4>();
+    Test<long4>();
+    Test<longlong4>();
+    Test<float4>();
     if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-        Test<double4>(CUB_TYPE_STRING(double4));
+        Test<double4>();
 
-    Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
-    Test<TestBar>(CUB_TYPE_STRING(TestBar));
+    Test<TestFoo>();
+    Test<TestBar>();
 
     printf("\nTest complete\n"); fflush(stdout);
 

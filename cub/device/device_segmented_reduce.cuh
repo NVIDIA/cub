@@ -308,7 +308,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Min(),
-            NumericTraits<T>::Max(),    // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
+            Traits<T>::Max(),    // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -381,7 +381,7 @@ struct DeviceSegmentedReduce
         typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;  // Wrapped input iterator type
 
         ArgIndexInputIteratorT      d_argmin_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {1, NumericTraits<T>::Max()};   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
+        KeyValuePair<OffsetT, T>    init = {1, Traits<T>::Max()};   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin>::Dispatch(
             d_temp_storage,
@@ -470,7 +470,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Max(),
-            NumericTraits<T>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
+            Traits<T>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -543,7 +543,7 @@ struct DeviceSegmentedReduce
         typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;      // Wrapped input iterator
 
         ArgIndexInputIteratorT      d_argmax_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {1, NumericTraits<T>::Lowest()};     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
+        KeyValuePair<OffsetT, T>    init = {1, Traits<T>::Lowest()};     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
             d_temp_storage,

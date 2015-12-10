@@ -967,6 +967,33 @@ struct BaseTraits<SIGNED_INTEGER, true, false, _UnsignedBits, T>
     }
 };
 
+template <typename _T>
+struct FpLimits;
+
+template <>
+struct FpLimits<float>
+{
+    static __host__ __device__ __forceinline__ float Max() {
+        return FLT_MAX;
+    }
+
+    static __host__ __device__ __forceinline__ float Lowest() {
+        return FLT_MAX * float(-1);
+    }
+};
+
+template <>
+struct FpLimits<double>
+{
+    static __host__ __device__ __forceinline__ double Max() {
+        return DBL_MAX;
+    }
+
+    static __host__ __device__ __forceinline__ double Lowest() {
+        return DBL_MAX  * double(-1);
+    }
+};
+
 
 /**
  * Basic type traits (fp primitive specialization)
@@ -987,33 +1014,6 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
         NULL_TYPE       = false,
     };
 
-    template <typename _T, int DUMMY = 0>
-    struct Limits;
-
-    template <int DUMMY>
-    struct Limits<float, DUMMY>
-    {
-        static __host__ __device__ __forceinline__ T Max() {
-            return FLT_MAX;
-        }
-
-        static __host__ __device__ __forceinline__ T Lowest() {
-            return FLT_MAX * float(-1);
-        }
-    };
-
-    template <int DUMMY>
-    struct Limits<double, DUMMY>
-    {
-        static __host__ __device__ __forceinline__ double Max() {
-            return DBL_MAX;
-        }
-
-        static __host__ __device__ __forceinline__ double Lowest() {
-            return DBL_MAX  * double(-1);
-        }
-    };
-
     static __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
     {
         UnsignedBits mask = (key & HIGH_BIT) ? UnsignedBits(-1) : HIGH_BIT;
@@ -1027,11 +1027,11 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
     };
 
     static __host__ __device__ __forceinline__ T Max() {
-        return Limits<T>::Max();
+        return FpLimits<T>::Max();
     }
 
     static __host__ __device__ __forceinline__ T Lowest() {
-        return Limits<T>::Lowest();
+        return FpLimits<T>::Lowest();
     }
 };
 

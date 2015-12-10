@@ -327,7 +327,6 @@ void TestFullTile(
     GenMode                 gen_mode,
     int                     tiles,
     ReductionOp             reduction_op,
-    const char              *type_string,
     Int2Type<true>          sufficient_resources)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
@@ -361,7 +360,7 @@ void TestFullTile(
         BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
         ITEMS_PER_THREAD,
         tiles,
-        type_string,
+        typeid(T).name(),
         (int) sizeof(T));
     fflush(stdout);
 
@@ -408,7 +407,6 @@ void TestFullTile(
     GenMode                 gen_mode,
     int                     tiles,
     ReductionOp             reduction_op,
-    const char              *type_string,
     Int2Type<false>         sufficient_resources)
 {}
 
@@ -427,8 +425,7 @@ template <
 void TestFullTile(
     GenMode                 gen_mode,
     int                     tiles,
-    ReductionOp             reduction_op,
-    const char              *type_string)
+    ReductionOp             reduction_op)
 {
     // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, TEST_ARCH> BlockReduceT;
@@ -444,7 +441,7 @@ void TestFullTile(
 #endif
     };
 
-    TestFullTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, type_string, Int2Type<sufficient_smem && sufficient_threads>());
+    TestFullTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, Int2Type<sufficient_smem && sufficient_threads>());
 }
 
 
@@ -460,11 +457,10 @@ template <
 void TestFullTile(
     GenMode                 gen_mode,
     int                     tiles,
-    ReductionOp             reduction_op,
-    const char              *type_string)
+    ReductionOp             reduction_op)
 {
-    TestFullTile<ALGORITHM, BLOCK_THREADS, 1, 1, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, type_string);
-    TestFullTile<ALGORITHM, BLOCK_THREADS, 2, 2, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, type_string);
+    TestFullTile<ALGORITHM, BLOCK_THREADS, 1, 1, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op);
+    TestFullTile<ALGORITHM, BLOCK_THREADS, 2, 2, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op);
 }
 
 /**
@@ -478,11 +474,10 @@ template <
 void TestFullTile(
     GenMode                 gen_mode,
     int                     tiles,
-    ReductionOp             reduction_op,
-    const char              *type_string)
+    ReductionOp             reduction_op)
 {
-    TestFullTile<ALGORITHM, BLOCK_THREADS, 1, T>(gen_mode, tiles, reduction_op, type_string);
-    TestFullTile<ALGORITHM, BLOCK_THREADS, 4, T>(gen_mode, tiles, reduction_op, type_string);
+    TestFullTile<ALGORITHM, BLOCK_THREADS, 1, T>(gen_mode, tiles, reduction_op);
+    TestFullTile<ALGORITHM, BLOCK_THREADS, 4, T>(gen_mode, tiles, reduction_op);
 }
 
 
@@ -496,12 +491,11 @@ template <
     typename                ReductionOp>
 void TestFullTile(
     GenMode                 gen_mode,
-    ReductionOp             reduction_op,
-    const char              *type_string)
+    ReductionOp             reduction_op)
 {
     for (int tiles = 1; tiles < 3; tiles++)
     {
-        TestFullTile<ALGORITHM, BLOCK_THREADS, T>(gen_mode, tiles, reduction_op, type_string);
+        TestFullTile<ALGORITHM, BLOCK_THREADS, T>(gen_mode, tiles, reduction_op);
     }
 }
 
@@ -524,7 +518,6 @@ void TestPartialTile(
     GenMode                 gen_mode,
     int                     num_items,
     ReductionOp             reduction_op,
-    const char              *type_string,
     Int2Type<true>          sufficient_resources)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
@@ -552,7 +545,7 @@ void TestPartialTile(
         gen_mode,
         num_items,
         BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
-        type_string,
+        typeid(T).name(),
         (int) sizeof(T));
     fflush(stdout);
 
@@ -599,7 +592,6 @@ void TestPartialTile(
     GenMode                 gen_mode,
     int                     num_items,
     ReductionOp             reduction_op,
-    const char              *type_string,
     Int2Type<false>         sufficient_resources)
 {}
 
@@ -617,8 +609,7 @@ template <
 void TestPartialTile(
     GenMode                 gen_mode,
     int                     num_items,
-    ReductionOp             reduction_op,
-    const char              *type_string)
+    ReductionOp             reduction_op)
 {
     // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, TEST_ARCH> BlockReduceT;
@@ -634,7 +625,7 @@ void TestPartialTile(
 #endif
     };
 
-    TestPartialTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, T>(gen_mode, num_items, reduction_op, type_string, Int2Type<sufficient_smem && sufficient_threads>());
+    TestPartialTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, T>(gen_mode, num_items, reduction_op, Int2Type<sufficient_smem && sufficient_threads>());
 }
 
 
@@ -649,16 +640,15 @@ template <
     typename                ReductionOp>
 void TestPartialTile(
     GenMode                 gen_mode,
-    ReductionOp             reduction_op,
-    const char              *type_string)
+    ReductionOp             reduction_op)
 {
     for (
         int num_items = 1;
         num_items < BLOCK_THREADS;
         num_items += CUB_MAX(1, BLOCK_THREADS / 5))
     {
-        TestPartialTile<ALGORITHM, BLOCK_THREADS, 1, 1, T>(gen_mode, num_items, reduction_op, type_string);
-        TestPartialTile<ALGORITHM, BLOCK_THREADS, 2, 2, T>(gen_mode, num_items, reduction_op, type_string);
+        TestPartialTile<ALGORITHM, BLOCK_THREADS, 1, 1, T>(gen_mode, num_items, reduction_op);
+        TestPartialTile<ALGORITHM, BLOCK_THREADS, 2, 2, T>(gen_mode, num_items, reduction_op);
     }
 }
 
@@ -677,20 +667,19 @@ template <
     typename                T,
     typename                ReductionOp>
 void Test(
-    ReductionOp             reduction_op,
-    const char              *type_string)
+    ReductionOp             reduction_op)
 {
-    TestFullTile<ALGORITHM, BLOCK_THREADS, T>(UNIFORM, reduction_op, type_string);
-    TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(UNIFORM, reduction_op, type_string);
+    TestFullTile<ALGORITHM, BLOCK_THREADS, T>(UNIFORM, reduction_op);
+    TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(UNIFORM, reduction_op);
 
-    TestFullTile<ALGORITHM, BLOCK_THREADS, T>(INTEGER_SEED, reduction_op, type_string);
-    TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(INTEGER_SEED, reduction_op, type_string);
+    TestFullTile<ALGORITHM, BLOCK_THREADS, T>(INTEGER_SEED, reduction_op);
+    TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(INTEGER_SEED, reduction_op);
 
     if (Traits<T>::CATEGORY != FLOATING_POINT)
     {
         // Don't test randomly-generated floats b/c of stability
-        TestFullTile<ALGORITHM, BLOCK_THREADS, T>(RANDOM, reduction_op, type_string);
-        TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(RANDOM, reduction_op, type_string);
+        TestFullTile<ALGORITHM, BLOCK_THREADS, T>(RANDOM, reduction_op);
+        TestPartialTile<ALGORITHM, BLOCK_THREADS, T>(RANDOM, reduction_op);
     }
 }
 
@@ -703,15 +692,14 @@ template <
     typename        T,
     typename        ReductionOp>
 void Test(
-    ReductionOp     reduction_op,
-    const char      *type_string)
+    ReductionOp     reduction_op)
 {
 #ifdef TEST_RAKING
-    Test<BLOCK_REDUCE_RAKING, BLOCK_THREADS, T>(reduction_op, type_string);
-    Test<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY, BLOCK_THREADS, T>(reduction_op, type_string);
+    Test<BLOCK_REDUCE_RAKING, BLOCK_THREADS, T>(reduction_op);
+    Test<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY, BLOCK_THREADS, T>(reduction_op);
 #endif
 #ifdef TEST_WARP_REDUCTIONS
-    Test<BLOCK_REDUCE_WARP_REDUCTIONS, BLOCK_THREADS, T>(reduction_op, type_string);
+    Test<BLOCK_REDUCE_WARP_REDUCTIONS, BLOCK_THREADS, T>(reduction_op);
 #endif
 }
 
@@ -723,15 +711,14 @@ template <
     typename        T,
     typename        ReductionOp>
 void Test(
-    ReductionOp     reduction_op,
-    const char      *type_string)
+    ReductionOp     reduction_op)
 {
-    Test<7,   T>(reduction_op, type_string);
-    Test<32,  T>(reduction_op, type_string);
-    Test<63,  T>(reduction_op, type_string);
-    Test<97,  T>(reduction_op, type_string);
-    Test<128, T>(reduction_op, type_string);
-    Test<238, T>(reduction_op, type_string);
+    Test<7,   T>(reduction_op);
+    Test<32,  T>(reduction_op);
+    Test<63,  T>(reduction_op);
+    Test<97,  T>(reduction_op);
+    Test<128, T>(reduction_op);
+    Test<238, T>(reduction_op);
 }
 
 
@@ -739,10 +726,10 @@ void Test(
  * Run battery of tests for different block sizes
  */
 template <typename T>
-void Test(const char* type_string)
+void Test()
 {
-    Test<T>(Sum(), type_string);
-    Test<T>(Max(), type_string);
+    Test<T>(Sum());
+    Test<T>(Max());
 }
 
 
@@ -781,19 +768,19 @@ int main(int argc, char** argv)
 
     printf("\n full tile ------------------------\n\n");
 
-    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 4, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 4, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 4, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 4, int>(RANDOM, 1, Sum());
+    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 4, int>(RANDOM, 1, Sum());
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 4, int>(RANDOM, 1, Sum());
 
-    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 1, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 1, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 1, int>(RANDOM, 1, Sum(), CUB_TYPE_STRING(int));
+    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 1, int>(RANDOM, 1, Sum());
+    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 1, int>(RANDOM, 1, Sum());
+    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 1, int>(RANDOM, 1, Sum());
 
     printf("\n partial tile ------------------------\n\n");
 
-    TestPartialTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, int>(RANDOM, 7, Sum(), CUB_TYPE_STRING(int));
-    TestPartialTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, int>(RANDOM, 7, Sum(), CUB_TYPE_STRING(int));
-    TestPartialTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, int>(RANDOM, 7, Sum(), CUB_TYPE_STRING(int));
+    TestPartialTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, int>(RANDOM, 7, Sum());
+    TestPartialTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, int>(RANDOM, 7, Sum());
+    TestPartialTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, int>(RANDOM, 7, Sum());
 
 #else
 
@@ -801,29 +788,29 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         // primitives
-        Test<char>(CUB_TYPE_STRING(char));
-        Test<short>(CUB_TYPE_STRING(short));
-        Test<int>(CUB_TYPE_STRING(int));
-        Test<long long>(CUB_TYPE_STRING(long long));
+        Test<char>();
+        Test<short>();
+        Test<int>();
+        Test<long long>();
         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-            Test<double>(CUB_TYPE_STRING(double));
+            Test<double>();
 
-        Test<float>(CUB_TYPE_STRING(float));
+        Test<float>();
 
         // vector types
-        Test<char2>(CUB_TYPE_STRING(char2));
-        Test<short2>(CUB_TYPE_STRING(short2));
-        Test<int2>(CUB_TYPE_STRING(int2));
-        Test<longlong2>(CUB_TYPE_STRING(longlong2));
+        Test<char2>();
+        Test<short2>();
+        Test<int2>();
+        Test<longlong2>();
 
-        Test<char4>(CUB_TYPE_STRING(char4));
-        Test<short4>(CUB_TYPE_STRING(short4));
-        Test<int4>(CUB_TYPE_STRING(int4));
-        Test<longlong4>(CUB_TYPE_STRING(longlong4));
+        Test<char4>();
+        Test<short4>();
+        Test<int4>();
+        Test<longlong4>();
 
         // Complex types
-        Test<TestFoo>(CUB_TYPE_STRING(TestFoo));
-        Test<TestBar>(CUB_TYPE_STRING(TestBar));
+        Test<TestFoo>();
+        Test<TestBar>();
     }
 
 #endif
