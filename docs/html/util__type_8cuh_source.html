@@ -853,7 +853,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;    <span class="keyword">typedef</span> _UnsignedBits       UnsignedBits;</div>
 <div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;</div>
 <div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> Category       CATEGORY    = UNSIGNED_INTEGER;</div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   MIN_KEY     = UnsignedBits(0);</div>
+<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   LOWEST_KEY     = UnsignedBits(0);</div>
 <div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   MAX_KEY     = UnsignedBits(-1);</div>
 <div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;</div>
 <div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;    <span class="keyword">enum</span></div>
@@ -882,7 +882,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00912"></a><span class="lineno">  912</span>&#160;</div>
 <div class="line"><a name="l00913"></a><span class="lineno">  913</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> Category       CATEGORY    = SIGNED_INTEGER;</div>
 <div class="line"><a name="l00914"></a><span class="lineno">  914</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   HIGH_BIT    = UnsignedBits(1) &lt;&lt; ((<span class="keyword">sizeof</span>(UnsignedBits) * 8) - 1);</div>
-<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   MIN_KEY     = HIGH_BIT;</div>
+<div class="line"><a name="l00915"></a><span class="lineno">  915</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   LOWEST_KEY     = HIGH_BIT;</div>
 <div class="line"><a name="l00916"></a><span class="lineno">  916</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   MAX_KEY     = UnsignedBits(-1) ^ HIGH_BIT;</div>
 <div class="line"><a name="l00917"></a><span class="lineno">  917</span>&#160;</div>
 <div class="line"><a name="l00918"></a><span class="lineno">  918</span>&#160;    <span class="keyword">enum</span></div>
@@ -911,7 +911,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;</div>
 <div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> Category       CATEGORY    = FLOATING_POINT;</div>
 <div class="line"><a name="l00946"></a><span class="lineno">  946</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   HIGH_BIT    = UnsignedBits(1) &lt;&lt; ((<span class="keyword">sizeof</span>(UnsignedBits) * 8) - 1);</div>
-<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   MIN_KEY     = UnsignedBits(-1);</div>
+<div class="line"><a name="l00947"></a><span class="lineno">  947</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   LOWEST_KEY     = UnsignedBits(-1);</div>
 <div class="line"><a name="l00948"></a><span class="lineno">  948</span>&#160;    <span class="keyword">static</span> <span class="keyword">const</span> UnsignedBits   MAX_KEY     = UnsignedBits(-1) ^ HIGH_BIT;</div>
 <div class="line"><a name="l00949"></a><span class="lineno">  949</span>&#160;</div>
 <div class="line"><a name="l00950"></a><span class="lineno">  950</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)</div>

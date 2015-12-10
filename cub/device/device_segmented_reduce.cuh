@@ -39,6 +39,7 @@
 
 #include "dispatch/dispatch_reduce.cuh"
 #include "dispatch/dispatch_reduce_by_key.cuh"
+#include "../util_type.cuh"
 #include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
@@ -307,7 +308,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Min(),
-            std::numeric_limits<T>::max(),
+            NumericTraits<T>::Max(),    // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -380,7 +381,7 @@ struct DeviceSegmentedReduce
         typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;  // Wrapped input iterator type
 
         ArgIndexInputIteratorT      d_argmin_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {1, std::numeric_limits<T>::max()};
+        KeyValuePair<OffsetT, T>    init = {1, NumericTraits<T>::Max()};   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin>::Dispatch(
             d_temp_storage,
@@ -401,7 +402,7 @@ struct DeviceSegmentedReduce
      * \brief Computes a device-wide segmented maximum using the greater-than ('>') operator.
      *
      * \par
-     * - Uses <tt>std::numeric_limits<T>::min()</tt> as the initial value of the reduction.
+     * - Uses <tt>std::numeric_limits<T>::lowest()</tt> as the initial value of the reduction.
      * - When input a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
@@ -469,7 +470,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Max(),
-            std::numeric_limits<T>::min(),
+            NumericTraits<T>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -481,7 +482,7 @@ struct DeviceSegmentedReduce
      * \par
      * - The output value type of \p d_out is cub::KeyValuePair <tt><int, T></tt> (assuming the value type of \p d_in is \p T)
      *   - The maximum of the <em>i</em><sup>th</sup> segment is written to <tt>d_out[i].value</tt> and its offset in that segment is written to <tt>d_out[i].key</tt>.
-     *   - The <tt>{1, std::numeric_limits<T>::max()}</tt> tuple is produced for zero-length inputs
+     *   - The <tt>{1, std::numeric_limits<T>::lowest()}</tt> tuple is produced for zero-length inputs
      * - When input a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
@@ -542,7 +543,7 @@ struct DeviceSegmentedReduce
         typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;      // Wrapped input iterator
 
         ArgIndexInputIteratorT      d_argmax_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {1, std::numeric_limits<T>::min()};
+        KeyValuePair<OffsetT, T>    init = {1, NumericTraits<T>::Lowest()};     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
             d_temp_storage,
