@@ -574,7 +574,7 @@ struct DispatchSpmv
                 if (d_temp_storage == NULL)
                 {
                     // Return if the caller is simply requesting the size of the storage allocation
-                    temp_storage_bytes = 0;
+                    temp_storage_bytes = 1;
                     return cudaSuccess;
                 }
 

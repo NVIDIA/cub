@@ -663,16 +663,15 @@ void TestEven(
     LevelT          upper_level[NUM_ACTIVE_CHANNELS],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
     OffsetT         num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT         num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT         row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-    const char*     type_string)
+    OffsetT         row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
 {
     OffsetT total_samples = num_rows * (row_stride_bytes / sizeof(SampleT));
 
     printf("\n----------------------------\n");
-    printf("%s cub::DeviceHistogramEven %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %d/%d channels, max sample ",
+    printf("%s cub::DeviceHistogramEven %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
         num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride_bytes,
-        total_samples, (int) sizeof(SampleT), type_string, entropy_reduction,
+        total_samples, (int) sizeof(SampleT), typeid(SampleT).name(), entropy_reduction, typeid(CounterT).name(),
         NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
     std::cout << CoutCast(max_level) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
@@ -840,16 +839,15 @@ void TestRange(
     LevelT*         levels[NUM_ACTIVE_CHANNELS],                ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
     OffsetT         num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT         num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT         row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-    const char*     type_string)
+    OffsetT         row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
 {
     OffsetT total_samples = num_rows * (row_stride_bytes / sizeof(SampleT));
 
     printf("\n----------------------------\n");
-    printf("%s cub::DeviceHistogramRange %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %d/%d channels, max sample ",
+    printf("%s cub::DeviceHistogramRange %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
         num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride_bytes,
-        total_samples, (int) sizeof(SampleT), type_string, entropy_reduction,
+        total_samples, (int) sizeof(SampleT), typeid(SampleT).name(), entropy_reduction, typeid(CounterT).name(),
         NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
     std::cout << CoutCast(max_level) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
@@ -1025,8 +1023,7 @@ void TestEven(
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     LevelT          max_level,
-    int             max_num_levels,
-    const char*     type_string)
+    int             max_num_levels)
 {
     LevelT lower_level[NUM_ACTIVE_CHANNELS];
     LevelT upper_level[NUM_ACTIVE_CHANNELS];
@@ -1044,7 +1041,7 @@ void TestEven(
     }
 
     TestEven<BACKEND, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
-        max_level, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes, type_string);
+        max_level, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes);
 }
 
 
@@ -1067,8 +1064,7 @@ void TestRange(
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     LevelT          max_level,
-    int             max_num_levels,
-    const char*     type_string)
+    int             max_num_levels)
 {
     // Find smallest level increment
     int max_bins = max_num_levels - 1;
@@ -1087,7 +1083,7 @@ void TestRange(
     }
 
     TestRange<BACKEND, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
-        max_level, entropy_reduction, num_levels, levels, num_row_pixels, num_rows, row_stride_bytes, type_string);
+        max_level, entropy_reduction, num_levels, levels, num_row_pixels, num_rows, row_stride_bytes);
 
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
         delete[] levels[channel];
@@ -1113,14 +1109,13 @@ void Test(
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     LevelT          max_level,
-    int             max_num_levels,
-    const char*     type_string)
+    int             max_num_levels)
 {
     TestEven<CUB, SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels);
 
     TestRange<CUB, SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels);
 }
 
 
@@ -1140,8 +1135,7 @@ void Test(
     OffsetT         row_stride_bytes,
     int             entropy_reduction,
     LevelT          max_level,
-    int             max_num_levels,
-    const char*     type_string)
+    int             max_num_levels)
 {
     int num_levels[NUM_ACTIVE_CHANNELS];
 
@@ -1151,7 +1145,7 @@ void Test(
         num_levels[channel] = max_num_levels;
     }
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels);
 
     // All different levels
     num_levels[0] = max_num_levels;
@@ -1160,7 +1154,7 @@ void Test(
         num_levels[channel] = (num_levels[channel - 1] / 2) + 1;
     }
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels);
 }
 
 
@@ -1180,17 +1174,16 @@ void Test(
     OffsetT         num_rows,
     OffsetT         row_stride_bytes,
     LevelT          max_level,
-    int             max_num_levels,
-    const char*     type_string)
+    int             max_num_levels)
 {
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, 0,   max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, 0,   max_level, max_num_levels);
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, -1,  max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, -1,  max_level, max_num_levels);
 
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, 5,   max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, 5,   max_level, max_num_levels);
 }
 
 
@@ -1208,18 +1201,17 @@ void Test(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
     LevelT          max_level,
-    int             max_num_levels,
-    const char*     type_string)
+    int             max_num_levels)
 {
     OffsetT row_stride_bytes = num_row_pixels * NUM_CHANNELS * sizeof(SampleT);
 
     // No padding
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes, max_level, max_num_levels);
 
     // 13 samples padding
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes + (13 * sizeof(SampleT)), max_level, max_num_levels, type_string);
+        num_row_pixels, num_rows, row_stride_bytes + (13 * sizeof(SampleT)), max_level, max_num_levels);
 }
 
 
@@ -1235,16 +1227,15 @@ template <
     typename        OffsetT>
 void Test(
     LevelT          max_level,
-    int             max_num_levels,
-    const char*     type_string)
+    int             max_num_levels)
 {
     // 1080 image
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        OffsetT(1920), OffsetT(1080), max_level, max_num_levels, type_string);
+        OffsetT(1920), OffsetT(1080), max_level, max_num_levels);
 
     // 720 image
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        OffsetT(1280), OffsetT(720), max_level, max_num_levels, type_string);
+        OffsetT(1280), OffsetT(720), max_level, max_num_levels);
 
     // Sample different image sizes
     for (OffsetT rows = 1; rows < 1000000; rows *= 100)
@@ -1252,7 +1243,7 @@ void Test(
         for (OffsetT cols = 1; cols < (1000000 / rows); cols *= 100)
         {
             Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-                cols, rows, max_level, max_num_levels, type_string);
+                cols, rows, max_level, max_num_levels);
         }
     }
 
@@ -1266,7 +1257,7 @@ void Test(
         num_items = CUB_MAX(1, num_items);
 
         Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-            OffsetT(num_items), 1, max_level, max_num_levels, type_string);
+            OffsetT(num_items), 1, max_level, max_num_levels);
     }
 }
 
@@ -1282,13 +1273,12 @@ template <
     typename        OffsetT>
 void Test(
     LevelT          max_level,
-    int             max_num_levels,
-    const char*     type_string)
+    int             max_num_levels)
 {
-    Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_level, max_num_levels, type_string);
-    Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels, type_string);
-    Test<SampleT, 3, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels, type_string);
-    Test<SampleT, 4, 4, CounterT, LevelT, OffsetT>(max_level, max_num_levels, type_string);
+    Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+    Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+    Test<SampleT, 3, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+    Test<SampleT, 4, 4, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
 }
 
 
@@ -1369,9 +1359,9 @@ int main(int argc, char** argv)
         int     num_levels[1]       = {257};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
         if (compare_npp)
-            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
 
@@ -1387,9 +1377,9 @@ int main(int argc, char** argv)
         int     num_levels[1]       = {257};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
         if (compare_npp)
-            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1401,7 +1391,7 @@ int main(int argc, char** argv)
         int     num_levels[4]       = {257, 257, 257, 257};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
 
-        TestEven<CUB, SampleT, 4, 4, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+        TestEven<CUB, SampleT, 4, 4, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1413,9 +1403,9 @@ int main(int argc, char** argv)
         int     num_levels[3]       = {257, 257, 257};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
 
-        TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+        TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
         if (compare_npp)
-            TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+            TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1427,7 +1417,7 @@ int main(int argc, char** argv)
         int     num_levels[1]       = {257};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned short));
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1439,7 +1429,7 @@ int main(int argc, char** argv)
         int     num_levels[1]       = {257};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(float));
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1451,7 +1441,7 @@ int main(int argc, char** argv)
          int     num_levels[3]       = {257, 257, 257};
          int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
 
-         TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(float));
+         TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1463,7 +1453,7 @@ int main(int argc, char** argv)
         int     num_levels[1]       = {257};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
-        TestRange<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+        TestRange<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1475,7 +1465,7 @@ int main(int argc, char** argv)
         int     num_levels[3]       = {257, 129, 65};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
 
-        TestRange<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned char));
+        TestRange<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
@@ -1488,7 +1478,7 @@ int main(int argc, char** argv)
         int     num_levels[1]       = {65};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(double));
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1500,7 +1490,7 @@ int main(int argc, char** argv)
         int     num_levels[1]       = {513};
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0], CUB_TYPE_STRING(unsigned short));
+        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
 #else
@@ -1508,16 +1498,16 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
-        Test <unsigned char,    int, int,   int>(256,   256 + 1,    CUB_TYPE_STRING(unsigned char));
-        Test <signed char,      int, int,   int>(256,   256 + 1,    CUB_TYPE_STRING(signed char));
-        Test <unsigned short,   int, int,   int>(128,   128 + 1,    CUB_TYPE_STRING(unsigned short));
-        Test <unsigned short,   int, int,   int>(8192,  8192 + 1,   CUB_TYPE_STRING(unsigned short));
-        Test <float,            int, float, int>(1.0,   256 + 1,    CUB_TYPE_STRING(float));
+        Test <unsigned char,    int, int,   int>(256,   256 + 1);
+        Test <signed char,      int, int,   int>(256,   256 + 1);
+        Test <unsigned short,   int, int,   int>(128,   128 + 1);
+        Test <unsigned short,   int, int,   int>(8192,  8192 + 1);
+        Test <float,            int, float, int>(1.0,   256 + 1);
 
 		// Test down-conversion of size_t offsets to int
         if (sizeof(size_t) != sizeof(int))
         {
-            Test <unsigned char,    int, int,   size_t>(256, 256 + 1, CUB_TYPE_STRING(unsigned char));
+            Test <unsigned char,    int, int,   size_t>(256, 256 + 1);
         }
     }
 

@@ -490,7 +490,6 @@ void Test(
     ScanOp              scan_op,
     IdentityT           identity,
     T                   prefix,
-    const char          *type_string,
     Int2Type<true>      sufficient_resources)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
@@ -524,7 +523,7 @@ void Test(
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
         ITEMS_PER_THREAD,  TILE_SIZE,
-        type_string, (int) sizeof(T));
+        typeid(T).name(), (int) sizeof(T));
     fflush(stdout);
 
     // Initialize/clear device arrays
@@ -622,7 +621,6 @@ void Test(
     ScanOp              scan_op,
     IdentityT           identity,
     T                   prefix,
-    const char          *type_string,
     Int2Type<false>     sufficient_resources)
 {}
 
@@ -644,8 +642,7 @@ void Test(
     GenMode             gen_mode,
     ScanOp              scan_op,
     IdentityT           identity,
-    T                   prefix,
-    const char          *type_string)
+    T                   prefix)
 {
     // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockScan<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockScanT;
@@ -669,7 +666,7 @@ void Test(
         sufficient_resources    = (sufficient_smem && sufficient_threads && !special_skip),
     };
 
-    Test<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, type_string, Int2Type<sufficient_resources>());
+    Test<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, Int2Type<sufficient_resources>());
 }
 
 
@@ -689,11 +686,10 @@ void Test(
     GenMode     gen_mode,
     ScanOp      scan_op,
     IdentityT   identity,
-    T           prefix,
-    const char  *type_string)
+    T           prefix)
 {
-    Test<BLOCK_THREADS, 1, 1, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, type_string);
-    Test<BLOCK_THREADS, 2, 2, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, 1, 1, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, 2, 2, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix);
 }
 
 
@@ -711,17 +707,16 @@ void Test(
     GenMode     gen_mode,
     ScanOp      scan_op,
     IdentityT   identity,
-    T           prefix,
-    const char  *type_string)
+    T           prefix)
 {
 #ifdef TEST_RAKING
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, identity, prefix);
 #endif
 #ifdef TEST_RAKING_MEMOIZE
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING_MEMOIZE>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING_MEMOIZE>(gen_mode, scan_op, identity, prefix);
 #endif
 #ifdef TEST_WARP_SCANS
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, identity, prefix);
 #endif
 }
 
@@ -738,18 +733,17 @@ void Test(
     GenMode     gen_mode,
     ScanOp      scan_op,
     T           identity,
-    T           prefix,
-    const char  *type_string)
+    T           prefix)
 {
     // Exclusive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, identity, prefix, type_string);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, AGGREGATE>(gen_mode, scan_op, identity, prefix, type_string);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, AGGREGATE>(gen_mode, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, identity, prefix);
 
     // Inclusive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, NullType(), prefix, type_string);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, AGGREGATE>(gen_mode, scan_op, NullType(), prefix, type_string);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, NullType(), prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, NullType(), prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, AGGREGATE>(gen_mode, scan_op, NullType(), prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, NullType(), prefix);
 }
 
 
@@ -764,15 +758,14 @@ template <
 void Test(
     ScanOp      scan_op,
     T           identity,
-    T           prefix,
-    const char  *type_string)
+    T           prefix)
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM, scan_op, identity, prefix, type_string);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED, scan_op, identity, prefix, type_string);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED, scan_op, identity, prefix);
 
     // Don't test randomly-generated floats b/c of stability
     if (Traits<T>::CATEGORY != FLOATING_POINT)
-        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM, scan_op, identity, prefix, type_string);
+        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM, scan_op, identity, prefix);
 }
 
 
@@ -789,39 +782,39 @@ void Test()
     CubDebugExit(PtxVersion(ptx_version));
 
     // primitive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned char) 0, (unsigned char) 99, CUB_TYPE_STRING(Sum<unsigned char>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned short) 0, (unsigned short) 99, CUB_TYPE_STRING(Sum<unsigned short>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned int) 0, (unsigned int) 99, CUB_TYPE_STRING(Sum<unsigned int>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned long long) 0, (unsigned long long) 99, CUB_TYPE_STRING(Sum<unsigned long long>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (float) 0, (float) 99, CUB_TYPE_STRING(Sum<float>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned char) 0, (unsigned char) 99);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned short) 0, (unsigned short) 99);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned int) 0, (unsigned int) 99);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned long long) 0, (unsigned long long) 99);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (float) 0, (float) 99);
 
     // primitive (alternative scan op)
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<char>::min(), (char) 99, CUB_TYPE_STRING(Max<char>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<short>::min(), (short) 99, CUB_TYPE_STRING(Max<short>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<int>::min(), (int) 99, CUB_TYPE_STRING(Max<int>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<long long>::min(), (long long) 99, CUB_TYPE_STRING(Max<long long>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<char>::min(), (char) 99);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<short>::min(), (short) 99);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<int>::min(), (int) 99);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<long long>::min(), (long long) 99);
 
     if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<double>::max() * -1, (double) 99, CUB_TYPE_STRING(Sum<double>));
+        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<double>::max() * -1, (double) 99);
 
     // vec-1
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar1(0), make_uchar1(17), CUB_TYPE_STRING(Sum<uchar1>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar1(0), make_uchar1(17));
 
     // vec-2
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar2(0, 0), make_uchar2(17, 21), CUB_TYPE_STRING(Sum<uchar2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ushort2(0, 0), make_ushort2(17, 21), CUB_TYPE_STRING(Sum<ushort2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uint2(0, 0), make_uint2(17, 21), CUB_TYPE_STRING(Sum<uint2>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar2(0, 0), make_uchar2(17, 21));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ushort2(0, 0), make_ushort2(17, 21));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uint2(0, 0), make_uint2(17, 21));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21));
 
     // vec-4
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_char4(0, 0, 0, 0), make_char4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<char4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_short4(0, 0, 0, 0), make_short4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<short4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_int4(0, 0, 0, 0), make_int4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<int4>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<longlong4>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_char4(0, 0, 0, 0), make_char4(17, 21, 32, 85));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_short4(0, 0, 0, 0), make_short4(17, 21, 32, 85));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_int4(0, 0, 0, 0), make_int4(17, 21, 32, 85));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85));
 
     // complex
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestBar(0, 0), TestBar(17, 21), CUB_TYPE_STRING(Sum<TestBar>));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85));
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestBar(0, 0), TestBar(17, 21));
 }
 
 
@@ -865,10 +858,10 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    Test<128, 1, 1, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
-    Test<128, 1, 1, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10), CUB_TYPE_STRING(Sum<int>));
-    Test<128, 1, 1, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), NullType(), TestFoo::MakeTestFoo(17, 21, 32, 85), CUB_TYPE_STRING(Sum<TestFoo>));
-    Test<128, 1, 1, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85), CUB_TYPE_STRING(Sum<longlong4>));
+    Test<128, 1, 1, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10));
+    Test<128, 1, 1, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10));
+    Test<128, 1, 1, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), NullType(), TestFoo::MakeTestFoo(17, 21, 32, 85));
+    Test<128, 1, 1, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85));
 
 #else
 
@@ -880,7 +873,7 @@ int main(int argc, char** argv)
         Test<32>();
         Test<62>();
         Test<65>();
-//            Test<96>();             // TODO: file bug for UNREACHABLE error for Test<96, 9, BASIC, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), NullType(), make_ulonglong2(17, 21), CUB_TYPE_STRING(Sum<ulonglong2>));
+//            Test<96>();             // TODO: file bug for UNREACHABLE error for Test<96, 9, BASIC, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), NullType(), make_ulonglong2(17, 21));
         Test<128>();
     }
 

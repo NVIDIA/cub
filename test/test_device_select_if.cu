@@ -604,8 +604,7 @@ void Test(
     SelectOpT               select_op,
     T*                      h_reference,
     int                     num_selected,
-    int                     num_items,
-    const char*             type_string)
+    int                     num_items)
 {
     // Allocate device flags, output, and num-selected
     FlagT*      d_flags = NULL;
@@ -699,8 +698,7 @@ template <
     typename        T>
 void TestPointer(
     int             num_items,
-    float           select_ratio,
-    const char*     type_string)
+    float           select_ratio)
 {
     typedef char FlagT;
 
@@ -729,7 +727,7 @@ void TestPointer(
         (IS_PARTITION) ? "DevicePartition" : "DeviceSelect",
         (IS_FLAGGED) ? "Flagged" : "If",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, float(num_selected) / num_items, type_string, (int) sizeof(T));
+        num_items, num_selected, float(num_selected) / num_items, typeid(T).name(), (int) sizeof(T));
     fflush(stdout);
 
     // Allocate problem device arrays
@@ -741,7 +739,7 @@ void TestPointer(
     CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND, IS_FLAGGED, IS_PARTITION>(d_in, h_flags, select_op, h_reference, num_selected, num_items, type_string);
+    Test<BACKEND, IS_FLAGGED, IS_PARTITION>(d_in, h_flags, select_op, h_reference, num_selected, num_items);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -761,8 +759,7 @@ template <
     typename        T>
 void TestIterator(
     int             num_items,
-    float           select_ratio,
-    const char*     type_string)
+    float           select_ratio)
 {
     typedef char FlagT;
 
@@ -790,11 +787,11 @@ void TestIterator(
         (IS_PARTITION) ? "DevicePartition" : "DeviceSelect",
         (IS_FLAGGED) ? "Flagged" : "If",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        num_items, num_selected, float(num_selected) / num_items, type_string, (int) sizeof(T));
+        num_items, num_selected, float(num_selected) / num_items, typeid(T).name(), (int) sizeof(T));
     fflush(stdout);
 
     // Run Test
-    Test<BACKEND, IS_FLAGGED, IS_PARTITION>(h_in, h_flags, select_op, h_reference, num_selected, num_items, type_string);
+    Test<BACKEND, IS_FLAGGED, IS_PARTITION>(h_in, h_flags, select_op, h_reference, num_selected, num_items);
 
     // Cleanup
     if (h_reference) delete[] h_reference;
@@ -811,12 +808,11 @@ template <
     bool            IS_PARTITION,
     typename        T>
 void Test(
-    int             num_items,
-    const char*     type_string)
+    int             num_items)
 {
     for (float select_ratio = 0; select_ratio <= 1.0; select_ratio += 0.2)
     {
-        TestPointer<BACKEND, IS_FLAGGED, IS_PARTITION, T>(num_items, select_ratio, type_string);
+        TestPointer<BACKEND, IS_FLAGGED, IS_PARTITION, T>(num_items, select_ratio);
     }
 }
 
@@ -828,16 +824,15 @@ template <
     Backend         BACKEND,
     typename        T>
 void TestMethod(
-    int             num_items,
-    const char*     type_string)
+    int             num_items)
 {
     // Functor
-    Test<BACKEND, false, false, T>(num_items, type_string);
-    Test<BACKEND, false, true, T>(num_items, type_string);
+    Test<BACKEND, false, false, T>(num_items);
+    Test<BACKEND, false, true, T>(num_items);
 
     // Flagged
-    Test<BACKEND, true, false, T>(num_items, type_string);
-    Test<BACKEND, true, true, T>(num_items, type_string);
+    Test<BACKEND, true, false, T>(num_items);
+    Test<BACKEND, true, true, T>(num_items);
 }
 
 
@@ -847,12 +842,11 @@ void TestMethod(
 template <
     typename        T>
 void TestOp(
-    int             num_items,
-    const char*     type_string)
+    int             num_items)
 {
-    TestMethod<CUB, T>(num_items, type_string);
+    TestMethod<CUB, T>(num_items);
 #ifdef CUB_CDP
-    TestMethod<CDP, T>(num_items, type_string);
+    TestMethod<CDP, T>(num_items);
 #endif
 }
 
@@ -862,19 +856,18 @@ void TestOp(
  */
 template <typename T>
 void Test(
-    int             num_items,
-    const char*     type_string)
+    int             num_items)
 {
     if (num_items < 0)
     {
-        TestOp<T>(1,        type_string);
-        TestOp<T>(100,      type_string);
-        TestOp<T>(10000,    type_string);
-        TestOp<T>(1000000,  type_string);
+        TestOp<T>(1);
+        TestOp<T>(100);
+        TestOp<T>(10000);
+        TestOp<T>(1000000);
     }
     else
     {
-        TestOp<T>(num_items, type_string);
+        TestOp<T>(num_items);
     }
 }
 
@@ -884,24 +877,23 @@ void Test(
 template <typename T>
 void ComparePointer(
     int             num_items,
-    float           select_ratio,
-    const char*     type_string)
+    float           select_ratio)
 {
     printf("-- Select-if ----------------------------\n");
-    TestPointer<CUB, false, false, T>(num_items, select_ratio, type_string);
-    TestPointer<THRUST, false, false, T>(num_items, select_ratio, type_string);
+    TestPointer<CUB, false, false, T>(num_items, select_ratio);
+    TestPointer<THRUST, false, false, T>(num_items, select_ratio);
 
     printf("-- Partition-if ----------------------------\n");
-    TestPointer<CUB, false, true, T>(num_items, select_ratio, type_string);
-    TestPointer<THRUST, false, true, T>(num_items, select_ratio, type_string);
+    TestPointer<CUB, false, true, T>(num_items, select_ratio);
+    TestPointer<THRUST, false, true, T>(num_items, select_ratio);
 
     printf("-- Select-flagged ----------------------------\n");
-    TestPointer<CUB, true, false, T>(num_items, select_ratio, type_string);
-    TestPointer<THRUST, true, false, T>(num_items, select_ratio, type_string);
+    TestPointer<CUB, true, false, T>(num_items, select_ratio);
+    TestPointer<THRUST, true, false, T>(num_items, select_ratio);
 
     printf("-- Partition-flagged ----------------------------\n");
-    TestPointer<CUB, true, true, T>(num_items, select_ratio, type_string);
-    TestPointer<THRUST, true, true, T>(num_items, select_ratio, type_string);
+    TestPointer<CUB, true, true, T>(num_items, select_ratio);
+    TestPointer<THRUST, true, true, T>(num_items, select_ratio);
 
 }
 
@@ -951,16 +943,16 @@ int main(int argc, char** argv)
     if (num_items < 0) num_items = 32000000;
 
     printf("-- Select-if ----------------------------\n");
-    TestPointer<CUB, false, false, int>(num_items, select_ratio,  CUB_TYPE_STRING(int));
+    TestPointer<CUB, false, false, int>(num_items, select_ratio);
 
     printf("-- Partition-if ----------------------------\n");
-    TestPointer<CUB, false, true, int>(num_items, select_ratio,  CUB_TYPE_STRING(int));
+    TestPointer<CUB, false, true, int>(num_items, select_ratio);
 
     printf("-- Select-flagged ----------------------------\n");
-    TestPointer<CUB, true, false, int>(num_items, select_ratio,  CUB_TYPE_STRING(int));
+    TestPointer<CUB, true, false, int>(num_items, select_ratio);
 
     printf("-- Partition-flagged ----------------------------\n");
-    TestPointer<CUB, true, true, int>(num_items, select_ratio,  CUB_TYPE_STRING(int));
+    TestPointer<CUB, true, true, int>(num_items, select_ratio);
 
 
 #elif defined(QUICK_TEST)
@@ -977,13 +969,13 @@ int main(int argc, char** argv)
     if (num_items < 0) num_items = 32000000;
 
     printf("-- Iterator ----------------------------\n");
-    TestIterator<CUB, false, false, int>(num_items, select_ratio,  CUB_TYPE_STRING(int));
+    TestIterator<CUB, false, false, int>(num_items, select_ratio);
 
-    ComparePointer<char>(       num_items * ((sm_version <= 130) ? 1 : 4),  select_ratio, CUB_TYPE_STRING(char));
-    ComparePointer<short>(      num_items * ((sm_version <= 130) ? 1 : 2),  select_ratio, CUB_TYPE_STRING(short));
-    ComparePointer<int>(        num_items,                                  select_ratio, CUB_TYPE_STRING(int));
-    ComparePointer<long long>(  num_items / 2,                              select_ratio, CUB_TYPE_STRING(long long));
-    ComparePointer<TestFoo>(    num_items / 4,                              select_ratio, CUB_TYPE_STRING(TestFoo));
+    ComparePointer<char>(       num_items * ((sm_version <= 130) ? 1 : 4),  select_ratio);
+    ComparePointer<short>(      num_items * ((sm_version <= 130) ? 1 : 2),  select_ratio);
+    ComparePointer<int>(        num_items,                                  select_ratio);
+    ComparePointer<long long>(  num_items / 2,                              select_ratio);
+    ComparePointer<TestFoo>(    num_items / 4,                              select_ratio);
 
 #else
 
@@ -991,23 +983,23 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         // Test different input types
-        Test<unsigned char>(num_items, CUB_TYPE_STRING(unsigned char));
-        Test<unsigned short>(num_items, CUB_TYPE_STRING(unsigned short));
-        Test<unsigned int>(num_items, CUB_TYPE_STRING(unsigned int));
-        Test<unsigned long long>(num_items, CUB_TYPE_STRING(unsigned long long));
+        Test<unsigned char>(num_items);
+        Test<unsigned short>(num_items);
+        Test<unsigned int>(num_items);
+        Test<unsigned long long>(num_items);
 
-        Test<uchar2>(num_items, CUB_TYPE_STRING(uchar2));
-        Test<ushort2>(num_items, CUB_TYPE_STRING(ushort2));
-        Test<uint2>(num_items, CUB_TYPE_STRING(uint2));
-        Test<ulonglong2>(num_items, CUB_TYPE_STRING(ulonglong2));
+        Test<uchar2>(num_items);
+        Test<ushort2>(num_items);
+        Test<uint2>(num_items);
+        Test<ulonglong2>(num_items);
 
-        Test<uchar4>(num_items, CUB_TYPE_STRING(uchar4));
-        Test<ushort4>(num_items, CUB_TYPE_STRING(ushort4));
-        Test<uint4>(num_items, CUB_TYPE_STRING(uint4));
-        Test<ulonglong4>(num_items, CUB_TYPE_STRING(ulonglong4));
+        Test<uchar4>(num_items);
+        Test<ushort4>(num_items);
+        Test<uint4>(num_items);
+        Test<ulonglong4>(num_items);
 
-        Test<TestFoo>(num_items, CUB_TYPE_STRING(TestFoo));
-        Test<TestBar>(num_items, CUB_TYPE_STRING(TestBar));
+        Test<TestFoo>(num_items);
+        Test<TestBar>(num_items);
     }
 
 #endif

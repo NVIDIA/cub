@@ -706,6 +706,8 @@ struct DispatchReduce :
         cudaStream_t    stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
+        typedef DispatchReduce::MaxPolicy MaxPolicyT;
+
         cudaError error = cudaSuccess;
         do
         {
@@ -720,7 +722,7 @@ struct DispatchReduce :
                 stream, debug_synchronous, ptx_version);
 
             // Dispatch to chained policy
-            if (CubDebug(error = DispatchReduce::MaxPolicy::Invoke(ptx_version, dispatch))) break;
+            if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
         }
         while (0);
 
@@ -907,6 +909,8 @@ struct DispatchSegmentedReduce :
         cudaStream_t    stream,                             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous)                  ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
+        typedef typename DispatchSegmentedReduce::MaxPolicy MaxPolicyT;
+
         if (num_segments <= 0)
             return cudaSuccess;
 
@@ -926,7 +930,7 @@ struct DispatchSegmentedReduce :
                 stream, debug_synchronous, ptx_version);
 
             // Dispatch to chained policy
-            if (CubDebug(error = DispatchSegmentedReduce::MaxPolicy::Invoke(ptx_version, dispatch))) break;
+            if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
         }
         while (0);
 
