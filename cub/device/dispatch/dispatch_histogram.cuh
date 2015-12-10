@@ -637,7 +637,7 @@ struct DipatchHistogram
             int histogram_init_grid_dims        = (max_num_output_bins + histogram_init_block_threads - 1) / histogram_init_block_threads;
 
             // Log DeviceHistogramInitKernel configuration
-            if (debug_synchronous) CubLog("Invoking DeviceHistogramInitKernel<<<%d, %d, 0, %lld>>>()\n",
+            if (debug_synchronous) _CubLog("Invoking DeviceHistogramInitKernel<<<%d, %d, 0, %lld>>>()\n",
                 histogram_init_grid_dims, histogram_init_block_threads, (long long) stream);
 
             // Invoke histogram_init_kernel
@@ -647,7 +647,7 @@ struct DipatchHistogram
                 tile_queue);
 
             // Log histogram_sweep_kernel configuration
-            if (debug_synchronous) CubLog("Invoking histogram_sweep_kernel<<<{%d, %d, %d}, %d, 0, %lld>>>(), %d pixels per thread, %d SM occupancy\n",
+            if (debug_synchronous) _CubLog("Invoking histogram_sweep_kernel<<<{%d, %d, %d}, %d, 0, %lld>>>(), %d pixels per thread, %d SM occupancy\n",
                 sweep_grid_dims.x, sweep_grid_dims.y, sweep_grid_dims.z,
                 histogram_sweep_config.block_threads, (long long) stream, histogram_sweep_config.pixels_per_thread, histogram_sweep_sm_occupancy);
 

@@ -410,7 +410,7 @@ struct DeviceRleDispatch
 
             // Log device_scan_init_kernel configuration
             int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
-            if (debug_synchronous) CubLog("Invoking device_scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            if (debug_synchronous) _CubLog("Invoking device_scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke device_scan_init_kernel to initialize tile descriptors and queue descriptors
             device_scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
@@ -441,7 +441,7 @@ struct DeviceRleDispatch
             scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
             // Log device_rle_sweep_kernel configuration
-            if (debug_synchronous) CubLog("Invoking device_rle_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+            if (debug_synchronous) _CubLog("Invoking device_rle_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
                 scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, device_rle_config.block_threads, (long long) stream, device_rle_config.items_per_thread, device_rle_kernel_sm_occupancy);
 
             // Invoke device_rle_sweep_kernel
