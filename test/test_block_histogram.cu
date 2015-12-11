@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <limits>
 #include <string>
+#include <typeinfo>
 
 #include <cub/block/block_histogram.cuh>
 #include <cub/block/block_load.cuh>
@@ -135,15 +136,14 @@ template <
     int                         ITEMS_PER_THREAD,
     BlockHistogramAlgorithm     ALGORITHM>
 void Test(
-    GenMode                     gen_mode,
-    char*                       type_string)
+    GenMode                     gen_mode)
 {
     int num_samples = BLOCK_THREADS * ITEMS_PER_THREAD;
 
     printf("cub::BlockHistogram %s %d %s samples (%dB), %d bins, %d threads, gen-mode %s\n",
         (ALGORITHM == BLOCK_HISTO_SORT) ? "BLOCK_HISTO_SORT" : "BLOCK_HISTO_ATOMIC",
         num_samples,
-        type_string,
+        typeid(SampleT).name(),
         (int) sizeof(SampleT),
         BINS,
         BLOCK_THREADS,
@@ -202,7 +202,7 @@ template <
     int                         BLOCK_THREADS,
     int                         ITEMS_PER_THREAD,
     BlockHistogramAlgorithm     ALGORITHM>
-void Test(char* type_string)
+void Test()
 {
     Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>(UNIFORM);
     Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>(INTEGER_SEED);
@@ -218,10 +218,10 @@ template <
     int                         BINS,
     int                         BLOCK_THREADS,
     int                         ITEMS_PER_THREAD>
-void Test(char* type_string)
+void Test()
 {
-    Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_HISTO_SORT>(type_string);
-    Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_HISTO_ATOMIC>(type_string);
+    Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_HISTO_SORT>();
+    Test<SampleT, BINS, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_HISTO_ATOMIC>();
 }
 
 
@@ -232,10 +232,10 @@ template <
     typename                    SampleT,
     int                         BINS,
     int                         BLOCK_THREADS>
-void Test(char* type_string)
+void Test()
 {
-    Test<SampleT, BINS, BLOCK_THREADS, 1>(type_string);
-    Test<SampleT, BINS, BLOCK_THREADS, 5>(type_string);
+    Test<SampleT, BINS, BLOCK_THREADS, 1>();
+    Test<SampleT, BINS, BLOCK_THREADS, 5>();
 }
 
 
@@ -245,11 +245,11 @@ void Test(char* type_string)
 template <
     typename                    SampleT,
     int                         BINS>
-void Test(char* type_string)
+void Test()
 {
-    Test<SampleT, BINS, 32>(type_string);
-    Test<SampleT, BINS, 96>(type_string);
-    Test<SampleT, BINS, 128>(type_string);
+    Test<SampleT, BINS, 32>();
+    Test<SampleT, BINS, 96>();
+    Test<SampleT, BINS, 128>();
 }
 
 
@@ -288,17 +288,17 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    Test<unsigned char, 256, 128, 4, BLOCK_HISTO_SORT>(RANDOM, "unsigned char");
-    Test<unsigned char, 256, 128, 4, BLOCK_HISTO_ATOMIC>(RANDOM, "unsigned char");
+    Test<unsigned char, 256, 128, 4, BLOCK_HISTO_SORT>(RANDOM);
+    Test<unsigned char, 256, 128, 4, BLOCK_HISTO_ATOMIC>(RANDOM);
 
 #else
 
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
-        Test<unsigned char, 32>("unsigned char");
-        Test<unsigned char, 256>("unsigned char");
-        Test<unsigned short, 1024>("unsigned short");
+        Test<unsigned char, 32>();
+        Test<unsigned char, 256>();
+        Test<unsigned short, 1024>();
     }
 
 #endif
