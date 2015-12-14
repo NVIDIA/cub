@@ -1,5 +1,20 @@
 //-----------------------------------------------------------------------------
 
+1.5.0    12/14/2015
+    - New Features:
+        - Added new segmented device-wide operations for device-wide sort and 
+          reduction primitives.
+    - Bug fixes: 
+        - Fix for Git Issue 36 (Compilation error with GCC 4.8.4 nvcc 7.0.27) and
+          Forums thread (ThreadLoad generates compiler errors when loading from 
+          pointer-to-const)
+        - Fix for Git Issue 29 (DeviceRadixSort::SortKeys<bool> yields compiler 
+          errors)
+        - Fix for Git Issue 26 (CUDA error: misaligned address after 
+          cub::DeviceRadixSort::SortKeys())
+          
+//-----------------------------------------------------------------------------
+
 1.4.1    04/13/2015
     - Bug fixes: 
         - Fixes for CUDA 7.0 issues with SHFL-based warp-scan and warp-reduction 

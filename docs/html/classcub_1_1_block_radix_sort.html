@@ -129,7 +129,7 @@ class cub::BlockRadixSort&lt; KeyT, BLOCK_DIM_X, ITEMS_PER_THREAD, ValueT, RADIX
     <tr><td class="paramname">KeyT</td><td>KeyT type </td></tr>
     <tr><td class="paramname">BLOCK_DIM_X</td><td>The thread block length in threads along the X dimension </td></tr>
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td>The number of items per thread </td></tr>
-    <tr><td class="paramname">ValueT</td><td><b>[optional]</b> ValueT type (default: <a class="el" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">cub::NullType</a>, which indicates a keys-only sort) </td></tr>
+    <tr><td class="paramname">ValueT</td><td><b>[optional]</b> ValueT type (default: cub::NullType, which indicates a keys-only sort) </td></tr>
     <tr><td class="paramname">RADIX_BITS</td><td><b>[optional]</b> The number of radix bits per digit place (default: 4 bits) </td></tr>
     <tr><td class="paramname">MEMOIZE_OUTER_SCAN</td><td><b>[optional]</b> Whether or not to buffer outer raking scan partials to incur fewer shared memory reads at the expense of higher register pressure (default: true for architectures SM35 and newer, false otherwise). </td></tr>
     <tr><td class="paramname">INNER_SCAN_ALGORITHM</td><td><b>[optional]</b> The <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23ab" title="BlockScanAlgorithm enumerates alternative algorithms for cub::BlockScan to compute a parallel prefix ...">cub::BlockScanAlgorithm</a> algorithm to use (default: <a class="el" href="namespacecub.html#abec44bba36037c547e7e84906d0d23aba7f51e58246eb53f1a97bd1bc8c0f400f">cub::BLOCK_SCAN_WARP_SCANS</a>) </td></tr>
@@ -924,7 +924,7 @@ template&lt;typename KeyT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, typename Valu
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 10 2015 13:58:06 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

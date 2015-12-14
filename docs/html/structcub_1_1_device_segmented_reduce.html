@@ -116,43 +116,43 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </ul>
 </dd></dl>
 
-<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00063">63</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00064">64</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
-<tr class="memitem:abbaebbc469e9603774e1d1fc60435baf"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT , typename ReductionOp , typename T &gt; </td></tr>
-<tr class="memitem:abbaebbc469e9603774e1d1fc60435baf"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#abbaebbc469e9603774e1d1fc60435baf">Reduce</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, ReductionOp reduction_op, T identity, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:abbaebbc469e9603774e1d1fc60435baf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide segmented reduction using the specified binary <code>reduction_op</code> functor.  <a href="#abbaebbc469e9603774e1d1fc60435baf">More...</a><br/></td></tr>
-<tr class="separator:abbaebbc469e9603774e1d1fc60435baf"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a62f13e427316b0caec6168ebd9ba85e3"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </td></tr>
-<tr class="memitem:a62f13e427316b0caec6168ebd9ba85e3"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#a62f13e427316b0caec6168ebd9ba85e3">Sum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, T identity, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a62f13e427316b0caec6168ebd9ba85e3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide segmented sum using the addition ('+') operator.  <a href="#a62f13e427316b0caec6168ebd9ba85e3">More...</a><br/></td></tr>
-<tr class="separator:a62f13e427316b0caec6168ebd9ba85e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a687d16fb62173a4f2630db8fe4db15fe"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </td></tr>
-<tr class="memitem:a687d16fb62173a4f2630db8fe4db15fe"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#a687d16fb62173a4f2630db8fe4db15fe">Min</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, T identity, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a687d16fb62173a4f2630db8fe4db15fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide segmented minimum using the less-than ('&lt;') operator.  <a href="#a687d16fb62173a4f2630db8fe4db15fe">More...</a><br/></td></tr>
-<tr class="separator:a687d16fb62173a4f2630db8fe4db15fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1adbde01527b1df8fd326569dce6aa03"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </td></tr>
-<tr class="memitem:a1adbde01527b1df8fd326569dce6aa03"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#a1adbde01527b1df8fd326569dce6aa03">ArgMin</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, T identity, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a1adbde01527b1df8fd326569dce6aa03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the first device-wide minimum in each segment using the less-than ('&lt;') operator, also returning the in-segment index of that item.  <a href="#a1adbde01527b1df8fd326569dce6aa03">More...</a><br/></td></tr>
-<tr class="separator:a1adbde01527b1df8fd326569dce6aa03"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a81cc146a6aa537728469ca76f5d91c16"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </td></tr>
-<tr class="memitem:a81cc146a6aa537728469ca76f5d91c16"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#a81cc146a6aa537728469ca76f5d91c16">Max</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, T identity, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a81cc146a6aa537728469ca76f5d91c16"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide segmented maximum using the greater-than ('&gt;') operator.  <a href="#a81cc146a6aa537728469ca76f5d91c16">More...</a><br/></td></tr>
-<tr class="separator:a81cc146a6aa537728469ca76f5d91c16"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abf36bf795ef905c5f3736f46e7f5d0da"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </td></tr>
-<tr class="memitem:abf36bf795ef905c5f3736f46e7f5d0da"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#abf36bf795ef905c5f3736f46e7f5d0da">ArgMax</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, T identity, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:abf36bf795ef905c5f3736f46e7f5d0da"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the first device-wide maximum in each segment using the greater-than ('&gt;') operator, also returning the in-segment index of that item.  <a href="#abf36bf795ef905c5f3736f46e7f5d0da">More...</a><br/></td></tr>
-<tr class="separator:abf36bf795ef905c5f3736f46e7f5d0da"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad9b73f245930740c4d8786fc1a812364"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT , typename ReductionOp , typename T &gt; </td></tr>
+<tr class="memitem:ad9b73f245930740c4d8786fc1a812364"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#ad9b73f245930740c4d8786fc1a812364">Reduce</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, ReductionOp reduction_op, T init, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:ad9b73f245930740c4d8786fc1a812364"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide segmented reduction using the specified binary <code>reduction_op</code> functor.  <a href="#ad9b73f245930740c4d8786fc1a812364">More...</a><br/></td></tr>
+<tr class="separator:ad9b73f245930740c4d8786fc1a812364"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aefdf8fcdfb5e5d76459ee222360924eb"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </td></tr>
+<tr class="memitem:aefdf8fcdfb5e5d76459ee222360924eb"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#aefdf8fcdfb5e5d76459ee222360924eb">Sum</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:aefdf8fcdfb5e5d76459ee222360924eb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide segmented sum using the addition ('+') operator.  <a href="#aefdf8fcdfb5e5d76459ee222360924eb">More...</a><br/></td></tr>
+<tr class="separator:aefdf8fcdfb5e5d76459ee222360924eb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2fb8a073bb504afd0e05cd06d008ec29"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </td></tr>
+<tr class="memitem:a2fb8a073bb504afd0e05cd06d008ec29"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#a2fb8a073bb504afd0e05cd06d008ec29">Min</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a2fb8a073bb504afd0e05cd06d008ec29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide segmented minimum using the less-than ('&lt;') operator.  <a href="#a2fb8a073bb504afd0e05cd06d008ec29">More...</a><br/></td></tr>
+<tr class="separator:a2fb8a073bb504afd0e05cd06d008ec29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a085150ad8d55de8665b45a3f69f38bce"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </td></tr>
+<tr class="memitem:a085150ad8d55de8665b45a3f69f38bce"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#a085150ad8d55de8665b45a3f69f38bce">ArgMin</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a085150ad8d55de8665b45a3f69f38bce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the first device-wide minimum in each segment using the less-than ('&lt;') operator, also returning the in-segment index of that item.  <a href="#a085150ad8d55de8665b45a3f69f38bce">More...</a><br/></td></tr>
+<tr class="separator:a085150ad8d55de8665b45a3f69f38bce"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa1f982f913c95d9974412b8fc0995183"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </td></tr>
+<tr class="memitem:aa1f982f913c95d9974412b8fc0995183"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#aa1f982f913c95d9974412b8fc0995183">Max</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:aa1f982f913c95d9974412b8fc0995183"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes a device-wide segmented maximum using the greater-than ('&gt;') operator.  <a href="#aa1f982f913c95d9974412b8fc0995183">More...</a><br/></td></tr>
+<tr class="separator:aa1f982f913c95d9974412b8fc0995183"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad0e1f7eede9a0f93a379950eac7d8329"><td class="memTemplParams" colspan="2">template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </td></tr>
+<tr class="memitem:ad0e1f7eede9a0f93a379950eac7d8329"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_reduce.html#ad0e1f7eede9a0f93a379950eac7d8329">ArgMax</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, InputIteratorT d_in, OutputIteratorT d_out, int num_segments, int *d_begin_offsets, int *d_end_offsets, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:ad0e1f7eede9a0f93a379950eac7d8329"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finds the first device-wide maximum in each segment using the greater-than ('&gt;') operator, also returning the in-segment index of that item.  <a href="#ad0e1f7eede9a0f93a379950eac7d8329">More...</a><br/></td></tr>
+<tr class="separator:ad0e1f7eede9a0f93a379950eac7d8329"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="abbaebbc469e9603774e1d1fc60435baf"></a>
+<a class="anchor" id="ad9b73f245930740c4d8786fc1a812364"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -213,7 +213,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename Reduct
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>identity</em>, </td>
+          <td class="paramname"><em>init</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -242,13 +242,12 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename Reduct
 
 <p>Computes a device-wide segmented reduction using the specified binary <code>reduction_op</code> functor. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The specified <code>identity</code> value is produced for zero-length segments. <code>identity</code> is assumed to be arithmetically neutral for the given operation, i.e., <code>reduction_op(XXX, identity)</code> will return <code>XXX</code>.</li>
-<li>Does not support non-commutative reduction operators.</li>
+<li>Does not support binary reduction operators that are non-commutative.</li>
 <li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a custom min reduction of a device vector of <code>int</code> items. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates a custom min-reduction of a device vector of <code>int</code> data elements. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// CustomMin functor</span></div>
@@ -267,30 +266,30 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename Reduct
 <div class="line"><span class="keywordtype">int</span>          *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_out;         <span class="comment">// e.g., [-, -, -]</span></div>
 <div class="line">CustomMin    min_op;</div>
-<div class="line"><span class="keywordtype">int</span>          identity;       <span class="comment">// e.g., MAX_INT</span></div>
+<div class="line"><span class="keywordtype">int</span>          init;           <span class="comment">// e.g., INT_MAX</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#abbaebbc469e9603774e1d1fc60435baf" title="Computes a device-wide segmented reduction using the specified binary reduction_op functor...">cub::DeviceSegmentedReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, min_op, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#ad9b73f245930740c4d8786fc1a812364" title="Computes a device-wide segmented reduction using the specified binary reduction_op functor...">cub::DeviceSegmentedReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1, min_op, init);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#abbaebbc469e9603774e1d1fc60435baf" title="Computes a device-wide segmented reduction using the specified binary reduction_op functor...">cub::DeviceSegmentedReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, min_op, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#ad9b73f245930740c4d8786fc1a812364" title="Computes a device-wide segmented reduction using the specified binary reduction_op functor...">cub::DeviceSegmentedReduce::Reduce</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1, min_op, init);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out &lt;-- [6, MAX_INT, 0]</span></div>
+<div class="line"><span class="comment">// d_out &lt;-- [6, INT_MAX, 0]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> (e.g., <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
-    <tr><td class="paramname">T</td><td><b>[inferred]</b> Data type being reduced </td></tr>
+    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">T</td><td><b>[inferred]</b> Data element type that is convertible to the <code>value</code> type of <code>InputIteratorT</code> </td></tr>
   </table>
   </dd>
 </dl>
@@ -303,23 +302,23 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename Reduct
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>The identity value to be returned for zero-length segments </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction functor </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">init</td><td>Initial value of the reduction for each segment </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00132">132</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00130">130</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a62f13e427316b0caec6168ebd9ba85e3"></a>
+<a class="anchor" id="aefdf8fcdfb5e5d76459ee222360924eb"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </div>
+template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -369,12 +368,6 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>identity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">cudaStream_t&#160;</td>
           <td class="paramname"><em>stream</em> = <code>0</code>, </td>
         </tr>
@@ -399,13 +392,13 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 
 <p>Computes a device-wide segmented sum using the addition ('+') operator. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The specified <code>identity</code> value is produced for zero-length segments. <code>identity</code> is assumed to be arithmetically neutral for the input type's addition operation, i.e., <code>XXX + identity = XXX </code></li>
+<li>Uses <code>0</code> as the initial value of the reduction for each segment.</li>
 <li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
-<li>Does not support non-commutative reduction operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>Does not support <code>+</code> operators that are non-commutative..</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the sum reduction of a device vector of <code>int</code> items. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the sum reduction of a device vector of <code>int</code> data elements. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
@@ -413,21 +406,20 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 <div class="line"><span class="keywordtype">int</span> *d_offsets;     <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span> *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line"><span class="keywordtype">int</span> *d_out;         <span class="comment">// e.g., [-, -, -]</span></div>
-<div class="line"><span class="keywordtype">int</span> identity        <span class="comment">// e.g., 0</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a62f13e427316b0caec6168ebd9ba85e3" title="Computes a device-wide segmented sum using the addition (&#39;+&#39;) operator. ">cub::DeviceSegmentedReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#aefdf8fcdfb5e5d76459ee222360924eb" title="Computes a device-wide segmented sum using the addition (&#39;+&#39;) operator. ">cub::DeviceSegmentedReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sum-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a62f13e427316b0caec6168ebd9ba85e3" title="Computes a device-wide segmented sum using the addition (&#39;+&#39;) operator. ">cub::DeviceSegmentedReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#aefdf8fcdfb5e5d76459ee222360924eb" title="Computes a device-wide segmented sum using the addition (&#39;+&#39;) operator. ">cub::DeviceSegmentedReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_out &lt;-- [21, 0, 17]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -435,7 +427,6 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">T</td><td><b>[inferred]</b> Data type being reduced </td></tr>
   </table>
   </dd>
 </dl>
@@ -448,22 +439,21 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>The identity value to be returned for zero-length segments </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00217">217</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00210">210</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a687d16fb62173a4f2630db8fe4db15fe"></a>
+<a class="anchor" id="a2fb8a073bb504afd0e05cd06d008ec29"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </div>
+template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -513,12 +503,6 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>identity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">cudaStream_t&#160;</td>
           <td class="paramname"><em>stream</em> = <code>0</code>, </td>
         </tr>
@@ -543,13 +527,13 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 
 <p>Computes a device-wide segmented minimum using the less-than ('&lt;') operator. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The specified <code>identity</code> value is produced for zero-length segments. <code>identity</code> is assumed to be arithmetically neutral for the input type's <code>&lt;</code> operation, i.e., <code>(identity &lt; XXX) = false</code></li>
+<li>Uses <code>std::numeric_limits&lt;T&gt;::max()</code> as the initial value of the reduction for each segment.</li>
 <li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
-<li>Does not support non-commutative minimum operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>Does not support <code>&lt;</code> operators that are non-commutative.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the min-reduction of a device vector of <code>int</code> items. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the min-reduction of a device vector of <code>int</code> data elements. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
@@ -557,29 +541,27 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 <div class="line"><span class="keywordtype">int</span> *d_offsets;     <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span> *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line"><span class="keywordtype">int</span> *d_out;         <span class="comment">// e.g., [-, -, -]</span></div>
-<div class="line"><span class="keywordtype">int</span> identity;       <span class="comment">// e.g., MAX_INT</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a687d16fb62173a4f2630db8fe4db15fe" title="Computes a device-wide segmented minimum using the less-than (&#39;&lt;&#39;) operator. ">cub::DeviceSegmentedReduce::Min</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a2fb8a073bb504afd0e05cd06d008ec29" title="Computes a device-wide segmented minimum using the less-than (&#39;&lt;&#39;) operator. ">cub::DeviceSegmentedReduce::Min</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run min-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a687d16fb62173a4f2630db8fe4db15fe" title="Computes a device-wide segmented minimum using the less-than (&#39;&lt;&#39;) operator. ">cub::DeviceSegmentedReduce::Min</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a2fb8a073bb504afd0e05cd06d008ec29" title="Computes a device-wide segmented minimum using the less-than (&#39;&lt;&#39;) operator. ">cub::DeviceSegmentedReduce::Min</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out &lt;-- [6, MAX_INT, 0]</span></div>
+<div class="line"><span class="comment">// d_out &lt;-- [6, INT_MAX, 0]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">T</td><td><b>[inferred]</b> Data type being reduced </td></tr>
   </table>
   </dd>
 </dl>
@@ -592,22 +574,21 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>The identity value to be returned for zero-length segments </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00301">301</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00288">288</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a1adbde01527b1df8fd326569dce6aa03"></a>
+<a class="anchor" id="a085150ad8d55de8665b45a3f69f38bce"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </div>
+template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -657,12 +638,6 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>identity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">cudaStream_t&#160;</td>
           <td class="paramname"><em>stream</em> = <code>0</code>, </td>
         </tr>
@@ -687,14 +662,17 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 
 <p>Finds the first device-wide minimum in each segment using the less-than ('&lt;') operator, also returning the in-segment index of that item. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assuming the input <code>d_in</code> has value type <code>T</code>, the output <code>d_out</code> must have value type <code>KeyValuePair&lt;int, T&gt;</code>. The minimum value is written to <code>d_out.value</code> and its location in the input array is written to <code>d_out.key</code>.</li>
-<li>The specified <code>identity</code> value is produced for zero-length segments. <code>identity</code> is assumed to be arithmetically neutral for the input type's <code>&lt;</code> operation, i.e., <code>(identity &lt; XXX) = false</code></li>
+<li>The output value type of <code>d_out</code> is cub::KeyValuePair <code>&lt;int, T&gt;</code> (assuming the value type of <code>d_in</code> is <code>T</code>)<ul>
+<li>The minimum of the <em>i</em><sup>th</sup> segment is written to <code>d_out[i].value</code> and its offset in that segment is written to <code>d_out[i].key</code>.</li>
+<li>The <code>{1, std::numeric_limits&lt;T&gt;::max()}</code> tuple is produced for zero-length inputs</li>
+</ul>
+</li>
 <li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
-<li>Does not support non-commutative minimum operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>Does not support <code>&lt;</code> operators that are non-commutative.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the argmin-reduction of a device vector of <code>int</code> items. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the argmin-reduction of a device vector of <code>int</code> data elements. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
@@ -702,29 +680,27 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 <div class="line"><span class="keywordtype">int</span>                      *d_offsets;     <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>                      *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line">KeyValuePair&lt;int, int&gt;   *d_out;         <span class="comment">// e.g., [{-,-}, {-,-}, {-,-}]</span></div>
-<div class="line"><span class="keywordtype">int</span>                      identity;       <span class="comment">// e.g., MAX_INT</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a1adbde01527b1df8fd326569dce6aa03" title="Finds the first device-wide minimum in each segment using the less-than (&#39;&lt;&#39;) operator, also returning the in-segment index of that item. ">cub::DeviceSegmentedReduce::ArgMin</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a085150ad8d55de8665b45a3f69f38bce" title="Finds the first device-wide minimum in each segment using the less-than (&#39;&lt;&#39;) operator, also returning the in-segment index of that item. ">cub::DeviceSegmentedReduce::ArgMin</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run argmin-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a1adbde01527b1df8fd326569dce6aa03" title="Finds the first device-wide minimum in each segment using the less-than (&#39;&lt;&#39;) operator, also returning the in-segment index of that item. ">cub::DeviceSegmentedReduce::ArgMin</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a085150ad8d55de8665b45a3f69f38bce" title="Finds the first device-wide minimum in each segment using the less-than (&#39;&lt;&#39;) operator, also returning the in-segment index of that item. ">cub::DeviceSegmentedReduce::ArgMin</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out &lt;-- [{1,6}, {-1,MAX_INT}, {2,0}]</span></div>
+<div class="line"><span class="comment">// d_out &lt;-- [{1,6}, {1,INT_MAX}, {2,0}]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (of some type <code>T</code>) (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <code>KeyValuePair&lt;int, T&gt;</code>) (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">T</td><td><b>[inferred]</b> Data type being reduced </td></tr>
   </table>
   </dd>
 </dl>
@@ -737,22 +713,21 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>The identity value to be returned for zero-length segments </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00388">388</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00368">368</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a81cc146a6aa537728469ca76f5d91c16"></a>
+<a class="anchor" id="aa1f982f913c95d9974412b8fc0995183"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </div>
+template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -802,12 +777,6 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>identity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">cudaStream_t&#160;</td>
           <td class="paramname"><em>stream</em> = <code>0</code>, </td>
         </tr>
@@ -832,13 +801,13 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 
 <p>Computes a device-wide segmented maximum using the greater-than ('&gt;') operator. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The specified <code>identity</code> value is produced for zero-length segments. <code>identity</code> is assumed to be arithmetically neutral for the input type's <code>&gt;</code> operation, i.e., <code>(identity &gt; XXX) = false</code></li>
+<li>Uses <code>std::numeric_limits&lt;T&gt;::lowest()</code> as the initial value of the reduction.</li>
 <li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
-<li>Does not support non-commutative maximum operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>Does not support <code>&gt;</code> operators that are non-commutative.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the max-reduction of a device vector of <code>int</code> items. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the max-reduction of a device vector of <code>int</code> data elements. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
@@ -846,29 +815,27 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 <div class="line"><span class="keywordtype">int</span> *d_offsets;     <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span> *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line"><span class="keywordtype">int</span> *d_out;         <span class="comment">// e.g., [-, -, -]</span></div>
-<div class="line"><span class="keywordtype">int</span> identity;       <span class="comment">// e.g., MIN_INT</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a81cc146a6aa537728469ca76f5d91c16" title="Computes a device-wide segmented maximum using the greater-than (&#39;&gt;&#39;) operator. ">cub::DeviceSegmentedReduce::Max</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#aa1f982f913c95d9974412b8fc0995183" title="Computes a device-wide segmented maximum using the greater-than (&#39;&gt;&#39;) operator. ">cub::DeviceSegmentedReduce::Max</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run max-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#a81cc146a6aa537728469ca76f5d91c16" title="Computes a device-wide segmented maximum using the greater-than (&#39;&gt;&#39;) operator. ">cub::DeviceSegmentedReduce::Max</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#aa1f982f913c95d9974412b8fc0995183" title="Computes a device-wide segmented maximum using the greater-than (&#39;&gt;&#39;) operator. ">cub::DeviceSegmentedReduce::Max</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out &lt;-- [8, MIN_INT, 9]</span></div>
+<div class="line"><span class="comment">// d_out &lt;-- [8, INT_MIN, 9]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">T</td><td><b>[inferred]</b> Data type being reduced </td></tr>
   </table>
   </dd>
 </dl>
@@ -881,22 +848,21 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>The identity value to be returned for zero-length segments </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00478">478</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00450">450</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="abf36bf795ef905c5f3736f46e7f5d0da"></a>
+<a class="anchor" id="ad0e1f7eede9a0f93a379950eac7d8329"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt; </div>
+template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -946,12 +912,6 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T&#160;</td>
-          <td class="paramname"><em>identity</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">cudaStream_t&#160;</td>
           <td class="paramname"><em>stream</em> = <code>0</code>, </td>
         </tr>
@@ -976,14 +936,17 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 
 <p>Finds the first device-wide maximum in each segment using the greater-than ('&gt;') operator, also returning the in-segment index of that item. </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>Assuming the input <code>d_in</code> has value type <code>T</code>, the output <code>d_out</code> must have value type <code>KeyValuePair&lt;int, T&gt;</code>. The maximum value is written to <code>d_out.value</code> and its location in the input array is written to <code>d_out.key</code>.</li>
-<li>The specified <code>identity</code> value is produced for zero-length segments. <code>identity</code> is assumed to be arithmetically neutral for the input type's <code>&gt;</code> operation, i.e., <code>(identity &gt; XXX) = false</code></li>
+<li>The output value type of <code>d_out</code> is cub::KeyValuePair <code>&lt;int, T&gt;</code> (assuming the value type of <code>d_in</code> is <code>T</code>)<ul>
+<li>The maximum of the <em>i</em><sup>th</sup> segment is written to <code>d_out[i].value</code> and its offset in that segment is written to <code>d_out[i].key</code>.</li>
+<li>The <code>{1, std::numeric_limits&lt;T&gt;::lowest()}</code> tuple is produced for zero-length inputs</li>
+</ul>
+</li>
 <li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
-<li>Does not support non-commutative maximum operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
+<li>Does not support <code>&gt;</code> operators that are non-commutative.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the argmax-reduction of a device vector of <code>int</code> items. </dd></dl>
+<dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the argmax-reduction of a device vector of <code>int</code> data elements. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_reduce.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
@@ -991,29 +954,27 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 <div class="line"><span class="keywordtype">int</span>                      *d_offsets;     <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>                      *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line">KeyValuePair&lt;int, int&gt;   *d_out;         <span class="comment">// e.g., [{-,-}, {-,-}, {-,-}]</span></div>
-<div class="line"><span class="keywordtype">int</span>                      identity;       <span class="comment">// e.g., MIN_INT</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#abf36bf795ef905c5f3736f46e7f5d0da" title="Finds the first device-wide maximum in each segment using the greater-than (&#39;&gt;&#39;) operator...">cub::DeviceSegmentedReduce::ArgMax</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#ad0e1f7eede9a0f93a379950eac7d8329" title="Finds the first device-wide maximum in each segment using the greater-than (&#39;&gt;&#39;) operator...">cub::DeviceSegmentedReduce::ArgMax</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run argmax-reduction</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#abf36bf795ef905c5f3736f46e7f5d0da" title="Finds the first device-wide maximum in each segment using the greater-than (&#39;&gt;&#39;) operator...">cub::DeviceSegmentedReduce::ArgMax</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1, identity);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_reduce.html#ad0e1f7eede9a0f93a379950eac7d8329" title="Finds the first device-wide maximum in each segment using the greater-than (&#39;&gt;&#39;) operator...">cub::DeviceSegmentedReduce::ArgMax</a>(d_temp_storage, temp_storage_bytes, d_in, d_out,</div>
+<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// d_out &lt;-- [{0,8}, {-1,MIN_INT}, {3,9}]</span></div>
+<div class="line"><span class="comment">// d_out &lt;-- [{0,8}, {1,INT_MIN}, {3,9}]</span></div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">InputIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading input items (of some type <code>T</code>) (may be a simple pointer type) </td></tr>
     <tr><td class="paramname">OutputIteratorT</td><td><b>[inferred]</b> Output iterator type for recording the reduced aggregate (having value type <code>KeyValuePair&lt;int, T&gt;</code>) (may be a simple pointer type) </td></tr>
-    <tr><td class="paramname">T</td><td><b>[inferred]</b> Data type being reduced </td></tr>
   </table>
   </dd>
 </dl>
@@ -1026,14 +987,13 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>The identity value to be returned for zero-length segments </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. Also causes launch configurations to be printed to the console. Default is <code>false</code>. </td></tr>
   </table>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00565">565</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__reduce_8cuh_source.html#l00530">530</a> of file <a class="el" href="device__segmented__reduce_8cuh_source.html">device_segmented_reduce.cuh</a>.</p>
 
 </div>
 </div>
@@ -1044,7 +1004,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename T &gt;
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Nov 18 2015 10:24:47 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:18 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
