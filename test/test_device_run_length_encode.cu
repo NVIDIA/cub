@@ -756,6 +756,7 @@ void TestSize(
 {
     if (num_items < 0)
     {
+        TestDispatch<T, OffsetT, LengthT>(0);
         TestDispatch<T, OffsetT, LengthT>(1);
         TestDispatch<T, OffsetT, LengthT>(100);
         TestDispatch<T, OffsetT, LengthT>(10000);

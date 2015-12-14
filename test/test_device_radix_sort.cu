@@ -728,7 +728,7 @@ void Test(
         CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values.d_buffers[1], sizeof(ValueT) * num_items));
     }
 
-    // Allocate temporary storage
+    // Allocate temporary storage (and make it un-aligned)
     size_t  temp_storage_bytes  = 0;
     void    *d_temp_storage     = NULL;
     CubDebugExit(Dispatch(
@@ -736,7 +736,9 @@ void Test(
         d_temp_storage, temp_storage_bytes, d_keys, d_values,
         num_items, num_segments, d_segment_offsets,
         begin_bit, end_bit, 0, true));
-    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
+
+    CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes + 1));
+    void* mis_aligned_temp = static_cast<char*>(d_temp_storage) + 1;
 
     // Initialize/clear device arrays
     d_keys.selector = 0;
@@ -753,7 +755,7 @@ void Test(
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(
         Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_keys, d_values,
+        mis_aligned_temp, temp_storage_bytes, d_keys, d_values,
         num_items, num_segments, d_segment_offsets,
         begin_bit, end_bit, 0, true));
 
@@ -799,7 +801,7 @@ void Test(
         gpu_timer.Start();
         CubDebugExit(Dispatch(
             Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error,
-            d_temp_storage, temp_storage_bytes, d_keys, d_values,
+            mis_aligned_temp, temp_storage_bytes, d_keys, d_values,
             num_items, num_segments, d_segment_offsets,
             begin_bit, end_bit, 0, false));
         gpu_timer.Stop();
@@ -1018,6 +1020,7 @@ void TestSizes(
         TestSegments(h_keys, num_items, max_segments);
     }
     TestSegments(h_keys, 1, max_segments);
+    TestSegments(h_keys, 0, max_segments);
 }
 
 
@@ -1218,7 +1221,6 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         TestGen<bool>                 (num_items, num_segments);
-/*
         TestGen<char>                 (num_items, num_segments);
         TestGen<signed char>          (num_items, num_segments);
         TestGen<unsigned char>        (num_items, num_segments);
@@ -1239,8 +1241,6 @@ int main(int argc, char** argv)
 
         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
             TestGen<double>           (num_items, num_segments);
-*/
-
     }
 
 #endif

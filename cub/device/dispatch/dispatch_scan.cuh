@@ -59,7 +59,6 @@ namespace cub {
  * Initialization kernel for tile status initialization (multi-block)
  */
 template <
-    typename            OffsetT,            ///< Signed integer type for global offsets
     typename            ScanTileStateT>     ///< Tile status interface type
 __global__ void DeviceScanInitKernel(
     ScanTileStateT      tile_state,         ///< [in] Tile status interface
@@ -67,6 +66,25 @@ __global__ void DeviceScanInitKernel(
 {
     // Initialize tile status
     tile_state.InitializeStatus(num_tiles);
+}
+
+/**
+ * Initialization kernel for tile status initialization (multi-block)
+ */
+template <
+    typename            ScanTileStateT,         ///< Tile status interface type
+    typename            NumSelectedIteratorT>   ///< Output iterator type for recording the number of items selected
+__global__ void DeviceCompactInitKernel(
+    ScanTileStateT          tile_state,             ///< [in] Tile status interface
+    int                     num_tiles,              ///< [in] Number of tiles
+    NumSelectedIteratorT    d_num_selected_out) ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+{
+    // Initialize tile status
+    tile_state.InitializeStatus(num_tiles);
+
+    // Initialize d_num_selected_out
+    if ((blockIdx.x == 0) && (threadIdx.x == 0))
+        *d_num_selected_out = 0;
 }
 
 
@@ -415,8 +433,12 @@ struct DispatchScan
             if (d_temp_storage == NULL)
             {
                 // Return if the caller is simply requesting the size of the storage allocation
-                return cudaSuccess;
+                break;
             }
+
+            // Return if empty problem
+            if (num_items == 0)
+                break;
 
             // Construct the tile status interface
             ScanTileStateT tile_state;
@@ -519,7 +541,7 @@ struct DispatchScan
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<OffsetT, ScanTileStateT>,
+                DeviceScanInitKernel<ScanTileStateT>,
                 DeviceScanSweepKernel<PtxAgentScanPolicy, InputIteratorT, OutputIteratorT, ScanTileStateT, ScanOpT, IdentityT, OffsetT>,
                 scan_sweep_config))) break;
         }
