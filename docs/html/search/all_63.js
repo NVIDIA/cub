@@ -8,8 +8,8 @@ var searchData=
   ['cachemodifiedoutputiterator',['CacheModifiedOutputIterator',['../classcub_1_1_cache_modified_output_iterator.html',1,'cub']]],
   ['cachemodifiedoutputiterator',['CacheModifiedOutputIterator',['../classcub_1_1_cache_modified_output_iterator.html#a8d19a08f1fdc19bf71521beb5ccfd5c7',1,'cub::CacheModifiedOutputIterator']]],
   ['cachestoremodifier',['CacheStoreModifier',['../group___util_io.html#ga648d25a92a50ca41cf73e93a35f21f37',1,'cub']]],
-  ['cachingdeviceallocator',['CachingDeviceAllocator',['../structcub_1_1_caching_device_allocator.html#a8819cc293615f15d1f08f41140349b90',1,'cub::CachingDeviceAllocator::CachingDeviceAllocator(unsigned int bin_growth, unsigned int min_bin, unsigned int max_bin, size_t max_cached_bytes, bool skip_cleanup=false)'],['../structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff',1,'cub::CachingDeviceAllocator::CachingDeviceAllocator(bool skip_cleanup=false)']]],
   ['cachingdeviceallocator',['CachingDeviceAllocator',['../structcub_1_1_caching_device_allocator.html',1,'cub']]],
+  ['cachingdeviceallocator',['CachingDeviceAllocator',['../structcub_1_1_caching_device_allocator.html#a8819cc293615f15d1f08f41140349b90',1,'cub::CachingDeviceAllocator::CachingDeviceAllocator(unsigned int bin_growth, unsigned int min_bin, unsigned int max_bin, size_t max_cached_bytes, bool skip_cleanup=false)'],['../structcub_1_1_caching_device_allocator.html#ab08a4c3d066ec2303d07363a25466bff',1,'cub::CachingDeviceAllocator::CachingDeviceAllocator(bool skip_cleanup=false)']]],
   ['cast',['Cast',['../structcub_1_1_cast.html',1,'cub']]],
   ['composite',['Composite',['../classcub_1_1_block_histogram.html#a90ef25b7af7ce819367eca662a47dd2d',1,'cub::BlockHistogram']]],
   ['constant_5finput_5fiterator_2ecuh',['constant_input_iterator.cuh',['../constant__input__iterator_8cuh.html',1,'']]],
@@ -22,8 +22,5 @@ var searchData=
   ['cub',['cub',['../namespacecub.html',1,'']]],
   ['cub_2ecuh',['cub.cuh',['../cub_8cuh.html',1,'']]],
   ['cubdebug',['CubDebug',['../group___util_mgmt.html#ga84c3a4c178bf6593e0fad2b763606236',1,'util_debug.cuh']]],
-  ['cubdebugexit',['CubDebugExit',['../group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8',1,'util_debug.cuh']]],
-  ['cublog',['CubLog',['../group___util_mgmt.html#ga6788287a780dc10c443aa1ab5ae9f0db',1,'util_debug.cuh']]],
-  ['cubvector',['CubVector',['../structcub_1_1_cub_vector.html',1,'cub']]],
-  ['current',['Current',['../structcub_1_1_double_buffer.html#a861d3dff1a70d5e5926057a44d9b8724',1,'cub::DoubleBuffer']]]
+  ['cubdebugexit',['CubDebugExit',['../group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8',1,'util_debug.cuh']]]
 ];
