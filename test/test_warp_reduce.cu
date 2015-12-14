@@ -34,6 +34,7 @@
 #define CUB_STDERR
 
 #include <stdio.h>
+#include <typeinfo>
 
 #include <cub/warp/warp_reduce.cuh>
 #include <cub/util_allocator.cuh>

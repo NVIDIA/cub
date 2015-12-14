@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <limits>
+#include <typeinfo>
 
 #include <cub/block/block_scan.cuh>
 #include <cub/block/block_load.cuh>

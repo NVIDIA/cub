@@ -1131,9 +1131,11 @@ void TestType(
     int             max_items,
     int             max_segments)
 {
-    DeviceReducePolicy<T, int, cub::Sum>::MaxPolicy::Invoke(
-        g_ptx_version,
-        TestBySize<T>(max_items, max_segments));
+    typedef typename DeviceReducePolicy<T, int, cub::Sum>::MaxPolicy MaxPolicyT;
+
+    TestBySize<T> dispatch(max_items, max_segments);
+
+    MaxPolicyT::Invoke(g_ptx_version, dispatch);
 }
 
 
