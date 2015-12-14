@@ -401,7 +401,7 @@ struct DeviceRleDispatch
             if (d_temp_storage == NULL)
             {
                 // Return if the caller is simply requesting the size of the storage allocation
-                return cudaSuccess;
+                break;
             }
 
             // Construct the tile status interface
@@ -409,19 +409,24 @@ struct DeviceRleDispatch
             if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
             // Log device_scan_init_kernel configuration
-            int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
+            int init_grid_size = CUB_MAX(1, (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS);
             if (debug_synchronous) _CubLog("Invoking device_scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke device_scan_init_kernel to initialize tile descriptors and queue descriptors
             device_scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 tile_status,
-                num_tiles);
+                num_tiles,
+                d_num_runs_out);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+            // Return if empty problem
+            if (num_items == 0)
+                break;
 
             // Get SM occupancy for device_rle_sweep_kernel
             int device_rle_kernel_sm_occupancy;
@@ -514,7 +519,7 @@ struct DeviceRleDispatch
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<OffsetT, ScanTileStateT>,
+                DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>,
                 DeviceRleSweepKernel<PtxRleSweepPolicy, InputIteratorT, OffsetsOutputIteratorT, LengthsOutputIteratorT, NumRunsOutputIteratorT, ScanTileStateT, EqualityOpT, OffsetT>,
                 device_rle_config))) break;
         }

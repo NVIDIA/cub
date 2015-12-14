@@ -388,7 +388,7 @@ struct DispatchSelectIf
             if (d_temp_storage == NULL)
             {
                 // Return if the caller is simply requesting the size of the storage allocation
-                return cudaSuccess;
+                break;
             }
 
             // Construct the tile status interface
@@ -396,19 +396,24 @@ struct DispatchSelectIf
             if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
             // Log scan_init_kernel configuration
-            int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
+            int init_grid_size = CUB_MAX(1, (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS);
             if (debug_synchronous) _CubLog("Invoking scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke scan_init_kernel to initialize tile descriptors
             scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 tile_status,
-                num_tiles);
+                num_tiles,
+                d_num_selected_out);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+            // Return if empty problem
+            if (num_items == 0)
+                break;
 
             // Get SM occupancy for select_if_kernel
             int range_select_sm_occupancy;
@@ -503,7 +508,7 @@ struct DispatchSelectIf
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<OffsetT, ScanTileStateT>,
+                DeviceCompactInitKernel<ScanTileStateT, NumSelectedIteratorT>,
                 DeviceSelectSweepKernel<PtxSelectIfPolicyT, InputIteratorT, FlagsInputIteratorT, SelectedOutputIteratorT, NumSelectedIteratorT, ScanTileStateT, SelectOpT, EqualityOpT, OffsetT, KEEP_REJECTS>,
                 select_if_config))) break;
         }

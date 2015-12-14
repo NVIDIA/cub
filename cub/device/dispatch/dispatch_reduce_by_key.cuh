@@ -390,7 +390,7 @@ struct DispatchReduceByKey
             if (d_temp_storage == NULL)
             {
                 // Return if the caller is simply requesting the size of the storage allocation
-                return cudaSuccess;
+                break;
             }
 
             // Construct the tile status interface
@@ -398,19 +398,24 @@ struct DispatchReduceByKey
             if (CubDebug(error = tile_state.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
             // Log scan_init_kernel configuration
-            int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
+            int init_grid_size = CUB_MAX(1, (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS);
             if (debug_synchronous) _CubLog("Invoking scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke scan_init_kernel to initialize tile descriptors
             scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 tile_state,
-                num_tiles);
+                num_tiles,
+                d_num_runs_out);
 
             // Check for failure to launch
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+
+            // Return if empty problem
+            if (num_items == 0)
+                break;
 
             // Get SM occupancy for reduce_by_key_kernel
             int reduce_by_key_sm_occupancy;
@@ -509,7 +514,7 @@ struct DispatchReduceByKey
                 stream,
                 debug_synchronous,
                 ptx_version,
-                DeviceScanInitKernel<OffsetT, ScanTileStateT>,
+                DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>,
                 DeviceReduceByKeyKernel<PtxReduceByKeyPolicy, KeysInputIteratorT, UniqueOutputIteratorT, ValuesInputIteratorT, AggregatesOutputIteratorT, NumRunsOutputIteratorT, ScanTileStateT, EqualityOpT, ReductionOpT, OffsetT>,
                 reduce_by_key_config))) break;
         }

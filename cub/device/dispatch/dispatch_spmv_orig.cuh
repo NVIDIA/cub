@@ -569,7 +569,7 @@ struct DispatchSpmv
                 {
                     // Return if the caller is simply requesting the size of the storage allocation
                     temp_storage_bytes = 1;
-                    return cudaSuccess;
+                    break;
                 }
 
                 // Get search/init grid dims
@@ -651,7 +651,7 @@ struct DispatchSpmv
             if (d_temp_storage == NULL)
             {
                 // Return if the caller is simply requesting the size of the storage allocation
-                return cudaSuccess;
+                break;
             }
 
             // Construct the tile status interface

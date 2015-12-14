@@ -12,6 +12,14 @@
           errors)
         - Fix for Git Issue 26 (CUDA error: misaligned address after 
           cub::DeviceRadixSort::SortKeys())
+        - Fix for incorrect/crash on 0-length problems, e.g., Git Issue 25 (Floating 
+          point exception (core dumped) during cub::DeviceRadixSort::SortKeys)
+        - Fix for CUDA 7.5 issues on SM 5.2 with SHFL-based warp-scan and warp-reduction 
+          on non-primitive data types (e.g., user-defined structs)
+        - Fix for small radix sorting problems where 0 temporary bytes were 
+          required and users code was invoking malloc(0) on some systems where
+          that returns NULL.  (Impl assumed was asking for size again and was not 
+          running the sort.)
           
 //-----------------------------------------------------------------------------
 

@@ -574,7 +574,9 @@ struct DipatchHistogram
             int pixels_per_tile     = histogram_sweep_config.block_threads * histogram_sweep_config.pixels_per_thread;
             int tiles_per_row       = (num_row_pixels + pixels_per_tile - 1) / pixels_per_tile;
             int blocks_per_row      = CUB_MIN(histogram_sweep_occupancy, tiles_per_row);
-            int blocks_per_col      = CUB_MIN(histogram_sweep_occupancy / blocks_per_row, num_rows);
+            int blocks_per_col      = (blocks_per_row > 0) ?
+                                        CUB_MIN(histogram_sweep_occupancy / blocks_per_row, num_rows) :
+                                        0;
             int num_threadblocks    = blocks_per_row * blocks_per_col;
 
             dim3 sweep_grid_dims;
@@ -597,7 +599,7 @@ struct DipatchHistogram
             if (d_temp_storage == NULL)
             {
                 // Return if the caller is simply requesting the size of the storage allocation
-                return cudaSuccess;
+                break;
             }
 
             // Construct the grid queue descriptor
@@ -645,6 +647,10 @@ struct DipatchHistogram
                 num_output_bins_wrapper,
                 d_output_histograms_wrapper,
                 tile_queue);
+
+            // Return if empty problem
+            if ((blocks_per_row == 0) || (blocks_per_col == 0))
+                break;
 
             // Log histogram_sweep_kernel configuration
             if (debug_synchronous) _CubLog("Invoking histogram_sweep_kernel<<<{%d, %d, %d}, %d, 0, %lld>>>(), %d pixels per thread, %d SM occupancy\n",
