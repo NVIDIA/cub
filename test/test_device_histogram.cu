@@ -36,6 +36,7 @@
 #include <stdio.h>
 #include <limits>
 #include <algorithm>
+#include <typeinfo>
 
 #include <npp.h>
 

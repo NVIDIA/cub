@@ -342,14 +342,18 @@ __device__ __forceinline__ void ThreadStoreVolatilePtr(
 
 #else
 
-    typedef typename UnitWord<T>::VolatileWord VolatileWord;   // Word type for memcopying
+    // Create a temporary using shuffle-words, then store using volatile-words
+    typedef typename UnitWord<T>::VolatileWord  VolatileWord;  
+    typedef typename UnitWord<T>::ShuffleWord   ShuffleWord;
 
     const int VOLATILE_MULTIPLE = sizeof(T) / sizeof(VolatileWord);
-
+    const int SHUFFLE_MULTIPLE  = sizeof(T) / sizeof(ShuffleWord);
+    
     VolatileWord words[VOLATILE_MULTIPLE];
-    *reinterpret_cast<T*>(words) = val;
 
-//    VolatileWord *words = reinterpret_cast<VolatileWord*>(&val);
+    #pragma unroll
+    for (int i = 0; i < SHUFFLE_MULTIPLE; ++i)
+        reinterpret_cast<ShuffleWord*>(words)[i] = reinterpret_cast<ShuffleWord*>(&val)[i];
 
     IterateThreadStore<0, VOLATILE_MULTIPLE>::template Dereference(
         reinterpret_cast<volatile VolatileWord*>(ptr),
@@ -384,13 +388,18 @@ __device__ __forceinline__ void ThreadStore(
     Int2Type<MODIFIER>          modifier,
     Int2Type<true>              is_pointer)
 {
-    typedef typename UnitWord<T>::DeviceWord DeviceWord;   // Word type for memcopying
+    // Create a temporary using shuffle-words, then store using device-words
+    typedef typename UnitWord<T>::DeviceWord    DeviceWord;  
+    typedef typename UnitWord<T>::ShuffleWord   ShuffleWord;
 
-    const int DEVICE_MULTIPLE = sizeof(T) / sizeof(DeviceWord);
-
+    const int DEVICE_MULTIPLE   = sizeof(T) / sizeof(DeviceWord);
+    const int SHUFFLE_MULTIPLE  = sizeof(T) / sizeof(ShuffleWord);
+    
     DeviceWord words[DEVICE_MULTIPLE];
 
-    *reinterpret_cast<T*>(words) = val;
+    #pragma unroll
+    for (int i = 0; i < SHUFFLE_MULTIPLE; ++i)
+        reinterpret_cast<ShuffleWord*>(words)[i] = reinterpret_cast<ShuffleWord*>(&val)[i];
 
     IterateThreadStore<0, DEVICE_MULTIPLE>::template Store<CacheStoreModifier(MODIFIER)>(
         reinterpret_cast<DeviceWord*>(ptr),

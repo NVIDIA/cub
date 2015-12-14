@@ -35,6 +35,7 @@
 
 #include <stdio.h>
 #include <algorithm>
+#include <typeinfo>
 
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_radix_sort.cuh>

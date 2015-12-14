@@ -34,6 +34,7 @@
 #define CUB_STDERR
 
 #include <stdio.h>
+#include <typeinfo>
 
 #include <cub/warp/warp_scan.cuh>
 #include <cub/util_allocator.cuh>
@@ -348,6 +349,13 @@ void Test(
     T *p_prefix = NULL;
     T aggregate = Initialize(gen_mode, h_in, h_reference, LOGICAL_WARP_THREADS, scan_op, identity, p_prefix);
 
+    if (g_verbose)
+    {
+        printf("Input: \n");
+        DisplayResults(h_in, LOGICAL_WARP_THREADS);
+        printf("\n");
+    }
+
     for (int i = 0; i < LOGICAL_WARP_THREADS; ++i)
     {
         h_aggregate[i] = aggregate;
@@ -367,9 +375,9 @@ void Test(
     CubDebugExit(cudaMemset(d_aggregate, 0, sizeof(T) * LOGICAL_WARP_THREADS));
 
     // Run kernel
-    printf("Test-mode %d, gen-mode %d, %s warpscan, %d warp threads, %s (%d bytes) elements:\n",
-        TEST_MODE,
-        gen_mode,
+    printf("Test-mode %d (%s), gen-mode %d (%s), %s warpscan, %d warp threads, %s (%d bytes) elements:\n",
+        TEST_MODE, typeid(TEST_MODE).name(),
+        gen_mode, typeid(gen_mode).name(),
         (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         LOGICAL_WARP_THREADS,
         typeid(T).name(),
@@ -454,7 +462,6 @@ void Test(GenMode gen_mode)
     // Get ptx version
     int ptx_version;
     CubDebugExit(PtxVersion(ptx_version));
-
 
     // primitive
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (char) 0, (char) 99);

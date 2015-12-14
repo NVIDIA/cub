@@ -34,6 +34,7 @@
 #define CUB_STDERR
 
 #include <stdio.h>
+#include <typeinfo>
 
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/counting_input_iterator.cuh>
