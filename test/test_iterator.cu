@@ -35,6 +35,7 @@
 
 #include <iterator>
 #include <stdio.h>
+#include <typeinfo>
 
 #include <cub/iterator/arg_index_input_iterator.cuh>
 #include <cub/iterator/cache_modified_input_iterator.cuh>

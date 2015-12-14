@@ -36,6 +36,7 @@
 #include <stdio.h>
 
 #include <device_functions.h>
+#include <typeinfo>
 
 #include <cub/block/block_reduce.cuh>
 #include <cub/block/block_load.cuh>
