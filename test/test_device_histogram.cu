@@ -1230,6 +1230,12 @@ void Test(
     LevelT          max_level,
     int             max_num_levels)
 {
+    // 0 images
+    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+        OffsetT(1920), OffsetT(0), max_level, max_num_levels);
+    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+        OffsetT(0), OffsetT(0), max_level, max_num_levels);
+
     // 1080 image
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         OffsetT(1920), OffsetT(1080), max_level, max_num_levels);

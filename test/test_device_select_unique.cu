@@ -509,6 +509,7 @@ void Test(
 {
     if (num_items < 0)
     {
+        TestOp<T>(0);
         TestOp<T>(1);
         TestOp<T>(100);
         TestOp<T>(10000);

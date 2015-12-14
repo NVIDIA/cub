@@ -478,7 +478,7 @@ struct DispatchReduce :
             if (d_temp_storage == NULL)
             {
                 temp_storage_bytes = 1;
-                return cudaSuccess;
+                break;
             }
 
             // Log single_reduce_sweep_kernel configuration

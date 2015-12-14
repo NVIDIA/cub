@@ -755,6 +755,7 @@ void TestSize(
 {
     if (num_items < 0)
     {
+        TestOp(0,        max_identity);
         TestOp(1,        max_identity);
         TestOp(100,      max_identity);
         TestOp(10000,    max_identity);

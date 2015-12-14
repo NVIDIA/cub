@@ -77,6 +77,7 @@ cudaError_t AliasTemporaries(
         allocation_offsets[i] = bytes_needed;
         bytes_needed += allocation_bytes;
     }
+    bytes_needed += ALIGN_BYTES - 1;
 
     // Check if the caller is simply requesting the size of the storage allocation
     if (!d_temp_storage)
@@ -92,6 +93,7 @@ cudaError_t AliasTemporaries(
     }
 
     // Alias
+    d_temp_storage = (void *) ((size_t(d_temp_storage) + ALIGN_BYTES - 1) & ALIGN_MASK);
     for (int i = 0; i < ALLOCATIONS; ++i)
     {
         allocations[i] = static_cast<char*>(d_temp_storage) + allocation_offsets[i];
