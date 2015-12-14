@@ -527,6 +527,31 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 
 
 /**
+ * Initialize value (bool)
+ */
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, int index = 0)
+{
+    switch (gen_mode)
+    {
+#if (CUB_PTX_ARCH == 0)
+    case RANDOM:
+        char c;
+        RandomBits(c, 0, 0, 1);
+        value = (bool) c;
+        break;
+#endif
+     case UNIFORM:
+        value = true;
+        break;
+    case INTEGER_SEED:
+    default:
+        value = (bool) index;
+        break;
+    }
+}
+
+
+/**
  * cub::NullType test initialization
  */
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::NullType &value, int index = 0)

@@ -224,7 +224,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;</div>
-<div class="line"><a name="l00260"></a><span class="lineno"><a class="code" href="structcub_1_1_block_scan_1_1_temp_storage.html">  260</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_scan_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00260"></a><span class="lineno"><a class="code" href="structcub_1_1_block_scan_1_1_temp_storage.html">  260</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_scan_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;</div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;    <span class="comment">/******************************************************************/</span></div>
@@ -357,7 +357,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00805"></a><span class="lineno"><a class="code" href="classcub_1_1_block_scan.html#a7ab0258bec4a9e1d118e3ce55535cf5c">  805</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_scan.html#a7ab0258bec4a9e1d118e3ce55535cf5c" title="Computes an exclusive block-wide prefix scan using the specified binary scan_op functor. Each thread contributes one input element. Also provides every thread with the block-wide block_aggregate of all inputs. ">ExclusiveScan</a>(</div>
 <div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;        T               input,              </div>
 <div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;        T               &amp;output,            </div>
-<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;        T               identity,          </div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;        T               identity,           </div>
 <div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;        ScanOp          scan_op,            </div>
 <div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;        T               &amp;block_aggregate)   </div>
 <div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;    {</div>
@@ -389,7 +389,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00961"></a><span class="lineno"><a class="code" href="classcub_1_1_block_scan.html#a20f4eaab2459d928798100d31a93c422">  961</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_scan.html#a20f4eaab2459d928798100d31a93c422" title="Computes an exclusive block-wide prefix scan using the specified binary scan_op functor. Each thread contributes an array of consecutive input elements. ">ExclusiveScan</a>(</div>
 <div class="line"><a name="l00962"></a><span class="lineno">  962</span>&#160;        T                 (&amp;input)[ITEMS_PER_THREAD],   </div>
 <div class="line"><a name="l00963"></a><span class="lineno">  963</span>&#160;        T                 (&amp;output)[ITEMS_PER_THREAD],  </div>
-<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;        T                 identity,                    </div>
+<div class="line"><a name="l00964"></a><span class="lineno">  964</span>&#160;        T                 identity,                     </div>
 <div class="line"><a name="l00965"></a><span class="lineno">  965</span>&#160;        ScanOp            scan_op)                      </div>
 <div class="line"><a name="l00966"></a><span class="lineno">  966</span>&#160;    {</div>
 <div class="line"><a name="l00967"></a><span class="lineno">  967</span>&#160;        <span class="comment">// Reduce consecutive thread items in registers</span></div>
@@ -409,7 +409,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l01023"></a><span class="lineno"><a class="code" href="classcub_1_1_block_scan.html#a1a9223edd7926c8d196bf6012a43c5e1"> 1023</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_scan.html#a1a9223edd7926c8d196bf6012a43c5e1" title="Computes an exclusive block-wide prefix scan using the specified binary scan_op functor. Each thread contributes an array of consecutive input elements. Also provides every thread with the block-wide block_aggregate of all inputs. ">ExclusiveScan</a>(</div>
 <div class="line"><a name="l01024"></a><span class="lineno"> 1024</span>&#160;        T                 (&amp;input)[ITEMS_PER_THREAD],   </div>
 <div class="line"><a name="l01025"></a><span class="lineno"> 1025</span>&#160;        T                 (&amp;output)[ITEMS_PER_THREAD],  </div>
-<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;        T                 identity,                    </div>
+<div class="line"><a name="l01026"></a><span class="lineno"> 1026</span>&#160;        T                 identity,                     </div>
 <div class="line"><a name="l01027"></a><span class="lineno"> 1027</span>&#160;        ScanOp            scan_op,                      </div>
 <div class="line"><a name="l01028"></a><span class="lineno"> 1028</span>&#160;        T                 &amp;block_aggregate)             </div>
 <div class="line"><a name="l01029"></a><span class="lineno"> 1029</span>&#160;    {</div>
@@ -801,7 +801,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 10 2015 13:58:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

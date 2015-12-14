@@ -200,7 +200,8 @@ __device__ __forceinline__ void InternalLoadDirectBlockedVectorized(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = reinterpret_cast<T*>(vec_items)[ITEM];
+//        items[ITEM] = reinterpret_cast<T*>(vec_items)[ITEM];
+        items[ITEM] = *(reinterpret_cast<T*>(vec_items) + ITEM);
     }
 }
 

@@ -112,7 +112,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>These operations apply a selection criterion to selectively copy items from a specified input sequence to a compact output sequence.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">DeviceSelect</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">DeviceSelect</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The work-complexity of select-flagged, select-if, and select-unique as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU.</dd></dl>
@@ -247,8 +247,7 @@ template&lt;typename InputIteratorT , typename FlagIterator , typename OutputIte
 <dl class="section user"><dt></dt><dd><ul>
 <li>The value type of <code>d_flags</code> must be castable to <code>bool</code> (e.g., <code>bool</code>, <code>char</code>, <code>int</code>, etc.).</li>
 <li>Copies of the selected items are compacted into <code>d_out</code> and maintain their original relative ordering.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the compaction of items selected from an <code>int</code> device vector. </dd></dl>
@@ -301,7 +300,7 @@ template&lt;typename InputIteratorT , typename FlagIterator , typename OutputIte
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_select_flagged_8cu-example.html#a2">example_device_select_flagged.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00134">134</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00133">133</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
 
 </div>
 </div>
@@ -389,8 +388,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename NumSel
  </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Copies of the selected items are compacted into <code>d_out</code> and maintain their original relative ordering.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated select-if performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively. Items are selected with 50% probability.</dd></dl>
@@ -471,7 +469,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename NumSel
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_select_if_8cu-example.html#a2">example_device_select_if.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00241">241</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00239">239</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
 
 </div>
 </div>
@@ -554,8 +552,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename NumSel
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>==</code> equality operator is used to determine whether keys are equivalent</li>
 <li>Copies of the selected items are compacted into <code>d_out</code> and maintain their original relative ordering.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated select-unique performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively. Segments have lengths uniformly sampled from [1,1000].</dd></dl>
@@ -619,7 +616,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename NumSel
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_select_unique_8cu-example.html#a2">example_device_select_unique.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00332">332</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__select_8cuh_source.html#l00329">329</a> of file <a class="el" href="device__select_8cuh_source.html">device_select.cuh</a>.</p>
 
 </div>
 </div>
@@ -630,7 +627,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename NumSel
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 10 2015 13:58:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:18 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

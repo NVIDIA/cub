@@ -238,11 +238,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    <span class="comment">// Request and allocate temporary storage</span></div>
 <div class="line">    <span class="keywordtype">void</span>            *d_temp_storage = NULL;</div>
 <div class="line">    <span class="keywordtype">size_t</span>          temp_storage_bytes = 0;</div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (+) operator. ">DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items));</div>
 <div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate(&amp;d_temp_storage, temp_storage_bytes));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Run</span></div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a class="code" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (&#39;+&#39;) operator. ">DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a class="code" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f" title="Computes a device-wide sum using the addition (+) operator. ">DeviceReduce::Sum</a>(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Check for correctness (and display results, if specified)</span></div>
 <div class="line">    <span class="keywordtype">int</span> compare = CompareDeviceResults(&amp;h_reference, d_out, 1, g_verbose, g_verbose);</div>
@@ -266,7 +266,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 10 2015 13:58:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

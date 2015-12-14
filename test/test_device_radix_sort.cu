@@ -1217,6 +1217,8 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
+        TestGen<bool>                 (num_items, num_segments);
+/*
         TestGen<char>                 (num_items, num_segments);
         TestGen<signed char>          (num_items, num_segments);
         TestGen<unsigned char>        (num_items, num_segments);
@@ -1237,6 +1239,7 @@ int main(int argc, char** argv)
 
         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
             TestGen<double>           (num_items, num_segments);
+*/
 
     }
 

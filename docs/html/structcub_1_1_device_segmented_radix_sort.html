@@ -112,7 +112,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
  <dl class="section user"><dt>Overview</dt><dd>The <a href="http://en.wikipedia.org/wiki/Radix_sort"><em>radix sorting method</em></a> arranges items into ascending (or descending) order. The algorithm relies upon a positional representation for keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits, characters, etc.) specified from least-significant to most-significant. For a given input sequence of keys and a set of rules specifying a total ordering of the symbolic alphabet, the radix sorting method produces a lexicographic ordering of those keys.</dd></dl>
 <dl class="section user"><dt></dt><dd><a class="el" href="structcub_1_1_device_segmented_radix_sort.html" title="DeviceSegmentedRadixSort provides device-wide, parallel operations for computing a batched radix sort...">DeviceSegmentedRadixSort</a> can sort all of the built-in C++ numeric primitive types, e.g.: <code>unsigned char</code>, <code>int</code>, <code>double</code>, etc. Although the direct radix sorting method can only be applied to unsigned integral types, <a class="el" href="structcub_1_1_device_segmented_radix_sort.html" title="DeviceSegmentedRadixSort provides device-wide, parallel operations for computing a batched radix sort...">DeviceSegmentedRadixSort</a> is able to sort signed and floating-point types via simple bit-wise transformations that ensure lexicographic key ordering.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_segmented_radix_sort.html" title="DeviceSegmentedRadixSort provides device-wide, parallel operations for computing a batched radix sort...">DeviceSegmentedRadixSort</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions. </li>
+<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_segmented_radix_sort.html" title="DeviceSegmentedRadixSort provides device-wide, parallel operations for computing a batched radix sort...">DeviceSegmentedRadixSort</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. </li>
 </ul>
 </dd></dl>
 
@@ -121,14 +121,14 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Key-value pairs</div></td></tr>
-<tr class="memitem:a4c291958575f14acc6a9e6d3e2ea6597"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT , typename OffsetT &gt; </td></tr>
-<tr class="memitem:a4c291958575f14acc6a9e6d3e2ea6597"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a4c291958575f14acc6a9e6d3e2ea6597">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, KeyT *d_keys_in, KeyT *d_keys_out, ValueT *d_values_in, ValueT *d_values_out, int num_items, OffsetT num_segments, OffsetT *d_begin_offsets, OffsetT *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a4c291958575f14acc6a9e6d3e2ea6597"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into ascending order. (~<em>2N </em>auxiliary storage required)  <a href="#a4c291958575f14acc6a9e6d3e2ea6597">More...</a><br/></td></tr>
-<tr class="separator:a4c291958575f14acc6a9e6d3e2ea6597"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6770adfa8e5a99c8015d9e6ab5ed8ca0"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT &gt; </td></tr>
+<tr class="memitem:a6770adfa8e5a99c8015d9e6ab5ed8ca0"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a6770adfa8e5a99c8015d9e6ab5ed8ca0">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, KeyT *d_keys_in, KeyT *d_keys_out, ValueT *d_values_in, ValueT *d_values_out, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a6770adfa8e5a99c8015d9e6ab5ed8ca0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into ascending order. (~<em>2N </em>auxiliary storage required)  <a href="#a6770adfa8e5a99c8015d9e6ab5ed8ca0">More...</a><br/></td></tr>
+<tr class="separator:a6770adfa8e5a99c8015d9e6ab5ed8ca0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cffada9bba553f9871a34d926bbb148"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT &gt; </td></tr>
 <tr class="memitem:a4cffada9bba553f9871a34d926bbb148"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a4cffada9bba553f9871a34d926bbb148">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; KeyT &gt; &amp;d_keys, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; ValueT &gt; &amp;d_values, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a4cffada9bba553f9871a34d926bbb148">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, DoubleBuffer&lt; ValueT &gt; &amp;d_values, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:a4cffada9bba553f9871a34d926bbb148"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into ascending order. (~<em>N </em>auxiliary storage required)  <a href="#a4cffada9bba553f9871a34d926bbb148">More...</a><br/></td></tr>
 <tr class="separator:a4cffada9bba553f9871a34d926bbb148"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a39de3d48166582a802cc7df1481d3ff4"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT &gt; </td></tr>
@@ -138,7 +138,7 @@ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el
 <tr class="separator:a39de3d48166582a802cc7df1481d3ff4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aafce5852dfbfbeef027493c3791d6347"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT &gt; </td></tr>
 <tr class="memitem:aafce5852dfbfbeef027493c3791d6347"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#aafce5852dfbfbeef027493c3791d6347">SortPairsDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; KeyT &gt; &amp;d_keys, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; ValueT &gt; &amp;d_values, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#aafce5852dfbfbeef027493c3791d6347">SortPairsDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, DoubleBuffer&lt; ValueT &gt; &amp;d_values, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:aafce5852dfbfbeef027493c3791d6347"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into descending order. (~<em>N </em>auxiliary storage required).  <a href="#aafce5852dfbfbeef027493c3791d6347">More...</a><br/></td></tr>
 <tr class="separator:aafce5852dfbfbeef027493c3791d6347"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Keys-only</div></td></tr>
@@ -149,7 +149,7 @@ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el
 <tr class="separator:ab6a917a29d441021949e197d3a639fba"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8b433b55358ac507a7fcbba933cdbac"><td class="memTemplParams" colspan="2">template&lt;typename KeyT &gt; </td></tr>
 <tr class="memitem:ab8b433b55358ac507a7fcbba933cdbac"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#ab8b433b55358ac507a7fcbba933cdbac">SortKeys</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; KeyT &gt; &amp;d_keys, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#ab8b433b55358ac507a7fcbba933cdbac">SortKeys</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:ab8b433b55358ac507a7fcbba933cdbac"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into ascending order. (~<em>N </em>auxiliary storage required).  <a href="#ab8b433b55358ac507a7fcbba933cdbac">More...</a><br/></td></tr>
 <tr class="separator:ab8b433b55358ac507a7fcbba933cdbac"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49ccbb6ca7a1d26e4b01e68e8da8a701"><td class="memTemplParams" colspan="2">template&lt;typename KeyT &gt; </td></tr>
@@ -159,16 +159,16 @@ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el
 <tr class="separator:a49ccbb6ca7a1d26e4b01e68e8da8a701"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5c21fba171c718aaf9b3b3c27bda6a94"><td class="memTemplParams" colspan="2">template&lt;typename KeyT &gt; </td></tr>
 <tr class="memitem:a5c21fba171c718aaf9b3b3c27bda6a94"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a5c21fba171c718aaf9b3b3c27bda6a94">SortKeysDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, <a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; KeyT &gt; &amp;d_keys, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a5c21fba171c718aaf9b3b3c27bda6a94">SortKeysDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, int num_items, int num_segments, int *d_begin_offsets, int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
 <tr class="memdesc:a5c21fba171c718aaf9b3b3c27bda6a94"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into descending order. (~<em>N </em>auxiliary storage required).  <a href="#a5c21fba171c718aaf9b3b3c27bda6a94">More...</a><br/></td></tr>
 <tr class="separator:a5c21fba171c718aaf9b3b3c27bda6a94"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a4c291958575f14acc6a9e6d3e2ea6597"></a>
+<a class="anchor" id="a6770adfa8e5a99c8015d9e6ab5ed8ca0"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT , typename ValueT , typename OffsetT &gt; </div>
+template&lt;typename KeyT , typename ValueT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -218,19 +218,19 @@ template&lt;typename KeyT , typename ValueT , typename OffsetT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OffsetT&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>num_segments</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OffsetT *&#160;</td>
+          <td class="paramtype">int *&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">OffsetT *&#160;</td>
+          <td class="paramtype">int *&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -273,39 +273,39 @@ template&lt;typename KeyT , typename ValueT , typename OffsetT &gt; </div>
 <p>Sorts segments of key-value pairs into ascending order. (~<em>2N </em>auxiliary storage required) </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The contents of the input data are not altered by the sorting operation</li>
-<li>When sorting a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
+<li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
-<li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrappers below.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_segmentd_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_segments;       <span class="comment">// e.g., 3</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_keys_in;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_keys_out;        <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_keys_out;        <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_values_in;       <span class="comment">// e.g., [0, 1, 2, 3, 4, 5, 6]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_values_out;      <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_values_out;      <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a4c291958575f14acc6a9e6d3e2ea6597" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a6770adfa8e5a99c8015d9e6ab5ed8ca0" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes,</div>
 <div class="line">    d_keys_in, d_keys_out, d_values_in, d_values_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a4c291958575f14acc6a9e6d3e2ea6597" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a6770adfa8e5a99c8015d9e6ab5ed8ca0" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes,</div>
 <div class="line">    d_keys_in, d_keys_out, d_values_in, d_values_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys_out            &lt;-- [6, 7, 8, 0, 3, 5, 9]</span></div>
 <div class="line"><span class="comment">// d_values_out          &lt;-- [1, 2, 0, 5, 4, 3, 6]</span></div>
@@ -337,7 +337,7 @@ template&lt;typename KeyT , typename ValueT , typename OffsetT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00141">141</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00140">140</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -365,13 +365,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; KeyT &gt; &amp;&#160;</td>
+          <td class="paramtype">DoubleBuffer&lt; KeyT &gt; &amp;&#160;</td>
           <td class="paramname"><em>d_keys</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; ValueT &gt; &amp;&#160;</td>
+          <td class="paramtype">DoubleBuffer&lt; ValueT &gt; &amp;&#160;</td>
           <td class="paramname"><em>d_values</em>, </td>
         </tr>
         <tr>
@@ -437,44 +437,44 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 
 <p>Sorts segments of key-value pairs into ascending order. (~<em>N </em>auxiliary storage required) </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The sorting operation is given a pair of key buffers and a corresponding pair of associated value buffers. Each pair is managed by a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure that indicates which of the two buffers is "current" (and thus contains the input data to be sorted).</li>
+<li>The sorting operation is given a pair of key buffers and a corresponding pair of associated value buffers. Each pair is managed by a DoubleBuffer structure that indicates which of the two buffers is "current" (and thus contains the input data to be sorted).</li>
 <li>The contents of both buffers within each pair may be altered by the sorting operation.</li>
-<li>Upon completion, the sorting operation will update the "current" indicator within each <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrapper to reference which of the two buffers now contains the sorted output sequence (a function of the number of key bits specified and the targeted device architecture).</li>
-<li>When sorting a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
+<li>Upon completion, the sorting operation will update the "current" indicator within each DoubleBuffer wrapper to reference which of the two buffers now contains the sorted output sequence (a function of the number of key bits specified and the targeted device architecture).</li>
+<li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<code>P</code>), where <code>P</code> is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size <code>N</code>).</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_segmentd_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_segments;       <span class="comment">// e.g., 3</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_key_buf;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_value_buf;       <span class="comment">// e.g., [0, 1, 2, 3, 4, 5, 6]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_value_alt_buf;   <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_value_alt_buf;   <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Create a set of DoubleBuffers to wrap pairs of device pointers</span></div>
 <div class="line">cub::DoubleBuffer&lt;<span class="keywordtype">int</span>&gt; d_keys(d_key_buf, d_key_alt_buf);</div>
-<div class="line"><a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">cub::DoubleBuffer&lt;int&gt;</a> d_values(d_value_buf, d_value_alt_buf);</div>
+<div class="line">cub::DoubleBuffer&lt;int&gt; d_values(d_value_buf, d_value_alt_buf);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a4c291958575f14acc6a9e6d3e2ea6597" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a6770adfa8e5a99c8015d9e6ab5ed8ca0" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a4c291958575f14acc6a9e6d3e2ea6597" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a6770adfa8e5a99c8015d9e6ab5ed8ca0" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys.Current()      &lt;-- [6, 7, 8, 0, 3, 5, 9]</span></div>
 <div class="line"><span class="comment">// d_values.Current()    &lt;-- [5, 4, 3, 1, 2, 0, 6]</span></div>
@@ -504,7 +504,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00248">248</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00247">247</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -617,23 +617,23 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <p>Sorts segments of key-value pairs into descending order. (~<em>2N</em> auxiliary storage required). </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The contents of the input data are not altered by the sorting operation</li>
-<li>When sorting a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
+<li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
-<li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrappers below.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_segmentd_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_segments;       <span class="comment">// e.g., 3</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_keys_in;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_keys_out;        <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_keys_out;        <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_values_in;       <span class="comment">// e.g., [0, 1, 2, 3, 4, 5, 6]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_values_out;      <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_values_out;      <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
@@ -641,7 +641,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a39de3d48166582a802cc7df1481d3ff4" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes,</div>
 <div class="line">    d_keys_in, d_keys_out, d_values_in, d_values_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
@@ -649,7 +649,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a39de3d48166582a802cc7df1481d3ff4" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes,</div>
 <div class="line">    d_keys_in, d_keys_out, d_values_in, d_values_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys_out            &lt;-- [8, 7, 6, 9, 5, 3, 0]</span></div>
 <div class="line"><span class="comment">// d_values_out          &lt;-- [0, 2, 1, 6, 3, 4, 5]</span></div>
@@ -681,7 +681,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00339">339</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00338">338</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -709,13 +709,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; KeyT &gt; &amp;&#160;</td>
+          <td class="paramtype">DoubleBuffer&lt; KeyT &gt; &amp;&#160;</td>
           <td class="paramname"><em>d_keys</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; ValueT &gt; &amp;&#160;</td>
+          <td class="paramtype">DoubleBuffer&lt; ValueT &gt; &amp;&#160;</td>
           <td class="paramname"><em>d_values</em>, </td>
         </tr>
         <tr>
@@ -781,44 +781,44 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 
 <p>Sorts segments of key-value pairs into descending order. (~<em>N </em>auxiliary storage required). </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The sorting operation is given a pair of key buffers and a corresponding pair of associated value buffers. Each pair is managed by a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure that indicates which of the two buffers is "current" (and thus contains the input data to be sorted).</li>
+<li>The sorting operation is given a pair of key buffers and a corresponding pair of associated value buffers. Each pair is managed by a DoubleBuffer structure that indicates which of the two buffers is "current" (and thus contains the input data to be sorted).</li>
 <li>The contents of both buffers within each pair may be altered by the sorting operation.</li>
-<li>Upon completion, the sorting operation will update the "current" indicator within each <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrapper to reference which of the two buffers now contains the sorted output sequence (a function of the number of key bits specified and the targeted device architecture).</li>
-<li>When sorting a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
+<li>Upon completion, the sorting operation will update the "current" indicator within each DoubleBuffer wrapper to reference which of the two buffers now contains the sorted output sequence (a function of the number of key bits specified and the targeted device architecture).</li>
+<li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<code>P</code>), where <code>P</code> is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size <code>N</code>).</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of <code>int</code> keys with associated vector of <code>int</code> values. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_segmentd_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_segments;       <span class="comment">// e.g., 3</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_key_buf;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_value_buf;       <span class="comment">// e.g., [0, 1, 2, 3, 4, 5, 6]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_value_alt_buf;   <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_value_alt_buf;   <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Create a set of DoubleBuffers to wrap pairs of device pointers</span></div>
 <div class="line">cub::DoubleBuffer&lt;<span class="keywordtype">int</span>&gt; d_keys(d_key_buf, d_key_alt_buf);</div>
-<div class="line"><a class="code" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">cub::DoubleBuffer&lt;int&gt;</a> d_values(d_value_buf, d_value_alt_buf);</div>
+<div class="line">cub::DoubleBuffer&lt;int&gt; d_values(d_value_buf, d_value_alt_buf);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a39de3d48166582a802cc7df1481d3ff4" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a39de3d48166582a802cc7df1481d3ff4" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys.Current()      &lt;-- [8, 7, 6, 9, 5, 3, 0]</span></div>
 <div class="line"><span class="comment">// d_values.Current()    &lt;-- [0, 2, 1, 6, 3, 4, 5]</span></div>
@@ -848,7 +848,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00446">446</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00445">445</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -950,34 +950,34 @@ template&lt;typename KeyT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The contents of the input data are not altered by the sorting operation</li>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
-<li>When sorting a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
-<li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrappers below.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
+<li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of <code>int</code> keys. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_segmentd_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_segments;       <span class="comment">// e.g., 3</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_keys_in;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_keys_out;        <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_keys_out;        <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#ab6a917a29d441021949e197d3a639fba" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#ab6a917a29d441021949e197d3a639fba" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys_out            &lt;-- [6, 7, 8, 0, 3, 5, 9]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -1005,7 +1005,7 @@ template&lt;typename KeyT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00535">535</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00534">534</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -1033,7 +1033,7 @@ template&lt;typename KeyT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; KeyT &gt; &amp;&#160;</td>
+          <td class="paramtype">DoubleBuffer&lt; KeyT &gt; &amp;&#160;</td>
           <td class="paramname"><em>d_keys</em>, </td>
         </tr>
         <tr>
@@ -1099,24 +1099,24 @@ template&lt;typename KeyT &gt; </div>
 
 <p>Sorts segments of keys into ascending order. (~<em>N </em>auxiliary storage required). </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The sorting operation is given a pair of key buffers managed by a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure that indicates which of the two buffers is "current" (and thus contains the input data to be sorted).</li>
+<li>The sorting operation is given a pair of key buffers managed by a DoubleBuffer structure that indicates which of the two buffers is "current" (and thus contains the input data to be sorted).</li>
 <li>The contents of both buffers may be altered by the sorting operation.</li>
-<li>Upon completion, the sorting operation will update the "current" indicator within the <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrapper to reference which of the two buffers now contains the sorted output sequence (a function of the number of key bits specified and the targeted device architecture).</li>
-<li>When sorting a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
+<li>Upon completion, the sorting operation will update the "current" indicator within the DoubleBuffer wrapper to reference which of the two buffers now contains the sorted output sequence (a function of the number of key bits specified and the targeted device architecture).</li>
+<li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<code>P</code>), where <code>P</code> is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size <code>N</code>).</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of <code>int</code> keys. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_segmentd_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_segments;       <span class="comment">// e.g., 3</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_key_buf;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Create a DoubleBuffer to wrap the pair of device pointers</span></div>
@@ -1126,14 +1126,14 @@ template&lt;typename KeyT &gt; </div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#ab6a917a29d441021949e197d3a639fba" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#ab6a917a29d441021949e197d3a639fba" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys.Current()      &lt;-- [6, 7, 8, 0, 3, 5, 9]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -1160,7 +1160,7 @@ template&lt;typename KeyT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00631">631</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00630">630</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -1261,21 +1261,21 @@ template&lt;typename KeyT &gt; </div>
 <p>Sorts segments of keys into descending order. (~<em>2N</em> auxiliary storage required). </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The contents of the input data are not altered by the sorting operation</li>
-<li>When sorting a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
+<li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
-<li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrappers below.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>This operation requires an allocation of temporary device storage that is <em>O</em>(<code>N+P</code>), where <code>N</code> is the length of the input and <code>P</code> is the number of streaming multiprocessors on the device. For sorting using only <em>O</em>(<code>P</code>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.</li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of <code>int</code> keys. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_segmentd_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_segments;       <span class="comment">// e.g., 3</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_keys_in;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_keys_out;        <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_keys_out;        <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Create a DoubleBuffer to wrap the pair of device pointers</span></div>
@@ -1285,14 +1285,14 @@ template&lt;typename KeyT &gt; </div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a49ccbb6ca7a1d26e4b01e68e8da8a701" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a49ccbb6ca7a1d26e4b01e68e8da8a701" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys_out            &lt;-- [8, 7, 6, 9, 5, 3, 0]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -1320,7 +1320,7 @@ template&lt;typename KeyT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00717">717</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00716">716</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -1348,7 +1348,7 @@ template&lt;typename KeyT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype"><a class="el" href="structcub_1_1_double_buffer.html">DoubleBuffer</a>&lt; KeyT &gt; &amp;&#160;</td>
+          <td class="paramtype">DoubleBuffer&lt; KeyT &gt; &amp;&#160;</td>
           <td class="paramname"><em>d_keys</em>, </td>
         </tr>
         <tr>
@@ -1414,24 +1414,24 @@ template&lt;typename KeyT &gt; </div>
 
 <p>Sorts segments of keys into descending order. (~<em>N </em>auxiliary storage required). </p>
 <dl class="section user"><dt></dt><dd><ul>
-<li>The sorting operation is given a pair of key buffers managed by a <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> structure that indicates which of the two buffers is "current" (and thus contains the input data to be sorted).</li>
+<li>The sorting operation is given a pair of key buffers managed by a DoubleBuffer structure that indicates which of the two buffers is "current" (and thus contains the input data to be sorted).</li>
 <li>The contents of both buffers may be altered by the sorting operation.</li>
-<li>Upon completion, the sorting operation will update the "current" indicator within the <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">DoubleBuffer</a> wrapper to reference which of the two buffers now contains the sorted output sequence (a function of the number of key bits specified and the targeted device architecture).</li>
-<li>When sorting a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
+<li>Upon completion, the sorting operation will update the "current" indicator within the DoubleBuffer wrapper to reference which of the two buffers now contains the sorted output sequence (a function of the number of key bits specified and the targeted device architecture).</li>
+<li>When input a contiguous sequence of segments, a single sequence <code>segment_offsets</code> (of length <code>num_segments+1</code>) can be aliased for both the <code>d_begin_offsets</code> and <code>d_end_offsets</code> parameters (where the latter is specified as <code>segment_offsets+1</code>).</li>
 <li>An optional bit subrange <code>[begin_bit, end_bit)</code> of differentiating key bits can be specified. This can reduce overall sorting overhead and yield a corresponding performance improvement.</li>
 <li>This operation requires a relatively small allocation of temporary device storage that is <em>O</em>(<code>P</code>), where <code>P</code> is the number of streaming multiprocessors on the device (and is typically a small constant relative to the input size <code>N</code>).</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of <code>int</code> keys. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_segmentd_radix_sort.cuh&gt;</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for sorting data</span></div>
+<div class="line"><span class="keywordtype">int</span>  num_items;          <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_segments;       <span class="comment">// e.g., 3</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 6]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_offsets;         <span class="comment">// e.g., [0, 3, 3, 7]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_key_buf;         <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
-<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [        ...        ]</span></div>
+<div class="line"><span class="keywordtype">int</span>  *d_key_alt_buf;     <span class="comment">// e.g., [-, -, -, -, -, -, -]</span></div>
 <div class="line">...</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Create a DoubleBuffer to wrap the pair of device pointers</span></div>
@@ -1441,14 +1441,14 @@ template&lt;typename KeyT &gt; </div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a49ccbb6ca7a1d26e4b01e68e8da8a701" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
 <div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a49ccbb6ca7a1d26e4b01e68e8da8a701" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
-<div class="line">    num_segments, d_offsets, d_offsets + 1);</div>
+<div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys.Current()      &lt;-- [8, 7, 6, 9, 5, 3, 0]</span></div>
 </div><!-- fragment --></dd></dl>
@@ -1475,7 +1475,7 @@ template&lt;typename KeyT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00812">812</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00811">811</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 
 </div>
 </div>
@@ -1486,7 +1486,7 @@ template&lt;typename KeyT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 10 2015 13:58:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:18 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

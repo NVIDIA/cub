@@ -174,17 +174,17 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;<span class="keyword">struct </span>IterateThreadLoad</div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;{</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keyword">template</span> &lt;CacheLoadModifier MODIFIER, <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Load(T *ptr, T *vals)</div>
+<div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Load(T <span class="keyword">const</span> *ptr, T *vals)</div>
 <div class="line"><a name="l00125"></a><span class="lineno">  125</span>&#160;    {</div>
 <div class="line"><a name="l00126"></a><span class="lineno">  126</span>&#160;        vals[COUNT] = ThreadLoad&lt;MODIFIER&gt;(ptr + COUNT);</div>
 <div class="line"><a name="l00127"></a><span class="lineno">  127</span>&#160;        IterateThreadLoad&lt;COUNT + 1, MAX&gt;::template Load&lt;MODIFIER&gt;(ptr, vals);</div>
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    }</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> InputIteratorT, <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Dereference(InputIteratorT ptr, T *vals)</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Dereference(InputIteratorT itr, T *vals)</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;    {</div>
-<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        vals[COUNT] = ptr[COUNT];</div>
-<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        IterateThreadLoad&lt;COUNT + 1, MAX&gt;::Dereference(ptr, vals);</div>
+<div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;        vals[COUNT] = itr[COUNT];</div>
+<div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;        IterateThreadLoad&lt;COUNT + 1, MAX&gt;::Dereference(itr, vals);</div>
 <div class="line"><a name="l00135"></a><span class="lineno">  135</span>&#160;    }</div>
 <div class="line"><a name="l00136"></a><span class="lineno">  136</span>&#160;};</div>
 <div class="line"><a name="l00137"></a><span class="lineno">  137</span>&#160;</div>
@@ -193,16 +193,16 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00141"></a><span class="lineno">  141</span>&#160;<span class="keyword">struct </span>IterateThreadLoad&lt;MAX, MAX&gt;</div>
 <div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;{</div>
 <div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;    <span class="keyword">template</span> &lt;CacheLoadModifier MODIFIER, <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Load(T *ptr, T *vals) {}</div>
+<div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Load(T <span class="keyword">const</span> *ptr, T *vals) {}</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> InputIteratorT, <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Dereference(InputIteratorT ptr, T *vals) {}</div>
+<div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Dereference(InputIteratorT itr, T *vals) {}</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;};</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="preprocessor">#define CUB_LOAD_16(cub_modifier, ptx_modifier)                                             \</span></div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;<span class="preprocessor">    template&lt;&gt;                                                                              \</span></div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;<span class="preprocessor">    __device__ __forceinline__ uint4 ThreadLoad&lt;cub_modifier, uint4*&gt;(uint4* ptr)           \</span></div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;<span class="preprocessor">    __device__ __forceinline__ uint4 ThreadLoad&lt;cub_modifier, uint4 const *&gt;(uint4 const *ptr)                   \</span></div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;<span class="preprocessor">    {                                                                                       \</span></div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;<span class="preprocessor">        uint4 retval;                                                                       \</span></div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;<span class="preprocessor">        asm volatile (&quot;ld.&quot;#ptx_modifier&quot;.v4.u32 {%0, %1, %2, %3}, [%4];&quot; :                 \</span></div>
@@ -214,7 +214,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;<span class="preprocessor">        return retval;                                                                      \</span></div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;<span class="preprocessor">    }                                                                                       \</span></div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;<span class="preprocessor">    template&lt;&gt;                                                                              \</span></div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<span class="preprocessor">    __device__ __forceinline__ ulonglong2 ThreadLoad&lt;cub_modifier, ulonglong2*&gt;(ulonglong2* ptr)              \</span></div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<span class="preprocessor">    __device__ __forceinline__ ulonglong2 ThreadLoad&lt;cub_modifier, ulonglong2 const *&gt;(ulonglong2 const *ptr)    \</span></div>
 <div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;<span class="preprocessor">    {                                                                                       \</span></div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="preprocessor">        ulonglong2 retval;                                                                  \</span></div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="preprocessor">        asm volatile (&quot;ld.&quot;#ptx_modifier&quot;.v2.u64 {%0, %1}, [%2];&quot; :                         \</span></div>
@@ -226,7 +226,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;<span class="preprocessor">#define CUB_LOAD_8(cub_modifier, ptx_modifier)                                              \</span></div>
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;<span class="preprocessor">    template&lt;&gt;                                                                              \</span></div>
-<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="preprocessor">    __device__ __forceinline__ ushort4 ThreadLoad&lt;cub_modifier, ushort4*&gt;(ushort4* ptr)     \</span></div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;<span class="preprocessor">    __device__ __forceinline__ ushort4 ThreadLoad&lt;cub_modifier, ushort4 const *&gt;(ushort4 const *ptr)             \</span></div>
 <div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="preprocessor">    {                                                                                       \</span></div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="preprocessor">        ushort4 retval;                                                                     \</span></div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;<span class="preprocessor">        asm volatile (&quot;ld.&quot;#ptx_modifier&quot;.v4.u16 {%0, %1, %2, %3}, [%4];&quot; :                 \</span></div>
@@ -238,7 +238,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;<span class="preprocessor">        return retval;                                                                      \</span></div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;<span class="preprocessor">    }                                                                                       \</span></div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;<span class="preprocessor">    template&lt;&gt;                                                                              \</span></div>
-<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;<span class="preprocessor">    __device__ __forceinline__ uint2 ThreadLoad&lt;cub_modifier, uint2*&gt;(uint2* ptr)           \</span></div>
+<div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;<span class="preprocessor">    __device__ __forceinline__ uint2 ThreadLoad&lt;cub_modifier, uint2 const *&gt;(uint2 const *ptr)                   \</span></div>
 <div class="line"><a name="l00196"></a><span class="lineno">  196</span>&#160;<span class="preprocessor">    {                                                                                       \</span></div>
 <div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;<span class="preprocessor">        uint2 retval;                                                                       \</span></div>
 <div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;<span class="preprocessor">        asm volatile (&quot;ld.&quot;#ptx_modifier&quot;.v2.u32 {%0, %1}, [%2];&quot; :                         \</span></div>
@@ -248,7 +248,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;<span class="preprocessor">        return retval;                                                                      \</span></div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;<span class="preprocessor">    }                                                                                       \</span></div>
 <div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;<span class="preprocessor">    template&lt;&gt;                                                                              \</span></div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="preprocessor">    __device__ __forceinline__ unsigned long long ThreadLoad&lt;cub_modifier, unsigned long long*&gt;(unsigned long long* ptr)                 \</span></div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;<span class="preprocessor">    __device__ __forceinline__ unsigned long long ThreadLoad&lt;cub_modifier, unsigned long long const *&gt;(unsigned long long const *ptr)    \</span></div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;<span class="preprocessor">    {                                                                                       \</span></div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;<span class="preprocessor">        unsigned long long retval;                                                          \</span></div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="preprocessor">        asm volatile (&quot;ld.&quot;#ptx_modifier&quot;.u64 %0, [%1];&quot; :                                  \</span></div>
@@ -259,7 +259,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00213"></a><span class="lineno">  213</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00217"></a><span class="lineno">  217</span>&#160;<span class="preprocessor">#define CUB_LOAD_4(cub_modifier, ptx_modifier)                                              \</span></div>
 <div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;<span class="preprocessor">    template&lt;&gt;                                                                              \</span></div>
-<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="preprocessor">    __device__ __forceinline__ unsigned int ThreadLoad&lt;cub_modifier, unsigned int*&gt;(unsigned int* ptr)                 \</span></div>
+<div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;<span class="preprocessor">    __device__ __forceinline__ unsigned int ThreadLoad&lt;cub_modifier, unsigned int const *&gt;(unsigned int const *ptr)                      \</span></div>
 <div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;<span class="preprocessor">    {                                                                                       \</span></div>
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;<span class="preprocessor">        unsigned int retval;                                                                \</span></div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;<span class="preprocessor">        asm volatile (&quot;ld.&quot;#ptx_modifier&quot;.u32 %0, [%1];&quot; :                                  \</span></div>
@@ -271,7 +271,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;<span class="preprocessor">#define CUB_LOAD_2(cub_modifier, ptx_modifier)                                              \</span></div>
 <div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;<span class="preprocessor">    template&lt;&gt;                                                                              \</span></div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;<span class="preprocessor">    __device__ __forceinline__ unsigned short ThreadLoad&lt;cub_modifier, unsigned short*&gt;(unsigned short* ptr)           \</span></div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;<span class="preprocessor">    __device__ __forceinline__ unsigned short ThreadLoad&lt;cub_modifier, unsigned short const *&gt;(unsigned short const *ptr)                \</span></div>
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;<span class="preprocessor">    {                                                                                       \</span></div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;<span class="preprocessor">        unsigned short retval;                                                              \</span></div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;<span class="preprocessor">        asm volatile (&quot;ld.&quot;#ptx_modifier&quot;.u16 %0, [%1];&quot; :                                  \</span></div>
@@ -283,7 +283,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;</div>
 <div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;<span class="preprocessor">#define CUB_LOAD_1(cub_modifier, ptx_modifier)                                              \</span></div>
 <div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;<span class="preprocessor">    template&lt;&gt;                                                                              \</span></div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="preprocessor">    __device__ __forceinline__ unsigned char ThreadLoad&lt;cub_modifier, unsigned char*&gt;(unsigned char* ptr)              \</span></div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;<span class="preprocessor">    __device__ __forceinline__ unsigned char ThreadLoad&lt;cub_modifier, unsigned char const *&gt;(unsigned char const *ptr)                   \</span></div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;<span class="preprocessor">    {                                                                                       \</span></div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;<span class="preprocessor">        unsigned short retval;                                                              \</span></div>
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;<span class="preprocessor">        asm volatile (                                                                      \</span></div>
@@ -294,7 +294,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;<span class="preprocessor">        &quot;}&quot; :                                                                               \</span></div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;<span class="preprocessor">            &quot;=h&quot;(retval) :                                                                  \</span></div>
 <div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;<span class="preprocessor">            _CUB_ASM_PTR_(ptr));                                                            \</span></div>
-<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="preprocessor">        return (unsigned char) retval;                                                               \</span></div>
+<div class="line"><a name="l00260"></a><span class="lineno">  260</span>&#160;<span class="preprocessor">        return (unsigned char) retval;                                                      \</span></div>
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="preprocessor">    }</span></div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;</div>
@@ -374,7 +374,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T&gt;</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;__device__ __forceinline__ T ThreadLoadVolatilePointer(</div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;    T                       *ptr,</div>
-<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;    Int2Type&lt;false&gt;          is_primitive)</div>
+<div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;    Int2Type&lt;false&gt;         is_primitive)</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;{</div>
 <div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &lt;= 130</span></div>
@@ -422,7 +422,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;</div>
 <div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> T, <span class="keywordtype">int</span> MODIFIER&gt;</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;__device__ __forceinline__ T <a class="code" href="group___util_io.html#ga54f8f9a6645b94a484fab6f73568b81c" title="Thread utility for reading memory using cub::CacheLoadModifier cache modifiers. Can be used to load a...">ThreadLoad</a>(</div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    T                       *ptr,</div>
+<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    T <span class="keyword">const</span>                 *ptr,</div>
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;    Int2Type&lt;MODIFIER&gt;      modifier,</div>
 <div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;    Int2Type&lt;true&gt;          is_pointer)</div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;{</div>
@@ -433,7 +433,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;    DeviceWord words[DEVICE_MULTIPLE];</div>
 <div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;</div>
 <div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;    IterateThreadLoad&lt;0, DEVICE_MULTIPLE&gt;::template Load&lt;CacheLoadModifier(MODIFIER)&gt;(</div>
-<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;        <span class="keyword">reinterpret_cast&lt;</span>DeviceWord*<span class="keyword">&gt;</span>(ptr),</div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;        <span class="keyword">reinterpret_cast&lt;</span>DeviceWord*<span class="keyword">&gt;</span>(<span class="keyword">const_cast&lt;</span>T*<span class="keyword">&gt;</span>(ptr)),</div>
 <div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;        words);</div>
 <div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;</div>
 <div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;    <span class="keywordflow">return</span> *<span class="keyword">reinterpret_cast&lt;</span>T*<span class="keyword">&gt;</span>(words);</div>
@@ -465,7 +465,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 10 2015 13:58:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

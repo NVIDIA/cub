@@ -111,7 +111,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a> counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_histogram.html" title="DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequenc...">DeviceHistogram</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions. </li>
+<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_histogram.html" title="DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequenc...">DeviceHistogram</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. </li>
 </ul>
 </dd></dl>
 
@@ -249,8 +249,7 @@ template&lt;typename SampleIteratorT , typename CounterT , typename LevelT , typ
 <dl class="section user"><dt></dt><dd><ul>
 <li>The number of histogram bins is (<code>num_levels</code> - 1)</li>
 <li>All bins comprise the same width of sample values: (<code>upper_level</code> - <code>lower_level</code>) / (<code>num_levels</code> - 1)</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of a six-bin histogram from a sequence of float samples</dd></dl>
@@ -307,7 +306,7 @@ template&lt;typename SampleIteratorT , typename CounterT , typename LevelT , typ
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00125">125</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00124">124</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -411,8 +410,7 @@ template&lt;typename SampleIteratorT , typename CounterT , typename LevelT , typ
 <li>The row stride must be a whole multiple of the sample data type size, i.e., <code>(row_stride_bytes % sizeof(SampleT)) == 0</code>.</li>
 <li>The number of histogram bins is (<code>num_levels</code> - 1)</li>
 <li>All bins comprise the same width of sample values: (<code>upper_level</code> - <code>lower_level</code>) / (<code>num_levels</code> - 1)</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of a six-bin histogram from a 2x5 region of interest within a flattened 2x7 array of float samples.</dd></dl>
@@ -475,7 +473,7 @@ template&lt;typename SampleIteratorT , typename CounterT , typename LevelT , typ
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00225">225</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00223">223</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -567,8 +565,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
 <li>Of the <code>NUM_CHANNELS</code> specified, the function will only compute histograms for the first <code>NUM_ACTIVE_CHANNELS</code> (e.g., only <em>RGB</em> histograms from <em>RGBA</em> pixel samples).</li>
 <li>The number of histogram bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1.</li>
 <li>For channel<sub><em>i</em></sub>, the range of values for all histogram bins have the same width: (<code>upper_level[i]</code> - <code>lower_level[i]</code>) / (<code> num_levels[i]</code> - 1)</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 256-bin <em>RGB</em> histograms from a quad-channel sequence of <em>RGBA</em> pixels (8 bits per channel per pixel)</dd></dl>
@@ -631,7 +628,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00328">328</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00325">325</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -737,8 +734,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
 <li>The row stride must be a whole multiple of the sample data type size, i.e., <code>(row_stride_bytes % sizeof(SampleT)) == 0</code>.</li>
 <li>The number of histogram bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1.</li>
 <li>For channel<sub><em>i</em></sub>, the range of values for all histogram bins have the same width: (<code>upper_level[i]</code> - <code>lower_level[i]</code>) / (<code> num_levels[i]</code> - 1)</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 256-bin <em>RGB</em> histograms from a 2x3 region of interest of within a flattened 2x4 array of quad-channel <em>RGBA</em> pixels (8 bits per channel per pixel).</dd></dl>
@@ -807,7 +803,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00436">436</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00432">432</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -891,8 +887,7 @@ template&lt;typename SampleIteratorT , typename CounterT , typename LevelT , typ
 <dl class="section user"><dt></dt><dd><ul>
 <li>The number of histogram bins is (<code>num_levels</code> - 1)</li>
 <li>The value range for bin<sub><em>i</em></sub> is [<code>level[i]</code>, <code>level[i+1]</code>)</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of an six-bin histogram from a sequence of float samples</dd></dl>
@@ -947,7 +942,7 @@ template&lt;typename SampleIteratorT , typename CounterT , typename LevelT , typ
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00532">532</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00527">527</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -1045,8 +1040,7 @@ template&lt;typename SampleIteratorT , typename CounterT , typename LevelT , typ
 <li>The row stride must be a whole multiple of the sample data type size, i.e., <code>(row_stride_bytes % sizeof(SampleT)) == 0</code>.</li>
 <li>The number of histogram bins is (<code>num_levels</code> - 1)</li>
 <li>The value range for bin<sub><em>i</em></sub> is [<code>level[i]</code>, <code>level[i+1]</code>)</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of a six-bin histogram from a 2x5 region of interest within a flattened 2x7 array of float samples.</dd></dl>
@@ -1107,7 +1101,7 @@ template&lt;typename SampleIteratorT , typename CounterT , typename LevelT , typ
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00628">628</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00622">622</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -1193,8 +1187,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
 <li>Of the <code>NUM_CHANNELS</code> specified, the function will only compute histograms for the first <code>NUM_ACTIVE_CHANNELS</code> (e.g., <em>RGB</em> histograms from <em>RGBA</em> pixel samples).</li>
 <li>The number of histogram bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1.</li>
 <li>For channel<sub><em>i</em></sub>, the range of values for all histogram bins have the same width: (<code>upper_level[i]</code> - <code>lower_level[i]</code>) / (<code> num_levels[i]</code> - 1)</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 4-bin <em>RGB</em> histograms from a quad-channel sequence of <em>RGBA</em> pixels (8 bits per channel per pixel)</dd></dl>
@@ -1256,7 +1249,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00728">728</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00721">721</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -1356,8 +1349,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
 <li>The row stride must be a whole multiple of the sample data type size, i.e., <code>(row_stride_bytes % sizeof(SampleT)) == 0</code>.</li>
 <li>The number of histogram bins for channel<sub><em>i</em></sub> is <code>num_levels[i]</code> - 1.</li>
 <li>For channel<sub><em>i</em></sub>, the range of values for all histogram bins have the same width: (<code>upper_level[i]</code> - <code>lower_level[i]</code>) / (<code> num_levels[i]</code> - 1)</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the computation of three 4-bin <em>RGB</em> histograms from a 2x3 region of interest of within a flattened 2x4 array of quad-channel <em>RGBA</em> pixels (8 bits per channel per pixel).</dd></dl>
@@ -1423,7 +1415,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00832">832</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__histogram_8cuh_source.html#l00824">824</a> of file <a class="el" href="device__histogram_8cuh_source.html">device_histogram.cuh</a>.</p>
 
 </div>
 </div>
@@ -1434,7 +1426,7 @@ template&lt;int NUM_CHANNELS, int NUM_ACTIVE_CHANNELS, typename SampleIteratorT 
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 10 2015 13:58:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:18 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

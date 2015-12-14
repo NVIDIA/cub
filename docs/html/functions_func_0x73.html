@@ -165,27 +165,28 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>SortPairs()
 : <a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a4cffada9bba553f9871a34d926bbb148">cub::DeviceSegmentedRadixSort</a>
 , <a class="el" href="structcub_1_1_device_radix_sort.html#a31d7224d3f6c6a9309a0b84571f25eb9">cub::DeviceRadixSort</a>
-, <a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a4c291958575f14acc6a9e6d3e2ea6597">cub::DeviceSegmentedRadixSort</a>
+, <a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a6770adfa8e5a99c8015d9e6ab5ed8ca0">cub::DeviceSegmentedRadixSort</a>
 </li>
 <li>SortPairsDescending()
 : <a class="el" href="structcub_1_1_device_radix_sort.html#aea53a40e665f2d5ed683a6655a3d188e">cub::DeviceRadixSort</a>
 , <a class="el" href="structcub_1_1_device_segmented_radix_sort.html#aafce5852dfbfbeef027493c3791d6347">cub::DeviceSegmentedRadixSort</a>
 , <a class="el" href="structcub_1_1_device_radix_sort.html#add6a87f54c8058edba4b9e875bb0626a">cub::DeviceRadixSort</a>
+, <a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a39de3d48166582a802cc7df1481d3ff4">cub::DeviceSegmentedRadixSort</a>
 </li>
 <li>Store()
-: <a class="el" href="classcub_1_1_block_store.html#a67d0aa8fcf37f92b2074e986581ffdf5">cub::BlockStore&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a>
+: <a class="el" href="classcub_1_1_block_store.html#a86fd777fd9bef8264787d756b16303ed">cub::BlockStore&lt; OutputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a>
 </li>
 <li>StripedToBlocked()
 : <a class="el" href="classcub_1_1_block_exchange.html#a2855471bbbcc4d66ac6a29d35a040e0c">cub::BlockExchange&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a>
 </li>
 <li>Sum()
-: <a class="el" href="classcub_1_1_block_reduce.html#a33ddffdde07275ab0c4e1bf61b0d9409">cub::BlockReduce&lt; T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a>
-, <a class="el" href="classcub_1_1_warp_reduce.html#abe4aeeabf8859a7582a0b5858b84ee7a">cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#ac5d4591d9513f08b180d4112cb0c4c51">cub::BlockReduce&lt; T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a>
+: <a class="el" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f">cub::DeviceReduce</a>
 , <a class="el" href="classcub_1_1_warp_scan.html#a25bd83f795e88b9260ec2bcbf846fb20">cub::WarpScan&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a>
-, <a class="el" href="classcub_1_1_block_reduce.html#a7632bd9c8950dd6a3528ca99fa3f0890">cub::BlockReduce&lt; T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#ac5d4591d9513f08b180d4112cb0c4c51">cub::BlockReduce&lt; T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a>
 , <a class="el" href="classcub_1_1_warp_reduce.html#ad9c4a8d85a7795cf220713f362c36f30">cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a>
-, <a class="el" href="structcub_1_1_device_reduce.html#ab7f21e8255eb842aaf74305975ae607f">cub::DeviceReduce</a>
+, <a class="el" href="classcub_1_1_block_reduce.html#a33ddffdde07275ab0c4e1bf61b0d9409">cub::BlockReduce&lt; T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;</a>
+, <a class="el" href="classcub_1_1_warp_reduce.html#abe4aeeabf8859a7582a0b5858b84ee7a">cub::WarpReduce&lt; T, LOGICAL_WARP_THREADS, PTX_ARCH &gt;</a>
+, <a class="el" href="structcub_1_1_device_segmented_reduce.html#aefdf8fcdfb5e5d76459ee222360924eb">cub::DeviceSegmentedReduce</a>
 </li>
 <li>SwizzleScanOp()
 : <a class="el" href="classcub_1_1_swizzle_scan_op.html#ae81a38aa9d94025da72544b9e0dc611b">cub::SwizzleScanOp&lt; ScanOp &gt;</a>
@@ -195,7 +196,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 10 2015 13:58:08 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:20 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
