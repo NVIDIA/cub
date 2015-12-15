@@ -964,8 +964,8 @@ void TestBits(
     int     num_segments,
     int     *h_segment_offsets)
 {
-    // Don't test partial-word sorting for fp or signed types (the bit-flipping techniques get in the way)
-    if (Traits<KeyT>::CATEGORY == UNSIGNED_INTEGER)
+    // Don't test partial-word sorting for boolean, fp, or signed types (the bit-flipping techniques get in the way)
+    if ((Traits<KeyT>::CATEGORY == UNSIGNED_INTEGER) && (!Equals<KeyT, bool>::VALUE))
     {
         // Partial bits
         int begin_bit = 1;
@@ -1230,6 +1230,7 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         TestGen<bool>                 (num_items, num_segments);
+
         TestGen<char>                 (num_items, num_segments);
         TestGen<signed char>          (num_items, num_segments);
         TestGen<unsigned char>        (num_items, num_segments);
