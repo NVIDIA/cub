@@ -207,7 +207,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    };</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="comment">// Vector type</span></div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_cub_vector.html" title="Exposes a member typedef Type that names the corresponding CUDA vector type if one exists...">CubVector&lt;T, VEC_SIZE&gt;::Type</a> Vector;</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> CubVector&lt;T, VEC_SIZE&gt;::Type Vector;</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="comment">// Alias global pointer</span></div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;    Vector *block_ptr_vectors = <span class="keyword">reinterpret_cast&lt;</span>Vector*<span class="keyword">&gt;</span>(<span class="keyword">const_cast&lt;</span>T*<span class="keyword">&gt;</span>(block_ptr));</div>
@@ -384,7 +384,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DUMMY&gt;</div>
 <div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;    <span class="keyword">struct </span>StoreInternal&lt;BLOCK_STORE_DIRECT, DUMMY&gt;</div>
 <div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;    {</div>
-<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a>;</div>
+<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;        <span class="keyword">typedef</span> NullType <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a>;</div>
 <div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;</div>
 <div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;        <span class="keywordtype">int</span> linear_tid;</div>
 <div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;</div>
@@ -415,7 +415,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00572"></a><span class="lineno">  572</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DUMMY&gt;</div>
 <div class="line"><a name="l00573"></a><span class="lineno">  573</span>&#160;    <span class="keyword">struct </span>StoreInternal&lt;BLOCK_STORE_VECTORIZE, DUMMY&gt;</div>
 <div class="line"><a name="l00574"></a><span class="lineno">  574</span>&#160;    {</div>
-<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;        <span class="keyword">typedef</span> <a class="code" href="structcub_1_1_null_type.html" title="A simple &quot;NULL&quot; marker type. ">NullType</a> <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a>;</div>
+<div class="line"><a name="l00576"></a><span class="lineno">  576</span>&#160;        <span class="keyword">typedef</span> NullType <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a>;</div>
 <div class="line"><a name="l00577"></a><span class="lineno">  577</span>&#160;</div>
 <div class="line"><a name="l00579"></a><span class="lineno">  579</span>&#160;        <span class="keywordtype">int</span> linear_tid;</div>
 <div class="line"><a name="l00580"></a><span class="lineno">  580</span>&#160;</div>
@@ -459,7 +459,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;</div>
 <div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchange::TempStorage</a> _TempStorage;</div>
 <div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;</div>
-<div class="line"><a name="l00630"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___t_r_a_n_s_p_o_s_e_00_09dfae03f13932c7dbdb41be30a5767ba.html">  630</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00630"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___t_r_a_n_s_p_o_s_e_00_09dfae03f13932c7dbdb41be30a5767ba.html">  630</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
 <div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;</div>
 <div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;        <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">_TempStorage</a> &amp;temp_storage;</div>
 <div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;</div>
@@ -497,7 +497,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;    {</div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        <span class="keyword">enum</span></div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;        {</div>
-<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            WARP_THREADS = <a class="code" href="group___util_mgmt.html#gabfbb84b4dfe9567e3a5bd8216e2acbb4" title="Number of threads per warp. ">CUB_WARP_THREADS</a>(PTX_ARCH)</div>
+<div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;            WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH)</div>
 <div class="line"><a name="l00677"></a><span class="lineno">  677</span>&#160;        };</div>
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;</div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;        <span class="comment">// Assert BLOCK_THREADS must be a multiple of WARP_THREADS</span></div>
@@ -508,7 +508,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> BlockExchange::TempStorage _TempStorage;</div>
 <div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;</div>
-<div class="line"><a name="l00689"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8d170856b7ed1df0ed565731a681b449.html">  689</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00689"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8d170856b7ed1df0ed565731a681b449.html">  689</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
 <div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;</div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;        <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">_TempStorage</a> &amp;temp_storage;</div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;</div>
@@ -546,7 +546,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;    {</div>
 <div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;        <span class="keyword">enum</span></div>
 <div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;        {</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;            WARP_THREADS = <a class="code" href="group___util_mgmt.html#gabfbb84b4dfe9567e3a5bd8216e2acbb4" title="Number of threads per warp. ">CUB_WARP_THREADS</a>(PTX_ARCH)</div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;            WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH)</div>
 <div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;        };</div>
 <div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;</div>
 <div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;        <span class="comment">// Assert BLOCK_THREADS must be a multiple of WARP_THREADS</span></div>
@@ -557,7 +557,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;</div>
 <div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> BlockExchange::TempStorage _TempStorage;</div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;</div>
-<div class="line"><a name="l00748"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_263becc1ca5b47586740c2f7bb0d0145.html">  748</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00748"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_263becc1ca5b47586740c2f7bb0d0145.html">  748</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
 <div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;</div>
 <div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;        <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">_TempStorage</a> &amp;temp_storage;</div>
 <div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;</div>
@@ -621,7 +621,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;</div>
 <div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;</div>
-<div class="line"><a name="l00823"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html">  823</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00823"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html">  823</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
 <div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;</div>
 <div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;</div>
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;    <span class="comment">/******************************************************************/</span></div>
@@ -668,7 +668,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

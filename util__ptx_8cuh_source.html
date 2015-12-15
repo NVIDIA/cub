@@ -237,7 +237,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> bit_start,</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> num_bits)</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;{</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="group___util_ptx.html#gae6e3003e44d5f640aeea7d67414b3668" title="Bitfield-extract. Extracts num_bits from source starting at bit-offset bit_start. The input source ma...">BFE</a>(source, bit_start, num_bits, <a class="code" href="structcub_1_1_int2_type.html" title="Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static c...">Int2Type</a>&lt;<span class="keyword">sizeof</span>(UnsignedBits)&gt;());</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="group___util_ptx.html#gae6e3003e44d5f640aeea7d67414b3668" title="Bitfield-extract. Extracts num_bits from source starting at bit-offset bit_start. The input source ma...">BFE</a>(source, bit_start, num_bits, Int2Type&lt;<span class="keyword">sizeof</span>(UnsignedBits)&gt;());</div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;}</div>
 <div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;</div>
@@ -571,7 +571,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;{</div>
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &lt; 120</span></div>
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;    __shared__ <span class="keyword">volatile</span> <span class="keywordtype">int</span> warp_signals[CUB_PTX_MAX_SM_THREADS / CUB_PTX_WARP_THREADS];</div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;    __shared__ <span class="keyword">volatile</span> <span class="keywordtype">int</span> warp_signals[32];</div>
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;</div>
 <div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="group___util_ptx.html#gabf8633aaa6ac4f9f43a2f897a7939129" title="Returns the warp lane ID of the calling thread. ">LaneId</a>() == 0)</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        warp_signals[<a class="code" href="group___util_ptx.html#gadd1601dca30742c7a26e108c1dc933c9" title="Returns the warp ID of the calling thread. Warp ID is guaranteed to be unique among warps...">WarpId</a>()] = 1;</div>
@@ -583,7 +583,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;</div>
 <div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;    <span class="keywordflow">return</span> __all(cond);</div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;    return ::__all(cond);</div>
 <div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;</div>
 <div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;<span class="preprocessor"></span>}</div>
@@ -593,7 +593,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;{</div>
 <div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &lt; 120</span></div>
 <div class="line"><a name="l00707"></a><span class="lineno">  707</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;    __shared__ <span class="keyword">volatile</span> <span class="keywordtype">int</span> warp_signals[CUB_PTX_MAX_SM_THREADS / CUB_PTX_WARP_THREADS];</div>
+<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;    __shared__ <span class="keyword">volatile</span> <span class="keywordtype">int</span> warp_signals[32];</div>
 <div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;</div>
 <div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="group___util_ptx.html#gabf8633aaa6ac4f9f43a2f897a7939129" title="Returns the warp lane ID of the calling thread. ">LaneId</a>() == 0)</div>
 <div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;        warp_signals[<a class="code" href="group___util_ptx.html#gadd1601dca30742c7a26e108c1dc933c9" title="Returns the warp ID of the calling thread. Warp ID is guaranteed to be unique among warps...">WarpId</a>()] = 0;</div>
@@ -605,7 +605,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;</div>
 <div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;<span class="preprocessor">#else</span></div>
 <div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;    <span class="keywordflow">return</span> __any(cond);</div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;    return ::__any(cond);</div>
 <div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;</div>
 <div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;<span class="preprocessor">#endif</span></div>
 <div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;<span class="preprocessor"></span>}</div>
@@ -617,7 +617,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

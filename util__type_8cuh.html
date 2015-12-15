@@ -106,6 +106,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="contents">
 <div class="textblock"><code>#include &lt;iostream&gt;</code><br/>
 <code>#include &lt;limits&gt;</code><br/>
+<code>#include &lt;cfloat&gt;</code><br/>
 <code>#include &quot;util_macro.cuh&quot;</code><br/>
 <code>#include &quot;<a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>&quot;</code><br/>
 <code>#include &quot;util_namespace.cuh&quot;</code><br/>
@@ -119,24 +120,6 @@ Classes</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_equals.html">cub::Equals&lt; A, B &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Type equality test.  <a href="structcub_1_1_equals.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_null_type.html">cub::NullType</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A simple "NULL" marker type.  <a href="structcub_1_1_null_type.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_int2_type.html">cub::Int2Type&lt; A &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allows for the treatment of an integral constant as a type at compile-time (e.g., to achieve static call dispatch based on constant integral values)  <a href="structcub_1_1_int2_type.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_cub_vector.html">cub::CubVector&lt; T, vec_elements &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Exposes a member typedef <code>Type</code> that names the corresponding CUDA vector type if one exists. Otherwise <code>Type</code> refers to the <a class="el" href="structcub_1_1_cub_vector.html" title="Exposes a member typedef Type that names the corresponding CUDA vector type if one exists...">CubVector</a> structure itself, which will wrap the corresponding <code>x</code>, <code>y</code>, etc. vector fields.  <a href="structcub_1_1_cub_vector.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_uninitialized.html">cub::Uninitialized&lt; T &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions.  <a href="structcub_1_1_uninitialized.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_key_value_pair.html">cub::KeyValuePair&lt; _Key, _Value &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A key identifier paired with a corresponding value.  <a href="structcub_1_1_key_value_pair.html#details">More...</a><br/></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_double_buffer.html">cub::DoubleBuffer&lt; T &gt;</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Double-buffer storage wrapper for multi-pass stream transformations that require more than one storage array for streaming intermediate results back and forth.  <a href="structcub_1_1_double_buffer.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_log2.html">cub::Log2&lt; N, CURRENT_VAL, COUNT &gt;</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Statically determine log2(N), rounded up.  <a href="structcub_1_1_log2.html#details">More...</a><br/></td></tr>
@@ -168,7 +151,7 @@ Namespaces</h2></td></tr>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:51 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

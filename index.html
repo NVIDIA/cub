@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.4.1</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.5.0</b></em></a>
 
 </td><td>
 
@@ -394,19 +394,23 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>CUB releases are labeled using version identifiers having three fields: <code>&lt;epoch&gt;.&lt;feature&gt;.&lt;update&gt;</code>. The <em>epoch</em> field corresponds to support for a major change or update to the CUDA programming model. The <em>feature</em> field corresponds to a stable set of features, functionality, and interface. The <em>update</em> field corresponds to a bug-fix or performance update for that feature set. At the moment, we do not publicly provide non-stable releases such as development snapshots, beta releases or rolling releases. (Feel free to contact us if you would like access to such things.)</dd></dl>
 <dl class="section user"><dt></dt><dd>The following table enumerates prior feature releases as well as update versions for the current feature release. <table class="doxtable">
 <tr>
-<td style="white-space: nowrap; vertical-align:text-top;">04/13/2015<br/>
- <a href="download_cub.html"><b>CUB v1.4.1</b></a> </td><td style="vertical-align:text-top;"><ul>
-<li>CUDA 7.0 bug fixes and issue workarounds. See the <a href="CHANGE_LOG.TXT">change-log</a> for further details. </li>
+<td style="white-space: nowrap; vertical-align:text-top;">12/15/2015<br/>
+ <a href="download_cub.html"><b>CUB v1.5.0</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li>New Features:<ul>
+<li>Added new <a href="group___segmented_module.html">segmented device-wide operations</a> for sort and reduction primitives.</li>
+</ul>
+</li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
 <p class="endtd"></p>
 </td></tr>
 <tr>
-<td style="white-space: nowrap; vertical-align:text-top;">03/18/2015<br/>
- <a href="download_cub.html"><b>CUB v1.4.0</b></a> </td><td style="vertical-align:text-top;"><ul>
+<td style="white-space: nowrap; vertical-align:text-top;">04/13/2015<br/>
+ <a href="download_cub.html"><b>CUB v1.4.1</b></a> </td><td style="vertical-align:text-top;"><ul>
 <li>New Features:<ul>
 <li>Updated <a class="el" href="structcub_1_1_device_histogram.html" title="DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequenc...">cub::DeviceHistogram</a> implementation that provides the same "histogram-even" and "histogram-range" functionality as IPP/NPP. Provides extremely fast and, perhaps more importantly, very uniform performance response across diverse real-world datasets, including pathological (homogeneous) sample distributions (resilience)</li>
 <li>New <a class="el" href="structcub_1_1_device_spmv.html" title="DeviceSpmv provides device-wide parallel operations for performing sparse-matrix * dense-vector multi...">cub::DeviceSpmv</a> methods for multiplying sparse matrices by dense vectors, load-balanced using a merge-based parallel decomposition.</li>
-<li>New <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> sorting entry-points that always return the sorted output into the specified buffer (as opposed to the <a class="el" href="structcub_1_1_double_buffer.html" title="Double-buffer storage wrapper for multi-pass stream transformations that require more than one storag...">cub::DoubleBuffer</a> in which it could end up in either buffer)</li>
+<li>New <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> sorting entry-points that always return the sorted output into the specified buffer (as opposed to the cub::DoubleBuffer in which it could end up in either buffer)</li>
 <li>New <a class="el" href="structcub_1_1_device_run_length_encode.html#aa2318dc7a69f28a8c47d417aaf53db3a" title="Enumerates the starting offsets and lengths of all non-trivial runs (of length &gt; 1) of same-valued ke...">cub::DeviceRunLengthEncode::NonTrivialRuns</a> for finding the starting offsets and lengths of all non-trivial runs (i.e., length &gt; 1) of keys in a given sequence. (Useful for top-down partitioning algorithms like MSD sorting of very-large keys.)</li>
 </ul>
 </li>
@@ -431,7 +435,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <tr>
 <td style="white-space: nowrap; vertical-align:text-top;">04/01/2014<br/>
  <b>CUB v1.2.3</b> </td><td style="vertical-align:text-top;"><ul>
-<li>Added device-wide reduce-by-key (<a class="el" href="structcub_1_1_device_reduce.html#a3206c7c11b4d894ca176482e86215b02" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>, cub::DeviceReduce::RunLengthEncode)</li>
+<li>Added device-wide reduce-by-key (<a class="el" href="structcub_1_1_device_reduce.html#a303ae673ac32825f95912b4bfff8bef1" title="Reduces segments of values, where segments are demarcated by corresponding runs of identical keys...">cub::DeviceReduce::ReduceByKey</a>, cub::DeviceReduce::RunLengthEncode)</li>
 <li>Added MS VC++ project solutions for device-wide and block-wide examples</li>
 <li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
@@ -446,7 +450,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li>Added <a class="el" href="structcub_1_1_device_select.html" title="DeviceSelect provides device-wide, parallel operations for compacting selected items from sequences o...">cub::DeviceSelect</a> (select-unique, select-if, and select-flagged)</li>
 <li>Added <a class="el" href="structcub_1_1_device_partition.html" title="DevicePartition provides device-wide, parallel operations for partitioning sequences of data items re...">cub::DevicePartition</a> (partition-if, partition-flagged)</li>
 <li>Added generic <a class="el" href="group___warp_module.html#gaa09dbea525e654af4138cae81ea9a6a8" title="Shuffle-up for any data type. Each warp-lanei obtains the value input contributed by warp-lanei-src_o...">cub::ShuffleUp()</a>, <a class="el" href="group___warp_module.html#gafca5db82f4d7bea60266099297359059" title="Shuffle-down for any data type. Each warp-lanei obtains the value input contributed by warp-lanei+src...">cub::ShuffleDown()</a>, and <a class="el" href="group___warp_module.html#ga490fe7fa432727b3d27be6cfe8d9439f" title="Shuffle-broadcast for any data type. Each warp-lanei obtains the value input contributed by warp-lane...">cub::ShuffleIndex()</a> for warp-wide communication of arbitrary data types (SM3x+)</li>
-<li>Added <a class="el" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">cub::MaxSmOccupancy()</a> for accurately determining SM occupancy for any given kernel function pointer</li>
+<li>Added cub::MaxSmOccupancy() for accurately determining SM occupancy for any given kernel function pointer</li>
 <li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
 <p class="endtd"></p>
@@ -511,7 +515,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:19 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

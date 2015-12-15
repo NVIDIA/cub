@@ -100,18 +100,18 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
   <div class="summary">
 <a href="structcub_1_1_device_scan-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::DeviceScan Struct Reference<div class="ingroups"><a class="el" href="group___device_module.html">Device-wide</a></div></div>  </div>
+<div class="title">cub::DeviceScan Struct Reference<div class="ingroups"><a class="el" href="group___single_module.html">Single-problem</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
-<div class="textblock"><p><a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">DeviceScan</a> provides device-wide, parallel operations for computing a prefix scan across a sequence of data items residing within global memory. </p>
+<div class="textblock"><p><a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">DeviceScan</a> provides device-wide, parallel operations for computing a prefix scan across a sequence of data items residing within device-accessible memory. </p>
 <div class="image">
 <img src="device_scan.png" alt="device_scan.png"/>
 <div class="caption">
 .</div></div>
  <dl class="section user"><dt>Overview</dt><dd>Given a sequence of input elements and a binary reduction operator, a <a href="http://en.wikipedia.org/wiki/Prefix_sum"><em>prefix scan</em></a> produces an output sequence where each element is computed to be the reduction of the elements occurring earlier in the input sequence. <em>Prefix sum</em> connotes a prefix scan with the addition operator. The term <em>inclusive</em> indicates that the <em>i</em><sup>th</sup> output reduction incorporates the <em>i</em><sup>th</sup> input. The term <em>exclusive</em> indicates the <em>i</em><sup>th</sup> input is not incorporated into the <em>i</em><sup>th</sup> output reduction.</dd></dl>
 <dl class="section user"><dt>Usage Considerations</dt><dd><ul>
-<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">DeviceScan</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. When calling these methods from kernel code, be sure to define the <code>CUB_CDP</code> macro in your compiler's macro definitions.</li>
+<li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">DeviceScan</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The work-complexity of prefix scan as a function of input size is linear, resulting in performance throughput that plateaus with problem sizes large enough to saturate the GPU.</dd></dl>
@@ -215,8 +215,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <p>Computes a device-wide exclusive prefix sum. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative sum operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
 <dl class="section user"><dt>Performance</dt><dd>The following charts illustrate saturated exclusive sum performance across different CUDA architectures for <code>int32</code> and <code>int64</code> items, respectively.</dd></dl>
@@ -229,7 +228,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the exclusive prefix sum of an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_items;      <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_out;         <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ]</span></div>
@@ -257,7 +256,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device-accessible allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of data items </td></tr>
@@ -269,7 +268,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 </dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_scan_8cu-example.html#a2">example_device_scan.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00133">133</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00132">132</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -352,11 +351,9 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <p>Computes a device-wide exclusive prefix scan using the specified binary <code>scan_op</code> functor. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a02b2d2e98f89f80813460f6a6ea1692b" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the exclusive prefix min-scan of an <code>int</code> device vector </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
@@ -370,7 +367,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <div class="line">    }</div>
 <div class="line">};</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>          num_items;      <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_out;         <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ]</span></div>
@@ -401,11 +398,11 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device-accessible allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of data items </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">identity</td><td>Identity element </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., the length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -414,7 +411,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00221">221</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00216">216</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -485,15 +482,13 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <p>Computes a device-wide inclusive prefix sum. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative sum operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a02b2d2e98f89f80813460f6a6ea1692b" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the inclusive prefix sum of an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>  num_items;      <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line"><span class="keywordtype">int</span>  *d_out;         <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ]</span></div>
@@ -521,7 +516,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device-accessible allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of data items </td></tr>
@@ -532,7 +527,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00300">300</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00291">291</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -609,11 +604,9 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <p>Computes a device-wide inclusive prefix scan using the specified binary <code>scan_op</code> functor. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
-<li>When <code>d_temp_storage</code> is NULL, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
-<li></li>
+<li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
-<dl class="section user"><dt>Performance</dt><dd>Performance is typically similar to <a class="el" href="structcub_1_1_device_scan.html#a02b2d2e98f89f80813460f6a6ea1692b" title="Computes a device-wide exclusive prefix sum. ">DeviceScan::ExclusiveSum</a>.</dd></dl>
 <dl class="section user"><dt>Snippet</dt><dd>The code snippet below illustrates the inclusive prefix min-scan of an <code>int</code> device vector. </dd></dl>
 <dl class="section user"><dt></dt><dd><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="cub_8cuh.html">cub/cub.cuh</a>&gt;</span>   <span class="comment">// or equivalently &lt;cub/device/device_scan.cuh&gt;</span></div>
 <div class="line"></div>
@@ -627,7 +620,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <div class="line">    }</div>
 <div class="line">};</div>
 <div class="line"></div>
-<div class="line"><span class="comment">// Declare, allocate, and initialize device pointers for input and output</span></div>
+<div class="line"><span class="comment">// Declare, allocate, and initialize device-accessible pointers for input and output</span></div>
 <div class="line"><span class="keywordtype">int</span>          num_items;      <span class="comment">// e.g., 7</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_in;          <span class="comment">// e.g., [8, 6, 7, 5, 3, 0, 9]</span></div>
 <div class="line"><span class="keywordtype">int</span>          *d_out;         <span class="comment">// e.g., [ ,  ,  ,  ,  ,  ,  ]</span></div>
@@ -657,11 +650,11 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_temp_storage</td><td>Device-accessible allocation of temporary storage. When NULL, the required allocation size is written to <code>temp_storage_bytes</code> and no work is done. </td></tr>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">temp_storage_bytes</td><td>Reference to size in bytes of <code>d_temp_storage</code> allocation </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">d_in</td><td>Pointer to the input sequence of data items </td></tr>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_out</td><td>Pointer to the output sequence of data items </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">scan_op</td><td>Binary scan functor </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>Total number of input items (i.e., the length of <code>d_in</code>) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">debug_synchronous</td><td><b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors. May cause significant slowdown. Default is <code>false</code>. </td></tr>
@@ -669,7 +662,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00383">383</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
+<p>Definition at line <a class="el" href="device__scan_8cuh_source.html#l00370">370</a> of file <a class="el" href="device__scan_8cuh_source.html">device_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -680,7 +673,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:54 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:18 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

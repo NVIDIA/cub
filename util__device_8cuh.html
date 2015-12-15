@@ -104,7 +104,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="title">util_device.cuh File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &quot;<a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>&quot;</code><br/>
+<div class="textblock"><code>#include &quot;<a class="el" href="util__type_8cuh_source.html">util_type.cuh</a>&quot;</code><br/>
+<code>#include &quot;<a class="el" href="util__arch_8cuh_source.html">util_arch.cuh</a>&quot;</code><br/>
 <code>#include &quot;<a class="el" href="util__debug_8cuh_source.html">util_debug.cuh</a>&quot;</code><br/>
 <code>#include &quot;util_namespace.cuh&quot;</code><br/>
 <code>#include &quot;util_macro.cuh&quot;</code><br/>
@@ -128,11 +129,6 @@ CUB_RUNTIME_FUNCTION <br class="typebreak"/>
 __forceinline__ cudaError_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#ga791244a362e168e8404403b5f4148de4">cub::SmVersion</a> (int &amp;sm_version, int device_ordinal)</td></tr>
 <tr class="memdesc:ga791244a362e168e8404403b5f4148de4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves the SM version (major * 100 + minor * 10) <br/></td></tr>
 <tr class="separator:ga791244a362e168e8404403b5f4148de4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gad47c4df33ee75496ad5ba3514c5c9334"><td class="memTemplParams" colspan="2">template&lt;typename KernelPtr &gt; </td></tr>
-<tr class="memitem:gad47c4df33ee75496ad5ba3514c5c9334"><td class="memTemplItemLeft" align="right" valign="top">CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-__forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334">cub::MaxSmOccupancy</a> (int &amp;max_sm_occupancy, KernelPtr kernel_ptr, int block_threads)</td></tr>
-<tr class="memdesc:gad47c4df33ee75496ad5ba3514c5c9334"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer <code>kernel_ptr</code> on the current device with <code>block_threads</code> per thread block.  <a href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334">More...</a><br/></td></tr>
-<tr class="separator:gad47c4df33ee75496ad5ba3514c5c9334"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Properties of a given CUDA device and the corresponding PTX bundle </p>
@@ -142,7 +138,7 @@ __forceinline__ cudaError_t&#160;</td><td class="memTemplItemRight" valign="bott
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

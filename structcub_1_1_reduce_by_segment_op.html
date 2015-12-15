@@ -111,8 +111,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 struct cub::ReduceBySegmentOp&lt; ReductionOpT &gt;</h3>
 
 <p>Reduce-by-segment functor. </p>
-<p>Given two <a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">cub::KeyValuePair</a> inputs <code>a</code> and <code>b</code> and a binary associative combining operator <code><code>f(const T &amp;x, const T &amp;y)</code></code>, an instance of this functor returns a <a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">cub::KeyValuePair</a> whose <code>key</code> field is <code>a.key</code> + <code>a.key</code>, and whose <code>value</code> field is either b.value if b.key is non-zero, or f(a.value, b.value) otherwise.</p>
-<p><a class="el" href="structcub_1_1_reduce_by_segment_op.html" title="Reduce-by-segment functor. ">ReduceBySegmentOp</a> is an associative, non-commutative binary combining operator for input sequences of <a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">cub::KeyValuePair</a> pairings. Such sequences are typically used to represent a segmented set of values to be reduced and a corresponding set of {0,1}-valued integer "head flags" demarcating the first value of each segment.&lt; Binary reduction operator to apply to values </p>
+<p>Given two cub::KeyValuePair inputs <code>a</code> and <code>b</code> and a binary associative combining operator <code><code>f(const T &amp;x, const T &amp;y)</code></code>, an instance of this functor returns a cub::KeyValuePair whose <code>key</code> field is <code>a.key</code> + <code>a.key</code>, and whose <code>value</code> field is either b.value if b.key is non-zero, or f(a.value, b.value) otherwise.</p>
+<p><a class="el" href="structcub_1_1_reduce_by_segment_op.html" title="Reduce-by-segment functor. ">ReduceBySegmentOp</a> is an associative, non-commutative binary combining operator for input sequences of cub::KeyValuePair pairings. Such sequences are typically used to represent a segmented set of values to be reduced and a corresponding set of {0,1}-valued integer "head flags" demarcating the first value of each segment.&lt; Binary reduction operator to apply to values </p>
 
 <p>Definition at line <a class="el" href="thread__operators_8cuh_source.html#l00249">249</a> of file <a class="el" href="thread__operators_8cuh_source.html">thread_operators.cuh</a>.</p>
 </div><table class="memberdecls">
@@ -177,7 +177,7 @@ template&lt;typename KeyValuePairT &gt; </div>
 </div><div class="memdoc">
 
 <p>Scan operator. </p>
-<p>&lt; <a class="el" href="structcub_1_1_key_value_pair.html" title="A key identifier paired with a corresponding value. ">KeyValuePair</a> pairing of T (value) and OffsetT (head flag) </p>
+<p>&lt; KeyValuePair pairing of T (value) and OffsetT (head flag) </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">first</td><td>First partial reduction </td></tr>
@@ -197,7 +197,7 @@ template&lt;typename KeyValuePairT &gt; </div>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:52 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

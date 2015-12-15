@@ -157,7 +157,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    <span class="keyword">enum</span></div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    {</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == <a class="code" href="group___util_mgmt.html#gabfbb84b4dfe9567e3a5bd8216e2acbb4" title="Number of threads per warp. ">CUB_WARP_THREADS</a>(PTX_ARCH)),</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        IS_POW_OF_TWO = <a class="code" href="structcub_1_1_power_of_two.html" title="Statically determine if N is a power-of-two. ">PowerOfTwo&lt;LOGICAL_WARP_THREADS&gt;::VALUE</a>,</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;    };</div>
@@ -191,7 +191,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;<span class="keyword">public</span>:</div>
 <div class="line"><a name="l00189"></a><span class="lineno">  189</span>&#160;</div>
-<div class="line"><a name="l00191"></a><span class="lineno"><a class="code" href="structcub_1_1_warp_reduce_1_1_temp_storage.html">  191</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_warp_reduce_1_1_temp_storage.html" title="The operations exposed by WarpReduce require a temporary memory allocation of this nested type for th...">TempStorage</a> : <a class="code" href="structcub_1_1_uninitialized.html" title="A storage-backing wrapper that allows types with non-trivial constructors to be aliased in unions...">Uninitialized</a>&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00191"></a><span class="lineno"><a class="code" href="structcub_1_1_warp_reduce_1_1_temp_storage.html">  191</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_warp_reduce_1_1_temp_storage.html" title="The operations exposed by WarpReduce require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;</div>
 <div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    <span class="comment">/******************************************************************/</span></div>
@@ -297,7 +297,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:50 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

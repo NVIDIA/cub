@@ -243,13 +243,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line">    <span class="comment">// Kernel props</span></div>
 <div class="line">    <span class="keywordtype">int</span> max_sm_occupancy;</div>
-<div class="line">    <a name="a1"></a><a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="group___util_mgmt.html#gad47c4df33ee75496ad5ba3514c5c9334" title="Computes maximum SM occupancy in thread blocks for executing the given kernel function pointer kernel...">MaxSmOccupancy</a>(max_sm_occupancy, BlockSumKernel&lt;BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM&gt;, BLOCK_THREADS));</div>
+<div class="line">    <a name="a1"></a><a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(MaxSmOccupancy(max_sm_occupancy, BlockSumKernel&lt;BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM&gt;, BLOCK_THREADS));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Copy problem to device</span></div>
 <div class="line">    cudaMemcpy(d_in, h_in, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>) * TILE_SIZE, cudaMemcpyHostToDevice);</div>
 <div class="line"></div>
 <div class="line">    printf(<span class="stringliteral">&quot;BlockReduce algorithm %s on %d items (%d timing iterations, %d blocks, %d threads, %d items per thread, %d SM occupancy):\n&quot;</span>,</div>
-<div class="line">        (ALGORITHM == <a name="a3"></a><a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">BLOCK_REDUCE_RAKING</a>) ? <span class="stringliteral">&quot;BLOCK_REDUCE_RAKING&quot;</span> : <span class="stringliteral">&quot;BLOCK_REDUCE_WARP_REDUCTIONS&quot;</span>,</div>
+<div class="line">        (ALGORITHM == <a name="a2"></a><a class="code" href="namespacecub.html#add0251c713859b8974806079e498d10aab32651e17a8a42207e74b7ed8d1aa4d2">BLOCK_REDUCE_RAKING</a>) ? <span class="stringliteral">&quot;BLOCK_REDUCE_RAKING&quot;</span> : <span class="stringliteral">&quot;BLOCK_REDUCE_WARP_REDUCTIONS&quot;</span>,</div>
 <div class="line">        TILE_SIZE, g_timing_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Run aggregate/prefix kernel</span></div>
@@ -365,7 +365,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:49 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:13 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

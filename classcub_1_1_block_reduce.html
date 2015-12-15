@@ -101,7 +101,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="#nested-classes">Classes</a> &#124;
 <a href="classcub_1_1_block_reduce-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">cub::BlockReduce&lt; T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide (collective)</a></div></div>  </div>
+<div class="title">cub::BlockReduce&lt; T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt; Class Template Reference<div class="ingroups"><a class="el" href="group___block_module.html">Block-wide</a></div></div>  </div>
 </div><!--header-->
 <div class="contents">
 <a name="details" id="details"></a><h2 class="groupheader">Detailed description</h2>
@@ -319,14 +319,14 @@ template&lt;typename ReductionOp &gt; </div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction functor </td></tr>
   </table>
   </dd>
 </dl>
@@ -399,14 +399,14 @@ template&lt;int ITEMS_PER_THREAD, typename ReductionOp &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">ITEMS_PER_THREAD</td><td><b>[inferred]</b> The number of consecutive items partitioned onto each thread. </td></tr>
-    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">inputs</td><td>Calling thread's input segment </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction functor </td></tr>
   </table>
   </dd>
 </dl>
@@ -484,14 +484,14 @@ template&lt;typename ReductionOp &gt; </div>
 </div><!-- fragment --></dd></dl>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
-    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
+    <tr><td class="paramname">ReductionOp</td><td><b>[inferred]</b> Binary reduction functor type having member <code>T operator()(const T &amp;a, const T &amp;b)</code> </td></tr>
   </table>
   </dd>
 </dl>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">input</td><td>Calling thread's input </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction functor (e.g., an instance of <a class="el" href="structcub_1_1_sum.html" title="Default sum functor. ">cub::Sum</a>, <a class="el" href="structcub_1_1_min.html" title="Default min functor. ">cub::Min</a>, <a class="el" href="structcub_1_1_max.html" title="Default max functor. ">cub::Max</a>, etc.) </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">reduction_op</td><td>Binary reduction functor </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_valid</td><td>Number of threads containing valid elements (may be less than BLOCK_THREADS) </td></tr>
   </table>
   </dd>
@@ -708,7 +708,7 @@ template&lt;typename T , int BLOCK_DIM_X, BlockReduceAlgorithm ALGORITHM = BLOCK
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Apr 13 2015 13:56:53 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Dec 14 2015 13:11:17 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
