@@ -419,6 +419,9 @@ int Solve(
     EqualityOp      equality_op,
     int             num_items)
 {
+    if (num_items == 0) 
+        return 0;
+
     // First item
     T       previous        = h_in[0];
     LengthT  length          = 1;
@@ -848,7 +851,6 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         // Test different input types
-        TestSize<int,           int, int>(num_items);
         TestSize<char,          int, int>(num_items);
         TestSize<short,         int, int>(num_items);
         TestSize<int,           int, int>(num_items);
@@ -864,7 +866,6 @@ int main(int argc, char** argv)
         TestSize<ulonglong4,    int, int>(num_items);
         TestSize<TestFoo,       int, int>(num_items);
         TestSize<TestBar,       int, int>(num_items);
-
     }
 
 #endif
