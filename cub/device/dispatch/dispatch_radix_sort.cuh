@@ -250,6 +250,8 @@ __global__ void DeviceRadixSortSingleTileKernel(
         ITEMS_PER_THREAD,
         ChainedPolicyT::ActivePolicy::DownsweepPolicy::LOAD_ALGORITHM> BlockLoadValues;
 
+    // Unsigned word for key bits
+    typedef typename Traits<KeyT>::UnsignedBits UnsignedBitsT;
 
     // Shared memory storage
     __shared__ union
@@ -265,9 +267,8 @@ __global__ void DeviceRadixSortSingleTileKernel(
     ValueT          values[ITEMS_PER_THREAD];
 
     // Get default (min/max) value for out-of-bounds keys
-    typedef typename Traits<KeyT>::UnsignedBits UnsignedBitsT;
-    UnsignedBitsT default_key_bits = (IS_DESCENDING) ? Traits<KeyT>::LOWEST_KEY : Traits<KeyT>::MAX_KEY;
-    KeyT default_key = reinterpret_cast<KeyT&>(default_key_bits);
+    UnsignedBitsT   default_key_bits = (IS_DESCENDING) ? Traits<KeyT>::LOWEST_KEY : Traits<KeyT>::MAX_KEY;
+    KeyT            default_key = reinterpret_cast<KeyT&>(default_key_bits);
 
     // Load keys
     BlockLoadKeys(temp_storage.load_keys).Load(d_keys_in, keys, num_items, default_key);
@@ -765,6 +766,10 @@ struct DispatchRadixSort :
                 temp_storage_bytes = 1;
                 break;
             }
+
+            // Return if empty problem
+            if (num_items == 0)
+                break;
 
             // Log single_tile_kernel configuration
             if (debug_synchronous)
