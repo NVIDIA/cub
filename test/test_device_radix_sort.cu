@@ -556,6 +556,22 @@ struct Pair
 
 
 /**
+ * Simple key-value pairing (specialized for bool types)
+ */
+template <typename ValueT>
+struct Pair<bool, ValueT, false>
+{
+    bool     key;
+    ValueT   value;
+
+    bool operator<(const Pair &b) const
+    {
+        return (!key && b.key);
+    }
+};
+
+
+/**
  * Simple key-value pairing (specialized for floating point types)
  */
 template <typename KeyT, typename ValueT>
@@ -596,15 +612,7 @@ void InitializeKeyBits(
     int             entropy_reduction)
 {
     for (int i = 0; i < num_items; ++i)
-    {
-        if (gen_mode == RANDOM) {
-            RandomBits(h_keys[i], entropy_reduction);
-        } else if (gen_mode == UNIFORM) {
-            h_keys[i] = 1;
-        } else {
-            h_keys[i] = i;
-        }
-    }
+        InitValue(gen_mode, h_keys[i], i);
 }
 
 
@@ -622,7 +630,9 @@ void InitializeSolution(
     int     *&h_reference_ranks,
     KeyT    *&h_reference_keys)
 {
-    Pair<KeyT, int> *h_pairs = new Pair<KeyT, int>[num_items];
+    typedef Pair<KeyT, int> PairT;
+
+    PairT *h_pairs = new PairT[num_items];
 
     int num_bits = end_bit - begin_bit;
     for (int i = 0; i < num_items; ++i)
@@ -644,7 +654,7 @@ void InitializeSolution(
         h_pairs[i].value = i;
     }
 
-    printf("\nSorting reference solution on CPU..."); fflush(stdout);
+    printf("\nSorting reference solution on CPU (%d segments)...", num_segments); fflush(stdout);
 
     for (int i = 0; i < num_segments; ++i)
     {
@@ -664,7 +674,7 @@ void InitializeSolution(
         h_reference_keys[i]     = h_keys[h_pairs[i].value];
     }
 
-    delete[] h_pairs;
+    if (h_pairs) delete[] h_pairs;
 }
 
 
@@ -910,7 +920,6 @@ void TestValueTypes(
     // Test value types
 
     TestBackend<IS_DESCENDING, KeyT, NullType>              (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
-
     TestBackend<IS_DESCENDING, KeyT, KeyT>                  (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     if (!Equals<KeyT, unsigned int>::VALUE)
@@ -922,7 +931,6 @@ void TestValueTypes(
     TestBackend<IS_DESCENDING, KeyT, TestFoo>               (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Cleanup
-
     if (h_reference_ranks) delete[] h_reference_ranks;
     if (h_reference_keys) delete[] h_reference_keys;
 }
@@ -956,8 +964,8 @@ void TestBits(
     int     num_segments,
     int     *h_segment_offsets)
 {
-    // Don't test partial-word sorting for fp or signed types (the bit-flipping techniques get in the way)
-    if (Traits<KeyT>::CATEGORY == UNSIGNED_INTEGER)
+    // Don't test partial-word sorting for boolean, fp, or signed types (the bit-flipping techniques get in the way)
+    if ((Traits<KeyT>::CATEGORY == UNSIGNED_INTEGER) && (!Equals<KeyT, bool>::VALUE))
     {
         // Partial bits
         int begin_bit = 1;
@@ -996,6 +1004,7 @@ void TestSegments(
         }
     }
 
+    // Test single segment
     if (num_items < 128 * 1000) {
         // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
         InitializeSegments(num_items, 1, h_segment_offsets);
@@ -1221,6 +1230,7 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         TestGen<bool>                 (num_items, num_segments);
+
         TestGen<char>                 (num_items, num_segments);
         TestGen<signed char>          (num_items, num_segments);
         TestGen<unsigned char>        (num_items, num_segments);
@@ -1241,9 +1251,11 @@ int main(int argc, char** argv)
 
         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
             TestGen<double>           (num_items, num_segments);
+
     }
 
 #endif
 
     return 0;
 }
+
