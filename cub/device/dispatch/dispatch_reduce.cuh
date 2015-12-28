@@ -112,7 +112,7 @@ template <
     typename                OffsetT,                    ///< Signed integer type for global offsets
     typename                ReductionOpT,               ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename                T>                          ///< Data element type that is convertible to the \p value type of \p InputIteratorT
-__launch_bounds__ (int(ChainedPolicyT::ActivePolicy::ReducePolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS), 1)
 __global__ void DeviceReduceSingleTileKernel(
     InputIteratorT          d_in,                       ///< [in] Pointer to the input sequence of data items
     OutputIteratorT         d_out,                      ///< [out] Pointer to the output aggregate
@@ -122,7 +122,7 @@ __global__ void DeviceReduceSingleTileKernel(
 {
     // Thread block type for reducing input tiles
     typedef AgentReduce<
-            typename ChainedPolicyT::ActivePolicy::ReducePolicy,
+            typename ChainedPolicyT::ActivePolicy::SingleTilePolicy,
             InputIteratorT,
             OffsetT,
             ReductionOpT>
