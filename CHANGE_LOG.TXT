@@ -1,3 +1,9 @@
+1.5.1    12/28/2015
+    - Bug fixes: 
+        - Fix for incorrect DeviceRadixSort output for some small problems on 
+          Maxwell SM52 architectures
+        - Fix for macro redefinition warnings when compiling with Thrust sort
+          
 //-----------------------------------------------------------------------------
 
 1.5.0    12/14/2015
