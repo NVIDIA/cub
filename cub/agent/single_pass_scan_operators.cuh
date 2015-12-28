@@ -257,13 +257,16 @@ struct ScanTileState<T, true>
         StatusWord      &status,
         T               &value)
     {
-        TileDescriptor tile_descriptor;
-        do {
+        TxnWord         alias           = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
+        TileDescriptor  tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-            TxnWord alias   = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
+        while (tile_descriptor.status == SCAN_TILE_INVALID)
+        {
+            __threadfence_block(); // prevent hoisting loads from loop
+
+            alias           = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
-
-        } while (tile_descriptor.status == SCAN_TILE_INVALID);
+        }
 
         status = tile_descriptor.status;
         value = tile_descriptor.value;
@@ -416,7 +419,10 @@ struct ScanTileState<T, false>
     {
         do {
             status = ThreadLoad<LOAD_CG>(d_tile_status + TILE_STATUS_PADDING + tile_idx);
-        } while (status == SCAN_TILE_INVALID);    
+
+            __threadfence();    // prevent hoisting loads from loop or loads below above this one
+
+        } while (status == SCAN_TILE_INVALID);
 
         if (status == StatusWord(SCAN_TILE_PARTIAL)) 
             value = ThreadLoad<LOAD_CG>(d_tile_partial + TILE_STATUS_PADDING + tile_idx);
@@ -616,13 +622,16 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
         StatusWord              &status,
         KeyValuePairT           &value)
     {
-        TileDescriptor tile_descriptor;
-        do {
+        TxnWord         alias           = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
+        TileDescriptor  tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
-            TxnWord alias   = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
+        while (tile_descriptor.status == SCAN_TILE_INVALID)
+        {
+            __threadfence_block();  // prevent hoisting loads from loop
+
+            alias           = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
-
-        } while (tile_descriptor.status == SCAN_TILE_INVALID);
+        }
 
         status      = tile_descriptor.status;
         value.value = tile_descriptor.value;
