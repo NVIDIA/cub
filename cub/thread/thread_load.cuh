@@ -151,7 +151,7 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define a uint4 (16B) ThreadLoad specialization for the given Cache load modifier
  */
-#define CUB_LOAD_16(cub_modifier, ptx_modifier)                                             \
+#define _CUB_LOAD_16(cub_modifier, ptx_modifier)                                             \
     template<>                                                                              \
     __device__ __forceinline__ uint4 ThreadLoad<cub_modifier, uint4 const *>(uint4 const *ptr)                   \
     {                                                                                       \
@@ -178,7 +178,7 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define a uint2 (8B) ThreadLoad specialization for the given Cache load modifier
  */
-#define CUB_LOAD_8(cub_modifier, ptx_modifier)                                              \
+#define _CUB_LOAD_8(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
     __device__ __forceinline__ ushort4 ThreadLoad<cub_modifier, ushort4 const *>(ushort4 const *ptr)             \
     {                                                                                       \
@@ -214,7 +214,7 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define a uint (4B) ThreadLoad specialization for the given Cache load modifier
  */
-#define CUB_LOAD_4(cub_modifier, ptx_modifier)                                              \
+#define _CUB_LOAD_4(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
     __device__ __forceinline__ unsigned int ThreadLoad<cub_modifier, unsigned int const *>(unsigned int const *ptr)                      \
     {                                                                                       \
@@ -229,7 +229,7 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define a unsigned short (2B) ThreadLoad specialization for the given Cache load modifier
  */
-#define CUB_LOAD_2(cub_modifier, ptx_modifier)                                              \
+#define _CUB_LOAD_2(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
     __device__ __forceinline__ unsigned short ThreadLoad<cub_modifier, unsigned short const *>(unsigned short const *ptr)                \
     {                                                                                       \
@@ -244,7 +244,7 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define an unsigned char (1B) ThreadLoad specialization for the given Cache load modifier
  */
-#define CUB_LOAD_1(cub_modifier, ptx_modifier)                                              \
+#define _CUB_LOAD_1(cub_modifier, ptx_modifier)                                              \
     template<>                                                                              \
     __device__ __forceinline__ unsigned char ThreadLoad<cub_modifier, unsigned char const *>(unsigned char const *ptr)                   \
     {                                                                                       \
@@ -264,44 +264,44 @@ struct IterateThreadLoad<MAX, MAX>
 /**
  * Define powers-of-two ThreadLoad specializations for the given Cache load modifier
  */
-#define CUB_LOAD_ALL(cub_modifier, ptx_modifier)                                            \
-    CUB_LOAD_16(cub_modifier, ptx_modifier)                                                 \
-    CUB_LOAD_8(cub_modifier, ptx_modifier)                                                  \
-    CUB_LOAD_4(cub_modifier, ptx_modifier)                                                  \
-    CUB_LOAD_2(cub_modifier, ptx_modifier)                                                  \
-    CUB_LOAD_1(cub_modifier, ptx_modifier)                                                  \
+#define _CUB_LOAD_ALL(cub_modifier, ptx_modifier)                                            \
+    _CUB_LOAD_16(cub_modifier, ptx_modifier)                                                 \
+    _CUB_LOAD_8(cub_modifier, ptx_modifier)                                                  \
+    _CUB_LOAD_4(cub_modifier, ptx_modifier)                                                  \
+    _CUB_LOAD_2(cub_modifier, ptx_modifier)                                                  \
+    _CUB_LOAD_1(cub_modifier, ptx_modifier)                                                  \
 
 
 /**
  * Define powers-of-two ThreadLoad specializations for the various Cache load modifiers
  */
 #if CUB_PTX_ARCH >= 200
-    CUB_LOAD_ALL(LOAD_CA, ca)
-    CUB_LOAD_ALL(LOAD_CG, cg)
-    CUB_LOAD_ALL(LOAD_CS, cs)
-    CUB_LOAD_ALL(LOAD_CV, cv)
+    _CUB_LOAD_ALL(LOAD_CA, ca)
+    _CUB_LOAD_ALL(LOAD_CG, cg)
+    _CUB_LOAD_ALL(LOAD_CS, cs)
+    _CUB_LOAD_ALL(LOAD_CV, cv)
 #else
-    CUB_LOAD_ALL(LOAD_CA, global)
+    _CUB_LOAD_ALL(LOAD_CA, global)
     // Use volatile to ensure coherent reads when this PTX is JIT'd to run on newer architectures with L1
-    CUB_LOAD_ALL(LOAD_CG, volatile.global)
-    CUB_LOAD_ALL(LOAD_CS, global)
-    CUB_LOAD_ALL(LOAD_CV, volatile.global)
+    _CUB_LOAD_ALL(LOAD_CG, volatile.global)
+    _CUB_LOAD_ALL(LOAD_CS, global)
+    _CUB_LOAD_ALL(LOAD_CV, volatile.global)
 #endif
 
 #if CUB_PTX_ARCH >= 350
-    CUB_LOAD_ALL(LOAD_LDG, global.nc)
+    _CUB_LOAD_ALL(LOAD_LDG, global.nc)
 #else
-    CUB_LOAD_ALL(LOAD_LDG, global)
+    _CUB_LOAD_ALL(LOAD_LDG, global)
 #endif
 
 
 // Macro cleanup
-#undef CUB_LOAD_ALL
-#undef CUB_LOAD_1
-#undef CUB_LOAD_2
-#undef CUB_LOAD_4
-#undef CUB_LOAD_8
-#undef CUB_LOAD_16
+#undef _CUB_LOAD_ALL
+#undef _CUB_LOAD_1
+#undef _CUB_LOAD_2
+#undef _CUB_LOAD_4
+#undef _CUB_LOAD_8
+#undef _CUB_LOAD_16
 
 
 
