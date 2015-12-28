@@ -203,11 +203,11 @@ __global__ void DeviceRadixSortDownsweepKernel(
  */
 template <
     typename                ChainedPolicyT,                 ///< Chained tuning policy
-    bool                    IS_DESCENDING,                     ///< Whether or not the sorted-order is high-to-low
+    bool                    IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
     typename                KeyT,                           ///< Key type
     typename                ValueT,                         ///< Value type
     typename                OffsetT>                        ///< Signed integer type for global offsets
-__launch_bounds__ (int(ChainedPolicyT::ActivePolicy::DownsweepPolicy::BLOCK_THREADS), 1)
+__launch_bounds__ (int(ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS), 1)
 __global__ void DeviceRadixSortSingleTileKernel(
     KeyT                    *d_keys_in,                     ///< [in] Input keys buffer
     KeyT                    *d_keys_out,                    ///< [in] Output keys buffer
@@ -220,8 +220,8 @@ __global__ void DeviceRadixSortSingleTileKernel(
     // Constants
     enum
     {
-        BLOCK_THREADS           = ChainedPolicyT::ActivePolicy::DownsweepPolicy::BLOCK_THREADS,
-        ITEMS_PER_THREAD        = ChainedPolicyT::ActivePolicy::DownsweepPolicy::ITEMS_PER_THREAD,
+        BLOCK_THREADS           = ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS,
+        ITEMS_PER_THREAD        = ChainedPolicyT::ActivePolicy::SingleTilePolicy::ITEMS_PER_THREAD,
         KEYS_ONLY               = Equals<ValueT, NullType>::VALUE,
     };
 
@@ -231,9 +231,9 @@ __global__ void DeviceRadixSortSingleTileKernel(
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
             ValueT,
-            ChainedPolicyT::ActivePolicy::DownsweepPolicy::RADIX_BITS,
-            ChainedPolicyT::ActivePolicy::DownsweepPolicy::MEMOIZE_OUTER_SCAN,
-            ChainedPolicyT::ActivePolicy::DownsweepPolicy::INNER_SCAN_ALGORITHM>
+            ChainedPolicyT::ActivePolicy::SingleTilePolicy::RADIX_BITS,
+            ChainedPolicyT::ActivePolicy::SingleTilePolicy::MEMOIZE_OUTER_SCAN,
+            ChainedPolicyT::ActivePolicy::SingleTilePolicy::INNER_SCAN_ALGORITHM>
         BlockRadixSortT;
 
     // BlockLoad type (keys)
@@ -241,14 +241,14 @@ __global__ void DeviceRadixSortSingleTileKernel(
         KeyT*,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
-        ChainedPolicyT::ActivePolicy::DownsweepPolicy::LOAD_ALGORITHM> BlockLoadKeys;
+        ChainedPolicyT::ActivePolicy::SingleTilePolicy::LOAD_ALGORITHM> BlockLoadKeys;
 
     // BlockLoad type (values)
     typedef BlockLoad<
         ValueT*,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
-        ChainedPolicyT::ActivePolicy::DownsweepPolicy::LOAD_ALGORITHM> BlockLoadValues;
+        ChainedPolicyT::ActivePolicy::SingleTilePolicy::LOAD_ALGORITHM> BlockLoadValues;
 
     // Unsigned word for key bits
     typedef typename Traits<KeyT>::UnsignedBits UnsignedBitsT;
