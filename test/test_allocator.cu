@@ -197,8 +197,8 @@ int main(int argc, char** argv)
     char *d_5B;
     CubDebugExit(allocator.DeviceAllocate((void **) &d_5B, 5));
 
-    // Check that that we have zero bytes allocated on the initial GPU
-    AssertEquals(allocator.cached_bytes[initial_gpu], 0);
+    // Check that that we have zero free bytes cached on the initial GPU
+    AssertEquals(allocator.cached_bytes[initial_gpu].free, 0);
 
     // Check that that we have 1 live block on the initial GPU
     AssertEquals(allocator.live_blocks.size(), 1);
@@ -222,7 +222,7 @@ int main(int argc, char** argv)
     CubDebugExit(allocator.DeviceFree(d_5B));
 
     // Check that that we have min_bin_bytes free bytes cached on the initial gpu
-    AssertEquals(allocator.cached_bytes[initial_gpu], allocator.min_bin_bytes);
+    AssertEquals(allocator.cached_bytes[initial_gpu].free, allocator.min_bin_bytes);
 
     // Check that that we have 1 live block on the initial GPU
     AssertEquals(allocator.live_blocks.size(), 1);
@@ -238,7 +238,7 @@ int main(int argc, char** argv)
     CubDebugExit(allocator.DeviceFree(d_4096B));
 
     // Check that that we have the 4096 + min_bin free bytes cached on the initial gpu
-    AssertEquals(allocator.cached_bytes[initial_gpu], allocator.min_bin_bytes + 4096);
+    AssertEquals(allocator.cached_bytes[initial_gpu].free, allocator.min_bin_bytes + 4096);
 
     // Check that that we have 0 live block on the initial GPU
     AssertEquals(allocator.live_blocks.size(), 0);
@@ -255,7 +255,7 @@ int main(int argc, char** argv)
     CubDebugExit(allocator.DeviceAllocate((void **) &d_768B, 768));
 
     // Check that that we have the min_bin free bytes cached on the initial gpu (4096 was reused)
-    AssertEquals(allocator.cached_bytes[initial_gpu], allocator.min_bin_bytes);
+    AssertEquals(allocator.cached_bytes[initial_gpu].free, allocator.min_bin_bytes);
 
     // Check that that we have 1 live block on the initial GPU
     AssertEquals(allocator.live_blocks.size(), 1);
@@ -275,7 +275,7 @@ int main(int argc, char** argv)
     CubDebugExit(allocator.DeviceFree(d_max_cached));
 
     // Check that that we have the min_bin free bytes cached on the initial gpu (max cached was not returned because we went over)
-    AssertEquals(allocator.cached_bytes[initial_gpu], allocator.min_bin_bytes);
+    AssertEquals(allocator.cached_bytes[initial_gpu].free, allocator.min_bin_bytes);
 
     // Check that that we have 1 live block on the initial GPU
     AssertEquals(allocator.live_blocks.size(), 1);
@@ -291,7 +291,7 @@ int main(int argc, char** argv)
     CubDebugExit(allocator.FreeAllCached());
 
     // Check that that we have 0 bytes cached on the initial GPU
-    AssertEquals(allocator.cached_bytes[initial_gpu], 0);
+    AssertEquals(allocator.cached_bytes[initial_gpu].free, 0);
 
     // Check that that we have 0 cached blocks across all GPUs
     AssertEquals(allocator.cached_blocks.size(), 0);
@@ -318,7 +318,7 @@ int main(int argc, char** argv)
     allocator.NearestPowerOf(power, rounded_bytes, allocator.bin_growth, 768);
 
     // Check that that we have 4096 free bytes cached on the initial gpu
-    AssertEquals(allocator.cached_bytes[initial_gpu], rounded_bytes);
+    AssertEquals(allocator.cached_bytes[initial_gpu].free, rounded_bytes);
 
     // Check that that we have 1 cached blocks across all GPUs
     AssertEquals(allocator.cached_blocks.size(), 1);
@@ -346,10 +346,10 @@ int main(int argc, char** argv)
         CubDebugExit(allocator.DeviceFree(next_gpu, d_768B_2));
 
         // Check that that we have 4096 free bytes cached on the initial gpu
-        AssertEquals(allocator.cached_bytes[initial_gpu], rounded_bytes);
+        AssertEquals(allocator.cached_bytes[initial_gpu].free, rounded_bytes);
 
         // Check that that we have 4096 free bytes cached on the second gpu
-        AssertEquals(allocator.cached_bytes[next_gpu], rounded_bytes);
+        AssertEquals(allocator.cached_bytes[next_gpu].free, rounded_bytes);
 
         // Check that that we have 2 cached blocks across all GPUs
         AssertEquals(allocator.cached_blocks.size(), 2);

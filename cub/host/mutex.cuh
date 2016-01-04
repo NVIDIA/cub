@@ -28,7 +28,7 @@
 
 /**
  * \file
- * Simple x86/x64 atomic spinlock, portable across MS Windows (cl.exe) & Linux (g++)
+ * Simple portable mutex
  */
 
 
@@ -48,12 +48,40 @@
 
 #include "../util_namespace.cuh"
 
+//#include <mutex>
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
 /// CUB namespace
 namespace cub {
 
+
+/**
+ * Simple portable mutex
+ *   - Wraps std::mutex when compiled with C++11 or newer (supported on all platforms)
+ *   - Uses GNU/Windows spinlock mechanisms for pre C++11 (supported on x86/x64 when compiled with cl.exe or g++)
+ */
+struct Mutex
+{
+/*
+    std::mutex mtx;
+
+    void Lock()
+    {
+        mtx.lock();
+    }
+
+    void Unlock()
+    {
+        mtx.unlock();
+    }
+
+    void TryLock()
+    {
+        mtx.try_lock();
+    }
+*/
 
 #if defined(_MSC_VER)
 
@@ -88,34 +116,45 @@ namespace cub {
      */
     __forceinline__ void YieldProcessor()
     {
-#ifndef __arm__
-        asm volatile("pause\n": : :"memory");
-#endif  // __arm__
+    #ifndef __arm__
+            asm volatile("pause\n": : :"memory");
+    #endif  // __arm__
     }
 
 #endif  // defined(_MSC_VER)
 
-/**
- * Return when the specified spinlock has been acquired
- */
-__forceinline__ void Lock(volatile Spinlock *lock)
-{
-    while (1)
+    /// Lock member
+    volatile Spinlock lock;
+
+    /**
+     * Constructor
+     */
+    Mutex() : lock(0) {}
+
+    /**
+     * Return when the specified spinlock has been acquired
+     */
+    __forceinline__ void Lock()
     {
-        if (!_InterlockedExchange(lock, 1)) return;
-        while (*lock) YieldProcessor();
+        while (1)
+        {
+            if (!_InterlockedExchange(&lock, 1)) return;
+            while (lock) YieldProcessor();
+        }
     }
-}
 
 
-/**
- * Release the specified spinlock
- */
-__forceinline__ void Unlock(volatile Spinlock *lock)
-{
-    _ReadWriteBarrier();
-    *lock = 0;
-}
+    /**
+     * Release the specified spinlock
+     */
+    __forceinline__ void Unlock()
+    {
+        _ReadWriteBarrier();
+        lock = 0;
+    }
+};
+
+
 
 
 }               // CUB namespace

@@ -65,9 +65,6 @@
 #include "grid/grid_queue.cuh"
 
 // Host
-#include "host/spinlock.cuh"
-
-// Thread
 #include "thread/thread_load.cuh"
 #include "thread/thread_operators.cuh"
 #include "thread/thread_reduce.cuh"
