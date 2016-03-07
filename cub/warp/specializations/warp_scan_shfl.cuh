@@ -109,6 +109,29 @@ struct WarpScanShfl
     // Inclusive scan steps
     //---------------------------------------------------------------------
 
+    /// Inclusive prefix scan step (specialized for summation across int32 types)
+    __device__ __forceinline__ int InclusiveScanStep(
+        int             input,              ///< [in] Calling thread's input item.
+        cub::Sum        scan_op,            ///< [in] Binary scan operator
+        int             first_lane,         ///< [in] Index of first lane in segment
+        int             offset)             ///< [in] Up-offset to pull from
+    {
+        int output;
+
+        // Use predicate set from SHFL to guard against invalid peers
+        asm volatile(
+            "{"
+            "  .reg .s32 r0;"
+            "  .reg .pred p;"
+            "  shfl.up.b32 r0|p, %1, %2, %3;"
+            "  @p add.s32 r0, r0, %4;"
+            "  mov.s32 %0, r0;"
+            "}"
+            : "=r"(output) : "r"(input), "r"(offset), "r"(first_lane), "r"(input));
+
+        return output;
+    }
+
     /// Inclusive prefix scan step (specialized for summation across uint32 types)
     __device__ __forceinline__ unsigned int InclusiveScanStep(
         unsigned int    input,              ///< [in] Calling thread's input item.
@@ -297,7 +320,7 @@ struct WarpScanShfl
         _T temp = ShuffleUp(output, offset, first_lane);
 
         // Perform scan op if from a valid peer
-        if (lane_id >= offset)
+        if (lane_id >= first_lane + offset)
             output = scan_op(temp, output);
 
         return output;
