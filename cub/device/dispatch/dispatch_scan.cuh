@@ -133,6 +133,14 @@ __global__ void DeviceScanSweepKernel(
  * Dispatch
  ******************************************************************************/
 
+
+#define CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T) \
+    CUB_MAX(2, (NOMINAL_4B_BLOCK_THREADS / 32) * 4 / sizeof(T)) * 32
+
+#define CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, BLOCK_THREADS, T) \
+    (NOMINAL_4B_BLOCK_THREADS * NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)) / BLOCK_THREADS,
+
+
 /**
  * Utility class for dispatching the appropriately-tuned kernels for DeviceScan
  */
@@ -169,17 +177,18 @@ struct DispatchScan
     struct Policy520
     {
         enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 16,
+            NOMINAL_4B_ITEMS_PER_THREAD = 12,
             ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
-        // GTX980: 20.5B items/s @ 48M 32-bit T
+        // Titan X: 32.47B items/s @ 48M 32-bit T
         typedef AgentScanPolicy<
-                256,
+                128,
                 ITEMS_PER_THREAD,
-                BLOCK_LOAD_DIRECT, LOAD_LDG,
+                BLOCK_LOAD_DIRECT,
+                LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             ScanPolicyT;
     };
 
@@ -187,17 +196,23 @@ struct DispatchScan
     struct Policy350
     {
         enum {
+            NOMINAL_4B_BLOCK_THREADS    = 128,
+            BLOCK_THREADS               = CUB_MAX(2, (NOMINAL_4B_BLOCK_THREADS / 32) * 4 / sizeof(T)) * 32,
+
             NOMINAL_4B_ITEMS_PER_THREAD = 12,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+            ITEMS_PER_THREAD            = (NOMINAL_4B_BLOCK_THREADS * NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)) / BLOCK_THREADS,
         };
 
         // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
         typedef AgentScanPolicy<
-                128,
+                BLOCK_THREADS,
+//                12,
+//                128,
                 ITEMS_PER_THREAD,
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
+//                BLOCK_SCAN_WARP_SCANS>
                 BLOCK_SCAN_RAKING>
             ScanPolicyT;
     };
