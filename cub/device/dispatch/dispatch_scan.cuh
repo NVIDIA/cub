@@ -40,6 +40,7 @@
 #include "../../agent/agent_scan.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
+#include "../../util_arch.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 #include "../../util_namespace.cuh"
@@ -134,13 +135,6 @@ __global__ void DeviceScanSweepKernel(
  ******************************************************************************/
 
 
-#define CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T) \
-    CUB_MAX(2, (NOMINAL_4B_BLOCK_THREADS / 32) * 4 / sizeof(T)) * 32
-
-#define CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, BLOCK_THREADS, T) \
-    (NOMINAL_4B_BLOCK_THREADS * NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)) / BLOCK_THREADS,
-
-
 /**
  * Utility class for dispatching the appropriately-tuned kernels for DeviceScan
  */
@@ -177,14 +171,15 @@ struct DispatchScan
     struct Policy520
     {
         enum {
+            PTX_ARCH                    = 520,
+            NOMINAL_4B_BLOCK_THREADS    = 128,
             NOMINAL_4B_ITEMS_PER_THREAD = 12,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         // Titan X: 32.47B items/s @ 48M 32-bit T
         typedef AgentScanPolicy<
-                128,
-                ITEMS_PER_THREAD,
+                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -192,28 +187,24 @@ struct DispatchScan
             ScanPolicyT;
     };
 
+
     /// SM35
     struct Policy350
     {
         enum {
+            PTX_ARCH                    = 350,
             NOMINAL_4B_BLOCK_THREADS    = 128,
-            BLOCK_THREADS               = CUB_MAX(2, (NOMINAL_4B_BLOCK_THREADS / 32) * 4 / sizeof(T)) * 32,
-
             NOMINAL_4B_ITEMS_PER_THREAD = 12,
-            ITEMS_PER_THREAD            = (NOMINAL_4B_BLOCK_THREADS * NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)) / BLOCK_THREADS,
         };
 
         // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
         typedef AgentScanPolicy<
-                BLOCK_THREADS,
-//                12,
-//                128,
-                ITEMS_PER_THREAD,
+                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
-//                BLOCK_SCAN_WARP_SCANS>
-                BLOCK_SCAN_RAKING>
+                BLOCK_SCAN_WARP_SCANS>
             ScanPolicyT;
     };
 
@@ -221,13 +212,14 @@ struct DispatchScan
     struct Policy300
     {
         enum {
+            PTX_ARCH                    = 300,
+            NOMINAL_4B_BLOCK_THREADS    = 256,
             NOMINAL_4B_ITEMS_PER_THREAD = 9,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef AgentScanPolicy<
-                256,
-                ITEMS_PER_THREAD,
+                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -239,14 +231,15 @@ struct DispatchScan
     struct Policy200
     {
         enum {
+            PTX_ARCH                    = 200,
+            NOMINAL_4B_BLOCK_THREADS    = 128,
             NOMINAL_4B_ITEMS_PER_THREAD = 15,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         // GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
         typedef AgentScanPolicy<
-                128,
-                ITEMS_PER_THREAD,
+                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -258,13 +251,14 @@ struct DispatchScan
     struct Policy130
     {
         enum {
+            PTX_ARCH                    = 130,
+            NOMINAL_4B_BLOCK_THREADS    = 96,
             NOMINAL_4B_ITEMS_PER_THREAD = 21,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef AgentScanPolicy<
-                96,
-                ITEMS_PER_THREAD,
+                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -276,13 +270,14 @@ struct DispatchScan
     struct Policy100
     {
         enum {
+            PTX_ARCH                    = 100,
+            NOMINAL_4B_BLOCK_THREADS    = 64,
             NOMINAL_4B_ITEMS_PER_THREAD = 9,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
         };
 
         typedef AgentScanPolicy<
-                64,
-                ITEMS_PER_THREAD,
+                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,

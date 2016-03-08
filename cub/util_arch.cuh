@@ -113,6 +113,16 @@ namespace cub {
 #endif
 
 
+/// Scale the number of warps to keep same amount of "tile" storage as the nominal configuration for 4B data.  Minimum of two warps.
+#define CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH) \
+    (CUB_MIN(NOMINAL_4B_BLOCK_THREADS, CUB_MAX(2, ((NOMINAL_4B_BLOCK_THREADS / CUB_WARP_THREADS(PTX_ARCH)) * 4) / sizeof(T)) * CUB_WARP_THREADS(PTX_ARCH)))
+
+/// If necessary, scale down number of items per thread to keep the same amount of "tile" storage as the nominal configuration for 4B data.  Minimum 1 item per thread
+#define CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH) \
+    (CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * NOMINAL_4B_BLOCK_THREADS * 4 / sizeof(T)) / CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH))))
+
+
+
 #endif  // Do not document
 
 }               // CUB namespace
