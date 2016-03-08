@@ -429,7 +429,12 @@ struct WarpScanShfl
         Int2Type<_IS_INTEGER>   is_integer)
     {
         T exclusive = ShuffleUp(inclusive, 1);
-        return (lane_id == 0) ? identity : exclusive;
+
+        if (lane_id == 0)
+          return identity;
+
+        return exclusive;
+
     }
 
     //---------------------------------------------------------------------
