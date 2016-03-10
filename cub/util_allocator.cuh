@@ -576,30 +576,32 @@ struct CachingDeviceAllocator
         // Unlock
         mutex.Unlock();
 
+        // First set to specified device (entrypoint may not be set)
+        if (device != entrypoint_device)
+        {
+            if (CubDebug(error = cudaGetDevice(&entrypoint_device))) return error;
+            if (CubDebug(error = cudaSetDevice(device))) return error;
+        }
+
         if (recached)
         {
-            // Insert the ready event in the associated stream
+            // Insert the ready event in the associated stream (must have current device set properly)
             if (CubDebug(error = cudaEventRecord(search_key.ready_event, search_key.associated_stream))) return error;
         }
         else
         {
             // Free the allocation from the runtime and cleanup the event.
-            // First set to specified device (entrypoint may not be set)
-            if (device != entrypoint_device)
-            {
-                if (CubDebug(error = cudaGetDevice(&entrypoint_device))) return error;
-                if (CubDebug(error = cudaSetDevice(device))) return error;
-            }
-
             if (CubDebug(error = cudaFree(d_ptr))) return error;
             if (CubDebug(error = cudaEventDestroy(search_key.ready_event))) return error;
-            if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device))
-            {
-                if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
-            }
 
             if (debug) _CubLog("\tDevice %d freed %lld bytes from associated stream %lld.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
                 device, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].live);
+        }
+
+        // Reset device
+        if ((entrypoint_device != INVALID_DEVICE_ORDINAL) && (entrypoint_device != device))
+        {
+            if (CubDebug(error = cudaSetDevice(entrypoint_device))) return error;
         }
 
         return error;
