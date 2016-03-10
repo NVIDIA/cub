@@ -117,6 +117,7 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         int output;
+        int shfl_c = first_lane | SHFL_C;   // Shuffle control (mask and first-lane)
 
         // Use predicate set from SHFL to guard against invalid peers
         asm volatile(
@@ -127,7 +128,7 @@ struct WarpScanShfl
             "  @p add.s32 r0, r0, %4;"
             "  mov.s32 %0, r0;"
             "}"
-            : "=r"(output) : "r"(input), "r"(offset), "r"(first_lane), "r"(input));
+            : "=r"(output) : "r"(input), "r"(offset), "r"(shfl_c), "r"(input));
 
         return output;
     }
@@ -140,6 +141,7 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         unsigned int output;
+        int shfl_c = first_lane | SHFL_C;   // Shuffle control (mask and first-lane)
 
         // Use predicate set from SHFL to guard against invalid peers
         asm volatile(
@@ -150,7 +152,7 @@ struct WarpScanShfl
             "  @p add.u32 r0, r0, %4;"
             "  mov.u32 %0, r0;"
             "}"
-            : "=r"(output) : "r"(input), "r"(offset), "r"(first_lane), "r"(input));
+            : "=r"(output) : "r"(input), "r"(offset), "r"(shfl_c), "r"(input));
 
         return output;
     }
@@ -164,6 +166,7 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         float output;
+        int shfl_c = first_lane | SHFL_C;   // Shuffle control (mask and first-lane)
 
         // Use predicate set from SHFL to guard against invalid peers
         asm volatile(
@@ -174,7 +177,7 @@ struct WarpScanShfl
             "  @p add.f32 r0, r0, %4;"
             "  mov.f32 %0, r0;"
             "}"
-            : "=f"(output) : "f"(input), "r"(offset), "r"(first_lane), "f"(input));
+            : "=f"(output) : "f"(input), "r"(offset), "r"(shfl_c), "f"(input));
 
         return output;
     }
@@ -188,6 +191,7 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         unsigned long long output;
+        int shfl_c = first_lane | SHFL_C;   // Shuffle control (mask and first-lane)
 
         // Use predicate set from SHFL to guard against invalid peers
         asm volatile(
@@ -203,7 +207,7 @@ struct WarpScanShfl
             "  @p add.u64 r0, r0, %4;"
             "  mov.u64 %0, r0;"
             "}"
-            : "=l"(output) : "l"(input), "r"(offset), "r"(first_lane), "l"(input));
+            : "=l"(output) : "l"(input), "r"(offset), "r"(shfl_c), "l"(input));
 
         return output;
     }
@@ -217,6 +221,7 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         long long output;
+        int shfl_c = first_lane | SHFL_C;   // Shuffle control (mask and first-lane)
 
         // Use predicate set from SHFL to guard against invalid peers
         asm volatile(
@@ -232,7 +237,7 @@ struct WarpScanShfl
             "  @p add.s64 r0, r0, %4;"
             "  mov.s64 %0, r0;"
             "}"
-            : "=l"(output) : "l"(input), "r"(offset), "r"(first_lane), "l"(input));
+            : "=l"(output) : "l"(input), "r"(offset), "r"(shfl_c), "l"(input));
 
         return output;
     }
@@ -246,6 +251,7 @@ struct WarpScanShfl
         int             offset)             ///< [in] Up-offset to pull from
     {
         double output;
+        int shfl_c = first_lane | SHFL_C;   // Shuffle control (mask and first-lane)
 /*
         // Use predicate set from SHFL to guard against invalid peers
         asm volatile(
@@ -261,7 +267,7 @@ struct WarpScanShfl
             "  mov.b64 r0, {lo, hi};"
             "  @p add.f64 %0, %0, r0;"
             "}"
-            : "=d"(output) : "d"(input), "r"(offset), "r"(first_lane));
+            : "=d"(output) : "d"(input), "r"(offset), "r"(shfl_c));
 */
 
         // Use predicate set from SHFL to guard against invalid peers
@@ -280,7 +286,7 @@ struct WarpScanShfl
             "  @p add.f64 r0, r0, %4;"
             "  mov.f64 %0, r0;"
             "}"
-            : "=d"(output) : "d"(input), "r"(offset), "r"(first_lane), "d"(input), "d"(0.0));
+            : "=d"(output) : "d"(input), "r"(offset), "r"(shfl_c), "d"(input), "d"(0.0));
 
         return output;
     }
@@ -463,13 +469,13 @@ struct WarpScanShfl
         output = input;
 
         // Iterate scan steps
-        InclusiveScanStep(output, scan_op, SHFL_C, Int2Type<0>());
+        InclusiveScanStep(output, scan_op, 0, Int2Type<0>());
 /*
         // Iterate scan steps
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
-            output = InclusiveScanStep(output, scan_op, SHFL_C, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
+            output = InclusiveScanStep(output, scan_op, 0, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
 */
     }
@@ -494,14 +500,14 @@ struct WarpScanShfl
         int first_lane = CUB_MAX(0, 31 - __clz(ballot));
 
         // Iterate scan steps
-        InclusiveScanStep(output.value, scan_op.op, first_lane | SHFL_C, Int2Type<0>());
+        InclusiveScanStep(output.value, scan_op.op, first_lane, Int2Type<0>());
 
 /*
         // Iterate scan steps
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
         {
-            output.value = InclusiveScanStep(output.value, scan_op.op, first_lane | SHFL_C, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
+            output.value = InclusiveScanStep(output.value, scan_op.op, first_lane, 1 << STEP, Int2Type<IsInteger<T>::IS_SMALL_UNSIGNED>());
         }
 */
     }
