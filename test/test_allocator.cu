@@ -345,6 +345,12 @@ int main(int argc, char** argv)
         // DeviceFree d_768B on the next gpu
         CubDebugExit(allocator.DeviceFree(next_gpu, d_768B_2));
 
+        // Re-allocate 768 bytes on the next gpu
+        CubDebugExit(allocator.DeviceAllocate(next_gpu, (void **) &d_768B_2, 768));
+
+        // Re-free d_768B on the next gpu
+        CubDebugExit(allocator.DeviceFree(next_gpu, d_768B_2));
+
         // Check that that we have 4096 free bytes cached on the initial gpu
         AssertEquals(allocator.cached_bytes[initial_gpu].free, rounded_bytes);
 
