@@ -645,7 +645,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         T a,                                                \
         T b)                                                \
     {                                                       \
-        T retval = {BaseT(a.x + b.x)};                             \
+        T retval = make_##T(a.x + b.x);                     \
         return retval;                                      \
     }                                                       \
     namespace cub {                                         \
@@ -731,9 +731,9 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         T a,                                         \
         T b)                                         \
     {                                                       \
-        T retval = {                                        \
-            BaseT(a.x + b.x),                                      \
-            BaseT(a.y + b.y)};                                     \
+        T retval = make_##T(                                        \
+            a.x + b.x,                                      \
+            a.y + b.y);                                     \
         return retval;                                      \
     }                                                       \
     namespace cub {                                         \
@@ -827,10 +827,10 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         T a,                                                \
         T b)                                                \
     {                                                       \
-        T retval = {                                        \
-            BaseT(a.x + b.x),                                      \
-            BaseT(a.y + b.y),                                      \
-            BaseT(a.z + b.z)};                                     \
+        T retval = make_##T(                                        \
+            a.x + b.x,                                      \
+            a.y + b.y,                                      \
+            a.z + b.z);                                     \
         return retval;                                      \
     }                                                       \
     namespace cub {                                         \
@@ -931,11 +931,11 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         T a,                                                \
         T b)                                                \
     {                                                       \
-        T retval = {                                        \
-            BaseT(a.x + b.x),                                      \
-            BaseT(a.y + b.y),                                      \
-            BaseT(a.z + b.z),                                      \
-            BaseT(a.w + b.w)};                                     \
+        T retval = make_##T(                                        \
+            a.x + b.x,                                      \
+            a.y + b.y,                                      \
+            a.z + b.z,                                      \
+            a.w + b.w);                                     \
         return retval;                                      \
     }                                                       \
     namespace cub {                                         \
