@@ -34,21 +34,24 @@
 
 #pragma once
 
-#if defined(_WIN32) || defined(_WIN64)
-    #include <intrin.h>
-    #include <windows.h>
-    #undef small            // Windows is terrible for polluting macro namespace
+#if __cplusplus > 199711L
+    #include <mutex>
+#else
+    #if defined(_WIN32) || defined(_WIN64)
+        #include <intrin.h>
+        #include <windows.h>
+        #undef small            // Windows is terrible for polluting macro namespace
 
-    /**
-     * Compiler read/write barrier
-     */
-    #pragma intrinsic(_ReadWriteBarrier)
+        /**
+         * Compiler read/write barrier
+         */
+        #pragma intrinsic(_ReadWriteBarrier)
 
+    #endif
 #endif
 
 #include "../util_namespace.cuh"
 
-//#include <mutex>
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -64,7 +67,8 @@ namespace cub {
  */
 struct Mutex
 {
-/*
+#if __cplusplus > 199711L
+
     std::mutex mtx;
 
     void Lock()
@@ -81,77 +85,81 @@ struct Mutex
     {
         mtx.try_lock();
     }
-*/
 
-#if defined(_MSC_VER)
+#else       //__cplusplus > 199711L
 
-    // Microsoft VC++
-    typedef long Spinlock;
+    #if defined(_MSC_VER)
 
-#else
+        // Microsoft VC++
+        typedef long Spinlock;
 
-    // GNU g++
-    typedef int Spinlock;
+    #else
 
-    /**
-     * Compiler read/write barrier
-     */
-    __forceinline__ void _ReadWriteBarrier()
-    {
-        __sync_synchronize();
-    }
+        // GNU g++
+        typedef int Spinlock;
 
-    /**
-     * Atomic exchange
-     */
-    __forceinline__ long _InterlockedExchange(volatile int * const Target, const int Value)
-    {
-        // NOTE: __sync_lock_test_and_set would be an acquire barrier, so we force a full barrier
-        _ReadWriteBarrier();
-        return __sync_lock_test_and_set(Target, Value);
-    }
-
-    /**
-     * Pause instruction to prevent excess processor bus usage
-     */
-    __forceinline__ void YieldProcessor()
-    {
-    #ifndef __arm__
-            asm volatile("pause\n": : :"memory");
-    #endif  // __arm__
-    }
-
-#endif  // defined(_MSC_VER)
-
-    /// Lock member
-    volatile Spinlock lock;
-
-    /**
-     * Constructor
-     */
-    Mutex() : lock(0) {}
-
-    /**
-     * Return when the specified spinlock has been acquired
-     */
-    __forceinline__ void Lock()
-    {
-        while (1)
+        /**
+         * Compiler read/write barrier
+         */
+        __forceinline__ void _ReadWriteBarrier()
         {
-            if (!_InterlockedExchange(&lock, 1)) return;
-            while (lock) YieldProcessor();
+            __sync_synchronize();
         }
-    }
+
+        /**
+         * Atomic exchange
+         */
+        __forceinline__ long _InterlockedExchange(volatile int * const Target, const int Value)
+        {
+            // NOTE: __sync_lock_test_and_set would be an acquire barrier, so we force a full barrier
+            _ReadWriteBarrier();
+            return __sync_lock_test_and_set(Target, Value);
+        }
+
+        /**
+         * Pause instruction to prevent excess processor bus usage
+         */
+        __forceinline__ void YieldProcessor()
+        {
+        #ifndef __arm__
+                asm volatile("pause\n": : :"memory");
+        #endif  // __arm__
+        }
+
+    #endif  // defined(_MSC_VER)
+
+        /// Lock member
+        volatile Spinlock lock;
+
+        /**
+         * Constructor
+         */
+        Mutex() : lock(0) {}
+
+        /**
+         * Return when the specified spinlock has been acquired
+         */
+        __forceinline__ void Lock()
+        {
+            while (1)
+            {
+                if (!_InterlockedExchange(&lock, 1)) return;
+                while (lock) YieldProcessor();
+            }
+        }
 
 
-    /**
-     * Release the specified spinlock
-     */
-    __forceinline__ void Unlock()
-    {
-        _ReadWriteBarrier();
-        lock = 0;
-    }
+        /**
+         * Release the specified spinlock
+         */
+        __forceinline__ void Unlock()
+        {
+            _ReadWriteBarrier();
+            lock = 0;
+        }
+
+#endif      // __cplusplus > 199711L
+
 };
 
 
