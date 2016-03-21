@@ -1,3 +1,17 @@
+1.5.2    03/21/2016
+	- Improved medium-size scan performance for sm5x (Maxwell)
+    - Refactored caching allocator for device memory
+   		- Spends less time locked
+		- Failure to allocate a block from the runtime will retry once after
+		  freeing cached allocations
+		- Now respects max-bin (issue where blocks in excess of max-bin were
+		  still being retained in free cache)
+		- Uses C++11 mutex when available
+    - Bug fixes: 
+        - Fix for generic-type reduce-by-key warpscan (sm3.x and newer)
+          
+//-----------------------------------------------------------------------------
+
 1.5.1    12/28/2015
     - Bug fixes: 
         - Fix for incorrect DeviceRadixSort output for some small problems on 
