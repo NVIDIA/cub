@@ -1,7 +1,7 @@
 <hr>
 <h3>About CUB</h3>
 
-Current release: v1.5.1 (12/28/2015)
+Current release: v1.5.2 (03/21/2016)
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) and the [cub-users discussion forum](http://groups.google.com/group/cub-users) for further information and examples.
 
@@ -102,7 +102,7 @@ CUB is available under the "New BSD" open-source license:
 
 ```
 Copyright (c) 2010-2011, Duane Merrill.  All rights reserved.
-Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
+Copyright (c) 2011-2016, NVIDIA CORPORATION.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:

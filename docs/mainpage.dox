@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2016, NVIDIA CORPORATION.  All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -62,7 +62,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.5.1</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.5.2</b></em></a>
 
 </td><td>
 
@@ -527,16 +527,18 @@ for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-12/28/2015<br>
-[<b>CUB v1.5.1</b>](download_cub.html)
+03/21/2016<br>
+[<b>CUB v1.5.2</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
   - New Features: 
     - Added new [segmented device-wide operations](group___segmented_module.html) for sort and reduction primitives.
+  - Improved medium-size scan performance for sm5x (Maxwell)
+  - Refactored caching allocator for device memory
   - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-04/13/2015<br>
+04/13/2016<br>
 [<b>CUB v1.4.1</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
   - New Features: 
@@ -647,7 +649,7 @@ CUB is available under the "New BSD" open-source license:
 \par
 \code
 Copyright (c) 2011, Duane Merrill.  All rights reserved.
-Copyright (c) 2011-2015, NVIDIA CORPORATION.  All rights reserved.
+Copyright (c) 2011-2016, NVIDIA CORPORATION.  All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
