@@ -359,10 +359,11 @@ struct AgentScan
      */
     __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
-        ScanTileStateT&     tile_state)         ///< Global tile state descriptor
+        ScanTileStateT&     tile_state,         ///< Global tile state descriptor
+        int                 current_tile)       ///< [in] The current tile
     {
         // Blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = (blockIdx.x * gridDim.y) + blockIdx.y;   // Current tile index
+        int     tile_idx        = current_tile + blockIdx.x;                // Current tile index
         OffsetT tile_offset     = OffsetT(TILE_ITEMS) * tile_idx;          // Global offset for the current tile
         OffsetT num_remaining   = num_items - tile_offset;                 // Remaining items (including this tile)
 

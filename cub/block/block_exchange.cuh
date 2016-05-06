@@ -145,8 +145,8 @@ private:
         WARP_TIME_SLICED_ITEMS      = WARP_TIME_SLICED_THREADS * ITEMS_PER_THREAD,
 
         // Insert padding if the number of items per thread is a power of two
-//        INSERT_PADDING              = PowerOfTwo<ITEMS_PER_THREAD>::VALUE,
-        INSERT_PADDING              = 0,
+        INSERT_PADDING              = PowerOfTwo<ITEMS_PER_THREAD>::VALUE,
+//        INSERT_PADDING              = 0,
         PADDING_ITEMS               = (INSERT_PADDING) ? (TIME_SLICED_ITEMS >> LOG_SMEM_BANKS) : 0,
     };
 
