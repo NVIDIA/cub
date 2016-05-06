@@ -789,8 +789,8 @@ private:
             typename T,
             typename _InputIteratorT>
         __device__ __forceinline__ void Load(
-            _InputIteratorT   block_itr,                  ///< [in] The thread block's base input iterator for loading from
-            T                   (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
+            _InputIteratorT   block_itr,                    ///< [in] The thread block's base input iterator for loading from
+            T                 (&items)[ITEMS_PER_THREAD])   ///< [out] Data to load
         {
             LoadDirectBlocked(linear_tid, block_itr, items);
         }
