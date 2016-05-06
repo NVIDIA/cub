@@ -105,6 +105,7 @@ __global__ void DeviceScanSweepKernel(
     InputIteratorT      d_in,               ///< Input data
     OutputIteratorT     d_out,              ///< Output data
     ScanTileStateT      tile_state,         ///< [in] Tile status interface
+    int                 current_tile,       ///< [in] The current tile
     ScanOpT             scan_op,            ///< Binary scan functor 
     IdentityT           identity,           ///< The identity element for ScanOpT
     OffsetT             num_items)          ///< Total number of scan items for the entire problem
@@ -124,7 +125,8 @@ __global__ void DeviceScanSweepKernel(
     // Process tiles
     AgentScanT(temp_storage, d_in, d_out, scan_op, identity).ConsumeRange(
         num_items,
-        tile_state);
+        tile_state,
+        current_tile);
 }
 
 
@@ -233,7 +235,7 @@ struct DispatchScan
         enum {
             PTX_ARCH                    = 200,
             NOMINAL_4B_BLOCK_THREADS    = 128,
-            NOMINAL_4B_ITEMS_PER_THREAD = 15,
+            NOMINAL_4B_ITEMS_PER_THREAD = 12,
         };
 
         // GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
@@ -243,7 +245,7 @@ struct DispatchScan
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             ScanPolicyT;
     };
 
@@ -480,30 +482,30 @@ struct DispatchScan
             int max_dim_x;
             if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
 
-            // Get grid size for scanning tiles
-            dim3 scan_grid_size;
-            scan_grid_size.z = 1;
-            scan_grid_size.y = ((unsigned int) num_tiles + max_dim_x - 1) / max_dim_x;
-            scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
+            // Run grids in epochs (in case number of tiles exceeds max x-dimension
+            int scan_grid_size = CUB_MIN(num_tiles, max_dim_x);
+            for (int current_tile = 0; current_tile < num_tiles; current_tile += scan_grid_size)
+            {
+                // Log scan_sweep_kernel configuration
+                if (debug_synchronous) _CubLog("Invoking %d scan_sweep_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                    current_tile, scan_grid_size, scan_sweep_config.block_threads, (long long) stream, scan_sweep_config.items_per_thread, range_scan_sm_occupancy);
 
-            // Log scan_sweep_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking scan_sweep_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, scan_sweep_config.block_threads, (long long) stream, scan_sweep_config.items_per_thread, range_scan_sm_occupancy);
+                // Invoke scan_sweep_kernel
+                scan_sweep_kernel<<<scan_grid_size, scan_sweep_config.block_threads, 0, stream>>>(
+                    d_in,
+                    d_out,
+                    tile_state,
+                    current_tile,
+                    scan_op,
+                    identity,
+                    num_items);
 
-            // Invoke scan_sweep_kernel
-            scan_sweep_kernel<<<scan_grid_size, scan_sweep_config.block_threads, 0, stream>>>(
-                d_in,
-                d_out,
-                tile_state,
-                scan_op,
-                identity,
-                num_items);
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
 
-            // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
-
-            // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+                // Sync the stream if specified to flush runtime errors
+                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            }
         }
         while (0);
 
