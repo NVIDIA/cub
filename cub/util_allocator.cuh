@@ -407,12 +407,13 @@ struct CachingDeviceAllocator
                     live_blocks.insert(search_key);
 
                     // Remove from free blocks
-                    cached_blocks.erase(block_itr);
                     cached_bytes[device].free -= search_key.bytes;
                     cached_bytes[device].live += search_key.bytes;
 
                     if (debug) _CubLog("\tDevice %d reused cached block at %p (%lld bytes) for stream %lld (previously associated with stream %lld).\n",
                         device, search_key.d_ptr, (long long) search_key.bytes, (long long) search_key.associated_stream, (long long)  block_itr->associated_stream);
+
+                    cached_blocks.erase(block_itr);
 
                     break;
                 }
@@ -460,10 +461,11 @@ struct CachingDeviceAllocator
 
                     // Reduce balance and erase entry
                     cached_bytes[device].free -= block_itr->bytes;
-                    cached_blocks.erase(block_itr);
 
                     if (debug) _CubLog("\tDevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
                         device, (long long) block_itr->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[device].free, (long long) live_blocks.size(), (long long) cached_bytes[device].live);
+
+                    cached_blocks.erase(block_itr);
 
                     block_itr++;
                 }
@@ -657,10 +659,11 @@ struct CachingDeviceAllocator
 
             // Reduce balance and erase entry
             cached_bytes[current_device].free -= begin->bytes;
-            cached_blocks.erase(begin);
 
             if (debug) _CubLog("\tDevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
-                              current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device].free, (long long) live_blocks.size(), (long long) cached_bytes[current_device].live);
+                current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device].free, (long long) live_blocks.size(), (long long) cached_bytes[current_device].live);
+
+            cached_blocks.erase(begin);
         }
 
         mutex.Unlock();

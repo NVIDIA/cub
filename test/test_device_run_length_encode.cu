@@ -204,7 +204,7 @@ cudaError_t Dispatch(
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
     UniqueOutputIteratorT       d_unique_out,
-    cub::NullType               d_offsets_out,
+    OffsetsOutputIteratorT      d_offsets_out,
     LengthsOutputIteratorT      d_lengths_out,
     NumRunsIterator             d_num_runs,
     cub::Equality               equality_op,
@@ -835,15 +835,18 @@ int main(int argc, char** argv)
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
 
-    TestPointer<RLE,         	CUB, int, int, int>(	num_items, entropy_reduction, max_segment);
-    TestPointer<NON_TRIVIAL, 	CUB, int, int, int>(	num_items, entropy_reduction, max_segment);
-    TestIterator<RLE, 			CUB, float, int, int>(	num_items, Int2Type<Traits<float>::PRIMITIVE>());
+    TestPointer<RLE,            CUB, int, int, int>(    num_items, entropy_reduction, max_segment);
+    TestPointer<NON_TRIVIAL,    CUB, int, int, int>(    num_items, entropy_reduction, max_segment);
+    TestIterator<RLE,           CUB, float, int, int>(  num_items, Int2Type<Traits<float>::PRIMITIVE>());
 
 
 #elif defined(QUICK_TEST)
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;
+
+    TestPointer<RLE,            CUB, int, int, int>(    num_items, entropy_reduction, max_segment);
+    TestPointer<RLE,            THRUST, int, int, int>(    num_items, entropy_reduction, max_segment);
 
 #else
 
