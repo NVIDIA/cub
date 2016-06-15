@@ -438,9 +438,11 @@ struct CachingDeviceAllocator
             if (CubDebug(error = cudaMalloc(&search_key.d_ptr, search_key.bytes)) == cudaErrorMemoryAllocation)
             {
                 // The allocation attempt failed: free all cached blocks on device and retry
-                error = cudaSuccess;    // Reset error
                 if (debug) _CubLog("\tDevice %d failed to allocate %lld bytes for stream %lld, retrying after freeing cached allocations",
                       device, (long long) search_key.bytes, (long long) search_key.associated_stream);
+
+                error = cudaSuccess;    // Reset the error we will return
+                cudaGetLastError();     // Reset CUDART's error
 
                 // Lock
                 mutex.Lock();
