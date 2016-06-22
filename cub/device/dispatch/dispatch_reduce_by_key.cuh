@@ -70,16 +70,16 @@ template <
     typename            OffsetT>                                ///< Signed integer type for global offsets
 __launch_bounds__ (int(AgentReduceByKeyPolicyT::BLOCK_THREADS))
 __global__ void DeviceReduceByKeyKernel(
-    KeysInputIteratorT          d_keys_in,                      ///< [in] Pointer to the input sequence of keys
-    UniqueOutputIteratorT       d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
-    ValuesInputIteratorT        d_values_in,                    ///< [in] Pointer to the input sequence of corresponding values
-    AggregatesOutputIteratorT   d_aggregates_out,               ///< [out] Pointer to the output sequence of value aggregates (one aggregate per run)
-    NumRunsOutputIteratorT      d_num_runs_out,                 ///< [out] Pointer to total number of runs encountered (i.e., the length of d_unique_out)
-    ScanTileStateT              tile_state,                    ///< [in] Tile status interface
-    EqualityOpT                 equality_op,                    ///< [in] KeyT equality operator
-    ReductionOpT                reduction_op,                   ///< [in] ValueT reduction operator
-    OffsetT                     num_items,                      ///< [in] Total number of items to select from
-    int                         num_tiles)                      ///< [in] Total number of tiles for the entire problem
+    KeysInputIteratorT          d_keys_in,                      ///< Pointer to the input sequence of keys
+    UniqueOutputIteratorT       d_unique_out,                   ///< Pointer to the output sequence of unique keys (one key per run)
+    ValuesInputIteratorT        d_values_in,                    ///< Pointer to the input sequence of corresponding values
+    AggregatesOutputIteratorT   d_aggregates_out,               ///< Pointer to the output sequence of value aggregates (one aggregate per run)
+    NumRunsOutputIteratorT      d_num_runs_out,                 ///< Pointer to total number of runs encountered (i.e., the length of d_unique_out)
+    ScanTileStateT              tile_state,                     ///< Tile status interface
+    int                         start_tile,                     ///< The starting tile for the current grid
+    EqualityOpT                 equality_op,                    ///< KeyT equality operator
+    ReductionOpT                reduction_op,                   ///< ValueT reduction operator
+    OffsetT                     num_items)                      ///< Total number of items to select from
 {
     // Thread block type for reducing tiles of value segments
     typedef AgentReduceByKey<
@@ -100,8 +100,8 @@ __global__ void DeviceReduceByKeyKernel(
     // Process tiles
     AgentReduceByKeyT(temp_storage, d_keys_in, d_unique_out, d_values_in, d_aggregates_out, d_num_runs_out, equality_op, reduction_op).ConsumeRange(
         num_items,
-        num_tiles,
-        tile_state);
+        tile_state,
+        start_tile);
 }
 
 
