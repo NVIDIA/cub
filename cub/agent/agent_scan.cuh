@@ -120,9 +120,6 @@ struct AgentScan
         BLOCK_THREADS       = AgentScanPolicyT::BLOCK_THREADS,
         ITEMS_PER_THREAD    = AgentScanPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
-
-        // Whether or not to sync after loading data
-        SYNC_AFTER_LOAD     = (AgentScanPolicyT::LOAD_ALGORITHM != BLOCK_LOAD_DIRECT),
     };
 
     // Parameterized BlockLoad type
@@ -189,9 +186,9 @@ struct AgentScan
     IdentityT                   identity;           ///< The identity element for ScanOpT
 
 
-
     //---------------------------------------------------------------------
     // Block scan utility methods (first tile)
+    // Scan operators like addition that associate an identity value may be slightly faster.
     //---------------------------------------------------------------------
 
     /**
@@ -306,10 +303,9 @@ struct AgentScan
     /**
      * Process a tile of input (dynamic chained scan)
      */
-    template <bool IS_FULL_TILE>
+    template <bool IS_LAST_TILE>                ///< Whether the current tile is the last tile
     __device__ __forceinline__ void ConsumeTile(
-        OffsetT             num_items,          ///< Total number of input items
-        OffsetT             num_remaining,      ///< Total number of items remaining to be processed (including this tile)
+        OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
@@ -317,13 +313,12 @@ struct AgentScan
         // Load items
         T items[ITEMS_PER_THREAD];
 
-        if (IS_FULL_TILE)
-            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
-        else
+        if (IS_LAST_TILE)
             BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining);
+        else
+            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
 
-        if (SYNC_AFTER_LOAD)
-            __syncthreads();
+        __syncthreads();
 
         // Perform tile scan
         if (tile_idx == 0)
@@ -333,7 +328,7 @@ struct AgentScan
             ScanTile(items, scan_op, identity, block_aggregate);
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
-            if (IS_FULL_TILE && (threadIdx.x == 0))
+            if (IS_LAST_TILE && (threadIdx.x == 0))
                 tile_state.SetInclusive(0, block_aggregate);
         }
         else
@@ -347,35 +342,35 @@ struct AgentScan
         __syncthreads();
 
         // Store items
-        if (IS_FULL_TILE)
-            BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items);
-        else
+        if (IS_LAST_TILE)
             BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items, num_remaining);
+        else
+            BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items);
     }
 
 
     /**
-     * Dequeue and scan tiles of items as part of a dynamic chained scan
+     * Scan tiles of items as part of a dynamic chained scan
      */
     __device__ __forceinline__ void ConsumeRange(
         int                 num_items,          ///< Total number of input items
         ScanTileStateT&     tile_state,         ///< Global tile state descriptor
-        int                 current_tile)       ///< [in] The current tile
+        int                 start_tile)         ///< The starting tile for the current grid
     {
         // Blocks are launched in increasing order, so just assign one tile per block
-        int     tile_idx        = current_tile + blockIdx.x;                // Current tile index
-        OffsetT tile_offset     = OffsetT(TILE_ITEMS) * tile_idx;          // Global offset for the current tile
-        OffsetT num_remaining   = num_items - tile_offset;                 // Remaining items (including this tile)
+        int     tile_idx        = start_tile + blockIdx.x;          // Current tile index
+        OffsetT tile_offset     = OffsetT(TILE_ITEMS) * tile_idx;   // Global offset for the current tile
+        OffsetT num_remaining   = num_items - tile_offset;          // Remaining items (including this tile)
 
         if (num_remaining > TILE_ITEMS)
         {
-            // Full tile
-            ConsumeTile<true>(num_items, num_remaining, tile_idx, tile_offset, tile_state);
+            // Not last tile
+            ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
         }
         else if (num_remaining > 0)
         {
-            // Partially-full tile
-            ConsumeTile<false>(num_items, num_remaining, tile_idx, tile_offset, tile_state);
+            // Last tile
+            ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state);
         }
     }
 
@@ -388,20 +383,20 @@ struct AgentScan
      * Process a tile of input
      */
     template <
-        bool                        IS_FULL_TILE,
-        bool                        IS_FIRST_TILE>
+        bool                        IS_FIRST_TILE,
+        bool                        IS_LAST_TILE>
     __device__ __forceinline__ void ConsumeTile(
-        OffsetT                     tile_offset,               ///< Tile offset
+        OffsetT                     tile_offset,                ///< Tile offset
         RunningPrefixCallbackOp&    prefix_op,                  ///< Running prefix operator
         int                         valid_items = TILE_ITEMS)   ///< Number of valid items in the tile
     {
         // Load items
         T items[ITEMS_PER_THREAD];
 
-        if (IS_FULL_TILE)
-            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
-        else
+        if (IS_LAST_TILE)
             BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, valid_items);
+        else
+            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
 
         __syncthreads();
 
@@ -421,10 +416,10 @@ struct AgentScan
         __syncthreads();
 
         // Store items
-        if (IS_FULL_TILE)
-            BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items);
-        else
+        if (IS_LAST_TILE)
             BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items, valid_items);
+        else
+            BlockStoreT(temp_storage.store).Store(d_out + tile_offset, items);
     }
 
 
@@ -446,7 +441,7 @@ struct AgentScan
             // Consume subsequent full tiles of input
             while (range_offset + TILE_ITEMS <= range_end)
             {
-                ConsumeTile<true, false>(range_offset, prefix_op);
+                ConsumeTile<false, true>(range_offset, prefix_op);
                 range_offset += TILE_ITEMS;
             }
 
@@ -461,7 +456,7 @@ struct AgentScan
         {
             // Consume the first tile of input (partially-full)
             int valid_items = range_end - range_offset;
-            ConsumeTile<false, true>(range_offset, prefix_op, valid_items);
+            ConsumeTile<true, false>(range_offset, prefix_op, valid_items);
         }
     }
 
