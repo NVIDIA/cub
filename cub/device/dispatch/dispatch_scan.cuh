@@ -409,9 +409,9 @@ struct DispatchScan
         cudaStream_t        stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous,      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                 ptx_version,            ///< [in] PTX version of dispatch kernels
-        ScanInitKernelPtrT  scan_init_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
-        ScanSweepKernelPtrT scan_kernel,      ///< [in] Kernel function pointer to parameterization of cub::DeviceScanKernel
-        KernelConfig        scan_kernel_config)      ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
+        ScanInitKernelPtrT  init_kernel,            ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
+        ScanSweepKernelPtrT scan_kernel,            ///< [in] Kernel function pointer to parameterization of cub::DeviceScanKernel
+        KernelConfig        scan_kernel_config)     ///< [in] Dispatch parameters that match the policy that \p scan_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
@@ -456,12 +456,12 @@ struct DispatchScan
             ScanTileStateT tile_state;
             if (CubDebug(error = tile_state.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
-            // Log scan_init_kernel configuration
+            // Log init_kernel configuration
             int init_grid_size = (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS;
-            if (debug_synchronous) _CubLog("Invoking scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            if (debug_synchronous) _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
-            // Invoke scan_init_kernel to initialize tile descriptors
-            scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
+            // Invoke init_kernel to initialize tile descriptors
+            init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 tile_state,
                 num_tiles);
 
@@ -472,9 +472,9 @@ struct DispatchScan
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
 
             // Get SM occupancy for scan_kernel
-            int range_scan_sm_occupancy;
+            int scan_sm_occupancy;
             if (CubDebug(error = MaxSmOccupancy(
-                range_scan_sm_occupancy,            // out
+                scan_sm_occupancy,            // out
                 scan_kernel,
                 scan_kernel_config.block_threads))) break;
 
@@ -488,7 +488,7 @@ struct DispatchScan
             {
                 // Log scan_kernel configuration
                 if (debug_synchronous) _CubLog("Invoking %d scan_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                    start_tile, scan_grid_size, scan_kernel_config.block_threads, (long long) stream, scan_kernel_config.items_per_thread, range_scan_sm_occupancy);
+                    start_tile, scan_grid_size, scan_kernel_config.block_threads, (long long) stream, scan_kernel_config.items_per_thread, scan_sm_occupancy);
 
                 // Invoke scan_kernel
                 scan_kernel<<<scan_grid_size, scan_kernel_config.block_threads, 0, stream>>>(

@@ -365,12 +365,12 @@ struct AgentScan
         if (num_remaining > TILE_ITEMS)
         {
             // Not last tile
-            ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
+            ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state);
         }
         else if (num_remaining > 0)
         {
             // Last tile
-            ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state);
+            ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
         }
     }
 
