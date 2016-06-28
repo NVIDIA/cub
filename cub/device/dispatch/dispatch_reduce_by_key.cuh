@@ -353,8 +353,8 @@ struct DispatchReduceByKey
         cudaStream_t                stream,                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
         int                         ptx_version,                ///< [in] PTX version of dispatch kernels
-        ScanInitKernelT          scan_init_kernel,           ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
-        ReduceByKeyKernelT       reduce_by_key_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
+        ScanInitKernelT          	init_kernel,           ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
+        ReduceByKeyKernelT       	reduce_by_key_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
         KernelConfig                reduce_by_key_config)       ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_kernel was compiled for
     {
 
@@ -397,12 +397,12 @@ struct DispatchReduceByKey
             ScanTileStateT tile_state;
             if (CubDebug(error = tile_state.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
-            // Log scan_init_kernel configuration
+            // Log init_kernel configuration
             int init_grid_size = CUB_MAX(1, (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS);
-            if (debug_synchronous) _CubLog("Invoking scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
+            if (debug_synchronous) _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
-            // Invoke scan_init_kernel to initialize tile descriptors
-            scan_init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
+            // Invoke init_kernel to initialize tile descriptors
+            init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
                 tile_state,
                 num_tiles,
                 d_num_runs_out);
@@ -428,35 +428,33 @@ struct DispatchReduceByKey
             int max_dim_x;
             if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
 
-            // Get grid dimensions
-            dim3 scan_grid_size(
-                CUB_MIN(num_tiles, max_dim_x),
-                (num_tiles + max_dim_x - 1) / max_dim_x,
-                1);
+            // Run grids in epochs (in case number of tiles exceeds max x-dimension
+            int scan_grid_size = CUB_MIN(num_tiles, max_dim_x);
+            for (int start_tile = 0; start_tile < num_tiles; start_tile += scan_grid_size)
+            {
+                // Log reduce_by_key_kernel configuration
+                if (debug_synchronous) _CubLog("Invoking %d reduce_by_key_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
+                    start_tile, scan_grid_size, reduce_by_key_config.block_threads, (long long) stream, reduce_by_key_config.items_per_thread, reduce_by_key_sm_occupancy);
 
-            // Log reduce_by_key_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking reduce_by_key_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, reduce_by_key_config.block_threads, (long long) stream, reduce_by_key_config.items_per_thread, reduce_by_key_sm_occupancy);
+                // Invoke reduce_by_key_kernel
+                reduce_by_key_kernel<<<scan_grid_size, reduce_by_key_config.block_threads, 0, stream>>>(
+                    d_keys_in,
+                    d_unique_out,
+                    d_values_in,
+                    d_aggregates_out,
+                    d_num_runs_out,
+                    tile_state,
+                    start_tile,
+                    equality_op,
+                    reduction_op,
+                    num_items);
 
-            // Invoke reduce_by_key_kernel
-            reduce_by_key_kernel<<<scan_grid_size, reduce_by_key_config.block_threads, 0, stream>>>(
-                d_keys_in,
-                d_unique_out,
-                d_values_in,
-                d_aggregates_out,
-                d_num_runs_out,
-                tile_state,
-                equality_op,
-                reduction_op,
-                num_items,
-                num_tiles);
+                // Check for failure to launch
+                if (CubDebug(error = cudaPeekAtLastError())) break;
 
-            // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
-
-            // Sync the stream if specified to flush runtime errors
-            if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-
+                // Sync the stream if specified to flush runtime errors
+                if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
+            }
         }
         while (0);
 

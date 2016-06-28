@@ -349,12 +349,10 @@ struct AgentReduceByKey
     /**
      * Directly scatter flagged items to output offsets
      */
-    template <bool IS_LAST_TILE>
     __device__ __forceinline__ void ScatterDirect(
         KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD],
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
-        OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
-        OffsetT         num_segments)
+        OffsetT         (&segment_indices)[ITEMS_PER_THREAD])
     {
         // Scatter flagged keys and values
         #pragma unroll
@@ -362,11 +360,7 @@ struct AgentReduceByKey
         {
             if (segment_flags[ITEM])
             {
-                // Scatter flagged key (except for the last flag)
-                if ((!IS_LAST_TILE) || (segment_indices[ITEM] + 1 < num_segments))
-                    d_unique_out[segment_indices[ITEM] + 1] = scatter_items[ITEM].key;
-
-                // Scatter flagged value
+                d_unique_out[segment_indices[ITEM]]     = scatter_items[ITEM].key;
                 d_aggregates_out[segment_indices[ITEM]] = scatter_items[ITEM].value;
             }
         }
@@ -384,17 +378,17 @@ struct AgentReduceByKey
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         OffsetT         num_tile_segments,
-        OffsetT         num_segments_prefix)
+        OffsetT         num_tile_segments_prefix)
     {
         __syncthreads();
 
-        // Compact and scatter keys
+        // Compact and scatter pairs
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (segment_flags[ITEM])
             {
-                temp_storage.raw_exchange.Alias()[segment_indices[ITEM] - num_segments_prefix] = scatter_items[ITEM];
+                temp_storage.raw_exchange.Alias()[segment_indices[ITEM] - num_tile_segments_prefix] = scatter_items[ITEM];
             }
         }
 
@@ -403,8 +397,8 @@ struct AgentReduceByKey
         for (int item = threadIdx.x; item < num_tile_segments; item += BLOCK_THREADS)
         {
             KeyValuePairT pair                                  = temp_storage.raw_exchange.Alias()[item];
-            d_unique_out[num_segments_prefix + item]       = pair.key;
-            d_aggregates_out[num_segments_prefix + item]   = pair.value;
+            d_unique_out[num_tile_segments_prefix + item]       = pair.key;
+            d_aggregates_out[num_tile_segments_prefix + item]   = pair.value;
         }
     }
 
@@ -412,16 +406,13 @@ struct AgentReduceByKey
     /**
      * Scatter flagged items
      */
-    template <bool IS_LAST_TILE>
     __device__ __forceinline__ void Scatter(
         KeyValuePairT   (&scatter_items)[ITEMS_PER_THREAD],
         OffsetT         (&segment_flags)[ITEMS_PER_THREAD],
         OffsetT         (&segment_indices)[ITEMS_PER_THREAD],
         OffsetT         num_tile_segments,
-        OffsetT         num_segments_prefix,
-        OffsetT         num_segments)
+        OffsetT         num_tile_segments_prefix)
     {
-/*
         // Do a one-phase scatter if (a) two-phase is disabled or (b) the average number of selected items per thread is less than one
         if (TWO_PHASE_SCATTER && (num_tile_segments > BLOCK_THREADS))
         {
@@ -430,13 +421,15 @@ struct AgentReduceByKey
                 segment_flags,
                 segment_indices,
                 num_tile_segments,
-                num_segments_prefix);
+                num_tile_segments_prefix);
         }
         else
         {
-*/
-            ScatterDirect<IS_LAST_TILE>(scatter_items, segment_flags, segment_indices, num_segments);
-//        }
+            ScatterDirect(
+                scatter_items,
+                segment_flags,
+                segment_indices);
+        }
     }
 
 
@@ -455,10 +448,29 @@ struct AgentReduceByKey
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
         KeyT                keys[ITEMS_PER_THREAD];             // Tile keys
+        KeyT                prev_keys[ITEMS_PER_THREAD];        // Tile keys shuffled up
         ValueT              values[ITEMS_PER_THREAD];           // Tile values
         OffsetT             head_flags[ITEMS_PER_THREAD];       // Segment head flags
         OffsetT             segment_indices[ITEMS_PER_THREAD];  // Segment indices
         OffsetValuePairT    scan_items[ITEMS_PER_THREAD];       // Zipped values and segment flags|indices
+        KeyValuePairT       scatter_items[ITEMS_PER_THREAD];    // Zipped key value pairs for scattering
+
+        // Load keys
+        if (IS_LAST_TILE)
+            BlockLoadKeysT(temp_storage.load_keys).Load(d_keys_in + tile_offset, keys, num_remaining);
+        else
+            BlockLoadKeysT(temp_storage.load_keys).Load(d_keys_in + tile_offset, keys);
+
+        // Load tile predecessor key in first thread
+        KeyT tile_predecessor;
+        if (threadIdx.x == 0)
+        {
+            tile_predecessor = (tile_idx == 0) ?
+                keys[0] :                       // First tile gets repeat of first item (thus first item will not be flagged as a head)
+                d_keys_in[tile_offset - 1];     // Subsequent tiles get last key from previous tile
+        }
+
+        __syncthreads();
 
         // Load values
         if (IS_LAST_TILE)
@@ -468,39 +480,19 @@ struct AgentReduceByKey
 
         __syncthreads();
 
-        // Load tile predecessor key
-        KeyT tile_predecessor;
-        if (threadIdx.x == 0)
-        {
-            // First tile gets repeat of first item (thus first item will not be flagged as a head)
-            OffsetT tile_pred_offset    = (tile_idx == 0) ? 0 : tile_offset - 1;
-            tile_predecessor            = d_values_in[tile_pred_offset];
-        }
-
-        // Load keys and initialize head-flags
+        // Initialize head-flags and shuffle up the previous keys
         if (IS_LAST_TILE)
         {
-            BlockLoadKeysT(temp_storage.load_keys).Load(d_keys_in + tile_offset, keys, num_remaining);
-
-            __syncthreads();
-
+            // Use custom flag operator to additionally flag the first out-of-bounds item
+            GuardedInequalityWrapper<EqualityOpT> flag_op(equality_op, num_remaining);
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(
-                head_flags,
-                keys,
-                GuardedInequalityWrapper<EqualityOpT> flag_op(equality_op, num_remaining),
-                tile_predecessor);
+                head_flags, keys, prev_keys, flag_op, tile_predecessor);
         }
         else
         {
-            BlockLoadKeysT(temp_storage.load_keys).Load(d_keys_in + tile_offset, keys);
-
-            __syncthreads();
-
+            InequalityWrapper<EqualityOpT> flag_op(equality_op);
             BlockDiscontinuityKeys(temp_storage.discontinuity).FlagHeads(
-                head_flags,
-                keys,
-                InequalityWrapper<EqualityOpT> flag_op(equality_op),
-                tile_predecessor);
+                head_flags, keys, prev_keys, flag_op, tile_predecessor);
         }
 
         // Zip values and head flags
@@ -511,7 +503,7 @@ struct AgentReduceByKey
             scan_items[ITEM].key    = head_flags[ITEM];
         }
 
-        // Perform exclusive tile scan (each segment head will get the reduced value of the previous segment)
+        // Perform exclusive tile scan
         OffsetValuePairT    block_aggregate;        // Inclusive block-wide scan aggregate
         OffsetT             num_segments_prefix;    // Number of segments prior to this tile
         if (tile_idx == 0)
@@ -520,45 +512,45 @@ struct AgentReduceByKey
             ScanTile(scan_items, block_aggregate, Int2Type<HAS_IDENTITY_ZERO>());
             num_segments_prefix = 0;
 
-            if (threadIdx.x == 0)
-            {
-                // Update tile status if there may be successor tiles (i.e., this tile is full)
-                if (!IS_LAST_TILE)
-                    tile_state.SetInclusive(0, block_aggregate);
-
-                // First thread in first tile needs to scatter first key (since it was not flagged)
-                d_unique_out[0] = keys[0];
-            }
+            // Update tile status if there are successor tiles
+            if ((!IS_LAST_TILE) && (threadIdx.x == 0))
+                tile_state.SetInclusive(0, block_aggregate);
         }
         else
         {
             // Scan non-first tile
             TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
             ScanTile(scan_items, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
-            num_segments_prefix = prefix_op.GetInclusivePrefix().key;
+            num_segments_prefix = prefix_op.GetExclusivePrefix().key;
         }
 
-        // Unzip values and segment indices
+        // Rezip scatter items and segment indices
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            values[ITEM]            = scan_items[ITEM].value;
-            segment_indices[ITEM]   = scan_items[ITEM].key;
+            scatter_items[ITEM].key     = prev_keys[ITEM];
+            scatter_items[ITEM].value   = scan_items[ITEM].value;
+            segment_indices[ITEM]       = scan_items[ITEM].key;
         }
 
         // At this point, each flagged segment head has:
-        //  - The key for that segment
+        //  - The key for the previous segment
         //  - The reduced value from the previous segment
-        //  - The segment index for the reduced value (the key's index is +1)
+        //  - The segment index for the reduced value
 
-        // Last thread in last tile will output final count (and last value, if necessary)
-        OffsetT num_tile_segments   = block_aggregate.key;
-        OffsetT num_segments        = num_segments_prefix + num_tile_segments;
+        // Scatter flagged keys and values
+        OffsetT num_tile_segments = block_aggregate.key;
+        Scatter(scatter_items, head_flags, segment_indices, num_tile_segments, num_segments_prefix);
+
+        // Last thread in last tile will output final count (and last pair, if necessary)
         if ((IS_LAST_TILE) && (threadIdx.x == BLOCK_THREADS - 1))
         {
+            OffsetT num_segments = num_segments_prefix + num_tile_segments;
+
             // If the last tile is a whole tile, the block-wide aggregate contains the value for the last segment
             if (num_remaining == TILE_ITEMS)
             {
+                d_unique_out[num_segments]      = keys[ITEMS_PER_THREAD - 1];
                 d_aggregates_out[num_segments]  = block_aggregate.value;
                 num_segments++;
             }
@@ -566,9 +558,6 @@ struct AgentReduceByKey
             // Output the total number of items selected
             *d_num_runs_out = num_segments;
         }
-
-        // Scatter flagged keys and values
-        Scatter<IS_LAST_TILE>(values, head_flags, segment_indices, num_tile_segments, num_segments_prefix);
     }
 
 
@@ -588,12 +577,12 @@ struct AgentReduceByKey
         if (num_remaining > TILE_ITEMS)
         {
             // Not last tile
-            ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
+            ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state);
         }
         else if (num_remaining > 0)
         {
             // Last tile
-            ConsumeTile<false>(num_remaining, tile_idx, tile_offset, tile_state);
+            ConsumeTile<true>(num_remaining, tile_idx, tile_offset, tile_state);
         }
     }
 
