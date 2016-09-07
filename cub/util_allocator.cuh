@@ -218,7 +218,7 @@ struct CachingDeviceAllocator
     /**
      * Round up to the nearest power-of
      */
-    static void NearestPowerOf(
+    void NearestPowerOf(
         unsigned int    &power,
         size_t          &rounded_bytes,
         unsigned int    base,
@@ -226,6 +226,14 @@ struct CachingDeviceAllocator
     {
         power = 0;
         rounded_bytes = 1;
+
+        if (value * base < value)
+        {
+            // Overflow
+            power = sizeof(size_t) * 8;
+            rounded_bytes = size_t(0) - 1;
+            return;
+        }
 
         while (rounded_bytes < value)
         {

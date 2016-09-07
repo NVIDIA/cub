@@ -328,7 +328,7 @@ struct AgentScan
             ScanTile(items, scan_op, identity, block_aggregate);
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
-            if (IS_LAST_TILE && (threadIdx.x == 0))
+            if ((!IS_LAST_TILE) && (threadIdx.x == 0))
                 tile_state.SetInclusive(0, block_aggregate);
         }
         else
