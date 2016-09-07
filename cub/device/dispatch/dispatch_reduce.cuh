@@ -240,22 +240,6 @@ template <
 struct DeviceReducePolicy
 {
     //------------------------------------------------------------------------------
-    // Constants
-    //------------------------------------------------------------------------------
-
-    enum
-    {
-        // Whether this is for ArgMin or ArgMax
-        IS_ARG_OP = Equals<ReductionOpT, ArgMin>::VALUE || Equals<ReductionOpT, ArgMax>::VALUE,
-
-        // Relative size of T type to a 4-byte word
-        SCALE_FACTOR_4B = (sizeof(T) + 3) / 4,
-
-        // Relative size of T type to a 1-byte word
-        SCALE_FACTOR_1B = sizeof(T),
-    };
-
-    //------------------------------------------------------------------------------
     // Architecture-specific tuning policies
     //------------------------------------------------------------------------------
 
@@ -264,8 +248,7 @@ struct DeviceReducePolicy
     {
         // ReducePolicy
         typedef AgentReducePolicy<
-                128,                                ///< Threads per thread block
-                CUB_MAX(1, 8 / SCALE_FACTOR_4B),    ///< Items per thread per tile of input
+                CUB_NOMINAL_CONFIG(128, 8, T),      ///< Threads per block, items per thread
                 2,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
@@ -283,32 +266,14 @@ struct DeviceReducePolicy
     /// SM20
     struct Policy200 : ChainedPolicy<200, Policy200, Policy130>
     {
-        // ReducePolicy1B (GTX 580: 158.1 GB/s @ 192M 1B items)
+        // ReducePolicy (GTX 580: 178.9 GB/s @ 48M 4B items, 158.1 GB/s @ 192M 1B items)
         typedef AgentReducePolicy<
-                192,                                ///< Threads per thread block
-                CUB_MAX(1, 24 / SCALE_FACTOR_1B),   ///< Items per thread per tile of input
-                4,                                  ///< Number of items per vectorized load
-                BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
-                LOAD_DEFAULT,                       ///< Cache load modifier
-                (sizeof(T) == 1) ?                  ///< How to map tiles of input onto thread blocks
-                    GRID_MAPPING_EVEN_SHARE :
-                    GRID_MAPPING_DYNAMIC>
-            ReducePolicy1B;
-
-        // ReducePolicy4B (GTX 580: 178.9 GB/s @ 48M 4B items)
-        typedef AgentReducePolicy<
-                128,                                ///< Threads per thread block
-                CUB_MAX(1, 8 / SCALE_FACTOR_4B),    ///< Items per thread per tile of input
+                CUB_NOMINAL_CONFIG(128, 8, T),      ///< Threads per block, items per thread
                 4,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_RAKING,                ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
-            ReducePolicy4B;
-
-        // ReducePolicy
-        typedef typename If<(sizeof(T) < 4),
-            ReducePolicy1B,
-            ReducePolicy4B>::Type ReducePolicy;
+            ReducePolicy;
 
         // SingleTilePolicy
         typedef ReducePolicy SingleTilePolicy;
@@ -323,8 +288,7 @@ struct DeviceReducePolicy
     {
         // ReducePolicy (GTX670: 154.0 @ 48M 4B items)
         typedef AgentReducePolicy<
-                256,                                ///< Threads per thread block
-                CUB_MAX(1, 20 / SCALE_FACTOR_4B),    ///< Items per thread per tile of input
+                CUB_NOMINAL_CONFIG(256, 20, T),     ///< Threads per block, items per thread
                 2,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_DEFAULT,                       ///< Cache load modifier
@@ -342,30 +306,14 @@ struct DeviceReducePolicy
     /// SM35
     struct Policy350 : ChainedPolicy<350, Policy350, Policy300>
     {
-        // ReducePolicy1B (GTX Titan: 228.7 GB/s @ 192M 1B items)
+        // ReducePolicy (GTX Titan: 255.1 GB/s @ 48M 4B items; 228.7 GB/s @ 192M 1B items)
         typedef AgentReducePolicy<
-                128,                                ///< Threads per thread block
-                CUB_MAX(1, 24 / SCALE_FACTOR_1B),   ///< Items per thread per tile of input
+                CUB_NOMINAL_CONFIG(256, 20, T),     ///< Threads per block, items per thread
                 4,                                  ///< Number of items per vectorized load
                 BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
                 LOAD_LDG,                           ///< Cache load modifier
                 GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
-            ReducePolicy1B;
-
-        // ReducePolicy4B types (GTX Titan: 255.1 GB/s @ 48M 4B items)
-        typedef AgentReducePolicy<
-                256,                                ///< Threads per thread block
-                CUB_MAX(1, 20 / SCALE_FACTOR_4B),   ///< Items per thread per tile of input
-                4,                                  ///< Number of items per vectorized load
-                BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
-                LOAD_LDG,                           ///< Cache load modifier
-                GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
-            ReducePolicy4B;
-
-        // ReducePolicy
-        typedef typename If<(sizeof(T) < 4),
-            ReducePolicy1B,
-            ReducePolicy4B>::Type ReducePolicy;
+            ReducePolicy;
 
         // SingleTilePolicy
         typedef ReducePolicy SingleTilePolicy;

@@ -172,16 +172,9 @@ struct DispatchScan
     /// SM520
     struct Policy520
     {
-        enum {
-            PTX_ARCH                    = 520,
-            NOMINAL_4B_BLOCK_THREADS    = 128,
-            NOMINAL_4B_ITEMS_PER_THREAD = 12,
-        };
-
         // Titan X: 32.47B items/s @ 48M 32-bit T
         typedef AgentScanPolicy<
-                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
-                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_NOMINAL_CONFIG(128, 12, T),      ///< Threads per block, items per thread
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -193,16 +186,9 @@ struct DispatchScan
     /// SM35
     struct Policy350
     {
-        enum {
-            PTX_ARCH                    = 350,
-            NOMINAL_4B_BLOCK_THREADS    = 128,
-            NOMINAL_4B_ITEMS_PER_THREAD = 12,
-        };
-
         // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
         typedef AgentScanPolicy<
-                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
-                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_NOMINAL_CONFIG(128, 12, T),      ///< Threads per block, items per thread
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
@@ -213,15 +199,8 @@ struct DispatchScan
     /// SM30
     struct Policy300
     {
-        enum {
-            PTX_ARCH                    = 300,
-            NOMINAL_4B_BLOCK_THREADS    = 256,
-            NOMINAL_4B_ITEMS_PER_THREAD = 9,
-        };
-
         typedef AgentScanPolicy<
-                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
-                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_NOMINAL_CONFIG(256, 9, T),      ///< Threads per block, items per thread
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -232,16 +211,9 @@ struct DispatchScan
     /// SM20
     struct Policy200
     {
-        enum {
-            PTX_ARCH                    = 200,
-            NOMINAL_4B_BLOCK_THREADS    = 128,
-            NOMINAL_4B_ITEMS_PER_THREAD = 12,
-        };
-
         // GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
         typedef AgentScanPolicy<
-                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
-                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_NOMINAL_CONFIG(128, 12, T),      ///< Threads per block, items per thread
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -252,15 +224,8 @@ struct DispatchScan
     /// SM13
     struct Policy130
     {
-        enum {
-            PTX_ARCH                    = 130,
-            NOMINAL_4B_BLOCK_THREADS    = 96,
-            NOMINAL_4B_ITEMS_PER_THREAD = 21,
-        };
-
         typedef AgentScanPolicy<
-                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
-                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_NOMINAL_CONFIG(96, 21, T),      ///< Threads per block, items per thread
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -271,15 +236,8 @@ struct DispatchScan
     /// SM10
     struct Policy100
     {
-        enum {
-            PTX_ARCH                    = 100,
-            NOMINAL_4B_BLOCK_THREADS    = 64,
-            NOMINAL_4B_ITEMS_PER_THREAD = 9,
-        };
-
         typedef AgentScanPolicy<
-                CUB_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
-                CUB_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH),
+                CUB_NOMINAL_CONFIG(64, 9, T),      ///< Threads per block, items per thread
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
