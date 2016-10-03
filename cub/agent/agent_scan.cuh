@@ -93,7 +93,7 @@ template <
     typename InputIteratorT,        ///< Random-access input iterator type
     typename OutputIteratorT,       ///< Random-access output iterator type
     typename ScanOpT,               ///< Scan functor type
-    typename IdentityT,             ///< The identity element for ScanOpT type (cub::NullType for inclusive scan)
+    typename InitValueT,             ///< The init_value element for ScanOpT type (cub::NullType for inclusive scan)
     typename OffsetT>               ///< Signed integer type for global offsets
 struct AgentScan
 {
@@ -117,7 +117,7 @@ struct AgentScan
     // Constants
     enum
     {
-        INCLUSIVE           = Equals<IdentityT, NullType>::VALUE,            // Inclusive scan if no identity type is provided
+        IS_INCLUSIVE        = Equals<InitValueT, NullType>::VALUE,            // Inclusive scan if no init_value type is provided
         BLOCK_THREADS       = AgentScanPolicyT::BLOCK_THREADS,
         ITEMS_PER_THREAD    = AgentScanPolicyT::ITEMS_PER_THREAD,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
@@ -168,7 +168,7 @@ struct AgentScan
         struct
         {
             typename TilePrefixCallbackOpT::TempStorage  prefix;     // Smem needed for cooperative prefix callback
-            typename BlockScanT::TempStorage                scan;       // Smem needed for tile scanning
+            typename BlockScanT::TempStorage             scan;       // Smem needed for tile scanning
         };
     };
 
@@ -184,95 +184,52 @@ struct AgentScan
     WrappedInputIteratorT       d_in;               ///< Input data
     OutputIteratorT             d_out;              ///< Output data
     ScanOpT                     scan_op;            ///< Binary scan operator
-    IdentityT                   identity;           ///< The identity element for ScanOpT
+    InitValueT                  init_value;         ///< The init_value element for ScanOpT
 
 
     //---------------------------------------------------------------------
-    // Block scan utility methods (first tile)
-    // Scan operators like addition that associate an identity value may be slightly faster.
+    // Block scan utility methods
     //---------------------------------------------------------------------
 
     /**
-     * Exclusive scan specialization
+     * Exclusive scan specialization (first tile)
      */
-    template <typename _ScanOp, typename _Identity>
     __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, OutputT& block_aggregate)
+    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, OutputT init_value, OutputT& block_aggregate, Int2Type<false> is_inclusive)
     {
-        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, identity, scan_op, block_aggregate);
+        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, init_value, scan_op, block_aggregate);
     }
 
-    /**
-     * Exclusive sum specialization
-     */
-    template <typename _Identity>
-    __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], Sum scan_op, _Identity identity, OutputT& block_aggregate)
-    {
-        BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate);
-    }
 
     /**
-     * Inclusive scan specialization
+     * Inclusive scan specialization (first tile)
      */
-    template <typename _ScanOp>
     __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, OutputT& block_aggregate)
+    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, OutputT init_value, OutputT& block_aggregate, Int2Type<true> is_inclusive)
     {
         BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate);
     }
 
-    /**
-     * Inclusive sum specialization
-     */
-    __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, OutputT& block_aggregate)
-    {
-        BlockScanT(temp_storage.scan).InclusiveSum(items, items, block_aggregate);
-    }
-
-    //---------------------------------------------------------------------
-    // Block scan utility methods (subsequent tiles)
-    //---------------------------------------------------------------------
 
     /**
-     * Exclusive scan specialization (with prefix from predecessors)
-     */
-    template <typename _ScanOp, typename _Identity, typename PrefixCallback>
-    __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, _Identity identity, OutputT& block_aggregate, PrefixCallback &prefix_op)
-    {
-        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, identity, scan_op, block_aggregate, prefix_op);
-    }
-
-    /**
-     * Exclusive sum specialization (with prefix from predecessors)
-     */
-    template <typename _Identity, typename PrefixCallback>
-    __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], Sum scan_op, _Identity identity, OutputT& block_aggregate, PrefixCallback &prefix_op)
-    {
-        BlockScanT(temp_storage.scan).ExclusiveSum(items, items, block_aggregate, prefix_op);
-    }
-
-    /**
-     * Inclusive scan specialization (with prefix from predecessors)
-     */
-    template <typename _ScanOp, typename PrefixCallback>
-    __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], _ScanOp scan_op, NullType identity, OutputT& block_aggregate, PrefixCallback &prefix_op)
-    {
-        BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate, prefix_op);
-    }
-
-    /**
-     * Inclusive sum specialization (with prefix from predecessors)
+     * Exclusive scan specialization (subsequent tiles)
      */
     template <typename PrefixCallback>
     __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], Sum scan_op, NullType identity, OutputT& block_aggregate, PrefixCallback &prefix_op)
+    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, PrefixCallback &prefix_op, OutputT& block_aggregate, Int2Type<false> is_inclusive)
     {
-        BlockScanT(temp_storage.scan).InclusiveSum(items, items, block_aggregate, prefix_op);
+        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, prefix_op, scan_op, block_aggregate);
+    }
+
+
+    /**
+     * Inclusive scan specialization (subsequent tiles)
+     */
+    template <typename PrefixCallback>
+    __device__ __forceinline__
+    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, PrefixCallback &prefix_op, OutputT& block_aggregate, Int2Type<true> is_inclusive)
+    {
+        BlockScanT(temp_storage.scan).InclusiveScan(items, items, prefix_op, scan_op, block_aggregate);
     }
 
 
@@ -287,13 +244,13 @@ struct AgentScan
         InputIteratorT  d_in,               ///< Input data
         OutputIteratorT d_out,              ///< Output data
         ScanOpT         scan_op,            ///< Binary scan operator
-        IdentityT       identity)           ///< The identity element for ScanOpT
+        InitValueT      init_value)         ///< Initial value to seed the exclusive scan
     :
         temp_storage(temp_storage.Alias()),
         d_in(d_in),
         d_out(d_out),
         scan_op(scan_op),
-        identity(identity)
+        init_value(init_value)
     {}
 
 
@@ -326,7 +283,7 @@ struct AgentScan
         {
             // Scan first tile
             OutputT block_aggregate;
-            ScanTile(items, scan_op, identity, block_aggregate);
+            ScanTile(items, scan_op, init_value, block_aggregate, Int2Type<IS_INCLUSIVE>());
 
             // Update tile status if there may be successor tiles (i.e., this tile is full)
             if ((!IS_LAST_TILE) && (threadIdx.x == 0))
@@ -337,7 +294,7 @@ struct AgentScan
             // Scan non-first tile
             OutputT block_aggregate;
             TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            ScanTile(items, scan_op, identity, block_aggregate, prefix_op);
+            ScanTile(items, scan_op, prefix_op, block_aggregate, Int2Type<IS_INCLUSIVE>());
         }
 
         __syncthreads();
@@ -405,13 +362,13 @@ struct AgentScan
         if (IS_FIRST_TILE)
         {
             OutputT block_aggregate;
-            ScanTile(items, scan_op, identity, block_aggregate);
+            ScanTile(items, scan_op, init_value, block_aggregate, Int2Type<IS_INCLUSIVE>());
             prefix_op.running_total = block_aggregate;
         }
         else
         {
             OutputT block_aggregate;
-            ScanTile(items, scan_op, identity, block_aggregate, prefix_op);
+            ScanTile(items, scan_op, prefix_op, block_aggregate, Int2Type<IS_INCLUSIVE>());
         }
 
         __syncthreads();

@@ -145,7 +145,7 @@ struct DeviceScan
         typedef typename std::iterator_traits<OutputIteratorT>::value_type OutputT;
 
         // Initial value
-        OutputT init = 0;
+        OutputT init_value = 0;
 
         return DispatchScan<InputIteratorT, OutputIteratorT, Sum, OutputT, OffsetT>::Dispatch(
             d_temp_storage,
@@ -153,7 +153,7 @@ struct DeviceScan
             d_in,
             d_out,
             Sum(),
-            init,
+            init_value,
             num_items,
             stream,
             debug_synchronous);
@@ -161,7 +161,7 @@ struct DeviceScan
 
 
     /**
-     * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.  The \p init value is applied as the initial value, and is assigned to *d_out.
+     * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.  The \p init_value value is applied as the initial value, and is assigned to *d_out.
      *
      * \par
      * - Supports non-commutative scan operators.
@@ -214,7 +214,7 @@ struct DeviceScan
         typename        InputIteratorT,
         typename        OutputIteratorT,
         typename        ScanOpT,
-        typename        InitT>
+        typename        InitValueT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t ExclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
@@ -222,7 +222,7 @@ struct DeviceScan
         InputIteratorT  d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT d_out,                              ///< [out] Pointer to the output sequence of data items
         ScanOpT         scan_op,                            ///< [in] Binary scan functor
-        InitT       identity,                           ///< [in] Identity element
+        InitValueT      init_value,                         ///< [in] Initial value to seed the exclusive scan (and is assigned to *d_out)
         int             num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -230,13 +230,13 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DispatchScan<InputIteratorT, OutputIteratorT, ScanOpT, InitT, OffsetT>::Dispatch(
+        return DispatchScan<InputIteratorT, OutputIteratorT, ScanOpT, InitValueT, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
             d_out,
             scan_op,
-            identity,
+            init_value,
             num_items,
             stream,
             debug_synchronous);
@@ -292,13 +292,13 @@ struct DeviceScan
         typename            OutputIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t InclusiveSum(
-        void*               d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t&             temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIteratorT      d_in,                               ///< [in] Pointer to the input sequence of data items
-        OutputIteratorT     d_out,                              ///< [out] Pointer to the output sequence of data items
-        int                 num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
-        cudaStream_t        stream             = 0,             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
+        void*               d_temp_storage,                 ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        size_t&             temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+        InputIteratorT      d_in,                           ///< [in] Pointer to the input sequence of data items
+        OutputIteratorT     d_out,                          ///< [out] Pointer to the output sequence of data items
+        int                 num_items,                      ///< [in] Total number of input items (i.e., the length of \p d_in)
+        cudaStream_t        stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+        bool                debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int OffsetT;
@@ -383,7 +383,7 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DispatchScan<InputIteratorT, OutputIteratorT, ScanOp, NullType, OffsetT>::Dispatch(
+        return DispatchScan<InputIteratorT, OutputIteratorT, ScanOpT, NullType, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,

@@ -528,13 +528,13 @@ public:
     {
         // Reduce consecutive thread items in registers
         Sum scan_op;
-        T thread_partial = ThreadReduce(input, scan_op);
+        T thread_prefix = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveSum(thread_partial, thread_partial);
+        ExclusiveSum(thread_prefix, thread_prefix);
 
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial);
+        // Exclusive scan in registers with prefix as seed
+        ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
@@ -587,13 +587,13 @@ public:
     {
         // Reduce consecutive thread items in registers
         Sum scan_op;
-        T thread_partial = ThreadReduce(input, scan_op);
+        T thread_prefix = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveSum(thread_partial, thread_partial, block_aggregate);
+        ExclusiveSum(thread_prefix, thread_prefix, block_aggregate);
 
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial);
+        // Exclusive scan in registers with prefix as seed
+        ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
@@ -696,13 +696,13 @@ public:
     {
         // Reduce consecutive thread items in registers
         Sum scan_op;
-        T thread_partial = ThreadReduce(input, scan_op);
+        T thread_prefix = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveSum(thread_partial, thread_partial, block_aggregate, block_prefix_callback_op);
+        ExclusiveSum(thread_prefix, thread_prefix, block_aggregate, block_prefix_callback_op);
 
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial);
+        // Exclusive scan in registers with prefix as seed
+        ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
@@ -755,10 +755,10 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T               identity,                       ///< [in] Identity value
+        T               initial_value,                  ///< [in] Initial value to seed the exclusive scan (and is assigned to \p output[0] in <em>thread</em><sub>0</sub>)
         ScanOp          scan_op)                        ///< [in] Binary scan functor 
     {
-        InternalBlockScan(temp_storage).ExclusiveScan(input, output, identity, scan_op);
+        InternalBlockScan(temp_storage).ExclusiveScan(input, output, initial_value, scan_op);
     }
 
 
@@ -805,11 +805,11 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input items
         T               &output,            ///< [out] Calling thread's output items (may be aliased to \p input)
-        T               identity,           ///< [in] Identity value
+        T               initial_value,      ///< [in] Initial value to seed the exclusive scan (and is assigned to \p output[0] in <em>thread</em><sub>0</sub>)
         ScanOp          scan_op,            ///< [in] Binary scan functor 
         T               &block_aggregate)   ///< [out] block-wide aggregate reduction of input items
     {
-        InternalBlockScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, block_aggregate);
+        InternalBlockScan(temp_storage).ExclusiveScan(input, output, initial_value, scan_op, block_aggregate);
     }
 
 
@@ -897,12 +897,11 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                       input,                          ///< [in] Calling thread's input item
         T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        T                       identity,                       ///< [in] Identity value
         ScanOp                  scan_op,                        ///< [in] Binary scan functor 
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
-        InternalBlockScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, block_aggregate, block_prefix_callback_op);
+        InternalBlockScan(temp_storage).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -961,17 +960,17 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        T                 identity,                     ///< [in] Identity value
-        ScanOp            scan_op)                      ///< [in] Binary scan functor 
+        T                 initial_value,                     ///< [in] Initial value to seed the exclusive scan (and is assigned to \p output[0] in <em>thread</em><sub>0</sub>)
+        ScanOp            scan_op)                      ///< [in] Binary scan functor
     {
         // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
+        T thread_prefix = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveScan(thread_partial, thread_partial, identity, scan_op);
+        ExclusiveScan(thread_prefix, thread_prefix, initial_value, scan_op);
 
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial);
+        // Exclusive scan in registers with prefix as seed
+        ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
@@ -1023,18 +1022,18 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        T                 identity,                     ///< [in] Identity value
-        ScanOp            scan_op,                      ///< [in] Binary scan functor 
+        T                 initial_value,                ///< [in] Initial value to seed the exclusive scan (and is assigned to \p output[0] in <em>thread</em><sub>0</sub>)
+        ScanOp            scan_op,                      ///< [in] Binary scan functor
         T                 &block_aggregate)             ///< [out] block-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
+        T thread_prefix = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveScan(thread_partial, thread_partial, identity, scan_op, block_aggregate);
+        ExclusiveScan(thread_prefix, thread_prefix, initial_value, scan_op, block_aggregate);
 
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial);
+        // Exclusive scan in registers with prefix as seed
+        ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
@@ -1134,34 +1133,31 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                       (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
         T                       (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        T                       identity,                       ///< [in] Identity value
-        ScanOp                  scan_op,                        ///< [in] Binary scan functor 
+        ScanOp                  scan_op,                        ///< [in] Binary scan functor
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
     {
         // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
+        T thread_prefix = ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
-        ExclusiveScan(thread_partial, thread_partial, identity, scan_op, block_aggregate, block_prefix_callback_op);
+        ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_aggregate, block_prefix_callback_op);
 
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial);
+        // Exclusive scan in registers with prefix as seed
+        ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
     //@}  end member group
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document no-initial-value scans
     /******************************************************************//**
-     * \name Exclusive prefix scan operations (identityless, single datum per thread)
+     * \name Exclusive prefix scan operations (no initial value, single datum per thread)
      *********************************************************************/
     //@{
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  With no initial value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
      * \par
      * - Supports non-commutative scan operators.
@@ -1174,14 +1170,14 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op)                        ///< [in] Binary scan functor 
+        ScanOp          scan_op)                        ///< [in] Binary scan functor
     {
         InternalBlockScan(temp_storage).ExclusiveScan(input, output, scan_op);
     }
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no initial value, the output computed for <em>thread</em><sub>0</sub> is undefined.
      *
      * \par
      * - Supports non-commutative scan operators.
@@ -1194,158 +1190,16 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T               input,                          ///< [in] Calling thread's input item
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan functor 
+        ScanOp          scan_op,                        ///< [in] Binary scan functor
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
         InternalBlockScan(temp_storage).ExclusiveScan(input, output, scan_op, block_aggregate);
     }
 
 
-    /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
-     *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
-     *
-     * \par
-     * - Supports non-commutative scan operators.
-     * - \rowmajor
-     * - \smemreuse
-     *
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor  type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
-     */
-    template <
-        typename ScanOp,
-        typename BlockPrefixCallbackOp>
-    __device__ __forceinline__ void ExclusiveScan(
-        T                       input,                          ///< [in] Calling thread's input item
-        T                       &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
-        ScanOp                  scan_op,                        ///< [in] Binary scan functor 
-        T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
-        BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
-    {
-        InternalBlockScan(temp_storage).ExclusiveScan(input, output, scan_op, block_aggregate, block_prefix_callback_op);
-    }
-
 
     //@}  end member group
-
-    /******************************************************************//**
-     * \name Exclusive prefix scan operations (identityless, multiple data per thread)
-     *********************************************************************/
-    //@{
-
-
-    /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
-     *
-     * \par
-     * - Supports non-commutative scan operators.
-     * - \blocked
-     * - \granularity
-     * - \smemreuse
-     *
-     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor  type having member <tt>T operator()(const T &a, const T &b)</tt>
-     */
-    template <
-        int             ITEMS_PER_THREAD,
-        typename        ScanOp>
-    __device__ __forceinline__ void ExclusiveScan(
-        T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
-        T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp            scan_op)                      ///< [in] Binary scan functor 
-    {
-        // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
-
-        // Exclusive threadblock-scan
-        ExclusiveScan(thread_partial, thread_partial, scan_op);
-
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
-    }
-
-
-    /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no identity value, the output computed for <em>thread</em><sub>0</sub> is undefined.
-     *
-     * \par
-     * - Supports non-commutative scan operators.
-     * - \blocked
-     * - \granularity
-     * - \smemreuse
-     *
-     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor  type having member <tt>T operator()(const T &a, const T &b)</tt>
-     */
-    template <
-        int             ITEMS_PER_THREAD,
-        typename        ScanOp>
-    __device__ __forceinline__ void ExclusiveScan(
-        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
-        T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp          scan_op,                        ///< [in] Binary scan functor 
-        T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
-    {
-        // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
-
-        // Exclusive threadblock-scan
-        ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate);
-
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
-    }
-
-
-    /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
-     *
-     * The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
-     * The functor's input parameter \p block_aggregate is the same value also returned by the scan operation.
-     * The functor will be invoked by the first warp of threads in the block, however only the return value from
-     * <em>lane</em><sub>0</sub> is applied as the block-wide prefix.  Can be stateful.
-     *
-     * \par
-     * - Supports non-commutative scan operators.
-     * - \blocked
-     * - \granularity
-     * - \smemreuse
-     *
-     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
-     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor  type having member <tt>T operator()(const T &a, const T &b)</tt>
-     * \tparam BlockPrefixCallbackOp        <b>[inferred]</b> Call-back functor type having member <tt>T operator()(T block_aggregate)</tt>
-     */
-    template <
-        int             ITEMS_PER_THREAD,
-        typename        ScanOp,
-        typename        BlockPrefixCallbackOp>
-    __device__ __forceinline__ void ExclusiveScan(
-        T                       (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
-        T                       (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        ScanOp                  scan_op,                      ///< [in] Binary scan functor 
-        T                       &block_aggregate,             ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
-        BlockPrefixCallbackOp   &block_prefix_callback_op)    ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to all inputs.
-    {
-        // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
-
-        // Exclusive threadblock-scan
-        ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate, block_prefix_callback_op);
-
-        // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial);
-    }
-
-
-    //@}  end member group
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
+#endif // DOXYGEN_SHOULD_SKIP_THIS  // Do not document no-initial-value scans
     /******************************************************************//**
      * \name Inclusive prefix sum operations
      *********************************************************************/
@@ -1586,13 +1440,13 @@ public:
         {
             // Reduce consecutive thread items in registers
             Sum scan_op;
-            T thread_partial = ThreadReduce(input, scan_op);
+            T thread_prefix = ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
-            ExclusiveSum(thread_partial, thread_partial);
+            ExclusiveSum(thread_prefix, thread_prefix);
 
-            // Inclusive scan in registers with prefix
-            ThreadScanInclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
+            // Inclusive scan in registers with prefix as seed
+            ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
         }
     }
 
@@ -1654,13 +1508,13 @@ public:
         {
             // Reduce consecutive thread items in registers
             Sum scan_op;
-            T thread_partial = ThreadReduce(input, scan_op);
+            T thread_prefix = ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
-            ExclusiveSum(thread_partial, thread_partial, block_aggregate);
+            ExclusiveSum(thread_prefix, thread_prefix, block_aggregate);
 
-            // Inclusive scan in registers with prefix
-            ThreadScanInclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
+            // Inclusive scan in registers with prefix as seed
+            ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
         }
     }
 
@@ -1769,13 +1623,13 @@ public:
         {
             // Reduce consecutive thread items in registers
             Sum scan_op;
-            T thread_partial = ThreadReduce(input, scan_op);
+            T thread_prefix = ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
-            ExclusiveSum(thread_partial, thread_partial, block_aggregate, block_prefix_callback_op);
+            ExclusiveSum(thread_prefix, thread_prefix, block_aggregate, block_prefix_callback_op);
 
-            // Inclusive scan in registers with prefix
-            ThreadScanInclusive(input, output, scan_op, thread_partial);
+            // Inclusive scan in registers with prefix as seed
+            ThreadScanInclusive(input, output, scan_op, thread_prefix);
         }
     }
 
@@ -2038,13 +1892,13 @@ public:
         else
         {
             // Reduce consecutive thread items in registers
-            T thread_partial = ThreadReduce(input, scan_op);
+            T thread_prefix = ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
-            ExclusiveScan(thread_partial, thread_partial, scan_op);
+            ExclusiveScan(thread_prefix, thread_prefix, scan_op);
 
-            // Inclusive scan in registers with prefix
-            ThreadScanInclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
+            // Inclusive scan in registers with prefix as seed (first thread does not seed)
+            ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
         }
     }
 
@@ -2109,13 +1963,13 @@ public:
         else
         {
             // Reduce consecutive thread items in registers
-            T thread_partial = ThreadReduce(input, scan_op);
+            T thread_prefix = ThreadReduce(input, scan_op);
 
-            // Exclusive threadblock-scan
-            ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate);
+            // Exclusive threadblock-scan (with no initial value)
+            ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_aggregate);
 
-            // Inclusive scan in registers with prefix
-            ThreadScanInclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
+            // Inclusive scan in registers with prefix as seed (first thread does not seed)
+            ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
         }
     }
 
@@ -2227,13 +2081,13 @@ public:
         else
         {
             // Reduce consecutive thread items in registers
-            T thread_partial = ThreadReduce(input, scan_op);
+            T thread_prefix = ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
-            ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate, block_prefix_callback_op);
+            ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_aggregate, block_prefix_callback_op);
 
-            // Inclusive scan in registers with prefix
-            ThreadScanInclusive(input, output, scan_op, thread_partial);
+            // Inclusive scan in registers with prefix as seed
+            ThreadScanInclusive(input, output, scan_op, thread_prefix);
         }
     }
 
