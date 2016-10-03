@@ -73,12 +73,12 @@ __global__ void DeviceScanInitKernel(
  * Initialization kernel for tile status initialization (multi-block)
  */
 template <
-    typename            ScanTileStateT,         ///< Tile status interface type
-    typename            NumSelectedIteratorT>   ///< Output iterator type for recording the number of items selected
+    typename                ScanTileStateT,         ///< Tile status interface type
+    typename                NumSelectedIteratorT>   ///< Output iterator type for recording the number of items selected
 __global__ void DeviceCompactInitKernel(
     ScanTileStateT          tile_state,             ///< [in] Tile status interface
     int                     num_tiles,              ///< [in] Number of tiles
-    NumSelectedIteratorT    d_num_selected_out) ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+    NumSelectedIteratorT    d_num_selected_out)     ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
 {
     // Initialize tile status
     tile_state.InitializeStatus(num_tiles);
@@ -98,7 +98,7 @@ template <
     typename            OutputIteratorT,    ///< Random-access output iterator type for writing scan outputs \iterator
     typename            ScanTileStateT,     ///< Tile status interface type
     typename            ScanOpT,            ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename            IdentityT,          ///< The identity element for ScanOpT (cub::NullType for inclusive scans)
+    typename            InitValueT,         ///< Initial value to seed the exclusive scan (cub::NullType for inclusive scans)
     typename            OffsetT>            ///< Signed integer type for global offsets
 __launch_bounds__ (int(ScanPolicyT::BLOCK_THREADS))
 __global__ void DeviceScanKernel(
@@ -107,7 +107,7 @@ __global__ void DeviceScanKernel(
     ScanTileStateT      tile_state,         ///< Tile status interface
     int                 start_tile,         ///< The starting tile for the current grid
     ScanOpT             scan_op,            ///< Binary scan functor 
-    IdentityT           identity,           ///< The identity element for ScanOpT
+    InitValueT          init_value,         ///< Initial value to seed the exclusive scan
     OffsetT             num_items)          ///< Total number of scan items for the entire problem
 {
     // Thread block type for scanning input tiles
@@ -116,14 +116,14 @@ __global__ void DeviceScanKernel(
         InputIteratorT,
         OutputIteratorT,
         ScanOpT,
-        IdentityT,
+        InitValueT,
         OffsetT> AgentScanT;
 
     // Shared memory for AgentScan
     __shared__ typename AgentScanT::TempStorage temp_storage;
 
     // Process tiles
-    AgentScanT(temp_storage, d_in, d_out, scan_op, identity).ConsumeRange(
+    AgentScanT(temp_storage, d_in, d_out, scan_op, init_value).ConsumeRange(
         num_items,
         tile_state,
         start_tile);
@@ -144,7 +144,7 @@ template <
     typename InputIteratorT,     ///< Random-access input iterator type for reading scan inputs \iterator
     typename OutputIteratorT,    ///< Random-access output iterator type for writing scan outputs \iterator
     typename ScanOpT,            ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename IdentityT,          ///< The identity element type for ScanOpT (cub::NullType for inclusive scans)
+    typename InitValueT,          ///< The init_value element type for ScanOpT (cub::NullType for inclusive scans)
     typename OffsetT>            ///< Signed integer type for global offsets
 struct DispatchScan
 {
@@ -363,7 +363,7 @@ struct DispatchScan
         InputIteratorT      d_in,                   ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                  ///< [out] Pointer to the output sequence of data items
         ScanOpT             scan_op,                ///< [in] Binary scan functor 
-        IdentityT           identity,               ///< [in] The identity element for ScanOpT
+        InitValueT          init_value,             ///< [in] Initial value to seed the exclusive scan
         OffsetT             num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t        stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous,      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
@@ -456,7 +456,7 @@ struct DispatchScan
                     tile_state,
                     start_tile,
                     scan_op,
-                    identity,
+                    init_value,
                     num_items);
 
                 // Check for failure to launch
@@ -484,7 +484,7 @@ struct DispatchScan
         InputIteratorT  d_in,                   ///< [in] Pointer to the input sequence of data items
         OutputIteratorT d_out,                  ///< [out] Pointer to the output sequence of data items
         ScanOpT         scan_op,                ///< [in] Binary scan functor 
-        IdentityT       identity,               ///< [in] The identity element for ScanOpT
+        InitValueT      init_value,             ///< [in] Initial value to seed the exclusive scan
         OffsetT         num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous)      ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
@@ -507,13 +507,13 @@ struct DispatchScan
                 d_in,
                 d_out,
                 scan_op,
-                identity,
+                init_value,
                 num_items,
                 stream,
                 debug_synchronous,
                 ptx_version,
                 DeviceScanInitKernel<ScanTileStateT>,
-                DeviceScanKernel<PtxAgentScanPolicy, InputIteratorT, OutputIteratorT, ScanTileStateT, ScanOpT, IdentityT, OffsetT>,
+                DeviceScanKernel<PtxAgentScanPolicy, InputIteratorT, OutputIteratorT, ScanTileStateT, ScanOpT, InitValueT, OffsetT>,
                 scan_kernel_config))) break;
         }
         while (0);
