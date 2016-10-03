@@ -157,11 +157,12 @@ struct DispatchScan
         INIT_KERNEL_THREADS = 128
     };
 
-    // Data type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    // The value types of the iterators
+    typedef typename std::iterator_traits<InputIteratorT>::value_type   InputT;
+    typedef typename std::iterator_traits<OutputIteratorT>::value_type  OutputT;
 
     // Tile status descriptor interface type
-    typedef ScanTileState<T> ScanTileStateT;
+    typedef ScanTileState<OutputT> ScanTileStateT;
 
 
     //---------------------------------------------------------------------
@@ -174,7 +175,7 @@ struct DispatchScan
     {
         // Titan X: 32.47B items/s @ 48M 32-bit T
         typedef AgentScanPolicy<
-                CUB_NOMINAL_CONFIG(128, 12, T),      ///< Threads per block, items per thread
+                CUB_NOMINAL_CONFIG(128, 12, OutputT),      ///< Threads per block, items per thread
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -188,7 +189,7 @@ struct DispatchScan
     {
         // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
         typedef AgentScanPolicy<
-                CUB_NOMINAL_CONFIG(128, 12, T),      ///< Threads per block, items per thread
+                CUB_NOMINAL_CONFIG(128, 12, OutputT),      ///< Threads per block, items per thread
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
                 BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
@@ -200,7 +201,7 @@ struct DispatchScan
     struct Policy300
     {
         typedef AgentScanPolicy<
-                CUB_NOMINAL_CONFIG(256, 9, T),      ///< Threads per block, items per thread
+                CUB_NOMINAL_CONFIG(256, 9, OutputT),      ///< Threads per block, items per thread
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -213,7 +214,7 @@ struct DispatchScan
     {
         // GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
         typedef AgentScanPolicy<
-                CUB_NOMINAL_CONFIG(128, 12, T),      ///< Threads per block, items per thread
+                CUB_NOMINAL_CONFIG(128, 12, OutputT),      ///< Threads per block, items per thread
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -225,7 +226,7 @@ struct DispatchScan
     struct Policy130
     {
         typedef AgentScanPolicy<
-                CUB_NOMINAL_CONFIG(96, 21, T),      ///< Threads per block, items per thread
+                CUB_NOMINAL_CONFIG(96, 21, OutputT),      ///< Threads per block, items per thread
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
@@ -237,7 +238,7 @@ struct DispatchScan
     struct Policy100
     {
         typedef AgentScanPolicy<
-                CUB_NOMINAL_CONFIG(64, 9, T),      ///< Threads per block, items per thread
+                CUB_NOMINAL_CONFIG(64, 9, OutputT),      ///< Threads per block, items per thread
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
