@@ -82,7 +82,7 @@ struct DeviceScan
     //@{
 
     /**
-     * \brief Computes a device-wide exclusive prefix sum.
+     * \brief Computes a device-wide exclusive prefix sum.  The value of 0 is applied as the initial value, and is assigned to *d_out.
      *
      * \par
      * - Supports non-commutative sum operators.
@@ -142,15 +142,18 @@ struct DeviceScan
         typedef int OffsetT;
 
         // Scan data type
-        typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+        typedef typename std::iterator_traits<OutputIteratorT>::value_type OutputT;
 
-        return DispatchScan<InputIteratorT, OutputIteratorT, Sum, T, OffsetT>::Dispatch(
+        // Initial value
+        OutputT init = 0;
+
+        return DispatchScan<InputIteratorT, OutputIteratorT, Sum, OutputT, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
             d_out,
             Sum(),
-            T(),
+            init,
             num_items,
             stream,
             debug_synchronous);
@@ -158,7 +161,7 @@ struct DeviceScan
 
 
     /**
-     * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.
+     * \brief Computes a device-wide exclusive prefix scan using the specified binary \p scan_op functor.  The \p init value is applied as the initial value, and is assigned to *d_out.
      *
      * \par
      * - Supports non-commutative scan operators.
@@ -210,16 +213,16 @@ struct DeviceScan
     template <
         typename        InputIteratorT,
         typename        OutputIteratorT,
-        typename        ScanOp,
-        typename        Identity>
+        typename        ScanOpT,
+        typename        InitT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t ExclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT  d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT d_out,                              ///< [out] Pointer to the output sequence of data items
-        ScanOp          scan_op,                            ///< [in] Binary scan functor 
-        Identity        identity,                           ///< [in] Identity element
+        ScanOpT         scan_op,                            ///< [in] Binary scan functor
+        InitT       identity,                           ///< [in] Identity element
         int             num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -227,7 +230,7 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DispatchScan<InputIteratorT, OutputIteratorT, ScanOp, Identity, OffsetT>::Dispatch(
+        return DispatchScan<InputIteratorT, OutputIteratorT, ScanOpT, InitT, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
             d_in,
@@ -365,14 +368,14 @@ struct DeviceScan
     template <
         typename        InputIteratorT,
         typename        OutputIteratorT,
-        typename        ScanOp>
+        typename        ScanOpT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t InclusiveScan(
         void            *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t          &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT  d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT d_out,                              ///< [out] Pointer to the output sequence of data items
-        ScanOp          scan_op,                            ///< [in] Binary scan functor 
+        ScanOpT         scan_op,                            ///< [in] Binary scan functor
         int             num_items,                          ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t    stream             = 0,             ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool            debug_synchronous  = false)         ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
