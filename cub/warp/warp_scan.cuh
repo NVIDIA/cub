@@ -253,9 +253,9 @@ public:
      */
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               &inclusive_output)  ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
-        InternalWarpScan(temp_storage).InclusiveScan(input, output, cub::Sum());
+        InternalWarpScan(temp_storage).InclusiveScan(input, inclusive_output, cub::Sum());
     }
 
 
@@ -296,10 +296,10 @@ public:
      */
     __device__ __forceinline__ void InclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               &inclusive_output,  ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).InclusiveScan(input, output, cub::Sum(), warp_aggregate);
+        InternalWarpScan(temp_storage).InclusiveScan(input, inclusive_output, cub::Sum(), warp_aggregate);
     }
 
 
@@ -348,9 +348,10 @@ public:
      */
     __device__ __forceinline__ void ExclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output)            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               &exclusive_output)  ///< [out] Calling thread's output item.  May be aliased with \p input.
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, ZeroInitialize<T>(), cub::Sum());
+        T initial_value = 0;
+        ExclusiveScan(input, exclusive_output, initial_value, cub::Sum());
     }
 
 
@@ -392,10 +393,11 @@ public:
      */
     __device__ __forceinline__ void ExclusiveSum(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               &exclusive_output,  ///< [out] Calling thread's output item.  May be aliased with \p input.
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, ZeroInitialize<T>(), cub::Sum(), warp_aggregate);
+        T initial_value = 0;
+        ExclusiveScan(input, exclusive_output, initial_value, cub::Sum(), warp_aggregate);
     }
 
 
@@ -444,10 +446,10 @@ public:
     template <typename ScanOp>
     __device__ __forceinline__ void InclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               &inclusive_output,  ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op);
+        InternalWarpScan(temp_storage).InclusiveScan(input, inclusive_output, scan_op);
     }
 
 
@@ -494,11 +496,11 @@ public:
     template <typename ScanOp>
     __device__ __forceinline__ void InclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               &inclusive_output,  ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).InclusiveScan(input, output, scan_op, warp_aggregate);
+        InternalWarpScan(temp_storage).InclusiveScan(input, inclusive_output, scan_op, warp_aggregate);
     }
 
 
@@ -547,11 +549,12 @@ public:
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        T               identity,           ///< [in] Identity value
+        T               &exclusive_output,  ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               initial_value,      ///< [in] Initial value to seed the exclusive scan
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op);
+        T inclusive_output;
+        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, initial_value, scan_op);
     }
 
 
@@ -597,24 +600,30 @@ public:
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        T               identity,           ///< [in] Identity value
+        T               &exclusive_output,  ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               initial_value,      ///< [in] Initial value to seed the exclusive scan
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, identity, scan_op, warp_aggregate);
+        InternalWarpScan internal(temp_storage);
+
+        // Compute inclusive scan
+        T inclusive_output;
+        internal.InclusiveScan(input, inclusive_output, scan_op);
+
+        // Update with initial value
+        inclusive_output = scan_op(initial_value, inclusive_output);
+
+        // Grab exclusive result from predecessor (undefined in lane0), and warp_aggregate from last lane
+        exclusive_output = internal.GetExclusive(input, inclusive_output, scan_op, warp_aggregate, Int2Type<IS_INTEGER>());
+
+        if (lane_id == 0)
+            exclusive_output = initial_value;
     }
 
 
-    //@}  end member group
-    /******************************************************************//**
-     * \name Identityless exclusive prefix scans
-     *********************************************************************/
-    //@{
-
-
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  Because no initial value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.
      *
      * \par
      * - \smemreuse
@@ -653,15 +662,16 @@ public:
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               &exclusive_output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op);
+        T inclusive_output;
+        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, scan_op);
     }
 
 
     /**
-     * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  Because no identity value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
+     * \brief Computes an exclusive prefix scan using the specified binary scan functor across the calling warp.  Because no initial value is supplied, the \p output computed for <em>warp-lane</em><sub>0</sub> is undefined.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
      * \par
      * - \smemreuse
@@ -702,11 +712,18 @@ public:
     template <typename ScanOp>
     __device__ __forceinline__ void ExclusiveScan(
         T               input,              ///< [in] Calling thread's input item.
-        T               &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
+        T               &exclusive_output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &warp_aggregate)    ///< [out] Warp-wide aggregate reduction of input items.
     {
-        InternalWarpScan(temp_storage).ExclusiveScan(input, output, scan_op, warp_aggregate);
+        InternalWarpScan internal(temp_storage);
+
+        // Compute inclusive scan
+        T inclusive_output;
+        internal.InclusiveScan(input, inclusive_output, scan_op);
+
+        // Grab exclusive result from predecessor (undefined in lane0), and warp_aggregate from last lane
+        exclusive_output = internal.GetExclusive(input, inclusive_output, scan_op, warp_aggregate, Int2Type<IS_INTEGER>());
     }
 
 
@@ -761,7 +778,8 @@ public:
         T               &inclusive_output,  ///< [out] Calling thread's inclusive-scan output item.
         T               &exclusive_output)  ///< [out] Calling thread's exclusive-scan output item.
     {
-        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, ZeroInitialize<T>(), cub::Sum());
+        T initial_value = 0;
+        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, initial_value, cub::Sum());
     }
 
 
@@ -809,15 +827,27 @@ public:
         T               input,              ///< [in] Calling thread's input item.
         T               &inclusive_output,  ///< [out] Calling thread's inclusive-scan output item.
         T               &exclusive_output,  ///< [out] Calling thread's exclusive-scan output item.
-        T               identity,           ///< [in] Identity value
+        T               initial_value,      ///< [in] Initial value to seed the exclusive scan
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, identity, scan_op);
+        InternalWarpScan internal(temp_storage);
+
+        // Compute inclusive scan
+        internal.InclusiveScan(input, inclusive_output, scan_op);
+
+        // Update with initial value
+        inclusive_output = scan_op(initial_value, inclusive_output);
+
+        // Grab exclusive result from predecessor (undefined in lane0)
+        exclusive_output = internal.GetExclusive(input, inclusive_output, scan_op, Int2Type<IS_INTEGER>());
+
+        if (lane_id == 0)
+            exclusive_output = initial_value;
     }
 
 
     /**
-     * \brief Computes both inclusive and exclusive prefix scans using the specified binary scan functor across the calling warp.  Because no identity value is supplied, the \p exclusive_output computed for <em>warp-lane</em><sub>0</sub> is undefined.
+     * \brief Computes both inclusive and exclusive prefix scans using the specified binary scan functor across the calling warp.  Because no initial value is supplied, the \p exclusive_output computed for <em>warp-lane</em><sub>0</sub> is undefined.
      *
      * \par
      * - \smemreuse
@@ -862,8 +892,16 @@ public:
         T               &exclusive_output,  ///< [out] Calling thread's exclusive-scan output item.
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
-        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, scan_op);
+        InternalWarpScan internal(temp_storage);
+
+        // Compute inclusive scan
+        internal.InclusiveScan(input, inclusive_output, scan_op);
+
+        // Grab exclusive result from predecessor (undefined in lane0)
+        exclusive_output = internal.GetExclusive(input, inclusive_output, scan_op, Int2Type<IS_INTEGER>());
     }
+
+
 
     //@}  end member group
     /******************************************************************//**

@@ -163,12 +163,12 @@ void NormalizeReductionOutput(
 
 
 /// Normalize input iterator to segment offset (specialized for arg-index)
-template <typename KeyValuePairT, typename OffsetT, typename WrappedIteratorT>
+template <typename KeyValuePairT, typename OffsetT, typename WrappedIteratorT, typename OutputValueT>
 __device__ __forceinline__
 void NormalizeReductionOutput(
     KeyValuePairT &val,
     OffsetT base_offset,
-    ArgIndexInputIterator<WrappedIteratorT, OffsetT> itr)
+    ArgIndexInputIterator<WrappedIteratorT, OffsetT, OutputValueT> itr)
 {
     val.key -= base_offset;
 }
