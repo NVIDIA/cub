@@ -560,7 +560,7 @@ int main(int argc, char** argv)
 
     typedef KeyValuePair<int, float> T;
     cub::Sum sum_op;
-    Test<32, AGGREGATE>(UNIFORM, ReduceBySegmentOp<cub::Sum>(sum_op), ZeroInitialize<T>(), ZeroInitialize<T>());
+    Test<32, AGGREGATE>(UNIFORM, ReduceBySegmentOp<cub::Sum>(sum_op), 0, 0);
 
 #else
 

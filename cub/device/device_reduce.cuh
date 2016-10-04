@@ -38,6 +38,7 @@
 #include <iterator>
 #include <limits>
 
+#include "../iterator/arg_index_input_iterator.cuh"
 #include "dispatch/dispatch_reduce.cuh"
 #include "dispatch/dispatch_reduce_by_key.cuh"
 #include "../util_namespace.cuh"
@@ -359,21 +360,29 @@ struct DeviceReduce
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
-        typedef int OffsetT;                                                        // Signed integer type for global offsets
-        typedef typename std::iterator_traits<InputIteratorT>::value_type T;        // Data element type
-        typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;  // Wrapped input iterator type
+        // Signed integer type for global offsets
+        typedef int OffsetT;
 
-        ArgIndexInputIteratorT      d_argmin_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {1, Traits<T>::Max()};   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
+        // Input and output data types
+        typedef typename std::iterator_traits<OutputIteratorT>::value_type  OutputT;        // Output tuple type
+        typedef typename OutputT::Value                                     OutputValueT;   // Output data type
+        typedef typename std::iterator_traits<InputIteratorT>::value_type   InputValueT;    // Input data type
+
+        // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
+        typedef ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT> ArgIndexInputIteratorT;
+        ArgIndexInputIteratorT d_indexed_in(d_in);
+
+        // Initial value
+        OutputT initial_value = {1, Traits<InputValueT>::Max()};   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
 
         return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_argmin_in,
+            d_indexed_in,
             d_out,
             num_items,
             cub::ArgMin(),
-            init,
+            initial_value,
             stream,
             debug_synchronous);
     }
@@ -499,21 +508,29 @@ struct DeviceReduce
         cudaStream_t                stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
-        typedef int OffsetT;                                                            // Signed integer type for global offsets
-        typedef typename std::iterator_traits<InputIteratorT>::value_type T;            // Data element type
-        typedef ArgIndexInputIterator<InputIteratorT, int> ArgIndexInputIteratorT;      // Wrapped input iterator
+        // Signed integer type for global offsets
+        typedef int OffsetT;
 
-        ArgIndexInputIteratorT      d_argmax_in(d_in);
-        KeyValuePair<OffsetT, T>    init = {1, Traits<T>::Lowest()};                    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
+        // Input and output data types
+        typedef typename std::iterator_traits<OutputIteratorT>::value_type  OutputT;        // Output tuple type
+        typedef typename OutputT::Value                                     OutputValueT;   // Output data type
+        typedef typename std::iterator_traits<InputIteratorT>::value_type   InputValueT;    // Input data type
+
+        // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
+        typedef ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT> ArgIndexInputIteratorT;
+        ArgIndexInputIteratorT d_indexed_in(d_in);
+
+        // Initial value
+        OutputT initial_value = {1, Traits<InputValueT>::Lowest()};     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
 
         return DispatchReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_argmax_in,
+            d_indexed_in,
             d_out,
             num_items,
             cub::ArgMax(),
-            init,
+            initial_value,
             stream,
             debug_synchronous);
     }

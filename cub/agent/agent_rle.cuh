@@ -622,7 +622,7 @@ struct AgentRle
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining, ZeroInitialize<T>());
+                BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining, 0);
             else
                 BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
 
@@ -702,7 +702,7 @@ struct AgentRle
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining, ZeroInitialize<T>());
+                BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining, 0);
             else
                 BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
 

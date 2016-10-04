@@ -581,9 +581,6 @@ cudaError_t Dispatch(
 }
 
 
-
-
-
 //---------------------------------------------------------------------
 // CUDA nested-parallelism test kernel
 //---------------------------------------------------------------------
@@ -681,7 +678,7 @@ void Initialize(
 
 
 /// Solve problem (max/custom-max functor)
-template <typename ReductionOpT, typename _OutputT>
+template <typename ReductionOpT, typename InputT, typename _OutputT>
 struct Solution
 {
     typedef _OutputT OutputT;
@@ -692,7 +689,7 @@ struct Solution
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate = Traits<OutputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
+            OutputT aggregate = Traits<InputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
                 aggregate = reduction_op(aggregate, OutputT(h_in[j]));
             h_reference[i] = aggregate;
@@ -701,8 +698,8 @@ struct Solution
 };
 
 /// Solve problem (min functor)
-template <typename _OutputT>
-struct Solution<cub::Min, _OutputT>
+template <typename InputT, typename _OutputT>
+struct Solution<cub::Min, InputT, _OutputT>
 {
     typedef _OutputT OutputT;
 
@@ -712,7 +709,7 @@ struct Solution<cub::Min, _OutputT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate = Traits<OutputT>::Max();    // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
+            OutputT aggregate = Traits<InputT>::Max();    // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
                 aggregate = reduction_op(aggregate, OutputT(h_in[j]));
             h_reference[i] = aggregate;
@@ -722,8 +719,8 @@ struct Solution<cub::Min, _OutputT>
 
 
 /// Solve problem (sum functor)
-template <typename _OutputT>
-struct Solution<cub::Sum, _OutputT>
+template <typename InputT, typename _OutputT>
+struct Solution<cub::Sum, InputT, _OutputT>
 {
     typedef _OutputT OutputT;
 
@@ -743,8 +740,8 @@ struct Solution<cub::Sum, _OutputT>
 };
 
 /// Solve problem (argmin functor)
-template <typename OutputValueT>
-struct Solution<cub::ArgMin, OutputValueT>
+template <typename InputValueT, typename OutputValueT>
+struct Solution<cub::ArgMin, InputValueT, OutputValueT>
 {
     typedef KeyValuePair<int, OutputValueT> OutputT;
 
@@ -754,7 +751,7 @@ struct Solution<cub::ArgMin, OutputValueT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate = {1, Traits<OutputValueT>::Max()}; // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
+            OutputT aggregate = {1, Traits<InputValueT>::Max()}; // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
             {
                 OutputT item = {j - h_segment_offsets[i], OutputValueT(h_in[j])};
@@ -767,8 +764,8 @@ struct Solution<cub::ArgMin, OutputValueT>
 
 
 /// Solve problem (argmax functor)
-template <typename OutputValueT>
-struct Solution<cub::ArgMax, OutputValueT>
+template <typename InputValueT, typename OutputValueT>
+struct Solution<cub::ArgMax, InputValueT, OutputValueT>
 {
     typedef KeyValuePair<int, OutputValueT> OutputT;
 
@@ -778,7 +775,7 @@ struct Solution<cub::ArgMax, OutputValueT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate = {1, Traits<OutputValueT>::Lowest()}; // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
+            OutputT aggregate = {1, Traits<InputValueT>::Lowest()}; // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
             {
                 OutputT item = {j - h_segment_offsets[i], OutputValueT(h_in[j])};
@@ -896,14 +893,16 @@ void SolveAndTest(
     int                     *d_segment_offsets,
     ReductionOpT            reduction_op)
 {
+    typedef typename std::iterator_traits<DeviceInputIteratorT>::value_type     InputValueT;
+    typedef Solution<ReductionOpT, InputValueT, OutputValueT>                   SolutionT;
+    typedef typename SolutionT::OutputT                                         OutputT;
+
     printf("\n\n%s cub::DeviceReduce<%s> %d items (%s), %d segments\n",
         (BACKEND == CUB_CDP) ? "CUB_CDP" : (BACKEND == THRUST) ? "Thrust" : (BACKEND == CUB_SEGMENTED) ? "CUB_SEGMENTED" : "CUB",
         typeid(ReductionOpT).name(), num_items, typeid(HostInputIteratorT).name(), num_segments);
     fflush(stdout);
 
     // Allocate and solve solution
-    typedef Solution<ReductionOpT, OutputValueT> SolutionT;
-    typedef typename SolutionT::OutputT OutputT;
     OutputT *h_reference = new OutputT[num_segments];
     SolutionT::Solve(h_in, h_reference, num_segments, h_segment_offsets, reduction_op);
 
@@ -989,12 +988,12 @@ void TestByBackend(
     printf("\n\nInitializing %s -> %s (gen mode %d)... ",
         typeid(InputT).name(), typeid(OutputT).name(), gen_mode); fflush(stdout);
 
-    InputT     *h_in               = new InputT[num_items];
+    InputT  *h_in               = new InputT[num_items];
     int     *h_segment_offsets  = new int[max_segments + 1];
     Initialize(gen_mode, h_in, num_items);
 
     // Initialize device data
-    InputT     *d_in               = NULL;
+    InputT  *d_in               = NULL;
     int     *d_segment_offsets  = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(InputT) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(int) * (max_segments + 1)));
@@ -1054,28 +1053,27 @@ void TestByGenMode(
     // Test pointer support using different input-generation modes
     //
 
-    TestByBackend<OutputT>(num_items, max_segments, UNIFORM);
-    TestByBackend<OutputT>(num_items, max_segments, INTEGER_SEED);
-    TestByBackend<OutputT>(num_items, max_segments, RANDOM);
+    TestByBackend<InputT, OutputT>(num_items, max_segments, UNIFORM);
+    TestByBackend<InputT, OutputT>(num_items, max_segments, INTEGER_SEED);
+    TestByBackend<InputT, OutputT>(num_items, max_segments, RANDOM);
 
     //
     // Test iterator support using a constant-iterator and SUM
     //
 
-    OutputT val;
+    InputT val;
     InitValue(UNIFORM, val, 0);
-    ConstantInputIterator<OutputT, int> h_in(val);
+    ConstantInputIterator<InputT, int> h_in(val);
 
     int *h_segment_offsets = new int[1 + 1];
     InitializeSegments(num_items, 1, h_segment_offsets, g_verbose_input);
 
-    SolveAndTest<CUB>(h_in, h_in, num_items, 1, h_segment_offsets, NULL, Sum());
+    SolveAndTest<CUB, OutputT>(h_in, h_in, num_items, 1, h_segment_offsets, NULL, Sum());
 #ifdef CUB_CDP
-    SolveAndTest<CUB_CDP>(h_in, h_in, num_items, 1, h_segment_offsets, NULL, Sum());
+    SolveAndTest<CUB_CDP, OutputT>(h_in, h_in, num_items, 1, h_segment_offsets, NULL, Sum());
 #endif
 
     if (h_segment_offsets) delete[] h_segment_offsets;
-
 }
 
 
@@ -1101,9 +1099,9 @@ struct TestBySize
         //
 
         // Test 0, 1, many
-        TestByGenMode<OutputT>(0,           max_segments);
-        TestByGenMode<OutputT>(1,           max_segments);
-        TestByGenMode<OutputT>(max_items,   max_segments);
+        TestByGenMode<InputT, OutputT>(0,           max_segments);
+        TestByGenMode<InputT, OutputT>(1,           max_segments);
+        TestByGenMode<InputT, OutputT>(max_items,   max_segments);
 
         // Test random problem sizes from a log-distribution [8, max_items-ish)
         int     num_iterations = 8;
@@ -1111,7 +1109,7 @@ struct TestBySize
         for (int i = 0; i < num_iterations; ++i)
         {
             int num_items = (int) pow(2.0, RandomValue(max_exp - 3.0) + 3.0);
-            TestByGenMode<OutputT>(num_items, max_segments);
+            TestByGenMode<InputT, OutputT>(num_items, max_segments);
         }
 
         //
@@ -1120,16 +1118,16 @@ struct TestBySize
 
         // Tile-boundaries: multiple blocks, one tile per block
         int tile_size = ActivePolicyT::ReducePolicy::BLOCK_THREADS * ActivePolicyT::ReducePolicy::ITEMS_PER_THREAD;
-        TestProblem<CUB, OutputT>(tile_size * 4,  1,      RANDOM, Sum());
-        TestProblem<CUB, OutputT>(tile_size * 4 + 1, 1,   RANDOM, Sum());
-        TestProblem<CUB, OutputT>(tile_size * 4 - 1, 1,   RANDOM, Sum());
+        TestProblem<CUB, InputT, OutputT>(tile_size * 4,  1,      RANDOM, Sum());
+        TestProblem<CUB, InputT, OutputT>(tile_size * 4 + 1, 1,   RANDOM, Sum());
+        TestProblem<CUB, InputT, OutputT>(tile_size * 4 - 1, 1,   RANDOM, Sum());
 
         // Tile-boundaries: multiple blocks, multiple tiles per block
         int sm_occupancy = 32;
         int occupancy = tile_size * sm_occupancy * g_sm_count;
-        TestProblem<CUB, OutputT>(occupancy,  1,      RANDOM, Sum());
-        TestProblem<CUB, OutputT>(occupancy + 1, 1,   RANDOM, Sum());
-        TestProblem<CUB, OutputT>(occupancy - 1, 1,   RANDOM, Sum());
+        TestProblem<CUB, InputT, OutputT>(occupancy,  1,      RANDOM, Sum());
+        TestProblem<CUB, InputT, OutputT>(occupancy + 1, 1,   RANDOM, Sum());
+        TestProblem<CUB, InputT, OutputT>(occupancy - 1, 1,   RANDOM, Sum());
 
         return cudaSuccess;
     }
@@ -1202,40 +1200,39 @@ int main(int argc, char** argv)
 
 #ifdef QUICKER_TEST
 
-    TestProblem<CUB, char, int>(              max_items, 1,               RANDOM, Sum());
-
-/*
     // Compile/run basic test
-    TestProblem<CUB_SEGMENTED, int>(    max_items, max_segments,    RANDOM, Sum());
 
-    TestProblem<CUB, int>(              max_items, 1,               RANDOM, Sum());
-    TestProblem<CUB, int>(              max_items, 1,               RANDOM, ArgMax());
+    TestProblem<CUB_SEGMENTED, int, int>(max_items, max_segments, RANDOM, Sum());
 
-    TestProblem<CUB, float>(            max_items, 1,               RANDOM, Sum());
-    TestProblem<CUB, float>(            max_items, 1,               RANDOM, ArgMax());
-*/
+    TestProblem<CUB, char, int>(    max_items, 1, RANDOM, Sum());
+
+    TestProblem<CUB, int, int>(     max_items, 1, RANDOM, Sum());
+    TestProblem<CUB, int, int>(     max_items, 1, RANDOM, ArgMax());
+
+    TestProblem<CUB, float, float>( max_items, 1, RANDOM, Sum());
+
 #elif defined(QUICK_TEST)
 
     // Compile/run quick comparison tests
 
-    TestProblem<CUB, char>(         max_items * 4, 1, UNIFORM, Sum());
-    TestProblem<THRUST, char>(      max_items * 4, 1, UNIFORM, Sum());
+    TestProblem<CUB, char, char>(         max_items * 4, 1, UNIFORM, Sum());
+    TestProblem<THRUST, char, char>(      max_items * 4, 1, UNIFORM, Sum());
 
     printf("\n----------------------------\n");
-    TestProblem<CUB, short>(        max_items * 2, 1, UNIFORM, Sum());
-    TestProblem<THRUST, short>(     max_items * 2, 1, UNIFORM, Sum());
+    TestProblem<CUB, short, short>(        max_items * 2, 1, UNIFORM, Sum());
+    TestProblem<THRUST, short, short>(     max_items * 2, 1, UNIFORM, Sum());
 
     printf("\n----------------------------\n");
-    TestProblem<CUB, int>(          max_items,     1, UNIFORM, Sum());
-    TestProblem<THRUST, int>(       max_items,     1, UNIFORM, Sum());
+    TestProblem<CUB, int, int>(          max_items,     1, UNIFORM, Sum());
+    TestProblem<THRUST, int, int>(       max_items,     1, UNIFORM, Sum());
 
     printf("\n----------------------------\n");
-    TestProblem<CUB, long long>(    max_items / 2, 1, UNIFORM, Sum());
-    TestProblem<THRUST, long long>( max_items / 2, 1, UNIFORM, Sum());
+    TestProblem<CUB, long long, long long>(    max_items / 2, 1, UNIFORM, Sum());
+    TestProblem<THRUST, long long, long long>( max_items / 2, 1, UNIFORM, Sum());
 
     printf("\n----------------------------\n");
-    TestProblem<CUB, TestFoo>(      max_items / 4, 1, UNIFORM, Max());
-    TestProblem<THRUST, TestFoo>(   max_items / 4, 1, UNIFORM, Max());
+    TestProblem<CUB, TestFoo, TestFoo>(      max_items / 4, 1, UNIFORM, Max());
+    TestProblem<THRUST, TestFoo, TestFoo>(   max_items / 4, 1, UNIFORM, Max());
 
 #else
 
@@ -1243,19 +1240,23 @@ int main(int argc, char** argv)
     for (int i = 0; i <= g_repeat; ++i)
     {
         // Test different input types
-        TestType<unsigned char>(max_items, max_segments);
-        TestType<unsigned short>(max_items, max_segments);
-        TestType<unsigned int>(max_items, max_segments);
-        TestType<unsigned long>(max_items, max_segments);
-        TestType<unsigned long long>(max_items, max_segments);
+        TestType<char, char>(max_items, max_segments);
+        TestType<unsigned char, unsigned char>(max_items, max_segments);
 
-        TestType<uchar2>(max_items, max_segments);
-        TestType<uint2>(max_items, max_segments);
-        TestType<ulonglong2>(max_items, max_segments);
-        TestType<ulonglong4>(max_items, max_segments);
+        TestType<char, int>(max_items, max_segments);
 
-        TestType<TestFoo>(max_items, max_segments);
-        TestType<TestBar>(max_items, max_segments);
+        TestType<short, short>(max_items, max_segments);
+        TestType<int, int>(max_items, max_segments);
+        TestType<long, long>(max_items, max_segments);
+        TestType<long long, long long>(max_items, max_segments);
+
+        TestType<uchar2, uchar2>(max_items, max_segments);
+        TestType<uint2, uint2>(max_items, max_segments);
+        TestType<ulonglong2, ulonglong2>(max_items, max_segments);
+        TestType<ulonglong4, ulonglong4>(max_items, max_segments);
+
+        TestType<TestFoo, TestFoo>(max_items, max_segments);
+        TestType<TestBar, TestBar>(max_items, max_segments);
     }
 
 #endif
