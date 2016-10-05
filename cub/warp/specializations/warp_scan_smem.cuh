@@ -147,22 +147,6 @@ struct WarpScanSmem
     {}
 
 
-    /// Inclusive prefix scan with identity
-    template <typename ScanOp>
-    __device__ __forceinline__ void InclusiveScan(
-        T                       input,              ///< [in] Calling thread's input item.
-        T                       &output,            ///< [out] Calling thread's output item.  May be aliased with \p input.
-        T                       identity,           ///< [in] Identity value
-        ScanOp                  scan_op)            ///< [in] Binary scan operator
-    {
-        ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], (CellT) identity);
-
-        // Iterate scan steps
-        output = input;
-        ScanStep<true>(output, scan_op, Int2Type<0>());
-    }
-
-
     /// Inclusive prefix scan (specialized for summation across primitive types)
     __device__ __forceinline__ void InclusiveScan(
         T                       input,              ///< [in] Calling thread's input item.
@@ -171,7 +155,11 @@ struct WarpScanSmem
         Int2Type<true>          is_primitive)       ///< [in] Marker type indicating whether T is primitive type
     {
         T identity = 0;
-        InclusiveScan(input, output, identity, scan_op);
+        ThreadStore<STORE_VOLATILE>(&temp_storage[lane_id], (CellT) identity);
+
+        // Iterate scan steps
+        output = input;
+        ScanStep<true>(output, scan_op, Int2Type<0>());
     }
 
 
