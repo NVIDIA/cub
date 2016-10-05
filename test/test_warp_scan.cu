@@ -63,16 +63,29 @@ enum TestMode
 
 
 
+/**
+ * \brief WrapperFunctor (for obscuring specialization for cub::Sum)
+ */
+template<typename OpT>
+struct WrapperFunctor
+{
+    OpT op;
+
+    WrapperFunctor(OpT op) : op(op) {}
+
+    template <typename T>
+    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
+    {
+        return op(a, b);
+    }
+};
+
 //---------------------------------------------------------------------
 // Test kernels
 //---------------------------------------------------------------------
 
 /// Exclusive scan basic
-template <
-    typename    WarpScanT,
-    typename    T,
-    typename    ScanOpT,
-    typename    IsPrimitiveT>
+template <typename WarpScanT, typename T, typename ScanOpT, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
     WarpScanT                       &warp_scan,
     T                               &data,
@@ -232,7 +245,6 @@ __global__ void WarpScanKernel(
     T               *d_aggregate,
     ScanOpT         scan_op,
     InitialValueT   initial_value,
-    T               prefix,
     clock_t         *d_elapsed)
 {
     // Cooperative warp-scan utility type (1 warp)
@@ -288,19 +300,17 @@ __global__ void WarpScanKernel(
  * Initialize exclusive-scan problem (and solution)
  */
 template <
-    typename    T,
-    typename    ScanOpT,
-    typename    InitialValueT>
+    typename        T,
+    typename        ScanOpT>
 T Initialize(
-    GenMode     gen_mode,
-    T           *h_in,
-    T           *h_reference,
-    int         num_items,
-    ScanOpT      scan_op,
-    InitialValueT   initial_value,
-    T           *prefix)
+    GenMode         gen_mode,
+    T               *h_in,
+    T               *h_reference,
+    int             num_items,
+    ScanOpT         scan_op,
+    T               initial_value)
 {
-    T inclusive = (prefix != NULL) ? *prefix : initial_value;
+    T inclusive = initial_value;
     T aggregate = initial_value;
 
     for (int i = 0; i < num_items; ++i)
@@ -326,9 +336,8 @@ T Initialize(
     T           *h_in,
     T           *h_reference,
     int         num_items,
-    ScanOpT      scan_op,
-    NullType,
-    T           *prefix)
+    ScanOpT     scan_op,
+    NullType)
 {
     T inclusive;
     T aggregate;
@@ -337,9 +346,7 @@ T Initialize(
         InitValue(gen_mode, h_in[i], i);
         if (i == 0)
         {
-            inclusive = (prefix != NULL) ?
-                scan_op(*prefix, h_in[0]) :
-                h_in[0];
+            inclusive = h_in[0];
             aggregate = h_in[0];
         }
         else
@@ -358,16 +365,15 @@ T Initialize(
  * Test warp scan
  */
 template <
-    int         LOGICAL_WARP_THREADS,
-    TestMode    TEST_MODE,
-    typename    ScanOpT,
-    typename    InitialValueT,        // NullType implies inclusive-scan, otherwise inclusive scan
-    typename    T>
+    int             LOGICAL_WARP_THREADS,
+    TestMode        TEST_MODE,
+    typename        T,
+    typename        ScanOpT,
+    typename        InitialValueT>        // NullType implies inclusive-scan, otherwise inclusive scan
 void Test(
-    GenMode     gen_mode,
-    ScanOpT      scan_op,
-    InitialValueT   initial_value,
-    T           prefix)
+    GenMode         gen_mode,
+    ScanOpT         scan_op,
+    InitialValueT   initial_value)
 {
     // Allocate host arrays
     T *h_in = new T[LOGICAL_WARP_THREADS];
@@ -375,8 +381,13 @@ void Test(
     T *h_aggregate = new T[LOGICAL_WARP_THREADS];
 
     // Initialize problem
-    T *p_prefix = NULL;
-    T aggregate = Initialize(gen_mode, h_in, h_reference, LOGICAL_WARP_THREADS, scan_op, initial_value, p_prefix);
+    T aggregate = Initialize(
+        gen_mode,
+        h_in,
+        h_reference,
+        LOGICAL_WARP_THREADS,
+        scan_op,
+        initial_value);
 
     if (g_verbose)
     {
@@ -420,7 +431,6 @@ void Test(
         d_aggregate,
         scan_op,
         initial_value,
-        prefix,
         d_elapsed);
 
     printf("\tElapsed clocks: ");
@@ -465,16 +475,19 @@ template <
 void Test(
     GenMode     gen_mode,
     ScanOpT     scan_op,
-    T           initial_value,
-    T           prefix)
+    T           initial_value)
 {
     // Exclusive
-    Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, initial_value, prefix);
-    Test<LOGICAL_WARP_THREADS, AGGREGATE>(gen_mode, scan_op, initial_value, prefix);
+    Test<LOGICAL_WARP_THREADS, BASIC, T>(gen_mode, scan_op, T());
+    Test<LOGICAL_WARP_THREADS, AGGREGATE, T>(gen_mode, scan_op, T());
+
+    // Exclusive (non-specialized, so we can use initial-value)
+    Test<LOGICAL_WARP_THREADS, BASIC, T>(gen_mode, WrapperFunctor<ScanOpT>(scan_op), initial_value);
+    Test<LOGICAL_WARP_THREADS, AGGREGATE, T>(gen_mode, WrapperFunctor<ScanOpT>(scan_op), initial_value);
 
     // Inclusive
-    Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, NullType(), prefix);
-    Test<LOGICAL_WARP_THREADS, AGGREGATE>(gen_mode, scan_op, NullType(), prefix);
+    Test<LOGICAL_WARP_THREADS, BASIC, T>(gen_mode, scan_op, NullType());
+    Test<LOGICAL_WARP_THREADS, AGGREGATE, T>(gen_mode, scan_op, NullType());
 }
 
 
@@ -493,53 +506,53 @@ void Test(GenMode gen_mode)
     CubDebugExit(PtxVersion(ptx_version));
 
     // primitive
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (char) 0, (char) 99);
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (short) 0, (short) 99);
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (int) 0, (int) 99);
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (long) 0, (long) 99);
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (long long) 0, (long long) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (char) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (short) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (int) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (long) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (long long) 99);
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
-        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (float) 0, (float) 99);
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (float) 99);
         if (ptx_version > 100)
-            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (double) 0, (double) 99);
+            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), (double) 99);
     }
 
     // primitive (alternative scan op)
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned char) 0, (unsigned char) 99);
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned short) 0, (unsigned short) 99);
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned int) 0, (unsigned int) 99);
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned long long) 0, (unsigned long long) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned char) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned short) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned int) 99);
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Max(), (unsigned long long) 99);
 
     // vec-2
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uchar2(0, 0), make_uchar2(17, 21));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ushort2(0, 0), make_ushort2(17, 21));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uint2(0, 0), make_uint2(17, 21));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulong2(0, 0), make_ulong2(17, 21));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uchar2(17, 21));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ushort2(17, 21));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_uint2(17, 21));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulong2(17, 21));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_ulonglong2(17, 21));
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
-        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float2(0, 0), make_float2(17, 21));
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float2(17, 21));
         if (ptx_version > 100)
-            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double2(0, 0), make_double2(17, 21));
+            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double2(17, 21));
     }
 
     // vec-4
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_char4(0, 0, 0, 0), make_char4(17, 21, 32, 85));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_short4(0, 0, 0, 0), make_short4(17, 21, 32, 85));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_int4(0, 0, 0, 0), make_int4(17, 21, 32, 85));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_long4(0, 0, 0, 0), make_long4(17, 21, 32, 85));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_char4(17, 21, 32, 85));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_short4(17, 21, 32, 85));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_int4(17, 21, 32, 85));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_long4(17, 21, 32, 85));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_longlong4(17, 21, 32, 85));
     if (gen_mode != RANDOM) {
         // Only test numerically stable inputs
-        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float4(0, 0, 0, 0), make_float4(17, 21, 32, 85));
+        Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_float4(17, 21, 32, 85));
         if (ptx_version > 100)
-            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double4(0, 0, 0, 0), make_double4(17, 21, 32, 85));
+            Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), make_double4(17, 21, 32, 85));
     }
 
     // complex
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85));
-    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestBar(0, 0), TestBar(17, 21));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestFoo::MakeTestFoo(17, 21, 32, 85));
+    Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestBar(17, 21));
 
 }
 
@@ -581,12 +594,22 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
 #ifdef QUICK_TEST
+    template <
+        int             LOGICAL_WARP_THREADS,
+        TestMode        TEST_MODE,
+        typename        T,
+        typename        ScanOpT,
+        typename        InitialValueT>        // NullType implies inclusive-scan, otherwise inclusive scan
+    void Test(
+        GenMode         gen_mode,
+        ScanOpT         scan_op,
+        InitialValueT   initial_value)
 
     // Compile/run quick tests
-    Test<32, AGGREGATE>(UNIFORM, Sum(), (int) 0, (int) 99);
-    Test<32, AGGREGATE>(UNIFORM, Sum(), (float) 0, (float) 99);
-    Test<32, AGGREGATE>(UNIFORM, Sum(), (long long) 0, (long long) 99);
-    Test<32, AGGREGATE>(UNIFORM, Sum(), (double) 0, (double) 99);
+    Test<32, AGGREGATE, int>(UNIFORM, Sum(), (int) 0);
+    Test<32, AGGREGATE, float>(UNIFORM, Sum(), (float) 0);
+    Test<32, AGGREGATE, long long>(UNIFORM, Sum(), (long long) 0);
+    Test<32, AGGREGATE, double>(UNIFORM, Sum(), (double) 0);
 
     typedef KeyValuePair<int, float> T;
     cub::Sum sum_op;
