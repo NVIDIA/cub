@@ -474,7 +474,7 @@ public:
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to the logical input sequence.
     {
         T initial_value = 0;
-        ExclusiveScan(input, output, initial_value, cub::Sum(), block_aggregate, block_prefix_callback_op);
+        ExclusiveScan(input, output, cub::Sum(), block_aggregate, block_prefix_callback_op);
     }
 
 
@@ -710,7 +710,7 @@ public:
 
 
 
-    //@}  end member group        // Inclusive prefix sums
+    //@}  end member group        // Exclusive prefix sums
     /******************************************************************//**
      * \name Exclusive prefix scan operations
      *********************************************************************/
