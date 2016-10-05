@@ -166,8 +166,8 @@ struct BlockScanWarpScans
 
         // Accumulate block aggregates and save the one that is our warp's prefix
         T warp_prefix;
-        block_aggregate = initial_value;
-        for (int WARP = 0; WARP < WARPS; ++WARP)
+        block_aggregate = temp_storage.warp_aggregates[0];
+        for (int WARP = 1; WARP < WARPS; ++WARP)
         {
             if (warp_id == WARP)
                 warp_prefix = block_aggregate;
@@ -175,6 +175,8 @@ struct BlockScanWarpScans
             T addend = temp_storage.warp_aggregates[WARP];
             block_aggregate = scan_op(block_aggregate, addend);
         }
+
+        warp_prefix = (warp_id == 0) ? initial_value : scan_op(initial_value, warp_prefix);
 
         return warp_prefix;
     }
@@ -245,7 +247,7 @@ struct BlockScanWarpScans
     {
         // Compute warp scan in each warp.  The exclusive output from each lane0 is invalid.
         T inclusive_output;
-        WarpScanT(temp_storage.warp_scan[warp_id]).Scan(input, inclusive_output, exclusive_output, initial_value, scan_op);
+        WarpScanT(temp_storage.warp_scan[warp_id]).Scan(input, inclusive_output, exclusive_output, scan_op);
 
         // Compute the warp-wide prefix and block-wide aggregate for each warp
         T warp_prefix = ComputeWarpPrefix(scan_op, inclusive_output, block_aggregate, initial_value);

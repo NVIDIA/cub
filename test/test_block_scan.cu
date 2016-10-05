@@ -69,21 +69,30 @@ enum TestMode
 };
 
 
+/**
+ * Scan mode to test
+ */
+enum ScanMode
+{
+    EXCLUSIVE,
+    INCLUSIVE
+};
+
 
 /**
  * Stateful prefix functor
  */
 template <
     typename T,
-    typename ScanOp>
+    typename ScanOpT>
 struct BlockPrefixCallbackOp
 {
     int     linear_tid;
     T       prefix;
-    ScanOp  scan_op;
+    ScanOpT  scan_op;
 
     __device__ __forceinline__
-    BlockPrefixCallbackOp(int linear_tid, T prefix, ScanOp scan_op) :
+    BlockPrefixCallbackOp(int linear_tid, T prefix, ScanOpT scan_op) :
         linear_tid(linear_tid),
         prefix(prefix),
         scan_op(scan_op)
@@ -105,51 +114,57 @@ struct BlockPrefixCallbackOp
 //---------------------------------------------------------------------
 
 /// Exclusive scan (BASIC, 1)
-template <typename BlockScanT, typename T, typename ScanOp, typename IdentityT, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], IdentityT &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<BASIC> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<BASIC> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.ExclusiveScan(data[0], data[0], identity, scan_op);
+    block_scan.ExclusiveScan(data[0], data[0], initial_value, scan_op);
 }
 
 /// Exclusive scan (BASIC, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename ScanOp, typename IdentityT, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, int ITEMS_PER_THREAD, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], IdentityT &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<BASIC> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<BASIC> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.ExclusiveScan(data, data, identity, scan_op);
+    block_scan.ExclusiveScan(data, data, initial_value, scan_op);
 }
 
 /// Exclusive scan (AGGREGATE, 1)
-template <typename BlockScanT, typename T, typename ScanOp, typename IdentityT, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], IdentityT &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<AGGREGATE> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.ExclusiveScan(data[0], data[0], identity, scan_op, aggregate);
+    block_scan.ExclusiveScan(data[0], data[0], initial_value, scan_op, block_aggregate);
 }
 
 /// Exclusive scan (AGGREGATE, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename ScanOp, typename IdentityT, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, int ITEMS_PER_THREAD, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], IdentityT &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<AGGREGATE> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.ExclusiveScan(data, data, identity, scan_op, aggregate);
+    block_scan.ExclusiveScan(data, data, initial_value, scan_op, block_aggregate);
 }
 
 /// Exclusive scan (PREFIX_AGGREGATE, 1)
-template <typename BlockScanT, typename T, typename ScanOp, typename IdentityT, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], IdentityT &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<PREFIX_AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<PREFIX_AGGREGATE> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.ExclusiveScan(data[0], data[0], identity, scan_op, aggregate, prefix_op);
+    block_scan.ExclusiveScan(data[0], data[0], scan_op, block_aggregate, prefix_op);
 }
 
 /// Exclusive scan (PREFIX_AGGREGATE, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename ScanOp, typename IdentityT, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, int ITEMS_PER_THREAD, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], IdentityT &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<PREFIX_AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<PREFIX_AGGREGATE> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.ExclusiveScan(data, data, identity, scan_op, aggregate, prefix_op);
+    block_scan.ExclusiveScan(data, data, scan_op, block_aggregate, prefix_op);
 }
 
 
@@ -158,51 +173,57 @@ __device__ __forceinline__ void DeviceTest(
 //---------------------------------------------------------------------
 
 /// Exclusive sum (BASIC, 1)
-template <typename BlockScanT, typename T, typename IdentityT, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename PrefixCallbackOp>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], IdentityT &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<BASIC> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<BASIC> test_mode, Int2Type<true> is_primitive)
 {
     block_scan.ExclusiveSum(data[0], data[0]);
 }
 
 /// Exclusive sum (BASIC, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename IdentityT, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], IdentityT &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<BASIC> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<BASIC> test_mode, Int2Type<true> is_primitive)
 {
     block_scan.ExclusiveSum(data, data);
 }
 
 /// Exclusive sum (AGGREGATE, 1)
-template <typename BlockScanT, typename T, typename IdentityT, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename PrefixCallbackOp>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], IdentityT &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<AGGREGATE> test_mode, Int2Type<true> is_primitive)
 {
-    block_scan.ExclusiveSum(data[0], data[0], aggregate);
+    block_scan.ExclusiveSum(data[0], data[0], block_aggregate);
 }
 
 /// Exclusive sum (AGGREGATE, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename IdentityT, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], IdentityT &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<AGGREGATE> test_mode, Int2Type<true> is_primitive)
 {
-    block_scan.ExclusiveSum(data, data, aggregate);
+    block_scan.ExclusiveSum(data, data, block_aggregate);
 }
 
 /// Exclusive sum (PREFIX_AGGREGATE, 1)
-template <typename BlockScanT, typename T, typename IdentityT, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename PrefixCallbackOp>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], IdentityT &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<PREFIX_AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<PREFIX_AGGREGATE> test_mode, Int2Type<true> is_primitive)
 {
-    block_scan.ExclusiveSum(data[0], data[0], aggregate, prefix_op);
+    block_scan.ExclusiveSum(data[0], data[0], block_aggregate, prefix_op);
 }
 
 /// Exclusive sum (PREFIX_AGGREGATE, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename IdentityT, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], IdentityT &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<PREFIX_AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<EXCLUSIVE> scan_mode, Int2Type<PREFIX_AGGREGATE> test_mode, Int2Type<true> is_primitive)
 {
-    block_scan.ExclusiveSum(data, data, aggregate, prefix_op);
+    block_scan.ExclusiveSum(data, data, block_aggregate, prefix_op);
 }
 
 
@@ -211,51 +232,57 @@ __device__ __forceinline__ void DeviceTest(
 //---------------------------------------------------------------------
 
 /// Inclusive scan (BASIC, 1)
-template <typename BlockScanT, typename T, typename ScanOp, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], NullType &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<BASIC> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<BASIC> test_mode, IsPrimitiveT is_primitive)
 {
     block_scan.InclusiveScan(data[0], data[0], scan_op);
 }
 
 /// Inclusive scan (BASIC, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename ScanOp, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, int ITEMS_PER_THREAD, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], NullType &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<BASIC> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<BASIC> test_mode, IsPrimitiveT is_primitive)
 {
     block_scan.InclusiveScan(data, data, scan_op);
 }
 
 /// Inclusive scan (AGGREGATE, 1)
-template <typename BlockScanT, typename T, typename ScanOp, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], NullType &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<AGGREGATE> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.InclusiveScan(data[0], data[0], scan_op, aggregate);
+    block_scan.InclusiveScan(data[0], data[0], scan_op, block_aggregate);
 }
 
 /// Inclusive scan (AGGREGATE, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename ScanOp, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, int ITEMS_PER_THREAD, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], NullType &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<AGGREGATE> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.InclusiveScan(data, data, scan_op, aggregate);
+    block_scan.InclusiveScan(data, data, scan_op, block_aggregate);
 }
 
 /// Inclusive scan (PREFIX_AGGREGATE, 1)
-template <typename BlockScanT, typename T, typename ScanOp, typename PrefixCallbackOp>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], NullType &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<PREFIX_AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<PREFIX_AGGREGATE> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.InclusiveScan(data[0], data[0], scan_op, aggregate, prefix_op);
+    block_scan.InclusiveScan(data[0], data[0], scan_op, block_aggregate, prefix_op);
 }
 
 /// Inclusive scan (PREFIX_AGGREGATE, ITEMS_PER_THREAD)
-template <typename BlockScanT, typename T, typename ScanOp, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
+template <typename BlockScanT, typename T, typename ScanOpT, typename PrefixCallbackOp, int ITEMS_PER_THREAD, typename IsPrimitiveT>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], NullType &identity, ScanOp &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<PREFIX_AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, ScanOpT &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<PREFIX_AGGREGATE> test_mode, IsPrimitiveT is_primitive)
 {
-    block_scan.InclusiveScan(data, data, scan_op, aggregate, prefix_op);
+    block_scan.InclusiveScan(data, data, scan_op, block_aggregate, prefix_op);
 }
 
 
@@ -266,7 +293,8 @@ __device__ __forceinline__ void DeviceTest(
 /// Inclusive sum (BASIC, 1)
 template <typename BlockScanT, typename T, typename PrefixCallbackOp>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], NullType &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<BASIC> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<BASIC> test_mode, Int2Type<true> is_primitive)
 {
     block_scan.InclusiveSum(data[0], data[0]);
 }
@@ -274,7 +302,8 @@ __device__ __forceinline__ void DeviceTest(
 /// Inclusive sum (BASIC, ITEMS_PER_THREAD)
 template <typename BlockScanT, typename T, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], NullType &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<BASIC> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<BASIC> test_mode, Int2Type<true> is_primitive)
 {
     block_scan.InclusiveSum(data, data);
 }
@@ -282,33 +311,37 @@ __device__ __forceinline__ void DeviceTest(
 /// Inclusive sum (AGGREGATE, 1)
 template <typename BlockScanT, typename T, typename PrefixCallbackOp>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], NullType &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<AGGREGATE> test_mode, Int2Type<true> is_primitive)
 {
-    block_scan.InclusiveSum(data[0], data[0], aggregate);
+    block_scan.InclusiveSum(data[0], data[0], block_aggregate);
 }
 
 /// Inclusive sum (AGGREGATE, ITEMS_PER_THREAD)
 template <typename BlockScanT, typename T, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], NullType &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<AGGREGATE> test_mode, Int2Type<true> is_primitive)
 {
-    block_scan.InclusiveSum(data, data, aggregate);
+    block_scan.InclusiveSum(data, data, block_aggregate);
 }
 
 /// Inclusive sum (PREFIX_AGGREGATE, 1)
 template <typename BlockScanT, typename T, typename PrefixCallbackOp>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[1], NullType &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<PREFIX_AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[1], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<PREFIX_AGGREGATE> test_mode, Int2Type<true> is_primitive)
 {
-    block_scan.InclusiveSum(data[0], data[0], aggregate, prefix_op);
+    block_scan.InclusiveSum(data[0], data[0], block_aggregate, prefix_op);
 }
 
 /// Inclusive sum (PREFIX_AGGREGATE, ITEMS_PER_THREAD)
 template <typename BlockScanT, typename T, typename PrefixCallbackOp, int ITEMS_PER_THREAD>
 __device__ __forceinline__ void DeviceTest(
-    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], NullType &identity, Sum &scan_op, T &aggregate, PrefixCallbackOp &prefix_op, Int2Type<PREFIX_AGGREGATE> test_mode)
+    BlockScanT &block_scan, T (&data)[ITEMS_PER_THREAD], T &initial_value, Sum &scan_op, T &block_aggregate, PrefixCallbackOp &prefix_op,
+    Int2Type<INCLUSIVE> scan_mode, Int2Type<PREFIX_AGGREGATE> test_mode, Int2Type<true> is_primitive)
 {
-    block_scan.InclusiveSum(data, data, aggregate, prefix_op);
+    block_scan.InclusiveSum(data, data, block_aggregate, prefix_op);
 }
 
 
@@ -325,19 +358,18 @@ template <
     int                 BLOCK_DIM_Y,
     int                 BLOCK_DIM_Z,
     int                 ITEMS_PER_THREAD,
+    ScanMode            SCAN_MODE,
     TestMode            TEST_MODE,
     BlockScanAlgorithm  ALGORITHM,
     typename            T,
-    typename            ScanOp,
-    typename            IdentityT>
+    typename            ScanOpT>
 __launch_bounds__ (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)
 __global__ void BlockScanKernel(
     T                   *d_in,
     T                   *d_out,
     T                   *d_aggregate,
-    ScanOp              scan_op,
-    IdentityT           identity,
-    T                   prefix,
+    ScanOpT              scan_op,
+    T                   initial_value,
     clock_t             *d_elapsed)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
@@ -361,11 +393,12 @@ __global__ void BlockScanKernel(
 #endif
 
     // Test scan
-    T                                   aggregate;
+    T                                   block_aggregate;
     BlockScanT                          block_scan(temp_storage);
-    BlockPrefixCallbackOp<T, ScanOp>    prefix_op(linear_tid, prefix, scan_op);
+    BlockPrefixCallbackOp<T, ScanOpT>   prefix_op(linear_tid, initial_value, scan_op);
 
-    DeviceTest(block_scan, data, identity, scan_op, aggregate, prefix_op, Int2Type<TEST_MODE>());
+    DeviceTest(block_scan, data, initial_value, scan_op, block_aggregate, prefix_op,
+        Int2Type<SCAN_MODE>(), Int2Type<TEST_MODE>(), Int2Type<Traits<T>::PRIMITIVE>());
 
     // Stop cycle timer
 #if CUB_PTX_ARCH > 100
@@ -375,25 +408,22 @@ __global__ void BlockScanKernel(
     // Store output
     StoreDirectBlocked(linear_tid, d_out, data);
 
+    // Store block_aggregate
     if (TEST_MODE != BASIC)
+        d_aggregate[linear_tid] = block_aggregate;
+
+    // Store prefix
+    if (TEST_MODE == PREFIX_AGGREGATE)
     {
-        // Store aggregate
-        d_aggregate[linear_tid] = aggregate;
+        if (linear_tid == 0)
+            d_out[TILE_SIZE] = prefix_op.prefix;
     }
 
-    if (linear_tid == 0)
-    {
-        if (TEST_MODE == PREFIX_AGGREGATE)
-        {
-            // Store prefix
-            d_out[TILE_SIZE] = prefix_op.prefix;
-        }
-
-        // Store time
 #if CUB_PTX_ARCH > 100
+    // Store time
+    if (linear_tid == 0)
         *d_elapsed = (start > stop) ? start - stop : stop - start;
 #endif
-    }
 
 }
 
@@ -406,70 +436,62 @@ __global__ void BlockScanKernel(
 /**
  * Initialize exclusive-scan problem (and solution)
  */
-template <
-    typename    T,
-    typename    ScanOp,
-    typename    IdentityT>
+template <typename T, typename ScanOpT>
 T Initialize(
     GenMode     gen_mode,
     T           *h_in,
     T           *h_reference,
     int         num_items,
-    ScanOp      scan_op,
-    IdentityT   identity,
-    T           *prefix)
+    ScanOpT     scan_op,
+    T           initial_value,
+    Int2Type<EXCLUSIVE>)
 {
-    T inclusive = (prefix != NULL) ? *prefix : identity;
-    T aggregate = identity;
+    InitValue(gen_mode, h_in[0], 0);
 
-    for (int i = 0; i < num_items; ++i)
+    T block_aggregate   = h_in[0];
+    h_reference[0]      = initial_value;
+    T inclusive         = scan_op(initial_value, h_in[0]);
+
+    for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         h_reference[i] = inclusive;
         inclusive = scan_op(inclusive, h_in[i]);
-        aggregate = scan_op(aggregate, h_in[i]);
+        block_aggregate = scan_op(block_aggregate, h_in[i]);
     }
 
-    return aggregate;
+    return block_aggregate;
 }
 
 
 /**
  * Initialize inclusive-scan problem (and solution)
  */
-template <
-    typename    T,
-    typename    ScanOp>
+template <typename T, typename ScanOpT>
 T Initialize(
     GenMode     gen_mode,
     T           *h_in,
     T           *h_reference,
     int         num_items,
-    ScanOp      scan_op,
-    NullType,
-    T           *prefix)
+    ScanOpT      scan_op,
+    T           initial_value,
+    Int2Type<INCLUSIVE>)
 {
-    T inclusive;
-    T aggregate;
-    for (int i = 0; i < num_items; ++i)
+    InitValue(gen_mode, h_in[0], 0);
+
+    T block_aggregate   = h_in[0];
+    T inclusive         = scan_op(initial_value, h_in[0]);
+    h_reference[0]      = inclusive;
+
+    for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        if (i == 0)
-        {
-            inclusive = (prefix != NULL) ?
-                scan_op(*prefix, h_in[0]) :
-                h_in[0];
-            aggregate = h_in[0];
-        }
-        else
-        {
-            inclusive = scan_op(inclusive, h_in[i]);
-            aggregate = scan_op(aggregate, h_in[i]);
-        }
+        inclusive = scan_op(inclusive, h_in[i]);
+        block_aggregate = scan_op(block_aggregate, h_in[i]);
         h_reference[i] = inclusive;
     }
 
-    return aggregate;
+    return block_aggregate;
 }
 
 
@@ -481,16 +503,15 @@ template <
     int                 BLOCK_DIM_Y,
     int                 BLOCK_DIM_Z,
     int                 ITEMS_PER_THREAD,
+    ScanMode            SCAN_MODE,
     TestMode            TEST_MODE,
     BlockScanAlgorithm  ALGORITHM,
-    typename            ScanOp,
-    typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
+    typename            ScanOpT,
     typename            T>
 void Test(
     GenMode             gen_mode,
-    ScanOp              scan_op,
-    IdentityT           identity,
-    T                   prefix,
+    ScanOpT              scan_op,
+    T                   initial_value,
     Int2Type<true>      sufficient_resources)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
@@ -502,26 +523,25 @@ void Test(
     T *h_aggregate = new T[BLOCK_THREADS];
 
     // Initialize problem
-    T *p_prefix = (TEST_MODE == PREFIX_AGGREGATE) ? &prefix : NULL;
-    T aggregate = Initialize(
+    T block_aggregate = Initialize(
         gen_mode,
         h_in,
         h_reference,
         TILE_SIZE,
         scan_op,
-        identity,
-        p_prefix);
+        initial_value,
+        Int2Type<SCAN_MODE>());
 
-    // Test reference aggregate is returned in all threads
+    // Test reference block_aggregate is returned in all threads
     for (int i = 0; i < BLOCK_THREADS; ++i)
     {
-        h_aggregate[i] = aggregate;
+        h_aggregate[i] = block_aggregate;
     }
 
     // Run kernel
     printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d (%d,%d,%d) threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
         TEST_MODE, gen_mode, ALGORITHM,
-        (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
+        (SCAN_MODE == INCLUSIVE) ? "Inclusive" : "Exclusive",
         BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
         ITEMS_PER_THREAD,  TILE_SIZE,
         typeid(T).name(), (int) sizeof(T));
@@ -551,15 +571,14 @@ void Test(
         printf("\n\n");
     }
 
-    // Run aggregate/prefix kernel
+    // Run block_aggregate/prefix kernel
     dim3 block_dims(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z);
-    BlockScanKernel<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM><<<1, block_dims>>>(
+    BlockScanKernel<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, ALGORITHM><<<1, block_dims>>>(
         d_in,
         d_out,
         d_aggregate,
         scan_op,
-        identity,
-        prefix,
+        initial_value,
         d_elapsed);
 
     CubDebugExit(cudaPeekAtLastError());
@@ -571,10 +590,10 @@ void Test(
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
-    // Copy out and display aggregate
+    // Copy out and display block_aggregate
     if ((TEST_MODE == AGGREGATE) || (TEST_MODE == PREFIX_AGGREGATE))
     {
-        printf("\tScan aggregate: ");
+        printf("\tScan block aggregate: ");
         compare = CompareDeviceResults(h_aggregate, d_aggregate, BLOCK_THREADS, g_verbose, g_verbose);
         printf("%s\n", compare ? "FAIL" : "PASS");
         AssertEquals(0, compare);
@@ -582,9 +601,9 @@ void Test(
         // Copy out and display updated prefix
         if (TEST_MODE == PREFIX_AGGREGATE)
         {
-            printf("\tScan prefix: ");
-            T updated_prefix = scan_op(prefix, aggregate);
-            compare = CompareDeviceResults(&updated_prefix, d_out + TILE_SIZE, 1, g_verbose, g_verbose);
+            printf("\tScan running total: ");
+            T running_total = scan_op(initial_value, block_aggregate);
+            compare = CompareDeviceResults(&running_total, d_out + TILE_SIZE, 1, g_verbose, g_verbose);
             printf("%s\n", compare ? "FAIL" : "PASS");
             AssertEquals(0, compare);
         }
@@ -612,16 +631,15 @@ template <
     int                 BLOCK_DIM_Y,
     int                 BLOCK_DIM_Z,
     int                 ITEMS_PER_THREAD,
+    ScanMode            SCAN_MODE,
     TestMode            TEST_MODE,
     BlockScanAlgorithm  ALGORITHM,
-    typename            ScanOp,
-    typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
+    typename            ScanOpT,
     typename            T>
 void Test(
     GenMode             gen_mode,
-    ScanOp              scan_op,
-    IdentityT           identity,
-    T                   prefix,
+    ScanOpT             scan_op,
+    T                   initial_value,
     Int2Type<false>     sufficient_resources)
 {}
 
@@ -634,16 +652,15 @@ template <
     int                 BLOCK_DIM_Y,
     int                 BLOCK_DIM_Z,
     int                 ITEMS_PER_THREAD,
+    ScanMode            SCAN_MODE,
     TestMode            TEST_MODE,
     BlockScanAlgorithm  ALGORITHM,
-    typename            ScanOp,
-    typename            IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
+    typename            ScanOpT,
     typename            T>
 void Test(
     GenMode             gen_mode,
-    ScanOp              scan_op,
-    IdentityT           identity,
-    T                   prefix)
+    ScanOpT             scan_op,
+    T                   initial_value)
 {
     // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockScan<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockScanT;
@@ -667,7 +684,8 @@ void Test(
         sufficient_resources    = (sufficient_smem && sufficient_threads && !special_skip),
     };
 
-    Test<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix, Int2Type<sufficient_resources>());
+    Test<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, ALGORITHM>(
+        gen_mode, scan_op, initial_value, Int2Type<sufficient_resources>());
 }
 
 
@@ -678,19 +696,18 @@ void Test(
 template <
     int                 BLOCK_THREADS,
     int                 ITEMS_PER_THREAD,
+    ScanMode            SCAN_MODE,
     TestMode            TEST_MODE,
     BlockScanAlgorithm  ALGORITHM,
-    typename            ScanOp,
-    typename            IdentityT,
+    typename            ScanOpT,
     typename            T>
 void Test(
     GenMode     gen_mode,
-    ScanOp      scan_op,
-    IdentityT   identity,
-    T           prefix)
+    ScanOpT     scan_op,
+    T           initial_value)
 {
-    Test<BLOCK_THREADS, 1, 1, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix);
-    Test<BLOCK_THREADS, 2, 2, ITEMS_PER_THREAD, TEST_MODE, ALGORITHM>(gen_mode, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, 1, 1, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, ALGORITHM>(gen_mode, scan_op, initial_value);
+    Test<BLOCK_THREADS, 2, 2, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, ALGORITHM>(gen_mode, scan_op, initial_value);
 }
 
 
@@ -700,24 +717,23 @@ void Test(
 template <
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD,
+    ScanMode    SCAN_MODE,
     TestMode    TEST_MODE,
-    typename    ScanOp,
-    typename    IdentityT,
+    typename    ScanOpT,
     typename    T>
 void Test(
     GenMode     gen_mode,
-    ScanOp      scan_op,
-    IdentityT   identity,
-    T           prefix)
+    ScanOpT     scan_op,
+    T           initial_value)
 {
 #ifdef TEST_RAKING
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, initial_value);
 #endif
 #ifdef TEST_RAKING_MEMOIZE
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_RAKING_MEMOIZE>(gen_mode, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, BLOCK_SCAN_RAKING_MEMOIZE>(gen_mode, scan_op, initial_value);
 #endif
 #ifdef TEST_WARP_SCANS
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, initial_value);
 #endif
 }
 
@@ -728,23 +744,23 @@ void Test(
 template <
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD,
-    typename    ScanOp,
+    typename    ScanOpT,
     typename    T>
 void Test(
     GenMode     gen_mode,
-    ScanOp      scan_op,
+    ScanOpT     scan_op,
     T           identity,
-    T           prefix)
+    T           initial_value)
 {
     // Exclusive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, identity, prefix);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, AGGREGATE>(gen_mode, scan_op, identity, prefix);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, BASIC>(gen_mode, scan_op, initial_value);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, AGGREGATE>(gen_mode, scan_op, initial_value);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, PREFIX_AGGREGATE>(gen_mode, scan_op, initial_value);
 
     // Inclusive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, BASIC>(gen_mode, scan_op, NullType(), prefix);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, AGGREGATE>(gen_mode, scan_op, NullType(), prefix);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, PREFIX_AGGREGATE>(gen_mode, scan_op, NullType(), prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, INCLUSIVE, BASIC>(gen_mode, scan_op, identity);      // This scan doesn't take an initial value
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, INCLUSIVE, AGGREGATE>(gen_mode, scan_op, identity);  // This scan doesn't take an initial value
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, INCLUSIVE, PREFIX_AGGREGATE>(gen_mode, scan_op, initial_value);
 }
 
 
@@ -754,19 +770,19 @@ void Test(
 template <
     int         BLOCK_THREADS,
     int         ITEMS_PER_THREAD,
-    typename    ScanOp,
+    typename    ScanOpT,
     typename    T>
 void Test(
-    ScanOp      scan_op,
+    ScanOpT     scan_op,
     T           identity,
-    T           prefix)
+    T           initial_value)
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM, scan_op, identity, prefix);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED, scan_op, identity, prefix);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(UNIFORM, scan_op, identity, initial_value);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(INTEGER_SEED, scan_op, identity, initial_value);
 
     // Don't test randomly-generated floats b/c of stability
     if (Traits<T>::CATEGORY != FLOATING_POINT)
-        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM, scan_op, identity, prefix);
+        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM, scan_op, identity, initial_value);
 }
 
 
@@ -859,11 +875,14 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    Test<128, 1, 1, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0), int(10));
-    Test<128, 1, 1, 4, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0), int(10));
-    Test<128, 1, 1, 2, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), NullType(), TestFoo::MakeTestFoo(17, 21, 32, 85));
-    Test<128, 1, 1, 1, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85));
+    Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0));
+/*
+    Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), int(0));
+    Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0));
 
+    Test<128, 1, 1, 2, INCLUSIVE, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), TestFoo::MakeTestFoo(17, 21, 32, 85));
+    Test<128, 1, 1, 1, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), make_longlong4(17, 21, 32, 85));
+*/
 #else
 
     // Compile/run thorough tests
