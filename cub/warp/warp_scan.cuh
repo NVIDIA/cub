@@ -554,7 +554,7 @@ public:
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
         T inclusive_output;
-        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, initial_value, scan_op);
+        Scan(input, inclusive_output, exclusive_output, initial_value, scan_op);
     }
 
 
@@ -666,7 +666,7 @@ public:
         ScanOp          scan_op)            ///< [in] Binary scan operator
     {
         T inclusive_output;
-        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, scan_op);
+        Scan(input, inclusive_output, exclusive_output, scan_op);
     }
 
 
@@ -779,7 +779,7 @@ public:
         T               &exclusive_output)  ///< [out] Calling thread's exclusive-scan output item.
     {
         T initial_value = 0;
-        InternalWarpScan(temp_storage).Scan(input, inclusive_output, exclusive_output, initial_value, cub::Sum());
+        Scan(input, inclusive_output, exclusive_output, initial_value, cub::Sum());
     }
 
 
