@@ -67,132 +67,154 @@ enum TestMode
 // Test kernels
 //---------------------------------------------------------------------
 
-/**
- * Exclusive scan
- */
+/// Exclusive scan basic
 template <
+    typename    WarpScanT,
     typename    T,
-    typename    ScanOp,
-    typename    IdentityT>
-struct DeviceTest
+    typename    ScanOpT,
+    typename    IsPrimitiveT>
+__device__ __forceinline__ void DeviceTest(
+    WarpScanT                       &warp_scan,
+    T                               &data,
+    T                               &initial_value,
+    ScanOpT                         &scan_op,
+    T                               &aggregate,
+    Int2Type<BASIC>                 test_mode,
+    IsPrimitiveT                    is_primitive)
 {
-    template <
-        TestMode TEST_MODE,
-        typename WarpScan>
-    static __device__ __forceinline__ void Test(
-        typename WarpScan::TempStorage  &temp_storage,
-        T                               &data,
-        IdentityT                       &identity,
-        ScanOp                          &scan_op,
-        T                               &aggregate)
-    {
-        if (TEST_MODE == BASIC)
-        {
-            // Test basic warp scan
-            WarpScan(temp_storage).ExclusiveScan(data, data, identity, scan_op);
-        }
-        else if (TEST_MODE == AGGREGATE)
-        {
-            // Test with cumulative aggregate
-            WarpScan(temp_storage).ExclusiveScan(data, data, identity, scan_op, aggregate);
-        }
-    }
-};
+    // Test basic warp scan
+    warp_scan.ExclusiveScan(data, data, initial_value, scan_op);
+}
 
-
-/**
- * Exclusive sum
- */
+/// Exclusive scan aggregate
 template <
-    typename T,
-    typename IdentityT>
-struct DeviceTest<T, Sum, IdentityT>
-{
-    template <
-        TestMode TEST_MODE,
-        typename WarpScan>
-    static __device__ __forceinline__ void Test(
-        typename WarpScan::TempStorage  &temp_storage,
-        T                               &data,
-        T                               &identity,
-        Sum                             &scan_op,
-        T                               &aggregate)
-    {
-        if (TEST_MODE == BASIC)
-        {
-            // Test basic warp scan
-            WarpScan(temp_storage).ExclusiveSum(data, data);
-        }
-        else if (TEST_MODE == AGGREGATE)
-        {
-            // Test with cumulative aggregate
-            WarpScan(temp_storage).ExclusiveSum(data, data, aggregate);
-        }
-    }
-};
-
-
-/**
- * Inclusive scan
- */
-template <
+    typename    WarpScanT,
     typename    T,
-    typename    ScanOp>
-struct DeviceTest<T, ScanOp, NullType>
+    typename    ScanOpT,
+    typename    IsPrimitiveT>
+__device__ __forceinline__ void DeviceTest(
+    WarpScanT                       &warp_scan,
+    T                               &data,
+    T                               &initial_value,
+    ScanOpT                         &scan_op,
+    T                               &aggregate,
+    Int2Type<AGGREGATE>             test_mode,
+    IsPrimitiveT                    is_primitive)
 {
-    template <
-        TestMode TEST_MODE,
-        typename WarpScan>
-    static __device__ __forceinline__ void Test(
-        typename WarpScan::TempStorage  &temp_storage,
-        T                               &data,
-        NullType                        &identity,
-        ScanOp                          &scan_op,
-        T                               &aggregate)
-    {
-        if (TEST_MODE == BASIC)
-        {
-            // Test basic warp scan
-            WarpScan(temp_storage).InclusiveScan(data, data, scan_op);
-        }
-        else if (TEST_MODE == AGGREGATE)
-        {
-            // Test with cumulative aggregate
-            WarpScan(temp_storage).InclusiveScan(data, data, scan_op, aggregate);
-        }
-    }
-};
+    // Test with cumulative aggregate
+    warp_scan.ExclusiveScan(data, data, initial_value, scan_op, aggregate);
+}
 
 
-/**
- * Inclusive sum
- */
-template <typename T>
-struct DeviceTest<T, Sum, NullType>
+/// Exclusive sum basic
+template <
+    typename    WarpScanT,
+    typename    T>
+__device__ __forceinline__ void DeviceTest(
+    WarpScanT                       &warp_scan,
+    T                               &data,
+    T                               &initial_value,
+    Sum                             &scan_op,
+    T                               &aggregate,
+    Int2Type<BASIC>                 test_mode,
+    Int2Type<true>                  is_primitive)
 {
-    template <
-        TestMode TEST_MODE,
-        typename WarpScan>
-    static __device__ __forceinline__ void Test(
-        typename WarpScan::TempStorage  &temp_storage,
-        T                               &data,
-        NullType                        &identity,
-        Sum                             &scan_op,
-        T                               &aggregate)
-    {
-        if (TEST_MODE == BASIC)
-        {
-            // Test basic warp scan
-            WarpScan(temp_storage).InclusiveSum(data, data);
-        }
-        else if (TEST_MODE == AGGREGATE)
-        {
-            // Test with cumulative aggregate
-            WarpScan(temp_storage).InclusiveSum(data, data, aggregate);
-        }
-    }
-};
+    // Test basic warp scan
+    warp_scan.ExclusiveSum(data, data);
+}
 
+
+/// Exclusive sum aggregate
+template <
+    typename    WarpScanT,
+    typename    T>
+__device__ __forceinline__ void DeviceTest(
+    WarpScanT                       &warp_scan,
+    T                               &data,
+    T                               &initial_value,
+    Sum                             &scan_op,
+    T                               &aggregate,
+    Int2Type<AGGREGATE>             test_mode,
+    Int2Type<true>                  is_primitive)
+{
+    // Test with cumulative aggregate
+    warp_scan.ExclusiveSum(data, data, aggregate);
+}
+
+
+/// Inclusive scan basic
+template <
+    typename    WarpScanT,
+    typename    T,
+    typename    ScanOpT,
+    typename    IsPrimitiveT>
+__device__ __forceinline__ void DeviceTest(
+    WarpScanT                       &warp_scan,
+    T                               &data,
+    NullType                        &initial_value,
+    ScanOpT                         &scan_op,
+    T                               &aggregate,
+    Int2Type<BASIC>                 test_mode,
+    IsPrimitiveT                    is_primitive)
+{
+    // Test basic warp scan
+    warp_scan.InclusiveScan(data, data, scan_op);
+}
+
+/// Inclusive scan aggregate
+template <
+    typename    WarpScanT,
+    typename    T,
+    typename    ScanOpT,
+    typename    IsPrimitiveT>
+__device__ __forceinline__ void DeviceTest(
+    WarpScanT                       &warp_scan,
+    T                               &data,
+    NullType                        &initial_value,
+    ScanOpT                         &scan_op,
+    T                               &aggregate,
+    Int2Type<AGGREGATE>             test_mode,
+    IsPrimitiveT                    is_primitive)
+{
+    // Test with cumulative aggregate
+    warp_scan.InclusiveScan(data, data, scan_op, aggregate);
+}
+
+/// Inclusive sum basic
+template <
+    typename    WarpScanT,
+    typename    T,
+    typename    InitialValueT>
+__device__ __forceinline__ void DeviceTest(
+    WarpScanT                       &warp_scan,
+    T                               &data,
+    NullType                        &initial_value,
+    Sum                             &scan_op,
+    T                               &aggregate,
+    Int2Type<BASIC>                 test_mode,
+    Int2Type<true>                  is_primitive)
+{
+    // Test basic warp scan
+    warp_scan.InclusiveSum(data, data);
+}
+
+/// Inclusive sum aggregate
+template <
+    typename    WarpScanT,
+    typename    T,
+    typename    InitialValueT>
+__device__ __forceinline__ void DeviceTest(
+    WarpScanT                       &warp_scan,
+    T                               &data,
+    NullType                        &initial_value,
+    Sum                             &scan_op,
+    T                               &aggregate,
+    Int2Type<AGGREGATE>             test_mode,
+    Int2Type<true>                  is_primitive)
+{
+    // Test with cumulative aggregate
+    warp_scan.InclusiveSum(data, data, aggregate);
+}
 
 
 /**
@@ -202,22 +224,22 @@ template <
     int         LOGICAL_WARP_THREADS,
     TestMode    TEST_MODE,
     typename    T,
-    typename    ScanOp,
-    typename    IdentityT>
+    typename    ScanOpT,
+    typename    InitialValueT>
 __global__ void WarpScanKernel(
-    T           *d_in,
-    T           *d_out,
-    T           *d_aggregate,
-    ScanOp      scan_op,
-    IdentityT   identity,
-    T           prefix,
-    clock_t     *d_elapsed)
+    T               *d_in,
+    T               *d_out,
+    T               *d_aggregate,
+    ScanOpT         scan_op,
+    InitialValueT   initial_value,
+    T               prefix,
+    clock_t         *d_elapsed)
 {
     // Cooperative warp-scan utility type (1 warp)
-    typedef WarpScan<T, LOGICAL_WARP_THREADS> WarpScan;
+    typedef WarpScan<T, LOGICAL_WARP_THREADS> WarpScanT;
 
     // Allocate temp storage in shared memory
-    __shared__ typename WarpScan::TempStorage temp_storage;
+    __shared__ typename WarpScanT::TempStorage temp_storage;
 
     // Per-thread tile data
     T data = d_in[threadIdx.x];
@@ -228,8 +250,15 @@ __global__ void WarpScanKernel(
     T aggregate;
 
     // Test scan
-    DeviceTest<T, ScanOp, IdentityT>::template Test<TEST_MODE, WarpScan>(
-        temp_storage, data, identity, scan_op, aggregate);
+    WarpScanT warp_scan(temp_storage);
+    DeviceTest(
+        warp_scan,
+        data,
+        initial_value,
+        scan_op,
+        aggregate,
+        Int2Type<TEST_MODE>(),
+        Int2Type<Traits<T>::PRIMITIVE>());
 
     // Stop cycle timer
     clock_t stop = clock();
@@ -243,7 +272,7 @@ __global__ void WarpScanKernel(
         d_aggregate[threadIdx.x] = aggregate;
     }
 
-    // Store prefix and time
+    // Store time
     if (threadIdx.x == 0)
     {
         *d_elapsed = (start > stop) ? start - stop : stop - start;
@@ -260,19 +289,19 @@ __global__ void WarpScanKernel(
  */
 template <
     typename    T,
-    typename    ScanOp,
-    typename    IdentityT>
+    typename    ScanOpT,
+    typename    InitialValueT>
 T Initialize(
     GenMode     gen_mode,
     T           *h_in,
     T           *h_reference,
     int         num_items,
-    ScanOp      scan_op,
-    IdentityT   identity,
+    ScanOpT      scan_op,
+    InitialValueT   initial_value,
     T           *prefix)
 {
-    T inclusive = (prefix != NULL) ? *prefix : identity;
-    T aggregate = identity;
+    T inclusive = (prefix != NULL) ? *prefix : initial_value;
+    T aggregate = initial_value;
 
     for (int i = 0; i < num_items; ++i)
     {
@@ -291,13 +320,13 @@ T Initialize(
  */
 template <
     typename    T,
-    typename    ScanOp>
+    typename    ScanOpT>
 T Initialize(
     GenMode     gen_mode,
     T           *h_in,
     T           *h_reference,
     int         num_items,
-    ScanOp      scan_op,
+    ScanOpT      scan_op,
     NullType,
     T           *prefix)
 {
@@ -331,13 +360,13 @@ T Initialize(
 template <
     int         LOGICAL_WARP_THREADS,
     TestMode    TEST_MODE,
-    typename    ScanOp,
-    typename    IdentityT,        // NullType implies inclusive-scan, otherwise inclusive scan
+    typename    ScanOpT,
+    typename    InitialValueT,        // NullType implies inclusive-scan, otherwise inclusive scan
     typename    T>
 void Test(
     GenMode     gen_mode,
-    ScanOp      scan_op,
-    IdentityT   identity,
+    ScanOpT      scan_op,
+    InitialValueT   initial_value,
     T           prefix)
 {
     // Allocate host arrays
@@ -347,7 +376,7 @@ void Test(
 
     // Initialize problem
     T *p_prefix = NULL;
-    T aggregate = Initialize(gen_mode, h_in, h_reference, LOGICAL_WARP_THREADS, scan_op, identity, p_prefix);
+    T aggregate = Initialize(gen_mode, h_in, h_reference, LOGICAL_WARP_THREADS, scan_op, initial_value, p_prefix);
 
     if (g_verbose)
     {
@@ -378,7 +407,7 @@ void Test(
     printf("Test-mode %d (%s), gen-mode %d (%s), %s warpscan, %d warp threads, %s (%d bytes) elements:\n",
         TEST_MODE, typeid(TEST_MODE).name(),
         gen_mode, typeid(gen_mode).name(),
-        (Equals<IdentityT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
+        (Equals<InitialValueT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         LOGICAL_WARP_THREADS,
         typeid(T).name(),
         (int) sizeof(T));
@@ -390,7 +419,7 @@ void Test(
         d_out,
         d_aggregate,
         scan_op,
-        identity,
+        initial_value,
         prefix,
         d_elapsed);
 
@@ -431,17 +460,17 @@ void Test(
  */
 template <
     int         LOGICAL_WARP_THREADS,
-    typename    ScanOp,
+    typename    ScanOpT,
     typename    T>
 void Test(
     GenMode     gen_mode,
-    ScanOp      scan_op,
-    T           identity,
+    ScanOpT     scan_op,
+    T           initial_value,
     T           prefix)
 {
     // Exclusive
-    Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, identity, prefix);
-    Test<LOGICAL_WARP_THREADS, AGGREGATE>(gen_mode, scan_op, identity, prefix);
+    Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, initial_value, prefix);
+    Test<LOGICAL_WARP_THREADS, AGGREGATE>(gen_mode, scan_op, initial_value, prefix);
 
     // Inclusive
     Test<LOGICAL_WARP_THREADS, BASIC>(gen_mode, scan_op, NullType(), prefix);
@@ -511,6 +540,7 @@ void Test(GenMode gen_mode)
     // complex
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85));
     Test<LOGICAL_WARP_THREADS>(gen_mode, Sum(), TestBar(0, 0), TestBar(17, 21));
+
 }
 
 
@@ -560,7 +590,7 @@ int main(int argc, char** argv)
 
     typedef KeyValuePair<int, float> T;
     cub::Sum sum_op;
-    Test<32, AGGREGATE>(UNIFORM, ReduceBySegmentOp<cub::Sum>(sum_op), 0, 0);
+    Test<32, AGGREGATE>(UNIFORM, ReduceBySegmentOp<cub::Sum>(sum_op), T(), T());
 
 #else
 
