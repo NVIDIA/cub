@@ -594,6 +594,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
 #ifdef QUICK_TEST
+
     // Compile/run quick tests
     Test<32, AGGREGATE, int>(UNIFORM, Sum(), (int) 0);
     Test<32, AGGREGATE, float>(UNIFORM, Sum(), (float) 0);
@@ -602,7 +603,7 @@ int main(int argc, char** argv)
 
     typedef KeyValuePair<int, float> T;
     cub::Sum sum_op;
-    Test<32, AGGREGATE>(UNIFORM, ReduceBySegmentOp<cub::Sum>(sum_op), T(), T());
+    Test<32, AGGREGATE, T>(UNIFORM, ReduceBySegmentOp<cub::Sum>(sum_op), T());
 
 #else
 
