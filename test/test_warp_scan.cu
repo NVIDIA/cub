@@ -594,17 +594,6 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
 #ifdef QUICK_TEST
-    template <
-        int             LOGICAL_WARP_THREADS,
-        TestMode        TEST_MODE,
-        typename        T,
-        typename        ScanOpT,
-        typename        InitialValueT>        // NullType implies inclusive-scan, otherwise inclusive scan
-    void Test(
-        GenMode         gen_mode,
-        ScanOpT         scan_op,
-        InitialValueT   initial_value)
-
     // Compile/run quick tests
     Test<32, AGGREGATE, int>(UNIFORM, Sum(), (int) 0);
     Test<32, AGGREGATE, float>(UNIFORM, Sum(), (float) 0);
