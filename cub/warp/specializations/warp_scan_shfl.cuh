@@ -249,7 +249,7 @@ struct WarpScanShfl
     {
         double output;
         int shfl_c = first_lane | SHFL_C;   // Shuffle control (mask and first-lane)
-/*
+
         // Use predicate set from SHFL to guard against invalid peers
         asm volatile(
             "{"
@@ -265,25 +265,6 @@ struct WarpScanShfl
             "  @p add.f64 %0, %0, r0;"
             "}"
             : "=d"(output) : "d"(input), "r"(offset), "r"(shfl_c));
-*/
-
-        // Use predicate set from SHFL to guard against invalid peers
-        asm volatile(
-            "{"
-            "  .reg .f64 r0;"
-            "  .reg .pred p;"
-            "  {"
-            "    .reg .u32 lo;"
-            "    .reg .u32 hi;"
-            "    mov.b64 {lo, hi}, %1;"
-            "    shfl.up.b32 lo|p, lo, %2, %3;"
-            "    shfl.up.b32 hi|p, hi, %2, %3;"
-            "    mov.b64 r0, {lo, hi};"
-            "  }"
-            "  @p add.f64 r0, r0, %4;"
-            "  mov.f64 %0, r0;"
-            "}"
-            : "=d"(output) : "d"(input), "r"(offset), "r"(shfl_c), "d"(input), "d"(0.0));
 
         return output;
     }
@@ -318,13 +299,12 @@ struct WarpScanShfl
         int             first_lane,         ///< [in] Index of first lane in segment
         int             offset)             ///< [in] Up-offset to pull from
     {
-        _T output = input;
-
-        _T temp = ShuffleUp(output, offset, first_lane);
+        _T temp = ShuffleUp(input, offset, first_lane);
 
         // Perform scan op if from a valid peer
-        if (lane_id >= first_lane + offset)
-            output = scan_op(temp, output);
+        _T output = scan_op(temp, input);
+        if (lane_id < first_lane + offset)
+            output = input;
 
         return output;
     }
@@ -454,8 +434,8 @@ struct WarpScanShfl
         int segment_first_lane = CUB_MAX(0, 31 - __clz(ballot));
 
         // Iterate scan steps
-        InclusiveScanStep(inclusive_output.value, scan_op.op, segment_first_lane, Int2Type<0>());
-/*
+//        InclusiveScanStep(inclusive_output.value, scan_op.op, segment_first_lane, Int2Type<0>());
+
         // Iterate scan steps
         #pragma unroll
         for (int STEP = 0; STEP < STEPS; STEP++)
@@ -467,8 +447,8 @@ struct WarpScanShfl
                 (1 << STEP),
                 Int2Type<IntegerTraits<T>::IS_SMALL_UNSIGNED>());
         }
-*/
     }
+
 
     /// Inclusive scan with aggregate
     template <typename ScanOpT>
