@@ -285,10 +285,10 @@ struct BlockScanWarpScans
         T                       input,                          ///< [in] Calling thread's input item
         T                       &exclusive_output,              ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp                  scan_op,                        ///< [in] Binary scan operator
-        T                       &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         // Compute block-wide exclusive scan.  The exclusive output from tid0 is invalid.
+        T block_aggregate;
         ExclusiveScan(input, exclusive_output, scan_op, block_aggregate);
 
         // Use the first warp to determine the threadblock prefix, returning the result in lane0
@@ -359,9 +359,9 @@ struct BlockScanWarpScans
         T                       input,                          ///< [in] Calling thread's input item
         T                       &exclusive_output,              ///< [out] Calling thread's output item (may be aliased to \p input)
         ScanOp                  scan_op,                        ///< [in] Binary scan operator
-        T                       &block_aggregate,               ///< [out] Threadblock-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
+        T block_aggregate;
         InclusiveScan(input, exclusive_output, scan_op, block_aggregate);
 
         // Use the first warp to determine the threadblock prefix, returning the result in lane0
