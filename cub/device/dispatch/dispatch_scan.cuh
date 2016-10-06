@@ -205,7 +205,7 @@ struct DispatchScan
                 BLOCK_LOAD_WARP_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_WARP_TRANSPOSE,
-                BLOCK_SCAN_RAKING_MEMOIZE>
+                BLOCK_SCAN_WARP_SCANS>
             ScanPolicyT;
     };
 

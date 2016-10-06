@@ -287,9 +287,6 @@ public:
 
 
 
-
-
-
     //@}  end member group
     /******************************************************************//**
      * \name Exclusive prefix sum operations
@@ -473,7 +470,6 @@ public:
         T                       &block_aggregate,               ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to the logical input sequence.
     {
-        T initial_value = 0;
         ExclusiveScan(input, output, cub::Sum(), block_aggregate, block_prefix_callback_op);
     }
 
@@ -529,15 +525,8 @@ public:
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD])  ///< [out] Calling thread's output items (may be aliased to \p input)
     {
-        // Reduce consecutive thread items in registers
-        Sum scan_op;
-        T thread_prefix = ThreadReduce(input, scan_op);
-
-        // Exclusive threadblock-scan
-        ExclusiveSum(thread_prefix, thread_prefix);
-
-        // Exclusive scan in registers with prefix as seed
-        ThreadScanExclusive(input, output, scan_op, thread_prefix);
+        T initial_value = 0;
+        ExclusiveScan(input, output, initial_value, cub::Sum());
     }
 
 
@@ -589,14 +578,8 @@ public:
         T                 &block_aggregate)                 ///< [out] block-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
-        Sum scan_op;
-        T thread_prefix = ThreadReduce(input, scan_op);
-
-        // Exclusive threadblock-scan
-        ExclusiveSum(thread_prefix, thread_prefix, block_aggregate);
-
-        // Exclusive scan in registers with prefix as seed
-        ThreadScanExclusive(input, output, scan_op, thread_prefix);
+        T initial_value = 0;
+        ExclusiveScan(input, output, initial_value, cub::Sum(), block_aggregate);
     }
 
 
@@ -697,15 +680,7 @@ public:
         T                       &block_aggregate,             ///< [out] block-wide aggregate reduction of input items (exclusive of the \p block_prefix_callback_op value)
         BlockPrefixCallbackOp   &block_prefix_callback_op)    ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to the logical input sequence.
     {
-        // Reduce consecutive thread items in registers
-        Sum scan_op;
-        T thread_prefix = ThreadReduce(input, scan_op);
-
-        // Exclusive threadblock-scan
-        ExclusiveSum(thread_prefix, thread_prefix, block_aggregate, block_prefix_callback_op);
-
-        // Exclusive scan in registers with prefix as seed
-        ThreadScanExclusive(input, output, scan_op, thread_prefix);
+        ExclusiveScan(input, output, cub::Sum(), block_aggregate, block_prefix_callback_op);
     }
 
 
