@@ -218,7 +218,7 @@ struct AgentScan
     __device__ __forceinline__
     void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, PrefixCallback &prefix_op, OutputT& block_aggregate, Int2Type<false> is_inclusive)
     {
-        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, prefix_op, scan_op, block_aggregate);
+        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, scan_op, block_aggregate, prefix_op);
     }
 
 
@@ -229,7 +229,7 @@ struct AgentScan
     __device__ __forceinline__
     void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, PrefixCallback &prefix_op, OutputT& block_aggregate, Int2Type<true> is_inclusive)
     {
-        BlockScanT(temp_storage.scan).InclusiveScan(items, items, prefix_op, scan_op, block_aggregate);
+        BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate, prefix_op);
     }
 
 

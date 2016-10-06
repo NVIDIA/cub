@@ -409,16 +409,14 @@ struct BlockScanRaking
                 T upsweep_partial = Upsweep(scan_op);
 
                 // Warp-synchronous scan
-                T inclusive_partial;
                 T exclusive_partial;
-                WarpScan(temp_storage.warp_scan).Scan(upsweep_partial, inclusive_partial, exclusive_partial, initial_value, scan_op);
+                WarpScan(temp_storage.warp_scan).ExclusiveScan(upsweep_partial, exclusive_partial, initial_value, scan_op, block_aggregate);
 
                 // Exclusive raking downsweep scan
                 ExclusiveDownsweep(scan_op, exclusive_partial);
 
                 // Broadcast aggregate to other threads
-                if (linear_tid == RAKING_THREADS - 1)
-                    temp_storage.block_aggregate = inclusive_partial;
+                temp_storage.block_aggregate = block_aggregate;
             }
 
             __syncthreads();
