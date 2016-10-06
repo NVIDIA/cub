@@ -405,10 +405,9 @@ __global__ void BlockScanKernel(
     T data[ITEMS_PER_THREAD];
     LoadDirectBlocked(linear_tid, d_in, data);
 
-#if CUB_PTX_ARCH > 100
-    // Bug: using the clock on SM10 causes codegen issues (e.g., uchar4 sum)
+    __threadfence_block();      // workaround to prevent clock hoisting
     clock_t start = clock();
-#endif
+    __threadfence_block();      // workaround to prevent clock hoisting
 
     // Test scan
     T                                   block_aggregate;
@@ -419,9 +418,9 @@ __global__ void BlockScanKernel(
         Int2Type<SCAN_MODE>(), Int2Type<TEST_MODE>(), Int2Type<Traits<T>::PRIMITIVE>());
 
     // Stop cycle timer
-#if CUB_PTX_ARCH > 100
+    __threadfence_block();      // workaround to prevent clock hoisting
     clock_t stop = clock();
-#endif
+    __threadfence_block();      // workaround to prevent clock hoisting
 
     // Store output
     StoreDirectBlocked(linear_tid, d_out, data);
@@ -437,12 +436,9 @@ __global__ void BlockScanKernel(
             d_out[TILE_SIZE] = prefix_op.prefix;
     }
 
-#if CUB_PTX_ARCH > 100
     // Store time
     if (linear_tid == 0)
         *d_elapsed = (start > stop) ? start - stop : stop - start;
-#endif
-
 }
 
 
@@ -902,6 +898,7 @@ int main(int argc, char** argv)
     Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0));
     Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), int(0));
     Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0));
+
     Test<128, 1, 1, 2, INCLUSIVE, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), TestFoo::MakeTestFoo(17, 21, 32, 85));
     Test<128, 1, 1, 1, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), make_longlong4(17, 21, 32, 85));
 
