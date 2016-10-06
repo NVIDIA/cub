@@ -257,7 +257,9 @@ __global__ void WarpScanKernel(
     T data = d_in[threadIdx.x];
 
     // Start cycle timer
+    __threadfence_block();      // workaround to prevent clock hoisting
     clock_t start = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
 
     T aggregate;
 
@@ -273,7 +275,9 @@ __global__ void WarpScanKernel(
         Int2Type<Traits<T>::PRIMITIVE>());
 
     // Stop cycle timer
+    __threadfence_block();      // workaround to prevent clock hoisting
     clock_t stop = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
 
     // Store data
     d_out[threadIdx.x] = data;
