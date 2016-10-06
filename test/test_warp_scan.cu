@@ -64,7 +64,7 @@ enum TestMode
 
 
 /**
- * \brief WrapperFunctor (for obscuring specialization for cub::Sum)
+ * \brief WrapperFunctor (for precluding test-specialized dispatch to *Sum variants)
  */
 template<typename OpT>
 struct WrapperFunctor
@@ -310,18 +310,21 @@ T Initialize(
     ScanOpT         scan_op,
     T               initial_value)
 {
-    T inclusive = initial_value;
-    T aggregate = initial_value;
+    InitValue(gen_mode, h_in[0], 0);
 
-    for (int i = 0; i < num_items; ++i)
+    T block_aggregate   = h_in[0];
+    h_reference[0]      = initial_value;
+    T inclusive         = scan_op(initial_value, h_in[0]);
+
+    for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
         h_reference[i] = inclusive;
         inclusive = scan_op(inclusive, h_in[i]);
-        aggregate = scan_op(aggregate, h_in[i]);
+        block_aggregate = scan_op(block_aggregate, h_in[i]);
     }
 
-    return aggregate;
+    return block_aggregate;
 }
 
 
@@ -339,25 +342,21 @@ T Initialize(
     ScanOpT     scan_op,
     NullType)
 {
-    T inclusive;
-    T aggregate;
-    for (int i = 0; i < num_items; ++i)
+    InitValue(gen_mode, h_in[0], 0);
+
+    T block_aggregate   = h_in[0];
+    T inclusive         = h_in[0];
+    h_reference[0]      = inclusive;
+
+    for (int i = 1; i < num_items; ++i)
     {
         InitValue(gen_mode, h_in[i], i);
-        if (i == 0)
-        {
-            inclusive = h_in[0];
-            aggregate = h_in[0];
-        }
-        else
-        {
-            inclusive = scan_op(inclusive, h_in[i]);
-            aggregate = scan_op(aggregate, h_in[i]);
-        }
+        inclusive = scan_op(inclusive, h_in[i]);
+        block_aggregate = scan_op(block_aggregate, h_in[i]);
         h_reference[i] = inclusive;
     }
 
-    return aggregate;
+    return block_aggregate;
 }
 
 

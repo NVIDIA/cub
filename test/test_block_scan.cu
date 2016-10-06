@@ -80,6 +80,24 @@ enum ScanMode
 
 
 /**
+ * \brief WrapperFunctor (for precluding test-specialized dispatch to *Sum variants)
+ */
+template<typename OpT>
+struct WrapperFunctor
+{
+    OpT op;
+
+    WrapperFunctor(OpT op) : op(op) {}
+
+    template <typename T>
+    __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
+    {
+        return op(a, b);
+    }
+};
+
+
+/**
  * Stateful prefix functor
  */
 template <
@@ -510,7 +528,7 @@ template <
     typename            T>
 void Test(
     GenMode             gen_mode,
-    ScanOpT              scan_op,
+    ScanOpT             scan_op,
     T                   initial_value,
     Int2Type<true>      sufficient_resources)
 {
@@ -539,9 +557,9 @@ void Test(
     }
 
     // Run kernel
-    printf("Test-mode %d, gen-mode %d, policy %d, %s BlockScan, %d (%d,%d,%d) threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
+    printf("Test-mode %d, gen-mode %d, policy %d, %s %s BlockScan, %d (%d,%d,%d) threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
         TEST_MODE, gen_mode, ALGORITHM,
-        (SCAN_MODE == INCLUSIVE) ? "Inclusive" : "Exclusive",
+        (SCAN_MODE == INCLUSIVE) ? "Inclusive" : "Exclusive", typeid(ScanOpT).name(),
         BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
         ITEMS_PER_THREAD,  TILE_SIZE,
         typeid(T).name(), (int) sizeof(T));
@@ -752,10 +770,15 @@ void Test(
     T           identity,
     T           initial_value)
 {
-    // Exclusive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, BASIC>(gen_mode, scan_op, initial_value);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, AGGREGATE>(gen_mode, scan_op, initial_value);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, PREFIX_AGGREGATE>(gen_mode, scan_op, initial_value);
+    // Exclusive (use identity as initial value because it will dispatch to *Sum variants that don't take initial values)
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, BASIC>(gen_mode, scan_op, identity);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, AGGREGATE>(gen_mode, scan_op, identity);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, PREFIX_AGGREGATE>(gen_mode, scan_op, identity);
+
+    // Exclusive (non-specialized, so we can use initial-value)
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, BASIC>(gen_mode, WrapperFunctor<ScanOpT>(scan_op), initial_value);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, AGGREGATE>(gen_mode, WrapperFunctor<ScanOpT>(scan_op), initial_value);
+    Test<BLOCK_THREADS, ITEMS_PER_THREAD, EXCLUSIVE, PREFIX_AGGREGATE>(gen_mode, WrapperFunctor<ScanOpT>(scan_op), initial_value);
 
     // Inclusive
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, INCLUSIVE, BASIC>(gen_mode, scan_op, identity);      // This scan doesn't take an initial value
@@ -832,6 +855,7 @@ void Test()
     // complex
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85));
     Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestBar(0, 0), TestBar(17, 21));
+
 }
 
 
@@ -876,13 +900,11 @@ int main(int argc, char** argv)
 
     // Compile/run quick tests
     Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0));
-/*
     Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), int(0));
     Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0));
-
     Test<128, 1, 1, 2, INCLUSIVE, PREFIX_AGGREGATE, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), TestFoo::MakeTestFoo(17, 21, 32, 85));
     Test<128, 1, 1, 1, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), make_longlong4(17, 21, 32, 85));
-*/
+
 #else
 
     // Compile/run thorough tests
