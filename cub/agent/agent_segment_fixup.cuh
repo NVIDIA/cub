@@ -306,7 +306,8 @@ struct AgentSegmentFixup
         {
             // Exclusive scan of values and segment_flags
             TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            BlockScanT(temp_storage.scan).ExclusiveScan(pairs, scatter_pairs, scan_op, tile_aggregate, prefix_op);
+            BlockScanT(temp_storage.scan).ExclusiveScan(pairs, scatter_pairs, scan_op, prefix_op);
+            tile_aggregate = prefix_op.GetBlockAggregate();
         }
 
         // Scatter updated values

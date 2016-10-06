@@ -663,6 +663,7 @@ struct TilePrefixCallbackOp
         typename WarpReduceT::TempStorage   warp_reduce;
         T                                   exclusive_prefix;
         T                                   inclusive_prefix;
+        T                                   block_aggregate;
     };
 
     // Alias wrapper allowing temporary storage to be unioned
@@ -718,6 +719,8 @@ struct TilePrefixCallbackOp
     __device__ __forceinline__
     T operator()(T block_aggregate)
     {
+        temp_storage.block_aggregate = block_aggregate;
+
         // Update our status with our tile-aggregate
         if (threadIdx.x == 0)
         {
@@ -770,6 +773,13 @@ struct TilePrefixCallbackOp
     T GetInclusivePrefix()
     {
         return temp_storage.inclusive_prefix;
+    }
+
+    // Get the block aggregate stored in temporary storage
+    __device__ __forceinline__
+    T GetBlockAggregate()
+    {
+        return temp_storage.block_aggregate;
     }
 
 };

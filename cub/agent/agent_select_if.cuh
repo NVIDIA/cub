@@ -602,10 +602,10 @@ struct AgentSelectIf
         __syncthreads();
 
         // Exclusive scan of values and selection_flags
-        OffsetT num_tile_selections;
         TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, cub::Sum(), tile_idx);
-        BlockScanT(temp_storage.scan).ExclusiveSum(selection_flags, selection_indices, num_tile_selections, prefix_op);
+        BlockScanT(temp_storage.scan).ExclusiveSum(selection_flags, selection_indices, prefix_op);
 
+        OffsetT num_tile_selections     = prefix_op.GetBlockAggregate();
         OffsetT num_selections          = prefix_op.GetInclusivePrefix();
         OffsetT num_selections_prefix   = prefix_op.GetExclusivePrefix();
         OffsetT num_rejected_prefix     = (tile_idx * TILE_ITEMS) - num_selections_prefix;
