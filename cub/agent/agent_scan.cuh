@@ -195,9 +195,15 @@ struct AgentScan
      * Exclusive scan specialization (first tile)
      */
     __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, OutputT init_value, OutputT& block_aggregate, Int2Type<false> is_inclusive)
+    void ScanTile(
+        OutputT             (&items)[ITEMS_PER_THREAD],
+        OutputT             init_value,
+        ScanOpT             scan_op,
+        OutputT             &block_aggregate,
+        Int2Type<false>     is_inclusive)
     {
         BlockScanT(temp_storage.scan).ExclusiveScan(items, items, init_value, scan_op, block_aggregate);
+        block_aggregate = scan_op(init_value, block_aggregate);
     }
 
 
@@ -205,7 +211,12 @@ struct AgentScan
      * Inclusive scan specialization (first tile)
      */
     __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, OutputT init_value, OutputT& block_aggregate, Int2Type<true> is_inclusive)
+    void ScanTile(
+        OutputT             (&items)[ITEMS_PER_THREAD],
+        InitValueT          init_value,
+        ScanOpT             scan_op,
+        OutputT             &block_aggregate,
+        Int2Type<true>      is_inclusive)
     {
         BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate);
     }
@@ -216,9 +227,13 @@ struct AgentScan
      */
     template <typename PrefixCallback>
     __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, PrefixCallback &prefix_op, OutputT& block_aggregate, Int2Type<false> is_inclusive)
+    void ScanTile(
+        OutputT             (&items)[ITEMS_PER_THREAD],
+        ScanOpT             scan_op,
+        PrefixCallback      &prefix_op,
+        Int2Type<false>     is_inclusive)
     {
-        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, scan_op, block_aggregate, prefix_op);
+        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, scan_op, prefix_op);
     }
 
 
@@ -227,9 +242,13 @@ struct AgentScan
      */
     template <typename PrefixCallback>
     __device__ __forceinline__
-    void ScanTile(OutputT (&items)[ITEMS_PER_THREAD], ScanOpT scan_op, PrefixCallback &prefix_op, OutputT& block_aggregate, Int2Type<true> is_inclusive)
+    void ScanTile(
+        OutputT             (&items)[ITEMS_PER_THREAD],
+        ScanOpT             scan_op,
+        PrefixCallback      &prefix_op,
+        Int2Type<true>      is_inclusive)
     {
-        BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate, prefix_op);
+        BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, prefix_op);
     }
 
 
@@ -283,18 +302,15 @@ struct AgentScan
         {
             // Scan first tile
             OutputT block_aggregate;
-            ScanTile(items, scan_op, init_value, block_aggregate, Int2Type<IS_INCLUSIVE>());
-
-            // Update tile status if there may be successor tiles (i.e., this tile is full)
+            ScanTile(items, init_value, scan_op, block_aggregate, Int2Type<IS_INCLUSIVE>());
             if ((!IS_LAST_TILE) && (threadIdx.x == 0))
                 tile_state.SetInclusive(0, block_aggregate);
         }
         else
         {
             // Scan non-first tile
-            OutputT block_aggregate;
             TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            ScanTile(items, scan_op, prefix_op, block_aggregate, Int2Type<IS_INCLUSIVE>());
+            ScanTile(items, scan_op, prefix_op, Int2Type<IS_INCLUSIVE>());
         }
 
         __syncthreads();
@@ -362,13 +378,12 @@ struct AgentScan
         if (IS_FIRST_TILE)
         {
             OutputT block_aggregate;
-            ScanTile(items, scan_op, init_value, block_aggregate, Int2Type<IS_INCLUSIVE>());
+            ScanTile(items, init_value, scan_op, block_aggregate, Int2Type<IS_INCLUSIVE>());
             prefix_op.running_total = block_aggregate;
         }
         else
         {
-            OutputT block_aggregate;
-            ScanTile(items, scan_op, prefix_op, block_aggregate, Int2Type<IS_INCLUSIVE>());
+            ScanTile(items, scan_op, prefix_op, Int2Type<IS_INCLUSIVE>());
         }
 
         __syncthreads();

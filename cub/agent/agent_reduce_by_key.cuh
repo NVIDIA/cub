@@ -318,14 +318,13 @@ struct AgentReduceByKey
     __device__ __forceinline__
     void ScanTile(
         OffsetValuePairT            (&scan_items)[ITEMS_PER_THREAD],
-        OffsetValuePairT&           block_aggregate,
         TilePrefixCallbackOpT&      prefix_op,
         Int2Type<true>              has_identity)
     {
         OffsetValuePairT identity;
         identity.value = 0;
         identity.key = 0;
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, identity, scan_op, block_aggregate, prefix_op);
+        BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, identity, scan_op, prefix_op);
     }
 
     /**
@@ -334,11 +333,10 @@ struct AgentReduceByKey
     __device__ __forceinline__
     void ScanTile(
         OffsetValuePairT            (&scan_items)[ITEMS_PER_THREAD],
-        OffsetValuePairT&           block_aggregate,
         TilePrefixCallbackOpT&      prefix_op,
         Int2Type<false>             has_identity)
     {
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, block_aggregate, prefix_op);
+        BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, prefix_op);
     }
 
 
@@ -520,8 +518,10 @@ struct AgentReduceByKey
         {
             // Scan non-first tile
             TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            ScanTile(scan_items, block_aggregate, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
-            num_segments_prefix = prefix_op.GetExclusivePrefix().key;
+            ScanTile(scan_items, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
+
+            num_segments_prefix     = prefix_op.GetExclusivePrefix().key;
+            block_aggregate         = prefix_op.GetBlockAggregate();
         }
 
         // Rezip scatter items and segment indices
