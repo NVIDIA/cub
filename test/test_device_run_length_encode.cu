@@ -365,7 +365,7 @@ void Initialize(
     while (i < num_items)
     {
         // Select number of repeating occurrences for the current run
-        unsigned int repeat;
+        int repeat;
         if (max_segment < 0)
         {
             repeat = num_items;
@@ -377,7 +377,7 @@ void Initialize(
         else
         {
             RandomBits(repeat, entropy_reduction);
-            repeat = (unsigned int) ((double(repeat) * double(max_segment)) / double(max_int));
+            repeat = (int) ((double(repeat) * double(max_segment)) / double(max_int));
             repeat = CUB_MAX(1, repeat);
         }
 
@@ -561,9 +561,9 @@ void Test(
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float giga_rate = float(num_items) / avg_millis / 1000.0 / 1000.0;
+        float giga_rate = float(num_items) / avg_millis / 1000.0f / 1000.0f;
         int bytes_moved = (num_items * sizeof(T)) + (num_runs * (sizeof(OffsetT) + sizeof(LengthT)));
-        float giga_bandwidth = float(bytes_moved) / avg_millis / 1000.0 / 1000.0;
+        float giga_bandwidth = float(bytes_moved) / avg_millis / 1000.0f / 1000.0f;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, giga_rate, giga_bandwidth);
     }
     printf("\n\n");
@@ -660,7 +660,7 @@ void TestIterator(
     OffsetT* h_offsets_reference = new OffsetT[num_items];
     LengthT* h_lengths_reference = new LengthT[num_items];
 
-    LengthT one_val;
+    T one_val;
     InitValue(INTEGER_SEED, one_val, 1);
     ConstantInputIterator<T, int> h_in(one_val);
 

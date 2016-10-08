@@ -118,7 +118,7 @@ __global__ void Kernel(
     // reset data
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        data[ITEM] = 0;
+        data[ITEM] = T();
 
     __syncthreads();
 
@@ -513,15 +513,15 @@ int main(int argc, char** argv)
 #else
 
     // Compile/run thorough tests
-    TestThreads<char>(2, 0.8);
-    TestThreads<int>(2, 0.8);
-    TestThreads<long>(2, 0.8);
-    TestThreads<long2>(2, 0.8);
+    TestThreads<char>(2, 0.8f);
+    TestThreads<int>(2, 0.8f);
+    TestThreads<long>(2, 0.8f);
+    TestThreads<long2>(2, 0.8f);
 
     if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-        TestThreads<double2>(2, 0.8);
-    TestThreads<TestFoo>(2, 0.8);
-    TestThreads<TestBar>(2, 0.8);
+        TestThreads<double2>(2, 0.8f);
+    TestThreads<TestFoo>(2, 0.8f);
+    TestThreads<TestBar>(2, 0.8f);
 
 #endif
 

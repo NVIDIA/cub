@@ -281,66 +281,6 @@ struct AgentReduceByKey
 
 
     //---------------------------------------------------------------------
-    // Block scan utility methods.  Scan operators that associate an identity value may be slightly faster.
-    //---------------------------------------------------------------------
-
-    /**
-     * Scan with identity (first tile)
-     */
-    __device__ __forceinline__
-    void ScanTile(
-        OffsetValuePairT    (&scan_items)[ITEMS_PER_THREAD],
-        OffsetValuePairT    &block_aggregate,
-        Int2Type<true>      has_identity)
-    {
-        OffsetValuePairT identity;
-        identity.value = 0;
-        identity.key = 0;
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, identity, scan_op, block_aggregate);
-    }
-
-    /**
-     * Scan without identity (first tile).  Without an identity, the first output item is undefined.
-     *
-     */
-    __device__ __forceinline__
-    void ScanTile(
-        OffsetValuePairT    (&scan_items)[ITEMS_PER_THREAD],
-        OffsetValuePairT    &block_aggregate,
-        Int2Type<false>     has_identity)
-    {
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, block_aggregate);
-    }
-
-    /**
-     * Scan with identity (subsequent tile)
-     */
-    __device__ __forceinline__
-    void ScanTile(
-        OffsetValuePairT            (&scan_items)[ITEMS_PER_THREAD],
-        TilePrefixCallbackOpT&      prefix_op,
-        Int2Type<true>              has_identity)
-    {
-        OffsetValuePairT identity;
-        identity.value = 0;
-        identity.key = 0;
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, identity, scan_op, prefix_op);
-    }
-
-    /**
-     * Scan without identity (subsequent tile)
-     */
-    __device__ __forceinline__
-    void ScanTile(
-        OffsetValuePairT            (&scan_items)[ITEMS_PER_THREAD],
-        TilePrefixCallbackOpT&      prefix_op,
-        Int2Type<false>             has_identity)
-    {
-        BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, prefix_op);
-    }
-
-
-    //---------------------------------------------------------------------
     // Scatter utility methods
     //---------------------------------------------------------------------
 
@@ -507,7 +447,7 @@ struct AgentReduceByKey
         if (tile_idx == 0)
         {
             // Scan first tile
-            ScanTile(scan_items, block_aggregate, Int2Type<HAS_IDENTITY_ZERO>());
+            BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, block_aggregate);
             num_segments_prefix = 0;
 
             // Update tile status if there are successor tiles
@@ -518,7 +458,7 @@ struct AgentReduceByKey
         {
             // Scan non-first tile
             TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            ScanTile(scan_items, prefix_op, Int2Type<HAS_IDENTITY_ZERO>());
+            BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, prefix_op);
 
             num_segments_prefix     = prefix_op.GetExclusivePrefix().key;
             block_aggregate         = prefix_op.GetBlockAggregate();

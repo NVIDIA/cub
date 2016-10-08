@@ -377,8 +377,8 @@ struct DispatchReduceByKey
             if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
-            int             tile_size = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
-            unsigned int    num_tiles = (num_items + tile_size - 1) / tile_size;
+            int tile_size = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
+            int num_tiles = (num_items + tile_size - 1) / tile_size;
 
             // Specify temporary storage allocation requirements
             size_t  allocation_sizes[1];

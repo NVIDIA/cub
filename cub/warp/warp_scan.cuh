@@ -178,7 +178,7 @@ private:
 
     /// Shared storage reference
     _TempStorage    &temp_storage;
-    int             lane_id;
+    unsigned int    lane_id;
 
 
 

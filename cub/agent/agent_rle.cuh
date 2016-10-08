@@ -421,8 +421,8 @@ struct AgentRle
         LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD],
         Int2Type<true>      is_warp_time_slice)
     {
-        int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
-        int lane_id = LaneId();
+        unsigned int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
+        unsigned int lane_id = LaneId();
 
         // Locally compact items within the warp (first warp)
         if (warp_id == 0)
@@ -478,8 +478,8 @@ struct AgentRle
         LengthOffsetPair    (&lengths_and_offsets)[ITEMS_PER_THREAD],
         Int2Type<false>     is_warp_time_slice)
     {
-        int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
-        int lane_id = LaneId();
+        unsigned int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
+        unsigned int lane_id = LaneId();
 
         // Unzip
         OffsetT run_offsets[ITEMS_PER_THREAD];
@@ -622,7 +622,7 @@ struct AgentRle
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining, 0);
+                BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining, T());
             else
                 BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
 
@@ -702,7 +702,7 @@ struct AgentRle
             // Load items
             T items[ITEMS_PER_THREAD];
             if (LAST_TILE)
-                BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining, 0);
+                BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining, T());
             else
                 BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
 

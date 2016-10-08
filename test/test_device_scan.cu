@@ -661,7 +661,7 @@ void Test(
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float giga_rate = float(num_items) / avg_millis / 1000.0 / 1000.0;
+        float giga_rate = float(num_items) / avg_millis / 1000.0f / 1000.0f;
         float giga_bandwidth = giga_rate * (sizeof(InputT) + sizeof(OutputT));
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, giga_rate, giga_bandwidth, giga_bandwidth / g_device_giga_bandwidth * 100.0);
     }
@@ -910,6 +910,7 @@ int main(int argc, char** argv)
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
+
     TestPointer<CUB, char, int>(         num_items    , UNIFORM, Sum(), (int) (0));
     TestPointer<CUB, int, int>(         num_items    , UNIFORM, Sum(), (int) (0));
 

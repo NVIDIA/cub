@@ -822,7 +822,7 @@ void Test(
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float giga_rate = float(num_items) / avg_millis / 1000.0 / 1000.0;
+        float giga_rate = float(num_items) / avg_millis / 1000.0f / 1000.0f;
         float giga_bandwidth = (KEYS_ONLY) ?
             giga_rate * sizeof(KeyT) * 2 :
             giga_rate * (sizeof(KeyT) + sizeof(ValueT)) * 2;

@@ -202,7 +202,7 @@ private:
     _TempStorage &temp_storage;
 
     /// Linear thread-id
-    int linear_tid;
+    unsigned int linear_tid;
 
     /******************************************************************************
      * Utility methods
@@ -400,7 +400,7 @@ public:
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-    /// \smemstorage{BlockScan}
+    /// \smemstorage{BlockRadixSort}
     struct TempStorage : Uninitialized<_TempStorage> {};
 
 

@@ -268,7 +268,7 @@ private:
     _TempStorage &temp_storage;
 
     /// Linear thread-id
-    int linear_tid;
+    unsigned int linear_tid;
 
 
 public:

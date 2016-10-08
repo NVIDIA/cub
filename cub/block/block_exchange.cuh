@@ -173,10 +173,10 @@ private:
     _TempStorage &temp_storage;
 
     /// Linear thread-id
-    int linear_tid;
-    int lane_id;
-    int warp_id;
-    int warp_offset;
+    unsigned int linear_tid;
+    unsigned int lane_id;
+    unsigned int warp_id;
+    unsigned int warp_offset;
 
 
     /******************************************************************************

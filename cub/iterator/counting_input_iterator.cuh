@@ -152,7 +152,7 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator+(Distance n) const
     {
-        self_type retval(val + n);
+        self_type retval(val + (ValueType) n);
         return retval;
     }
 
@@ -160,7 +160,7 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type& operator+=(Distance n)
     {
-        val += n;
+        val += (ValueType) n;
         return *this;
     }
 
@@ -168,7 +168,7 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ self_type operator-(Distance n) const
     {
-        self_type retval(val - n);
+        self_type retval(val - (ValueType) n);
         return retval;
     }
 
@@ -190,7 +190,7 @@ public:
     template <typename Distance>
     __host__ __device__ __forceinline__ reference operator[](Distance n) const
     {
-        return val + n;
+        return val + (ValueType) n;
     }
 
     /// Structure dereference

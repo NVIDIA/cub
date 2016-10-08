@@ -115,7 +115,7 @@ struct BlockReduceRaking
 
     // Thread fields
     _TempStorage &temp_storage;
-    int linear_tid;
+    unsigned int linear_tid;
 
 
     /// Constructor
