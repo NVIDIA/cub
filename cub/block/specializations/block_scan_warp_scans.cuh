@@ -79,10 +79,11 @@ struct BlockScanWarpScans
     typedef WarpScan<T, WARPS, PTX_ARCH> WarpAggregateScan;
 
     /// Shared memory storage layout type
-    struct _TempStorage
+
+    struct __align__(32) _TempStorage
     {
-        typename WarpScanT::TempStorage warp_scan[WARPS];           ///< Buffer for warp-synchronous scans
         T                               warp_aggregates[WARPS];
+        typename WarpScanT::TempStorage warp_scan[WARPS];           ///< Buffer for warp-synchronous scans
         T                               block_prefix;               ///< Shared prefix for the entire threadblock
     };
 
@@ -97,9 +98,9 @@ struct BlockScanWarpScans
 
     // Thread fields
     _TempStorage    &temp_storage;
-    int             linear_tid;
-    int             warp_id;
-    int             lane_id;
+    unsigned int    linear_tid;
+    unsigned int    warp_id;
+    unsigned int    lane_id;
 
 
     //---------------------------------------------------------------------

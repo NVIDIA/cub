@@ -537,12 +537,12 @@ private:
         typedef NullType TempStorage;
 
         /// Linear thread-id
-        int linear_tid;
+        unsigned int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ StoreInternal(
             TempStorage &temp_storage,
-            int linear_tid)
+            unsigned int linear_tid)
         :
             linear_tid(linear_tid)
         {}
@@ -576,12 +576,12 @@ private:
         typedef NullType TempStorage;
 
         /// Linear thread-id
-        int linear_tid;
+        unsigned int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ StoreInternal(
             TempStorage &temp_storage,
-            int linear_tid)
+            unsigned int linear_tid)
         :
             linear_tid(linear_tid)
         {}
@@ -633,12 +633,12 @@ private:
         _TempStorage &temp_storage;
 
         /// Linear thread-id
-        int linear_tid;
+        unsigned int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ StoreInternal(
             TempStorage &temp_storage,
-            int linear_tid)
+            unsigned int linear_tid)
         :
             temp_storage(temp_storage.Alias()),
             linear_tid(linear_tid)
@@ -692,12 +692,12 @@ private:
         _TempStorage &temp_storage;
 
         /// Linear thread-id
-        int linear_tid;
+        unsigned int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ StoreInternal(
             TempStorage &temp_storage,
-            int linear_tid)
+            unsigned int linear_tid)
         :
             temp_storage(temp_storage.Alias()),
             linear_tid(linear_tid)
@@ -751,12 +751,12 @@ private:
         _TempStorage &temp_storage;
 
         /// Linear thread-id
-        int linear_tid;
+        unsigned int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ StoreInternal(
             TempStorage &temp_storage,
-            int linear_tid)
+            unsigned int linear_tid)
         :
             temp_storage(temp_storage.Alias()),
             linear_tid(linear_tid)
@@ -814,7 +814,7 @@ private:
     _TempStorage &temp_storage;
 
     /// Linear thread-id
-    int linear_tid;
+    unsigned int linear_tid;
 
 public:
 

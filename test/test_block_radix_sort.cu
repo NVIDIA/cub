@@ -271,13 +271,7 @@ void Initialize(
 
     for (int i = 0; i < num_items; ++i)
     {
-        if (gen_mode == RANDOM) {
-            RandomBits(h_keys[i], entropy_reduction);
-        } else if (gen_mode == UNIFORM) {
-            h_keys[i] = 1;
-        } else {
-            h_keys[i] = i;
-        }
+        InitValue(gen_mode, h_keys[i], i);
 
         RandomBits(h_values[i]);
 
@@ -694,11 +688,17 @@ int main(int argc, char** argv)
 
 #ifdef QUICK_TEST
 
+    {
+        typedef float T;
+        TestDriver<32, 4, 4, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, false, false, T, NullType>(INTEGER_SEED, 0, 0, sizeof(T) * 8);
+    }
+/*
     // Compile/run quick tests
     typedef unsigned int T;
     TestDriver<64, 17, 4, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, false, false, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
     TestDriver<96, 8, 4, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, false, false, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
     TestDriver<128, 2, 4, true, BLOCK_SCAN_WARP_SCANS, cudaSharedMemBankSizeFourByte, false, false, T, NullType>(RANDOM, 0, 0, sizeof(T) * 8);
+*/
 
 #else
 

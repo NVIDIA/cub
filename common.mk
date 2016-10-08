@@ -174,6 +174,8 @@ NVCCFLAGS += $(SM_DEF) -Xptxas -v -Xcudafe -\#
 
 ifeq (WIN_NT, $(findstring WIN_NT, $(OSUPPER)))
     # For MSVC
+    # Enable more warnings and treat as errors
+    NVCCFLAGS += -Xcompiler /W3 -Xcompiler /WX
     # Disable excess x86 floating point precision that can lead to results being labeled incorrectly
     NVCCFLAGS += -Xcompiler /fp:strict
     # Help the compiler/linker work with huge numbers of kernels on Windows
