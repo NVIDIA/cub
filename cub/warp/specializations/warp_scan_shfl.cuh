@@ -79,14 +79,14 @@ struct WarpScanShfl
     };
 
     /// Shared memory storage layout type
-    typedef NullType TempStorage;
+    struct TempStorage {};
 
 
     //---------------------------------------------------------------------
     // Thread fields
     //---------------------------------------------------------------------
 
-    int lane_id;
+    unsigned int lane_id;
 
     //---------------------------------------------------------------------
     // Construction

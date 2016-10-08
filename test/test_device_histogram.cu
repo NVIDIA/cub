@@ -477,7 +477,7 @@ struct SearchTransform
     template <typename SampleT>
     int operator()(SampleT sample)
     {
-        int bin = std::upper_bound(levels, levels + num_levels, (LevelT) sample) - levels - 1;
+        int bin = int(std::upper_bound(levels, levels + num_levels, (LevelT) sample) - levels - 1);
         if (bin < 0)
         {
             // Sample out of range
@@ -541,7 +541,7 @@ struct ScaleTransform<float>
         this->num_levels = num_levels;
         this->max = max;
         this->min = min;
-        this->scale = 1.0 / scale;
+        this->scale = 1.0f / scale;
     }
 
     // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)
@@ -785,7 +785,7 @@ void TestEven(
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float giga_rate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
+        float giga_rate = float(total_samples) / avg_millis / 1000.0f / 1000.0f;
         float giga_bandwidth = giga_rate * sizeof(SampleT);
         printf("\t%.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
             avg_millis,
@@ -969,7 +969,7 @@ void TestRange(
     if (g_timing_iterations > 0)
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float giga_rate = float(total_samples) / avg_millis / 1000.0 / 1000.0;
+        float giga_rate = float(total_samples) / avg_millis / 1000.0f / 1000.0f;
         float giga_bandwidth = giga_rate * sizeof(SampleT);
         printf("\t%.3f avg ms, %.3f billion samples/s, %.3f billion bins/s, %.3f billion pixels/s, %.3f logical GB/s",
             avg_millis,
@@ -1020,7 +1020,7 @@ template <
 void TestEven(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
-    int             row_stride_bytes,
+    OffsetT         row_stride_bytes,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     LevelT          max_level,
@@ -1061,7 +1061,7 @@ template <
 void TestRange(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
-    int             row_stride_bytes,
+    OffsetT         row_stride_bytes,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     LevelT          max_level,
@@ -1106,7 +1106,7 @@ template <
 void Test(
     OffsetT         num_row_pixels,
     OffsetT         num_rows,
-    int             row_stride_bytes,
+    OffsetT         row_stride_bytes,
     int             entropy_reduction,
     int             num_levels[NUM_ACTIVE_CHANNELS],
     LevelT          max_level,

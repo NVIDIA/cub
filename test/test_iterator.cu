@@ -190,7 +190,7 @@ void Test(
 template <typename T>
 void TestConstant(T base)
 {
-    printf("\nTesting constant iterator on type %s (base: %d)\n", typeid(T).name(), int(base)); fflush(stdout);
+    printf("\nTesting constant iterator on type %s (base: %lld)\n", typeid(T).name(), (unsigned long long) (base)); fflush(stdout);
 
     //
     // Test iterator manipulation in kernel
@@ -261,12 +261,12 @@ void TestCounting(T base)
     // Test with thrust::copy_if()
     //
 
-    unsigned int max_items  = (unsigned int) ((1ull << ((sizeof(T) * 8) - 1)) - 1);
-    int copy_items          = CUB_MIN(max_items - base, 100);     // potential issue with differencing overflows when T is a smaller type than can handle the offset
-    T   *h_copy             = new T[copy_items];
-    T   *d_copy             = NULL;
+    unsigned long long  max_items   = ((1ull << ((sizeof(T) * 8) - 1)) - 1);
+    unsigned long long  copy_items  = CUB_MIN(max_items - base, 100);     // potential issue with differencing overflows when T is a smaller type than can handle the offset
+    T                   *h_copy     = new T[copy_items];
+    T                   *d_copy     = NULL;
 
-    for (int i = 0; i < copy_items; ++i)
+    for (unsigned long long i = 0; i < copy_items; ++i)
         h_copy[i] = d_itr[i];
 
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * copy_items));

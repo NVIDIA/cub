@@ -110,7 +110,7 @@ struct BlockScanRaking
 
     // Thread fields
     _TempStorage    &temp_storage;
-    int             linear_tid;
+    unsigned int    linear_tid;
     T               cached_segment[SEGMENT_LENGTH];
 
 

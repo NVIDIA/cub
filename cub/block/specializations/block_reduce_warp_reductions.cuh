@@ -94,9 +94,9 @@ struct BlockReduceWarpReductions
 
     // Thread fields
     _TempStorage &temp_storage;
-    int linear_tid;
-    int warp_id;
-    int lane_id;
+    unsigned int linear_tid;
+    unsigned int warp_id;
+    unsigned int lane_id;
 
 
     /// Constructor

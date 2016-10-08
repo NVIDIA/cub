@@ -862,7 +862,7 @@ void Test(
 
         // Display performance
         float avg_millis = elapsed_millis / g_timing_iterations;
-        float giga_rate = float(num_items) / avg_millis / 1000.0 / 1000.0;
+        float giga_rate = float(num_items) / avg_millis / 1000.0f / 1000.0f;
         float giga_bandwidth = giga_rate * sizeof(InputT);
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, giga_rate, giga_bandwidth);
     }
