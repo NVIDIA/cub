@@ -165,7 +165,7 @@ class cub::BlockLoad&lt; InputIteratorT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITH
 <dl class="section user"><dt></dt><dd>Suppose the input <code>d_data</code> is <code>0, 1, 2, 3, 4, 5, ...</code>. The set of <code>thread_data</code> across the block of threads in those threads will be <code>{ [0,1,2,3], [4,5,6,7], ..., [508,509,510,511] }</code>. </dd></dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_block_radix_sort_8cu-example.html#_a0">example_block_radix_sort.cu</a>, and <a class="el" href="example_block_scan_8cu-example.html#_a0">example_block_scan.cu</a>.</dd>
 </dl>
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00674">674</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00683">683</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -184,15 +184,18 @@ __device__ __forceinline__&#160;</td><td class="memItemRight" valign="bottom"><a
 <tr class="memdesc:ae412a81afb577ba1f4f86beb9b69ba27"><td class="mdescLeft">&#160;</td><td class="mdescRight">Collective constructor using the specified memory allocation as temporary storage.  <a href="#ae412a81afb577ba1f4f86beb9b69ba27">More...</a><br/></td></tr>
 <tr class="separator:ae412a81afb577ba1f4f86beb9b69ba27"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Data movement</div></td></tr>
-<tr class="memitem:aaef224eb3fba8d7ea3bbf5a7c747955e"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#aaef224eb3fba8d7ea3bbf5a7c747955e">Load</a> (InputIteratorT block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:aaef224eb3fba8d7ea3bbf5a7c747955e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory.  <a href="#aaef224eb3fba8d7ea3bbf5a7c747955e">More...</a><br/></td></tr>
-<tr class="separator:aaef224eb3fba8d7ea3bbf5a7c747955e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aba3c71ada9679db505c4d935287fcdfb"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#aba3c71ada9679db505c4d935287fcdfb">Load</a> (InputIteratorT block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
-<tr class="memdesc:aba3c71ada9679db505c4d935287fcdfb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory, guarded by range.  <a href="#aba3c71ada9679db505c4d935287fcdfb">More...</a><br/></td></tr>
-<tr class="separator:aba3c71ada9679db505c4d935287fcdfb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a10415c910ce86cc5f47d1073574b1b79"><td class="memItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a10415c910ce86cc5f47d1073574b1b79">Load</a> (InputIteratorT block_itr, T(&amp;items)[ITEMS_PER_THREAD], int valid_items, T oob_default)</td></tr>
-<tr class="memdesc:a10415c910ce86cc5f47d1073574b1b79"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#a10415c910ce86cc5f47d1073574b1b79">More...</a><br/></td></tr>
-<tr class="separator:a10415c910ce86cc5f47d1073574b1b79"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa2e700f159309f2bd6cbb77e502a941e"><td class="memTemplParams" colspan="2">template&lt;typename OutputT &gt; </td></tr>
+<tr class="memitem:aa2e700f159309f2bd6cbb77e502a941e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#aa2e700f159309f2bd6cbb77e502a941e">Load</a> (InputIteratorT block_itr, OutputT(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:aa2e700f159309f2bd6cbb77e502a941e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory.  <a href="#aa2e700f159309f2bd6cbb77e502a941e">More...</a><br/></td></tr>
+<tr class="separator:aa2e700f159309f2bd6cbb77e502a941e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6996860806038e40c56d74c12bc04911"><td class="memTemplParams" colspan="2">template&lt;typename OutputT &gt; </td></tr>
+<tr class="memitem:a6996860806038e40c56d74c12bc04911"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a6996860806038e40c56d74c12bc04911">Load</a> (InputIteratorT block_itr, OutputT(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memdesc:a6996860806038e40c56d74c12bc04911"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory, guarded by range.  <a href="#a6996860806038e40c56d74c12bc04911">More...</a><br/></td></tr>
+<tr class="separator:a6996860806038e40c56d74c12bc04911"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a1dbedc1f9518d8cc98f21989c933ec"><td class="memTemplParams" colspan="2">template&lt;typename OutputT &gt; </td></tr>
+<tr class="memitem:a3a1dbedc1f9518d8cc98f21989c933ec"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classcub_1_1_block_load.html#a3a1dbedc1f9518d8cc98f21989c933ec">Load</a> (InputIteratorT block_itr, OutputT(&amp;items)[ITEMS_PER_THREAD], int valid_items, InputT oob_default)</td></tr>
+<tr class="memdesc:a3a1dbedc1f9518d8cc98f21989c933ec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#a3a1dbedc1f9518d8cc98f21989c933ec">More...</a><br/></td></tr>
+<tr class="separator:a3a1dbedc1f9518d8cc98f21989c933ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="ae412a81afb577ba1f4f86beb9b69ba27"></a>
@@ -227,16 +230,18 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01088">1088</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01122">1122</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="aaef224eb3fba8d7ea3bbf5a7c747955e"></a>
+<a class="anchor" id="aa2e700f159309f2bd6cbb77e502a941e"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+<div class="memtemplate">
+template&lt;typename OutputT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -250,7 +255,7 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramtype">OutputT(&amp;)&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD]&#160;</td>
         </tr>
         <tr>
@@ -296,15 +301,17 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01141">1141</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01176">1176</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="aba3c71ada9679db505c4d935287fcdfb"></a>
+<a class="anchor" id="a6996860806038e40c56d74c12bc04911"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+<div class="memtemplate">
+template&lt;typename OutputT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -318,7 +325,7 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramtype">OutputT(&amp;)&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
         </tr>
         <tr>
@@ -371,15 +378,17 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01186">1186</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01222">1222</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="a10415c910ce86cc5f47d1073574b1b79"></a>
+<a class="anchor" id="a3a1dbedc1f9518d8cc98f21989c933ec"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
 template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, BlockLoadAlgorithm ALGORITHM = BLOCK_LOAD_DIRECT, int BLOCK_DIM_Y = 1, int BLOCK_DIM_Z = 1, int PTX_ARCH = CUB_PTX_ARCH&gt; </div>
+<div class="memtemplate">
+template&lt;typename OutputT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -393,7 +402,7 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T(&amp;)&#160;</td>
+          <td class="paramtype">OutputT(&amp;)&#160;</td>
           <td class="paramname"><em>items</em>[ITEMS_PER_THREAD], </td>
         </tr>
         <tr>
@@ -405,7 +414,7 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">T&#160;</td>
+          <td class="paramtype">InputT&#160;</td>
           <td class="paramname"><em>oob_default</em>&#160;</td>
         </tr>
         <tr>
@@ -453,7 +462,7 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01233">1233</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l01270">1270</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -464,7 +473,7 @@ template&lt;typename InputIteratorT , int BLOCK_DIM_X, int ITEMS_PER_THREAD, Blo
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 21 2016 13:28:10 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 11 2016 09:02:37 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

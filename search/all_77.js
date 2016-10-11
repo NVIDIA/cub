@@ -10,5 +10,5 @@ var searchData=
   ['warpreduce',['WarpReduce',['../classcub_1_1_warp_reduce.html',1,'cub']]],
   ['warpscan',['WarpScan',['../classcub_1_1_warp_scan.html',1,'cub']]],
   ['warpscan',['WarpScan',['../classcub_1_1_warp_scan.html#a97e8ea275768d3fed3be69e813675461',1,'cub::WarpScan']]],
-  ['warpstripedtoblocked',['WarpStripedToBlocked',['../classcub_1_1_block_exchange.html#a122bf51ee7258410c9eb507f2abbd81a',1,'cub::BlockExchange']]]
+  ['warpstripedtoblocked',['WarpStripedToBlocked',['../classcub_1_1_block_exchange.html#a8a19a8279fbf5428f38782325a16d9b1',1,'cub::BlockExchange']]]
 ];

@@ -1,0 +1,51 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9"/>
+
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />
+
+<script type="text/javascript">
+
+	var _gaq = _gaq || [];
+	_gaq.push(['_setAccount', 'UA-38890655-1']);
+	_gaq.push(['_trackPageview']);
+	
+	(function() {
+	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	})();
+
+	var downloadURL = function downloadURL(url) {
+	    var hiddenIFrameID = 'hiddenDownloader',
+	        iframe = document.getElementById(hiddenIFrameID);
+	    if (iframe === null) {
+	        iframe = document.createElement('iframe');
+	        iframe.id = hiddenIFrameID;
+	        iframe.style.display = 'none';
+	        document.body.appendChild(iframe);
+	    }
+	    iframe.src = url;
+	};
+
+</script>
+
+<meta http-equiv="Refresh" content="3; url=index.html" />
+
+</head>
+
+<body 
+	onload="downloadURL('https://github.com/NVlabs/cub/archive/1.5.2.zip');" 
+	style="color: rgb(102, 102, 102); font-family: Helvetica, arial, freesans, clean, sans-serif; font-size: 13px; font-style: normal; font-variant: normal; font-weight: 300; height: 18px;">
+
+<center>
+If your download doesn't start in 3s:
+<br><br>
+<a href="https://github.com/NVlabs/cub/archive/1.5.2.zip"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+<a href="https://github.com/NVlabs/cub/archive/1.5.2.zip"><em>Download CUB!</em></a>
+</center>
+
+</body>
+</html>

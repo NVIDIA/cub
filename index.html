@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.5.2</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.5.3</b></em></a>
 
 </td><td>
 
@@ -320,7 +320,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    ...</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Perform an exclusive block-wide prefix sum</span></div>
-<div class="line">    BlockScan(scan_storage).<a class="code" href="classcub_1_1_block_scan.html#a266a054160f65c87e43f645cd8e46fd1" title="Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. ">ExclusiveSum</a>(thread_data_in, thread_data_out);</div>
+<div class="line">    BlockScan(scan_storage).<a class="code" href="classcub_1_1_block_scan.html#a266a054160f65c87e43f645cd8e46fd1" title="Computes an exclusive block-wide prefix scan using addition (+) as the scan operator. Each thread contributes one input element. The value of 0 is applied as the initial value, and is assigned to output in thread0. ">ExclusiveSum</a>(thread_data_in, thread_data_out);</div>
 </div><!-- fragment --></dd></dl>
 <dl class="section user"><dt></dt><dd>Furthermore, the CUB interface is designed to separate parameter fields by concerns. CUB primitives have three distinct parameter fields:<ol type="1">
 <li><b><em>Static template parameters</em></b>. These are constants that will dictate the storage layout and the unrolling of algorithmic steps (e.g., the input data type and the number of block threads), and are used to specialize the class.</li>
@@ -394,9 +394,13 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>CUB releases are labeled using version identifiers having three fields: <code>&lt;epoch&gt;.&lt;feature&gt;.&lt;update&gt;</code>. The <em>epoch</em> field corresponds to support for a major change or update to the CUDA programming model. The <em>feature</em> field corresponds to a stable set of features, functionality, and interface. The <em>update</em> field corresponds to a bug-fix or performance update for that feature set. At the moment, we do not publicly provide non-stable releases such as development snapshots, beta releases or rolling releases. (Feel free to contact us if you would like access to such things.)</dd></dl>
 <dl class="section user"><dt></dt><dd>The following table enumerates prior feature releases as well as update versions for the current feature release. <table class="doxtable">
 <tr>
-<td style="white-space: nowrap; vertical-align:text-top;">03/21/2016<br/>
- <a href="download_cub.html"><b>CUB v1.5.2</b></a> </td><td style="vertical-align:text-top;"><ul>
+<td style="white-space: nowrap; vertical-align:text-top;">10/11/2016<br/>
+ <a href="download_cub.html"><b>CUB v1.5.3</b></a> </td><td style="vertical-align:text-top;"><ul>
 <li>New Features:<ul>
+<li>Device/block/warp-wide exclusive scans now take an "initial value" (instead of an "identity value") for seeding the computation with an arbitrary prefix.</li>
+<li>Device-wide reductions and scans can now have input sequence types that are differnet from output sequence types (as long as they are coercible) value") for seeding the computation with an arbitrary prefix</li>
+<li>Reduce repository size (move doxygen binary to doc repository)</li>
+<li>Minor reductions in block-scan instruction count</li>
 <li>Added new <a href="group___segmented_module.html">segmented device-wide operations</a> for sort and reduction primitives.</li>
 </ul>
 </li>
@@ -407,7 +411,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <p class="endtd"></p>
 </td></tr>
 <tr>
-<td style="white-space: nowrap; vertical-align:text-top;">04/13/2016<br/>
+<td style="white-space: nowrap; vertical-align:text-top;">04/13/2015<br/>
  <a href="download_cub.html"><b>CUB v1.4.1</b></a> </td><td style="vertical-align:text-top;"><ul>
 <li>New Features:<ul>
 <li>Updated <a class="el" href="structcub_1_1_device_histogram.html" title="DeviceHistogram provides device-wide parallel operations for constructing histogram(s) from a sequenc...">cub::DeviceHistogram</a> implementation that provides the same "histogram-even" and "histogram-range" functionality as IPP/NPP. Provides extremely fast and, perhaps more importantly, very uniform performance response across diverse real-world datasets, including pathological (homogeneous) sample distributions (resilience)</li>
@@ -461,7 +465,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <td style="white-space: nowrap; vertical-align:text-top;">08/08/2013<br/>
  <b>CUB v1.0.1</b> </td><td style="vertical-align:text-top;"><ul>
 <li>New API for block-wide and warp-wide collective operations</li>
-<li>New <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> and <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> implementations</li>
+<li>New <a class="el" href="structcub_1_1_device_radix_sort.html" title="DeviceRadixSort provides device-wide, parallel operations for computing a radix sort across a sequenc...">cub::DeviceRadixSort</a> and <a href="https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back">(single-pass)</a> <a class="el" href="structcub_1_1_device_scan.html" title="DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of...">cub::DeviceScan</a> implementations</li>
 <li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
 </ul>
 <p class="endtd"></p>
@@ -517,7 +521,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 21 2016 13:28:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 11 2016 09:02:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

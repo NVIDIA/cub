@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_80932b4cec52750ff92b1a1912314cf5.html">iterator</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d0982493d827c84906319b1126b06fa3.html">PrivateCub</a></li><li class="navelem"><a class="el" href="dir_57eaf5c1b3a967e183de38ac17eb217a.html">cub</a></li><li class="navelem"><a class="el" href="dir_9b397e7eab0e95a4604c13014bcb584e.html">iterator</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -209,21 +209,21 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
 <div class="line"><a name="l00153"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a4491f4d5635571964f4d98cf1c3cc753">  153</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a4491f4d5635571964f4d98cf1c3cc753" title="Addition. ">operator+</a>(Distance n)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval(val + n);</div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval(val + (ValueType) n);</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    }</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
 <div class="line"><a name="l00161"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a3e78162dd96fa3dbe2c5796da7bbcdbe">  161</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a>&amp; <a class="code" href="classcub_1_1_counting_input_iterator.html#a3e78162dd96fa3dbe2c5796da7bbcdbe" title="Addition assignment. ">operator+=</a>(Distance n)</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;    {</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        val += n;</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        val += (ValueType) n;</div>
 <div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;    }</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;</div>
 <div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
 <div class="line"><a name="l00169"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a1f524d491834020f1a5d6b275e6b2911">  169</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a1f524d491834020f1a5d6b275e6b2911" title="Subtraction. ">operator-</a>(Distance n)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval(val - n);</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        <a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> retval(val - (ValueType) n);</div>
 <div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;        <span class="keywordflow">return</span> retval;</div>
 <div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;    }</div>
 <div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;</div>
@@ -242,7 +242,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
 <div class="line"><a name="l00191"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#ad59d5567ddf4aa4ac6989581d5c65e43">  191</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#ad8f9fade98b7ecc1b9ac36a64050aa3a" title="The type of a reference to an element the iterator can point to. ">reference</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#ad59d5567ddf4aa4ac6989581d5c65e43" title="Array subscript. ">operator[]</a>(Distance n)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        <span class="keywordflow">return</span> val + n;</div>
+<div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;        <span class="keywordflow">return</span> val + (ValueType) n;</div>
 <div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;    }</div>
 <div class="line"><a name="l00195"></a><span class="lineno">  195</span>&#160;</div>
 <div class="line"><a name="l00197"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a2e9c03abaf7baead2ba40bc4d01bc411">  197</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#a4ec296688575b99b8d123ffa8100035b" title="The type of a pointer to an element the iterator can point to. ">pointer</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a2e9c03abaf7baead2ba40bc4d01bc411" title="Structure dereference. ">operator-&gt;</a>()</div>
@@ -277,7 +277,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 21 2016 13:28:03 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 11 2016 09:02:26 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

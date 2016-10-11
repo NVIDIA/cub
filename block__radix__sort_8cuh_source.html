@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_011e1c944d88f71be72e1e24a5fda7cf.html">block</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d0982493d827c84906319b1126b06fa3.html">PrivateCub</a></li><li class="navelem"><a class="el" href="dir_57eaf5c1b3a967e183de38ac17eb217a.html">cub</a></li><li class="navelem"><a class="el" href="dir_638d6786c779dba24ddc957a9b8cf26f.html">block</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -221,7 +221,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;</div>
 <div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;    _TempStorage &amp;temp_storage;</div>
 <div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;</div>
-<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    <span class="keywordtype">int</span> linear_tid;</div>
+<div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> linear_tid;</div>
 <div class="line"><a name="l00206"></a><span class="lineno">  206</span>&#160;</div>
 <div class="line"><a name="l00207"></a><span class="lineno">  207</span>&#160;    <span class="comment">/******************************************************************************</span></div>
 <div class="line"><a name="l00208"></a><span class="lineno">  208</span>&#160;<span class="comment">     * Utility methods</span></div>
@@ -411,7 +411,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;</div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;<span class="preprocessor">#endif // DOXYGEN_SHOULD_SKIP_THIS</span></div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;<span class="preprocessor"></span></div>
-<div class="line"><a name="l00404"></a><span class="lineno"><a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html">  404</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00404"></a><span class="lineno"><a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html">  404</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockRadixSort require a temporary memory allocation of this nested type fo...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
 <div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;</div>
 <div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;</div>
 <div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;    <span class="comment">/******************************************************************/</span></div>
@@ -424,7 +424,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;</div>
 <div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;</div>
 <div class="line"><a name="l00425"></a><span class="lineno"><a class="code" href="classcub_1_1_block_radix_sort.html#afec22300c3b4b119e18ecac33373a14c">  425</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_radix_sort.html#afec22300c3b4b119e18ecac33373a14c" title="Collective constructor using the specified memory allocation as temporary storage. ">BlockRadixSort</a>(</div>
-<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;        <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockScan require a temporary memory allocation of this nested type for thr...">TempStorage</a> &amp;temp_storage)             </div>
+<div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;        <a class="code" href="structcub_1_1_block_radix_sort_1_1_temp_storage.html" title="The operations exposed by BlockRadixSort require a temporary memory allocation of this nested type fo...">TempStorage</a> &amp;temp_storage)             </div>
 <div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;    :</div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;        temp_storage(temp_storage.Alias()),</div>
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;        linear_tid(<a class="code" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce" title="Returns the row-major linear thread identifier for a multidimensional threadblock. ">RowMajorTid</a>(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))</div>
@@ -529,7 +529,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Mar 21 2016 13:28:02 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Oct 11 2016 09:02:25 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
