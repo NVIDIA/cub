@@ -311,7 +311,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix sum across the calling warp.
+     * \brief Computes an exclusive prefix sum across the calling warp.  The value of 0 is applied as the initial value, and is assigned to \p exclusive_output in <em>thread</em><sub>0</sub>.
      *
      * \par
      *  - \identityzero
@@ -356,7 +356,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive prefix sum across the calling warp.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
+     * \brief Computes an exclusive prefix sum across the calling warp.  The value of 0 is applied as the initial value, and is assigned to \p exclusive_output in <em>thread</em><sub>0</sub>.  Also provides every thread with the warp-wide \p warp_aggregate of all inputs.
      *
      * \par
      *  - \identityzero

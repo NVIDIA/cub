@@ -295,7 +295,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.
+     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The value of 0 is applied as the initial value, and is assigned to \p output in <em>thread</em><sub>0</sub>.
      *
      * \par
      * - \identityzero
@@ -340,7 +340,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  The value of 0 is applied as the initial value, and is assigned to \p output in <em>thread</em><sub>0</sub>.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - \identityzero
@@ -479,7 +479,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.
+     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  The value of 0 is applied as the initial value, and is assigned to \p output[0] in <em>thread</em><sub>0</sub>.
      *
      * \par
      * - \identityzero
@@ -528,7 +528,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  The value of 0 is applied as the initial value, and is assigned to \p output[0] in <em>thread</em><sub>0</sub>.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - \identityzero
@@ -929,7 +929,7 @@ public:
     __device__ __forceinline__ void ExclusiveScan(
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
-        T                 initial_value,                     ///< [in] Initial value to seed the exclusive scan (and is assigned to \p output[0] in <em>thread</em><sub>0</sub>)
+        T                 initial_value,                ///< [in] Initial value to seed the exclusive scan (and is assigned to \p output[0] in <em>thread</em><sub>0</sub>)
         ScanOp            scan_op)                      ///< [in] Binary scan functor
     {
         // Reduce consecutive thread items in registers
