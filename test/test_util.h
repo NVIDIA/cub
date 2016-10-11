@@ -1430,9 +1430,9 @@ void DisplayResults(
 /**
  * Print the contents of a host array
  */
-template <typename T>
+template <typename InputIteratorT>
 void DisplayResults(
-    T *h_data,
+    InputIteratorT h_data,
     size_t num_items)
 {
     // Display data

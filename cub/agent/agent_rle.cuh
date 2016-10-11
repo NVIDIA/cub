@@ -367,7 +367,7 @@ struct AgentRle
         LengthOffsetPair    (&lengths_and_num_runs)[ITEMS_PER_THREAD])
     {
         // Perform warpscans
-        int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
+        unsigned int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
         int lane_id = LaneId();
 
         LengthOffsetPair identity;
@@ -422,7 +422,7 @@ struct AgentRle
         Int2Type<true>      is_warp_time_slice)
     {
         unsigned int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
-        unsigned int lane_id = LaneId();
+        int lane_id = LaneId();
 
         // Locally compact items within the warp (first warp)
         if (warp_id == 0)
@@ -479,7 +479,7 @@ struct AgentRle
         Int2Type<false>     is_warp_time_slice)
     {
         unsigned int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
-        unsigned int lane_id = LaneId();
+        int lane_id = LaneId();
 
         // Unzip
         OffsetT run_offsets[ITEMS_PER_THREAD];
@@ -733,7 +733,7 @@ struct AgentRle
 
             // First warp computes tile prefix in lane 0
             TilePrefixCallbackOpT prefix_op(tile_status, temp_storage.prefix, Sum(), tile_idx);
-            int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
+            unsigned int warp_id = ((WARPS == 1) ? 0 : threadIdx.x / WARP_THREADS);
             if (warp_id == 0)
             {
                 prefix_op(tile_aggregate);
