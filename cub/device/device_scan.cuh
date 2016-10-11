@@ -60,6 +60,13 @@ namespace cub {
  * The term \em exclusive indicates the <em>i</em><sup>th</sup> input is not incorporated into
  * the <em>i</em><sup>th</sup> output reduction.
  *
+ * As of CUB 1.0.1, CUB's device-wide scan APIs have implemented [our "decoupled look-back" algorithm](https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back)
+ * for performing global prefix scan with only a single pass through the input data.  The central
+ * idea is to leverage a small, constant factor of redundant work in order to overlap the latencies
+ * of global prefix propagation with local computation.  As such, our algorithm requires only
+ * ~2<em>n</em> data movement (<em>n</em> inputs are read, <em>n</em> outputs are written), and typically
+ * proceeds at "memcpy" speeds.
+ *
  * \par Usage Considerations
  * \cdp_class{DeviceScan}
  *
