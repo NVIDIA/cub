@@ -117,15 +117,15 @@ struct AgentReduceByKey
     typedef ReduceByKeyScanTileState<ValueT, OffsetT> ScanTileStateT;
 
     // Guarded inequality functor
-    template <typename EqualityOpT>
+    template <typename _EqualityOpT>
     struct GuardedInequalityWrapper
     {
-        EqualityOpT     op;             ///< Wrapped equality operator
+        _EqualityOpT     op;             ///< Wrapped equality operator
         int             num_remaining;  ///< Items remaining
 
         /// Constructor
         __host__ __device__ __forceinline__
-        GuardedInequalityWrapper(EqualityOpT op, int num_remaining) : op(op), num_remaining(num_remaining) {}
+        GuardedInequalityWrapper(_EqualityOpT op, int num_remaining) : op(op), num_remaining(num_remaining) {}
 
         /// Boolean inequality operator, returns <tt>(a != b)</tt>
         template <typename T>
