@@ -1115,6 +1115,7 @@ public:
 
     //@}  end member group
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document no-initial-value scans
+
     /******************************************************************//**
      * \name Exclusive prefix scan operations (no initial value, single datum per thread)
      *********************************************************************/
@@ -1161,10 +1162,79 @@ public:
         InternalBlockScan(temp_storage).ExclusiveScan(input, output, scan_op, block_aggregate);
     }
 
+    //@}  end member group
+    /******************************************************************//**
+     * \name Exclusive prefix scan operations (no initial value, multiple data per thread)
+     *********************************************************************/
+    //@{
+
+
+    /**
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  With no initial value, the output computed for <em>thread</em><sub>0</sub> is undefined.
+     *
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \granularity
+     * - \smemreuse
+     *
+     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor  type having member <tt>T operator()(const T &a, const T &b)</tt>
+     */
+    template <
+        int             ITEMS_PER_THREAD,
+        typename        ScanOp>
+    __device__ __forceinline__ void ExclusiveScan(
+        T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
+        T                 (&output)[ITEMS_PER_THREAD],  ///< [out] Calling thread's output items (may be aliased to \p input)
+        ScanOp            scan_op)                      ///< [in] Binary scan functor
+    {
+        // Reduce consecutive thread items in registers
+        T thread_partial = ThreadReduce(input, scan_op);
+
+        // Exclusive threadblock-scan
+        ExclusiveScan(thread_partial, thread_partial, scan_op);
+
+        // Exclusive scan in registers with prefix
+        ThreadScanExclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
+    }
+
+
+    /**
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  Also provides every thread with the block-wide \p block_aggregate of all inputs.  With no initial value, the output computed for <em>thread</em><sub>0</sub> is undefined.
+     *
+     * \par
+     * - Supports non-commutative scan operators.
+     * - \blocked
+     * - \granularity
+     * - \smemreuse
+     *
+     * \tparam ITEMS_PER_THREAD     <b>[inferred]</b> The number of consecutive items partitioned onto each thread.
+     * \tparam ScanOp               <b>[inferred]</b> Binary scan functor  type having member <tt>T operator()(const T &a, const T &b)</tt>
+     */
+    template <
+        int             ITEMS_PER_THREAD,
+        typename        ScanOp>
+    __device__ __forceinline__ void ExclusiveScan(
+        T               (&input)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input items
+        T               (&output)[ITEMS_PER_THREAD],    ///< [out] Calling thread's output items (may be aliased to \p input)
+        ScanOp          scan_op,                        ///< [in] Binary scan functor
+        T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
+    {
+        // Reduce consecutive thread items in registers
+        T thread_partial = ThreadReduce(input, scan_op);
+
+        // Exclusive threadblock-scan
+        ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate);
+
+        // Exclusive scan in registers with prefix
+        ThreadScanExclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
+    }
 
 
     //@}  end member group
 #endif // DOXYGEN_SHOULD_SKIP_THIS  // Do not document no-initial-value scans
+
     /******************************************************************//**
      * \name Inclusive prefix sum operations
      *********************************************************************/
