@@ -533,9 +533,8 @@ for the current feature release.
   - New Features: 
     - Device/block/warp-wide exclusive scans now take an "initial value" (instead 
       of an "identity value") for seeding the computation with an arbitrary prefix.  
-    - Device-wide reductions and scans can now have input sequence types that are 
-      differnet from output sequence types (as long as they are coercible)
-      value") for seeding the computation with an arbitrary prefix
+    - Device-wide reductions and scans can now accept different input and 
+      output sequence data types (as long as they are coercible).
     - Reduce repository size (move doxygen binary to doc repository)
     - Minor reductions in block-scan instruction count
     - Added new [segmented device-wide operations](group___segmented_module.html) for sort and reduction primitives.
