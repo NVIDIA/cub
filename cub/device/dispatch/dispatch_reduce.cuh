@@ -506,8 +506,8 @@ struct DispatchReduce :
             void* allocations[2];
             size_t allocation_sizes[2] =
             {
-                max_blocks * sizeof(OutputT),       // bytes needed for privatized block reductions
-                GridQueue<int>::AllocationSize()    // bytes needed for grid queue descriptor
+                max_blocks * sizeof(OutputT),           // bytes needed for privatized block reductions
+                GridQueue<OffsetT>::AllocationSize()    // bytes needed for grid queue descriptor
             };
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
