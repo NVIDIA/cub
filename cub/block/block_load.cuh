@@ -82,7 +82,6 @@ __device__ __forceinline__ void LoadDirectBlocked(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-//        items[ITEM] = block_itr[(linear_tid * ITEMS_PER_THREAD) + ITEM];
         items[ITEM] = *(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM);
     }
 }
@@ -110,7 +109,7 @@ __device__ __forceinline__ void LoadDirectBlocked(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if ((linear_tid * ITEMS_PER_THREAD) + ITEM < valid_items)
+        if (int(linear_tid * ITEMS_PER_THREAD) < valid_items - ITEM)
         {
             items[ITEM] = *(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM);
         }
