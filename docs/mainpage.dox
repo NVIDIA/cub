@@ -62,7 +62,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.5.3</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.5.4</b></em></a>
 
 </td><td>
 
@@ -527,8 +527,8 @@ for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-10/11/2016<br>
-[<b>CUB v1.5.3</b>](download_cub.html)
+10/14/2016<br>
+[<b>CUB v1.5.4</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
   - New Features: 
     - Device/block/warp-wide exclusive scans now take an "initial value" (instead 
