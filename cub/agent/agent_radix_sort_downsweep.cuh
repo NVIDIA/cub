@@ -194,9 +194,6 @@ struct AgentRadixSortDownsweep
      */
     struct _TempStorage
     {
-        OffsetT relative_bin_offsets[RADIX_DIGITS + 1];
-        bool    short_circuit;
-
         union
         {
             typename BlockRadixRank::TempStorage        ranking;
@@ -205,6 +202,9 @@ struct AgentRadixSortDownsweep
             typename BlockExchangeKeys::TempStorage     exchange_keys;
             typename BlockExchangeValues::TempStorage   exchange_values;
         };
+
+        OffsetT relative_bin_offsets[RADIX_DIGITS + 1];
+        bool    short_circuit;
     };
 
 
@@ -455,15 +455,17 @@ struct AgentRadixSortDownsweep
     /**
      * Truck along associated values
      */
-    template <bool FULL_TILE, typename _ValueT>
+    template <bool FULL_TILE>
     __device__ __forceinline__ void GatherScatterValues(
-        _ValueT     (&values)[ITEMS_PER_THREAD],
-        OffsetT     (&relative_bin_offsets)[ITEMS_PER_THREAD],
-        int         (&ranks)[ITEMS_PER_THREAD],
-        OffsetT     block_offset,
-        OffsetT     valid_items)
+        OffsetT         (&relative_bin_offsets)[ITEMS_PER_THREAD],
+        int             (&ranks)[ITEMS_PER_THREAD],
+        OffsetT         block_offset,
+        OffsetT         valid_items,
+        Int2Type<false> is_keys_only)
     {
         __syncthreads();
+
+        ValueT values[ITEMS_PER_THREAD];
 
         BlockLoadValues loader(temp_storage.load_values);
         LoadItems(
@@ -487,11 +489,11 @@ struct AgentRadixSortDownsweep
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void GatherScatterValues(
-        NullType    (&values)[ITEMS_PER_THREAD],
-        OffsetT     (&relative_bin_offsets)[ITEMS_PER_THREAD],
-        int         (&ranks)[ITEMS_PER_THREAD],
-        OffsetT     block_offset,
-        OffsetT     valid_items)
+        OffsetT         (&relative_bin_offsets)[ITEMS_PER_THREAD],
+        int             (&ranks)[ITEMS_PER_THREAD],
+        OffsetT         block_offset,
+        OffsetT         valid_items,
+        Int2Type<true>  is_keys_only)
     {}
 
 
@@ -586,8 +588,7 @@ struct AgentRadixSortDownsweep
         ScatterKeys<FULL_TILE>(twiddled_keys, relative_bin_offsets, ranks, valid_items, Int2Type<SCATTER_ALGORITHM>());
 
         // Gather/scatter values
-        ValueT values[ITEMS_PER_THREAD];
-        GatherScatterValues<FULL_TILE>(values, relative_bin_offsets, ranks, block_offset, valid_items);
+        GatherScatterValues<FULL_TILE>(relative_bin_offsets, ranks, block_offset, valid_items, Int2Type<KEYS_ONLY>());
     }
 
     //---------------------------------------------------------------------
