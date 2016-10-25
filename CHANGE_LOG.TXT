@@ -1,3 +1,10 @@
+1.5.5    10/25/2016
+    - Updated Pascal tuning policies for radix sorting
+    - Bug fixes: 
+        - Fix for arm64 compilation of caching allocator
+
+//-----------------------------------------------------------------------------
+
 1.5.4    10/14/2016
     - Bug fixes: 
         - Fix for radix sorting bug introduced by scan refactorization
