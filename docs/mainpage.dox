@@ -62,7 +62,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.5.4</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.5.5</b></em></a>
 
 </td><td>
 
@@ -527,8 +527,8 @@ for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-10/14/2016<br>
-[<b>CUB v1.5.4</b>](download_cub.html)
+10/25/2016<br>
+[<b>CUB v1.5.5</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
   - New Features: 
     - Device/block/warp-wide exclusive scans now take an "initial value" (instead 
@@ -538,6 +538,7 @@ for the current feature release.
     - Reduce repository size (move doxygen binary to doc repository)
     - Minor reductions in block-scan instruction count
     - Added new [segmented device-wide operations](group___segmented_module.html) for sort and reduction primitives.
+  - Improved sorting performance for sm6x (Pascal)
   - Improved medium-size scan performance for sm5x (Maxwell)
   - Refactored caching allocator for device memory
   - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
