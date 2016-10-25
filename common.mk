@@ -40,10 +40,20 @@ else
     SM_ARCH = 200
 endif
 
+ifeq (620, $(findstring 620, $(SM_ARCH)))
+    SM_TARGETS 	+= -gencode=arch=compute_62,code=\"sm_62,compute_62\" 
+    SM_DEF 		+= -DSM620
+    TEST_ARCH 	= 620
+endif
 ifeq (610, $(findstring 610, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_61,code=\"sm_61,compute_61\" 
     SM_DEF 		+= -DSM610
     TEST_ARCH 	= 610
+endif
+ifeq (600, $(findstring 600, $(SM_ARCH)))
+    SM_TARGETS 	+= -gencode=arch=compute_61,code=\"sm_60,compute_60\" 
+    SM_DEF 		+= -DSM600
+    TEST_ARCH 	= 600
 endif
 ifeq (520, $(findstring 520, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_52,code=\"sm_52,compute_52\" 
