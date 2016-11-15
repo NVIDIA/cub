@@ -98,7 +98,7 @@ struct DeviceSegmentedRadixSort
      * with associated vector of \p int values.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmentd_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for sorting data
      * int  num_items;          // e.g., 7
@@ -203,7 +203,7 @@ struct DeviceSegmentedRadixSort
      * with associated vector of \p int values.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmentd_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for sorting data
      * int  num_items;          // e.g., 7
@@ -233,7 +233,7 @@ struct DeviceSegmentedRadixSort
      *     num_items, num_segments, d_offsets, d_offsets + 1);
      *
      * // d_keys.Current()      <-- [6, 7, 8, 0, 3, 5, 9]
-     * // d_values.Current()    <-- [5, 4, 3, 1, 2, 0, 6]
+     * // d_values.Current()    <-- [1, 2, 0, 5, 4, 3, 6]
      *
      * \endcode
      *
@@ -296,7 +296,7 @@ struct DeviceSegmentedRadixSort
      * with associated vector of \p int values.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmentd_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for sorting data
      * int  num_items;          // e.g., 7
@@ -401,7 +401,7 @@ struct DeviceSegmentedRadixSort
      * with associated vector of \p int values.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmentd_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for sorting data
      * int  num_items;          // e.g., 7
@@ -500,7 +500,7 @@ struct DeviceSegmentedRadixSort
      * The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of \p int keys.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmentd_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for sorting data
      * int  num_items;          // e.g., 7
@@ -593,7 +593,7 @@ struct DeviceSegmentedRadixSort
      * The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of \p int keys.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmentd_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for sorting data
      * int  num_items;          // e.g., 7
@@ -679,7 +679,7 @@ struct DeviceSegmentedRadixSort
      * The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of \p int keys.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmentd_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for sorting data
      * int  num_items;          // e.g., 7
@@ -688,9 +688,6 @@ struct DeviceSegmentedRadixSort
      * int  *d_keys_in;         // e.g., [8, 6, 7, 5, 3, 0, 9]
      * int  *d_keys_out;        // e.g., [-, -, -, -, -, -, -]
      * ...
-     *
-     * // Create a DoubleBuffer to wrap the pair of device pointers
-     * cub::DoubleBuffer<int> d_keys(d_key_buf, d_key_alt_buf);
      *
      * // Determine temporary device storage requirements
      * void     *d_temp_storage = NULL;
@@ -774,7 +771,7 @@ struct DeviceSegmentedRadixSort
      * The code snippet below illustrates the batched sorting of three segments (with one zero-length segment) of \p int keys.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmentd_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_radix_sort.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for sorting data
      * int  num_items;          // e.g., 7
