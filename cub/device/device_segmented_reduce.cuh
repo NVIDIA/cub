@@ -69,7 +69,7 @@ struct DeviceSegmentedReduce
      *
      * \par
      * - Does not support binary reduction operators that are non-commutative.
-     * - When input a contiguous sequence of segments, a single sequence
+     * - When the input is a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
      *   the latter is specified as <tt>segment_offsets+1</tt>).
@@ -79,7 +79,7 @@ struct DeviceSegmentedReduce
      * The code snippet below illustrates a custom min-reduction of a device vector of \p int data elements.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_reduce.cuh>
      *
      * // CustomMin functor
      * struct CustomMin
@@ -133,9 +133,9 @@ struct DeviceSegmentedReduce
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                              ///< [out] Pointer to the output aggregate
-        int                 num_segments,                       ///< [in] The number of segments that comprise the sorting data
-        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
+        int                 num_segments,                       ///< [in] The number of segments of data items
+        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in \p d_in
+        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in \p d_in.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> segment is considered empty.
         ReductionOp         reduction_op,                       ///< [in] Binary reduction functor 
         T                   initial_value,                               ///< [in] Initial value of the reduction for each segment
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
@@ -164,18 +164,18 @@ struct DeviceSegmentedReduce
      *
      * \par
      * - Uses \p 0 as the initial value of the reduction for each segment.
-     * - When input a contiguous sequence of segments, a single sequence
+     * - When the input is a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
      *   the latter is specified as <tt>segment_offsets+1</tt>).
-     * - Does not support \p + operators that are non-commutative..
+     * - Does not support \p + operators that are non-commutative.
      * - \devicestorage
      *
      * \par Snippet
      * The code snippet below illustrates the sum reduction of a device vector of \p int data elements.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_reduce.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int num_segments;   // e.g., 3
@@ -213,9 +213,9 @@ struct DeviceSegmentedReduce
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                              ///< [out] Pointer to the output aggregate
-        int                 num_segments,                       ///< [in] The number of segments that comprise the sorting data
-        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
+        int                 num_segments,                       ///< [in] The number of segments of data items
+        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in \p d_in
+        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in \p d_in.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> segment is considered empty.
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -242,7 +242,7 @@ struct DeviceSegmentedReduce
      *
      * \par
      * - Uses <tt>std::numeric_limits<T>::max()</tt> as the initial value of the reduction for each segment.
-     * - When input a contiguous sequence of segments, a single sequence
+     * - When the input is a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
      *   the latter is specified as <tt>segment_offsets+1</tt>).
@@ -253,7 +253,7 @@ struct DeviceSegmentedReduce
      * The code snippet below illustrates the min-reduction of a device vector of \p int data elements.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_reduce.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int num_segments;   // e.g., 3
@@ -291,9 +291,9 @@ struct DeviceSegmentedReduce
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                              ///< [out] Pointer to the output aggregate
-        int                 num_segments,                       ///< [in] The number of segments that comprise the sorting data
-        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
+        int                 num_segments,                       ///< [in] The number of segments of data items
+        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in \p d_in
+        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in \p d_in.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> segment is considered empty.
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -321,8 +321,8 @@ struct DeviceSegmentedReduce
      * \par
      * - The output value type of \p d_out is cub::KeyValuePair <tt><int, T></tt> (assuming the value type of \p d_in is \p T)
      *   - The minimum of the <em>i</em><sup>th</sup> segment is written to <tt>d_out[i].value</tt> and its offset in that segment is written to <tt>d_out[i].key</tt>.
-     *   - The <tt>{1, std::numeric_limits<T>::max()}</tt> tuple is produced for zero-length inputs
-     * - When input a contiguous sequence of segments, a single sequence
+     *   - The <tt>{1, std::numeric_limits<T>::max()}</tt> tuple is produced for zero-length segments.
+     * - When the input is a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
      *   the latter is specified as <tt>segment_offsets+1</tt>).
@@ -333,7 +333,7 @@ struct DeviceSegmentedReduce
      * The code snippet below illustrates the argmin-reduction of a device vector of \p int data elements.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_reduce.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int                      num_segments;   // e.g., 3
@@ -371,9 +371,9 @@ struct DeviceSegmentedReduce
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                              ///< [out] Pointer to the output aggregate
-        int                 num_segments,                       ///< [in] The number of segments that comprise the sorting data
-        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
+        int                 num_segments,                       ///< [in] The number of segments of data items
+        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in \p d_in
+        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in \p d_in.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> segment is considered empty.
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -412,7 +412,7 @@ struct DeviceSegmentedReduce
      *
      * \par
      * - Uses <tt>std::numeric_limits<T>::lowest()</tt> as the initial value of the reduction.
-     * - When input a contiguous sequence of segments, a single sequence
+     * - When the input is a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
      *   the latter is specified as <tt>segment_offsets+1</tt>).
@@ -423,7 +423,7 @@ struct DeviceSegmentedReduce
      * The code snippet below illustrates the max-reduction of a device vector of \p int data elements.
      * \par
      * \code
-     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_radix_sort.cuh>
+     * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_reduce.cuh>
      *
      * // Declare, allocate, and initialize device-accessible pointers for input and output
      * int num_segments;   // e.g., 3
@@ -461,9 +461,9 @@ struct DeviceSegmentedReduce
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                              ///< [out] Pointer to the output aggregate
-        int                 num_segments,                       ///< [in] The number of segments that comprise the sorting data
-        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
+        int                 num_segments,                       ///< [in] The number of segments of data items
+        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in \p d_in
+        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in \p d_in.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> segment is considered empty.
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -491,8 +491,8 @@ struct DeviceSegmentedReduce
      * \par
      * - The output value type of \p d_out is cub::KeyValuePair <tt><int, T></tt> (assuming the value type of \p d_in is \p T)
      *   - The maximum of the <em>i</em><sup>th</sup> segment is written to <tt>d_out[i].value</tt> and its offset in that segment is written to <tt>d_out[i].key</tt>.
-     *   - The <tt>{1, std::numeric_limits<T>::lowest()}</tt> tuple is produced for zero-length inputs
-     * - When input a contiguous sequence of segments, a single sequence
+     *   - The <tt>{1, std::numeric_limits<T>::lowest()}</tt> tuple is produced for zero-length segments.
+     * - When the input is a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
      *   the latter is specified as <tt>segment_offsets+1</tt>).
@@ -541,9 +541,9 @@ struct DeviceSegmentedReduce
         size_t              &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT      d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT     d_out,                              ///< [out] Pointer to the output aggregate
-        int                 num_segments,                       ///< [in] The number of segments that comprise the sorting data
-        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
+        int                 num_segments,                       ///< [in] The number of segments of data items
+        int                 *d_begin_offsets,                   ///< [in] %Device-accessible pointer to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in \p d_in
+        int                 *d_end_offsets,                     ///< [in] %Device-accessible pointer to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in \p d_in.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> segment is considered empty.
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
