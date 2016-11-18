@@ -110,7 +110,7 @@ struct WarpReduceShfl
     // Thread fields
     //---------------------------------------------------------------------
 
-    unsigned int lane_id;
+    int lane_id;
 
 
     //---------------------------------------------------------------------
@@ -320,7 +320,7 @@ struct WarpReduceShfl
         _T temp = ShuffleDown(output, offset);
 
         // Perform reduction op if valid
-        if (offset <= last_lane - lane_id)
+        if (offset + lane_id <= last_lane)
             output = reduction_op(input, temp);
 
         return output;

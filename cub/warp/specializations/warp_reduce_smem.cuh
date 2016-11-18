@@ -221,7 +221,7 @@ struct WarpReduceSmem
             ThreadStore<STORE_VOLATILE>(&temp_storage.reduce[lane_id], input);
 
             // Update input if peer_addend is in range
-            if (OFFSET < next_flag - lane_id)
+            if (OFFSET + lane_id < next_flag)
             {
                 T peer_addend = ThreadLoad<LOAD_VOLATILE>(&temp_storage.reduce[lane_id + OFFSET]);
                 input = reduction_op(input, peer_addend);
