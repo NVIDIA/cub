@@ -51,7 +51,7 @@ ifeq (610, $(findstring 610, $(SM_ARCH)))
     TEST_ARCH 	= 610
 endif
 ifeq (600, $(findstring 600, $(SM_ARCH)))
-    SM_TARGETS 	+= -gencode=arch=compute_61,code=\"sm_60,compute_60\" 
+    SM_TARGETS 	+= -gencode=arch=compute_60,code=\"sm_60,compute_60\" 
     SM_DEF 		+= -DSM600
     TEST_ARCH 	= 600
 endif
