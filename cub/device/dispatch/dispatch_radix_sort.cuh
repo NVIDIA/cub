@@ -679,9 +679,9 @@ struct DeviceRadixSortPolicy
         // Single-tile policy
         typedef AgentRadixSortDownsweepPolicy <256, CUB_MAX(1, 19 / SCALE_FACTOR_4B),  BLOCK_LOAD_DIRECT, LOAD_LDG, true, BLOCK_SCAN_WARP_SCANS, RADIX_SORT_SCATTER_TWO_PHASE, PRIMARY_RADIX_BITS> SingleTilePolicy;
 
-        // Segmented policies
-        typedef DownsweepPolicy     SegmentedPolicy;
-        typedef AltDownsweepPolicy  AltSegmentedPolicy;
+        // Segmented policies (use 5 and 4 bits, b/c of warpscan)
+        typedef AltDownsweepPolicy     SegmentedPolicy;
+        typedef AgentRadixSortDownsweepPolicy <256, CUB_MAX(1, 16 / SCALE_FACTOR_4B),  BLOCK_LOAD_DIRECT, LOAD_LDG, true, BLOCK_SCAN_RAKING_MEMOIZE, RADIX_SORT_SCATTER_TWO_PHASE, ALT_RADIX_BITS - 1>       AltSegmentedPolicy;
     };
 
     /// SM61 (GP104)

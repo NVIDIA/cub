@@ -97,7 +97,7 @@ public:
 
     // Required iterator traits
     typedef CountingInputIterator               self_type;              ///< My own type
-    typedef OffsetT                             difference_type;        ///< Type to express the result of subtracting one iterator from another
+    typedef ValueType                           difference_type;        ///< Type to express the result of subtracting one iterator from another
     typedef ValueType                           value_type;             ///< The type of the element the iterator can point to
     typedef ValueType*                          pointer;                ///< The type of a pointer to an element the iterator can point to
     typedef ValueType                           reference;              ///< The type of a reference to an element the iterator can point to
@@ -183,7 +183,7 @@ public:
     /// Distance
     __host__ __device__ __forceinline__ difference_type operator-(self_type other) const
     {
-        return val - other.val;
+        return (difference_type) (val - other.val);
     }
 
     /// Array subscript
