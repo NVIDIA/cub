@@ -649,13 +649,14 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
  * aggregates/prefixes from predecessor tiles to become available.
  */
 template <
-    typename T,
-    typename ScanOpT,
-    typename ScanTileStateT>
+    typename    T,
+    typename    ScanOpT,
+    typename    ScanTileStateT,
+    int         PTX_ARCH = CUB_PTX_ARCH>
 struct TilePrefixCallbackOp
 {
     // Parameterized warp reduce
-    typedef WarpReduce<T> WarpReduceT;
+    typedef WarpReduce<T, CUB_PTX_WARP_THREADS, PTX_ARCH> WarpReduceT;
 
     // Temporary storage type
     struct _TempStorage
