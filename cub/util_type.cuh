@@ -291,41 +291,48 @@ struct AlignBytes
 
     enum
     {
-        /// The alignment of T in bytes
+        /// The "true CUDA" alignment of T in bytes
         ALIGN_BYTES = sizeof(Pad) - sizeof(T)
     };
+
+    /// The "truly aligned" type
+    typedef T Type;
 };
 
-// Specializations where host C++ compilers (e.g., Windows) may disagree with device C++ compilers (EDG)
+// Specializations where host C++ compilers (e.g., 32-bit Windows) may disagree
+// with device C++ compilers (EDG) on types passed as template parameters through
+// kernel functions
 
-template <> struct AlignBytes<short4>               { enum { ALIGN_BYTES = 8 }; };
-template <> struct AlignBytes<ushort4>              { enum { ALIGN_BYTES = 8 }; };
-template <> struct AlignBytes<int2>                 { enum { ALIGN_BYTES = 8 }; };
-template <> struct AlignBytes<uint2>                { enum { ALIGN_BYTES = 8 }; };
+#define __CUB_ALIGN_BYTES(t, b)         \
+    template <> struct AlignBytes<t>    \
+    { enum { ALIGN_BYTES = b }; typedef __align__(b) t Type; };
+
+__CUB_ALIGN_BYTES(short4, 8)
+__CUB_ALIGN_BYTES(ushort4, 8)
+__CUB_ALIGN_BYTES(int2, 8)
+__CUB_ALIGN_BYTES(uint2, 8)
+__CUB_ALIGN_BYTES(long long, 8)
+__CUB_ALIGN_BYTES(unsigned long long, 8)
+__CUB_ALIGN_BYTES(float2, 8)
+__CUB_ALIGN_BYTES(double, 8)
 #ifdef _WIN32
-    template <> struct AlignBytes<long2>            { enum { ALIGN_BYTES = 8 }; };
-    template <> struct AlignBytes<ulong2>           { enum { ALIGN_BYTES = 8 }; };
+    __CUB_ALIGN_BYTES(long2, 8)
+    __CUB_ALIGN_BYTES(ulong2, 8)
+#else
+    __CUB_ALIGN_BYTES(long2, 16)
+    __CUB_ALIGN_BYTES(ulong2, 16)
 #endif
-template <> struct AlignBytes<long long>            { enum { ALIGN_BYTES = 8 }; };
-template <> struct AlignBytes<unsigned long long>   { enum { ALIGN_BYTES = 8 }; };
-template <> struct AlignBytes<float2>               { enum { ALIGN_BYTES = 8 }; };
-template <> struct AlignBytes<double>               { enum { ALIGN_BYTES = 8 }; };
-
-template <> struct AlignBytes<int4>                 { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<uint4>                { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<float4>               { enum { ALIGN_BYTES = 16 }; };
-#ifndef _WIN32
-    template <> struct AlignBytes<long2>            { enum { ALIGN_BYTES = 16 }; };
-    template <> struct AlignBytes<ulong2>           { enum { ALIGN_BYTES = 16 }; };
-#endif
-template <> struct AlignBytes<long4>                { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<ulong4>               { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<longlong2>            { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<ulonglong2>           { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<double2>              { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<longlong4>            { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<ulonglong4>           { enum { ALIGN_BYTES = 16 }; };
-template <> struct AlignBytes<double4>              { enum { ALIGN_BYTES = 16 }; };
+__CUB_ALIGN_BYTES(int4, 16)
+__CUB_ALIGN_BYTES(uint4, 16)
+__CUB_ALIGN_BYTES(float4, 16)
+__CUB_ALIGN_BYTES(long4, 16)
+__CUB_ALIGN_BYTES(ulong4, 16)
+__CUB_ALIGN_BYTES(longlong2, 16)
+__CUB_ALIGN_BYTES(ulonglong2, 16)
+__CUB_ALIGN_BYTES(double2, 16)
+__CUB_ALIGN_BYTES(longlong4, 16)
+__CUB_ALIGN_BYTES(ulonglong4, 16)
+__CUB_ALIGN_BYTES(double4, 16)
 
 template <typename T> struct AlignBytes<volatile T> : AlignBytes<T> {};
 template <typename T> struct AlignBytes<const T> : AlignBytes<T> {};
@@ -645,20 +652,11 @@ struct Uninitialized
 template <typename _Key, typename _Value>
 struct KeyValuePair
 {
-    typedef _Key    Key;                ///< Key data type
-    typedef _Value  Value;              ///< Value data type
+    typedef _Key    Key;
+    typedef _Value  Value;
 
-#if (CUB_PTX_ARCH == 0)
-    union
-    {
-        Key                                     key;        ///< Item key
-        typename UnitWord<Value>::DeviceWord    align0;     ///< Alignment/padding (for Win32 consistency between host/device)
-    };
-#else
-    Key                     key;        ///< Item key
-#endif
-
-    Value                   value;      ///< Item value
+    typename AlignBytes<Key>::Type     key;
+    typename AlignBytes<Value>::Type   value;
 
     /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
