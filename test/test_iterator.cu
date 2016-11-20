@@ -262,7 +262,7 @@ void TestCounting(T base)
     //
 
     unsigned long long  max_items   = ((1ull << ((sizeof(T) * 8) - 1)) - 1);
-    unsigned long long  copy_items  = CUB_MIN(max_items - base, 100);     // potential issue with differencing overflows when T is a smaller type than can handle the offset
+    size_t  copy_items              = (size_t) CUB_MIN(max_items - base, 100);     // potential issue with differencing overflows when T is a smaller type than can handle the offset
     T                   *h_copy     = new T[copy_items];
     T                   *d_copy     = NULL;
 

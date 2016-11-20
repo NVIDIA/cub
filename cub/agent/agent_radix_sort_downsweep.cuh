@@ -204,7 +204,6 @@ struct AgentRadixSortDownsweep
         };
 
         OffsetT relative_bin_offsets[RADIX_DIGITS + 1];
-//        bool    short_circuit;
     };
 
 
@@ -234,6 +233,9 @@ struct AgentRadixSortDownsweep
     // Number of bits in current digit
     int             num_bits;
 
+    // Whether to short-cirucit
+    int             short_circuit;
+
     //---------------------------------------------------------------------
     // Utility methods
     //---------------------------------------------------------------------
@@ -251,7 +253,7 @@ struct AgentRadixSortDownsweep
             UnsignedBits digit = BFE(twiddled_keys[KEY], current_bit, num_bits);
 
             // Lookup base digit offset from shared memory
-            relative_bin_offsets[KEY] = temp_storage.relative_bin_offsets[1 + digit];
+            relative_bin_offsets[KEY] = temp_storage.relative_bin_offsets[digit];
         }
     }
 
@@ -524,6 +526,18 @@ struct AgentRadixSortDownsweep
             default_key,
             Int2Type<FULL_TILE>());
 
+        if (threadIdx.x < RADIX_DIGITS)
+        {
+            if (IS_DESCENDING)
+            {
+                this->temp_storage.relative_bin_offsets[threadIdx.x + 1] = 0;
+            }
+            else
+            {
+                this->temp_storage.relative_bin_offsets[threadIdx.x] = 0;
+            }
+        }
+
         __syncthreads();
 
         // Twiddle key bits if necessary
@@ -546,8 +560,16 @@ struct AgentRadixSortDownsweep
         // Update global scatter base offsets for each digit
         if (threadIdx.x < RADIX_DIGITS)
         {
-            // Store exclusive prefix
-            temp_storage.relative_bin_offsets[threadIdx.x + 1] = inclusive_digit_prefix;
+            if (IS_DESCENDING)
+            {
+                // Store exclusive prefix
+                temp_storage.relative_bin_offsets[threadIdx.x] = inclusive_digit_prefix;
+            }
+            else
+            {
+                // Store exclusive prefix
+                temp_storage.relative_bin_offsets[threadIdx.x + 1] = inclusive_digit_prefix;
+            }
         }
 
         __syncthreads();
@@ -556,8 +578,16 @@ struct AgentRadixSortDownsweep
         int exclusive_digit_prefix;
         if (threadIdx.x < RADIX_DIGITS)
         {
-            // Get exclusive digit prefix from inclusive prefix (lower bins come first)
-            exclusive_digit_prefix = temp_storage.relative_bin_offsets[threadIdx.x];
+            if (IS_DESCENDING)
+            {
+                // Get exclusive digit prefix from inclusive prefix (higher bins come first)
+                exclusive_digit_prefix = temp_storage.relative_bin_offsets[threadIdx.x + 1];
+            }
+            else
+            {
+                // Get exclusive digit prefix from inclusive prefix (lower bins come first)
+                exclusive_digit_prefix = temp_storage.relative_bin_offsets[threadIdx.x];
+            }
         }
 
         __syncthreads();
@@ -565,7 +595,7 @@ struct AgentRadixSortDownsweep
         if (threadIdx.x < RADIX_DIGITS)
         {
             bin_offset -= exclusive_digit_prefix;
-            temp_storage.relative_bin_offsets[1 + threadIdx.x] = bin_offset;
+            temp_storage.relative_bin_offsets[threadIdx.x] = bin_offset;
             bin_offset += inclusive_digit_prefix;
         }
 
@@ -657,18 +687,16 @@ struct AgentRadixSortDownsweep
         d_values_in(d_values_in),
         d_values_out(d_values_out),
         current_bit(current_bit),
-        num_bits(num_bits)
+        num_bits(num_bits),
+        short_circuit(1)
     {
-/*
         if (threadIdx.x < RADIX_DIGITS)
         {
             // Short circuit if the histogram has only bin counts of only zeros or problem-size
-            int predicate = ((bin_offset == 0) || (bin_offset == num_items));
-            this->temp_storage.short_circuit = WarpAll(predicate);
+            short_circuit = ((bin_offset == 0) || (bin_offset == num_items));
         }
 
-        __syncthreads();
-*/
+        short_circuit = __syncthreads_and(short_circuit);
     }
 
 
@@ -692,7 +720,8 @@ struct AgentRadixSortDownsweep
         d_values_in(d_values_in),
         d_values_out(d_values_out),
         current_bit(current_bit),
-        num_bits(num_bits)
+        num_bits(num_bits),
+        short_circuit(1)
     {
         // Load digit bin offsets (each of the first RADIX_DIGITS threads will load an offset for that digit)
         if (threadIdx.x < RADIX_DIGITS)
@@ -702,17 +731,14 @@ struct AgentRadixSortDownsweep
                 threadIdx.x;
 
             // Short circuit if the first block's histogram has only bin counts of only zeros or problem-size
-//            OffsetT first_block_bin_offset = d_spine[gridDim.x * bin_idx];
-//            int predicate = ((first_block_bin_offset == 0) || (first_block_bin_offset == num_items));
-//            this->temp_storage.short_circuit = WarpAll(predicate);
+            OffsetT first_block_bin_offset = d_spine[gridDim.x * bin_idx];
+            short_circuit = ((first_block_bin_offset == 0) || (first_block_bin_offset == num_items));
 
             // Load my block's bin offset for my bin
             bin_offset = d_spine[(gridDim.x * bin_idx) + blockIdx.x];
-
-            this->temp_storage.relative_bin_offsets[threadIdx.x] = 0;
         }
 
-      __syncthreads();
+        short_circuit = __syncthreads_and(short_circuit);
     }
 
 
@@ -723,8 +749,7 @@ struct AgentRadixSortDownsweep
         OffsetT   block_offset,
         OffsetT   block_end)
     {
-/*
-        if (temp_storage.short_circuit)
+        if (short_circuit)
         {
             // Copy keys
             Copy(d_keys_in, d_keys_out, block_offset, block_end);
@@ -733,7 +758,7 @@ struct AgentRadixSortDownsweep
             Copy(d_values_in, d_values_out, block_offset, block_end);
         }
         else
-*/        {
+        {
             // Process full tiles of tile_items
             while (block_offset + TILE_ITEMS <= block_end)
             {
