@@ -282,6 +282,14 @@ __device__ __forceinline__ void ThreadExit() {
 
 
 /**
+ * \brief  Abort execution and generate an interrupt to the host CPU
+ */
+__device__ __forceinline__ void ThreadTrap() {
+    asm volatile("trap;");
+}
+
+
+/**
  * \brief Returns the row-major linear thread identifier for a multidimensional threadblock
  */
 __device__ __forceinline__ int RowMajorTid(int block_dim_x, int block_dim_y, int block_dim_z)

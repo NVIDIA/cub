@@ -52,6 +52,32 @@ int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
+/**
+ * \brief WrapperFunctor (for precluding test-specialized dispatch to *Sum variants)
+ */
+template<
+    typename    OpT,
+    int         LOGICAL_WARP_THREADS>
+struct WrapperFunctor
+{
+    OpT op;
+    int num_valid;
+
+    inline __host__ __device__ WrapperFunctor(OpT op, int num_valid) : op(op), num_valid(num_valid) {}
+
+    template <typename T>
+    inline __host__ __device__ T operator()(const T &a, const T &b) const
+    {
+#if CUB_PTX_ARCH != 0
+        if ((cub::LaneId() % LOGICAL_WARP_THREADS) >= num_valid)
+            cub::ThreadTrap();
+#endif
+
+        return op(a, b);
+    }
+
+};
+
 
 //---------------------------------------------------------------------
 // Test kernels
@@ -179,7 +205,9 @@ __global__ void FullWarpReduceKernel(
     T input = d_in[threadIdx.x];
 
     // Record elapsed clocks
+    __threadfence_block();      // workaround to prevent clock hoisting
     clock_t start = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
 
     // Test warp reduce
     int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
@@ -188,7 +216,11 @@ __global__ void FullWarpReduceKernel(
         temp_storage[warp_id], input, reduction_op);
 
     // Record elapsed clocks
-    *d_elapsed = clock() - start;
+    __threadfence_block();      // workaround to prevent clock hoisting
+    clock_t stop = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
+
+    *d_elapsed = stop - start;
 
     // Store aggregate
     d_out[threadIdx.x] = (threadIdx.x % LOGICAL_WARP_THREADS == 0) ?
@@ -221,7 +253,9 @@ __global__ void PartialWarpReduceKernel(
     T input = d_in[threadIdx.x];
 
     // Record elapsed clocks
+    __threadfence_block();      // workaround to prevent clock hoisting
     clock_t start = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
 
     // Test partial-warp reduce
     int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
@@ -229,7 +263,11 @@ __global__ void PartialWarpReduceKernel(
         temp_storage[warp_id], input, reduction_op, valid_warp_threads);
 
     // Record elapsed clocks
-    *d_elapsed = clock() - start;
+    __threadfence_block();      // workaround to prevent clock hoisting
+    clock_t stop = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
+
+    *d_elapsed = stop - start;
 
     // Store aggregate
     d_out[threadIdx.x] = (threadIdx.x % LOGICAL_WARP_THREADS == 0) ?
@@ -262,10 +300,12 @@ __global__ void WarpHeadSegmentedReduceKernel(
 
     // Per-thread tile data
     T       input       = d_in[threadIdx.x];
-    FlagT    head_flag   = d_head_flags[threadIdx.x];
+    FlagT   head_flag   = d_head_flags[threadIdx.x];
 
     // Record elapsed clocks
+    __threadfence_block();      // workaround to prevent clock hoisting
     clock_t start = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
 
     // Test segmented warp reduce
     int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
@@ -273,7 +313,11 @@ __global__ void WarpHeadSegmentedReduceKernel(
         temp_storage[warp_id], input, head_flag, reduction_op);
 
     // Record elapsed clocks
-    *d_elapsed = clock() - start;
+    __threadfence_block();      // workaround to prevent clock hoisting
+    clock_t stop = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
+
+    *d_elapsed = stop - start;
 
     // Store aggregate
     d_out[threadIdx.x] = ((threadIdx.x % LOGICAL_WARP_THREADS == 0) || head_flag) ?
@@ -293,7 +337,7 @@ template <
     typename    ReductionOp>
 __global__ void WarpTailSegmentedReduceKernel(
     T           *d_in,
-    FlagT        *d_tail_flags,
+    FlagT       *d_tail_flags,
     T           *d_out,
     ReductionOp reduction_op,
     clock_t     *d_elapsed)
@@ -312,7 +356,9 @@ __global__ void WarpTailSegmentedReduceKernel(
                             d_tail_flags[threadIdx.x - 1];
 
     // Record elapsed clocks
+    __threadfence_block();      // workaround to prevent clock hoisting
     clock_t start = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
 
     // Test segmented warp reduce
     int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
@@ -320,7 +366,11 @@ __global__ void WarpTailSegmentedReduceKernel(
         temp_storage[warp_id], input, tail_flag, reduction_op);
 
     // Record elapsed clocks
-    *d_elapsed = clock() - start;
+    __threadfence_block();      // workaround to prevent clock hoisting
+    clock_t stop = clock();
+    __threadfence_block();      // workaround to prevent clock hoisting
+
+    *d_elapsed = stop - start;
 
     // Store aggregate
     d_out[threadIdx.x] = ((threadIdx.x % LOGICAL_WARP_THREADS == 0) || head_flag) ?
@@ -422,7 +472,7 @@ template <
 void TestReduce(
     GenMode     gen_mode,
     ReductionOp reduction_op,
-    int         valid_warp_threads)
+    int         valid_warp_threads = LOGICAL_WARP_THREADS)
 {
     const int BLOCK_THREADS = LOGICAL_WARP_THREADS * WARPS;
 
@@ -636,7 +686,12 @@ void Test(
         valid_warp_threads < LOGICAL_WARP_THREADS;
         valid_warp_threads += CUB_MAX(1, LOGICAL_WARP_THREADS / 5))
     {
+        // Without wrapper (to test non-excepting PTX POD-op specializations)
         TestReduce<WARPS, LOGICAL_WARP_THREADS, T>(gen_mode, reduction_op, valid_warp_threads);
+
+        // With wrapper to ensure no ops called on OOB lanes
+        WrapperFunctor<ReductionOp, LOGICAL_WARP_THREADS> wrapped_op(reduction_op, valid_warp_threads);
+        TestReduce<WARPS, LOGICAL_WARP_THREADS, T>(gen_mode, wrapped_op, valid_warp_threads);
     }
 
     // Full tile
@@ -754,8 +809,8 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-
     TestReduce<1, 32, int>(UNIFORM, Sum());
+
     TestReduce<1, 32, double>(UNIFORM, Sum());
     TestReduce<2, 16, TestBar>(UNIFORM, Sum());
     TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum());
