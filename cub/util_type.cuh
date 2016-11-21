@@ -649,22 +649,103 @@ struct Uninitialized
 /**
  * \brief A key identifier paired with a corresponding value
  */
-template <typename _Key, typename _Value>
+template <
+    typename    _Key,
+    typename    _Value
+#if defined(_WIN32) && !defined(_WIN64)
+    , bool KeyIsLT = sizeof(_Key) < sizeof(_Value),
+      bool ValIsLT = sizeof(_Value) < sizeof(_Key)
+#endif // #if defined(_WIN32) && !defined(_WIN64)
+    >
 struct KeyValuePair
 {
-    typedef _Key    Key;
-    typedef _Value  Value;
+    typedef _Key    Key;                ///< Key data type
+    typedef _Value  Value;              ///< Value data type
 
-    typename AlignBytes<Key>::Type     key;
-    typename AlignBytes<Value>::Type   value;
+    Key     key;                        ///< Item key
+    Value   value;                      ///< Item value
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    KeyValuePair() {}
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    KeyValuePair(Key const& key, Value const& value) : key(key), value(value) {}
 
     /// Inequality operator
     __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
     {
         return (value != b.value) || (key != b.key);
     }
-
 };
+
+#if defined(_WIN32) && !defined(_WIN64)
+
+// Need explicit padding to normalize value alignment and overall structure size
+// because the Win32 host compiler (VC++) may disagree with CUDA device C++ compilers
+// (EDG) on the member alignment and size of types passed as template parameters
+// through kernel functions
+
+/// Smaller key specialization
+template <typename K, typename V>
+struct KeyValuePair<K, V, true, false>
+{
+    typedef K Key;
+    typedef V Value;
+
+    typedef char Pad[sizeof(Value) - sizeof(Key)];
+
+    Value   value;
+    Key     key;
+    Pad     pad;
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    KeyValuePair() {}
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    KeyValuePair(Key const& key, Value const& value) : key(key), value(value) {}
+
+    /// Inequality operator
+    __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
+    {
+        return (value != b.value) || (key != b.key);
+    }
+};
+
+
+/// Smaller value specialization
+template <typename K, typename V>
+struct KeyValuePair<K, V, false, true>
+{
+    typedef K Key;
+    typedef V Value;
+
+    typedef char Pad[sizeof(Key) - sizeof(Value)];
+
+    Key     key;
+    Value   value;
+    Pad     pad;
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    KeyValuePair() {}
+
+    /// Constructor
+    __host__ __device__ __forceinline__
+    KeyValuePair(Key const& key, Value const& value) : key(key), value(value) {}
+
+    /// Inequality operator
+    __host__ __device__ __forceinline__ bool operator !=(const KeyValuePair &b)
+    {
+        return (value != b.value) || (key != b.key);
+    }
+};
+
+#endif // #if defined(_WIN32) && !defined(_WIN64)
+
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
