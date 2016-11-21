@@ -1001,7 +1001,7 @@ HTML_EXTRA_FILES       += images/simt_abstraction.png
 HTML_EXTRA_FILES       += images/kernel_abstraction.png 
 HTML_EXTRA_FILES       += images/devfun_abstraction.png
 HTML_EXTRA_FILES       += images/nested_composition.png
-HTML_EXTRA_FILES       += ../CHANGE_LOG.TXT
+HTML_EXTRA_FILES       += ../../PrivateCub/CHANGE_LOG.TXT
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the style sheet and background images
