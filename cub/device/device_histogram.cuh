@@ -447,7 +447,7 @@ struct DeviceHistogram
         typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
         Int2Type<sizeof(SampleT) == 1> is_byte_sample;
 
-        if ((sizeof(OffsetT) > sizeof(int)) && (row_stride_bytes * num_rows < std::numeric_limits<int>::max()))
+        if ((sizeof(OffsetT) > sizeof(int)) && (row_stride_bytes < size_t(std::numeric_limits<int>::max() / num_rows)))
         {
             // Down-convert OffsetT data type
 
@@ -838,7 +838,7 @@ struct DeviceHistogram
         typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
         Int2Type<sizeof(SampleT) == 1> is_byte_sample;
 
-        if ((sizeof(OffsetT) > sizeof(int)) && (row_stride_bytes * num_rows < std::numeric_limits<int>::max()))
+        if ((sizeof(OffsetT) > sizeof(int)) && (row_stride_bytes < size_t(std::numeric_limits<int>::max() / num_rows)))
         {
             // Down-convert OffsetT data type
             return DipatchHistogram<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, int>::DispatchRange(
