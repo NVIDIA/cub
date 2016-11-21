@@ -671,9 +671,17 @@ void TestEven(
     printf("\n----------------------------\n");
     printf("%s cub::DeviceHistogramEven %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
-        num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride_bytes,
-        total_samples, (int) sizeof(SampleT), typeid(SampleT).name(), entropy_reduction, typeid(CounterT).name(),
-        NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
+        (int) (num_row_pixels * num_rows),
+        (int) num_rows,
+        (int) num_row_pixels,
+        (int) row_stride_bytes,
+        (int) total_samples,
+        (int) sizeof(SampleT),
+        typeid(SampleT).name(),
+        entropy_reduction,
+        typeid(CounterT).name(),
+        NUM_ACTIVE_CHANNELS,
+        NUM_CHANNELS);
     std::cout << CoutCast(max_level) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
         std::cout << "\n\tChannel " << channel << ": " << num_levels[channel] - 1 << " bins [" << lower_level[channel] << ", " << upper_level[channel] << ")\n";
@@ -847,9 +855,17 @@ void TestRange(
     printf("\n----------------------------\n");
     printf("%s cub::DeviceHistogramRange %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
-        num_row_pixels * num_rows, num_rows, num_row_pixels, row_stride_bytes,
-        total_samples, (int) sizeof(SampleT), typeid(SampleT).name(), entropy_reduction, typeid(CounterT).name(),
-        NUM_ACTIVE_CHANNELS, NUM_CHANNELS);
+        (int) (num_row_pixels * num_rows),
+        (int) num_rows,
+        (int) num_row_pixels,
+        (int) row_stride_bytes,
+        (int) total_samples,
+        (int) sizeof(SampleT),
+        typeid(SampleT).name(),
+        entropy_reduction,
+        typeid(CounterT).name(),
+        NUM_ACTIVE_CHANNELS,
+        NUM_CHANNELS);
     std::cout << CoutCast(max_level) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
@@ -1528,7 +1544,7 @@ int main(int argc, char** argv)
         TestChannels <float,            int, float, int>(1.0,   256 + 1, Int2Type<true>());
 
 		// Test down-conversion of size_t offsets to int
-        TestChannels <unsigned char,    int, int,   size_t>(256, 256 + 1, Int2Type<(sizeof(size_t) != sizeof(int))>());
+        TestChannels <unsigned char,    int, int,   long long>(256, 256 + 1, Int2Type<(sizeof(size_t) != sizeof(int))>());
     }
 
 #endif
