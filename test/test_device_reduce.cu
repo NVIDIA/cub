@@ -751,10 +751,10 @@ struct Solution<cub::ArgMin, InputValueT, OutputValueT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate = {1, Traits<InputValueT>::Max()}; // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
+            OutputT aggregate(1, Traits<InputValueT>::Max()); // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
             {
-                OutputT item = {j - h_segment_offsets[i], OutputValueT(h_in[j])};
+                OutputT item(j - h_segment_offsets[i], OutputValueT(h_in[j]));
                 aggregate = reduction_op(aggregate, item);
             }
             h_reference[i] = aggregate;
@@ -775,10 +775,10 @@ struct Solution<cub::ArgMax, InputValueT, OutputValueT>
     {
         for (int i = 0; i < num_segments; ++i)
         {
-            OutputT aggregate = {1, Traits<InputValueT>::Lowest()}; // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
+            OutputT aggregate(1, Traits<InputValueT>::Lowest()); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
             for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
             {
-                OutputT item = {j - h_segment_offsets[i], OutputValueT(h_in[j])};
+                OutputT item(j - h_segment_offsets[i], OutputValueT(h_in[j]));
                 aggregate = reduction_op(aggregate, item);
             }
             h_reference[i] = aggregate;
