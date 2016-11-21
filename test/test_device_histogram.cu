@@ -90,14 +90,14 @@ cudaError_t DispatchEven(
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
-    unsigned char       *d_samples,                                  ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
+    unsigned char       *d_samples,               ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
     CounterT            *d_histogram[1],          ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
     int                 num_levels[1],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
     LevelT              lower_level[1],           ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
     LevelT              upper_level[1],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
-    OffsetT             num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
-    OffsetT             num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride_bytes,                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
+    OffsetT             num_row_pixels,           ///< [in] The number of multi-channel pixels per row in the region of interest
+    OffsetT             num_rows,                 ///< [in] The number of rows in the region of interest
+    OffsetT             row_stride_bytes,         ///< [in] The number of bytes between starts of consecutive rows in the region of interest
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -1271,16 +1271,17 @@ void Test(
 
 
 /**
- * Test different channel interleavings
+ * Test different channel interleavings (valid specialiation)
  */
 template <
     typename        SampleT,
     typename        CounterT,
     typename        LevelT,
     typename        OffsetT>
-void Test(
+void TestChannels(
     LevelT          max_level,
-    int             max_num_levels)
+    int             max_num_levels,
+    Int2Type<true>  is_valid_tag)
 {
     Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
     Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
@@ -1289,11 +1290,26 @@ void Test(
 }
 
 
+/**
+ * Test different channel interleavings (invalid specialiation)
+ */
+template <
+    typename        SampleT,
+    typename        CounterT,
+    typename        LevelT,
+    typename        OffsetT>
+void TestChannels(
+    LevelT          max_level,
+    int             max_num_levels,
+    Int2Type<false> is_valid_tag)
+{}
+
 
 
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
+
 
 
 
@@ -1505,17 +1521,14 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
-        Test <unsigned char,    int, int,   int>(256,   256 + 1);
-        Test <signed char,      int, int,   int>(256,   256 + 1);
-        Test <unsigned short,   int, int,   int>(128,   128 + 1);
-        Test <unsigned short,   int, int,   int>(8192,  8192 + 1);
-        Test <float,            int, float, int>(1.0,   256 + 1);
+        TestChannels <unsigned char,    int, int,   int>(256,   256 + 1, Int2Type<true>());
+        TestChannels <signed char,      int, int,   int>(256,   256 + 1, Int2Type<true>());
+        TestChannels <unsigned short,   int, int,   int>(128,   128 + 1, Int2Type<true>());
+        TestChannels <unsigned short,   int, int,   int>(8192,  8192 + 1, Int2Type<true>());
+        TestChannels <float,            int, float, int>(1.0,   256 + 1, Int2Type<true>());
 
 		// Test down-conversion of size_t offsets to int
-        if (sizeof(size_t) != sizeof(int))
-        {
-            Test <unsigned char,    int, int,   size_t>(256, 256 + 1);
-        }
+        TestChannels <unsigned char,    int, int,   size_t>(256, 256 + 1, Int2Type<(sizeof(size_t) != sizeof(int))>());
     }
 
 #endif
