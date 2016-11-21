@@ -689,7 +689,8 @@ void TestEven(
 
     // Allocate and initialize host and device data
 
-    SampleT*                    h_samples = new SampleT[total_samples];
+    typedef SampleT Foo;        // rename type to quelch gcc warnings (bug?)
+    SampleT*                    h_samples = new Foo[total_samples];
     CounterT*                   h_histogram[NUM_ACTIVE_CHANNELS];
     ScaleTransform<LevelT>      transform_op[NUM_ACTIVE_CHANNELS];
 
@@ -878,7 +879,8 @@ void TestRange(
     fflush(stdout);
 
     // Allocate and initialize host and device data
-    SampleT*                    h_samples = new SampleT[total_samples];
+    typedef SampleT Foo;        // rename type to quelch gcc warnings (bug?)
+    SampleT*                    h_samples = new Foo[total_samples];
     CounterT*                   h_histogram[NUM_ACTIVE_CHANNELS];
     SearchTransform<LevelT>     transform_op[NUM_ACTIVE_CHANNELS];
 
