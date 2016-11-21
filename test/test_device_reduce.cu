@@ -666,7 +666,9 @@ void Initialize(
     int             num_items)
 {
     for (int i = 0; i < num_items; ++i)
+    {
         InitValue(gen_mode, h_in[i], i);
+    }
 
     if (g_verbose_input)
     {
@@ -926,8 +928,10 @@ void TestProblem(
     GenMode         gen_mode,
     ReductionOpT    reduction_op)
 {
-    // Initialize host data
-    printf("\n\nInitializing %s->%s (gen mode %d)... ", typeid(InputT).name(), typeid(OutputT).name(), gen_mode); fflush(stdout);
+    printf("\n\nInitializing %d %s->%s (gen mode %d)... ", num_items, typeid(InputT).name(), typeid(OutputT).name(), gen_mode); fflush(stdout);
+    fflush(stdout);
+
+    // Initialize value data
     InputT* h_in = new InputT[num_items];
     Initialize(gen_mode, h_in, num_items);
 
@@ -936,8 +940,8 @@ void TestProblem(
     InitializeSegments(num_items, num_segments, h_segment_offsets, g_verbose_input);
 
     // Initialize device data
-    int *d_segment_offsets      = NULL;
-    InputT *d_in                   = NULL;
+    int     *d_segment_offsets      = NULL;
+    InputT  *d_in                   = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in,              sizeof(InputT) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(int) * (num_segments + 1)));
     CubDebugExit(cudaMemcpy(d_in,               h_in,                   sizeof(InputT) * num_items, cudaMemcpyHostToDevice));
@@ -985,8 +989,8 @@ void TestByBackend(
     GenMode         gen_mode)
 {
     // Initialize host data
-    printf("\n\nInitializing %s -> %s (gen mode %d)... ",
-        typeid(InputT).name(), typeid(OutputT).name(), gen_mode); fflush(stdout);
+    printf("\n\nInitializing %d %s -> %s (gen mode %d)... ",
+        num_items, typeid(InputT).name(), typeid(OutputT).name(), gen_mode); fflush(stdout);
 
     InputT  *h_in               = new InputT[num_items];
     int     *h_segment_offsets  = new int[max_segments + 1];
@@ -1160,7 +1164,7 @@ void TestType(
  */
 int main(int argc, char** argv)
 {
-    int max_items      = 48000000;
+    int max_items      = 27000000;
     int max_segments   = 34000;
 
     // Initialize command line
