@@ -1,20 +1,33 @@
-1.5.5    10/25/2016
+1.6.3    11/20/2016
+    - Updated GP100 tuning policies for radix sorting (6.2B 32b keys/s)
+    - Bug fixes: 
+        - Issue #74: Warpreduce executes reduction operator for out-of-bounds items
+        - Issue #72 (cub:InequalityWrapper::operator() should be non-const)
+        - Issue #71 (KeyVairPair won't work if Key has non-trivial ctor)
+        - Issue #68 (cub::TilePrefixCallbackOp::WarpReduce doesn't permit ptx 
+          arch specialization)
+		- Issue #70 1.5.3 breaks BlockScan API.  Retroactively reversioned 
+		  from v1.5.3 -> v1.6 to appropriately indicate API change.
+		  
+//-----------------------------------------------------------------------------
+
+1.6.2 (waws 1.5.5)    10/25/2016
     - Updated Pascal tuning policies for radix sorting
     - Bug fixes: 
         - Fix for arm64 compilation of caching allocator
 
 //-----------------------------------------------------------------------------
 
-1.5.4    10/14/2016
+1.6.1 (was 1.5.4)    10/14/2016
     - Bug fixes: 
         - Fix for radix sorting bug introduced by scan refactorization
 
 //-----------------------------------------------------------------------------
 
-1.5.3    10/11/2016
-    - Device/block/warp-wide exclusive scans now take an "initial value" (instead 
+1.6.0 (was 1.5.3)    10/11/2016
+    - API change: Device/block/warp-wide exclusive scans now take an "initial value" (instead 
       of an "identity value") for seeding the computation with an arbitrary prefix.  
-    - Device-wide reductions and scans can now have input sequence types that are 
+    - API change: Device-wide reductions and scans can now have input sequence types that are 
       differnet from output sequence types (as long as they are coercible)
       value") for seeding the computation with an arbitrary prefix
     - Reduce repository size (move doxygen binary to doc repository)

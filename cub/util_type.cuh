@@ -653,8 +653,8 @@ template <
     typename    _Key,
     typename    _Value
 #if defined(_WIN32) && !defined(_WIN64)
-    , bool KeyIsLT = sizeof(_Key) < sizeof(_Value),
-      bool ValIsLT = sizeof(_Value) < sizeof(_Key)
+    , bool KeyIsLT = (AlignBytes<_Key>::ALIGN_BYTES < AlignBytes<_Value>::ALIGN_BYTES)
+    , bool ValIsLT = (AlignBytes<_Value>::ALIGN_BYTES < AlignBytes<_Key>::ALIGN_BYTES)
 #endif // #if defined(_WIN32) && !defined(_WIN64)
     >
 struct KeyValuePair
@@ -682,10 +682,17 @@ struct KeyValuePair
 
 #if defined(_WIN32) && !defined(_WIN64)
 
-// Need explicit padding to normalize value alignment and overall structure size
-// because the Win32 host compiler (VC++) may disagree with CUDA device C++ compilers
-// (EDG) on the member alignment and size of types passed as template parameters
-// through kernel functions
+/**
+ * Win32 won't do 16B alignment.  This can present two problems for
+ * should-be-16B-aligned (but actually 8B aligned) built-in and intrinsics members:
+ * 1) If a smaller-aligned item were to be listed first, the host compiler places the
+ *    should-be-16B item at too early an offset (and disagrees with device compiler)
+ * 2) Or, if a smaller-aligned item lists second, the host compiler gets the size
+ *    of the struct wrong (and disagrees with device compiler)
+ *
+ * So we put the larger-should-be-aligned item first, and explicitly pad the
+ * end of the struct
+ */
 
 /// Smaller key specialization
 template <typename K, typename V>
@@ -694,9 +701,9 @@ struct KeyValuePair<K, V, true, false>
     typedef K Key;
     typedef V Value;
 
-    typedef char Pad[sizeof(Value) - sizeof(Key)];
+    typedef char Pad[AlignBytes<V>::ALIGN_BYTES - AlignBytes<K>::ALIGN_BYTES];
 
-    Value   value;
+    Value   value;  // Value has larger would-be alignment and goes first
     Key     key;
     Pad     pad;
 
@@ -723,9 +730,9 @@ struct KeyValuePair<K, V, false, true>
     typedef K Key;
     typedef V Value;
 
-    typedef char Pad[sizeof(Key) - sizeof(Value)];
+    typedef char Pad[AlignBytes<K>::ALIGN_BYTES - AlignBytes<V>::ALIGN_BYTES];
 
-    Key     key;
+    Key     key;    // Key has larger would-be alignment and goes first
     Value   value;
     Pad     pad;
 
