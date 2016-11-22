@@ -129,21 +129,31 @@ struct DispatchReduceByKey
     // Types and constants
     //-------------------------------------------------------------------------
 
-    // Data type of key input iterator
-    typedef typename std::iterator_traits<KeysInputIteratorT>::value_type KeyT;
+    // The input keys type
+    typedef typename std::iterator_traits<KeysInputIteratorT>::value_type KeyInputT;
 
-    // Data type of value input iterator
-    typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type ValueT;
+    // The output keys type
+    typedef typename If<(Equals<typename std::iterator_traits<UniqueOutputIteratorT>::value_type, void>::VALUE),    // KeyOutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<KeysInputIteratorT>::value_type,                                              // ... then the input iterator's value type,
+        typename std::iterator_traits<UniqueOutputIteratorT>::value_type>::Type KeyOutputT;                         // ... else the output iterator's value type
+
+    // The input values type
+    typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type ValueInputT;
+
+    // The output values type
+    typedef typename If<(Equals<typename std::iterator_traits<AggregatesOutputIteratorT>::value_type, void>::VALUE),    // ValueOutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<ValuesInputIteratorT>::value_type,                                                // ... then the input iterator's value type,
+        typename std::iterator_traits<AggregatesOutputIteratorT>::value_type>::Type ValueOutputT;                       // ... else the output iterator's value type
 
     enum
     {
         INIT_KERNEL_THREADS     = 128,
-        MAX_INPUT_BYTES         = CUB_MAX(sizeof(KeyT), sizeof(ValueT)),
-        COMBINED_INPUT_BYTES    = sizeof(KeyT) + sizeof(ValueT),
+        MAX_INPUT_BYTES         = CUB_MAX(sizeof(KeyOutputT), sizeof(ValueOutputT)),
+        COMBINED_INPUT_BYTES    = sizeof(KeyOutputT) + sizeof(ValueOutputT),
     };
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<ValueT, OffsetT> ScanTileStateT;
+    typedef ReduceByKeyScanTileState<ValueOutputT, OffsetT> ScanTileStateT;
 
 
     //-------------------------------------------------------------------------

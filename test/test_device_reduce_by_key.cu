@@ -160,8 +160,21 @@ cudaError_t Dispatch(
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<KeyInputIteratorT>::value_type KeyT;
-    typedef typename std::iterator_traits<ValueInputIteratorT>::value_type ValueT;
+    // The input keys type
+    typedef typename std::iterator_traits<KeyInputIteratorT>::value_type KeyInputT;
+
+    // The output keys type
+    typedef typename If<(Equals<typename std::iterator_traits<KeyOutputIteratorT>::value_type, void>::VALUE),   // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<KeyInputIteratorT>::value_type,                                           // ... then the input iterator's value type,
+        typename std::iterator_traits<KeyOutputIteratorT>::value_type>::Type KeyOutputT;                        // ... else the output iterator's value type
+
+    // The input values type
+    typedef typename std::iterator_traits<ValueInputIteratorT>::value_type ValueInputT;
+
+    // The output values type
+    typedef typename If<(Equals<typename std::iterator_traits<ValueOutputIteratorT>::value_type, void>::VALUE), // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<ValueInputIteratorT>::value_type,                                         // ... then the input iterator's value type,
+        typename std::iterator_traits<ValueOutputIteratorT>::value_type>::Type ValueOuputT;                     // ... else the output iterator's value type
 
     if (d_temp_storage == 0)
     {
@@ -169,13 +182,13 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<KeyT> d_keys_in_wrapper(d_keys_in);
-        thrust::device_ptr<KeyT> d_keys_out_wrapper(d_keys_out);
+        thrust::device_ptr<KeyInputT> d_keys_in_wrapper(d_keys_in);
+        thrust::device_ptr<KeyOutputT> d_keys_out_wrapper(d_keys_out);
 
-        thrust::device_ptr<ValueT> d_values_in_wrapper(d_values_in);
-        thrust::device_ptr<ValueT> d_values_out_wrapper(d_values_out);
+        thrust::device_ptr<ValueInputT> d_values_in_wrapper(d_values_in);
+        thrust::device_ptr<ValueOuputT> d_values_out_wrapper(d_values_out);
 
-        thrust::pair<thrust::device_ptr<KeyT>, thrust::device_ptr<ValueT> > d_out_ends;
+        thrust::pair<thrust::device_ptr<KeyOutputT>, thrust::device_ptr<ValueOuputT> > d_out_ends;
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {

@@ -101,20 +101,30 @@ struct AgentReduceByKey
     // Types and constants
     //---------------------------------------------------------------------
 
-    // Data type of key iterator
-    typedef typename std::iterator_traits<KeysInputIteratorT>::value_type KeyT;
+    // The input keys type
+    typedef typename std::iterator_traits<KeysInputIteratorT>::value_type KeyInputT;
 
-    // Data type of value iterator
-    typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type ValueT;
+    // The output keys type
+    typedef typename If<(Equals<typename std::iterator_traits<UniqueOutputIteratorT>::value_type, void>::VALUE),    // KeyOutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<KeysInputIteratorT>::value_type,                                              // ... then the input iterator's value type,
+        typename std::iterator_traits<UniqueOutputIteratorT>::value_type>::Type KeyOutputT;                         // ... else the output iterator's value type
+
+    // The input values type
+    typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type ValueInputT;
+
+    // The output values type
+    typedef typename If<(Equals<typename std::iterator_traits<AggregatesOutputIteratorT>::value_type, void>::VALUE),    // ValueOutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<ValuesInputIteratorT>::value_type,                                                // ... then the input iterator's value type,
+        typename std::iterator_traits<AggregatesOutputIteratorT>::value_type>::Type ValueOutputT;                       // ... else the output iterator's value type
 
     // Tuple type for scanning (pairs accumulated segment-value with segment-index)
-    typedef KeyValuePair<OffsetT, ValueT> OffsetValuePairT;
+    typedef KeyValuePair<OffsetT, ValueOutputT> OffsetValuePairT;
 
     // Tuple type for pairing keys and values
-    typedef KeyValuePair<KeyT, ValueT> KeyValuePairT;
+    typedef KeyValuePair<KeyOutputT, ValueOutputT> KeyValuePairT;
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<ValueT, OffsetT> ScanTileStateT;
+    typedef ReduceByKeyScanTileState<ValueOutputT, OffsetT> ScanTileStateT;
 
     // Guarded inequality functor
     template <typename _EqualityOpT>
@@ -149,25 +159,25 @@ struct AgentReduceByKey
         TWO_PHASE_SCATTER   = (ITEMS_PER_THREAD > 1),
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
-        HAS_IDENTITY_ZERO   = (Equals<ReductionOpT, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),
+        HAS_IDENTITY_ZERO   = (Equals<ReductionOpT, cub::Sum>::VALUE) && (Traits<ValueOutputT>::PRIMITIVE),
     };
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for keys
     typedef typename If<IsPointer<KeysInputIteratorT>::VALUE,
-            CacheModifiedInputIterator<AgentReduceByKeyPolicyT::LOAD_MODIFIER, KeyT, OffsetT>,      // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            KeysInputIteratorT>::Type                                                               // Directly use the supplied input iterator type
+            CacheModifiedInputIterator<AgentReduceByKeyPolicyT::LOAD_MODIFIER, KeyInputT, OffsetT>,     // Wrap the native input pointer with CacheModifiedValuesInputIterator
+            KeysInputIteratorT>::Type                                                                   // Directly use the supplied input iterator type
         WrappedKeysInputIteratorT;
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for values
     typedef typename If<IsPointer<ValuesInputIteratorT>::VALUE,
-            CacheModifiedInputIterator<AgentReduceByKeyPolicyT::LOAD_MODIFIER, ValueT, OffsetT>,    // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            ValuesInputIteratorT>::Type                                                             // Directly use the supplied input iterator type
+            CacheModifiedInputIterator<AgentReduceByKeyPolicyT::LOAD_MODIFIER, ValueInputT, OffsetT>,   // Wrap the native input pointer with CacheModifiedValuesInputIterator
+            ValuesInputIteratorT>::Type                                                                 // Directly use the supplied input iterator type
         WrappedValuesInputIteratorT;
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for fixup values
     typedef typename If<IsPointer<AggregatesOutputIteratorT>::VALUE,
-            CacheModifiedInputIterator<AgentReduceByKeyPolicyT::LOAD_MODIFIER, ValueT, OffsetT>,    // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            AggregatesOutputIteratorT>::Type                                                        // Directly use the supplied input iterator type
+            CacheModifiedInputIterator<AgentReduceByKeyPolicyT::LOAD_MODIFIER, ValueInputT, OffsetT>,   // Wrap the native input pointer with CacheModifiedValuesInputIterator
+            AggregatesOutputIteratorT>::Type                                                            // Directly use the supplied input iterator type
         WrappedFixupInputIteratorT;
 
     // Reduce-value-by-segment scan operator
@@ -191,7 +201,7 @@ struct AgentReduceByKey
 
     // Parameterized BlockDiscontinuity type for keys
     typedef BlockDiscontinuity<
-            KeyT,
+            KeyOutputT,
             BLOCK_THREADS>
         BlockDiscontinuityKeys;
 
@@ -210,8 +220,8 @@ struct AgentReduceByKey
         TilePrefixCallbackOpT;
 
     // Key and value exchange types
-    typedef KeyT    KeyExchangeT[TILE_ITEMS + 1];
-    typedef ValueT  ValueExchangeT[TILE_ITEMS + 1];
+    typedef KeyOutputT    KeyExchangeT[TILE_ITEMS + 1];
+    typedef ValueOutputT  ValueExchangeT[TILE_ITEMS + 1];
 
     // Shared memory type for this threadblock
     union _TempStorage
@@ -385,9 +395,9 @@ struct AgentReduceByKey
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
-        KeyT                keys[ITEMS_PER_THREAD];             // Tile keys
-        KeyT                prev_keys[ITEMS_PER_THREAD];        // Tile keys shuffled up
-        ValueT              values[ITEMS_PER_THREAD];           // Tile values
+        KeyOutputT          keys[ITEMS_PER_THREAD];             // Tile keys
+        KeyOutputT          prev_keys[ITEMS_PER_THREAD];        // Tile keys shuffled up
+        ValueOutputT        values[ITEMS_PER_THREAD];           // Tile values
         OffsetT             head_flags[ITEMS_PER_THREAD];       // Segment head flags
         OffsetT             segment_indices[ITEMS_PER_THREAD];  // Segment indices
         OffsetValuePairT    scan_items[ITEMS_PER_THREAD];       // Zipped values and segment flags|indices
@@ -400,7 +410,7 @@ struct AgentReduceByKey
             BlockLoadKeysT(temp_storage.load_keys).Load(d_keys_in + tile_offset, keys);
 
         // Load tile predecessor key in first thread
-        KeyT tile_predecessor;
+        KeyOutputT tile_predecessor;
         if (threadIdx.x == 0)
         {
             tile_predecessor = (tile_idx == 0) ?

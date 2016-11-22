@@ -106,11 +106,15 @@ struct AgentReduce
     // Types and constants
     //---------------------------------------------------------------------
 
-    /// The value types of the iterators
-    typedef typename std::iterator_traits<InputIteratorT>::value_type   InputT;
-    typedef typename std::iterator_traits<OutputIteratorT>::value_type  OutputT;
+    /// The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
 
-    /// Vector type of OutputT for data movement
+    /// The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+
+    /// Vector type of InputT for data movement
     typedef typename CubVector<InputT, AgentReducePolicy::VECTOR_LOAD_LENGTH>::Type VectorT;
 
     /// Input iterator wrapper type (for applying cache modifier)

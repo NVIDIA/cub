@@ -75,8 +75,10 @@ __global__ void DeviceReduceKernel(
     GridQueue<OffsetT>      queue,                      ///< [in] Drain queue descriptor for dynamically mapping tile data onto thread blocks
     ReductionOpT            reduction_op)               ///< [in] Binary reduction functor
 {
-    // Data type
-    typedef typename std::iterator_traits<OutputIteratorT>::value_type OuputT;
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     // Thread block type for reducing input tiles
     typedef AgentReduce<
@@ -91,7 +93,7 @@ __global__ void DeviceReduceKernel(
     __shared__ typename AgentReduceT::TempStorage temp_storage;
 
     // Consume input tiles
-    OuputT block_aggregate = AgentReduceT(temp_storage, d_in, reduction_op).ConsumeTiles(
+    OutputT block_aggregate = AgentReduceT(temp_storage, d_in, reduction_op).ConsumeTiles(
         num_items,
         even_share,
         queue,
@@ -347,7 +349,9 @@ template <
     typename ReductionOpT>      ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> 
 struct DispatchReduce :
     DeviceReducePolicy<
-        typename std::iterator_traits<InputIteratorT>::value_type,
+        typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+            typename std::iterator_traits<InputIteratorT>::value_type,                                  // ... then the input iterator's value type,
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type,                          // ... else the output iterator's value type
         OffsetT,
         ReductionOpT>
 {
@@ -356,7 +360,9 @@ struct DispatchReduce :
     //------------------------------------------------------------------------------
 
     // Data type of output iterator
-    typedef typename std::iterator_traits<OutputIteratorT>::value_type  OutputT;
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
 
     //------------------------------------------------------------------------------
@@ -705,8 +711,10 @@ struct DispatchSegmentedReduce :
     // Constants
     //------------------------------------------------------------------------------
 
-    // Data type of output iterator
-    typedef typename std::iterator_traits<OutputIteratorT>::value_type OutputT;
+    /// The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
 
     //------------------------------------------------------------------------------

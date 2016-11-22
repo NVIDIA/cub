@@ -40,6 +40,7 @@
 #include <cub/block/block_store.cuh>
 #include <cub/iterator/cache_modified_input_iterator.cuh>
 #include <cub/iterator/cache_modified_output_iterator.cuh>
+#include <cub/iterator/discard_output_iterator.cuh>
 #include <cub/util_allocator.cuh>
 
 #include "test_util.h"
@@ -81,12 +82,17 @@ __global__ void Kernel(
         TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD
     };
 
-    // Data type of input/output iterators
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     // Threadblock load/store abstraction types
     typedef BlockLoad<InputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
-    typedef BlockStore<OutputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
+    typedef BlockStore<OutputT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
     // Shared memory type for this threadblock
     union TempStorage
@@ -103,7 +109,7 @@ __global__ void Kernel(
     int guarded_elements = num_items - block_offset;
 
     // Tile of items
-    T data[ITEMS_PER_THREAD];
+    OutputT data[ITEMS_PER_THREAD];
 
     // Load data
     BlockLoad(temp_storage.load).Load(d_in + block_offset, data);
@@ -118,7 +124,7 @@ __global__ void Kernel(
     // reset data
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        data[ITEM] = T();
+        data[ITEM] = OutputT();
 
     __syncthreads();
 
@@ -161,6 +167,16 @@ void TestKernel(
     int compare;
 
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
+
+    typedef typename std::iterator_traits<InputIteratorT>::difference_type OffsetT;
+    DiscardOutputIterator<OffsetT> discard_itr;
+
+    Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>
+        <<<grid_size, BLOCK_THREADS>>>(
+            d_in,
+            discard_itr,
+            discard_itr,
+            guarded_elements);
 
     // Run kernel
     Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>
@@ -369,7 +385,7 @@ void TestPointerType(
 {
     // Threadblock load/store abstraction types
     typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
-    typedef BlockStore<T*, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
+    typedef BlockStore<T, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
 #if defined(SM100) || defined(SM110) || defined(SM130)
     static const bool sufficient_load_smem  = sizeof(typename BlockLoad::TempStorage)   <= 1024 * 16;
@@ -507,8 +523,8 @@ int main(int argc, char** argv)
 #ifdef QUICK_TEST
 
     // Compile/run quick tests
-    TestNative<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, true>(1, 0.8);
-    TestIterator<int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT, true>(1, 0.8);
+    TestNative<     int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(1, 0.8f, Int2Type<true>());
+    TestIterator<   int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT>(1, 0.8f, Int2Type<true>());
 
 #else
 

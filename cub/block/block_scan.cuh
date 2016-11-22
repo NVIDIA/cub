@@ -627,7 +627,7 @@ public:
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for a 1D block of 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
-     *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_TRANSPOSE> BlockStore;
+     *     typedef cub::BlockStore<int, 128, 4, BLOCK_STORE_TRANSPOSE>  BlockStore;
      *     typedef cub::BlockScan<int, 128>                             BlockScan;
      *
      *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan
@@ -1052,7 +1052,7 @@ public:
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for a 1D block of 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
-     *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_TRANSPOSE> BlockStore;
+     *     typedef cub::BlockStore<int, 128, 4, BLOCK_STORE_TRANSPOSE>  BlockStore;
      *     typedef cub::BlockScan<int, 128>                             BlockScan;
      *
      *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan
@@ -1597,7 +1597,7 @@ public:
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for a 1D block of 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
-     *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_TRANSPOSE> BlockStore;
+     *     typedef cub::BlockStore<int, 128, 4, BLOCK_STORE_TRANSPOSE>  BlockStore;
      *     typedef cub::BlockScan<int, 128>                             BlockScan;
      *
      *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan
@@ -2045,7 +2045,7 @@ public:
      * {
      *     // Specialize BlockLoad, BlockStore, and BlockScan for a 1D block of 128 threads, 4 ints per thread
      *     typedef cub::BlockLoad<int*, 128, 4, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
-     *     typedef cub::BlockStore<int*, 128, 4, BLOCK_STORE_TRANSPOSE> BlockStore;
+     *     typedef cub::BlockStore<int, 128, 4, BLOCK_STORE_TRANSPOSE>  BlockStore;
      *     typedef cub::BlockScan<int, 128>                             BlockScan;
      *
      *     // Allocate aliased shared memory for BlockLoad, BlockStore, and BlockScan

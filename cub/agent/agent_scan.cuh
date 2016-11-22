@@ -93,7 +93,7 @@ template <
     typename InputIteratorT,        ///< Random-access input iterator type
     typename OutputIteratorT,       ///< Random-access output iterator type
     typename ScanOpT,               ///< Scan functor type
-    typename InitValueT,             ///< The init_value element for ScanOpT type (cub::NullType for inclusive scan)
+    typename InitValueT,            ///< The init_value element for ScanOpT type (cub::NullType for inclusive scan)
     typename OffsetT>               ///< Signed integer type for global offsets
 struct AgentScan
 {
@@ -101,9 +101,13 @@ struct AgentScan
     // Types and constants
     //---------------------------------------------------------------------
 
-    // The value types of the iterators
-    typedef typename std::iterator_traits<InputIteratorT>::value_type   InputT;
-    typedef typename std::iterator_traits<OutputIteratorT>::value_type  OutputT;
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     // Tile status descriptor interface type
     typedef ScanTileState<OutputT> ScanTileStateT;
@@ -133,7 +137,7 @@ struct AgentScan
 
     // Parameterized BlockStore type
     typedef BlockStore<
-            OutputIteratorT,
+            OutputT,
             AgentScanPolicyT::BLOCK_THREADS,
             AgentScanPolicyT::ITEMS_PER_THREAD,
             AgentScanPolicyT::STORE_ALGORITHM>

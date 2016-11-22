@@ -117,16 +117,22 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void*               d_temp_storage,
+    void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     if (d_temp_storage == 0)
     {
@@ -134,9 +140,9 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<T> d_out_wrapper_end;
-        thrust::device_ptr<T> d_in_wrapper(d_in);
-        thrust::device_ptr<T> d_out_wrapper(d_out);
+        thrust::device_ptr<OutputT> d_out_wrapper_end;
+        thrust::device_ptr<InputT> d_in_wrapper(d_in);
+        thrust::device_ptr<OutputT> d_out_wrapper(d_out);
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
             d_out_wrapper_end = thrust::unique_copy(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);

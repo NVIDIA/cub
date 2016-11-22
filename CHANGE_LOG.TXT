@@ -4,11 +4,12 @@
         - Issue #74: Warpreduce executes reduction operator for out-of-bounds items
         - Issue #72 (cub:InequalityWrapper::operator() should be non-const)
         - Issue #71 (KeyVairPair won't work if Key has non-trivial ctor)
+		- Issue #70 1.5.3 breaks BlockScan API.  Retroactively reversioned
+		  from v1.5.3 -> v1.6 to appropriately indicate API change.
+		- Issue #69 cub::BlockStore::Store doesn't compile if OutputIteratorT::value_type != T  
         - Issue #68 (cub::TilePrefixCallbackOp::WarpReduce doesn't permit ptx 
           arch specialization)
-		- Issue #70 1.5.3 breaks BlockScan API.  Retroactively reversioned 
-		  from v1.5.3 -> v1.6 to appropriately indicate API change.
-		- Improved support for Win32 platforms
+		- Improved support for Win32 platforms (warnings, alignment, etc)
 		  
 //-----------------------------------------------------------------------------
 
