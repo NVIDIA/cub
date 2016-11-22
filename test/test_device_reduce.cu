@@ -41,6 +41,7 @@
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_segmented_reduce.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
+#include <cub/iterator/discard_output_iterator.cuh>
 
 #include <thrust/device_ptr.h>
 #include <thrust/reduce.h>
@@ -111,8 +112,12 @@ cudaError_t Dispatch(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+
     // Max-identity
-    typedef typename std::iterator_traits<InputIteratorT>::value_type OutputT;
     OutputT identity = Traits<OutputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
 
     // Invoke kernel to device reduction directly
@@ -308,8 +313,12 @@ cudaError_t Dispatch(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+
     // Max-identity
-    typedef typename std::iterator_traits<InputIteratorT>::value_type OutputT;
     OutputT identity = Traits<OutputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
 
     // Invoke kernel to device reduction directly
@@ -514,7 +523,10 @@ cudaError_t Dispatch(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type OutputT;
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     if (d_temp_storage == 0)
     {
@@ -559,7 +571,10 @@ cudaError_t Dispatch(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type OutputT;
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     if (d_temp_storage == 0)
     {
@@ -833,6 +848,13 @@ void Test(
 
     // Clear device output
     CubDebugExit(cudaMemset(d_out, 0, sizeof(OutputT) * num_segments));
+
+    // Run once with discard iterator
+    DiscardOutputIterator<int> discard_itr;
+    CubDebugExit(Dispatch(backend, 1,
+        d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
+        d_in, discard_itr, num_items, num_segments, d_segment_offsets,
+        reduction_op, 0, true));
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(backend, 1,

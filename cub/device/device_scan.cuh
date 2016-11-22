@@ -153,8 +153,10 @@ struct DeviceScan
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // Scan data type
-        typedef typename std::iterator_traits<OutputIteratorT>::value_type OutputT;
+        // The output value type
+        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+            typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
         // Initial value
         OutputT init_value = 0;

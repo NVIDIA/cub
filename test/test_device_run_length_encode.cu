@@ -200,7 +200,7 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void*               d_temp_storage,
+    void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
     UniqueOutputIteratorT       d_unique_out,
@@ -212,8 +212,18 @@ cudaError_t Dispatch(
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
-    typedef typename std::iterator_traits<LengthsOutputIteratorT>::value_type LengthT;
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<UniqueOutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                                // ... then the input iterator's value type,
+        typename std::iterator_traits<UniqueOutputIteratorT>::value_type>::Type UniqueT;                          // ... else the output iterator's value type
+
+    // The lengths output value type
+    typedef typename If<(Equals<typename std::iterator_traits<LengthsOutputIteratorT>::value_type, void>::VALUE),   // LengthT =  (if output iterator's value type is void) ?
+        OffsetT,                                                                                                    // ... then the OffsetT type,
+        typename std::iterator_traits<LengthsOutputIteratorT>::value_type>::Type LengthT;                           // ... else the output iterator's value type
 
     if (d_temp_storage == 0)
     {
@@ -221,11 +231,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<T>     d_in_wrapper(d_in);
-        thrust::device_ptr<T>     d_unique_out_wrapper(d_unique_out);
-        thrust::device_ptr<LengthT>   d_lengths_out_wrapper(d_lengths_out);
+        thrust::device_ptr<InputT>      d_in_wrapper(d_in);
+        thrust::device_ptr<UniqueT>     d_unique_out_wrapper(d_unique_out);
+        thrust::device_ptr<LengthT>     d_lengths_out_wrapper(d_lengths_out);
 
-        thrust::pair<thrust::device_ptr<T>, thrust::device_ptr<LengthT> > d_out_ends;
+        thrust::pair<thrust::device_ptr<UniqueT>, thrust::device_ptr<LengthT> > d_out_ends;
 
         LengthT one_val;
         InitValue(INTEGER_SEED, one_val, 1);

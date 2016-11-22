@@ -105,16 +105,18 @@ struct AgentRle
     // Types and constants
     //---------------------------------------------------------------------
 
-    // Data type of input iterator
+    /// The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type T;
 
-    // Signed integer type for run lengths
-    typedef typename std::iterator_traits<LengthsOutputIteratorT>::value_type LengthT;
+    /// The lengths output value type
+    typedef typename If<(Equals<typename std::iterator_traits<LengthsOutputIteratorT>::value_type, void>::VALUE),   // LengthT =  (if output iterator's value type is void) ?
+        OffsetT,                                                                                                    // ... then the OffsetT type,
+        typename std::iterator_traits<LengthsOutputIteratorT>::value_type>::Type LengthT;                           // ... else the output iterator's value type
 
-    // Tuple type for scanning (pairs run-length and run-index)
+    /// Tuple type for scanning (pairs run-length and run-index)
     typedef KeyValuePair<OffsetT, LengthT> LengthOffsetPair;
 
-    // Tile status descriptor interface type
+    /// Tile status descriptor interface type
     typedef ReduceByKeyScanTileState<LengthT, OffsetT> ScanTileStateT;
 
     // Constants
@@ -267,7 +269,7 @@ struct AgentRle
         InputIteratorT              d_in,               ///< [in] Pointer to input sequence of data items
         OffsetsOutputIteratorT      d_offsets_out,      ///< [out] Pointer to output sequence of run offsets
         LengthsOutputIteratorT      d_lengths_out,      ///< [out] Pointer to output sequence of run lengths
-        EqualityOpT                  equality_op,        ///< [in] T equality operator
+        EqualityOpT                 equality_op,        ///< [in] T equality operator
         OffsetT                     num_items)          ///< [in] Total number of input items
     :
         temp_storage(temp_storage.Alias()),
