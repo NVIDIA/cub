@@ -327,9 +327,28 @@ struct DeviceReducePolicy
         typedef ReducePolicy SegmentedReducePolicy;
     };
 
+    /// SM60
+    struct Policy600 : ChainedPolicy<600, Policy600, Policy350>
+    {
+        // ReducePolicy (P100: 591 GB/s @ 64M 4B items; 583 GB/s @ 256M 1B items)
+        typedef AgentReducePolicy<
+                CUB_NOMINAL_CONFIG(256, 16, OuputT),     ///< Threads per block, items per thread
+                4,                                  ///< Number of items per vectorized load
+                BLOCK_REDUCE_WARP_REDUCTIONS,       ///< Cooperative block-wide reduction algorithm to use
+                LOAD_LDG,                           ///< Cache load modifier
+                GRID_MAPPING_DYNAMIC>               ///< How to map tiles of input onto thread blocks
+            ReducePolicy;
+
+        // SingleTilePolicy
+        typedef ReducePolicy SingleTilePolicy;
+
+        // SegmentedReducePolicy
+        typedef ReducePolicy SegmentedReducePolicy;
+    };
+
 
     /// MaxPolicy
-    typedef Policy350 MaxPolicy;
+    typedef Policy600 MaxPolicy;
 
 };
 

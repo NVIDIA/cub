@@ -549,7 +549,8 @@ cudaError_t Dispatch(
             retval = thrust::reduce(d_in_wrapper, d_in_wrapper + num_items, init, reduction_op);
         }
 
-        CubDebugExit(cudaMemcpy(d_out, &retval, sizeof(OutputT), cudaMemcpyHostToDevice));
+        if (!Equals<OutputIteratorT, DiscardOutputIterator<int> >::VALUE)
+            CubDebugExit(cudaMemcpy(d_out, &retval, sizeof(OutputT), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -594,7 +595,8 @@ cudaError_t Dispatch(
             retval = thrust::reduce(d_in_wrapper, d_in_wrapper + num_items);
         }
 
-        CubDebugExit(cudaMemcpy(d_out, &retval, sizeof(OutputT), cudaMemcpyHostToDevice));
+        if (!Equals<OutputIteratorT, DiscardOutputIterator<int> >::VALUE)
+            CubDebugExit(cudaMemcpy(d_out, &retval, sizeof(OutputT), cudaMemcpyHostToDevice));
     }
 
     return cudaSuccess;
@@ -1233,14 +1235,18 @@ int main(int argc, char** argv)
 
     // Compile/run basic test
 
-    TestProblem<CUB_SEGMENTED, int, int>(max_items, max_segments, RANDOM, Sum());
+
+
+    TestProblem<CUB, int, int>(     max_items, 1, RANDOM, Sum());
 
     TestProblem<CUB, char, int>(    max_items, 1, RANDOM, Sum());
 
-    TestProblem<CUB, int, int>(     max_items, 1, RANDOM, Sum());
     TestProblem<CUB, int, int>(     max_items, 1, RANDOM, ArgMax());
 
     TestProblem<CUB, float, float>( max_items, 1, RANDOM, Sum());
+
+    TestProblem<CUB_SEGMENTED, int, int>(max_items, max_segments, RANDOM, Sum());
+
 
 #elif defined(QUICK_TEST)
 
