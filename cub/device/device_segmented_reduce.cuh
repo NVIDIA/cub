@@ -305,10 +305,8 @@ struct DeviceSegmentedReduce
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // The output value type
-        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-            typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+        // The input value type
+        typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
 
         return DispatchSegmentedReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Min>::Dispatch(
             d_temp_storage,
@@ -319,7 +317,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Min(),
-            Traits<OutputT>::Max(),    // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
+            Traits<InputT>::Max(),    // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -406,7 +404,7 @@ struct DeviceSegmentedReduce
         ArgIndexInputIteratorT d_indexed_in(d_in);
 
         // Initial value
-        OutputTupleT initial_value(1, Traits<OutputValueT>::Max());   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
+        OutputTupleT initial_value(1, Traits<InputValueT>::Max());   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin>::Dispatch(
             d_temp_storage,
@@ -486,10 +484,8 @@ struct DeviceSegmentedReduce
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // The output value type
-        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-            typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+        // The input value type
+        typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
 
         return DispatchSegmentedReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Max>::Dispatch(
             d_temp_storage,
@@ -500,7 +496,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Max(),
-            Traits<OutputT>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
+            Traits<InputT>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -587,7 +583,7 @@ struct DeviceSegmentedReduce
         ArgIndexInputIteratorT d_indexed_in(d_in);
 
         // Initial value
-        OutputTupleT initial_value(1, Traits<OutputValueT>::Lowest());     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
+        OutputTupleT initial_value(1, Traits<InputValueT>::Lowest());     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
             d_temp_storage,

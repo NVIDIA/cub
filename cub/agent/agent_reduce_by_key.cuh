@@ -185,7 +185,7 @@ struct AgentReduceByKey
 
     // Parameterized BlockLoad type for keys
     typedef BlockLoad<
-            WrappedKeysInputIteratorT,
+            KeyOutputT,
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
             AgentReduceByKeyPolicyT::LOAD_ALGORITHM>
@@ -193,7 +193,7 @@ struct AgentReduceByKey
 
     // Parameterized BlockLoad type for values
     typedef BlockLoad<
-            WrappedValuesInputIteratorT,
+            ValueOutputT,
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
             AgentReduceByKeyPolicyT::LOAD_ALGORITHM>

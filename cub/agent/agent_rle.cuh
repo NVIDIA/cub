@@ -176,7 +176,7 @@ struct AgentRle
 
     // Parameterized BlockLoad type for data
     typedef BlockLoad<
-            WrappedInputIteratorT,
+            T,
             AgentRlePolicyT::BLOCK_THREADS,
             AgentRlePolicyT::ITEMS_PER_THREAD,
             AgentRlePolicyT::LOAD_ALGORITHM>

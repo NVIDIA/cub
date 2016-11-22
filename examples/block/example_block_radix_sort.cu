@@ -82,7 +82,7 @@ __global__ void BlockSortKernel(
     enum { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };
 
     // Specialize BlockLoad type for our thread block (uses warp-striped loads for coalescing, then transposes in shared memory to a blocked arrangement)
-    typedef BlockLoad<Key*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoadT;
+    typedef BlockLoad<Key, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoadT;
 
     // Specialize BlockRadixSort type for our thread block
     typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;

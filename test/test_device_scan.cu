@@ -38,6 +38,7 @@
 
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
+#include <cub/iterator/discard_output_iterator.cuh>
 #include <cub/device/device_scan.cuh>
 
 #include <thrust/device_ptr.h>
@@ -634,6 +635,24 @@ void Test(
 
     // Clear device output array
     CubDebugExit(cudaMemset(d_out, 0, sizeof(OutputT) * num_items));
+
+    // Run once with discard iterator
+    DiscardOutputIterator<int> discard_itr;
+    CubDebugExit(Dispatch(
+        Int2Type<BACKEND>(),
+        Int2Type<Traits<OutputT>::PRIMITIVE>(),
+        1,
+        d_temp_storage_bytes,
+        d_cdp_error,
+        d_temp_storage,
+        temp_storage_bytes,
+        d_in,
+        discard_itr,
+        scan_op,
+        initial_value,
+        num_items,
+        0,
+        true));
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(
