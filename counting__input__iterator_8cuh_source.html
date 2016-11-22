@@ -236,7 +236,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;</div>
 <div class="line"><a name="l00184"></a><span class="lineno"><a class="code" href="classcub_1_1_counting_input_iterator.html#a1875e7aad8a49756a2a439fc0605bc8a">  184</a></span>&#160;    __host__ __device__ __forceinline__ <a class="code" href="classcub_1_1_counting_input_iterator.html#ac66dea2a687f0ad6ed0cbcd6217a3029" title="Type to express the result of subtracting one iterator from another. ">difference_type</a> <a class="code" href="classcub_1_1_counting_input_iterator.html#a1875e7aad8a49756a2a439fc0605bc8a" title="Distance. ">operator-</a>(<a class="code" href="classcub_1_1_counting_input_iterator.html" title="A random-access input generator for dereferencing a sequence of incrementing integer values...">self_type</a> other)<span class="keyword"> const</span></div>
 <div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="keyword">    </span>{</div>
-<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        <span class="keywordflow">return</span> val - other.val;</div>
+<div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        <span class="keywordflow">return</span> (<a class="code" href="classcub_1_1_counting_input_iterator.html#ac66dea2a687f0ad6ed0cbcd6217a3029" title="Type to express the result of subtracting one iterator from another. ">difference_type</a>) (val - other.val);</div>
 <div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;    }</div>
 <div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;</div>
 <div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> Distance&gt;</div>
@@ -277,7 +277,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 25 2016 10:52:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

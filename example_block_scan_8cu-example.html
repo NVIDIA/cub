@@ -168,10 +168,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    clock_t     *d_elapsed)     <span class="comment">// Elapsed cycle count of block scan</span></div>
 <div class="line">{</div>
 <div class="line">    <span class="comment">// Specialize BlockLoad type for our thread block (uses warp-striped loads for coalescing, then transposes in shared memory to a blocked arrangement)</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a name="_a0"></a><a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad&lt;int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> BlockLoadT;</div>
+<div class="line">    <span class="keyword">typedef</span> <a name="_a0"></a><a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad&lt;int, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> BlockLoadT;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Specialize BlockStore type for our thread block (uses warp-striped loads for coalescing, then transposes in shared memory to a blocked arrangement)</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a name="_a1"></a><a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore&lt;int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE&gt;</a> BlockStoreT;</div>
+<div class="line">    <span class="keyword">typedef</span> <a name="_a1"></a><a class="code" href="classcub_1_1_block_store.html" title="The BlockStore class provides collective data movement methods for writing a blocked arrangement of i...">BlockStore&lt;int, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE&gt;</a> BlockStoreT;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Specialize BlockScan type for our thread block</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a name="_a2"></a><a class="code" href="classcub_1_1_block_scan.html" title="The BlockScan class provides collective methods for computing a parallel prefix sum/scan of items par...">BlockScan&lt;int, BLOCK_THREADS, ALGORITHM&gt;</a> BlockScanT;</div>
@@ -414,7 +414,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 25 2016 10:52:43 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

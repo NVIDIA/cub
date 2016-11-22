@@ -168,7 +168,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    <span class="keyword">enum</span> { TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD };</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Specialize BlockLoad type for our thread block (uses warp-striped loads for coalescing, then transposes in shared memory to a blocked arrangement)</span></div>
-<div class="line">    <span class="keyword">typedef</span> <a name="_a0"></a><a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad&lt;Key*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> BlockLoadT;</div>
+<div class="line">    <span class="keyword">typedef</span> <a name="_a0"></a><a class="code" href="classcub_1_1_block_load.html" title="The BlockLoad class provides collective data movement methods for loading a linear segment of items f...">BlockLoad&lt;Key, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE&gt;</a> BlockLoadT;</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Specialize BlockRadixSort type for our thread block</span></div>
 <div class="line">    <span class="keyword">typedef</span> <a name="_a1"></a><a class="code" href="classcub_1_1_block_radix_sort.html" title="The BlockRadixSort class provides collective methods for sorting items partitioned across a CUDA thre...">BlockRadixSort&lt;Key, BLOCK_THREADS, ITEMS_PER_THREAD&gt;</a> BlockRadixSortT;</div>
@@ -398,7 +398,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 25 2016 10:52:43 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

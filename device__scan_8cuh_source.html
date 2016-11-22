@@ -163,132 +163,134 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;</div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="comment">// Scan data type</span></div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;OutputIteratorT&gt;::value_type OutputT;</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;</div>
-<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <span class="comment">// Initial value</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        OutputT init_value = 0;</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        <span class="keywordflow">return</span> DispatchScan&lt;InputIteratorT, OutputIteratorT, Sum, OutputT, OffsetT&gt;::Dispatch(</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;            d_in,</div>
-<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            d_out,</div>
-<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum</a>(),</div>
-<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            init_value,</div>
-<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            num_items,</div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            stream,</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;    }</div>
-<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;</div>
-<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        <span class="keyword">typename</span>        InputIteratorT,</div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;        <span class="keyword">typename</span>        OutputIteratorT,</div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="keyword">typename</span>        ScanOpT,</div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <span class="keyword">typename</span>        InitValueT&gt;</div>
-<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00231"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a83236fc272c0b573a2bb2c5b47e0867d">  231</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a83236fc272c0b573a2bb2c5b47e0867d" title="Computes a device-wide exclusive prefix scan using the specified binary scan_op functor. The init_value value is applied as the initial value, and is assigned to *d_out. ">ExclusiveScan</a>(</div>
-<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="keywordtype">void</span>            *d_temp_storage,                    </div>
-<div class="line"><a name="l00233"></a><span class="lineno">  233</span>&#160;        <span class="keywordtype">size_t</span>          &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        InputIteratorT  d_in,                               </div>
-<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        OutputIteratorT d_out,                              </div>
-<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        ScanOpT         scan_op,                            </div>
-<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        InitValueT      init_value,                         </div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="keywordtype">int</span>             num_items,                          </div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        cudaStream_t    stream              = 0,            </div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordtype">bool</span>            debug_synchronous   = <span class="keyword">false</span>)        </div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;    {</div>
-<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
-<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;</div>
-<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        <span class="keywordflow">return</span> DispatchScan&lt;InputIteratorT, OutputIteratorT, ScanOpT, InitValueT, OffsetT&gt;::Dispatch(</div>
-<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;            d_in,</div>
-<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;            d_out,</div>
-<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;            scan_op,</div>
-<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;            init_value,</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            num_items,</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            stream,</div>
-<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;    }</div>
-<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;</div>
-<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;</div>
-<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;</div>
-<div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;</div>
-<div class="line"><a name="l00302"></a><span class="lineno">  302</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00303"></a><span class="lineno">  303</span>&#160;        <span class="keyword">typename</span>            InputIteratorT,</div>
-<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;        <span class="keyword">typename</span>            OutputIteratorT&gt;</div>
-<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00306"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a9416ac1ea26f9fde669d83ddc883795a">  306</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a9416ac1ea26f9fde669d83ddc883795a" title="Computes a device-wide inclusive prefix sum. ">InclusiveSum</a>(</div>
-<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                 </div>
-<div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,             </div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        InputIteratorT      d_in,                           </div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        OutputIteratorT     d_out,                          </div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        <span class="keywordtype">int</span>                 num_items,                      </div>
-<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;        cudaStream_t        stream             = 0,         </div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous  = <span class="keyword">false</span>)     </div>
-<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;    {</div>
-<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
-<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;</div>
-<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        <span class="keywordflow">return</span> DispatchScan&lt;InputIteratorT, OutputIteratorT, Sum, NullType, OffsetT&gt;::Dispatch(</div>
-<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;            d_in,</div>
-<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;            d_out,</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;            <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum</a>(),</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;            NullType(),</div>
-<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;            num_items,</div>
-<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;            stream,</div>
-<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;    }</div>
-<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;</div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;        <span class="keyword">typename</span>        InputIteratorT,</div>
-<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;        <span class="keyword">typename</span>        OutputIteratorT,</div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;        <span class="keyword">typename</span>        ScanOpT&gt;</div>
-<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00385"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a16d7bc049ba8985dd89b10b3bcf0a8a3">  385</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a16d7bc049ba8985dd89b10b3bcf0a8a3" title="Computes a device-wide inclusive prefix scan using the specified binary scan_op functor. ">InclusiveScan</a>(</div>
-<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;        <span class="keywordtype">void</span>            *d_temp_storage,                    </div>
-<div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;        <span class="keywordtype">size_t</span>          &amp;temp_storage_bytes,                </div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;        InputIteratorT  d_in,                               </div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;        OutputIteratorT d_out,                              </div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;        ScanOpT         scan_op,                            </div>
-<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;        <span class="keywordtype">int</span>             num_items,                          </div>
-<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;        cudaStream_t    stream             = 0,             </div>
-<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;        <span class="keywordtype">bool</span>            debug_synchronous  = <span class="keyword">false</span>)         </div>
-<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;    {</div>
-<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;        <span class="keywordflow">return</span> DispatchScan&lt;InputIteratorT, OutputIteratorT, ScanOpT, NullType, OffsetT&gt;::Dispatch(</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;            d_in,</div>
-<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;            d_out,</div>
-<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;            scan_op,</div>
-<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;            NullType(),</div>
-<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;            num_items,</div>
-<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;            stream,</div>
-<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;    }</div>
-<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;</div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="comment">// The output value type</span></div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> <a class="code" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If&lt;(Equals&lt;typename std::iterator_traits&lt;OutputIteratorT&gt;::value_type</a>, <span class="keywordtype">void</span>&gt;::VALUE),  <span class="comment">// OutputT =  (if output iterator&#39;s value type is void) ?</span></div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;            <span class="keyword">typename</span> std::iterator_traits&lt;InputIteratorT&gt;::value_type,                                          <span class="comment">// ... then the input iterator&#39;s value type,</span></div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;            <span class="keyword">typename</span> std::iterator_traits&lt;OutputIteratorT&gt;::value_type&gt;::Type OutputT;                          <span class="comment">// ... else the output iterator&#39;s value type</span></div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;</div>
+<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        <span class="comment">// Initial value</span></div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;        OutputT init_value = 0;</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        <span class="keywordflow">return</span> DispatchScan&lt;InputIteratorT, OutputIteratorT, Sum, OutputT, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            d_in,</div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;            d_out,</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;            <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum</a>(),</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;            init_value,</div>
+<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;            num_items,</div>
+<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;            stream,</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    }</div>
+<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;</div>
+<div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;</div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;        <span class="keyword">typename</span>        InputIteratorT,</div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;        <span class="keyword">typename</span>        OutputIteratorT,</div>
+<div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        <span class="keyword">typename</span>        ScanOpT,</div>
+<div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;        <span class="keyword">typename</span>        InitValueT&gt;</div>
+<div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00233"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a83236fc272c0b573a2bb2c5b47e0867d">  233</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a83236fc272c0b573a2bb2c5b47e0867d" title="Computes a device-wide exclusive prefix scan using the specified binary scan_op functor. The init_value value is applied as the initial value, and is assigned to *d_out. ">ExclusiveScan</a>(</div>
+<div class="line"><a name="l00234"></a><span class="lineno">  234</span>&#160;        <span class="keywordtype">void</span>            *d_temp_storage,                    </div>
+<div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;        <span class="keywordtype">size_t</span>          &amp;temp_storage_bytes,                </div>
+<div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        InputIteratorT  d_in,                               </div>
+<div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        OutputIteratorT d_out,                              </div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        ScanOpT         scan_op,                            </div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        InitValueT      init_value,                         </div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;        <span class="keywordtype">int</span>             num_items,                          </div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        cudaStream_t    stream              = 0,            </div>
+<div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        <span class="keywordtype">bool</span>            debug_synchronous   = <span class="keyword">false</span>)        </div>
+<div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    {</div>
+<div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00245"></a><span class="lineno">  245</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
+<div class="line"><a name="l00246"></a><span class="lineno">  246</span>&#160;</div>
+<div class="line"><a name="l00247"></a><span class="lineno">  247</span>&#160;        <span class="keywordflow">return</span> DispatchScan&lt;InputIteratorT, OutputIteratorT, ScanOpT, InitValueT, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00248"></a><span class="lineno">  248</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;            d_in,</div>
+<div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;            d_out,</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;            scan_op,</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;            init_value,</div>
+<div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;            num_items,</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;            stream,</div>
+<div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;    }</div>
+<div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;</div>
+<div class="line"><a name="l00259"></a><span class="lineno">  259</span>&#160;</div>
+<div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;</div>
+<div class="line"><a name="l00304"></a><span class="lineno">  304</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00305"></a><span class="lineno">  305</span>&#160;        <span class="keyword">typename</span>            InputIteratorT,</div>
+<div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;        <span class="keyword">typename</span>            OutputIteratorT&gt;</div>
+<div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00308"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a9416ac1ea26f9fde669d83ddc883795a">  308</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a9416ac1ea26f9fde669d83ddc883795a" title="Computes a device-wide inclusive prefix sum. ">InclusiveSum</a>(</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                 </div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,             </div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        InputIteratorT      d_in,                           </div>
+<div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;        OutputIteratorT     d_out,                          </div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="keywordtype">int</span>                 num_items,                      </div>
+<div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        cudaStream_t        stream             = 0,         </div>
+<div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous  = <span class="keyword">false</span>)     </div>
+<div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;    {</div>
+<div class="line"><a name="l00317"></a><span class="lineno">  317</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
+<div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;        <span class="keywordflow">return</span> DispatchScan&lt;InputIteratorT, OutputIteratorT, Sum, NullType, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;            d_in,</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;            d_out,</div>
+<div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;            <a class="code" href="structcub_1_1_sum.html" title="Default sum functor. ">Sum</a>(),</div>
+<div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;            NullType(),</div>
+<div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;            num_items,</div>
+<div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;            stream,</div>
+<div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    }</div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;</div>
+<div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;</div>
+<div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;        <span class="keyword">typename</span>        InputIteratorT,</div>
+<div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;        <span class="keyword">typename</span>        OutputIteratorT,</div>
+<div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;        <span class="keyword">typename</span>        ScanOpT&gt;</div>
+<div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00387"></a><span class="lineno"><a class="code" href="structcub_1_1_device_scan.html#a16d7bc049ba8985dd89b10b3bcf0a8a3">  387</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_scan.html#a16d7bc049ba8985dd89b10b3bcf0a8a3" title="Computes a device-wide inclusive prefix scan using the specified binary scan_op functor. ">InclusiveScan</a>(</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;        <span class="keywordtype">void</span>            *d_temp_storage,                    </div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;        <span class="keywordtype">size_t</span>          &amp;temp_storage_bytes,                </div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;        InputIteratorT  d_in,                               </div>
+<div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;        OutputIteratorT d_out,                              </div>
+<div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;        ScanOpT         scan_op,                            </div>
+<div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;        <span class="keywordtype">int</span>             num_items,                          </div>
+<div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;        cudaStream_t    stream             = 0,             </div>
+<div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;        <span class="keywordtype">bool</span>            debug_synchronous  = <span class="keyword">false</span>)         </div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    {</div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;</div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;        <span class="keywordflow">return</span> DispatchScan&lt;InputIteratorT, OutputIteratorT, ScanOpT, NullType, OffsetT&gt;::Dispatch(</div>
+<div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;            d_in,</div>
+<div class="line"><a name="l00404"></a><span class="lineno">  404</span>&#160;            d_out,</div>
+<div class="line"><a name="l00405"></a><span class="lineno">  405</span>&#160;            scan_op,</div>
+<div class="line"><a name="l00406"></a><span class="lineno">  406</span>&#160;            NullType(),</div>
+<div class="line"><a name="l00407"></a><span class="lineno">  407</span>&#160;            num_items,</div>
+<div class="line"><a name="l00408"></a><span class="lineno">  408</span>&#160;            stream,</div>
+<div class="line"><a name="l00409"></a><span class="lineno">  409</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00410"></a><span class="lineno">  410</span>&#160;    }</div>
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;</div>
-<div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;};</div>
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;</div>
-<div class="line"><a name="l00418"></a><span class="lineno">  418</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00419"></a><span class="lineno">  419</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
-<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;</div>
-<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;</div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;};</div>
+<div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;</div>
+<div class="line"><a name="l00420"></a><span class="lineno">  420</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00421"></a><span class="lineno">  421</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00422"></a><span class="lineno">  422</span>&#160;</div>
+<div class="line"><a name="l00423"></a><span class="lineno">  423</span>&#160;</div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 25 2016 10:52:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -38,7 +38,7 @@ var searchData=
   ['blockhistogram',['BlockHistogram',['../classcub_1_1_block_histogram.html#a0cebf0947dda55b487e33ca63d900d7b',1,'cub::BlockHistogram::BlockHistogram()'],['../classcub_1_1_block_histogram.html#a875a03627d3fc144b616c2353569281c',1,'cub::BlockHistogram::BlockHistogram(TempStorage &amp;temp_storage)']]],
   ['blockhistogram',['BlockHistogram',['../classcub_1_1_block_histogram.html',1,'cub']]],
   ['blockhistogramalgorithm',['BlockHistogramAlgorithm',['../namespacecub.html#a845ca81ef9b346ef7429a35d4fdc80d2',1,'cub']]],
-  ['blockload',['BlockLoad',['../classcub_1_1_block_load.html#a63ca21a7d0a53bcff4f10b165859d9b1',1,'cub::BlockLoad::BlockLoad()'],['../classcub_1_1_block_load.html#ae412a81afb577ba1f4f86beb9b69ba27',1,'cub::BlockLoad::BlockLoad(TempStorage &amp;temp_storage)']]],
+  ['blockload',['BlockLoad',['../classcub_1_1_block_load.html#a4dd32bdc4eb8efa0aef66fec635c29b2',1,'cub::BlockLoad::BlockLoad()'],['../classcub_1_1_block_load.html#aeb44b240f59e36e691cb36880d3e7dbe',1,'cub::BlockLoad::BlockLoad(TempStorage &amp;temp_storage)']]],
   ['blockload',['BlockLoad',['../classcub_1_1_block_load.html',1,'cub']]],
   ['blockloadalgorithm',['BlockLoadAlgorithm',['../namespacecub.html#a9d7e37497fdd99864c57adecda710401',1,'cub']]],
   ['block_2dwide',['Block-wide',['../group___block_module.html',1,'']]],
@@ -50,7 +50,7 @@ var searchData=
   ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html#a5133f76e261ce0b33d381e8be747966c',1,'cub::BlockScan::BlockScan()'],['../classcub_1_1_block_scan.html#aa5156b3509d81ed5e53e06e270ab28cf',1,'cub::BlockScan::BlockScan(TempStorage &amp;temp_storage)']]],
   ['blockscan',['BlockScan',['../classcub_1_1_block_scan.html',1,'cub']]],
   ['blockscanalgorithm',['BlockScanAlgorithm',['../namespacecub.html#abec44bba36037c547e7e84906d0d23ab',1,'cub']]],
-  ['blockstore',['BlockStore',['../classcub_1_1_block_store.html#a68e195459de99cc6c19edd123f036e4c',1,'cub::BlockStore::BlockStore()'],['../classcub_1_1_block_store.html#a5f82d32486214e5b1c3f443cc117ef6d',1,'cub::BlockStore::BlockStore(TempStorage &amp;temp_storage)']]],
+  ['blockstore',['BlockStore',['../classcub_1_1_block_store.html#acb209b857a3bcc7d57e08e5134653735',1,'cub::BlockStore::BlockStore()'],['../classcub_1_1_block_store.html#a4fdd2c5743b99310dc3896754d7b69af',1,'cub::BlockStore::BlockStore(TempStorage &amp;temp_storage)']]],
   ['blockstore',['BlockStore',['../classcub_1_1_block_store.html',1,'cub']]],
   ['blockstorealgorithm',['BlockStoreAlgorithm',['../namespacecub.html#a839b145451e9eec3d44172e3c3619700',1,'cub']]],
   ['broadcast',['Broadcast',['../classcub_1_1_warp_scan.html#a97e5ad8bd37d95b39f9f7dee8254d9ad',1,'cub::WarpScan']]]

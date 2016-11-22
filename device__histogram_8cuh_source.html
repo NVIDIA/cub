@@ -292,189 +292,191 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;SampleIteratorT&gt;::value_type SampleT;</div>
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;        Int2Type&lt;sizeof(SampleT) == 1&gt; is_byte_sample;</div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;</div>
-<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;        <span class="keywordflow">if</span> ((<span class="keyword">sizeof</span>(OffsetT) &gt; <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>)) &amp;&amp; (row_stride_bytes * num_rows &lt; std::numeric_limits&lt;int&gt;::max()))</div>
-<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;        {</div>
-<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;            <span class="comment">// Down-convert OffsetT data type</span></div>
-<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;</div>
+<div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;        <span class="keywordflow">if</span> ((<span class="keyword">sizeof</span>(OffsetT) &gt; <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>)) &amp;&amp;</div>
+<div class="line"><a name="l00451"></a><span class="lineno">  451</span>&#160;            ((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span>) (num_rows * row_stride_bytes) &lt; (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span>) std::numeric_limits&lt;int&gt;::max()))</div>
+<div class="line"><a name="l00452"></a><span class="lineno">  452</span>&#160;        {</div>
+<div class="line"><a name="l00453"></a><span class="lineno">  453</span>&#160;            <span class="comment">// Down-convert OffsetT data type</span></div>
 <div class="line"><a name="l00454"></a><span class="lineno">  454</span>&#160;</div>
-<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;            <span class="keywordflow">return</span> DipatchHistogram&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, int&gt;::DispatchEven(</div>
-<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;                d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level,</div>
-<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;                (<span class="keywordtype">int</span>) num_row_pixels, (<span class="keywordtype">int</span>) num_rows, (<span class="keywordtype">int</span>) (row_stride_bytes / <span class="keyword">sizeof</span>(SampleT)),</div>
-<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;                stream, debug_synchronous, is_byte_sample);</div>
-<div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;        }</div>
-<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;</div>
-<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;        <span class="keywordflow">return</span> DipatchHistogram&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT&gt;::DispatchEven(</div>
-<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;            d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level,</div>
-<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;            num_row_pixels, num_rows, (OffsetT) (row_stride_bytes / <span class="keyword">sizeof</span>(SampleT)),</div>
-<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;            stream, debug_synchronous, is_byte_sample);</div>
-<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;    }</div>
-<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;</div>
+<div class="line"><a name="l00455"></a><span class="lineno">  455</span>&#160;</div>
+<div class="line"><a name="l00456"></a><span class="lineno">  456</span>&#160;            <span class="keywordflow">return</span> DipatchHistogram&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, int&gt;::DispatchEven(</div>
+<div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;                d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level,</div>
+<div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;                (<span class="keywordtype">int</span>) num_row_pixels, (<span class="keywordtype">int</span>) num_rows, (<span class="keywordtype">int</span>) (row_stride_bytes / <span class="keyword">sizeof</span>(SampleT)),</div>
+<div class="line"><a name="l00459"></a><span class="lineno">  459</span>&#160;                stream, debug_synchronous, is_byte_sample);</div>
+<div class="line"><a name="l00460"></a><span class="lineno">  460</span>&#160;        }</div>
+<div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;</div>
+<div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;        <span class="keywordflow">return</span> DipatchHistogram&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT&gt;::DispatchEven(</div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;            d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, lower_level, upper_level,</div>
+<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;            num_row_pixels, num_rows, (OffsetT) (row_stride_bytes / <span class="keyword">sizeof</span>(SampleT)),</div>
+<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;            stream, debug_synchronous, is_byte_sample);</div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    }</div>
 <div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;</div>
-<div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;    <span class="comment">/******************************************************************/</span></div>
-<div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;</div>
-<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;        <span class="keyword">typename</span>            SampleIteratorT,</div>
-<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;        <span class="keyword">typename</span>            CounterT,</div>
-<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        <span class="keyword">typename</span>            LevelT,</div>
-<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;        <span class="keyword">typename</span>            OffsetT&gt;</div>
-<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00527"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a11ec6d941fb6779c2a4d124b6f5b0813">  527</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a11ec6d941fb6779c2a4d124b6f5b0813" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">HistogramRange</a>(</div>
-<div class="line"><a name="l00528"></a><span class="lineno">  528</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                         </div>
-<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
-<div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;        SampleIteratorT     d_samples,                              </div>
-<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;        CounterT*           d_histogram,                            </div>
-<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;        <span class="keywordtype">int</span>                 num_levels,                             </div>
-<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;        LevelT*             d_levels,                               </div>
-<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;        OffsetT             num_samples,                            </div>
-<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
-<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;    {</div>
-<div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;SampleIteratorT&gt;::value_type SampleT;</div>
-<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;</div>
-<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;        CounterT*           d_histogram1[1] = {d_histogram};</div>
-<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;        <span class="keywordtype">int</span>                 num_levels1[1]  = {num_levels};</div>
-<div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;        LevelT*             d_levels1[1]    = {d_levels};</div>
-<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;</div>
-<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;        <span class="keywordflow">return</span> MultiHistogramRange&lt;1, 1&gt;(</div>
-<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;            d_samples,</div>
-<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;            d_histogram1,</div>
-<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;            num_levels1,</div>
-<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;            d_levels1,</div>
-<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;            num_samples,</div>
-<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;            1,</div>
-<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;            <span class="keyword">sizeof</span>(SampleT) * num_samples,</div>
-<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;            stream,</div>
-<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;    }</div>
-<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;</div>
+<div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;</div>
+<div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;</div>
+<div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;        <span class="keyword">typename</span>            SampleIteratorT,</div>
+<div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        <span class="keyword">typename</span>            CounterT,</div>
+<div class="line"><a name="l00525"></a><span class="lineno">  525</span>&#160;        <span class="keyword">typename</span>            LevelT,</div>
+<div class="line"><a name="l00526"></a><span class="lineno">  526</span>&#160;        <span class="keyword">typename</span>            OffsetT&gt;</div>
+<div class="line"><a name="l00527"></a><span class="lineno">  527</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00528"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a11ec6d941fb6779c2a4d124b6f5b0813">  528</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a11ec6d941fb6779c2a4d124b6f5b0813" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">HistogramRange</a>(</div>
+<div class="line"><a name="l00529"></a><span class="lineno">  529</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                         </div>
+<div class="line"><a name="l00530"></a><span class="lineno">  530</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
+<div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;        SampleIteratorT     d_samples,                              </div>
+<div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;        CounterT*           d_histogram,                            </div>
+<div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;        <span class="keywordtype">int</span>                 num_levels,                             </div>
+<div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;        LevelT*             d_levels,                               </div>
+<div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;        OffsetT             num_samples,                            </div>
+<div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;        cudaStream_t        stream              = 0,                </div>
+<div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;    {</div>
+<div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;SampleIteratorT&gt;::value_type SampleT;</div>
+<div class="line"><a name="l00541"></a><span class="lineno">  541</span>&#160;</div>
+<div class="line"><a name="l00542"></a><span class="lineno">  542</span>&#160;        CounterT*           d_histogram1[1] = {d_histogram};</div>
+<div class="line"><a name="l00543"></a><span class="lineno">  543</span>&#160;        <span class="keywordtype">int</span>                 num_levels1[1]  = {num_levels};</div>
+<div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;        LevelT*             d_levels1[1]    = {d_levels};</div>
+<div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;</div>
+<div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;        <span class="keywordflow">return</span> MultiHistogramRange&lt;1, 1&gt;(</div>
+<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;            d_samples,</div>
+<div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;            d_histogram1,</div>
+<div class="line"><a name="l00551"></a><span class="lineno">  551</span>&#160;            num_levels1,</div>
+<div class="line"><a name="l00552"></a><span class="lineno">  552</span>&#160;            d_levels1,</div>
+<div class="line"><a name="l00553"></a><span class="lineno">  553</span>&#160;            num_samples,</div>
+<div class="line"><a name="l00554"></a><span class="lineno">  554</span>&#160;            1,</div>
+<div class="line"><a name="l00555"></a><span class="lineno">  555</span>&#160;            <span class="keyword">sizeof</span>(SampleT) * num_samples,</div>
+<div class="line"><a name="l00556"></a><span class="lineno">  556</span>&#160;            stream,</div>
+<div class="line"><a name="l00557"></a><span class="lineno">  557</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;    }</div>
 <div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;</div>
-<div class="line"><a name="l00616"></a><span class="lineno">  616</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;        <span class="keyword">typename</span>            SampleIteratorT,</div>
-<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;        <span class="keyword">typename</span>            CounterT,</div>
-<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;        <span class="keyword">typename</span>            LevelT,</div>
-<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;        <span class="keyword">typename</span>            OffsetT&gt;</div>
-<div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00622"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a2b9278ea5e6442c9af944c83d745eb13">  622</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a2b9278ea5e6442c9af944c83d745eb13" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">HistogramRange</a>(</div>
-<div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                         </div>
-<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
-<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;        SampleIteratorT     d_samples,                              </div>
-<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;        CounterT*           d_histogram,                            </div>
-<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;        <span class="keywordtype">int</span>                 num_levels,                             </div>
-<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;        LevelT*             d_levels,                               </div>
-<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;        OffsetT             num_row_samples,                        </div>
-<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;        OffsetT             num_rows,                               </div>
-<div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;        <span class="keywordtype">size_t</span>              row_stride_bytes,                       </div>
-<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
-<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;    {</div>
-<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;        CounterT*           d_histogram1[1]     = {d_histogram};</div>
-<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;        <span class="keywordtype">int</span>                 num_levels1[1]      = {num_levels};</div>
-<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;        LevelT*             d_levels1[1]        = {d_levels};</div>
-<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;</div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;        <span class="keywordflow">return</span> MultiHistogramRange&lt;1, 1&gt;(</div>
-<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;            d_samples,</div>
-<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;            d_histogram1,</div>
-<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;            num_levels1,</div>
-<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;            d_levels1,</div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            num_row_samples,</div>
-<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;            num_rows,</div>
-<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;            row_stride_bytes,</div>
-<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;            stream,</div>
-<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;    }</div>
-<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;</div>
-<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;        <span class="keywordtype">int</span>                 NUM_CHANNELS,</div>
-<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;        <span class="keywordtype">int</span>                 NUM_ACTIVE_CHANNELS,</div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;        <span class="keyword">typename</span>            SampleIteratorT,</div>
-<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;        <span class="keyword">typename</span>            CounterT,</div>
-<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;        <span class="keyword">typename</span>            LevelT,</div>
-<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;        <span class="keyword">typename</span>            OffsetT&gt;</div>
-<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00721"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a77511d5ae7cc53f0b5c984fd32ad29fe">  721</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a77511d5ae7cc53f0b5c984fd32ad29fe" title="Computes per-channel intensity histograms from a sequence of multi-channel &quot;pixel&quot; data samples using...">MultiHistogramRange</a>(</div>
-<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                         </div>
-<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
-<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;        SampleIteratorT     d_samples,                              </div>
-<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;        CounterT*           d_histogram[NUM_ACTIVE_CHANNELS],       </div>
-<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;        <span class="keywordtype">int</span>                 num_levels[NUM_ACTIVE_CHANNELS],        </div>
-<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;        LevelT*             d_levels[NUM_ACTIVE_CHANNELS],          </div>
-<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;        OffsetT             num_pixels,                             </div>
-<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
-<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;    {</div>
-<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;SampleIteratorT&gt;::value_type SampleT;</div>
-<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;        <span class="keywordflow">return</span> MultiHistogramRange&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS&gt;(</div>
-<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;            d_temp_storage,</div>
-<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;            temp_storage_bytes,</div>
-<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;            d_samples,</div>
-<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;            d_histogram,</div>
-<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;            num_levels,</div>
-<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;            d_levels,</div>
-<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;            num_pixels,</div>
-<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;            1,</div>
-<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;            <span class="keyword">sizeof</span>(SampleT) * NUM_CHANNELS * num_pixels,</div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;            stream,</div>
-<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;            debug_synchronous);</div>
-<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;    }</div>
-<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;</div>
+<div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;</div>
+<div class="line"><a name="l00617"></a><span class="lineno">  617</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00618"></a><span class="lineno">  618</span>&#160;        <span class="keyword">typename</span>            SampleIteratorT,</div>
+<div class="line"><a name="l00619"></a><span class="lineno">  619</span>&#160;        <span class="keyword">typename</span>            CounterT,</div>
+<div class="line"><a name="l00620"></a><span class="lineno">  620</span>&#160;        <span class="keyword">typename</span>            LevelT,</div>
+<div class="line"><a name="l00621"></a><span class="lineno">  621</span>&#160;        <span class="keyword">typename</span>            OffsetT&gt;</div>
+<div class="line"><a name="l00622"></a><span class="lineno">  622</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00623"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a2b9278ea5e6442c9af944c83d745eb13">  623</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a2b9278ea5e6442c9af944c83d745eb13" title="Computes an intensity histogram from a sequence of data samples using the specified bin boundary leve...">HistogramRange</a>(</div>
+<div class="line"><a name="l00624"></a><span class="lineno">  624</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                         </div>
+<div class="line"><a name="l00625"></a><span class="lineno">  625</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
+<div class="line"><a name="l00626"></a><span class="lineno">  626</span>&#160;        SampleIteratorT     d_samples,                              </div>
+<div class="line"><a name="l00627"></a><span class="lineno">  627</span>&#160;        CounterT*           d_histogram,                            </div>
+<div class="line"><a name="l00628"></a><span class="lineno">  628</span>&#160;        <span class="keywordtype">int</span>                 num_levels,                             </div>
+<div class="line"><a name="l00629"></a><span class="lineno">  629</span>&#160;        LevelT*             d_levels,                               </div>
+<div class="line"><a name="l00630"></a><span class="lineno">  630</span>&#160;        OffsetT             num_row_samples,                        </div>
+<div class="line"><a name="l00631"></a><span class="lineno">  631</span>&#160;        OffsetT             num_rows,                               </div>
+<div class="line"><a name="l00632"></a><span class="lineno">  632</span>&#160;        <span class="keywordtype">size_t</span>              row_stride_bytes,                       </div>
+<div class="line"><a name="l00633"></a><span class="lineno">  633</span>&#160;        cudaStream_t        stream              = 0,                </div>
+<div class="line"><a name="l00634"></a><span class="lineno">  634</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l00635"></a><span class="lineno">  635</span>&#160;    {</div>
+<div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;        CounterT*           d_histogram1[1]     = {d_histogram};</div>
+<div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;        <span class="keywordtype">int</span>                 num_levels1[1]      = {num_levels};</div>
+<div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;        LevelT*             d_levels1[1]        = {d_levels};</div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;</div>
+<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;        <span class="keywordflow">return</span> MultiHistogramRange&lt;1, 1&gt;(</div>
+<div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;            d_samples,</div>
+<div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;            d_histogram1,</div>
+<div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;            num_levels1,</div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;            d_levels1,</div>
+<div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;            num_row_samples,</div>
+<div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;            num_rows,</div>
+<div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;            row_stride_bytes,</div>
+<div class="line"><a name="l00650"></a><span class="lineno">  650</span>&#160;            stream,</div>
+<div class="line"><a name="l00651"></a><span class="lineno">  651</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00652"></a><span class="lineno">  652</span>&#160;    }</div>
+<div class="line"><a name="l00653"></a><span class="lineno">  653</span>&#160;</div>
+<div class="line"><a name="l00714"></a><span class="lineno">  714</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;        <span class="keywordtype">int</span>                 NUM_CHANNELS,</div>
+<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;        <span class="keywordtype">int</span>                 NUM_ACTIVE_CHANNELS,</div>
+<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;        <span class="keyword">typename</span>            SampleIteratorT,</div>
+<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;        <span class="keyword">typename</span>            CounterT,</div>
+<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;        <span class="keyword">typename</span>            LevelT,</div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;        <span class="keyword">typename</span>            OffsetT&gt;</div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00722"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a77511d5ae7cc53f0b5c984fd32ad29fe">  722</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a77511d5ae7cc53f0b5c984fd32ad29fe" title="Computes per-channel intensity histograms from a sequence of multi-channel &quot;pixel&quot; data samples using...">MultiHistogramRange</a>(</div>
+<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                         </div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
+<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;        SampleIteratorT     d_samples,                              </div>
+<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;        CounterT*           d_histogram[NUM_ACTIVE_CHANNELS],       </div>
+<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;        <span class="keywordtype">int</span>                 num_levels[NUM_ACTIVE_CHANNELS],        </div>
+<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;        LevelT*             d_levels[NUM_ACTIVE_CHANNELS],          </div>
+<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;        OffsetT             num_pixels,                             </div>
+<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;        cudaStream_t        stream              = 0,                </div>
+<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;    {</div>
+<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;SampleIteratorT&gt;::value_type SampleT;</div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;</div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;        <span class="keywordflow">return</span> MultiHistogramRange&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS&gt;(</div>
+<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;            d_temp_storage,</div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;            temp_storage_bytes,</div>
+<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;            d_samples,</div>
+<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;            d_histogram,</div>
+<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;            num_levels,</div>
+<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;            d_levels,</div>
+<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;            num_pixels,</div>
+<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;            1,</div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;            <span class="keyword">sizeof</span>(SampleT) * NUM_CHANNELS * num_pixels,</div>
+<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;            stream,</div>
+<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;            debug_synchronous);</div>
+<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;    }</div>
 <div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;</div>
-<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;    <span class="keyword">template</span> &lt;</div>
-<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;        <span class="keywordtype">int</span>                 NUM_CHANNELS,</div>
-<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;        <span class="keywordtype">int</span>                 NUM_ACTIVE_CHANNELS,</div>
-<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;        <span class="keyword">typename</span>            SampleIteratorT,</div>
-<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;        <span class="keyword">typename</span>            CounterT,</div>
-<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;        <span class="keyword">typename</span>            LevelT,</div>
-<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;        <span class="keyword">typename</span>            OffsetT&gt;</div>
-<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00824"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a5926ff12b29d9e8e67ecf2684071542f">  824</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a5926ff12b29d9e8e67ecf2684071542f" title="Computes per-channel intensity histograms from a sequence of multi-channel &quot;pixel&quot; data samples using...">MultiHistogramRange</a>(</div>
-<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                         </div>
-<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
-<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;        SampleIteratorT     d_samples,                              </div>
-<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;        CounterT*           d_histogram[NUM_ACTIVE_CHANNELS],       </div>
-<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;        <span class="keywordtype">int</span>                 num_levels[NUM_ACTIVE_CHANNELS],        </div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;        LevelT*             d_levels[NUM_ACTIVE_CHANNELS],          </div>
-<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;        OffsetT             num_row_pixels,                         </div>
-<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;        OffsetT             num_rows,                               </div>
-<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        <span class="keywordtype">size_t</span>              row_stride_bytes,                       </div>
-<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        cudaStream_t        stream              = 0,                </div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
-<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;    {</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;SampleIteratorT&gt;::value_type SampleT;</div>
-<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;        Int2Type&lt;sizeof(SampleT) == 1&gt; is_byte_sample;</div>
-<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;</div>
-<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;        <span class="keywordflow">if</span> ((<span class="keyword">sizeof</span>(OffsetT) &gt; <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>)) &amp;&amp; (row_stride_bytes * num_rows &lt; std::numeric_limits&lt;int&gt;::max()))</div>
-<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;        {</div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;            <span class="comment">// Down-convert OffsetT data type</span></div>
-<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;            <span class="keywordflow">return</span> DipatchHistogram&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, int&gt;::DispatchRange(</div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;                d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels,</div>
-<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;                (<span class="keywordtype">int</span>) num_row_pixels, (<span class="keywordtype">int</span>) num_rows, (<span class="keywordtype">int</span>) (row_stride_bytes / <span class="keyword">sizeof</span>(SampleT)),</div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                stream, debug_synchronous, is_byte_sample);</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;        }</div>
-<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;        <span class="keywordflow">return</span> DipatchHistogram&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT&gt;::DispatchRange(</div>
-<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;            d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels,</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;            num_row_pixels, num_rows, (OffsetT) (row_stride_bytes / <span class="keyword">sizeof</span>(SampleT)),</div>
-<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;            stream, debug_synchronous, is_byte_sample);</div>
-<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;    }</div>
-<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;</div>
-<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;</div>
+<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;</div>
+<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;    <span class="keyword">template</span> &lt;</div>
+<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;        <span class="keywordtype">int</span>                 NUM_CHANNELS,</div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;        <span class="keywordtype">int</span>                 NUM_ACTIVE_CHANNELS,</div>
+<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;        <span class="keyword">typename</span>            SampleIteratorT,</div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;        <span class="keyword">typename</span>            CounterT,</div>
+<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;        <span class="keyword">typename</span>            LevelT,</div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;        <span class="keyword">typename</span>            OffsetT&gt;</div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;    CUB_RUNTIME_FUNCTION</div>
+<div class="line"><a name="l00825"></a><span class="lineno"><a class="code" href="structcub_1_1_device_histogram.html#a5926ff12b29d9e8e67ecf2684071542f">  825</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_histogram.html#a5926ff12b29d9e8e67ecf2684071542f" title="Computes per-channel intensity histograms from a sequence of multi-channel &quot;pixel&quot; data samples using...">MultiHistogramRange</a>(</div>
+<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;        <span class="keywordtype">void</span>*               d_temp_storage,                         </div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;        <span class="keywordtype">size_t</span>&amp;             temp_storage_bytes,                    </div>
+<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;        SampleIteratorT     d_samples,                              </div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;        CounterT*           d_histogram[NUM_ACTIVE_CHANNELS],       </div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;        <span class="keywordtype">int</span>                 num_levels[NUM_ACTIVE_CHANNELS],        </div>
+<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;        LevelT*             d_levels[NUM_ACTIVE_CHANNELS],          </div>
+<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;        OffsetT             num_row_pixels,                         </div>
+<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;        OffsetT             num_rows,                               </div>
+<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;        <span class="keywordtype">size_t</span>              row_stride_bytes,                       </div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;        cudaStream_t        stream              = 0,                </div>
+<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;        <span class="keywordtype">bool</span>                debug_synchronous   = <span class="keyword">false</span>)            </div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;    {</div>
+<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;        <span class="keyword">typedef</span> <span class="keyword">typename</span> std::iterator_traits&lt;SampleIteratorT&gt;::value_type SampleT;</div>
+<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;        Int2Type&lt;sizeof(SampleT) == 1&gt; is_byte_sample;</div>
+<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;</div>
+<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;        <span class="keywordflow">if</span> ((<span class="keyword">sizeof</span>(OffsetT) &gt; <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>)) &amp;&amp;</div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;            ((<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span>) (num_rows * row_stride_bytes) &lt; (<span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span>) std::numeric_limits&lt;int&gt;::max()))</div>
+<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;        {</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;            <span class="comment">// Down-convert OffsetT data type</span></div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;            <span class="keywordflow">return</span> DipatchHistogram&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, int&gt;::DispatchRange(</div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;                d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels,</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;                (<span class="keywordtype">int</span>) num_row_pixels, (<span class="keywordtype">int</span>) num_rows, (<span class="keywordtype">int</span>) (row_stride_bytes / <span class="keyword">sizeof</span>(SampleT)),</div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;                stream, debug_synchronous, is_byte_sample);</div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;        }</div>
+<div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;</div>
+<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;        <span class="keywordflow">return</span> DipatchHistogram&lt;NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, OffsetT&gt;::DispatchRange(</div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;            d_temp_storage, temp_storage_bytes, d_samples, d_histogram, num_levels, d_levels,</div>
+<div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;            num_row_pixels, num_rows, (OffsetT) (row_stride_bytes / <span class="keyword">sizeof</span>(SampleT)),</div>
+<div class="line"><a name="l00855"></a><span class="lineno">  855</span>&#160;            stream, debug_synchronous, is_byte_sample);</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;    }</div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;};</div>
-<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;</div>
-<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00866"></a><span class="lineno">  866</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
-<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;</div>
-<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;</div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;</div>
+<div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;};</div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;</div>
+<div class="line"><a name="l00867"></a><span class="lineno">  867</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;</div>
+<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;</div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Oct 25 2016 10:52:44 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

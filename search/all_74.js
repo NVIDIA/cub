@@ -8,9 +8,9 @@ var searchData=
   ['tempstorage',['TempStorage',['../structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___t_r_a_n_s_p_o_s_e_00_09dfae03f13932c7dbdb41be30a5767ba.html',1,'cub::BlockStore::StoreInternal&lt; BLOCK_STORE_TRANSPOSE, DUMMY &gt;']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_store_1_1_temp_storage.html',1,'cub::BlockStore']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8d170856b7ed1df0ed565731a681b449.html',1,'cub::BlockStore::StoreInternal&lt; BLOCK_STORE_WARP_TRANSPOSE, DUMMY &gt;']]],
+  ['tempstorage',['TempStorage',['../structcub_1_1_block_exchange_1_1_temp_storage.html',1,'cub::BlockExchange']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_scan_1_1_temp_storage.html',1,'cub::BlockScan']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_reduce_1_1_temp_storage.html',1,'cub::BlockReduce']]],
-  ['tempstorage',['TempStorage',['../structcub_1_1_block_exchange_1_1_temp_storage.html',1,'cub::BlockExchange']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_warp_scan_1_1_temp_storage.html',1,'cub::WarpScan']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_263becc1ca5b47586740c2f7bb0d0145.html',1,'cub::BlockStore::StoreInternal&lt; BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED, DUMMY &gt;']]],
   ['tempstorage',['TempStorage',['../structcub_1_1_block_histogram_1_1_temp_storage.html',1,'cub::BlockHistogram']]],
@@ -29,9 +29,10 @@ var searchData=
   ['threadexit',['ThreadExit',['../group___util_ptx.html#gaaabc0ca85704d56022045d75ece4cf22',1,'cub']]],
   ['threadload',['ThreadLoad',['../group___util_io.html#ga54f8f9a6645b94a484fab6f73568b81c',1,'cub']]],
   ['threadstore',['ThreadStore',['../group___util_io.html#ga7e46f6e1c83bab6124cf8d4b66377812',1,'cub']]],
+  ['threadtrap',['ThreadTrap',['../group___util_ptx.html#gabd92b218494177959781f509766387ed',1,'cub']]],
   ['transform_5finput_5fiterator_2ecuh',['transform_input_iterator.cuh',['../transform__input__iterator_8cuh.html',1,'']]],
-  ['transforminputiterator',['TransformInputIterator',['../classcub_1_1_transform_input_iterator.html',1,'cub']]],
   ['transforminputiterator',['TransformInputIterator',['../classcub_1_1_transform_input_iterator.html#ae7c61b8bdb41cef3d684f12b52f65dc6',1,'cub::TransformInputIterator']]],
+  ['transforminputiterator',['TransformInputIterator',['../classcub_1_1_transform_input_iterator.html',1,'cub']]],
   ['type',['Type',['../structcub_1_1_if.html#af689e9527f56372e66413b65581ded8e',1,'cub::If::Type()'],['../structcub_1_1_remove_qualifiers.html#a9143e196ef5e6a0176b953f677e94671',1,'cub::RemoveQualifiers::Type()']]],
   ['thread_20and_20thread_20block_20i_2fo',['Thread and thread block I/O',['../group___util_io.html',1,'']]]
 ];
