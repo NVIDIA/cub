@@ -112,13 +112,15 @@ cudaError_t Dispatch(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
     // The output value type
     typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
         typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
         typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     // Max-identity
-    OutputT identity = Traits<OutputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
+    OutputT identity = Traits<InputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
 
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;
@@ -313,13 +315,16 @@ cudaError_t Dispatch(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
     // The output value type
     typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
         typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
         typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     // Max-identity
-    OutputT identity = Traits<OutputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
+    OutputT identity = Traits<InputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
 
     // Invoke kernel to device reduction directly
     cudaError_t error = cudaSuccess;

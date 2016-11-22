@@ -236,14 +236,14 @@ __global__ void DeviceRadixSortSingleTileKernel(
 
     // BlockLoad type (keys)
     typedef BlockLoad<
-        KeyT*,
+        KeyT,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         ChainedPolicyT::ActivePolicy::SingleTilePolicy::LOAD_ALGORITHM> BlockLoadKeys;
 
     // BlockLoad type (values)
     typedef BlockLoad<
-        ValueT*,
+        ValueT,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         ChainedPolicyT::ActivePolicy::SingleTilePolicy::LOAD_ALGORITHM> BlockLoadValues;

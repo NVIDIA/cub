@@ -155,7 +155,7 @@ struct AgentSelectIf
 
     // Parameterized BlockLoad type for input data
     typedef BlockLoad<
-            WrappedInputIteratorT,
+            OutputT,
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
             AgentSelectIfPolicyT::LOAD_ALGORITHM>
@@ -163,7 +163,7 @@ struct AgentSelectIf
 
     // Parameterized BlockLoad type for flags
     typedef BlockLoad<
-            WrappedFlagsInputIteratorT,
+            FlagT,
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
             AgentSelectIfPolicyT::LOAD_ALGORITHM>
