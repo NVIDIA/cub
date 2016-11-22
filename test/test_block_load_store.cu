@@ -91,7 +91,7 @@ __global__ void Kernel(
         typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputIteratorT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
+    typedef BlockLoad<InputT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
     typedef BlockStore<OutputT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
     // Shared memory type for this threadblock
@@ -384,7 +384,7 @@ void TestPointerType(
     float           fraction_valid)
 {
     // Threadblock load/store abstraction types
-    typedef BlockLoad<T*, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
+    typedef BlockLoad<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
     typedef BlockStore<T, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
 #if defined(SM100) || defined(SM110) || defined(SM130)

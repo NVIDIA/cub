@@ -142,7 +142,7 @@ struct AgentSegmentFixup
 
     // Parameterized BlockLoad type for pairs
     typedef BlockLoad<
-            WrappedPairsInputIteratorT,
+            KeyValuePairT,
             BLOCK_THREADS,
             ITEMS_PER_THREAD,
             AgentSegmentFixupPolicyT::LOAD_ALGORITHM>

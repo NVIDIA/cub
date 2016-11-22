@@ -129,7 +129,7 @@ struct AgentScan
 
     // Parameterized BlockLoad type
     typedef BlockLoad<
-            WrappedInputIteratorT,
+            OutputT,
             AgentScanPolicyT::BLOCK_THREADS,
             AgentScanPolicyT::ITEMS_PER_THREAD,
             AgentScanPolicyT::LOAD_ALGORITHM>
