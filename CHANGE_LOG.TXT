@@ -1,4 +1,7 @@
 1.6.3    11/20/2016
+    - API change: BlockLoad and BlockStore are now templated by the local
+      data type, instead of the Iterator type.  This allows for output iterators
+      having \p void as their \p value_type (e.g., discard iterators).
     - Updated GP100 tuning policies for radix sorting (6.2B 32b keys/s)
     - Bug fixes: 
         - Issue #74: Warpreduce executes reduction operator for out-of-bounds items
