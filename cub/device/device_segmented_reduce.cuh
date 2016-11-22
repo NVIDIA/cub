@@ -219,8 +219,13 @@ struct DeviceSegmentedReduce
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
-        typedef int OffsetT;                                                    // Signed integer type for global offsets
-        typedef typename std::iterator_traits<InputIteratorT>::value_type T;    // Data element type
+        // Signed integer type for global offsets
+        typedef int OffsetT;
+
+        // The output value type
+        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+            typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
         return DispatchSegmentedReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Sum>::Dispatch(
             d_temp_storage,
@@ -231,7 +236,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Sum(),
-            T(),            // zero-initialize
+            OutputT(),            // zero-initialize
             stream,
             debug_synchronous);
     }
@@ -297,8 +302,13 @@ struct DeviceSegmentedReduce
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
-        typedef int OffsetT;                                                    // Signed integer type for global offsets
-        typedef typename std::iterator_traits<InputIteratorT>::value_type T;    // Data element type
+        // Signed integer type for global offsets
+        typedef int OffsetT;
+
+        // The output value type
+        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+            typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
         return DispatchSegmentedReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Min>::Dispatch(
             d_temp_storage,
@@ -309,7 +319,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Min(),
-            Traits<T>::Max(),    // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
+            Traits<OutputT>::Max(),    // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -380,17 +390,23 @@ struct DeviceSegmentedReduce
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // Input and output data types
-        typedef typename std::iterator_traits<OutputIteratorT>::value_type  OutputT;        // Output tuple type
-        typedef typename OutputT::Value                                     OutputValueT;   // Output data type
-        typedef typename std::iterator_traits<InputIteratorT>::value_type   InputValueT;    // Input data type
+        // The input type
+        typedef typename std::iterator_traits<InputIteratorT>::value_type InputValueT;
+
+        // The output tuple type
+        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+            KeyValuePair<OffsetT, InputValueT>,                                                                 // ... then the key value pair OffsetT + InputValueT
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputTupleT;                     // ... else the output iterator's value type
+
+        // The output value type
+        typedef typename OutputTupleT::Value OutputValueT;
 
         // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
         typedef ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT> ArgIndexInputIteratorT;
         ArgIndexInputIteratorT d_indexed_in(d_in);
 
         // Initial value
-        OutputT initial_value(1, Traits<InputValueT>::Max());   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
+        OutputTupleT initial_value(1, Traits<OutputValueT>::Max());   // replace with std::numeric_limits<T>::max() when C++11 support is more prevalent
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMin>::Dispatch(
             d_temp_storage,
@@ -467,8 +483,13 @@ struct DeviceSegmentedReduce
         cudaStream_t        stream              = 0,            ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
-        typedef int OffsetT;                                                    // Signed integer type for global offsets
-        typedef typename std::iterator_traits<InputIteratorT>::value_type T;    // Data element type
+        // Signed integer type for global offsets
+        typedef int OffsetT;
+
+        // The output value type
+        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+            typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
         return DispatchSegmentedReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Max>::Dispatch(
             d_temp_storage,
@@ -479,7 +500,7 @@ struct DeviceSegmentedReduce
             d_begin_offsets,
             d_end_offsets,
             cub::Max(),
-            Traits<T>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
+            Traits<OutputT>::Lowest(),    // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
             stream,
             debug_synchronous);
     }
@@ -550,17 +571,23 @@ struct DeviceSegmentedReduce
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // Input and output data types
-        typedef typename std::iterator_traits<OutputIteratorT>::value_type  OutputT;        // Output tuple type
-        typedef typename OutputT::Value                                     OutputValueT;   // Output data type
-        typedef typename std::iterator_traits<InputIteratorT>::value_type   InputValueT;    // Input data type
+        // The input type
+        typedef typename std::iterator_traits<InputIteratorT>::value_type InputValueT;
+
+        // The output tuple type
+        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+            KeyValuePair<OffsetT, InputValueT>,                                                                 // ... then the key value pair OffsetT + InputValueT
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputTupleT;                     // ... else the output iterator's value type
+
+        // The output value type
+        typedef typename OutputTupleT::Value OutputValueT;
 
         // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
         typedef ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT> ArgIndexInputIteratorT;
         ArgIndexInputIteratorT d_indexed_in(d_in);
 
         // Initial value
-        OutputT initial_value(1, Traits<InputValueT>::Lowest());     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
+        OutputTupleT initial_value(1, Traits<OutputValueT>::Lowest());     // replace with std::numeric_limits<T>::lowest() when C++11 support is more prevalent
 
         return DispatchSegmentedReduce<ArgIndexInputIteratorT, OutputIteratorT, OffsetT, cub::ArgMax>::Dispatch(
             d_temp_storage,

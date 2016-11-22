@@ -84,7 +84,7 @@ __global__ void BlockPrefixSumKernel(
     typedef BlockLoad<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE> BlockLoadT;
 
     // Specialize BlockStore type for our thread block (uses warp-striped loads for coalescing, then transposes in shared memory to a blocked arrangement)
-    typedef BlockStore<int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE> BlockStoreT;
+    typedef BlockStore<int, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE> BlockStoreT;
 
     // Specialize BlockScan type for our thread block
     typedef BlockScan<int, BLOCK_THREADS, ALGORITHM> BlockScanT;

@@ -250,7 +250,13 @@ cudaError_t Dispatch(
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     if (d_temp_storage == 0)
     {
@@ -258,9 +264,9 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<T>       d_out_wrapper_end;
-        thrust::device_ptr<T>       d_in_wrapper(d_in);
-        thrust::device_ptr<T>       d_out_wrapper(d_out);
+        thrust::device_ptr<OutputT>         d_out_wrapper_end;
+        thrust::device_ptr<InputT>          d_in_wrapper(d_in);
+        thrust::device_ptr<OutputT>         d_out_wrapper(d_out);
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
@@ -299,9 +305,15 @@ cudaError_t Dispatch(
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
 
-    typedef thrust::reverse_iterator<thrust::device_ptr<T> > ReverseOutputIteratorT;
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+
+    typedef thrust::reverse_iterator<thrust::device_ptr<OutputT> > ReverseOutputIteratorT;
 
     if (d_temp_storage == 0)
     {
@@ -309,10 +321,10 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::pair<thrust::device_ptr<T>, ReverseOutputIteratorT> d_out_wrapper_end;
+        thrust::pair<thrust::device_ptr<OutputT>, ReverseOutputIteratorT> d_out_wrapper_end;
 
-        thrust::device_ptr<T>       d_in_wrapper(d_in);
-        thrust::device_ptr<T>       d_out_wrapper(d_out);
+        thrust::device_ptr<InputT>       d_in_wrapper(d_in);
+        thrust::device_ptr<OutputT>       d_out_wrapper(d_out);
 
         ReverseOutputIteratorT d_out_unselected(d_out_wrapper + num_items);
 
@@ -358,9 +370,16 @@ cudaError_t Dispatch(
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type    T;
-    typedef typename std::iterator_traits<FlagIteratorT>::value_type     FlagT;
+    // The flag type
+    typedef typename std::iterator_traits<FlagIteratorT>::value_type FlagT;
 
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
 
     if (d_temp_storage == 0)
     {
@@ -368,11 +387,10 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<T>       d_out_wrapper_end;
-
-        thrust::device_ptr<T>       d_in_wrapper(d_in);
-        thrust::device_ptr<T>       d_out_wrapper(d_out);
-        thrust::device_ptr<FlagT>    d_flags_wrapper(d_flags);
+        thrust::device_ptr<OutputT>     d_out_wrapper_end;
+        thrust::device_ptr<InputT>      d_in_wrapper(d_in);
+        thrust::device_ptr<OutputT>     d_out_wrapper(d_out);
+        thrust::device_ptr<FlagT>       d_flags_wrapper(d_flags);
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
@@ -411,10 +429,18 @@ cudaError_t Dispatch(
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type    T;
-    typedef typename std::iterator_traits<FlagIteratorT>::value_type     FlagT;
+    // The flag type
+    typedef typename std::iterator_traits<FlagIteratorT>::value_type FlagT;
 
-    typedef thrust::reverse_iterator<thrust::device_ptr<T> > ReverseOutputIteratorT;
+    // The input value type
+    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+
+    // The output value type
+    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
+        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
+        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+
+    typedef thrust::reverse_iterator<thrust::device_ptr<OutputT> > ReverseOutputIteratorT;
 
     if (d_temp_storage == 0)
     {
@@ -422,10 +448,10 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::pair<thrust::device_ptr<T>, ReverseOutputIteratorT> d_out_wrapper_end;
+        thrust::pair<thrust::device_ptr<OutputT>, ReverseOutputIteratorT> d_out_wrapper_end;
 
-        thrust::device_ptr<T>       d_in_wrapper(d_in);
-        thrust::device_ptr<T>       d_out_wrapper(d_out);
+        thrust::device_ptr<InputT>  d_in_wrapper(d_in);
+        thrust::device_ptr<OutputT> d_out_wrapper(d_out);
         thrust::device_ptr<FlagT>   d_flags_wrapper(d_flags);
         ReverseOutputIteratorT      d_out_unselected(d_out_wrapper + num_items);
 
