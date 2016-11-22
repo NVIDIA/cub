@@ -531,12 +531,15 @@ for the current feature release.
 [<b>CUB v1.6.3</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
   - New Features: 
-    - API change: Device/block/warp-wide exclusive scans have been revised to now 
+    - API change: Device-, block-, and warp-wide exclusive scans have been revised to now 
       accept an "initial value" (instead of an "identity value") for seeding the 
       computation with an arbitrary prefix.  
     - API change: Device-wide reductions and scans can now have input sequence types that are 
       different from output sequence types (as long as they are coercible)
       value") for seeding the computation with an arbitrary prefix
+    - API change: BlockLoad and BlockStore are now templated by the local
+      data type, instead of the Iterator type.  This allows for output iterators
+      having \p void as their \p value_type (e.g., discard iterators).
   - Reduce repository size (move doxygen binary to doc repository)
   - Minor reductions in block-scan instruction count
   - Updated GP100 tuning policies for radix sorting (6.2B 32b keys/s)
