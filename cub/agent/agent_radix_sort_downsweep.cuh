@@ -164,7 +164,7 @@ struct AgentRadixSortDownsweep
 
     // BlockLoad type (keys)
     typedef BlockLoad<
-        KeyT,
+        UnsignedBits,
         BLOCK_THREADS,
         ITEMS_PER_THREAD,
         LOAD_ALGORITHM> BlockLoadKeys;

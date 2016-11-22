@@ -191,6 +191,9 @@ public:
     __host__ __device__ __forceinline__ void operator=(T const&)
     {}
 
+    /// Cast to void* operator
+    __host__ __device__ __forceinline__ operator void*() const { return NULL; }
+
     /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
