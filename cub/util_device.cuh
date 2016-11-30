@@ -58,7 +58,7 @@ namespace cub {
  * Alias temporaries to externally-allocated device storage (or simply return the amount of storage needed).
  */
 template <int ALLOCATIONS>
-CUB_RUNTIME_FUNCTION __forceinline__
+__host__ __device__ __forceinline__
 cudaError_t AliasTemporaries(
     void    *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t  &temp_storage_bytes,                ///< [in,out] Size in bytes of \t d_temp_storage allocation
