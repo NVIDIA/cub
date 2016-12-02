@@ -538,7 +538,7 @@ private:
 
         /// Constructor
         __device__ __forceinline__ StoreInternal(
-            TempStorage &temp_storage,
+            TempStorage &/*temp_storage*/,
             unsigned int linear_tid)
         :
             linear_tid(linear_tid)
@@ -579,7 +579,7 @@ private:
 
         /// Constructor
         __device__ __forceinline__ StoreInternal(
-            TempStorage &temp_storage,
+            TempStorage &/*temp_storage*/,
             unsigned int linear_tid)
         :
             linear_tid(linear_tid)

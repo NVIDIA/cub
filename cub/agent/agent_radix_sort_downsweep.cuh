@@ -290,7 +290,7 @@ struct AgentRadixSortDownsweep
         OffsetT                                 (&relative_bin_offsets)[ITEMS_PER_THREAD],
         int                                     (&ranks)[ITEMS_PER_THREAD],
         OffsetT                                 valid_items,
-        Int2Type<RADIX_SORT_SCATTER_DIRECT>     scatter_algorithm)
+        Int2Type<RADIX_SORT_SCATTER_DIRECT>     /*scatter_algorithm*/)
     {
         // Compute scatter offsets
         DecodeRelativeBinOffsets(twiddled_keys, relative_bin_offsets);
@@ -318,7 +318,7 @@ struct AgentRadixSortDownsweep
         OffsetT                                 (&relative_bin_offsets)[ITEMS_PER_THREAD],
         int                                     (&ranks)[ITEMS_PER_THREAD],
         OffsetT                                 valid_items,
-        Int2Type<RADIX_SORT_SCATTER_TWO_PHASE>  scatter_algorithm)
+        Int2Type<RADIX_SORT_SCATTER_TWO_PHASE>  /*scatter_algorithm*/)
     {
         // Exchange keys through shared memory
         BlockExchangeKeys(temp_storage.exchange_keys).ScatterToStriped(twiddled_keys, ranks);
@@ -351,7 +351,7 @@ struct AgentRadixSortDownsweep
         OffsetT                                 (&relative_bin_offsets)[ITEMS_PER_THREAD],
         int                                     (&ranks)[ITEMS_PER_THREAD],
         OffsetT                                 valid_items,
-        Int2Type<RADIX_SORT_SCATTER_DIRECT>     scatter_algorithm)
+        Int2Type<RADIX_SORT_SCATTER_DIRECT>     /*scatter_algorithm*/)
     {
         // Scatter to global
         ScatterItems<FULL_TILE>(values, ranks, relative_bin_offsets, d_values_out, valid_items);
@@ -367,7 +367,7 @@ struct AgentRadixSortDownsweep
         OffsetT                                 (&relative_bin_offsets)[ITEMS_PER_THREAD],
         int                                     (&ranks)[ITEMS_PER_THREAD],
         OffsetT                                 valid_items,
-        Int2Type<RADIX_SORT_SCATTER_TWO_PHASE>  scatter_algorithm)
+        Int2Type<RADIX_SORT_SCATTER_TWO_PHASE>  /*scatter_algorithm*/)
     {
         __syncthreads();
 
@@ -401,8 +401,8 @@ struct AgentRadixSortDownsweep
         BlockLoadT      &block_loader, 
         T               (&items)[ITEMS_PER_THREAD],
         InputIteratorT  d_in,
-        OffsetT         valid_items,
-        Int2Type<true>  is_full_tile)
+        OffsetT         /*valid_items*/,
+        Int2Type<true>  /*is_full_tile*/)
     {
         block_loader.Load(d_in, items);
     }
@@ -416,9 +416,9 @@ struct AgentRadixSortDownsweep
         BlockLoadT      &block_loader,
         T               (&items)[ITEMS_PER_THREAD],
         InputIteratorT  d_in,
-        OffsetT         valid_items,
-        T               oob_item,
-        Int2Type<true>  is_full_tile)
+        OffsetT         /*valid_items*/,
+        T               /*oob_item*/,
+        Int2Type<true>  /*is_full_tile*/)
     {
         block_loader.Load(d_in, items);
     }
@@ -433,7 +433,7 @@ struct AgentRadixSortDownsweep
         T               (&items)[ITEMS_PER_THREAD],
         InputIteratorT  d_in,
         OffsetT         valid_items,
-        Int2Type<false> is_full_tile)
+        Int2Type<false> /*is_full_tile*/)
     {
         block_loader.Load(d_in, items, valid_items);
     }
@@ -448,7 +448,7 @@ struct AgentRadixSortDownsweep
         InputIteratorT  d_in,
         OffsetT         valid_items,
         T               oob_item,
-        Int2Type<false> is_full_tile)
+        Int2Type<false> /*is_full_tile*/)
     {
         block_loader.Load(d_in, items, valid_items, oob_item);
     }
@@ -463,7 +463,7 @@ struct AgentRadixSortDownsweep
         int             (&ranks)[ITEMS_PER_THREAD],
         OffsetT         block_offset,
         OffsetT         valid_items,
-        Int2Type<false> is_keys_only)
+        Int2Type<false> /*is_keys_only*/)
     {
         __syncthreads();
 
@@ -491,11 +491,11 @@ struct AgentRadixSortDownsweep
      */
     template <bool FULL_TILE>
     __device__ __forceinline__ void GatherScatterValues(
-        OffsetT         (&relative_bin_offsets)[ITEMS_PER_THREAD],
-        int             (&ranks)[ITEMS_PER_THREAD],
-        OffsetT         block_offset,
-        OffsetT         valid_items,
-        Int2Type<true>  is_keys_only)
+        OffsetT         (&/*relative_bin_offsets*/)[ITEMS_PER_THREAD],
+        int             (&/*ranks*/)[ITEMS_PER_THREAD],
+        OffsetT         /*block_offset*/,
+        OffsetT         /*valid_items*/,
+        Int2Type<true>  /*is_keys_only*/)
     {}
 
 
@@ -655,10 +655,10 @@ struct AgentRadixSortDownsweep
      */
     template <typename InputIteratorT>
     __device__ __forceinline__ void Copy(
-        InputIteratorT  d_in,
-        NullType        *d_out,
-        OffsetT         block_offset,
-        OffsetT         block_end)
+        InputIteratorT  /*d_in*/,
+        NullType        * /*d_out*/,
+        OffsetT         /*block_offset*/,
+        OffsetT         /*block_end*/)
     {}
 
 

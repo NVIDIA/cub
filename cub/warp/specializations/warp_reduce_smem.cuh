@@ -137,7 +137,7 @@ struct WarpReduceSmem
         T                   input,                  ///< [in] Calling thread's input
         int                 folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
         ReductionOp         reduction_op,           ///< [in] Reduction operator
-        Int2Type<STEP>      step)
+        Int2Type<STEP>      /*step*/)
     {
         const int OFFSET = 1 << STEP;
 
@@ -159,14 +159,14 @@ struct WarpReduceSmem
      * Reduction step (terminate)
      */
     template <
-        bool                ALL_LANES_VALID,        ///< Whether all lanes in each warp are contributing a valid fold of items
-        int                 FOLDED_ITEMS_PER_LANE,  ///< Number of items folded into each lane
+        bool                ALL_LANES_VALID,            ///< Whether all lanes in each warp are contributing a valid fold of items
+        int                 FOLDED_ITEMS_PER_LANE,      ///< Number of items folded into each lane
         typename            ReductionOp>
     __device__ __forceinline__ T ReduceStep(
-        T                   input,                  ///< [in] Calling thread's input
-        int                 folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
-        ReductionOp         reduction_op,           ///< [in] Reduction operator
-        Int2Type<STEPS>     step)
+        T                   input,                      ///< [in] Calling thread's input
+        int                 /*folded_items_per_warp*/,  ///< [in] Total number of valid items folded into each logical warp
+        ReductionOp         /*reduction_op*/,           ///< [in] Reduction operator
+        Int2Type<STEPS>     /*step*/)
     {
         return input;
     }
@@ -185,10 +185,10 @@ struct WarpReduceSmem
         typename        FlagT,
         typename        ReductionOp>
     __device__ __forceinline__ T SegmentedReduce(
-        T               input,              ///< [in] Calling thread's input
-        FlagT            flag,               ///< [in] Whether or not the current lane is a segment head/tail
-        ReductionOp     reduction_op,       ///< [in] Reduction operator
-        Int2Type<true>  has_ballot)         ///< [in] Marker type for whether the target arch has ballot functionality
+        T               input,                  ///< [in] Calling thread's input
+        FlagT           flag,                   ///< [in] Whether or not the current lane is a segment head/tail
+        ReductionOp     reduction_op,           ///< [in] Reduction operator
+        Int2Type<true>  /*has_ballot*/)         ///< [in] Marker type for whether the target arch has ballot functionality
     {
         // Get the start flags for each thread in the warp.
         int warp_flags = __ballot(flag);
@@ -240,10 +240,10 @@ struct WarpReduceSmem
         typename        FlagT,
         typename        ReductionOp>
     __device__ __forceinline__ T SegmentedReduce(
-        T               input,              ///< [in] Calling thread's input
-        FlagT            flag,               ///< [in] Whether or not the current lane is a segment head/tail
-        ReductionOp     reduction_op,       ///< [in] Reduction operator
-        Int2Type<false> has_ballot)         ///< [in] Marker type for whether the target arch has ballot functionality
+        T               input,                  ///< [in] Calling thread's input
+        FlagT           flag,                   ///< [in] Whether or not the current lane is a segment head/tail
+        ReductionOp     reduction_op,           ///< [in] Reduction operator
+        Int2Type<false> /*has_ballot*/)         ///< [in] Marker type for whether the target arch has ballot functionality
     {
         enum
         {
