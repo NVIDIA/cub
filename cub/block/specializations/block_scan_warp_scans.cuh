@@ -127,7 +127,7 @@ struct BlockScanWarpScans
         T               &warp_prefix,           ///< [out] The calling thread's partial reduction
         ScanOp          scan_op,            ///< [in] Binary scan operator
         T               &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
-        Int2Type<WARP>  addend_warp)
+        Int2Type<WARP>  /*addend_warp*/)
     {
         if (warp_id == WARP)
             warp_prefix = block_aggregate;
@@ -140,10 +140,10 @@ struct BlockScanWarpScans
 
     template <typename ScanOp>
     __device__ __forceinline__ void ApplyWarpAggregates(
-        T               &warp_prefix,           ///< [out] The calling thread's partial reduction
-        ScanOp          scan_op,            ///< [in] Binary scan operator
-        T               &block_aggregate,   ///< [out] Threadblock-wide aggregate reduction of input items
-        Int2Type<WARPS> addend_warp)
+        T               &/*warp_prefix*/,       ///< [out] The calling thread's partial reduction
+        ScanOp          /*scan_op*/,            ///< [in] Binary scan operator
+        T               &/*block_aggregate*/,   ///< [out] Threadblock-wide aggregate reduction of input items
+        Int2Type<WARPS> /*addend_warp*/)
     {}
 
 
