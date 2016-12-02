@@ -70,6 +70,8 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     const char*     filename,
     int             line)
 {
+    (void)filename;
+    (void)line;
 #ifdef CUB_STDERR
     if (error)
     {
