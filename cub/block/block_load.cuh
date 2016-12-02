@@ -74,15 +74,17 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectBlocked(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
+    InputIteratorT thread_itr = block_itr + (linear_tid * ITEMS_PER_THREAD);
+
     // Load directly in thread-blocked order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = *(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM);
+        items[ITEM] = thread_itr[ITEM];
     }
 }
 
@@ -101,17 +103,21 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectBlocked(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
+    InputIteratorT thread_itr = block_itr + (linear_tid * ITEMS_PER_THREAD);
+
+    volatile int volatile_valid_items = valid_items;
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (int(linear_tid * ITEMS_PER_THREAD) < valid_items - ITEM)
+        if ((linear_tid * ITEMS_PER_THREAD) + ITEM < volatile_valid_items)
         {
-            items[ITEM] = *(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM);
+            items[ITEM] = thread_itr[ITEM];
         }
     }
 }
@@ -132,7 +138,7 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectBlocked(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items,                ///< [in] Number of valid items to load
@@ -140,11 +146,9 @@ __device__ __forceinline__ void LoadDirectBlocked(
 {
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        items[ITEM] = ((linear_tid * ITEMS_PER_THREAD) + ITEM < static_cast<unsigned int>(valid_items)) ?
-            *(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM) :
-            oob_default;
-    }
+        items[ITEM] = oob_default;
+
+    LoadDirectBlocked(linear_tid, block_itr, items, valid_items);
 }
 
 
@@ -158,9 +162,9 @@ template <
     typename            T,
     int                 ITEMS_PER_THREAD>
 __device__ __forceinline__ void InternalLoadDirectBlockedVectorized(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    T               *block_ptr,                 ///< [in] Input pointer for loading from
-    T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
+    int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    T      *block_ptr,                 ///< [in] Input pointer for loading from
+    T      (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
     // Biggest memory access word that T is a whole multiple of
     typedef typename UnitWord<T>::DeviceWord DeviceWord;
@@ -198,7 +202,6 @@ __device__ __forceinline__ void InternalLoadDirectBlockedVectorized(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-//        items[ITEM] = reinterpret_cast<T*>(vec_items)[ITEM];
         items[ITEM] = *(reinterpret_cast<T*>(vec_items) + ITEM);
     }
 }
@@ -224,9 +227,9 @@ template <
     typename        T,
     int             ITEMS_PER_THREAD>
 __device__ __forceinline__ void LoadDirectBlockedVectorized(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    T               *block_ptr,                 ///< [in] Input pointer for loading from
-    T               (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
+    int linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    T   *block_ptr,                 ///< [in] Input pointer for loading from
+    T   (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
     InternalLoadDirectBlockedVectorized<LOAD_DEFAULT>(linear_tid, block_ptr, items);
 }
@@ -237,42 +240,6 @@ __device__ __forceinline__ void LoadDirectBlockedVectorized(
  * \name Striped arrangement I/O (direct)
  *********************************************************************/
 //@{
-
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <
-    int         BLOCK_THREADS,
-    typename    InputT,
-    int         ITEMS_PER_THREAD,
-    typename    InputIteratorT,
-    int         ITEM>
-__device__ __forceinline__ void LoadDirectStriped(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIteratorT  block_itr,                  
-    InputT          (&items)[ITEMS_PER_THREAD],
-    Int2Type<ITEM>  /*item*/)
-{
-    items[ITEM] = block_itr[(ITEM * BLOCK_THREADS) + linear_tid];
-    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, Int2Type<ITEM + 1>());
-}
-
-
-template <
-    int         BLOCK_THREADS,
-    typename    InputT,
-    int         ITEMS_PER_THREAD,
-    typename    InputIteratorT>
-__device__ __forceinline__ void LoadDirectStriped(
-    unsigned int                /*linear_tid*/,             ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIteratorT              /*block_itr*/,                  
-    InputT                     (&/*items*/)[ITEMS_PER_THREAD],
-    Int2Type<ITEMS_PER_THREAD>  /*item*/)
-{}
-
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 
 /**
@@ -291,18 +258,17 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectStriped(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
+    InputIteratorT thread_itr = block_itr + linear_tid;
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-//        items[ITEM] = block_itr[linear_tid + (ITEM * BLOCK_THREADS)];
-        items[ITEM] = *(block_itr + linear_tid + (ITEM * BLOCK_THREADS));
+        items[ITEM] = thread_itr[ITEM * BLOCK_THREADS];
     }
-
-//    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, Int2Type<0>());
 }
 
 
@@ -322,17 +288,21 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectStriped(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
+    InputIteratorT thread_itr = block_itr + linear_tid;
+
+    volatile int volatile_valid_items = valid_items;
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (linear_tid + (ITEM * BLOCK_THREADS) < static_cast<unsigned int>(valid_items))
+        if (linear_tid + (ITEM * BLOCK_THREADS) < volatile_valid_items)
         {
-            items[ITEM] = *(block_itr + linear_tid + (ITEM * BLOCK_THREADS));
+            items[ITEM] = thread_itr[ITEM * BLOCK_THREADS];
         }
     }
 }
@@ -355,7 +325,7 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectStriped(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items,                ///< [in] Number of valid items to load
@@ -363,11 +333,9 @@ __device__ __forceinline__ void LoadDirectStriped(
 {
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        items[ITEM] = (linear_tid + (ITEM * BLOCK_THREADS) < static_cast<unsigned int>(valid_items)) ?
-            *(block_itr + linear_tid + (ITEM * BLOCK_THREADS)) :
-            oob_default;
-    }
+        items[ITEM] = oob_default;
+
+    LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
 }
 
 
@@ -396,19 +364,21 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectWarpStriped(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD]) ///< [out] Data to load
 {
-    unsigned int tid                = linear_tid & (CUB_PTX_WARP_THREADS - 1);
-    unsigned int wid                = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
-    unsigned int warp_offset        = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+    int tid                = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid                = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset        = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+
+    InputIteratorT thread_itr = block_itr + warp_offset + tid ;
 
     // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = *(block_itr + warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS));
+        items[ITEM] = thread_itr[(ITEM * CUB_PTX_WARP_THREADS)];
     }
 }
 
@@ -430,24 +400,26 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectWarpStriped(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIteratorT   block_itr,                 ///< [in] The thread block's base input iterator for loading from
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items)                ///< [in] Number of valid items to load
 {
-    unsigned int tid                = linear_tid & (CUB_PTX_WARP_THREADS - 1);
-    unsigned int wid                = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
-    unsigned int warp_offset        = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
+    int tid                = linear_tid & (CUB_PTX_WARP_THREADS - 1);
+    int wid                = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
+    int warp_offset        = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
 
-    int bounds                      = valid_items - warp_offset - tid;
+    InputIteratorT thread_itr = block_itr + warp_offset + tid ;
+
+    volatile int volatile_valid_items = valid_items;
 
     // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if ((ITEM * CUB_PTX_WARP_THREADS) < bounds)
+        if (warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS) < volatile_valid_items)
         {
-            items[ITEM] = *(block_itr + warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS));
+            items[ITEM] = thread_itr[(ITEM * CUB_PTX_WARP_THREADS)];
         }
     }
 }
@@ -471,26 +443,18 @@ template <
     int             ITEMS_PER_THREAD,
     typename        InputIteratorT>
 __device__ __forceinline__ void LoadDirectWarpStriped(
-    unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    int             linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  ///< [in] The thread block's base input iterator for loading from
     InputT          (&items)[ITEMS_PER_THREAD], ///< [out] Data to load
     int             valid_items,                ///< [in] Number of valid items to load
     DefaultT        oob_default)                ///< [in] Default value to assign out-of-bound items
 {
-    unsigned int tid                = linear_tid & (CUB_PTX_WARP_THREADS - 1);
-    unsigned int wid                = linear_tid >> CUB_PTX_LOG_WARP_THREADS;
-    unsigned int warp_offset        = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
-
-    int bounds                      = valid_items - warp_offset - tid;
-
     // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
-    {
-        items[ITEM] = ((ITEM * CUB_PTX_WARP_THREADS) < bounds) ? 
-            *(block_itr + warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS)) :
-            oob_default;
-    }
+        items[ITEM] = oob_default;
+
+    LoadDirectWarpStriped(linear_tid, block_itr, items, valid_items);
 }
 
 
@@ -714,12 +678,12 @@ private:
         typedef NullType TempStorage;
 
         /// Linear thread-id
-        unsigned int linear_tid;
+        int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ LoadInternal(
             TempStorage &/*temp_storage*/,
-            unsigned int linear_tid)
+            int linear_tid)
         :
             linear_tid(linear_tid)
         {}
@@ -767,12 +731,12 @@ private:
         typedef NullType TempStorage;
 
         /// Linear thread-id
-        unsigned int linear_tid;
+        int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ LoadInternal(
             TempStorage &/*temp_storage*/,
-            unsigned int linear_tid)
+            int linear_tid)
         :
             linear_tid(linear_tid)
         {}
@@ -859,12 +823,12 @@ private:
         _TempStorage &temp_storage;
 
         /// Linear thread-id
-        unsigned int linear_tid;
+        int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ LoadInternal(
             TempStorage &temp_storage,
-            unsigned int linear_tid)
+            int linear_tid)
         :
             temp_storage(temp_storage.Alias()),
             linear_tid(linear_tid)
@@ -936,12 +900,12 @@ private:
         _TempStorage &temp_storage;
 
         /// Linear thread-id
-        unsigned int linear_tid;
+        int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ LoadInternal(
             TempStorage &temp_storage,
-            unsigned int linear_tid)
+            int linear_tid)
         :
             temp_storage(temp_storage.Alias()),
             linear_tid(linear_tid)
@@ -1013,12 +977,12 @@ private:
         _TempStorage &temp_storage;
 
         /// Linear thread-id
-        unsigned int linear_tid;
+        int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ LoadInternal(
             TempStorage &temp_storage,
-            unsigned int linear_tid)
+            int linear_tid)
         :
             temp_storage(temp_storage.Alias()),
             linear_tid(linear_tid)
@@ -1095,7 +1059,7 @@ private:
     _TempStorage &temp_storage;
 
     /// Linear thread-id
-    unsigned int linear_tid;
+    int linear_tid;
 
 public:
 
