@@ -141,7 +141,7 @@ __device__ __forceinline__ void LoadDirectBlocked(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = ((linear_tid * ITEMS_PER_THREAD) + ITEM < valid_items) ?
+        items[ITEM] = ((linear_tid * ITEMS_PER_THREAD) + ITEM < static_cast<unsigned int>(valid_items)) ?
             *(block_itr + (linear_tid * ITEMS_PER_THREAD) + ITEM) :
             oob_default;
     }
@@ -251,7 +251,7 @@ __device__ __forceinline__ void LoadDirectStriped(
     unsigned int    linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
     InputIteratorT  block_itr,                  
     InputT          (&items)[ITEMS_PER_THREAD],
-    Int2Type<ITEM>  item)
+    Int2Type<ITEM>  /*item*/)
 {
     items[ITEM] = block_itr[(ITEM * BLOCK_THREADS) + linear_tid];
     LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, Int2Type<ITEM + 1>());
@@ -264,10 +264,10 @@ template <
     int         ITEMS_PER_THREAD,
     typename    InputIteratorT>
 __device__ __forceinline__ void LoadDirectStriped(
-    unsigned int                linear_tid,                 ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
-    InputIteratorT              block_itr,                  
-    InputT                     (&items)[ITEMS_PER_THREAD],
-    Int2Type<ITEMS_PER_THREAD>  item)
+    unsigned int                /*linear_tid*/,             ///< [in] A suitable 1D thread-identifier for the calling thread (e.g., <tt>(threadIdx.y * blockDim.x) + linear_tid</tt> for 2D thread blocks)
+    InputIteratorT              /*block_itr*/,                  
+    InputT                     (&/*items*/)[ITEMS_PER_THREAD],
+    Int2Type<ITEMS_PER_THREAD>  /*item*/)
 {}
 
 
@@ -330,7 +330,7 @@ __device__ __forceinline__ void LoadDirectStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (linear_tid + (ITEM * BLOCK_THREADS) < valid_items)
+        if (linear_tid + (ITEM * BLOCK_THREADS) < static_cast<unsigned int>(valid_items))
         {
             items[ITEM] = *(block_itr + linear_tid + (ITEM * BLOCK_THREADS));
         }
@@ -364,7 +364,7 @@ __device__ __forceinline__ void LoadDirectStriped(
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        items[ITEM] = (linear_tid + (ITEM * BLOCK_THREADS) < valid_items) ?
+        items[ITEM] = (linear_tid + (ITEM * BLOCK_THREADS) < static_cast<unsigned int>(valid_items)) ?
             *(block_itr + linear_tid + (ITEM * BLOCK_THREADS)) :
             oob_default;
     }
@@ -718,7 +718,7 @@ private:
 
         /// Constructor
         __device__ __forceinline__ LoadInternal(
-            TempStorage &temp_storage,
+            TempStorage &/*temp_storage*/,
             unsigned int linear_tid)
         :
             linear_tid(linear_tid)
@@ -771,7 +771,7 @@ private:
 
         /// Constructor
         __device__ __forceinline__ LoadInternal(
-            TempStorage &temp_storage,
+            TempStorage &/*temp_storage*/,
             unsigned int linear_tid)
         :
             linear_tid(linear_tid)

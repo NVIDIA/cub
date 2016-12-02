@@ -198,7 +198,7 @@ private:
     __device__ __forceinline__ void BlockedToStriped(
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
-        Int2Type<false> time_slicing)
+        Int2Type<false> /*time_slicing*/)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -227,7 +227,7 @@ private:
     __device__ __forceinline__ void BlockedToStriped(
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
-        Int2Type<true>  time_slicing)
+        Int2Type<true>  /*time_slicing*/)
     {
         InputT temp_items[ITEMS_PER_THREAD];
 
@@ -287,7 +287,7 @@ private:
     __device__ __forceinline__ void BlockedToWarpStriped(
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
-        Int2Type<false> time_slicing)
+        Int2Type<false> /*time_slicing*/)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -315,7 +315,7 @@ private:
     __device__ __forceinline__ void BlockedToWarpStriped(
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
-        Int2Type<true>  time_slicing)
+        Int2Type<true>  /*time_slicing*/)
     {
         if (warp_id == 0)
         {
@@ -339,7 +339,7 @@ private:
         }
 
         #pragma unroll
-        for (int SLICE = 1; SLICE < TIME_SLICES; ++SLICE)
+        for (unsigned int SLICE = 1; SLICE < TIME_SLICES; ++SLICE)
         {
             __syncthreads();
 
@@ -374,7 +374,7 @@ private:
     __device__ __forceinline__ void StripedToBlocked(
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
-        Int2Type<false> time_slicing)
+        Int2Type<false> /*time_slicing*/)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -404,7 +404,7 @@ private:
     __device__ __forceinline__ void StripedToBlocked(
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
-        Int2Type<true>  time_slicing)
+        Int2Type<true>  /*time_slicing*/)
     {
         // Warp time-slicing
         InputT temp_items[ITEMS_PER_THREAD];
@@ -465,7 +465,7 @@ private:
     __device__ __forceinline__ void WarpStripedToBlocked(
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
-        Int2Type<false> time_slicing)
+        Int2Type<false> /*time_slicing*/)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -494,10 +494,10 @@ private:
     __device__ __forceinline__ void WarpStripedToBlocked(
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
-        Int2Type<true>  time_slicing)
+        Int2Type<true>  /*time_slicing*/)
     {
         #pragma unroll
-        for (int SLICE = 0; SLICE < TIME_SLICES; ++SLICE)
+        for (unsigned int SLICE = 0; SLICE < TIME_SLICES; ++SLICE)
         {
             __syncthreads();
 
@@ -533,7 +533,7 @@ private:
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
-        Int2Type<false> time_slicing)
+        Int2Type<false> /*time_slicing*/)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -562,7 +562,7 @@ private:
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
-        Int2Type<true>  time_slicing)
+        Int2Type<true>  /*time_slicing*/)
     {
         InputT temp_items[ITEMS_PER_THREAD];
 
@@ -615,7 +615,7 @@ private:
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
-        Int2Type<false> time_slicing)
+        Int2Type<false> /*time_slicing*/)
     {
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
@@ -645,7 +645,7 @@ private:
         InputT          input_items[ITEMS_PER_THREAD],      ///< [in] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
-        Int2Type<true> time_slicing)
+        Int2Type<true> /*time_slicing*/)
     {
         InputT temp_items[ITEMS_PER_THREAD];
 
