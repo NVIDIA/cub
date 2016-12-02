@@ -285,6 +285,7 @@ struct DispatchReduceByKey
         KernelConfig    &reduce_by_key_config)
     {
     #if (CUB_PTX_ARCH > 0)
+        (void)ptx_version;
 
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         reduce_by_key_config.template Init<PtxReduceByKeyPolicy>();
@@ -362,13 +363,28 @@ struct DispatchReduceByKey
         OffsetT                     num_items,                  ///< [in] Total number of items to select from
         cudaStream_t                stream,                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous,          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
-        int                         ptx_version,                ///< [in] PTX version of dispatch kernels
-        ScanInitKernelT          	init_kernel,           ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
-        ReduceByKeyKernelT       	reduce_by_key_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
+        int                         /*ptx_version*/,            ///< [in] PTX version of dispatch kernels
+        ScanInitKernelT            	init_kernel,                ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
+        ReduceByKeyKernelT         	reduce_by_key_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
         KernelConfig                reduce_by_key_config)       ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_kernel was compiled for
     {
 
 #ifndef CUB_RUNTIME_ENABLED
+      (void)d_temp_storage;
+      (void)temp_storage_bytes;
+      (void)d_keys_in;
+      (void)d_unique_out;
+      (void)d_values_in;
+      (void)d_aggregates_out;
+      (void)d_num_runs_out;
+      (void)equality_op;
+      (void)reduction_op;
+      (void)num_items;
+      (void)stream;
+      (void)debug_synchronous;
+      (void)init_kernel;
+      (void)reduce_by_key_kernel;
+      (void)reduce_by_key_config;
 
         // Kernel launch not supported from this device
         return CubDebug(cudaErrorNotSupported);
