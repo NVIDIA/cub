@@ -174,7 +174,7 @@ struct DispatchScan
     struct Policy600
     {
         typedef AgentScanPolicy<
-            CUB_NOMINAL_CONFIG(256, 15, OutputT),      ///< Threads per block, items per thread
+            CUB_NOMINAL_CONFIG(128, 15, OutputT),      ///< Threads per block, items per thread
                 BLOCK_LOAD_TRANSPOSE,
                 LOAD_DEFAULT,
                 BLOCK_STORE_TRANSPOSE,
