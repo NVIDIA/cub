@@ -192,21 +192,21 @@ struct AgentRadixSortDownsweep
     /**
      * Shared memory storage layout
      */
-    union _TempStorage
+    union __align__(16) _TempStorage
     {
         typename BlockLoadKeys::TempStorage         load_keys;
         typename BlockRadixRank::TempStorage        ranking;
 
         struct
         {
-            OffsetT     exclusive_digit_prefix[RADIX_DIGITS];
-            OffsetT     relative_bin_offsets[RADIX_DIGITS + 1];
             union
             {
                 typename BlockLoadValues::TempStorage       load_values;
                 typename BlockExchangeKeys::TempStorage     exchange_keys;
                 typename BlockExchangeValues::TempStorage   exchange_values;
             };
+            OffsetT     exclusive_digit_prefix[RADIX_DIGITS];
+            OffsetT     relative_bin_offsets[RADIX_DIGITS + 1];
         };
     };
 
