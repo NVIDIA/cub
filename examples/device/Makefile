@@ -56,8 +56,7 @@ DEPS =				$(CUB_DEPS) \
 					$(CUB_DIR)test/test_util.h \
 					$(CUB_DIR)test/mersenne.h \
 		
-ALL = 	example_device_histogram \
-		example_device_partition_flagged \
+ALL = 	example_device_partition_flagged \
 		example_device_partition_if \
 	 	example_device_radix_sort \
 		example_device_reduce \
@@ -108,17 +107,6 @@ example_device_reduce: bin/example_device_reduce_$(BIN_SUFFIX)
 bin/example_device_reduce_$(BIN_SUFFIX) : example_device_reduce.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_device_reduce_$(BIN_SUFFIX) example_device_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
-
-
-#-------------------------------------------------------------------------------
-# make example_device_histogram
-#-------------------------------------------------------------------------------
-
-example_device_histogram: bin/example_device_histogram_$(BIN_SUFFIX)
-
-bin/example_device_histogram_$(BIN_SUFFIX) : example_device_histogram.cu $(DEPS)
-	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/example_device_histogram_$(BIN_SUFFIX) example_device_histogram.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
