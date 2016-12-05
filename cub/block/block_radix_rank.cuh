@@ -148,12 +148,12 @@ private:
 
 
     /// Shared memory storage layout type for BlockRadixRank
-    struct _TempStorage
+    struct __align__(16) _TempStorage
     {
         // Storage for scanning local ranks
         typename BlockScan::TempStorage block_scan;
 
-        union
+        union __align__(16)
         {
             DigitCounter            digit_counters[COUNTER_LANES + 1][BLOCK_THREADS][PACKING_RATIO];
             PackedCounter           raking_grid[BLOCK_THREADS][RAKING_SEGMENT];

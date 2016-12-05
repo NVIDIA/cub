@@ -168,6 +168,7 @@ void TestKernel(
 
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
 
+    // Test with discard output iterator
     typedef typename std::iterator_traits<InputIteratorT>::difference_type OffsetT;
     DiscardOutputIterator<OffsetT> discard_itr;
 
@@ -178,7 +179,7 @@ void TestKernel(
             discard_itr,
             guarded_elements);
 
-    // Run kernel
+    // Test with regular output iterator
     Kernel<BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM, STORE_ALGORITHM>
         <<<grid_size, BLOCK_THREADS>>>(
             d_in,
