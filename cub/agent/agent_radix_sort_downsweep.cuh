@@ -199,12 +199,14 @@ struct AgentRadixSortDownsweep
         typename BlockLoadValues::TempStorage       load_values;
         typename BlockExchangeValues::TempStorage   exchange_values;
 
+        OffsetT     exclusive_digit_prefix[RADIX_DIGITS];
+
         struct
         {
             typename BlockExchangeKeys::TempStorage     exchange_keys;
-            OffsetT     exclusive_digit_prefix[RADIX_DIGITS];
             OffsetT     relative_bin_offsets[RADIX_DIGITS + 1];
         };
+
     };
 
 
@@ -522,7 +524,7 @@ struct AgentRadixSortDownsweep
 
         __syncthreads();
 
-        // Update global scatter base offsets for each digit
+        // Share exclusive digit prefix
         if (threadIdx.x < RADIX_DIGITS)
         {
             // Store exclusive prefix
@@ -531,10 +533,10 @@ struct AgentRadixSortDownsweep
 
         __syncthreads();
 
-        // Update global scatter base offsets for each digit
+        // Get inclusive digit prefix
+        int inclusive_digit_prefix;
         if (threadIdx.x < RADIX_DIGITS)
         {
-            int inclusive_digit_prefix;
             if (IS_DESCENDING)
             {
                 // Get inclusive digit prefix from exclusive prefix (higher bins come first)
@@ -549,6 +551,14 @@ struct AgentRadixSortDownsweep
                     (BLOCK_THREADS * ITEMS_PER_THREAD) :
                     temp_storage.exclusive_digit_prefix[threadIdx.x + 1];
             }
+        }
+
+        __syncthreads();
+
+        // Update global scatter base offsets for each digit
+        if (threadIdx.x < RADIX_DIGITS)
+        {
+
 
             bin_offset -= exclusive_digit_prefix;
             temp_storage.relative_bin_offsets[threadIdx.x] = bin_offset;
