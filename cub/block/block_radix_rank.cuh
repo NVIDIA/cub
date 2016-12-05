@@ -148,7 +148,7 @@ private:
 
 
     /// Shared memory storage layout type for BlockRadixRank
-    struct __align__(16) _TempStorage
+    struct _TempStorage
     {
         // Storage for scanning local ranks
         typename BlockScan::TempStorage block_scan;
@@ -458,7 +458,7 @@ public:
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile (out parameter)
         int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
         int             num_bits,                           ///< [in] The number of bits in the current digit
-        int             &exclusive_digit_prefix)            ///< [out] The exclusive prefix sum for the digit threadIdx.x
+        int             &inclusive_digit_prefix)            ///< [out] The incluisve prefix sum for the digit threadIdx.x
     {
         // Rank keys
         RankKeys(keys, ranks, current_bit, num_bits);
@@ -472,10 +472,9 @@ public:
 
             // Obtain ex/inclusive digit counts.  (Unfortunately these all reside in the
             // first counter column, resulting in unavoidable bank conflicts.)
-            unsigned int counter_lane   = (bin_idx & (COUNTER_LANES - 1));
-            unsigned int sub_counter    = bin_idx >> (LOG_COUNTER_LANES);
-
-            exclusive_digit_prefix      = temp_storage.digit_counters[counter_lane][0][sub_counter];
+            unsigned int counter_lane = (bin_idx & (COUNTER_LANES - 1));
+            unsigned int sub_counter = bin_idx >> (LOG_COUNTER_LANES);
+            inclusive_digit_prefix = temp_storage.digit_counters[counter_lane + 1][0][sub_counter];
         }
     }
 };
