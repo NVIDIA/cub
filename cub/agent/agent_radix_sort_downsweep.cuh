@@ -636,19 +636,19 @@ struct AgentRadixSortDownsweep
      * Constructor
      */
     __device__ __forceinline__ AgentRadixSortDownsweep(
-        TempStorage &temp_storage,
-        OffsetT     num_items,
-        OffsetT     bin_offset,
-        KeyT        *d_keys_in,
-        KeyT        *d_keys_out,
-        ValueT      *d_values_in,
-        ValueT      *d_values_out,
-        int         current_bit,
-        int         num_bits)
+        TempStorage     &temp_storage,
+        OffsetT         num_items,
+        OffsetT         bin_offset,
+        const KeyT      *d_keys_in,
+        KeyT            *d_keys_out,
+        const ValueT    *d_values_in,
+        ValueT          *d_values_out,
+        int             current_bit,
+        int             num_bits)
     :
         temp_storage(temp_storage.Alias()),
         bin_offset(bin_offset),
-        d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
+        d_keys_in(reinterpret_cast<const UnsignedBits*>(d_keys_in)),
         d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
         d_values_in(d_values_in),
         d_values_out(d_values_out),
@@ -670,18 +670,18 @@ struct AgentRadixSortDownsweep
      * Constructor
      */
     __device__ __forceinline__ AgentRadixSortDownsweep(
-        TempStorage &temp_storage,
-        OffsetT     num_items,
-        OffsetT     *d_spine,
-        KeyT        *d_keys_in,
-        KeyT        *d_keys_out,
-        ValueT      *d_values_in,
-        ValueT      *d_values_out,
-        int         current_bit,
-        int         num_bits)
+        TempStorage     &temp_storage,
+        OffsetT         num_items,
+        OffsetT         *d_spine,
+        const KeyT      *d_keys_in,
+        KeyT            *d_keys_out,
+        const ValueT    *d_values_in,
+        ValueT          *d_values_out,
+        int             current_bit,
+        int             num_bits)
     :
         temp_storage(temp_storage.Alias()),
-        d_keys_in(reinterpret_cast<UnsignedBits*>(d_keys_in)),
+        d_keys_in(reinterpret_cast<const UnsignedBits*>(d_keys_in)),
         d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
         d_values_in(d_values_in),
         d_values_out(d_values_out),

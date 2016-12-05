@@ -28,6 +28,10 @@
 
 /******************************************************************************
  * Simple demonstration of cub::BlockRadixSort
+ *
+ * To compile using the command line:
+ *   nvcc -arch=sm_XX example_block_radix_sort.cu -I../.. -lcudart -O3
+ *
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console (define before including cub.h)

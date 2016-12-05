@@ -96,7 +96,7 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -127,15 +127,18 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+    KeyT      const *const_keys_itr     = d_keys.Current();
+    ValueT    const *const_values_itr   = d_values.Current();
+
     cudaError_t retval = DeviceRadixSort::SortPairs(
         d_temp_storage, temp_storage_bytes,
-        d_keys.Current(), d_keys.Alternate(), d_values.Current(), d_values.Alternate(),
+        const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
         num_items, begin_bit, end_bit, stream, debug_synchronous);
 
     d_keys.selector ^= 1;
@@ -162,7 +165,7 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -194,15 +197,18 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+    KeyT      const *const_keys_itr     = d_keys.Current();
+    ValueT    const *const_values_itr   = d_values.Current();
+
     cudaError_t retval = DeviceRadixSort::SortPairsDescending(
         d_temp_storage, temp_storage_bytes,
-        d_keys.Current(), d_keys.Alternate(), d_values.Current(), d_values.Alternate(),
+        const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
         num_items, begin_bit, end_bit, stream, debug_synchronous);
 
     d_keys.selector ^= 1;
@@ -233,7 +239,7 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -265,15 +271,18 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+    KeyT      const *const_keys_itr     = d_keys.Current();
+    ValueT    const *const_values_itr   = d_values.Current();
+
     cudaError_t retval = DeviceSegmentedRadixSort::SortPairs(
         d_temp_storage, temp_storage_bytes,
-        d_keys.Current(), d_keys.Alternate(), d_values.Current(), d_values.Alternate(),
+        const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
         num_items, num_segments, d_segment_offsets, d_segment_offsets + 1,
         begin_bit, end_bit, stream, debug_synchronous);
 
@@ -302,7 +311,7 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -334,15 +343,18 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+    KeyT      const *const_keys_itr     = d_keys.Current();
+    ValueT    const *const_values_itr   = d_values.Current();
+
     cudaError_t retval = DeviceSegmentedRadixSort::SortPairsDescending(
         d_temp_storage, temp_storage_bytes,
-        d_keys.Current(), d_keys.Alternate(), d_values.Current(), d_values.Alternate(),
+        const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
         num_items, num_segments, d_segment_offsets, d_segment_offsets + 1,
         begin_bit, end_bit, stream, debug_synchronous);
 
@@ -373,7 +385,7 @@ cudaError_t Dispatch(
     DoubleBuffer<NullType>  &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -414,7 +426,7 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -467,7 +479,7 @@ __global__ void CnpDispatchKernel(
     DoubleBuffer<ValueT>    d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     bool                    debug_synchronous)
@@ -503,7 +515,7 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    int                     *d_segment_offsets,
+    const int               *d_segment_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
