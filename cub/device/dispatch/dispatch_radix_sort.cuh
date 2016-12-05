@@ -395,12 +395,16 @@ __global__ void DeviceSegmentedRadixSortKernel(
 
     __syncthreads();
 
-    if ((IS_DESCENDING) && (threadIdx.x < RADIX_DIGITS))
+    if (IS_DESCENDING)
     {
         // Reverse bin counts
-        temp_storage.reverse_counts_in[threadIdx.x] = bin_count;
+        if (threadIdx.x < RADIX_DIGITS)
+            temp_storage.reverse_counts_in[threadIdx.x] = bin_count;
+
         __syncthreads();
-        bin_count = temp_storage.reverse_counts_in[RADIX_DIGITS - threadIdx.x - 1];
+
+        if (threadIdx.x < RADIX_DIGITS)
+            bin_count = temp_storage.reverse_counts_in[RADIX_DIGITS - threadIdx.x - 1];
     }
 
     // Scan
@@ -408,12 +412,16 @@ __global__ void DeviceSegmentedRadixSortKernel(
     DigitScanT(temp_storage.scan).ExclusiveSum(bin_count, bin_offset);
     bin_offset += segment_begin;
 
-    if ((IS_DESCENDING) && (threadIdx.x < RADIX_DIGITS))
+    if (IS_DESCENDING)
     {
         // Reverse bin offsets
-        temp_storage.reverse_counts_out[threadIdx.x] = bin_offset;
+        if (threadIdx.x < RADIX_DIGITS)
+            temp_storage.reverse_counts_out[threadIdx.x] = bin_offset;
+
         __syncthreads();
-        bin_offset = temp_storage.reverse_counts_out[RADIX_DIGITS - threadIdx.x - 1];
+
+        if (threadIdx.x < RADIX_DIGITS)
+            bin_offset = temp_storage.reverse_counts_out[RADIX_DIGITS - threadIdx.x - 1];
     }
 
     __syncthreads();
