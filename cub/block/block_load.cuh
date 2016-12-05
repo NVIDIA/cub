@@ -110,12 +110,10 @@ __device__ __forceinline__ void LoadDirectBlocked(
 {
     InputIteratorT thread_itr = block_itr + (linear_tid * ITEMS_PER_THREAD);
 
-    volatile int volatile_valid_items = valid_items;
-
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if ((linear_tid * ITEMS_PER_THREAD) + ITEM < volatile_valid_items)
+        if ((linear_tid * ITEMS_PER_THREAD) + ITEM < valid_items)
         {
             items[ITEM] = thread_itr[ITEM];
         }
@@ -295,12 +293,10 @@ __device__ __forceinline__ void LoadDirectStriped(
 {
     InputIteratorT thread_itr = block_itr + linear_tid;
 
-    volatile int volatile_valid_items = valid_items;
-
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (linear_tid + (ITEM * BLOCK_THREADS) < volatile_valid_items)
+        if (linear_tid + (ITEM * BLOCK_THREADS) < valid_items)
         {
             items[ITEM] = thread_itr[ITEM * BLOCK_THREADS];
         }
@@ -411,13 +407,11 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
 
     InputIteratorT thread_itr = block_itr + warp_offset + tid ;
 
-    volatile int volatile_valid_items = valid_items;
-
     // Load directly in warp-striped order
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
-        if (warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS) < volatile_valid_items)
+        if (warp_offset + tid + (ITEM * CUB_PTX_WARP_THREADS) < valid_items)
         {
             items[ITEM] = thread_itr[(ITEM * CUB_PTX_WARP_THREADS)];
         }
@@ -814,7 +808,10 @@ private:
         typedef BlockExchange<InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
 
         /// Shared memory storage layout type
-        typedef typename BlockExchange::TempStorage _TempStorage;
+        struct _TempStorage : BlockExchange::TempStorage
+        {
+            volatile int valid_items;
+        };
 
         /// Alias wrapper allowing storage to be unioned
         struct TempStorage : Uninitialized<_TempStorage> {};
@@ -840,9 +837,8 @@ private:
             InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
             InputT          (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, input_items);
-            BlockExchange(temp_storage).StripedToBlocked(input_items, items);
+            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items);
+            BlockExchange(temp_storage).StripedToBlocked(items, items);
         }
 
         /// Load a linear segment of items from memory, guarded by range
@@ -852,9 +848,9 @@ private:
             InputT          (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, input_items, valid_items);
-            BlockExchange(temp_storage).StripedToBlocked(input_items, items);
+            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, temp_storage.valid_items);
+            BlockExchange(temp_storage).StripedToBlocked(items, items);
         }
 
         /// Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements
@@ -865,9 +861,9 @@ private:
             int             valid_items,                    ///< [in] Number of valid items to load
             DefaultT        oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, input_items, valid_items, oob_default);
-            BlockExchange(temp_storage).StripedToBlocked(input_items, items);
+            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, temp_storage.valid_items, oob_default);
+            BlockExchange(temp_storage).StripedToBlocked(items, items);
         }
 
     };
@@ -891,7 +887,10 @@ private:
         typedef BlockExchange<InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
 
         /// Shared memory storage layout type
-        typedef typename BlockExchange::TempStorage _TempStorage;
+        struct _TempStorage : BlockExchange::TempStorage
+        {
+            volatile int valid_items;
+        };
 
         /// Alias wrapper allowing storage to be unioned
         struct TempStorage : Uninitialized<_TempStorage> {};
@@ -917,9 +916,8 @@ private:
             InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
             InputT          (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectWarpStriped(linear_tid, block_itr, input_items);
-            BlockExchange(temp_storage).WarpStripedToBlocked(input_items, items);
+            LoadDirectWarpStriped(linear_tid, block_itr, items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
 
         /// Load a linear segment of items from memory, guarded by range
@@ -929,9 +927,9 @@ private:
             InputT          (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectWarpStriped(linear_tid, block_itr, input_items, valid_items);
-            BlockExchange(temp_storage).WarpStripedToBlocked(input_items, items);
+            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            LoadDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
 
 
@@ -943,15 +941,15 @@ private:
             int             valid_items,                    ///< [in] Number of valid items to load
             DefaultT        oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectWarpStriped(linear_tid, block_itr, input_items, valid_items, oob_default);
-            BlockExchange(temp_storage).WarpStripedToBlocked(input_items, items);
+            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            LoadDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items, oob_default);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
     };
 
 
     /**
-     * BLOCK_LOAD_WARP_TRANSPOSE specialization of load helper
+     * BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED specialization of load helper
      */
     template <int DUMMY>
     struct LoadInternal<BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED, DUMMY>
@@ -968,7 +966,10 @@ private:
         typedef BlockExchange<InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, true, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchange;
 
         /// Shared memory storage layout type
-        typedef typename BlockExchange::TempStorage _TempStorage;
+        struct _TempStorage : BlockExchange::TempStorage
+        {
+            volatile int valid_items;
+        };
 
         /// Alias wrapper allowing storage to be unioned
         struct TempStorage : Uninitialized<_TempStorage> {};
@@ -994,9 +995,8 @@ private:
             InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
             InputT          (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectWarpStriped(linear_tid, block_itr, input_items);
-            BlockExchange(temp_storage).WarpStripedToBlocked(input_items, items);
+            LoadDirectWarpStriped(linear_tid, block_itr, items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
 
         /// Load a linear segment of items from memory, guarded by range
@@ -1006,9 +1006,9 @@ private:
             InputT          (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectWarpStriped(linear_tid, block_itr, input_items, valid_items);
-            BlockExchange(temp_storage).WarpStripedToBlocked(input_items, items);
+            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            LoadDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
 
 
@@ -1020,9 +1020,9 @@ private:
             int             valid_items,                    ///< [in] Number of valid items to load
             DefaultT        oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
-            InputT input_items[ITEMS_PER_THREAD];
-            LoadDirectWarpStriped(linear_tid, block_itr, input_items, valid_items, oob_default);
-            BlockExchange(temp_storage).WarpStripedToBlocked(input_items, items);
+            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            LoadDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items, oob_default);
+            BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
     };
 
