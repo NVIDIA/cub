@@ -29,9 +29,8 @@
 /******************************************************************************
  * Simple demonstration of cub::BlockScan
  *
- * Example compilation string:
- *
- * nvcc example_block_scan_sum.cu -arch=sm_20 -o example_block_scan_sum
+ * To compile using the command line:
+ *   nvcc -arch=sm_XX example_block_scan.cu -I../.. -lcudart -O3
  *
  ******************************************************************************/
 
