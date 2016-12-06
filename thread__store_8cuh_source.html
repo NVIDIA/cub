@@ -191,10 +191,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;<span class="keyword">struct </span>IterateThreadStore&lt;MAX, MAX&gt;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;{</div>
 <div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;    <span class="keyword">template</span> &lt;CacheStoreModifier MODIFIER, <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Store(T *ptr, T *vals) {}</div>
+<div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Store(T * <span class="comment">/*ptr*/</span>, T * <span class="comment">/*vals*/</span>) {}</div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT, <span class="keyword">typename</span> T&gt;</div>
-<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Dereference(OutputIteratorT ptr, T *vals) {}</div>
+<div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> Dereference(OutputIteratorT <span class="comment">/*ptr*/</span>, T * <span class="comment">/*vals*/</span>) {}</div>
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;};</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;</div>
@@ -289,7 +289,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00261"></a><span class="lineno">  261</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;<span class="preprocessor"></span></div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &gt;= 200</span></div>
-<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="preprocessor"></span>    _CUB_STORE_ALL(<a class="code" href="group___util_io.html#gga648d25a92a50ca41cf73e93a35f21f37afd29f1e82f0a9dc8258fb7977b0a8237" title="Cache write-back all coherent levels. ">STORE_WB</a>, ca)</div>
+<div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;<span class="preprocessor"></span>    _CUB_STORE_ALL(<a class="code" href="group___util_io.html#gga648d25a92a50ca41cf73e93a35f21f37afd29f1e82f0a9dc8258fb7977b0a8237" title="Cache write-back all coherent levels. ">STORE_WB</a>, wb)</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;    _CUB_STORE_ALL(<a class="code" href="group___util_io.html#gga648d25a92a50ca41cf73e93a35f21f37aacea07ea298b89dd1962a40b4823652d" title="Cache at global level. ">STORE_CG</a>, cg)</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;    _CUB_STORE_ALL(<a class="code" href="group___util_io.html#gga648d25a92a50ca41cf73e93a35f21f37a00ae8891d1acad179d134fdd60d7839b" title="Cache streaming (likely to be accessed once) ">STORE_CS</a>, cs)</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;    _CUB_STORE_ALL(<a class="code" href="group___util_io.html#gga648d25a92a50ca41cf73e93a35f21f37a5bf33b361cb9f3229588c95402fc484f" title="Cache write-through (to system memory) ">STORE_WT</a>, wt)</div>
@@ -314,8 +314,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00292"></a><span class="lineno">  292</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga7e46f6e1c83bab6124cf8d4b66377812" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. Can be used to store...">ThreadStore</a>(</div>
 <div class="line"><a name="l00293"></a><span class="lineno">  293</span>&#160;    OutputIteratorT             itr,</div>
 <div class="line"><a name="l00294"></a><span class="lineno">  294</span>&#160;    T                           val,</div>
-<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    Int2Type&lt;STORE_DEFAULT&gt;     modifier,</div>
-<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    Int2Type&lt;false&gt;             is_pointer)</div>
+<div class="line"><a name="l00295"></a><span class="lineno">  295</span>&#160;    Int2Type&lt;STORE_DEFAULT&gt;     <span class="comment">/*modifier*/</span>,</div>
+<div class="line"><a name="l00296"></a><span class="lineno">  296</span>&#160;    Int2Type&lt;false&gt;             <span class="comment">/*is_pointer*/</span>)</div>
 <div class="line"><a name="l00297"></a><span class="lineno">  297</span>&#160;{</div>
 <div class="line"><a name="l00298"></a><span class="lineno">  298</span>&#160;    *itr = val;</div>
 <div class="line"><a name="l00299"></a><span class="lineno">  299</span>&#160;}</div>
@@ -325,8 +325,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00306"></a><span class="lineno">  306</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga7e46f6e1c83bab6124cf8d4b66377812" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. Can be used to store...">ThreadStore</a>(</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    T                           val,</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    Int2Type&lt;STORE_DEFAULT&gt;     modifier,</div>
-<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    Int2Type&lt;true&gt;              is_pointer)</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    Int2Type&lt;STORE_DEFAULT&gt;     <span class="comment">/*modifier*/</span>,</div>
+<div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    Int2Type&lt;true&gt;              <span class="comment">/*is_pointer*/</span>)</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;{</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;    *ptr = val;</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;}</div>
@@ -336,7 +336,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> ThreadStoreVolatilePtr(</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;    T                           val,</div>
-<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;    Int2Type&lt;true&gt;              is_primitive)</div>
+<div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;    Int2Type&lt;true&gt;              <span class="comment">/*is_primitive*/</span>)</div>
 <div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;{</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;    *<span class="keyword">reinterpret_cast&lt;</span><span class="keyword">volatile </span>T*<span class="keyword">&gt;</span>(ptr) = val;</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;}</div>
@@ -346,7 +346,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> ThreadStoreVolatilePtr(</div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;    T                           val,</div>
-<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    Int2Type&lt;false&gt;             is_primitive)</div>
+<div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;    Int2Type&lt;false&gt;             <span class="comment">/*is_primitive*/</span>)</div>
 <div class="line"><a name="l00337"></a><span class="lineno">  337</span>&#160;{</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &lt;= 130</span></div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;<span class="preprocessor"></span></div>
@@ -381,8 +381,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga7e46f6e1c83bab6124cf8d4b66377812" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. Can be used to store...">ThreadStore</a>(</div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;    T                           val,</div>
-<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    Int2Type&lt;STORE_VOLATILE&gt;    modifier,</div>
-<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;    Int2Type&lt;true&gt;              is_pointer)</div>
+<div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    Int2Type&lt;STORE_VOLATILE&gt;    <span class="comment">/*modifier*/</span>,</div>
+<div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;    Int2Type&lt;true&gt;              <span class="comment">/*is_pointer*/</span>)</div>
 <div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;{</div>
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;    ThreadStoreVolatilePtr(ptr, val, Int2Type&lt;Traits&lt;T&gt;::PRIMITIVE&gt;());</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;}</div>
@@ -392,8 +392,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___util_io.html#ga7e46f6e1c83bab6124cf8d4b66377812" title="Thread utility for writing memory using cub::CacheStoreModifier cache modifiers. Can be used to store...">ThreadStore</a>(</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;    T                           *ptr,</div>
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;    T                           val,</div>
-<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;    Int2Type&lt;MODIFIER&gt;          modifier,</div>
-<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    Int2Type&lt;true&gt;              is_pointer)</div>
+<div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;    Int2Type&lt;MODIFIER&gt;          <span class="comment">/*modifier*/</span>,</div>
+<div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;    Int2Type&lt;true&gt;              <span class="comment">/*is_pointer*/</span>)</div>
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;{</div>
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;    <span class="comment">// Create a temporary using shuffle-words, then store using device-words</span></div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> UnitWord&lt;T&gt;::DeviceWord    DeviceWord;  </div>
@@ -437,7 +437,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:22:00 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -121,6 +121,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line"><span class="comment">/******************************************************************************</span></div>
 <div class="line"><span class="comment"> * Simple demonstration of cub::BlockRadixSort</span></div>
+<div class="line"><span class="comment"> *</span></div>
+<div class="line"><span class="comment"> * To compile using the command line:</span></div>
+<div class="line"><span class="comment"> *   nvcc -arch=sm_XX example_block_radix_sort.cu -I../.. -lcudart -O3</span></div>
+<div class="line"><span class="comment"> *</span></div>
 <div class="line"><span class="comment"> ******************************************************************************/</span></div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Ensure printing of CUDA runtime errors to console (define before including cub.h)</span></div>
@@ -333,7 +337,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"></div>
 <div class="line">    <span class="comment">// Display timing results</span></div>
 <div class="line">    <span class="keywordtype">float</span> avg_millis            = elapsed_millis / g_timing_iterations;</div>
-<div class="line">    <span class="keywordtype">float</span> avg_items_per_sec     = float(TILE_SIZE * g_grid_size) / avg_millis / 1000.0;</div>
+<div class="line">    <span class="keywordtype">float</span> avg_items_per_sec     = float(TILE_SIZE * g_grid_size) / avg_millis / 1000.0f;</div>
 <div class="line">    <span class="keywordtype">double</span> avg_clocks           = double(elapsed_clocks) / g_timing_iterations / g_grid_size;</div>
 <div class="line">    <span class="keywordtype">double</span> avg_clocks_per_item  = avg_clocks / TILE_SIZE;</div>
 <div class="line"></div>
@@ -398,7 +402,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:21:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

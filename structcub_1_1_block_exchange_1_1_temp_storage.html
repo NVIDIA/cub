@@ -114,13 +114,19 @@ struct cub::BlockExchange&lt; InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_S
 
 <p>The operations exposed by <a class="el" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a> require a temporary memory allocation of this nested type for thread communication. This opaque storage can be allocated directly using the <code>__shared__</code> keyword. Alternatively, it can be aliased to externally allocated memory (shared or global) or <code>union</code>'d with other storage allocation types to facilitate memory reuse. </p>
 
-<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00163">163</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__exchange_8cuh_source.html#l00165">165</a> of file <a class="el" href="block__exchange_8cuh_source.html">block_exchange.cuh</a>.</p>
 </div><div class="dynheader">
 Inheritance diagram for cub::BlockExchange&lt; InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage:</div>
 <div class="dyncontent">
  <div class="center">
   <img src="structcub_1_1_block_exchange_1_1_temp_storage.png" usemap="#cub::BlockExchange&lt; InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map" alt=""/>
   <map id="cub::BlockExchange&lt; InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map" name="cub::BlockExchange&lt; InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, WARP_TIME_SLICING, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::TempStorage_map">
+<area href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___t_r_a_n_s_p_o_s_e_00_01_d_u_m_m_y_01_4_1_1___temp_storage.html" title="Shared memory storage layout type. " alt="cub::BlockLoad&lt; InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::LoadInternal&lt; BLOCK_LOAD_TRANSPOSE, DUMMY &gt;::_TempStorage" shape="rect" coords="0,112,1271,136"/>
+<area href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___w_a_r_p___t_r_a_n_s_p_o_s_709686568e22300af6a87c991aaf1440.html" title="Shared memory storage layout type. " alt="cub::BlockLoad&lt; InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::LoadInternal&lt; BLOCK_LOAD_WARP_TRANSPOSE, DUMMY &gt;::_TempStorage" shape="rect" coords="1281,112,2552,136"/>
+<area href="structcub_1_1_block_load_1_1_load_internal_3_01_b_l_o_c_k___l_o_a_d___w_a_r_p___t_r_a_n_s_p_o_s_2f40e10b701720695fe73699e05e60d5.html" title="Shared memory storage layout type. " alt="cub::BlockLoad&lt; InputT, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::LoadInternal&lt; BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED, DUMMY &gt;::_TempStorage" shape="rect" coords="2562,112,3833,136"/>
+<area href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___t_r_a_n_s_p_o_s_e_00_0786433321b7869fa6694f76ac695d050.html" title="Shared memory storage layout type. " alt="cub::BlockStore&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::StoreInternal&lt; BLOCK_STORE_TRANSPOSE, DUMMY &gt;::_TempStorage" shape="rect" coords="3843,112,5114,136"/>
+<area href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8a4a85eadbd000fceac4f0dee53b2bb8.html" title="Shared memory storage layout type. " alt="cub::BlockStore&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::StoreInternal&lt; BLOCK_STORE_WARP_TRANSPOSE, DUMMY &gt;::_TempStorage" shape="rect" coords="5124,112,6395,136"/>
+<area href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_daed17744272abbe7611e8bf9933bbaa.html" title="Shared memory storage layout type. " alt="cub::BlockStore&lt; T, BLOCK_DIM_X, ITEMS_PER_THREAD, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH &gt;::StoreInternal&lt; BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED, DUMMY &gt;::_TempStorage" shape="rect" coords="6405,112,7676,136"/>
 </map>
  </div></div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
@@ -130,7 +136,7 @@ Inheritance diagram for cub::BlockExchange&lt; InputT, BLOCK_DIM_X, ITEMS_PER_TH
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:08 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:22:01 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

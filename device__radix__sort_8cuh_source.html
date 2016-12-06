@@ -153,12 +153,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        <span class="keyword">typename</span>            KeyT,</div>
 <div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        <span class="keyword">typename</span>            ValueT&gt;</div>
 <div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00147"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a31d7224d3f6c6a9309a0b84571f25eb9">  147</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a31d7224d3f6c6a9309a0b84571f25eb9" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">SortPairs</a>(</div>
+<div class="line"><a name="l00147"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a9e14a29dc4ba6d68dc804bc6b0da7dd4">  147</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a9e14a29dc4ba6d68dc804bc6b0da7dd4" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">SortPairs</a>(</div>
 <div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
-<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        KeyT                *d_keys_in,                             </div>
+<div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;        <span class="keyword">const</span> KeyT          *d_keys_in,                             </div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        KeyT                *d_keys_out,                            </div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        ValueT              *d_values_in,                           </div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;        <span class="keyword">const</span> ValueT        *d_values_in,                           </div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;        ValueT              *d_values_out,                          </div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
@@ -169,8 +169,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;</div>
-<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        DoubleBuffer&lt;KeyT&gt;       d_keys(d_keys_in, d_keys_out);</div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        DoubleBuffer&lt;ValueT&gt;     d_values(d_values_in, d_values_out);</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        DoubleBuffer&lt;KeyT&gt;       d_keys(const_cast&lt;KeyT*&gt;(d_keys_in), d_keys_out);</div>
+<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;        DoubleBuffer&lt;ValueT&gt;     d_values(const_cast&lt;ValueT*&gt;(d_values_in), d_values_out);</div>
 <div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;</div>
 <div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;false, KeyT, ValueT, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;            d_temp_storage,</div>
@@ -222,12 +222,12 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;        <span class="keyword">typename</span>            KeyT,</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;        <span class="keyword">typename</span>            ValueT&gt;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00328"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#add6a87f54c8058edba4b9e875bb0626a">  328</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#add6a87f54c8058edba4b9e875bb0626a" title="Sorts key-value pairs into descending order. (~2N auxiliary storage required). ">SortPairsDescending</a>(</div>
+<div class="line"><a name="l00328"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a44ed1342b9fd17bec3733f10d4e1ae54">  328</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a44ed1342b9fd17bec3733f10d4e1ae54" title="Sorts key-value pairs into descending order. (~2N auxiliary storage required). ">SortPairsDescending</a>(</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
 <div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
-<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;        KeyT                *d_keys_in,                             </div>
+<div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;        <span class="keyword">const</span> KeyT          *d_keys_in,                             </div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;        KeyT                *d_keys_out,                            </div>
-<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        ValueT              *d_values_in,                           </div>
+<div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;        <span class="keyword">const</span> ValueT        *d_values_in,                           </div>
 <div class="line"><a name="l00334"></a><span class="lineno">  334</span>&#160;        ValueT              *d_values_out,                          </div>
 <div class="line"><a name="l00335"></a><span class="lineno">  335</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
 <div class="line"><a name="l00336"></a><span class="lineno">  336</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
@@ -238,8 +238,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;</div>
-<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        DoubleBuffer&lt;KeyT&gt;       d_keys(d_keys_in, d_keys_out);</div>
-<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        DoubleBuffer&lt;ValueT&gt;     d_values(d_values_in, d_values_out);</div>
+<div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        DoubleBuffer&lt;KeyT&gt;       d_keys(const_cast&lt;KeyT*&gt;(d_keys_in), d_keys_out);</div>
+<div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        DoubleBuffer&lt;ValueT&gt;     d_values(const_cast&lt;ValueT*&gt;(d_values_in), d_values_out);</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;</div>
 <div class="line"><a name="l00347"></a><span class="lineno">  347</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;true, KeyT, ValueT, OffsetT&gt;::Dispatch(</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;            d_temp_storage,</div>
@@ -292,10 +292,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00458"></a><span class="lineno">  458</span>&#160;</div>
 <div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> KeyT&gt;</div>
 <div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00506"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a4f555afa8ac2949d9fef49fad52a50d6">  506</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a4f555afa8ac2949d9fef49fad52a50d6" title="Sorts keys into ascending order. (~2N auxiliary storage required) ">SortKeys</a>(</div>
+<div class="line"><a name="l00506"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#aac3b51925d55aa4504a29cb1379ae42e">  506</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#aac3b51925d55aa4504a29cb1379ae42e" title="Sorts keys into ascending order. (~2N auxiliary storage required) ">SortKeys</a>(</div>
 <div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
 <div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
-<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;        KeyT                *d_keys_in,                             </div>
+<div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160;        <span class="keyword">const</span> KeyT          *d_keys_in,                             </div>
 <div class="line"><a name="l00510"></a><span class="lineno">  510</span>&#160;        KeyT                *d_keys_out,                            </div>
 <div class="line"><a name="l00511"></a><span class="lineno">  511</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
 <div class="line"><a name="l00512"></a><span class="lineno">  512</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
@@ -307,7 +307,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00518"></a><span class="lineno">  518</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
 <div class="line"><a name="l00519"></a><span class="lineno">  519</span>&#160;</div>
 <div class="line"><a name="l00520"></a><span class="lineno">  520</span>&#160;        <span class="comment">// Null value type</span></div>
-<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        DoubleBuffer&lt;KeyT&gt;       d_keys(d_keys_in, d_keys_out);</div>
+<div class="line"><a name="l00521"></a><span class="lineno">  521</span>&#160;        DoubleBuffer&lt;KeyT&gt;      d_keys(const_cast&lt;KeyT*&gt;(d_keys_in), d_keys_out);</div>
 <div class="line"><a name="l00522"></a><span class="lineno">  522</span>&#160;        DoubleBuffer&lt;NullType&gt;  d_values;</div>
 <div class="line"><a name="l00523"></a><span class="lineno">  523</span>&#160;</div>
 <div class="line"><a name="l00524"></a><span class="lineno">  524</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;false, KeyT, NullType, OffsetT&gt;::Dispatch(</div>
@@ -357,10 +357,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00623"></a><span class="lineno">  623</span>&#160;</div>
 <div class="line"><a name="l00668"></a><span class="lineno">  668</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> KeyT&gt;</div>
 <div class="line"><a name="l00669"></a><span class="lineno">  669</span>&#160;    CUB_RUNTIME_FUNCTION</div>
-<div class="line"><a name="l00670"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a24761009c4cc15fd2e54cb72663af0ef">  670</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a24761009c4cc15fd2e54cb72663af0ef" title="Sorts keys into descending order. (~2N auxiliary storage required). ">SortKeysDescending</a>(</div>
+<div class="line"><a name="l00670"></a><span class="lineno"><a class="code" href="structcub_1_1_device_radix_sort.html#a590a4835c266715906f9a7f3009262a6">  670</a></span>&#160;    <span class="keyword">static</span> cudaError_t <a class="code" href="structcub_1_1_device_radix_sort.html#a590a4835c266715906f9a7f3009262a6" title="Sorts keys into descending order. (~2N auxiliary storage required). ">SortKeysDescending</a>(</div>
 <div class="line"><a name="l00671"></a><span class="lineno">  671</span>&#160;        <span class="keywordtype">void</span>                *d_temp_storage,                        </div>
 <div class="line"><a name="l00672"></a><span class="lineno">  672</span>&#160;        <span class="keywordtype">size_t</span>              &amp;temp_storage_bytes,                    </div>
-<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        KeyT                *d_keys_in,                             </div>
+<div class="line"><a name="l00673"></a><span class="lineno">  673</span>&#160;        <span class="keyword">const</span> KeyT          *d_keys_in,                             </div>
 <div class="line"><a name="l00674"></a><span class="lineno">  674</span>&#160;        KeyT                *d_keys_out,                            </div>
 <div class="line"><a name="l00675"></a><span class="lineno">  675</span>&#160;        <span class="keywordtype">int</span>                 num_items,                              </div>
 <div class="line"><a name="l00676"></a><span class="lineno">  676</span>&#160;        <span class="keywordtype">int</span>                 begin_bit           = 0,                </div>
@@ -371,7 +371,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;        <span class="comment">// Signed integer type for global offsets</span></div>
 <div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;        <span class="keyword">typedef</span> <span class="keywordtype">int</span> OffsetT;</div>
 <div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;</div>
-<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        DoubleBuffer&lt;KeyT&gt;      d_keys(d_keys_in, d_keys_out);</div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;        DoubleBuffer&lt;KeyT&gt;      d_keys(const_cast&lt;KeyT*&gt;(d_keys_in), d_keys_out);</div>
 <div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        DoubleBuffer&lt;NullType&gt;  d_values;</div>
 <div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;</div>
 <div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;        <span class="keywordflow">return</span> DispatchRadixSort&lt;true, KeyT, NullType, OffsetT&gt;::Dispatch(</div>
@@ -432,7 +432,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:22:00 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

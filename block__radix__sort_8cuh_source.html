@@ -238,7 +238,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00221"></a><span class="lineno">  221</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;        <span class="keywordtype">int</span>             begin_bit,</div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;        <span class="keywordtype">int</span>             pass_bits,</div>
-<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        Int2Type&lt;false&gt; is_descending)</div>
+<div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        Int2Type&lt;false&gt; <span class="comment">/*is_descending*/</span>)</div>
 <div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;    {</div>
 <div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;        AscendingBlockRadixRank(temp_storage.asending_ranking_storage).RankKeys(</div>
 <div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            unsigned_keys,</div>
@@ -252,7 +252,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <span class="keywordtype">int</span>             begin_bit,</div>
 <div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;        <span class="keywordtype">int</span>             pass_bits,</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        Int2Type&lt;true&gt;  is_descending)</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;        Int2Type&lt;true&gt;  <span class="comment">/*is_descending*/</span>)</div>
 <div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;    {</div>
 <div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;        DescendingBlockRadixRank(temp_storage.descending_ranking_storage).RankKeys(</div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;            unsigned_keys,</div>
@@ -264,8 +264,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00249"></a><span class="lineno">  249</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
 <div class="line"><a name="l00250"></a><span class="lineno">  250</span>&#160;        ValueT          (&amp;values)[ITEMS_PER_THREAD],</div>
 <div class="line"><a name="l00251"></a><span class="lineno">  251</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        Int2Type&lt;false&gt; is_keys_only,</div>
-<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        Int2Type&lt;true&gt;  is_blocked)</div>
+<div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        Int2Type&lt;false&gt; <span class="comment">/*is_keys_only*/</span>,</div>
+<div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        Int2Type&lt;true&gt;  <span class="comment">/*is_blocked*/</span>)</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    {</div>
 <div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        __syncthreads();</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;</div>
@@ -276,8 +276,8 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00262"></a><span class="lineno">  262</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
 <div class="line"><a name="l00263"></a><span class="lineno">  263</span>&#160;        ValueT          (&amp;values)[ITEMS_PER_THREAD],</div>
 <div class="line"><a name="l00264"></a><span class="lineno">  264</span>&#160;        <span class="keywordtype">int</span>             (&amp;ranks)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        Int2Type&lt;false&gt; is_keys_only,</div>
-<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;        Int2Type&lt;false&gt; is_blocked)</div>
+<div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        Int2Type&lt;false&gt; <span class="comment">/*is_keys_only*/</span>,</div>
+<div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;        Int2Type&lt;false&gt; <span class="comment">/*is_blocked*/</span>)</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    {</div>
 <div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        __syncthreads();</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;</div>
@@ -287,10 +287,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00273"></a><span class="lineno">  273</span>&#160;</div>
 <div class="line"><a name="l00275"></a><span class="lineno">  275</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> IS_BLOCKED&gt;</div>
 <div class="line"><a name="l00276"></a><span class="lineno">  276</span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> ExchangeValues(</div>
-<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;        ValueT                  (&amp;values)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;        <span class="keywordtype">int</span>                     (&amp;ranks)[ITEMS_PER_THREAD],</div>
-<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        Int2Type&lt;true&gt;          is_keys_only,</div>
-<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;        Int2Type&lt;IS_BLOCKED&gt;    is_blocked)</div>
+<div class="line"><a name="l00277"></a><span class="lineno">  277</span>&#160;        ValueT                  (&amp;<span class="comment">/*values*/</span>)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00278"></a><span class="lineno">  278</span>&#160;        <span class="keywordtype">int</span>                     (&amp;<span class="comment">/*ranks*/</span>)[ITEMS_PER_THREAD],</div>
+<div class="line"><a name="l00279"></a><span class="lineno">  279</span>&#160;        Int2Type&lt;true&gt;          <span class="comment">/*is_keys_only*/</span>,</div>
+<div class="line"><a name="l00280"></a><span class="lineno">  280</span>&#160;        Int2Type&lt;IS_BLOCKED&gt;    <span class="comment">/*is_blocked*/</span>)</div>
 <div class="line"><a name="l00281"></a><span class="lineno">  281</span>&#160;    {}</div>
 <div class="line"><a name="l00282"></a><span class="lineno">  282</span>&#160;</div>
 <div class="line"><a name="l00284"></a><span class="lineno">  284</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DESCENDING, <span class="keywordtype">int</span> KEYS_ONLY&gt;</div>
@@ -529,7 +529,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:21:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -205,7 +205,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00128"></a><span class="lineno">  128</span>&#160;    UnsignedBits            source,</div>
 <div class="line"><a name="l00129"></a><span class="lineno">  129</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>            bit_start,</div>
 <div class="line"><a name="l00130"></a><span class="lineno">  130</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>            num_bits,</div>
-<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    Int2Type&lt;BYTE_LEN&gt;      byte_len)</div>
+<div class="line"><a name="l00131"></a><span class="lineno">  131</span>&#160;    Int2Type&lt;BYTE_LEN&gt;      <span class="comment">/*byte_len*/</span>)</div>
 <div class="line"><a name="l00132"></a><span class="lineno">  132</span>&#160;{</div>
 <div class="line"><a name="l00133"></a><span class="lineno">  133</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> bits;</div>
 <div class="line"><a name="l00134"></a><span class="lineno">  134</span>&#160;<span class="preprocessor">#if CUB_PTX_ARCH &gt;= 200</span></div>
@@ -223,7 +223,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;    UnsignedBits            source,</div>
 <div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>            bit_start,</div>
 <div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>            num_bits,</div>
-<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    Int2Type&lt;8&gt;             byte_len)</div>
+<div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;    Int2Type&lt;8&gt;             <span class="comment">/*byte_len*/</span>)</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;{</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;    <span class="keyword">const</span> <span class="keywordtype">unsigned</span> <span class="keywordtype">long</span> <span class="keywordtype">long</span> MASK = (1ull &lt;&lt; num_bits) - 1;</div>
 <div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keywordflow">return</span> (source &gt;&gt; bit_start) &amp; MASK;</div>
@@ -324,7 +324,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00306"></a><span class="lineno"><a class="code" href="group___util_ptx.html#gabf8633aaa6ac4f9f43a2f897a7939129">  306</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="group___util_ptx.html#gabf8633aaa6ac4f9f43a2f897a7939129" title="Returns the warp lane ID of the calling thread. ">LaneId</a>()</div>
 <div class="line"><a name="l00307"></a><span class="lineno">  307</span>&#160;{</div>
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> ret;</div>
-<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %laneid;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
+<div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %%laneid;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;}</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;</div>
@@ -332,35 +332,35 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00317"></a><span class="lineno"><a class="code" href="group___util_ptx.html#gadd1601dca30742c7a26e108c1dc933c9">  317</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="group___util_ptx.html#gadd1601dca30742c7a26e108c1dc933c9" title="Returns the warp ID of the calling thread. Warp ID is guaranteed to be unique among warps...">WarpId</a>()</div>
 <div class="line"><a name="l00318"></a><span class="lineno">  318</span>&#160;{</div>
 <div class="line"><a name="l00319"></a><span class="lineno">  319</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> ret;</div>
-<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %warpid;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
+<div class="line"><a name="l00320"></a><span class="lineno">  320</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %%warpid;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;}</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;</div>
 <div class="line"><a name="l00327"></a><span class="lineno"><a class="code" href="group___util_ptx.html#ga7868c205ae60da775b3290cfb2c63582">  327</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="group___util_ptx.html#ga7868c205ae60da775b3290cfb2c63582" title="Returns the warp lane mask of all lanes less than the calling thread. ">LaneMaskLt</a>()</div>
 <div class="line"><a name="l00328"></a><span class="lineno">  328</span>&#160;{</div>
 <div class="line"><a name="l00329"></a><span class="lineno">  329</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> ret;</div>
-<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %lanemask_lt;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
+<div class="line"><a name="l00330"></a><span class="lineno">  330</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %%lanemask_lt;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
 <div class="line"><a name="l00331"></a><span class="lineno">  331</span>&#160;    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><a name="l00332"></a><span class="lineno">  332</span>&#160;}</div>
 <div class="line"><a name="l00333"></a><span class="lineno">  333</span>&#160;</div>
 <div class="line"><a name="l00337"></a><span class="lineno"><a class="code" href="group___util_ptx.html#gabd1e1fa6abc7c5aaf5076bc1123f49d3">  337</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="group___util_ptx.html#gabd1e1fa6abc7c5aaf5076bc1123f49d3" title="Returns the warp lane mask of all lanes less than or equal to the calling thread. ...">LaneMaskLe</a>()</div>
 <div class="line"><a name="l00338"></a><span class="lineno">  338</span>&#160;{</div>
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> ret;</div>
-<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %lanemask_le;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
+<div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %%lanemask_le;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;}</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;</div>
 <div class="line"><a name="l00347"></a><span class="lineno"><a class="code" href="group___util_ptx.html#ga9a2e99165402fa1a15fdc66e9f77f8cb">  347</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="group___util_ptx.html#ga9a2e99165402fa1a15fdc66e9f77f8cb" title="Returns the warp lane mask of all lanes greater than the calling thread. ">LaneMaskGt</a>()</div>
 <div class="line"><a name="l00348"></a><span class="lineno">  348</span>&#160;{</div>
 <div class="line"><a name="l00349"></a><span class="lineno">  349</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> ret;</div>
-<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %lanemask_gt;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
+<div class="line"><a name="l00350"></a><span class="lineno">  350</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %%lanemask_gt;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;}</div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;</div>
 <div class="line"><a name="l00357"></a><span class="lineno"><a class="code" href="group___util_ptx.html#gad6fcfe627801d7526a5f0785d774f5fa">  357</a></span>&#160;__device__ __forceinline__ <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> <a class="code" href="group___util_ptx.html#gad6fcfe627801d7526a5f0785d774f5fa" title="Returns the warp lane mask of all lanes greater than or equal to the calling thread. ">LaneMaskGe</a>()</div>
 <div class="line"><a name="l00358"></a><span class="lineno">  358</span>&#160;{</div>
 <div class="line"><a name="l00359"></a><span class="lineno">  359</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> ret;</div>
-<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %lanemask_ge;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
+<div class="line"><a name="l00360"></a><span class="lineno">  360</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;mov.u32 %0, %%lanemask_ge;&quot;</span> : <span class="stringliteral">&quot;=r&quot;</span>(ret) );</div>
 <div class="line"><a name="l00361"></a><span class="lineno">  361</span>&#160;    <span class="keywordflow">return</span> ret;</div>
 <div class="line"><a name="l00362"></a><span class="lineno">  362</span>&#160;}</div>
 <div class="line"><a name="l00363"></a><span class="lineno">  363</span>&#160;       <span class="comment">// end group UtilPtx</span></div>
@@ -376,7 +376,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;    ShuffleWordT*   output,</div>
 <div class="line"><a name="l00378"></a><span class="lineno">  378</span>&#160;    <span class="keywordtype">int</span>             src_offset,</div>
 <div class="line"><a name="l00379"></a><span class="lineno">  379</span>&#160;    <span class="keywordtype">int</span>             first_lane,</div>
-<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;    Int2Type&lt;STEP&gt;  step)</div>
+<div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;    Int2Type&lt;STEP&gt;  <span class="comment">/*step*/</span>)</div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;{</div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> word = input[STEP];</div>
 <div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;shfl.up.b32 %0, %1, %2, %3;&quot;</span></div>
@@ -389,11 +389,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;</div>
 <div class="line"><a name="l00394"></a><span class="lineno">  394</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> ShuffleWordT&gt;</div>
 <div class="line"><a name="l00395"></a><span class="lineno">  395</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___warp_module.html#gaa09dbea525e654af4138cae81ea9a6a8" title="Shuffle-up for any data type. Each warp-lanei obtains the value input contributed by warp-lanei-src_o...">ShuffleUp</a>(</div>
-<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    ShuffleWordT*   input, </div>
-<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    ShuffleWordT*   output,</div>
-<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    <span class="keywordtype">int</span>             src_offset,</div>
-<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;    <span class="keywordtype">int</span>             first_lane,</div>
-<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;    Int2Type&lt;-1&gt;    step)</div>
+<div class="line"><a name="l00396"></a><span class="lineno">  396</span>&#160;    ShuffleWordT*   <span class="comment">/*input*/</span>, </div>
+<div class="line"><a name="l00397"></a><span class="lineno">  397</span>&#160;    ShuffleWordT*   <span class="comment">/*output*/</span>,</div>
+<div class="line"><a name="l00398"></a><span class="lineno">  398</span>&#160;    <span class="keywordtype">int</span>             <span class="comment">/*src_offset*/</span>,</div>
+<div class="line"><a name="l00399"></a><span class="lineno">  399</span>&#160;    <span class="keywordtype">int</span>             <span class="comment">/*first_lane*/</span>,</div>
+<div class="line"><a name="l00400"></a><span class="lineno">  400</span>&#160;    Int2Type&lt;-1&gt;    <span class="comment">/*step*/</span>)</div>
 <div class="line"><a name="l00401"></a><span class="lineno">  401</span>&#160;{}</div>
 <div class="line"><a name="l00402"></a><span class="lineno">  402</span>&#160;</div>
 <div class="line"><a name="l00403"></a><span class="lineno">  403</span>&#160;</div>
@@ -404,7 +404,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00411"></a><span class="lineno">  411</span>&#160;    ShuffleWordT*   output,</div>
 <div class="line"><a name="l00412"></a><span class="lineno">  412</span>&#160;    <span class="keywordtype">int</span>             src_offset,</div>
 <div class="line"><a name="l00413"></a><span class="lineno">  413</span>&#160;    <span class="keywordtype">int</span>             last_lane,</div>
-<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;    Int2Type&lt;STEP&gt;  step)</div>
+<div class="line"><a name="l00414"></a><span class="lineno">  414</span>&#160;    Int2Type&lt;STEP&gt;  <span class="comment">/*step*/</span>)</div>
 <div class="line"><a name="l00415"></a><span class="lineno">  415</span>&#160;{</div>
 <div class="line"><a name="l00416"></a><span class="lineno">  416</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> word = input[STEP];</div>
 <div class="line"><a name="l00417"></a><span class="lineno">  417</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;shfl.down.b32 %0, %1, %2, %3;&quot;</span></div>
@@ -417,11 +417,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;</div>
 <div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> ShuffleWordT&gt;</div>
 <div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="group___warp_module.html#gafca5db82f4d7bea60266099297359059" title="Shuffle-down for any data type. Each warp-lanei obtains the value input contributed by warp-lanei+src...">ShuffleDown</a>(</div>
-<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;    ShuffleWordT*   input, </div>
-<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    ShuffleWordT*   output,</div>
-<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    <span class="keywordtype">int</span>             src_offset,</div>
-<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    <span class="keywordtype">int</span>             last_lane,</div>
-<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    Int2Type&lt;-1&gt;    step)</div>
+<div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;    ShuffleWordT*   <span class="comment">/*input*/</span>, </div>
+<div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    ShuffleWordT*   <span class="comment">/*output*/</span>,</div>
+<div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    <span class="keywordtype">int</span>             <span class="comment">/*src_offset*/</span>,</div>
+<div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;    <span class="keywordtype">int</span>             <span class="comment">/*last_lane*/</span>,</div>
+<div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    Int2Type&lt;-1&gt;    <span class="comment">/*step*/</span>)</div>
 <div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;{}</div>
 <div class="line"><a name="l00436"></a><span class="lineno">  436</span>&#160;</div>
 <div class="line"><a name="l00437"></a><span class="lineno">  437</span>&#160;</div>
@@ -431,7 +431,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00444"></a><span class="lineno">  444</span>&#160;    ShuffleWordT*   output,</div>
 <div class="line"><a name="l00445"></a><span class="lineno">  445</span>&#160;    <span class="keywordtype">int</span>             src_lane,</div>
 <div class="line"><a name="l00446"></a><span class="lineno">  446</span>&#160;    <span class="keywordtype">int</span>             last_lane,</div>
-<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;    Int2Type&lt;STEP&gt;  step)</div>
+<div class="line"><a name="l00447"></a><span class="lineno">  447</span>&#160;    Int2Type&lt;STEP&gt;  <span class="comment">/*step*/</span>)</div>
 <div class="line"><a name="l00448"></a><span class="lineno">  448</span>&#160;{</div>
 <div class="line"><a name="l00449"></a><span class="lineno">  449</span>&#160;    <span class="keywordtype">unsigned</span> <span class="keywordtype">int</span> word = input[STEP];</div>
 <div class="line"><a name="l00450"></a><span class="lineno">  450</span>&#160;    <span class="keyword">asm</span> <span class="keyword">volatile</span>(<span class="stringliteral">&quot;shfl.idx.b32 %0, %1, %2, %3;&quot;</span></div>
@@ -444,11 +444,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00457"></a><span class="lineno">  457</span>&#160;</div>
 <div class="line"><a name="l00461"></a><span class="lineno">  461</span>&#160;<span class="keyword">template</span> &lt;<span class="keyword">typename</span> ShuffleWordT&gt;</div>
 <div class="line"><a name="l00462"></a><span class="lineno">  462</span>&#160;__device__ __forceinline__ <span class="keywordtype">void</span> ShuffleIdx(</div>
-<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;    ShuffleWordT*   input, </div>
-<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;    ShuffleWordT*   output,</div>
-<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;    <span class="keywordtype">int</span>             src_lane,</div>
-<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    <span class="keywordtype">int</span>             last_lane,</div>
-<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;    Int2Type&lt;-1&gt;    step)</div>
+<div class="line"><a name="l00463"></a><span class="lineno">  463</span>&#160;    ShuffleWordT*   <span class="comment">/*input*/</span>, </div>
+<div class="line"><a name="l00464"></a><span class="lineno">  464</span>&#160;    ShuffleWordT*   <span class="comment">/*output*/</span>,</div>
+<div class="line"><a name="l00465"></a><span class="lineno">  465</span>&#160;    <span class="keywordtype">int</span>             <span class="comment">/*src_lane*/</span>,</div>
+<div class="line"><a name="l00466"></a><span class="lineno">  466</span>&#160;    <span class="keywordtype">int</span>             <span class="comment">/*last_lane*/</span>,</div>
+<div class="line"><a name="l00467"></a><span class="lineno">  467</span>&#160;    Int2Type&lt;-1&gt;    <span class="comment">/*step*/</span>)</div>
 <div class="line"><a name="l00468"></a><span class="lineno">  468</span>&#160;{}</div>
 <div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;</div>
 <div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;</div>
@@ -622,7 +622,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:08 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:22:00 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

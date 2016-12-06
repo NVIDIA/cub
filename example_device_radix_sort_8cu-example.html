@@ -270,7 +270,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    <span class="keywordtype">size_t</span>  temp_storage_bytes  = 0;</div>
 <div class="line">    <span class="keywordtype">void</span>    *d_temp_storage     = NULL;</div>
 <div class="line"></div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="structcub_1_1_device_radix_sort.html#a31d7224d3f6c6a9309a0b84571f25eb9" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">DeviceRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a name="a2"></a><a class="code" href="structcub_1_1_device_radix_sort.html#a9e14a29dc4ba6d68dc804bc6b0da7dd4" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">DeviceRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items));</div>
 <div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(g_allocator.DeviceAllocate(&amp;d_temp_storage, temp_storage_bytes));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Initialize device arrays</span></div>
@@ -278,7 +278,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(cudaMemcpy(d_values.d_buffers[d_values.selector], h_values, <span class="keyword">sizeof</span>(<span class="keywordtype">int</span>) * num_items, cudaMemcpyHostToDevice));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Run</span></div>
-<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a class="code" href="structcub_1_1_device_radix_sort.html#a31d7224d3f6c6a9309a0b84571f25eb9" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">DeviceRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items));</div>
+<div class="line">    <a class="code" href="group___util_mgmt.html#ga26211db894893b3cec946e4e537536f8" title="Debug macro with exit. ">CubDebugExit</a>(<a class="code" href="structcub_1_1_device_radix_sort.html#a9e14a29dc4ba6d68dc804bc6b0da7dd4" title="Sorts key-value pairs into ascending order. (~2N auxiliary storage required) ">DeviceRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values, num_items));</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">// Check for correctness (and display results, if specified)</span></div>
 <div class="line">    <span class="keywordtype">int</span> compare = CompareDeviceResults(h_reference_keys, d_keys.Current(), num_items, <span class="keyword">true</span>, g_verbose);</div>
@@ -311,7 +311,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:21:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -191,7 +191,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;    <span class="keyword">struct </span>ApplyOp&lt;FlagOp, false&gt;</div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;    {</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;        <span class="comment">// Apply flag operator</span></div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">bool</span> FlagT(FlagOp flag_op, <span class="keyword">const</span> T &amp;a, <span class="keyword">const</span> T &amp;b, <span class="keywordtype">int</span> idx)</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;        <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">bool</span> FlagT(FlagOp flag_op, <span class="keyword">const</span> T &amp;a, <span class="keyword">const</span> T &amp;b, <span class="keywordtype">int</span> <span class="comment">/*idx*/</span>)</div>
 <div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        {</div>
 <div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;            <span class="keywordflow">return</span> flag_op(a, b);</div>
 <div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;        }</div>
@@ -254,11 +254,11 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00222"></a><span class="lineno">  222</span>&#160;            <span class="keyword">typename</span>        FlagT,</div>
 <div class="line"><a name="l00223"></a><span class="lineno">  223</span>&#160;            <span class="keyword">typename</span>        FlagOp&gt;</div>
 <div class="line"><a name="l00224"></a><span class="lineno">  224</span>&#160;        <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_discontinuity.html#ab219179e48df220e7fde27c86e28dca1" title="Sets head flags indicating discontinuities between items partitioned across the thread block...">FlagHeads</a>(</div>
-<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;            <span class="keywordtype">int</span>                     linear_tid,</div>
-<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;            FlagT                   (&amp;flags)[ITEMS_PER_THREAD],         </div>
-<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            T                       (&amp;input)[ITEMS_PER_THREAD],         </div>
-<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            T                       (&amp;preds)[ITEMS_PER_THREAD],         </div>
-<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            FlagOp                  flag_op)                            </div>
+<div class="line"><a name="l00225"></a><span class="lineno">  225</span>&#160;            <span class="keywordtype">int</span>                     <span class="comment">/*linear_tid*/</span>,</div>
+<div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;            FlagT                   (&amp;<span class="comment">/*flags*/</span>)[ITEMS_PER_THREAD],         </div>
+<div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;            T                       (&amp;<span class="comment">/*input*/</span>)[ITEMS_PER_THREAD],         </div>
+<div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;            T                       (&amp;<span class="comment">/*preds*/</span>)[ITEMS_PER_THREAD],         </div>
+<div class="line"><a name="l00229"></a><span class="lineno">  229</span>&#160;            FlagOp                  <span class="comment">/*flag_op*/</span>)                            </div>
 <div class="line"><a name="l00230"></a><span class="lineno">  230</span>&#160;        {}</div>
 <div class="line"><a name="l00231"></a><span class="lineno">  231</span>&#160;</div>
 <div class="line"><a name="l00232"></a><span class="lineno">  232</span>&#160;        <span class="comment">// Tail flags</span></div>
@@ -267,10 +267,10 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00235"></a><span class="lineno">  235</span>&#160;            <span class="keyword">typename</span>        FlagT,</div>
 <div class="line"><a name="l00236"></a><span class="lineno">  236</span>&#160;            <span class="keyword">typename</span>        FlagOp&gt;</div>
 <div class="line"><a name="l00237"></a><span class="lineno">  237</span>&#160;        <span class="keyword">static</span> __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_discontinuity.html#a47f3d8cd0955d59bd86a6f4772a37f27" title="Sets tail flags indicating discontinuities between items partitioned across the thread block...">FlagTails</a>(</div>
-<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            <span class="keywordtype">int</span>                     linear_tid,</div>
-<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            FlagT                   (&amp;flags)[ITEMS_PER_THREAD],         </div>
-<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            T                       (&amp;input)[ITEMS_PER_THREAD],         </div>
-<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            FlagOp                  flag_op)                            </div>
+<div class="line"><a name="l00238"></a><span class="lineno">  238</span>&#160;            <span class="keywordtype">int</span>                     <span class="comment">/*linear_tid*/</span>,</div>
+<div class="line"><a name="l00239"></a><span class="lineno">  239</span>&#160;            FlagT                   (&amp;<span class="comment">/*flags*/</span>)[ITEMS_PER_THREAD],         </div>
+<div class="line"><a name="l00240"></a><span class="lineno">  240</span>&#160;            T                       (&amp;<span class="comment">/*input*/</span>)[ITEMS_PER_THREAD],         </div>
+<div class="line"><a name="l00241"></a><span class="lineno">  241</span>&#160;            FlagOp                  <span class="comment">/*flag_op*/</span>)                            </div>
 <div class="line"><a name="l00242"></a><span class="lineno">  242</span>&#160;        {}</div>
 <div class="line"><a name="l00243"></a><span class="lineno">  243</span>&#160;    };</div>
 <div class="line"><a name="l00244"></a><span class="lineno">  244</span>&#160;</div>
@@ -679,7 +679,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:07 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:21:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

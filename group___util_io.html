@@ -157,22 +157,22 @@ std::iterator_traits<br class="typebreak"/>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Blocked arrangement I/O (direct)</h2></td></tr>
-<tr class="memitem:ga4208908b26f55006f3f1b46bea307ef2"><td class="memTemplParams" colspan="2">template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:ga4208908b26f55006f3f1b46bea307ef2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga4208908b26f55006f3f1b46bea307ef2">cub::LoadDirectBlocked</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga4208908b26f55006f3f1b46bea307ef2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block.  <a href="#ga4208908b26f55006f3f1b46bea307ef2">More...</a><br/></td></tr>
-<tr class="separator:ga4208908b26f55006f3f1b46bea307ef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga809eeb2f239a0d79892dd642aa343ef2"><td class="memTemplParams" colspan="2">template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:ga809eeb2f239a0d79892dd642aa343ef2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga809eeb2f239a0d79892dd642aa343ef2">cub::LoadDirectBlocked</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
-<tr class="memdesc:ga809eeb2f239a0d79892dd642aa343ef2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block, guarded by range.  <a href="#ga809eeb2f239a0d79892dd642aa343ef2">More...</a><br/></td></tr>
-<tr class="separator:ga809eeb2f239a0d79892dd642aa343ef2"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga6acaa34a3a79af757f29d5285424c966"><td class="memTemplParams" colspan="2">template&lt;typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:ga6acaa34a3a79af757f29d5285424c966"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga6acaa34a3a79af757f29d5285424c966">cub::LoadDirectBlocked</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items, DefaultT oob_default)</td></tr>
-<tr class="memdesc:ga6acaa34a3a79af757f29d5285424c966"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements..  <a href="#ga6acaa34a3a79af757f29d5285424c966">More...</a><br/></td></tr>
-<tr class="separator:ga6acaa34a3a79af757f29d5285424c966"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaea1e1b7b7a72d96b7048142694220c43"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD&gt; </td></tr>
-<tr class="memitem:gaea1e1b7b7a72d96b7048142694220c43"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#gaea1e1b7b7a72d96b7048142694220c43">cub::LoadDirectBlockedVectorized</a> (unsigned int linear_tid, T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:gaea1e1b7b7a72d96b7048142694220c43"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block.  <a href="#gaea1e1b7b7a72d96b7048142694220c43">More...</a><br/></td></tr>
-<tr class="separator:gaea1e1b7b7a72d96b7048142694220c43"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaae0929dab69e0dfb00404f406d63b384"><td class="memTemplParams" colspan="2">template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:gaae0929dab69e0dfb00404f406d63b384"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#gaae0929dab69e0dfb00404f406d63b384">cub::LoadDirectBlocked</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:gaae0929dab69e0dfb00404f406d63b384"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block.  <a href="#gaae0929dab69e0dfb00404f406d63b384">More...</a><br/></td></tr>
+<tr class="separator:gaae0929dab69e0dfb00404f406d63b384"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga70279f26e11d71e25a7b832cdb50b7fb"><td class="memTemplParams" colspan="2">template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:ga70279f26e11d71e25a7b832cdb50b7fb"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga70279f26e11d71e25a7b832cdb50b7fb">cub::LoadDirectBlocked</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memdesc:ga70279f26e11d71e25a7b832cdb50b7fb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block, guarded by range.  <a href="#ga70279f26e11d71e25a7b832cdb50b7fb">More...</a><br/></td></tr>
+<tr class="separator:ga70279f26e11d71e25a7b832cdb50b7fb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga282cd56415aaaeb87b4eea309e1eec2e"><td class="memTemplParams" colspan="2">template&lt;typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:ga282cd56415aaaeb87b4eea309e1eec2e"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga282cd56415aaaeb87b4eea309e1eec2e">cub::LoadDirectBlocked</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items, DefaultT oob_default)</td></tr>
+<tr class="memdesc:ga282cd56415aaaeb87b4eea309e1eec2e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements..  <a href="#ga282cd56415aaaeb87b4eea309e1eec2e">More...</a><br/></td></tr>
+<tr class="separator:ga282cd56415aaaeb87b4eea309e1eec2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga0691288b08d9ee7e88a1358d4bd186df"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD&gt; </td></tr>
+<tr class="memitem:ga0691288b08d9ee7e88a1358d4bd186df"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga0691288b08d9ee7e88a1358d4bd186df">cub::LoadDirectBlockedVectorized</a> (int linear_tid, T *block_ptr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga0691288b08d9ee7e88a1358d4bd186df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a blocked arrangement across the thread block.  <a href="#ga0691288b08d9ee7e88a1358d4bd186df">More...</a><br/></td></tr>
+<tr class="separator:ga0691288b08d9ee7e88a1358d4bd186df"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga58460e08f9c9c2560ab311c30ab58aca"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorT &gt; </td></tr>
 <tr class="memitem:ga58460e08f9c9c2560ab311c30ab58aca"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga58460e08f9c9c2560ab311c30ab58aca">cub::StoreDirectBlocked</a> (int linear_tid, OutputIteratorT block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga58460e08f9c9c2560ab311c30ab58aca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a blocked arrangement of items across a thread block into a linear segment of items.  <a href="#ga58460e08f9c9c2560ab311c30ab58aca">More...</a><br/></td></tr>
@@ -188,18 +188,18 @@ Blocked arrangement I/O (direct)</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Striped arrangement I/O (direct)</h2></td></tr>
-<tr class="memitem:ga364f0443df2fa2a672a00d7b94bf5c28"><td class="memTemplParams" colspan="2">template&lt;int BLOCK_THREADS, typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:ga364f0443df2fa2a672a00d7b94bf5c28"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga364f0443df2fa2a672a00d7b94bf5c28">cub::LoadDirectStriped</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga364f0443df2fa2a672a00d7b94bf5c28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block.  <a href="#ga364f0443df2fa2a672a00d7b94bf5c28">More...</a><br/></td></tr>
-<tr class="separator:ga364f0443df2fa2a672a00d7b94bf5c28"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gabbdc1525eb56d4ba5c99274bbe2c1717"><td class="memTemplParams" colspan="2">template&lt;int BLOCK_THREADS, typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:gabbdc1525eb56d4ba5c99274bbe2c1717"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#gabbdc1525eb56d4ba5c99274bbe2c1717">cub::LoadDirectStriped</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
-<tr class="memdesc:gabbdc1525eb56d4ba5c99274bbe2c1717"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block, guarded by range.  <a href="#gabbdc1525eb56d4ba5c99274bbe2c1717">More...</a><br/></td></tr>
-<tr class="separator:gabbdc1525eb56d4ba5c99274bbe2c1717"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gae9a1729fcdc33e08a77bff4b3805befe"><td class="memTemplParams" colspan="2">template&lt;int BLOCK_THREADS, typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:gae9a1729fcdc33e08a77bff4b3805befe"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#gae9a1729fcdc33e08a77bff4b3805befe">cub::LoadDirectStriped</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items, DefaultT oob_default)</td></tr>
-<tr class="memdesc:gae9a1729fcdc33e08a77bff4b3805befe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#gae9a1729fcdc33e08a77bff4b3805befe">More...</a><br/></td></tr>
-<tr class="separator:gae9a1729fcdc33e08a77bff4b3805befe"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga5cc9db45ec9db3c6a1e7362086130313"><td class="memTemplParams" colspan="2">template&lt;int BLOCK_THREADS, typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:ga5cc9db45ec9db3c6a1e7362086130313"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga5cc9db45ec9db3c6a1e7362086130313">cub::LoadDirectStriped</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga5cc9db45ec9db3c6a1e7362086130313"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block.  <a href="#ga5cc9db45ec9db3c6a1e7362086130313">More...</a><br/></td></tr>
+<tr class="separator:ga5cc9db45ec9db3c6a1e7362086130313"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga14d49bccc8917a00cf70e9baa1fb2d46"><td class="memTemplParams" colspan="2">template&lt;int BLOCK_THREADS, typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:ga14d49bccc8917a00cf70e9baa1fb2d46"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga14d49bccc8917a00cf70e9baa1fb2d46">cub::LoadDirectStriped</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memdesc:ga14d49bccc8917a00cf70e9baa1fb2d46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block, guarded by range.  <a href="#ga14d49bccc8917a00cf70e9baa1fb2d46">More...</a><br/></td></tr>
+<tr class="separator:ga14d49bccc8917a00cf70e9baa1fb2d46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gac581449ff8aa49c5832dd849f6124895"><td class="memTemplParams" colspan="2">template&lt;int BLOCK_THREADS, typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:gac581449ff8aa49c5832dd849f6124895"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#gac581449ff8aa49c5832dd849f6124895">cub::LoadDirectStriped</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items, DefaultT oob_default)</td></tr>
+<tr class="memdesc:gac581449ff8aa49c5832dd849f6124895"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a striped arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#gac581449ff8aa49c5832dd849f6124895">More...</a><br/></td></tr>
+<tr class="separator:gac581449ff8aa49c5832dd849f6124895"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gac688ffdb1ecacc06375295947144d233"><td class="memTemplParams" colspan="2">template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename OutputIteratorT &gt; </td></tr>
 <tr class="memitem:gac688ffdb1ecacc06375295947144d233"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#gac688ffdb1ecacc06375295947144d233">cub::StoreDirectStriped</a> (int linear_tid, OutputIteratorT block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:gac688ffdb1ecacc06375295947144d233"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a striped arrangement of data across the thread block into a linear segment of items.  <a href="#gac688ffdb1ecacc06375295947144d233">More...</a><br/></td></tr>
@@ -211,18 +211,18 @@ Striped arrangement I/O (direct)</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="member-group"></a>
 Warp-striped arrangement I/O (direct)</h2></td></tr>
-<tr class="memitem:ga5e09b5b900873191f736693fe0152754"><td class="memTemplParams" colspan="2">template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:ga5e09b5b900873191f736693fe0152754"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga5e09b5b900873191f736693fe0152754">cub::LoadDirectWarpStriped</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD])</td></tr>
-<tr class="memdesc:ga5e09b5b900873191f736693fe0152754"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block.  <a href="#ga5e09b5b900873191f736693fe0152754">More...</a><br/></td></tr>
-<tr class="separator:ga5e09b5b900873191f736693fe0152754"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga5231f7798a2a68706b096105d3aca9d0"><td class="memTemplParams" colspan="2">template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:ga5231f7798a2a68706b096105d3aca9d0"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga5231f7798a2a68706b096105d3aca9d0">cub::LoadDirectWarpStriped</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
-<tr class="memdesc:ga5231f7798a2a68706b096105d3aca9d0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block, guarded by range.  <a href="#ga5231f7798a2a68706b096105d3aca9d0">More...</a><br/></td></tr>
-<tr class="separator:ga5231f7798a2a68706b096105d3aca9d0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaf8a0a6ee81f95cad96f43a11d2d8957c"><td class="memTemplParams" colspan="2">template&lt;typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
-<tr class="memitem:gaf8a0a6ee81f95cad96f43a11d2d8957c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#gaf8a0a6ee81f95cad96f43a11d2d8957c">cub::LoadDirectWarpStriped</a> (unsigned int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items, DefaultT oob_default)</td></tr>
-<tr class="memdesc:gaf8a0a6ee81f95cad96f43a11d2d8957c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#gaf8a0a6ee81f95cad96f43a11d2d8957c">More...</a><br/></td></tr>
-<tr class="separator:gaf8a0a6ee81f95cad96f43a11d2d8957c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga7d1fa5a9856c0d09c0978d6f841c6ac7"><td class="memTemplParams" colspan="2">template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:ga7d1fa5a9856c0d09c0978d6f841c6ac7"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga7d1fa5a9856c0d09c0978d6f841c6ac7">cub::LoadDirectWarpStriped</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD])</td></tr>
+<tr class="memdesc:ga7d1fa5a9856c0d09c0978d6f841c6ac7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block.  <a href="#ga7d1fa5a9856c0d09c0978d6f841c6ac7">More...</a><br/></td></tr>
+<tr class="separator:ga7d1fa5a9856c0d09c0978d6f841c6ac7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga09b5b45167165f43f293605d4444dcef"><td class="memTemplParams" colspan="2">template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:ga09b5b45167165f43f293605d4444dcef"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga09b5b45167165f43f293605d4444dcef">cub::LoadDirectWarpStriped</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items)</td></tr>
+<tr class="memdesc:ga09b5b45167165f43f293605d4444dcef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block, guarded by range.  <a href="#ga09b5b45167165f43f293605d4444dcef">More...</a><br/></td></tr>
+<tr class="separator:ga09b5b45167165f43f293605d4444dcef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga65bbd3f4dfc50ad6b3426ac0e4d37e60"><td class="memTemplParams" colspan="2">template&lt;typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename InputIteratorT &gt; </td></tr>
+<tr class="memitem:ga65bbd3f4dfc50ad6b3426ac0e4d37e60"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga65bbd3f4dfc50ad6b3426ac0e4d37e60">cub::LoadDirectWarpStriped</a> (int linear_tid, InputIteratorT block_itr, InputT(&amp;items)[ITEMS_PER_THREAD], int valid_items, DefaultT oob_default)</td></tr>
+<tr class="memdesc:ga65bbd3f4dfc50ad6b3426ac0e4d37e60"><td class="mdescLeft">&#160;</td><td class="mdescRight">Load a linear segment of items into a warp-striped arrangement across the thread block, guarded by range, with a fall-back assignment of out-of-bound elements.  <a href="#ga65bbd3f4dfc50ad6b3426ac0e4d37e60">More...</a><br/></td></tr>
+<tr class="separator:ga65bbd3f4dfc50ad6b3426ac0e4d37e60"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga9b2bb8f452cd26b5e297c9d5924fcf03"><td class="memTemplParams" colspan="2">template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorT &gt; </td></tr>
 <tr class="memitem:ga9b2bb8f452cd26b5e297c9d5924fcf03"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03">cub::StoreDirectWarpStriped</a> (int linear_tid, OutputIteratorT block_itr, T(&amp;items)[ITEMS_PER_THREAD])</td></tr>
 <tr class="memdesc:ga9b2bb8f452cd26b5e297c9d5924fcf03"><td class="mdescLeft">&#160;</td><td class="mdescRight">Store a warp-striped arrangement of data across the thread block into a linear segment of items.  <a href="#ga9b2bb8f452cd26b5e297c9d5924fcf03">More...</a><br/></td></tr>
@@ -416,7 +416,7 @@ template&lt;CacheStoreModifier MODIFIER, typename OutputIteratorT , typename T &
 
 </div>
 </div>
-<a class="anchor" id="ga4208908b26f55006f3f1b46bea307ef2"></a>
+<a class="anchor" id="gaae0929dab69e0dfb00404f406d63b384"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -425,7 +425,7 @@ template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt;
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectBlocked </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -471,7 +471,7 @@ template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt;
 
 </div>
 </div>
-<a class="anchor" id="ga809eeb2f239a0d79892dd642aa343ef2"></a>
+<a class="anchor" id="ga70279f26e11d71e25a7b832cdb50b7fb"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -480,7 +480,7 @@ template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt;
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectBlocked </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -529,11 +529,11 @@ template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt;
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00103">103</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00105">105</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ga6acaa34a3a79af757f29d5285424c966"></a>
+<a class="anchor" id="ga282cd56415aaaeb87b4eea309e1eec2e"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -542,7 +542,7 @@ template&lt;typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectBlocked </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -598,11 +598,11 @@ template&lt;typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00134">134</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00138">138</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="gaea1e1b7b7a72d96b7048142694220c43"></a>
+<a class="anchor" id="ga0691288b08d9ee7e88a1358d4bd186df"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -611,7 +611,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectBlockedVectorized </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -658,11 +658,11 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00226">226</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00227">227</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ga364f0443df2fa2a672a00d7b94bf5c28"></a>
+<a class="anchor" id="ga5cc9db45ec9db3c6a1e7362086130313"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -671,7 +671,7 @@ template&lt;int BLOCK_THREADS, typename InputT , int ITEMS_PER_THREAD, typename 
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectStriped </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -714,11 +714,11 @@ template&lt;int BLOCK_THREADS, typename InputT , int ITEMS_PER_THREAD, typename 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00293">293</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00258">258</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="gabbdc1525eb56d4ba5c99274bbe2c1717"></a>
+<a class="anchor" id="ga14d49bccc8917a00cf70e9baa1fb2d46"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -727,7 +727,7 @@ template&lt;int BLOCK_THREADS, typename InputT , int ITEMS_PER_THREAD, typename 
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectStriped </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -777,11 +777,11 @@ template&lt;int BLOCK_THREADS, typename InputT , int ITEMS_PER_THREAD, typename 
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00324">324</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00288">288</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="gae9a1729fcdc33e08a77bff4b3805befe"></a>
+<a class="anchor" id="gac581449ff8aa49c5832dd849f6124895"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -790,7 +790,7 @@ template&lt;int BLOCK_THREADS, typename InputT , typename DefaultT , int ITEMS_P
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectStriped </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -847,11 +847,11 @@ template&lt;int BLOCK_THREADS, typename InputT , typename DefaultT , int ITEMS_P
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00357">357</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00323">323</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ga5e09b5b900873191f736693fe0152754"></a>
+<a class="anchor" id="ga7d1fa5a9856c0d09c0978d6f841c6ac7"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -860,7 +860,7 @@ template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt;
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectWarpStriped </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -903,11 +903,11 @@ template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt;
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00398">398</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00362">362</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="ga5231f7798a2a68706b096105d3aca9d0"></a>
+<a class="anchor" id="ga09b5b45167165f43f293605d4444dcef"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -916,7 +916,7 @@ template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt;
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectWarpStriped </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -966,11 +966,11 @@ template&lt;typename InputT , int ITEMS_PER_THREAD, typename InputIteratorT &gt;
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00432">432</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00398">398</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
-<a class="anchor" id="gaf8a0a6ee81f95cad96f43a11d2d8957c"></a>
+<a class="anchor" id="ga65bbd3f4dfc50ad6b3426ac0e4d37e60"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
@@ -979,7 +979,7 @@ template&lt;typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename
         <tr>
           <td class="memname">__device__ __forceinline__ void cub::LoadDirectWarpStriped </td>
           <td>(</td>
-          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramtype">int&#160;</td>
           <td class="paramname"><em>linear_tid</em>, </td>
         </tr>
         <tr>
@@ -1036,7 +1036,7 @@ template&lt;typename InputT , typename DefaultT , int ITEMS_PER_THREAD, typename
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00473">473</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00439">439</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
 
 </div>
 </div>
@@ -1153,7 +1153,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorT &gt; </d
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00101">101</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00103">103</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1213,7 +1213,7 @@ template&lt;typename T , int ITEMS_PER_THREAD&gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00139">139</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00143">143</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1269,7 +1269,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Outpu
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00202">202</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00206">206</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1332,7 +1332,7 @@ template&lt;int BLOCK_THREADS, typename T , int ITEMS_PER_THREAD, typename Outpu
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00231">231</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00237">237</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1388,7 +1388,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorT &gt; </d
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00273">273</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00281">281</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1451,7 +1451,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorT &gt; </d
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00307">307</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00317">317</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
 
 </div>
 </div>
@@ -1459,7 +1459,7 @@ template&lt;typename T , int ITEMS_PER_THREAD, typename OutputIteratorT &gt; </d
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Nov 22 2016 14:40:08 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Tue Dec 6 2016 13:22:00 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
