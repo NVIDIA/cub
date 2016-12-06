@@ -638,6 +638,7 @@ private:
         /// Shared memory storage layout type
         struct _TempStorage : BlockExchange::TempStorage
         {
+            /// Temporary storage for partially-full block guard
             volatile int valid_items;
         };
 
@@ -703,6 +704,7 @@ private:
         /// Shared memory storage layout type
         struct _TempStorage : BlockExchange::TempStorage
         {
+            /// Temporary storage for partially-full block guard
             volatile int valid_items;
         };
 
@@ -768,6 +770,7 @@ private:
         /// Shared memory storage layout type
         struct _TempStorage : BlockExchange::TempStorage
         {
+            /// Temporary storage for partially-full block guard
             volatile int valid_items;
         };
 
