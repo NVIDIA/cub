@@ -1,13 +1,13 @@
 1.6.4    12/06/2016
     - Updated sm_5x, sm_6x tuning policies for radix sorting (3.5B and 3.4B 
       32b keys/s on TitanX and GTX 1080, respectively)
-    - Remove out-dated VC project files
     - Bug fixes: 
+        - Restore fence work-around for scan (reduce-by-key, etc.) hangs 
+          in CUDA 8.5
         - Issue 65: DeviceSegmentedRadixSort should allow inputs to have 
           pointer-to-const type 
         - Mollify Clang device-side warnings
-        - Restore fence work-around for scan (reduce-by-key, etc.) hangs 
-          in CUDA 8.5
+        - Remove out-dated VC project files
           		  
 //-----------------------------------------------------------------------------
 
