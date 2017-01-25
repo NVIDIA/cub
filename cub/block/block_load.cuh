@@ -849,7 +849,9 @@ private:
             InputT          (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
-            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            if (linear_tid == 0)
+                temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            CTA_SYNC();
             LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, temp_storage.valid_items);
             BlockExchange(temp_storage).StripedToBlocked(items, items);
         }
@@ -862,7 +864,9 @@ private:
             int             valid_items,                    ///< [in] Number of valid items to load
             DefaultT        oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
-            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            if (linear_tid == 0)
+                temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            CTA_SYNC();
             LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, temp_storage.valid_items, oob_default);
             BlockExchange(temp_storage).StripedToBlocked(items, items);
         }
@@ -929,7 +933,9 @@ private:
             InputT          (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
-            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            if (linear_tid == 0)
+                temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            CTA_SYNC();
             LoadDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items);
             BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
@@ -943,7 +949,9 @@ private:
             int             valid_items,                    ///< [in] Number of valid items to load
             DefaultT        oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
-            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            if (linear_tid == 0)
+                temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            CTA_SYNC();
             LoadDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items, oob_default);
             BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
@@ -1009,7 +1017,9 @@ private:
             InputT          (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
             int             valid_items)                    ///< [in] Number of valid items to load
         {
-            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            if (linear_tid == 0)
+                temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            CTA_SYNC();
             LoadDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items);
             BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
@@ -1023,7 +1033,9 @@ private:
             int             valid_items,                    ///< [in] Number of valid items to load
             DefaultT        oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
-            temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            if (linear_tid == 0)
+                temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            CTA_SYNC();
             LoadDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items, oob_default);
             BlockExchange(temp_storage).WarpStripedToBlocked(items, items);
         }
