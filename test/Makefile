@@ -50,6 +50,7 @@ else ifeq ($(quicktest), 1)
 	TEST_SUFFIX = quick
 else 
 	TEST_SUFFIX = thorough
+	NPPI = 
 endif
 
 
