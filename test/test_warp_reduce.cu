@@ -815,10 +815,6 @@ int main(int argc, char** argv)
     TestReduce<2, 16, TestBar>(UNIFORM, Sum());
     TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum());
 
-    typedef KeyValuePair<int, float> T;
-    cub::Sum sum_op;
-    TestReduce<1, 32, T>(UNIFORM, ReduceBySegmentOp<cub::Sum>(sum_op));
-
 #else
 
     // Compile/run thorough tests
