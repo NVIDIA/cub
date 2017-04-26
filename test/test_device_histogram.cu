@@ -38,7 +38,9 @@
 #include <algorithm>
 #include <typeinfo>
 
-#include <npp.h>
+#if defined(QUICK_TEST) || defined(QUICKER_TEST)
+    #include <npp.h>
+#endif
 
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_histogram.cuh>
@@ -74,6 +76,8 @@ CachingDeviceAllocator  g_allocator(true);
 //---------------------------------------------------------------------
 // Dispatch to NPP histogram
 //---------------------------------------------------------------------
+
+#if defined(QUICK_TEST) || defined(QUICKER_TEST)
 
 /**
  * Dispatch to single-channel 8b NPP histo-even
@@ -195,6 +199,10 @@ cudaError_t DispatchEven(
 
     return error;
 }
+
+
+#endif // #if defined(QUICK_TEST) || defined(QUICKER_TEST)
+
 
 //---------------------------------------------------------------------
 // Dispatch to different DeviceHistogram entrypoints

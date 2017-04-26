@@ -284,7 +284,7 @@ __device__  __forceinline__ unsigned int WARP_MASK()
 __device__  __forceinline__ void WARP_SYNC()
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
-  __bar_warp_sync(WARP_MASK());
+    __syncwarp(WARP_MASK());
 #else
   __threadfence_block();
 #endif
