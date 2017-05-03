@@ -260,7 +260,7 @@ struct ScanTileState<T, true>
         TileDescriptor  tile_descriptor;
         do
         {
-            WARP_SYNC(); // prevent hoisting loads from loop
+            __threadfence_block(); // prevent hoisting loads from loop
             TxnWord alias = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
 
@@ -625,7 +625,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
 
         while (tile_descriptor.status == SCAN_TILE_INVALID)
         {
-            WARP_SYNC();  // prevent hoisting loads from loop
+            __threadfence_block(); // prevent hoisting loads from loop
 
             alias           = ThreadLoad<LOAD_CG>(reinterpret_cast<TxnWord*>(d_tile_status + TILE_STATUS_PADDING + tile_idx));
             tile_descriptor = reinterpret_cast<TileDescriptor&>(alias);
