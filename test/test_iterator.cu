@@ -785,7 +785,8 @@ int main(int argc, char** argv)
         Test<double3>();
 
     Test<char4>();
-    Test<short4>();
+// Mooch CUDA R9 EA bug
+//    Test<short4>();
     Test<int4>();
     Test<long4>();
     Test<longlong4>();
