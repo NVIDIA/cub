@@ -1022,7 +1022,8 @@ int main(int argc, char** argv)
         Test<ulonglong2>(num_items);
 
         Test<uchar4>(num_items);
-        Test<ushort4>(num_items);
+// Mooch CUDA R9 EA bug
+//        Test<ushort4>(num_items);
         Test<uint4>(num_items);
         Test<ulonglong4>(num_items);
 
