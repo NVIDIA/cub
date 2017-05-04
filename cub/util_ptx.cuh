@@ -278,10 +278,35 @@ __device__  __forceinline__ void WARP_SYNC(unsigned int member_mask)
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
     __syncwarp(member_mask);
-//#else
-//    __threadfence_block();
 #endif
 }
+
+
+/**
+ * Warp any
+ */
+__device__  __forceinline__ int WARP_ANY(int predicate, unsigned int member_mask)
+{
+#ifdef CUB_USE_COOPERATIVE_GROUPS
+    return __any_sync(member_mask, predicate);
+#else
+    return ::__any(predicate);
+#endif
+}
+
+
+/**
+ * Warp any
+ */
+__device__  __forceinline__ int WARP_ALL(int predicate, unsigned int member_mask)
+{
+#ifdef CUB_USE_COOPERATIVE_GROUPS
+    return __all_sync(member_mask, predicate);
+#else
+    return ::__all(predicate);
+#endif
+}
+
 
 /**
  * Warp ballot
@@ -642,57 +667,6 @@ __device__ __forceinline__ T ShuffleIndex(
     return output;
 }
 
-
-/**
- * \brief Portable implementation of __all
- * \ingroup WarpModule
- */
-__device__ __forceinline__ int WarpAll(int cond)
-{
-#if CUB_PTX_ARCH < 120
-
-    __shared__ volatile int warp_signals[32];
-
-    if (LaneId() == 0)
-        warp_signals[WarpId()] = 1;
-
-    if (cond == 0)
-        warp_signals[WarpId()] = 0;
-
-    return warp_signals[WarpId()];
-
-#else
-
-    return ::__all(cond);
-
-#endif
-}
-
-
-/**
- * \brief Portable implementation of __any
- * \ingroup WarpModule
- */
-__device__ __forceinline__ int WarpAny(int cond)
-{
-#if CUB_PTX_ARCH < 120
-
-    __shared__ volatile int warp_signals[32];
-
-    if (LaneId() == 0)
-        warp_signals[WarpId()] = 0;
-
-    if (cond)
-        warp_signals[WarpId()] = 1;
-
-    return warp_signals[WarpId()];
-
-#else
-
-    return ::__any(cond);
-
-#endif
-}
 
 
 }               // CUB namespace
