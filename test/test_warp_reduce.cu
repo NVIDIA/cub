@@ -747,8 +747,7 @@ void Test(GenMode gen_mode)
 
     // vec-4
     Test<WARPS, LOGICAL_WARP_THREADS, uchar4>(              gen_mode, Sum());
-// Mooch CUDA R9 EA bug
-//    Test<WARPS, LOGICAL_WARP_THREADS, ushort4>(             gen_mode, Sum());
+    Test<WARPS, LOGICAL_WARP_THREADS, ushort4>(             gen_mode, Sum());
     Test<WARPS, LOGICAL_WARP_THREADS, uint4>(               gen_mode, Sum());
     Test<WARPS, LOGICAL_WARP_THREADS, ulonglong4>(          gen_mode, Sum());
 
