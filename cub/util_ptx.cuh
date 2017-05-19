@@ -255,7 +255,7 @@ __device__ __forceinline__ void BAR(int count)
 __device__  __forceinline__ void CTA_SYNC()
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
-    __bar_sync_all(0);
+    __barrier_sync(0);
 #else
     __syncthreads();
 #endif
