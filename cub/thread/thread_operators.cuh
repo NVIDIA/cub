@@ -224,7 +224,10 @@ public:
     __host__ __device__ __forceinline__
     T operator()(const T &a, const T &b)
     {
-        return scan_op(b, a);
+      T _a(a);
+      T _b(b);
+
+      return scan_op(_b, _a);
     }
 };
 
