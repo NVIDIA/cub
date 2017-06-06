@@ -158,7 +158,7 @@ struct AgentRle
         {}
 
         template <typename Index>
-        __device__ __forceinline__ bool operator()(T first, T second, Index idx)
+        __host__ __device__ __forceinline__ bool operator()(T first, T second, Index idx)
         {
             if (!LAST_TILE || (idx < num_remaining))
                 return !equality_op(first, second);
