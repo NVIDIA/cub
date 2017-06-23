@@ -159,7 +159,7 @@ public:
     template <typename QualifiedStoreType>
     __host__ __device__ __forceinline__ TransformOutputIterator(
         QualifiedStoreType* ptr,
-        ConversionOp conversionOp)     ///< Native pointer to wrap
+        ConversionOp conversion_op)     ///< Native pointer to wrap
     :
         ptr(const_cast<typename RemoveQualifiers<QualifiedStoreType>::Type *>(ptr)),
         conversion_op(conversion_op)
