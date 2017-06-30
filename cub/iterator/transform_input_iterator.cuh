@@ -85,7 +85,7 @@ namespace cub {
  * {
  *     __host__ __device__ __forceinline__
  *     double operator()(const int &a) const {
- *         return double(a * 2);
+ *         return double(a * 3);
  *     }
  * };
  *
