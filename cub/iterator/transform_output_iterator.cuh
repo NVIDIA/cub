@@ -120,7 +120,7 @@ private:
         __host__ __device__ __forceinline__ Reference(StoreType* ptr, ConversionOp conversion_op) : ptr(ptr), conversion_op(conversion_op) {}
 
         /// Assignment
-        __device__ __forceinline__ InputType operator =(InputType val)
+        __device__ __forceinline__ InputType operator=(InputType val)
         {
             *ptr = conversion_op(val);
             return val;
