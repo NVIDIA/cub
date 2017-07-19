@@ -216,19 +216,19 @@ public:
     /// Structure dereference
     __host__ __device__ __forceinline__ pointer operator->()
     {
-        return &(*(input_itr + *index_itr));
+        return input_itr + *index_itr;
     }
 
     /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
-        return (index_itr == rhs.index_itr);
+        return (index_itr == rhs.index_itr && input_itr == rhs.input_itr);
     }
 
     /// Not equal to
     __host__ __device__ __forceinline__ bool operator!=(const self_type& rhs)
     {
-        return (index_itr != rhs.index_itr);
+        return !(*this == rhs);
     }
 
     /// ostream operator
