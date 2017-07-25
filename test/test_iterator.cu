@@ -45,6 +45,7 @@
 #include <cub/iterator/tex_obj_input_iterator.cuh>
 #include <cub/iterator/tex_ref_input_iterator.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
+#include <cub/iterator/permutation_input_iterator.cuh>
 
 #include <cub/util_type.cuh>
 #include <cub/util_allocator.cuh>
@@ -90,7 +91,7 @@ struct SelectOp
     template <typename T>
     __host__ __device__ __forceinline__ bool operator()(T input)
     {
-        return true;;
+        return true;
     }
 };
 
@@ -670,6 +671,90 @@ void TestTexTransform()
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
 
+/**
+ * Test permutation iterator
+ */
+template <typename T>
+void TestPermute()
+{
+    printf("\nTesting permutation iterator on type %s\n", typeid(T).name()); fflush(stdout);
+
+    //
+    // Test iterator manipulation in kernel
+    //
+
+    const unsigned int TEST_VALUES = 11000;
+
+    T *h_data = new T[TEST_VALUES];
+    for (int i = 0; i < TEST_VALUES; ++i)
+    {
+        InitValue(INTEGER_SEED, h_data[i], i);
+    }
+
+    // Allocate device arrays
+    T *d_data = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_data, sizeof(T) * TEST_VALUES));
+    CubDebugExit(cudaMemcpy(d_data, h_data, sizeof(T) * TEST_VALUES, cudaMemcpyHostToDevice));
+
+    int *h_indices = new int[TEST_VALUES];
+    for (int i = 0; i < TEST_VALUES; ++i)
+    {
+      h_indices[i] = TEST_VALUES - i - 1;
+    }
+
+    int *d_indices = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_indices, sizeof(int) * TEST_VALUES));
+    CubDebugExit(cudaMemcpy(d_indices, h_indices, sizeof(int) * TEST_VALUES, cudaMemcpyHostToDevice));
+
+    cub::PermutationInputIterator<T, T*, int*> d_permute_iter(d_data, d_indices);
+
+    // Initialize reference data
+    T h_reference[8];
+    h_reference[0] = h_data[TEST_VALUES - 1 - 0];       // Value at offset 0
+    h_reference[1] = h_data[TEST_VALUES - 1 - 100];     // Value at offset 100
+    h_reference[2] = h_data[TEST_VALUES - 1 - 1000];    // Value at offset 1000
+    h_reference[3] = h_data[TEST_VALUES - 1 - 10000];   // Value at offset 10000
+    h_reference[4] = h_data[TEST_VALUES - 1 - 1];       // Value at offset 1
+    h_reference[5] = h_data[TEST_VALUES - 1 - 21];      // Value at offset 21
+    h_reference[6] = h_data[TEST_VALUES - 1 - 11];      // Value at offset 11
+    h_reference[7] = h_data[TEST_VALUES - 1 - 0];       // Value at offset 0;
+
+    Test(d_permute_iter, h_reference);
+
+#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
+
+    //
+    // Test with thrust::copy_if()
+    //
+
+    T *h_copy = new T[TEST_VALUES];
+    for (int i = 0; i < TEST_VALUES; ++i)
+        h_copy[i] = h_data[TEST_VALUES - 1 - i];
+
+    T *d_copy = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
+    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+
+    thrust::copy_if(d_permute_iter, d_permute_iter + TEST_VALUES, d_copy_wrapper, SelectOp());
+
+    int compare = CompareDeviceResults(h_copy, d_copy, TEST_VALUES, g_verbose, g_verbose);
+    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
+    AssertEquals(0, compare);
+
+    // Cleanup
+    if (h_copy) delete[] h_copy;
+    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
+
+#endif // THRUST_VERSION
+
+    if (h_data) delete[] h_data;
+    if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
+
+    if (h_indices) delete[] h_indices;
+    if (d_indices) CubDebugExit(g_allocator.DeviceFree(d_indices));
+}
+
+
 #endif  // CUDA_VERSION
 
 
@@ -727,6 +812,8 @@ void Test()
 
     // Test non-const type
     Test<T, const T>(Int2Type<IS_INTEGER>());
+
+    TestPermute<T>();
 }
 
 

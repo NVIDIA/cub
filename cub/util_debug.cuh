@@ -129,9 +129,9 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 #endif
     }
     #ifndef __CUDA_ARCH__
-        #define _CubLog(format, ...) thrust::cuda_cub::cub::va_printf(format,__VA_ARGS__);
+        #define _CubLog(format, ...) ::cub::va_printf(format,__VA_ARGS__);
     #else
-        #define _CubLog(format, ...) thrust::cuda_cub::cub::va_printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, __VA_ARGS__);
+        #define _CubLog(format, ...) ::cub::va_printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, __VA_ARGS__);
     #endif
 #endif
 #endif

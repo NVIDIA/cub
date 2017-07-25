@@ -1353,8 +1353,9 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("entropy", entropy_reduction);
-
+#if defined(QUICK_TEST) || defined(QUICKER_TEST)
     bool compare_npp = args.CheckCmdLineFlag("npp");
+#endif
 
 
     // Print usage

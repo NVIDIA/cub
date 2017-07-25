@@ -305,7 +305,7 @@ struct AgentHistogram
                 CounterT    count       = privatized_histograms[CHANNEL][privatized_bin];
                 bool        is_valid    = count > 0;
 
-                output_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>((SampleT) privatized_bin, output_bin, is_valid);
+                output_decode_op[CHANNEL].template BinSelect<LOAD_MODIFIER>((SampleT) privatized_bin, output_bin, is_valid);
 
                 if (output_bin >= 0)
                 {
@@ -357,7 +357,7 @@ struct AgentHistogram
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
             {
                 bins[PIXEL] = -1;
-                privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bins[PIXEL], is_valid[PIXEL]);
+                privatized_decode_op[CHANNEL].template BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bins[PIXEL], is_valid[PIXEL]);
             }
 
             CounterT accumulator = 1;
@@ -398,7 +398,7 @@ struct AgentHistogram
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
             {
                 int bin = -1;
-                privatized_decode_op[CHANNEL].BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
+                privatized_decode_op[CHANNEL].template BinSelect<LOAD_MODIFIER>(samples[PIXEL][CHANNEL], bin, is_valid[PIXEL]);
                 if (bin >= 0)
                     atomicAdd(privatized_histograms[CHANNEL] + bin, 1);
             }
