@@ -191,7 +191,7 @@ struct ArgMin
  * \brief Default cast functor
  */
 template <typename B>
-struct Cast
+struct CastOp
 {
     /// Cast operator, returns <tt>(B) a</tt>
     template <typename A>

@@ -90,7 +90,7 @@ struct SelectOp
     template <typename T>
     __host__ __device__ __forceinline__ bool operator()(T input)
     {
-        return true;;
+        return true;
     }
 };
 

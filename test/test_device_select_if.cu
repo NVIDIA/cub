@@ -394,7 +394,7 @@ cudaError_t Dispatch(
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            d_out_wrapper_end = thrust::copy_if(d_in_wrapper, d_in_wrapper + num_items, d_flags_wrapper, d_out_wrapper, Cast<bool>());
+            d_out_wrapper_end = thrust::copy_if(d_in_wrapper, d_in_wrapper + num_items, d_flags_wrapper, d_out_wrapper, CastOp<bool>());
         }
 
         OffsetT num_selected = d_out_wrapper_end - d_out_wrapper;
@@ -463,7 +463,7 @@ cudaError_t Dispatch(
                 d_flags_wrapper,
                 d_out_wrapper,
                 d_out_unselected,
-                Cast<bool>());
+                CastOp<bool>());
         }
 
         OffsetT num_selected = d_out_wrapper_end.first - d_out_wrapper;
