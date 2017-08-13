@@ -129,7 +129,7 @@ ifeq ($(force32), 1)
 else
 	CPU_ARCH = -m64
 	CPU_ARCH_SUFFIX = x86_64
-    NPPI = -lnppi
+    NPPI = -lnppist
 endif
 
 

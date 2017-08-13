@@ -36,8 +36,6 @@
 #include <iterator>
 #include <iostream>
 
-#include <thrust/iterator/discard_iterator.h>
-
 #include "../util_namespace.cuh"
 #include "../util_macro.cuh"
 

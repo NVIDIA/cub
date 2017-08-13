@@ -80,9 +80,9 @@ struct AgentHistogramPolicy
     {
         BLOCK_THREADS           = _BLOCK_THREADS,                   ///< Threads per thread block
         PIXELS_PER_THREAD       = _PIXELS_PER_THREAD,               ///< Pixels per thread (per tile of input)
-        IS_RLE_COMPRESS            = _RLE_COMPRESS,                    ///< Whether to perform localized RLE to compress samples before histogramming
+        IS_RLE_COMPRESS         = _RLE_COMPRESS,                    ///< Whether to perform localized RLE to compress samples before histogramming
         MEM_PREFERENCE          = _MEM_PREFERENCE,                  ///< Whether to prefer privatized shared-memory bins (versus privatized global-memory bins)
-        IS_WORK_STEALING           = _WORK_STEALING,                   ///< Whether to dequeue tiles from a global work queue
+        IS_WORK_STEALING        = _WORK_STEALING,                   ///< Whether to dequeue tiles from a global work queue
     };
 
     static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;          ///< The BlockLoad algorithm to use
@@ -346,7 +346,6 @@ struct AgentHistogram
         CounterT*           privatized_histograms[NUM_ACTIVE_CHANNELS],
         Int2Type<true>      is_rle_compress)
     {
-
         #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
@@ -365,18 +364,16 @@ struct AgentHistogram
             #pragma unroll
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD - 1; ++PIXEL)
             {
-                if (bins[PIXEL] == bins[PIXEL + 1])
-                {
-                     accumulator++;
-                }
-                else
+                if (bins[PIXEL] != bins[PIXEL + 1])
                 {
                     if (bins[PIXEL] >= 0)
                         atomicAdd(privatized_histograms[CHANNEL] + bins[PIXEL], accumulator);
 
-                     accumulator = 1;
+                     accumulator = 0;
                 }
+                accumulator++;
             }
+
             // Last pixel
             if (bins[PIXELS_PER_THREAD - 1] >= 0)
                 atomicAdd(privatized_histograms[CHANNEL] + bins[PIXELS_PER_THREAD - 1], accumulator);
@@ -734,12 +731,17 @@ struct AgentHistogram
         GridQueue<int>      tile_queue)                 ///< Queue descriptor for assigning tiles of work to thread blocks
     {
         // Check whether all row starting offsets are quad-aligned (in single-channel) or pixel-aligned (in multi-channel)
-        size_t  row_bytes           = sizeof(SampleT) * row_stride_samples;
-        size_t  offset_mask         = size_t(d_native_samples) | row_bytes;
-        int     quad_mask           = sizeof(SampleT) * 4 - 1;
+        int     quad_mask           = AlignBytes<QuadT>::ALIGN_BYTES - 1;
         int     pixel_mask          = AlignBytes<PixelT>::ALIGN_BYTES - 1;
-        bool    quad_aligned_rows   = (NUM_CHANNELS == 1) && ((offset_mask & quad_mask) == 0);
-        bool    pixel_aligned_rows  = (NUM_CHANNELS > 1) && ((offset_mask & pixel_mask) == 0);
+        size_t  row_bytes           = sizeof(SampleT) * row_stride_samples;
+
+        bool quad_aligned_rows      = (NUM_CHANNELS == 1) && (SAMPLES_PER_THREAD % 4 == 0) &&     // Single channel
+                                        ((size_t(d_native_samples) & quad_mask) == 0) &&        // ptr is quad-aligned
+                                        ((num_rows == 1) || ((row_bytes & quad_mask) == 0));    // number of row-samples is a multiple of the alignment of the quad
+
+        bool pixel_aligned_rows     = (NUM_CHANNELS > 1) &&                                     // Multi channel
+                                        ((size_t(d_native_samples) & pixel_mask) == 0) &&       // ptr is pixel-aligned
+                                        ((row_bytes & pixel_mask) == 0);                        // number of row-samples is a multiple of the alignment of the pixel
 
         // Whether rows are aligned and can be vectorized
         if (quad_aligned_rows || pixel_aligned_rows)
