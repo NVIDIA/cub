@@ -359,6 +359,7 @@ public:
         // Reset shared memory digit counters
         ResetCounters();
 
+        #pragma unroll
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
         {
             // Get digit
@@ -608,7 +609,8 @@ public:
             // Number of occurrences in previous strips
             DigitCounterT warp_digit_prefix = *digit_counters[ITEM];
 
-            // Todo: warp-sync
+            // Warp-sync
+            WARP_SYNC(0xFFFFFFFF);
 
             // Number of peers having same digit as me
             int32_t digit_count = __popc(peer_mask);
@@ -622,7 +624,8 @@ public:
                 *digit_counters[ITEM] = DigitCounterT(warp_digit_prefix + digit_count);
             }
 
-            // Todo: warp-sync
+            // Warp-sync
+            WARP_SYNC(0xFFFFFFFF);
 
             // Number of prior keys having same digit
             ranks[ITEM] = warp_digit_prefix + DigitCounterT(peer_digit_prefix);

@@ -63,23 +63,31 @@ __device__ __forceinline__ T ThreadReduce(
     T                   prefix,                 ///< [in] Prefix to seed reduction with
     Int2Type<LENGTH>    /*length*/)
 {
-    T addend = *input;
-    prefix = reduction_op(prefix, addend);
+    T retval = prefix;
 
-    return ThreadReduce(input + 1, reduction_op, prefix, Int2Type<LENGTH - 1>());
+    #pragma unroll
+    for (int i = 0; i < LENGTH; ++i)
+        retval = reduction_op(retval, input[i]);
+
+    return retval;
+
+//    T addend = *input;
+//    prefix = reduction_op(prefix, addend);
+//
+//    return ThreadReduce(input + 1, reduction_op, prefix, Int2Type<LENGTH - 1>());
 }
 
-template <
-    typename    T,
-    typename    ReductionOp>
-__device__ __forceinline__ T ThreadReduce(
-    T*                  /*input*/,              ///< [in] Input array
-    ReductionOp         /*reduction_op*/,       ///< [in] Binary reduction operator
-    T                   prefix,                 ///< [in] Prefix to seed reduction with
-    Int2Type<0>         /*length*/)
-{
-    return prefix;
-}
+//template <
+//    typename    T,
+//    typename    ReductionOp>
+//__device__ __forceinline__ T ThreadReduce(
+//    T*                  /*input*/,              ///< [in] Input array
+//    ReductionOp         /*reduction_op*/,       ///< [in] Binary reduction operator
+//    T                   prefix,                 ///< [in] Prefix to seed reduction with
+//    Int2Type<0>         /*length*/)
+//{
+//    return prefix;
+//}
 
 
 /**
