@@ -36,15 +36,15 @@
 #include <stdio.h>
 #include <typeinfo>
 
-#include <cub/util_allocator.cuh>
-#include <cub/device/device_select.cuh>
-#include <cub/device/device_partition.cuh>
-#include <cub/iterator/counting_input_iterator.cuh>
-
 #include <thrust/device_ptr.h>
 #include <thrust/copy.h>
 #include <thrust/partition.h>
 #include <thrust/iterator/reverse_iterator.h>
+
+#include <cub/util_allocator.cuh>
+#include <cub/device/device_select.cuh>
+#include <cub/device/device_partition.cuh>
+#include <cub/iterator/counting_input_iterator.cuh>
 
 #include "test_util.h"
 

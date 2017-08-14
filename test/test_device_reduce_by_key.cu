@@ -36,15 +36,15 @@
 #include <stdio.h>
 #include <typeinfo>
 
+#include <thrust/device_ptr.h>
+#include <thrust/reduce.h>
+#include <thrust/iterator/constant_iterator.h>
+
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_run_length_encode.cuh>
 #include <cub/thread/thread_operators.cuh>
-
-#include <thrust/device_ptr.h>
-#include <thrust/reduce.h>
-#include <thrust/iterator/constant_iterator.h>
 
 #include "test_util.h"
 

@@ -37,15 +37,15 @@
 #include <limits>
 #include <typeinfo>
 
+#include <thrust/device_ptr.h>
+#include <thrust/reduce.h>
+
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_segmented_reduce.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
-
-#include <thrust/device_ptr.h>
-#include <thrust/reduce.h>
 
 #include "test_util.h"
 

@@ -36,6 +36,9 @@
 #include <stdio.h>
 #include <typeinfo>
 
+#include <thrust/device_ptr.h>
+#include <thrust/unique.h>
+
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/counting_input_iterator.cuh>
 #include <cub/device/device_select.cuh>

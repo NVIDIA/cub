@@ -37,13 +37,13 @@
 #include <algorithm>
 #include <typeinfo>
 
-#include <cub/util_allocator.cuh>
-#include <cub/device/device_radix_sort.cuh>
-#include <cub/device/device_segmented_radix_sort.cuh>
-
 #include <thrust/device_ptr.h>
 #include <thrust/sort.h>
 #include <thrust/reverse.h>
+
+#include <cub/util_allocator.cuh>
+#include <cub/device/device_radix_sort.cuh>
+#include <cub/device/device_segmented_radix_sort.cuh>
 
 #include "test_util.h"
 

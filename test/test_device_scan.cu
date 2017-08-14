@@ -36,13 +36,13 @@
 #include <stdio.h>
 #include <typeinfo>
 
+#include <thrust/device_ptr.h>
+#include <thrust/scan.h>
+
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
 #include <cub/device/device_scan.cuh>
-
-#include <thrust/device_ptr.h>
-#include <thrust/scan.h>
 
 #include "test_util.h"
 
