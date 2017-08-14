@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d0982493d827c84906319b1126b06fa3.html">PrivateCub</a></li><li class="navelem"><a class="el" href="dir_57eaf5c1b3a967e183de38ac17eb217a.html">cub</a></li><li class="navelem"><a class="el" href="dir_638d6786c779dba24ddc957a9b8cf26f.html">block</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_9f8ee3e2708fba7b56c4614738cb69ac.html">cub</a></li><li class="navelem"><a class="el" href="dir_be18a941a6fe4cfa05f94e172e7abd29.html">block</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -324,7 +324,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00308"></a><span class="lineno">  308</span>&#160;        <span class="comment">// Share last item</span></div>
 <div class="line"><a name="l00309"></a><span class="lineno">  309</span>&#160;        temp_storage.last_items[linear_tid] = input[ITEMS_PER_THREAD - 1];</div>
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;</div>
-<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;</div>
 <div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;        <span class="keywordflow">if</span> (linear_tid == 0)</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;        {</div>
@@ -355,7 +355,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00339"></a><span class="lineno">  339</span>&#160;        <span class="comment">// Share last item</span></div>
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;        temp_storage.last_items[linear_tid] = input[ITEMS_PER_THREAD - 1];</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;</div>
-<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;</div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;        <span class="comment">// Set flag for first thread-item</span></div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;        preds[0] = (linear_tid == 0) ?</div>
@@ -416,7 +416,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00558"></a><span class="lineno">  558</span>&#160;        <span class="comment">// Share first item</span></div>
 <div class="line"><a name="l00559"></a><span class="lineno">  559</span>&#160;        temp_storage.first_items[linear_tid] = input[0];</div>
 <div class="line"><a name="l00560"></a><span class="lineno">  560</span>&#160;</div>
-<div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00561"></a><span class="lineno">  561</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00562"></a><span class="lineno">  562</span>&#160;</div>
 <div class="line"><a name="l00563"></a><span class="lineno">  563</span>&#160;        <span class="comment">// Set flag for last thread-item</span></div>
 <div class="line"><a name="l00564"></a><span class="lineno">  564</span>&#160;        tail_flags[ITEMS_PER_THREAD - 1] = (linear_tid == BLOCK_THREADS - 1) ?</div>
@@ -445,7 +445,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;        <span class="comment">// Share first item</span></div>
 <div class="line"><a name="l00644"></a><span class="lineno">  644</span>&#160;        temp_storage.first_items[linear_tid] = input[0];</div>
 <div class="line"><a name="l00645"></a><span class="lineno">  645</span>&#160;</div>
-<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00646"></a><span class="lineno">  646</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00647"></a><span class="lineno">  647</span>&#160;</div>
 <div class="line"><a name="l00648"></a><span class="lineno">  648</span>&#160;        <span class="comment">// Set flag for last thread-item</span></div>
 <div class="line"><a name="l00649"></a><span class="lineno">  649</span>&#160;        T successor_item = (linear_tid == BLOCK_THREADS - 1) ?</div>
@@ -480,7 +480,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;        temp_storage.first_items[linear_tid] = input[0];</div>
 <div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;        temp_storage.last_items[linear_tid] = input[ITEMS_PER_THREAD - 1];</div>
 <div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;</div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;</div>
 <div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;        T preds[ITEMS_PER_THREAD];</div>
 <div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;</div>
@@ -532,7 +532,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;        temp_storage.first_items[linear_tid] = input[0];</div>
 <div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;        temp_storage.last_items[linear_tid] = input[ITEMS_PER_THREAD - 1];</div>
 <div class="line"><a name="l00861"></a><span class="lineno">  861</span>&#160;</div>
-<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00862"></a><span class="lineno">  862</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;</div>
 <div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;        T preds[ITEMS_PER_THREAD];</div>
 <div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;</div>
@@ -585,7 +585,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00983"></a><span class="lineno">  983</span>&#160;        temp_storage.first_items[linear_tid] = input[0];</div>
 <div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;        temp_storage.last_items[linear_tid] = input[ITEMS_PER_THREAD - 1];</div>
 <div class="line"><a name="l00985"></a><span class="lineno">  985</span>&#160;</div>
-<div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;</div>
 <div class="line"><a name="l00988"></a><span class="lineno">  988</span>&#160;        T preds[ITEMS_PER_THREAD];</div>
 <div class="line"><a name="l00989"></a><span class="lineno">  989</span>&#160;</div>
@@ -633,7 +633,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l01103"></a><span class="lineno"> 1103</span>&#160;        temp_storage.first_items[linear_tid] = input[0];</div>
 <div class="line"><a name="l01104"></a><span class="lineno"> 1104</span>&#160;        temp_storage.last_items[linear_tid] = input[ITEMS_PER_THREAD - 1];</div>
 <div class="line"><a name="l01105"></a><span class="lineno"> 1105</span>&#160;</div>
-<div class="line"><a name="l01106"></a><span class="lineno"> 1106</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l01106"></a><span class="lineno"> 1106</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l01107"></a><span class="lineno"> 1107</span>&#160;</div>
 <div class="line"><a name="l01108"></a><span class="lineno"> 1108</span>&#160;        T preds[ITEMS_PER_THREAD];</div>
 <div class="line"><a name="l01109"></a><span class="lineno"> 1109</span>&#160;</div>
@@ -679,7 +679,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 6 2016 13:21:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2017 11:01:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

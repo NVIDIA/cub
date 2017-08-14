@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d0982493d827c84906319b1126b06fa3.html">PrivateCub</a></li><li class="navelem"><a class="el" href="dir_57eaf5c1b3a967e183de38ac17eb217a.html">cub</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_9f8ee3e2708fba7b56c4614738cb69ac.html">cub</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -189,41 +189,33 @@ __device__ __forceinline__ <br class="typebreak"/>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_ptx.html#gad6fcfe627801d7526a5f0785d774f5fa">cub::LaneMaskGe</a> ()</td></tr>
 <tr class="memdesc:gad6fcfe627801d7526a5f0785d774f5fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the warp lane mask of all lanes greater than or equal to the calling thread. <br/></td></tr>
 <tr class="separator:gad6fcfe627801d7526a5f0785d774f5fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa09dbea525e654af4138cae81ea9a6a8"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:gaa09dbea525e654af4138cae81ea9a6a8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#gaa09dbea525e654af4138cae81ea9a6a8">cub::ShuffleUp</a> (T input, int src_offset, int first_lane=0)</td></tr>
-<tr class="memdesc:gaa09dbea525e654af4138cae81ea9a6a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-up for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>-<code>src_offset</code></sub>. For thread lanes <em>i</em> &lt; src_offset, the thread's own <code>input</code> is returned to the thread. </p>
+<tr class="memitem:gab660be0cc3a80d04881a5c13d4049253"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:gab660be0cc3a80d04881a5c13d4049253"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#gab660be0cc3a80d04881a5c13d4049253">cub::ShuffleUp</a> (T input, int src_offset, int first_lane, unsigned int member_mask)</td></tr>
+<tr class="memdesc:gab660be0cc3a80d04881a5c13d4049253"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-up for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>-<code>src_offset</code></sub>. For thread lanes <em>i</em> &lt; src_offset, the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_up_logo.png" alt="shfl_up_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="group___warp_module.html#gaa09dbea525e654af4138cae81ea9a6a8">More...</a><br/></td></tr>
-<tr class="separator:gaa09dbea525e654af4138cae81ea9a6a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gafca5db82f4d7bea60266099297359059"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:gafca5db82f4d7bea60266099297359059"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#gafca5db82f4d7bea60266099297359059">cub::ShuffleDown</a> (T input, int src_offset, int last_lane=CUB_PTX_WARP_THREADS-1)</td></tr>
-<tr class="memdesc:gafca5db82f4d7bea60266099297359059"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-down for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>+<code>src_offset</code></sub>. For thread lanes <em>i</em> &gt;= WARP_THREADS, the thread's own <code>input</code> is returned to the thread. </p>
+  <a href="group___warp_module.html#gab660be0cc3a80d04881a5c13d4049253">More...</a><br/></td></tr>
+<tr class="separator:gab660be0cc3a80d04881a5c13d4049253"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4c200aa610257222e33b35f327d31d46"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ga4c200aa610257222e33b35f327d31d46"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga4c200aa610257222e33b35f327d31d46">cub::ShuffleDown</a> (T input, int src_offset, int last_lane, unsigned int member_mask)</td></tr>
+<tr class="memdesc:ga4c200aa610257222e33b35f327d31d46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-down for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>+<code>src_offset</code></sub>. For thread lanes <em>i</em> &gt;= WARP_THREADS, the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_down_logo.png" alt="shfl_down_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="group___warp_module.html#gafca5db82f4d7bea60266099297359059">More...</a><br/></td></tr>
-<tr class="separator:gafca5db82f4d7bea60266099297359059"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga490fe7fa432727b3d27be6cfe8d9439f"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ga490fe7fa432727b3d27be6cfe8d9439f"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga490fe7fa432727b3d27be6cfe8d9439f">cub::ShuffleIndex</a> (T input, int src_lane)</td></tr>
-<tr class="memdesc:ga490fe7fa432727b3d27be6cfe8d9439f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-broadcast for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><code>src_lane</code></sub>. For <code>src_lane</code> &lt; 0 or <code>src_lane</code> &gt;= WARP_THREADS, then the thread's own <code>input</code> is returned to the thread. </p>
+  <a href="group___warp_module.html#ga4c200aa610257222e33b35f327d31d46">More...</a><br/></td></tr>
+<tr class="separator:ga4c200aa610257222e33b35f327d31d46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga18d335d5b0c7f038389af7f552919ed2"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
+<tr class="memitem:ga18d335d5b0c7f038389af7f552919ed2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga18d335d5b0c7f038389af7f552919ed2">cub::ShuffleIndex</a> (T input, int src_lane, int logical_warp_threads, unsigned int member_mask)</td></tr>
+<tr class="memdesc:ga18d335d5b0c7f038389af7f552919ed2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-broadcast for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><code>src_lane</code></sub>. For <code>src_lane</code> &lt; 0 or <code>src_lane</code> &gt;= WARP_THREADS, then the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_broadcast_logo.png" alt="shfl_broadcast_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="group___warp_module.html#ga490fe7fa432727b3d27be6cfe8d9439f">More...</a><br/></td></tr>
-<tr class="separator:ga490fe7fa432727b3d27be6cfe8d9439f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga938f8e0eade89e1264aabe2a54ae50ad"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ga938f8e0eade89e1264aabe2a54ae50ad"></a>
-__device__ __forceinline__ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga938f8e0eade89e1264aabe2a54ae50ad">cub::WarpAll</a> (int cond)</td></tr>
-<tr class="memdesc:ga938f8e0eade89e1264aabe2a54ae50ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Portable implementation of __all. <br/></td></tr>
-<tr class="separator:ga938f8e0eade89e1264aabe2a54ae50ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaa1dc8cae33923255c06675806f9db155"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gaa1dc8cae33923255c06675806f9db155"></a>
-__device__ __forceinline__ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___warp_module.html#gaa1dc8cae33923255c06675806f9db155">cub::WarpAny</a> (int cond)</td></tr>
-<tr class="memdesc:gaa1dc8cae33923255c06675806f9db155"><td class="mdescLeft">&#160;</td><td class="mdescRight">Portable implementation of __any. <br/></td></tr>
-<tr class="separator:gaa1dc8cae33923255c06675806f9db155"><td class="memSeparator" colspan="2">&#160;</td></tr>
+  <a href="group___warp_module.html#ga18d335d5b0c7f038389af7f552919ed2">More...</a><br/></td></tr>
+<tr class="separator:ga18d335d5b0c7f038389af7f552919ed2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>PTX intrinsics </p>
@@ -233,7 +225,7 @@ __device__ __forceinline__ int&#160;</td><td class="memItemRight" valign="bottom
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 6 2016 13:22:00 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2017 11:01:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

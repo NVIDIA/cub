@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d0982493d827c84906319b1126b06fa3.html">PrivateCub</a></li><li class="navelem"><a class="el" href="dir_57eaf5c1b3a967e183de38ac17eb217a.html">cub</a></li><li class="navelem"><a class="el" href="dir_638d6786c779dba24ddc957a9b8cf26f.html">block</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_9f8ee3e2708fba7b56c4614738cb69ac.html">cub</a></li><li class="navelem"><a class="el" href="dir_be18a941a6fe4cfa05f94e172e7abd29.html">block</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -504,203 +504,209 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00678"></a><span class="lineno">  678</span>&#160;            <span class="keywordtype">int</span>                 valid_items)                </div>
 <div class="line"><a name="l00679"></a><span class="lineno">  679</span>&#160;        {</div>
 <div class="line"><a name="l00680"></a><span class="lineno">  680</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToStriped(items);</div>
-<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;            temp_storage.valid_items = valid_items;     <span class="comment">// Move through volatile smem as a workaround to prevent RF spilling on subsequent loads</span></div>
-<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;            StoreDirectStriped&lt;BLOCK_THREADS&gt;(linear_tid, block_itr, items, temp_storage.valid_items);</div>
-<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;        }</div>
-<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;    };</div>
-<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;</div>
-<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;</div>
-<div class="line"><a name="l00690"></a><span class="lineno">  690</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DUMMY&gt;</div>
-<div class="line"><a name="l00691"></a><span class="lineno">  691</span>&#160;    <span class="keyword">struct </span>StoreInternal&lt;<a class="code" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9178e3be2332f84a66761cee4ee6f3e3">BLOCK_STORE_WARP_TRANSPOSE</a>, DUMMY&gt;</div>
-<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;    {</div>
-<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;        <span class="keyword">enum</span></div>
-<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;        {</div>
-<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;            WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH)</div>
-<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;        };</div>
-<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;</div>
-<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;        <span class="comment">// Assert BLOCK_THREADS must be a multiple of WARP_THREADS</span></div>
-<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;        CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), <span class="stringliteral">&quot;BLOCK_THREADS must be a multiple of WARP_THREADS&quot;</span>);</div>
-<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;</div>
-<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;        <span class="comment">// BlockExchange utility type for keys</span></div>
-<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;        <span class="keyword">typedef</span> BlockExchange&lt;T, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH&gt; BlockExchange;</div>
-<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;</div>
-<div class="line"><a name="l00705"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8a4a85eadbd000fceac4f0dee53b2bb8.html">  705</a></span>&#160;        <span class="keyword">struct </span>_TempStorage : <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchange::TempStorage</a></div>
-<div class="line"><a name="l00706"></a><span class="lineno">  706</span>&#160;        {</div>
-<div class="line"><a name="l00708"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8a4a85eadbd000fceac4f0dee53b2bb8.html#ad8ff56c2e7f5a9c1810c1c92d5d7d00c">  708</a></span>&#160;            <span class="keyword">volatile</span> <span class="keywordtype">int</span> <a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8a4a85eadbd000fceac4f0dee53b2bb8.html#ad8ff56c2e7f5a9c1810c1c92d5d7d00c" title="Temporary storage for partially-full block guard. ">valid_items</a>;</div>
-<div class="line"><a name="l00709"></a><span class="lineno">  709</span>&#160;        };</div>
-<div class="line"><a name="l00710"></a><span class="lineno">  710</span>&#160;</div>
-<div class="line"><a name="l00712"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8d170856b7ed1df0ed565731a681b449.html">  712</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
-<div class="line"><a name="l00713"></a><span class="lineno">  713</span>&#160;</div>
-<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;        _TempStorage &amp;temp_storage;</div>
-<div class="line"><a name="l00716"></a><span class="lineno">  716</span>&#160;</div>
-<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;        <span class="keywordtype">int</span> linear_tid;</div>
-<div class="line"><a name="l00719"></a><span class="lineno">  719</span>&#160;</div>
-<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;        __device__ __forceinline__ StoreInternal(</div>
-<div class="line"><a name="l00722"></a><span class="lineno">  722</span>&#160;            <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> &amp;temp_storage,</div>
-<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;            <span class="keywordtype">int</span> linear_tid)</div>
-<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;        :</div>
-<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;            temp_storage(temp_storage.Alias()),</div>
-<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;            linear_tid(linear_tid)</div>
-<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;        {}</div>
-<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;</div>
-<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
-<div class="line"><a name="l00731"></a><span class="lineno">  731</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
-<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;            OutputIteratorT   block_itr,                    </div>
-<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;            T                 (&amp;items)[ITEMS_PER_THREAD])   </div>
-<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;        {</div>
-<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(items);</div>
-<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;            <a class="code" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03" title="Store a warp-striped arrangement of data across the thread block into a linear segment of items...">StoreDirectWarpStriped</a>(linear_tid, block_itr, items);</div>
-<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;        }</div>
-<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;</div>
-<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
-<div class="line"><a name="l00741"></a><span class="lineno">  741</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
-<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;            OutputIteratorT   block_itr,                    </div>
-<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;            T                 (&amp;items)[ITEMS_PER_THREAD],   </div>
-<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;            <span class="keywordtype">int</span>               valid_items)                  </div>
-<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;        {</div>
-<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(items);</div>
-<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;            temp_storage.valid_items = valid_items;     <span class="comment">// Move through volatile smem as a workaround to prevent RF spilling on subsequent loads</span></div>
-<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;            <a class="code" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03" title="Store a warp-striped arrangement of data across the thread block into a linear segment of items...">StoreDirectWarpStriped</a>(linear_tid, block_itr, items, temp_storage.valid_items);</div>
-<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;        }</div>
-<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;    };</div>
-<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;</div>
-<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;</div>
-<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DUMMY&gt;</div>
-<div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;    <span class="keyword">struct </span>StoreInternal&lt;<a class="code" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700ae0f1b9565e96bf7c12d4e02d58ba52d7">BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED</a>, DUMMY&gt;</div>
-<div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;    {</div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;        <span class="keyword">enum</span></div>
-<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;        {</div>
-<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;            WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH)</div>
-<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;        };</div>
-<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;</div>
-<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;        <span class="comment">// Assert BLOCK_THREADS must be a multiple of WARP_THREADS</span></div>
-<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;        CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), <span class="stringliteral">&quot;BLOCK_THREADS must be a multiple of WARP_THREADS&quot;</span>);</div>
-<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;</div>
-<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;        <span class="comment">// BlockExchange utility type for keys</span></div>
-<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        <span class="keyword">typedef</span> BlockExchange&lt;T, BLOCK_DIM_X, ITEMS_PER_THREAD, true, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH&gt; BlockExchange;</div>
-<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;</div>
-<div class="line"><a name="l00771"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_daed17744272abbe7611e8bf9933bbaa.html">  771</a></span>&#160;        <span class="keyword">struct </span>_TempStorage : <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchange::TempStorage</a></div>
-<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;        {</div>
-<div class="line"><a name="l00774"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_daed17744272abbe7611e8bf9933bbaa.html#a46676f74dbaad9219ad38e1895f7ee81">  774</a></span>&#160;            <span class="keyword">volatile</span> <span class="keywordtype">int</span> <a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_daed17744272abbe7611e8bf9933bbaa.html#a46676f74dbaad9219ad38e1895f7ee81" title="Temporary storage for partially-full block guard. ">valid_items</a>;</div>
-<div class="line"><a name="l00775"></a><span class="lineno">  775</span>&#160;        };</div>
-<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;</div>
-<div class="line"><a name="l00778"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_263becc1ca5b47586740c2f7bb0d0145.html">  778</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
-<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;</div>
-<div class="line"><a name="l00781"></a><span class="lineno">  781</span>&#160;        _TempStorage &amp;temp_storage;</div>
-<div class="line"><a name="l00782"></a><span class="lineno">  782</span>&#160;</div>
-<div class="line"><a name="l00784"></a><span class="lineno">  784</span>&#160;        <span class="keywordtype">int</span> linear_tid;</div>
-<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;</div>
-<div class="line"><a name="l00787"></a><span class="lineno">  787</span>&#160;        __device__ __forceinline__ StoreInternal(</div>
-<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;            <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> &amp;temp_storage,</div>
-<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;            <span class="keywordtype">int</span> linear_tid)</div>
-<div class="line"><a name="l00790"></a><span class="lineno">  790</span>&#160;        :</div>
-<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;            temp_storage(temp_storage.Alias()),</div>
-<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;            linear_tid(linear_tid)</div>
-<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;        {}</div>
-<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;</div>
-<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
-<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
-<div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;            OutputIteratorT     block_itr,                  </div>
-<div class="line"><a name="l00799"></a><span class="lineno">  799</span>&#160;            T                   (&amp;items)[ITEMS_PER_THREAD]) </div>
-<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;        {</div>
-<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(items);</div>
-<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;            <a class="code" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03" title="Store a warp-striped arrangement of data across the thread block into a linear segment of items...">StoreDirectWarpStriped</a>(linear_tid, block_itr, items);</div>
-<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;        }</div>
-<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;</div>
-<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
-<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
-<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;            OutputIteratorT   block_itr,                  </div>
-<div class="line"><a name="l00809"></a><span class="lineno">  809</span>&#160;            T                   (&amp;items)[ITEMS_PER_THREAD], </div>
-<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;            <span class="keywordtype">int</span>                 valid_items)                </div>
-<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;        {</div>
-<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;            temp_storage.valid_items = valid_items;     <span class="comment">// Move through volatile smem as a workaround to prevent RF spilling on subsequent loads</span></div>
-<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(items);</div>
-<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;            <a class="code" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03" title="Store a warp-striped arrangement of data across the thread block into a linear segment of items...">StoreDirectWarpStriped</a>(linear_tid, block_itr, items, temp_storage.valid_items);</div>
-<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;        }</div>
-<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;    };</div>
-<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;</div>
-<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;<span class="comment">     * Type definitions</span></div>
-<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;</div>
-<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;    <span class="keyword">typedef</span> StoreInternal&lt;ALGORITHM, 0&gt; InternalStore;</div>
-<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;</div>
-<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;</div>
-<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> InternalStore::TempStorage _TempStorage;</div>
-<div class="line"><a name="l00828"></a><span class="lineno">  828</span>&#160;</div>
-<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;</div>
-<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;<span class="comment">     * Utility methods</span></div>
-<div class="line"><a name="l00832"></a><span class="lineno">  832</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;</div>
-<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;    __device__ __forceinline__ _TempStorage&amp; PrivateStorage()</div>
-<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;    {</div>
-<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;        __shared__ _TempStorage private_storage;</div>
-<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;        <span class="keywordflow">return</span> private_storage;</div>
-<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;    }</div>
-<div class="line"><a name="l00840"></a><span class="lineno">  840</span>&#160;</div>
-<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;</div>
-<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;    <span class="comment">/******************************************************************************</span></div>
-<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;<span class="comment">     * Thread fields</span></div>
-<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
-<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;</div>
-<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;    _TempStorage &amp;temp_storage;</div>
-<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;</div>
-<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;    <span class="keywordtype">int</span> linear_tid;</div>
+<div class="line"><a name="l00681"></a><span class="lineno">  681</span>&#160;            <span class="keywordflow">if</span> (linear_tid == 0)</div>
+<div class="line"><a name="l00682"></a><span class="lineno">  682</span>&#160;                temp_storage.valid_items = valid_items;     <span class="comment">// Move through volatile smem as a workaround to prevent RF spilling on subsequent loads</span></div>
+<div class="line"><a name="l00683"></a><span class="lineno">  683</span>&#160;            CTA_SYNC();</div>
+<div class="line"><a name="l00684"></a><span class="lineno">  684</span>&#160;            StoreDirectStriped&lt;BLOCK_THREADS&gt;(linear_tid, block_itr, items, temp_storage.valid_items);</div>
+<div class="line"><a name="l00685"></a><span class="lineno">  685</span>&#160;        }</div>
+<div class="line"><a name="l00686"></a><span class="lineno">  686</span>&#160;    };</div>
+<div class="line"><a name="l00687"></a><span class="lineno">  687</span>&#160;</div>
+<div class="line"><a name="l00688"></a><span class="lineno">  688</span>&#160;</div>
+<div class="line"><a name="l00692"></a><span class="lineno">  692</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DUMMY&gt;</div>
+<div class="line"><a name="l00693"></a><span class="lineno">  693</span>&#160;    <span class="keyword">struct </span>StoreInternal&lt;<a class="code" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700a9178e3be2332f84a66761cee4ee6f3e3">BLOCK_STORE_WARP_TRANSPOSE</a>, DUMMY&gt;</div>
+<div class="line"><a name="l00694"></a><span class="lineno">  694</span>&#160;    {</div>
+<div class="line"><a name="l00695"></a><span class="lineno">  695</span>&#160;        <span class="keyword">enum</span></div>
+<div class="line"><a name="l00696"></a><span class="lineno">  696</span>&#160;        {</div>
+<div class="line"><a name="l00697"></a><span class="lineno">  697</span>&#160;            WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH)</div>
+<div class="line"><a name="l00698"></a><span class="lineno">  698</span>&#160;        };</div>
+<div class="line"><a name="l00699"></a><span class="lineno">  699</span>&#160;</div>
+<div class="line"><a name="l00700"></a><span class="lineno">  700</span>&#160;        <span class="comment">// Assert BLOCK_THREADS must be a multiple of WARP_THREADS</span></div>
+<div class="line"><a name="l00701"></a><span class="lineno">  701</span>&#160;        CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), <span class="stringliteral">&quot;BLOCK_THREADS must be a multiple of WARP_THREADS&quot;</span>);</div>
+<div class="line"><a name="l00702"></a><span class="lineno">  702</span>&#160;</div>
+<div class="line"><a name="l00703"></a><span class="lineno">  703</span>&#160;        <span class="comment">// BlockExchange utility type for keys</span></div>
+<div class="line"><a name="l00704"></a><span class="lineno">  704</span>&#160;        <span class="keyword">typedef</span> BlockExchange&lt;T, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH&gt; BlockExchange;</div>
+<div class="line"><a name="l00705"></a><span class="lineno">  705</span>&#160;</div>
+<div class="line"><a name="l00707"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8a4a85eadbd000fceac4f0dee53b2bb8.html">  707</a></span>&#160;        <span class="keyword">struct </span>_TempStorage : <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchange::TempStorage</a></div>
+<div class="line"><a name="l00708"></a><span class="lineno">  708</span>&#160;        {</div>
+<div class="line"><a name="l00710"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8a4a85eadbd000fceac4f0dee53b2bb8.html#ad8ff56c2e7f5a9c1810c1c92d5d7d00c">  710</a></span>&#160;            <span class="keyword">volatile</span> <span class="keywordtype">int</span> <a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8a4a85eadbd000fceac4f0dee53b2bb8.html#ad8ff56c2e7f5a9c1810c1c92d5d7d00c" title="Temporary storage for partially-full block guard. ">valid_items</a>;</div>
+<div class="line"><a name="l00711"></a><span class="lineno">  711</span>&#160;        };</div>
+<div class="line"><a name="l00712"></a><span class="lineno">  712</span>&#160;</div>
+<div class="line"><a name="l00714"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_8d170856b7ed1df0ed565731a681b449.html">  714</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00715"></a><span class="lineno">  715</span>&#160;</div>
+<div class="line"><a name="l00717"></a><span class="lineno">  717</span>&#160;        _TempStorage &amp;temp_storage;</div>
+<div class="line"><a name="l00718"></a><span class="lineno">  718</span>&#160;</div>
+<div class="line"><a name="l00720"></a><span class="lineno">  720</span>&#160;        <span class="keywordtype">int</span> linear_tid;</div>
+<div class="line"><a name="l00721"></a><span class="lineno">  721</span>&#160;</div>
+<div class="line"><a name="l00723"></a><span class="lineno">  723</span>&#160;        __device__ __forceinline__ StoreInternal(</div>
+<div class="line"><a name="l00724"></a><span class="lineno">  724</span>&#160;            <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> &amp;temp_storage,</div>
+<div class="line"><a name="l00725"></a><span class="lineno">  725</span>&#160;            <span class="keywordtype">int</span> linear_tid)</div>
+<div class="line"><a name="l00726"></a><span class="lineno">  726</span>&#160;        :</div>
+<div class="line"><a name="l00727"></a><span class="lineno">  727</span>&#160;            temp_storage(temp_storage.Alias()),</div>
+<div class="line"><a name="l00728"></a><span class="lineno">  728</span>&#160;            linear_tid(linear_tid)</div>
+<div class="line"><a name="l00729"></a><span class="lineno">  729</span>&#160;        {}</div>
+<div class="line"><a name="l00730"></a><span class="lineno">  730</span>&#160;</div>
+<div class="line"><a name="l00732"></a><span class="lineno">  732</span>&#160;        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
+<div class="line"><a name="l00733"></a><span class="lineno">  733</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
+<div class="line"><a name="l00734"></a><span class="lineno">  734</span>&#160;            OutputIteratorT   block_itr,                    </div>
+<div class="line"><a name="l00735"></a><span class="lineno">  735</span>&#160;            T                 (&amp;items)[ITEMS_PER_THREAD])   </div>
+<div class="line"><a name="l00736"></a><span class="lineno">  736</span>&#160;        {</div>
+<div class="line"><a name="l00737"></a><span class="lineno">  737</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(items);</div>
+<div class="line"><a name="l00738"></a><span class="lineno">  738</span>&#160;            <a class="code" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03" title="Store a warp-striped arrangement of data across the thread block into a linear segment of items...">StoreDirectWarpStriped</a>(linear_tid, block_itr, items);</div>
+<div class="line"><a name="l00739"></a><span class="lineno">  739</span>&#160;        }</div>
+<div class="line"><a name="l00740"></a><span class="lineno">  740</span>&#160;</div>
+<div class="line"><a name="l00742"></a><span class="lineno">  742</span>&#160;        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
+<div class="line"><a name="l00743"></a><span class="lineno">  743</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
+<div class="line"><a name="l00744"></a><span class="lineno">  744</span>&#160;            OutputIteratorT   block_itr,                    </div>
+<div class="line"><a name="l00745"></a><span class="lineno">  745</span>&#160;            T                 (&amp;items)[ITEMS_PER_THREAD],   </div>
+<div class="line"><a name="l00746"></a><span class="lineno">  746</span>&#160;            <span class="keywordtype">int</span>               valid_items)                  </div>
+<div class="line"><a name="l00747"></a><span class="lineno">  747</span>&#160;        {</div>
+<div class="line"><a name="l00748"></a><span class="lineno">  748</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(items);</div>
+<div class="line"><a name="l00749"></a><span class="lineno">  749</span>&#160;            <span class="keywordflow">if</span> (linear_tid == 0)</div>
+<div class="line"><a name="l00750"></a><span class="lineno">  750</span>&#160;                temp_storage.valid_items = valid_items;     <span class="comment">// Move through volatile smem as a workaround to prevent RF spilling on subsequent loads</span></div>
+<div class="line"><a name="l00751"></a><span class="lineno">  751</span>&#160;            CTA_SYNC();</div>
+<div class="line"><a name="l00752"></a><span class="lineno">  752</span>&#160;            <a class="code" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03" title="Store a warp-striped arrangement of data across the thread block into a linear segment of items...">StoreDirectWarpStriped</a>(linear_tid, block_itr, items, temp_storage.valid_items);</div>
+<div class="line"><a name="l00753"></a><span class="lineno">  753</span>&#160;        }</div>
+<div class="line"><a name="l00754"></a><span class="lineno">  754</span>&#160;    };</div>
+<div class="line"><a name="l00755"></a><span class="lineno">  755</span>&#160;</div>
+<div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;</div>
+<div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;    <span class="keyword">template</span> &lt;<span class="keywordtype">int</span> DUMMY&gt;</div>
+<div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;    <span class="keyword">struct </span>StoreInternal&lt;<a class="code" href="namespacecub.html#a839b145451e9eec3d44172e3c3619700ae0f1b9565e96bf7c12d4e02d58ba52d7">BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED</a>, DUMMY&gt;</div>
+<div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;    {</div>
+<div class="line"><a name="l00763"></a><span class="lineno">  763</span>&#160;        <span class="keyword">enum</span></div>
+<div class="line"><a name="l00764"></a><span class="lineno">  764</span>&#160;        {</div>
+<div class="line"><a name="l00765"></a><span class="lineno">  765</span>&#160;            WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH)</div>
+<div class="line"><a name="l00766"></a><span class="lineno">  766</span>&#160;        };</div>
+<div class="line"><a name="l00767"></a><span class="lineno">  767</span>&#160;</div>
+<div class="line"><a name="l00768"></a><span class="lineno">  768</span>&#160;        <span class="comment">// Assert BLOCK_THREADS must be a multiple of WARP_THREADS</span></div>
+<div class="line"><a name="l00769"></a><span class="lineno">  769</span>&#160;        CUB_STATIC_ASSERT((BLOCK_THREADS % WARP_THREADS == 0), <span class="stringliteral">&quot;BLOCK_THREADS must be a multiple of WARP_THREADS&quot;</span>);</div>
+<div class="line"><a name="l00770"></a><span class="lineno">  770</span>&#160;</div>
+<div class="line"><a name="l00771"></a><span class="lineno">  771</span>&#160;        <span class="comment">// BlockExchange utility type for keys</span></div>
+<div class="line"><a name="l00772"></a><span class="lineno">  772</span>&#160;        <span class="keyword">typedef</span> BlockExchange&lt;T, BLOCK_DIM_X, ITEMS_PER_THREAD, true, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH&gt; BlockExchange;</div>
+<div class="line"><a name="l00773"></a><span class="lineno">  773</span>&#160;</div>
+<div class="line"><a name="l00775"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_daed17744272abbe7611e8bf9933bbaa.html">  775</a></span>&#160;        <span class="keyword">struct </span>_TempStorage : <a class="code" href="structcub_1_1_block_exchange_1_1_temp_storage.html" title="The operations exposed by BlockExchange require a temporary memory allocation of this nested type for...">BlockExchange::TempStorage</a></div>
+<div class="line"><a name="l00776"></a><span class="lineno">  776</span>&#160;        {</div>
+<div class="line"><a name="l00778"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_daed17744272abbe7611e8bf9933bbaa.html#a46676f74dbaad9219ad38e1895f7ee81">  778</a></span>&#160;            <span class="keyword">volatile</span> <span class="keywordtype">int</span> <a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_daed17744272abbe7611e8bf9933bbaa.html#a46676f74dbaad9219ad38e1895f7ee81" title="Temporary storage for partially-full block guard. ">valid_items</a>;</div>
+<div class="line"><a name="l00779"></a><span class="lineno">  779</span>&#160;        };</div>
+<div class="line"><a name="l00780"></a><span class="lineno">  780</span>&#160;</div>
+<div class="line"><a name="l00782"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_store_internal_3_01_b_l_o_c_k___s_t_o_r_e___w_a_r_p___t_r_a_n_s_p_263becc1ca5b47586740c2f7bb0d0145.html">  782</a></span>&#160;        <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00783"></a><span class="lineno">  783</span>&#160;</div>
+<div class="line"><a name="l00785"></a><span class="lineno">  785</span>&#160;        _TempStorage &amp;temp_storage;</div>
+<div class="line"><a name="l00786"></a><span class="lineno">  786</span>&#160;</div>
+<div class="line"><a name="l00788"></a><span class="lineno">  788</span>&#160;        <span class="keywordtype">int</span> linear_tid;</div>
+<div class="line"><a name="l00789"></a><span class="lineno">  789</span>&#160;</div>
+<div class="line"><a name="l00791"></a><span class="lineno">  791</span>&#160;        __device__ __forceinline__ StoreInternal(</div>
+<div class="line"><a name="l00792"></a><span class="lineno">  792</span>&#160;            <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> &amp;temp_storage,</div>
+<div class="line"><a name="l00793"></a><span class="lineno">  793</span>&#160;            <span class="keywordtype">int</span> linear_tid)</div>
+<div class="line"><a name="l00794"></a><span class="lineno">  794</span>&#160;        :</div>
+<div class="line"><a name="l00795"></a><span class="lineno">  795</span>&#160;            temp_storage(temp_storage.Alias()),</div>
+<div class="line"><a name="l00796"></a><span class="lineno">  796</span>&#160;            linear_tid(linear_tid)</div>
+<div class="line"><a name="l00797"></a><span class="lineno">  797</span>&#160;        {}</div>
+<div class="line"><a name="l00798"></a><span class="lineno">  798</span>&#160;</div>
+<div class="line"><a name="l00800"></a><span class="lineno">  800</span>&#160;        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
+<div class="line"><a name="l00801"></a><span class="lineno">  801</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
+<div class="line"><a name="l00802"></a><span class="lineno">  802</span>&#160;            OutputIteratorT     block_itr,                  </div>
+<div class="line"><a name="l00803"></a><span class="lineno">  803</span>&#160;            T                   (&amp;items)[ITEMS_PER_THREAD]) </div>
+<div class="line"><a name="l00804"></a><span class="lineno">  804</span>&#160;        {</div>
+<div class="line"><a name="l00805"></a><span class="lineno">  805</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(items);</div>
+<div class="line"><a name="l00806"></a><span class="lineno">  806</span>&#160;            <a class="code" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03" title="Store a warp-striped arrangement of data across the thread block into a linear segment of items...">StoreDirectWarpStriped</a>(linear_tid, block_itr, items);</div>
+<div class="line"><a name="l00807"></a><span class="lineno">  807</span>&#160;        }</div>
+<div class="line"><a name="l00808"></a><span class="lineno">  808</span>&#160;</div>
+<div class="line"><a name="l00810"></a><span class="lineno">  810</span>&#160;        <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
+<div class="line"><a name="l00811"></a><span class="lineno">  811</span>&#160;        __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
+<div class="line"><a name="l00812"></a><span class="lineno">  812</span>&#160;            OutputIteratorT   block_itr,                  </div>
+<div class="line"><a name="l00813"></a><span class="lineno">  813</span>&#160;            T                   (&amp;items)[ITEMS_PER_THREAD], </div>
+<div class="line"><a name="l00814"></a><span class="lineno">  814</span>&#160;            <span class="keywordtype">int</span>                 valid_items)                </div>
+<div class="line"><a name="l00815"></a><span class="lineno">  815</span>&#160;        {</div>
+<div class="line"><a name="l00816"></a><span class="lineno">  816</span>&#160;            <a class="code" href="classcub_1_1_block_exchange.html" title="The BlockExchange class provides collective methods for rearranging data partitioned across a CUDA th...">BlockExchange</a>(temp_storage).BlockedToWarpStriped(items);</div>
+<div class="line"><a name="l00817"></a><span class="lineno">  817</span>&#160;            <span class="keywordflow">if</span> (linear_tid == 0)</div>
+<div class="line"><a name="l00818"></a><span class="lineno">  818</span>&#160;                temp_storage.valid_items = valid_items;     <span class="comment">// Move through volatile smem as a workaround to prevent RF spilling on subsequent loads</span></div>
+<div class="line"><a name="l00819"></a><span class="lineno">  819</span>&#160;            CTA_SYNC();</div>
+<div class="line"><a name="l00820"></a><span class="lineno">  820</span>&#160;            <a class="code" href="group___util_io.html#ga9b2bb8f452cd26b5e297c9d5924fcf03" title="Store a warp-striped arrangement of data across the thread block into a linear segment of items...">StoreDirectWarpStriped</a>(linear_tid, block_itr, items, temp_storage.valid_items);</div>
+<div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;        }</div>
+<div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;    };</div>
+<div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;</div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;<span class="comment">     * Type definitions</span></div>
+<div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
+<div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;</div>
+<div class="line"><a name="l00829"></a><span class="lineno">  829</span>&#160;    <span class="keyword">typedef</span> StoreInternal&lt;ALGORITHM, 0&gt; InternalStore;</div>
+<div class="line"><a name="l00830"></a><span class="lineno">  830</span>&#160;</div>
+<div class="line"><a name="l00831"></a><span class="lineno">  831</span>&#160;</div>
+<div class="line"><a name="l00833"></a><span class="lineno">  833</span>&#160;    <span class="keyword">typedef</span> <span class="keyword">typename</span> InternalStore::TempStorage _TempStorage;</div>
+<div class="line"><a name="l00834"></a><span class="lineno">  834</span>&#160;</div>
+<div class="line"><a name="l00835"></a><span class="lineno">  835</span>&#160;</div>
+<div class="line"><a name="l00836"></a><span class="lineno">  836</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00837"></a><span class="lineno">  837</span>&#160;<span class="comment">     * Utility methods</span></div>
+<div class="line"><a name="l00838"></a><span class="lineno">  838</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
+<div class="line"><a name="l00839"></a><span class="lineno">  839</span>&#160;</div>
+<div class="line"><a name="l00841"></a><span class="lineno">  841</span>&#160;    __device__ __forceinline__ _TempStorage&amp; PrivateStorage()</div>
+<div class="line"><a name="l00842"></a><span class="lineno">  842</span>&#160;    {</div>
+<div class="line"><a name="l00843"></a><span class="lineno">  843</span>&#160;        __shared__ _TempStorage private_storage;</div>
+<div class="line"><a name="l00844"></a><span class="lineno">  844</span>&#160;        <span class="keywordflow">return</span> private_storage;</div>
+<div class="line"><a name="l00845"></a><span class="lineno">  845</span>&#160;    }</div>
+<div class="line"><a name="l00846"></a><span class="lineno">  846</span>&#160;</div>
+<div class="line"><a name="l00847"></a><span class="lineno">  847</span>&#160;</div>
+<div class="line"><a name="l00848"></a><span class="lineno">  848</span>&#160;    <span class="comment">/******************************************************************************</span></div>
+<div class="line"><a name="l00849"></a><span class="lineno">  849</span>&#160;<span class="comment">     * Thread fields</span></div>
+<div class="line"><a name="l00850"></a><span class="lineno">  850</span>&#160;<span class="comment">     ******************************************************************************/</span></div>
 <div class="line"><a name="l00851"></a><span class="lineno">  851</span>&#160;</div>
-<div class="line"><a name="l00852"></a><span class="lineno">  852</span>&#160;<span class="keyword">public</span>:</div>
-<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;</div>
+<div class="line"><a name="l00853"></a><span class="lineno">  853</span>&#160;    _TempStorage &amp;temp_storage;</div>
 <div class="line"><a name="l00854"></a><span class="lineno">  854</span>&#160;</div>
-<div class="line"><a name="l00856"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html">  856</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
+<div class="line"><a name="l00856"></a><span class="lineno">  856</span>&#160;    <span class="keywordtype">int</span> linear_tid;</div>
 <div class="line"><a name="l00857"></a><span class="lineno">  857</span>&#160;</div>
-<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;</div>
-<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00858"></a><span class="lineno">  858</span>&#160;<span class="keyword">public</span>:</div>
+<div class="line"><a name="l00859"></a><span class="lineno">  859</span>&#160;</div>
+<div class="line"><a name="l00860"></a><span class="lineno">  860</span>&#160;</div>
+<div class="line"><a name="l00862"></a><span class="lineno"><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html">  862</a></span>&#160;    <span class="keyword">struct </span><a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> : Uninitialized&lt;_TempStorage&gt; {};</div>
 <div class="line"><a name="l00863"></a><span class="lineno">  863</span>&#160;</div>
-<div class="line"><a name="l00867"></a><span class="lineno"><a class="code" href="classcub_1_1_block_store.html#acb209b857a3bcc7d57e08e5134653735">  867</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_store.html#acb209b857a3bcc7d57e08e5134653735" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>()</div>
-<div class="line"><a name="l00868"></a><span class="lineno">  868</span>&#160;    :</div>
-<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;        temp_storage(PrivateStorage()),</div>
-<div class="line"><a name="l00870"></a><span class="lineno">  870</span>&#160;        linear_tid(<a class="code" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce" title="Returns the row-major linear thread identifier for a multidimensional threadblock. ">RowMajorTid</a>(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))</div>
-<div class="line"><a name="l00871"></a><span class="lineno">  871</span>&#160;    {}</div>
-<div class="line"><a name="l00872"></a><span class="lineno">  872</span>&#160;</div>
-<div class="line"><a name="l00873"></a><span class="lineno">  873</span>&#160;</div>
-<div class="line"><a name="l00877"></a><span class="lineno"><a class="code" href="classcub_1_1_block_store.html#a4fdd2c5743b99310dc3896754d7b69af">  877</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_store.html#a4fdd2c5743b99310dc3896754d7b69af" title="Collective constructor using the specified memory allocation as temporary storage. ">BlockStore</a>(</div>
-<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;        <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> &amp;temp_storage)             </div>
-<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;    :</div>
-<div class="line"><a name="l00880"></a><span class="lineno">  880</span>&#160;        temp_storage(temp_storage.Alias()),</div>
-<div class="line"><a name="l00881"></a><span class="lineno">  881</span>&#160;        linear_tid(<a class="code" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce" title="Returns the row-major linear thread identifier for a multidimensional threadblock. ">RowMajorTid</a>(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))</div>
-<div class="line"><a name="l00882"></a><span class="lineno">  882</span>&#160;    {}</div>
-<div class="line"><a name="l00883"></a><span class="lineno">  883</span>&#160;</div>
-<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;</div>
-<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00864"></a><span class="lineno">  864</span>&#160;</div>
+<div class="line"><a name="l00865"></a><span class="lineno">  865</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00869"></a><span class="lineno">  869</span>&#160;</div>
+<div class="line"><a name="l00873"></a><span class="lineno"><a class="code" href="classcub_1_1_block_store.html#acb209b857a3bcc7d57e08e5134653735">  873</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_store.html#acb209b857a3bcc7d57e08e5134653735" title="Collective constructor using a private static allocation of shared memory as temporary storage...">BlockStore</a>()</div>
+<div class="line"><a name="l00874"></a><span class="lineno">  874</span>&#160;    :</div>
+<div class="line"><a name="l00875"></a><span class="lineno">  875</span>&#160;        temp_storage(PrivateStorage()),</div>
+<div class="line"><a name="l00876"></a><span class="lineno">  876</span>&#160;        linear_tid(<a class="code" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce" title="Returns the row-major linear thread identifier for a multidimensional threadblock. ">RowMajorTid</a>(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))</div>
+<div class="line"><a name="l00877"></a><span class="lineno">  877</span>&#160;    {}</div>
+<div class="line"><a name="l00878"></a><span class="lineno">  878</span>&#160;</div>
+<div class="line"><a name="l00879"></a><span class="lineno">  879</span>&#160;</div>
+<div class="line"><a name="l00883"></a><span class="lineno"><a class="code" href="classcub_1_1_block_store.html#a4fdd2c5743b99310dc3896754d7b69af">  883</a></span>&#160;    __device__ __forceinline__ <a class="code" href="classcub_1_1_block_store.html#a4fdd2c5743b99310dc3896754d7b69af" title="Collective constructor using the specified memory allocation as temporary storage. ">BlockStore</a>(</div>
+<div class="line"><a name="l00884"></a><span class="lineno">  884</span>&#160;        <a class="code" href="structcub_1_1_block_store_1_1_temp_storage.html" title="The operations exposed by BlockStore require a temporary memory allocation of this nested type for th...">TempStorage</a> &amp;temp_storage)             </div>
+<div class="line"><a name="l00885"></a><span class="lineno">  885</span>&#160;    :</div>
+<div class="line"><a name="l00886"></a><span class="lineno">  886</span>&#160;        temp_storage(temp_storage.Alias()),</div>
+<div class="line"><a name="l00887"></a><span class="lineno">  887</span>&#160;        linear_tid(<a class="code" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce" title="Returns the row-major linear thread identifier for a multidimensional threadblock. ">RowMajorTid</a>(BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z))</div>
+<div class="line"><a name="l00888"></a><span class="lineno">  888</span>&#160;    {}</div>
+<div class="line"><a name="l00889"></a><span class="lineno">  889</span>&#160;</div>
 <div class="line"><a name="l00890"></a><span class="lineno">  890</span>&#160;</div>
-<div class="line"><a name="l00891"></a><span class="lineno">  891</span>&#160;</div>
-<div class="line"><a name="l00932"></a><span class="lineno">  932</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
-<div class="line"><a name="l00933"></a><span class="lineno"><a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8">  933</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
-<div class="line"><a name="l00934"></a><span class="lineno">  934</span>&#160;        OutputIteratorT     block_itr,                  </div>
-<div class="line"><a name="l00935"></a><span class="lineno">  935</span>&#160;        T                   (&amp;items)[ITEMS_PER_THREAD]) </div>
-<div class="line"><a name="l00936"></a><span class="lineno">  936</span>&#160;    {</div>
-<div class="line"><a name="l00937"></a><span class="lineno">  937</span>&#160;        InternalStore(temp_storage, linear_tid).Store(block_itr, items);</div>
-<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;    }</div>
-<div class="line"><a name="l00939"></a><span class="lineno">  939</span>&#160;</div>
-<div class="line"><a name="l00981"></a><span class="lineno">  981</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
-<div class="line"><a name="l00982"></a><span class="lineno"><a class="code" href="classcub_1_1_block_store.html#ac87db0462ae0cae12d4ed8466e339367">  982</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#ac87db0462ae0cae12d4ed8466e339367" title="Store items into a linear segment of memory, guarded by range. ">Store</a>(</div>
-<div class="line"><a name="l00983"></a><span class="lineno">  983</span>&#160;        OutputIteratorT     block_itr,                  </div>
-<div class="line"><a name="l00984"></a><span class="lineno">  984</span>&#160;        T                   (&amp;items)[ITEMS_PER_THREAD], </div>
-<div class="line"><a name="l00985"></a><span class="lineno">  985</span>&#160;        <span class="keywordtype">int</span>                 valid_items)                </div>
-<div class="line"><a name="l00986"></a><span class="lineno">  986</span>&#160;    {</div>
-<div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;        InternalStore(temp_storage, linear_tid).Store(block_itr, items, valid_items);</div>
-<div class="line"><a name="l00988"></a><span class="lineno">  988</span>&#160;    }</div>
-<div class="line"><a name="l00989"></a><span class="lineno">  989</span>&#160;};</div>
-<div class="line"><a name="l00990"></a><span class="lineno">  990</span>&#160;</div>
-<div class="line"><a name="l00991"></a><span class="lineno">  991</span>&#160;</div>
-<div class="line"><a name="l00992"></a><span class="lineno">  992</span>&#160;}               <span class="comment">// CUB namespace</span></div>
-<div class="line"><a name="l00993"></a><span class="lineno">  993</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
-<div class="line"><a name="l00994"></a><span class="lineno">  994</span>&#160;</div>
+<div class="line"><a name="l00892"></a><span class="lineno">  892</span>&#160;    <span class="comment">/******************************************************************/</span></div>
+<div class="line"><a name="l00896"></a><span class="lineno">  896</span>&#160;</div>
+<div class="line"><a name="l00897"></a><span class="lineno">  897</span>&#160;</div>
+<div class="line"><a name="l00938"></a><span class="lineno">  938</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
+<div class="line"><a name="l00939"></a><span class="lineno"><a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8">  939</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#a884d83528f6356568fcd6ce61410a2c8" title="Store items into a linear segment of memory. ">Store</a>(</div>
+<div class="line"><a name="l00940"></a><span class="lineno">  940</span>&#160;        OutputIteratorT     block_itr,                  </div>
+<div class="line"><a name="l00941"></a><span class="lineno">  941</span>&#160;        T                   (&amp;items)[ITEMS_PER_THREAD]) </div>
+<div class="line"><a name="l00942"></a><span class="lineno">  942</span>&#160;    {</div>
+<div class="line"><a name="l00943"></a><span class="lineno">  943</span>&#160;        InternalStore(temp_storage, linear_tid).Store(block_itr, items);</div>
+<div class="line"><a name="l00944"></a><span class="lineno">  944</span>&#160;    }</div>
+<div class="line"><a name="l00945"></a><span class="lineno">  945</span>&#160;</div>
+<div class="line"><a name="l00987"></a><span class="lineno">  987</span>&#160;    <span class="keyword">template</span> &lt;<span class="keyword">typename</span> OutputIteratorT&gt;</div>
+<div class="line"><a name="l00988"></a><span class="lineno"><a class="code" href="classcub_1_1_block_store.html#ac87db0462ae0cae12d4ed8466e339367">  988</a></span>&#160;    __device__ __forceinline__ <span class="keywordtype">void</span> <a class="code" href="classcub_1_1_block_store.html#ac87db0462ae0cae12d4ed8466e339367" title="Store items into a linear segment of memory, guarded by range. ">Store</a>(</div>
+<div class="line"><a name="l00989"></a><span class="lineno">  989</span>&#160;        OutputIteratorT     block_itr,                  </div>
+<div class="line"><a name="l00990"></a><span class="lineno">  990</span>&#160;        T                   (&amp;items)[ITEMS_PER_THREAD], </div>
+<div class="line"><a name="l00991"></a><span class="lineno">  991</span>&#160;        <span class="keywordtype">int</span>                 valid_items)                </div>
+<div class="line"><a name="l00992"></a><span class="lineno">  992</span>&#160;    {</div>
+<div class="line"><a name="l00993"></a><span class="lineno">  993</span>&#160;        InternalStore(temp_storage, linear_tid).Store(block_itr, items, valid_items);</div>
+<div class="line"><a name="l00994"></a><span class="lineno">  994</span>&#160;    }</div>
+<div class="line"><a name="l00995"></a><span class="lineno">  995</span>&#160;};</div>
+<div class="line"><a name="l00996"></a><span class="lineno">  996</span>&#160;</div>
+<div class="line"><a name="l00997"></a><span class="lineno">  997</span>&#160;</div>
+<div class="line"><a name="l00998"></a><span class="lineno">  998</span>&#160;}               <span class="comment">// CUB namespace</span></div>
+<div class="line"><a name="l00999"></a><span class="lineno">  999</span>&#160;CUB_NS_POSTFIX  <span class="comment">// Optional outer namespace(s)</span></div>
+<div class="line"><a name="l01000"></a><span class="lineno"> 1000</span>&#160;</div>
 </div><!-- fragment --></div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 6 2016 13:22:00 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2017 11:01:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

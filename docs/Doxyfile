@@ -677,51 +677,51 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT                  = mainpage.dox 
-INPUT                  += ../../PrivateCub/cub/cub.cuh 
-INPUT                  += ../../PrivateCub/cub/util_allocator.cuh 
-INPUT                  += ../../PrivateCub/cub/util_arch.cuh 
-INPUT                  += ../../PrivateCub/cub/util_debug.cuh 
-INPUT                  += ../../PrivateCub/cub/util_device.cuh 
-INPUT                  += ../../PrivateCub/cub/util_ptx.cuh 
-INPUT                  += ../../PrivateCub/cub/util_type.cuh 
-INPUT                  += ../../PrivateCub/cub/iterator/arg_index_input_iterator.cuh
-INPUT                  += ../../PrivateCub/cub/iterator/cache_modified_input_iterator.cuh
-INPUT                  += ../../PrivateCub/cub/iterator/cache_modified_output_iterator.cuh
-INPUT                  += ../../PrivateCub/cub/iterator/constant_input_iterator.cuh
-INPUT                  += ../../PrivateCub/cub/iterator/counting_input_iterator.cuh
-INPUT                  += ../../PrivateCub/cub/iterator/tex_obj_input_iterator.cuh
-INPUT                  += ../../PrivateCub/cub/iterator/tex_ref_input_iterator.cuh
-INPUT                  += ../../PrivateCub/cub/iterator/transform_input_iterator.cuh
-INPUT                  += ../../PrivateCub/cub/thread/thread_load.cuh  
-INPUT                  += ../../PrivateCub/cub/thread/thread_operators.cuh 
-#INPUT                  += ../../PrivateCub/cub/thread/thread_reduce.cuh  
-#INPUT                  += ../../PrivateCub/cub/thread/thread_scan.cuh  
-INPUT                  += ../../PrivateCub/cub/thread/thread_store.cuh  
-INPUT                  += ../../PrivateCub/cub/block/block_discontinuity.cuh 
-INPUT                  += ../../PrivateCub/cub/block/block_exchange.cuh 
-INPUT                  += ../../PrivateCub/cub/block/block_histogram.cuh 
-INPUT                  += ../../PrivateCub/cub/block/block_load.cuh 
-# INPUT                  += ../../PrivateCub/cub/block/block_radix_rank.cuh 
-INPUT                  += ../../PrivateCub/cub/block/block_radix_sort.cuh 
-# INPUT                  += ../../PrivateCub/cub/block/block_raking_layout.cuh 
-INPUT                  += ../../PrivateCub/cub/block/block_reduce.cuh 
-INPUT                  += ../../PrivateCub/cub/block/block_scan.cuh 
-INPUT                  += ../../PrivateCub/cub/block/block_store.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_histogram.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_partition.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_radix_sort.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_reduce.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_run_length_encode.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_scan.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_segmented_radix_sort.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_segmented_reduce.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_select.cuh 
-INPUT                  += ../../PrivateCub/cub/device/device_spmv.cuh 
-# INPUT                  += ../../PrivateCub/cub/grid/grid_even_share.cuh 
-# INPUT                  += ../../PrivateCub/cub/grid/grid_mapping.cuh 
-# INPUT                  += ../../PrivateCub/cub/grid/grid_queue.cuh 
-INPUT                  += ../../PrivateCub/cub/warp/warp_scan.cuh 
-INPUT                  += ../../PrivateCub/cub/warp/warp_reduce.cuh 
+INPUT                  += ../../cub/cub/cub.cuh 
+INPUT                  += ../../cub/cub/util_allocator.cuh 
+INPUT                  += ../../cub/cub/util_arch.cuh 
+INPUT                  += ../../cub/cub/util_debug.cuh 
+INPUT                  += ../../cub/cub/util_device.cuh 
+INPUT                  += ../../cub/cub/util_ptx.cuh 
+INPUT                  += ../../cub/cub/util_type.cuh 
+INPUT                  += ../../cub/cub/iterator/arg_index_input_iterator.cuh
+INPUT                  += ../../cub/cub/iterator/cache_modified_input_iterator.cuh
+INPUT                  += ../../cub/cub/iterator/cache_modified_output_iterator.cuh
+INPUT                  += ../../cub/cub/iterator/constant_input_iterator.cuh
+INPUT                  += ../../cub/cub/iterator/counting_input_iterator.cuh
+INPUT                  += ../../cub/cub/iterator/tex_obj_input_iterator.cuh
+INPUT                  += ../../cub/cub/iterator/tex_ref_input_iterator.cuh
+INPUT                  += ../../cub/cub/iterator/transform_input_iterator.cuh
+INPUT                  += ../../cub/cub/thread/thread_load.cuh  
+INPUT                  += ../../cub/cub/thread/thread_operators.cuh 
+#INPUT                  += ../../cub/cub/thread/thread_reduce.cuh  
+#INPUT                  += ../../cub/cub/thread/thread_scan.cuh  
+INPUT                  += ../../cub/cub/thread/thread_store.cuh  
+INPUT                  += ../../cub/cub/block/block_discontinuity.cuh 
+INPUT                  += ../../cub/cub/block/block_exchange.cuh 
+INPUT                  += ../../cub/cub/block/block_histogram.cuh 
+INPUT                  += ../../cub/cub/block/block_load.cuh 
+# INPUT                  += ../../cub/cub/block/block_radix_rank.cuh 
+INPUT                  += ../../cub/cub/block/block_radix_sort.cuh 
+# INPUT                  += ../../cub/cub/block/block_raking_layout.cuh 
+INPUT                  += ../../cub/cub/block/block_reduce.cuh 
+INPUT                  += ../../cub/cub/block/block_scan.cuh 
+INPUT                  += ../../cub/cub/block/block_store.cuh 
+INPUT                  += ../../cub/cub/device/device_histogram.cuh 
+INPUT                  += ../../cub/cub/device/device_partition.cuh 
+INPUT                  += ../../cub/cub/device/device_radix_sort.cuh 
+INPUT                  += ../../cub/cub/device/device_reduce.cuh 
+INPUT                  += ../../cub/cub/device/device_run_length_encode.cuh 
+INPUT                  += ../../cub/cub/device/device_scan.cuh 
+INPUT                  += ../../cub/cub/device/device_segmented_radix_sort.cuh 
+INPUT                  += ../../cub/cub/device/device_segmented_reduce.cuh 
+INPUT                  += ../../cub/cub/device/device_select.cuh 
+INPUT                  += ../../cub/cub/device/device_spmv.cuh 
+# INPUT                  += ../../cub/cub/grid/grid_even_share.cuh 
+# INPUT                  += ../../cub/cub/grid/grid_mapping.cuh 
+# INPUT                  += ../../cub/cub/grid/grid_queue.cuh 
+INPUT                  += ../../cub/cub/warp/warp_scan.cuh 
+INPUT                  += ../../cub/cub/warp/warp_reduce.cuh 
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -781,8 +781,8 @@ EXCLUDE_SYMBOLS        =
 # directories that contain example code fragments that are included (see
 # the \include command).
 
-EXAMPLE_PATH           = ../../PrivateCub/examples/block
-EXAMPLE_PATH           += ../../PrivateCub/examples/device
+EXAMPLE_PATH           = ../../cub/examples/block
+EXAMPLE_PATH           += ../../cub/examples/device
 
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
@@ -1001,7 +1001,7 @@ HTML_EXTRA_FILES       += images/simt_abstraction.png
 HTML_EXTRA_FILES       += images/kernel_abstraction.png 
 HTML_EXTRA_FILES       += images/devfun_abstraction.png
 HTML_EXTRA_FILES       += images/nested_composition.png
-HTML_EXTRA_FILES       += ../../PrivateCub/CHANGE_LOG.TXT
+HTML_EXTRA_FILES       += ../../cub/CHANGE_LOG.TXT
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output.
 # Doxygen will adjust the colors in the style sheet and background images

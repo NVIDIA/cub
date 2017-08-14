@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d0982493d827c84906319b1126b06fa3.html">PrivateCub</a></li><li class="navelem"><a class="el" href="dir_57eaf5c1b3a967e183de38ac17eb217a.html">cub</a></li><li class="navelem"><a class="el" href="dir_638d6786c779dba24ddc957a9b8cf26f.html">block</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_9f8ee3e2708fba7b56c4614738cb69ac.html">cub</a></li><li class="navelem"><a class="el" href="dir_be18a941a6fe4cfa05f94e172e7abd29.html">block</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -269,7 +269,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00351"></a><span class="lineno">  351</span>&#160;        <span class="comment">// Initialize histogram bin counts to zeros</span></div>
 <div class="line"><a name="l00352"></a><span class="lineno">  352</span>&#160;        <a class="code" href="classcub_1_1_block_histogram.html#a080faf88a47e73e8bfa9964cd8f26feb" title="Initialize the shared histogram counters to zero. ">InitHistogram</a>(histogram);</div>
 <div class="line"><a name="l00353"></a><span class="lineno">  353</span>&#160;</div>
-<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00354"></a><span class="lineno">  354</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00355"></a><span class="lineno">  355</span>&#160;</div>
 <div class="line"><a name="l00356"></a><span class="lineno">  356</span>&#160;        <span class="comment">// Composite the histogram</span></div>
 <div class="line"><a name="l00357"></a><span class="lineno">  357</span>&#160;        InternalBlockHistogram(temp_storage).Composite(items, histogram);</div>
@@ -295,7 +295,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 6 2016 13:21:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2017 11:01:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

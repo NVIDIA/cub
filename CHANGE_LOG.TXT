@@ -1,3 +1,15 @@
+1.7.0    06/07/2017
+    - Compatible with CUDA9 and SM7.x (Volta) independent thread scheduling 
+    - API change: remove cub::WarpAll() and cub::WarpAny().  These functions served to 
+      emulate __all and __any functionality for SM1.x devices, which did not have those 
+      operations.  However, the SM1.x devices are now deprecated in CUDA, and the 
+      interfaces of the these two functions are now lacking the lane-mask needed 
+      for collectives to run on Volta SMs having independent thread scheduling. 
+    - Bug fixes: 
+        - Issue #86 Incorrect results with ReduceByKey
+          		  
+//-----------------------------------------------------------------------------
+
 1.6.4    12/06/2016
     - Updated sm_5x, sm_6x tuning policies for radix sorting (3.5B and 3.4B 
       32b keys/s on TitanX and GTX 1080, respectively)

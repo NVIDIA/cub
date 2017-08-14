@@ -93,7 +93,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <div id="nav-path" class="navpath">
   <ul>
-<li class="navelem"><a class="el" href="dir_d0982493d827c84906319b1126b06fa3.html">PrivateCub</a></li><li class="navelem"><a class="el" href="dir_57eaf5c1b3a967e183de38ac17eb217a.html">cub</a></li><li class="navelem"><a class="el" href="dir_638d6786c779dba24ddc957a9b8cf26f.html">block</a></li>  </ul>
+<li class="navelem"><a class="el" href="dir_d583f216f1aafe19404e836b0c097ad2.html">cub</a></li><li class="navelem"><a class="el" href="dir_9f8ee3e2708fba7b56c4614738cb69ac.html">cub</a></li><li class="navelem"><a class="el" href="dir_be18a941a6fe4cfa05f94e172e7abd29.html">block</a></li>  </ul>
 </div>
 </div><!-- top -->
 <div class="header">
@@ -267,7 +267,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00252"></a><span class="lineno">  252</span>&#160;        Int2Type&lt;false&gt; <span class="comment">/*is_keys_only*/</span>,</div>
 <div class="line"><a name="l00253"></a><span class="lineno">  253</span>&#160;        Int2Type&lt;true&gt;  <span class="comment">/*is_blocked*/</span>)</div>
 <div class="line"><a name="l00254"></a><span class="lineno">  254</span>&#160;    {</div>
-<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00255"></a><span class="lineno">  255</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00256"></a><span class="lineno">  256</span>&#160;</div>
 <div class="line"><a name="l00257"></a><span class="lineno">  257</span>&#160;        <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
 <div class="line"><a name="l00258"></a><span class="lineno">  258</span>&#160;        BlockExchangeValues(temp_storage.exchange_values).ScatterToBlocked(values, ranks);</div>
@@ -279,7 +279,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00265"></a><span class="lineno">  265</span>&#160;        Int2Type&lt;false&gt; <span class="comment">/*is_keys_only*/</span>,</div>
 <div class="line"><a name="l00266"></a><span class="lineno">  266</span>&#160;        Int2Type&lt;false&gt; <span class="comment">/*is_blocked*/</span>)</div>
 <div class="line"><a name="l00267"></a><span class="lineno">  267</span>&#160;    {</div>
-<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        __syncthreads();</div>
+<div class="line"><a name="l00268"></a><span class="lineno">  268</span>&#160;        CTA_SYNC();</div>
 <div class="line"><a name="l00269"></a><span class="lineno">  269</span>&#160;</div>
 <div class="line"><a name="l00270"></a><span class="lineno">  270</span>&#160;        <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
 <div class="line"><a name="l00271"></a><span class="lineno">  271</span>&#160;        BlockExchangeValues(temp_storage.exchange_values).ScatterToStriped(values, ranks);</div>
@@ -322,7 +322,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00310"></a><span class="lineno">  310</span>&#160;            RankKeys(unsigned_keys, ranks, begin_bit, pass_bits, is_descending);</div>
 <div class="line"><a name="l00311"></a><span class="lineno">  311</span>&#160;            begin_bit += RADIX_BITS;</div>
 <div class="line"><a name="l00312"></a><span class="lineno">  312</span>&#160;</div>
-<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            __syncthreads();</div>
+<div class="line"><a name="l00313"></a><span class="lineno">  313</span>&#160;            CTA_SYNC();</div>
 <div class="line"><a name="l00314"></a><span class="lineno">  314</span>&#160;</div>
 <div class="line"><a name="l00315"></a><span class="lineno">  315</span>&#160;            <span class="comment">// Exchange keys through shared memory in blocked arrangement</span></div>
 <div class="line"><a name="l00316"></a><span class="lineno">  316</span>&#160;            BlockExchangeKeys(temp_storage.exchange_keys).ScatterToBlocked(keys, ranks);</div>
@@ -333,7 +333,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00321"></a><span class="lineno">  321</span>&#160;            <span class="comment">// Quit if done</span></div>
 <div class="line"><a name="l00322"></a><span class="lineno">  322</span>&#160;            <span class="keywordflow">if</span> (begin_bit &gt;= end_bit) <span class="keywordflow">break</span>;</div>
 <div class="line"><a name="l00323"></a><span class="lineno">  323</span>&#160;</div>
-<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;            __syncthreads();</div>
+<div class="line"><a name="l00324"></a><span class="lineno">  324</span>&#160;            CTA_SYNC();</div>
 <div class="line"><a name="l00325"></a><span class="lineno">  325</span>&#160;        }</div>
 <div class="line"><a name="l00326"></a><span class="lineno">  326</span>&#160;</div>
 <div class="line"><a name="l00327"></a><span class="lineno">  327</span>&#160;        <span class="comment">// Untwiddle bits if necessary</span></div>
@@ -377,7 +377,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00366"></a><span class="lineno">  366</span>&#160;            RankKeys(unsigned_keys, ranks, begin_bit, pass_bits, is_descending);</div>
 <div class="line"><a name="l00367"></a><span class="lineno">  367</span>&#160;            begin_bit += RADIX_BITS;</div>
 <div class="line"><a name="l00368"></a><span class="lineno">  368</span>&#160;</div>
-<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;            __syncthreads();</div>
+<div class="line"><a name="l00369"></a><span class="lineno">  369</span>&#160;            CTA_SYNC();</div>
 <div class="line"><a name="l00370"></a><span class="lineno">  370</span>&#160;</div>
 <div class="line"><a name="l00371"></a><span class="lineno">  371</span>&#160;            <span class="comment">// Check if this is the last pass</span></div>
 <div class="line"><a name="l00372"></a><span class="lineno">  372</span>&#160;            <span class="keywordflow">if</span> (begin_bit &gt;= end_bit)</div>
@@ -398,7 +398,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <div class="line"><a name="l00387"></a><span class="lineno">  387</span>&#160;            <span class="comment">// Exchange values through shared memory in blocked arrangement</span></div>
 <div class="line"><a name="l00388"></a><span class="lineno">  388</span>&#160;            ExchangeValues(values, ranks, is_keys_only, Int2Type&lt;true&gt;());</div>
 <div class="line"><a name="l00389"></a><span class="lineno">  389</span>&#160;</div>
-<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;            __syncthreads();</div>
+<div class="line"><a name="l00390"></a><span class="lineno">  390</span>&#160;            CTA_SYNC();</div>
 <div class="line"><a name="l00391"></a><span class="lineno">  391</span>&#160;        }</div>
 <div class="line"><a name="l00392"></a><span class="lineno">  392</span>&#160;</div>
 <div class="line"><a name="l00393"></a><span class="lineno">  393</span>&#160;        <span class="comment">// Untwiddle bits if necessary</span></div>
@@ -529,7 +529,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Tue Dec 6 2016 13:21:59 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 14 2017 11:01:14 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>
