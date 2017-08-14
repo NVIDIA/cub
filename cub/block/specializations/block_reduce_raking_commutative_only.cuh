@@ -93,17 +93,14 @@ struct BlockReduceRakingCommutativeOnly
     typedef BlockRakingLayout<T, SHARING_THREADS, PTX_ARCH> BlockRakingLayout;
 
     /// Shared memory storage layout type
-    struct _TempStorage
+    union _TempStorage
     {
-        union
+        struct
         {
-            struct
-            {
-                typename WarpReduce::TempStorage        warp_storage;        ///< Storage for warp-synchronous reduction
-                typename BlockRakingLayout::TempStorage raking_grid;         ///< Padded threadblock raking grid
-            };
-            typename FallBack::TempStorage              fallback_storage;    ///< Fall-back storage for non-commutative block scan
+            typename WarpReduce::TempStorage        warp_storage;        ///< Storage for warp-synchronous reduction
+            typename BlockRakingLayout::TempStorage raking_grid;         ///< Padded threadblock raking grid
         };
+        typename FallBack::TempStorage              fallback_storage;    ///< Fall-back storage for non-commutative block scan
     };
 
 

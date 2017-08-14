@@ -193,12 +193,14 @@ struct AgentHistogram
 
         int tile_idx;
 
-        union
+        // Aliasable storage layout
+        union Aliasable
         {
             typename BlockLoadSampleT::TempStorage sample_load;     // Smem needed for loading a tile of samples
             typename BlockLoadPixelT::TempStorage pixel_load;       // Smem needed for loading a tile of pixels
             typename BlockLoadQuadT::TempStorage quad_load;         // Smem needed for loading a tile of quads
-        };
+
+        } aliasable;
     };
 
 
@@ -448,7 +450,7 @@ struct AgentHistogram
         WrappedPixelIteratorT d_wrapped_pixels((PixelT*) (d_native_samples + block_offset));
 
         // Load using a wrapped pixel iterator
-        BlockLoadPixelT(temp_storage.pixel_load).Load(
+        BlockLoadPixelT(temp_storage.aliasable.pixel_load).Load(
             d_wrapped_pixels,
             reinterpret_cast<AliasedPixels&>(samples));
     }
@@ -465,7 +467,7 @@ struct AgentHistogram
         WrappedQuadIteratorT d_wrapped_quads((QuadT*) (d_native_samples + block_offset));
 
         // Load using a wrapped quad iterator
-        BlockLoadQuadT(temp_storage.quad_load).Load(
+        BlockLoadQuadT(temp_storage.aliasable.quad_load).Load(
             d_wrapped_quads,
             reinterpret_cast<AliasedQuads&>(samples));
     }
@@ -492,7 +494,7 @@ struct AgentHistogram
         typedef SampleT AliasedSamples[SAMPLES_PER_THREAD];
 
         // Load using sample iterator
-        BlockLoadSampleT(temp_storage.sample_load).Load(
+        BlockLoadSampleT(temp_storage.aliasable.sample_load).Load(
             d_wrapped_samples + block_offset,
             reinterpret_cast<AliasedSamples&>(samples));
     }
@@ -512,7 +514,7 @@ struct AgentHistogram
         int valid_pixels = valid_samples / NUM_CHANNELS;
 
         // Load using a wrapped pixel iterator
-        BlockLoadPixelT(temp_storage.pixel_load).Load(
+        BlockLoadPixelT(temp_storage.aliasable.pixel_load).Load(
             d_wrapped_pixels,
             reinterpret_cast<AliasedPixels&>(samples),
             valid_pixels);
@@ -528,7 +530,7 @@ struct AgentHistogram
     {
         typedef SampleT AliasedSamples[SAMPLES_PER_THREAD];
 
-        BlockLoadSampleT(temp_storage.sample_load).Load(
+        BlockLoadSampleT(temp_storage.aliasable.sample_load).Load(
             d_wrapped_samples + block_offset,
             reinterpret_cast<AliasedSamples&>(samples),
             valid_samples);

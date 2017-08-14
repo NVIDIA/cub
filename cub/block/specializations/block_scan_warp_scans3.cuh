@@ -85,12 +85,15 @@ struct BlockScanWarpScans
     /// Shared memory storage layout type
     struct _TempStorage
     {
-        union
+        union Aliasable
         {
             Uninitialized<OuterScanArray>           outer_warp_scan;  ///< Buffer for warp-synchronous outer scans
             typename InnerWarpScanT::TempStorage    inner_warp_scan;  ///< Buffer for warp-synchronous inner scan
-        };
+
+        } aliasable;
+
         T                               warp_aggregates[OUTER_WARPS];
+
         T                               block_aggregate;                           ///< Shared prefix for the entire threadblock
     };
 
@@ -165,7 +168,8 @@ struct BlockScanWarpScans
     {
         // Compute warp scan in each warp.  The exclusive output from each lane0 is invalid.
         T inclusive_output;
-        OuterWarpScanT(temp_storage.outer_warp_scan.Alias()[warp_id]).Scan(input, inclusive_output, exclusive_output, scan_op);
+        OuterWarpScanT(temp_storage.aliasable.outer_warp_scan.Alias()[warp_id]).Scan(
+            input, inclusive_output, exclusive_output, scan_op);
 
         // Share outer warp total
         if (lane_id == OUTER_WARP_THREADS - 1)
@@ -178,7 +182,7 @@ struct BlockScanWarpScans
             T outer_warp_input = temp_storage.warp_aggregates[linear_tid];
             T outer_warp_exclusive;
 
-            InnerWarpScanT(temp_storage.inner_warp_scan).ExclusiveScan(
+            InnerWarpScanT(temp_storage.aliasable.inner_warp_scan).ExclusiveScan(
                 outer_warp_input, outer_warp_exclusive, scan_op, block_aggregate);
 
             temp_storage.block_aggregate                = block_aggregate;
@@ -212,7 +216,8 @@ struct BlockScanWarpScans
     {
         // Compute warp scan in each warp.  The exclusive output from each lane0 is invalid.
         T inclusive_output;
-        OuterWarpScanT(temp_storage.outer_warp_scan.Alias()[warp_id]).Scan(input, inclusive_output, exclusive_output, scan_op);
+        OuterWarpScanT(temp_storage.aliasable.outer_warp_scan.Alias()[warp_id]).Scan(
+            input, inclusive_output, exclusive_output, scan_op);
 
         // Share outer warp total
         if (lane_id == OUTER_WARP_THREADS - 1)
@@ -227,7 +232,7 @@ struct BlockScanWarpScans
             T outer_warp_input = temp_storage.warp_aggregates[linear_tid];
             T outer_warp_exclusive;
 
-            InnerWarpScanT(temp_storage.inner_warp_scan).ExclusiveScan(
+            InnerWarpScanT(temp_storage.aliasable.inner_warp_scan).ExclusiveScan(
                 outer_warp_input, outer_warp_exclusive, initial_value, scan_op, block_aggregate);
 
             temp_storage.block_aggregate                = block_aggregate;
@@ -259,7 +264,8 @@ struct BlockScanWarpScans
     {
         // Compute warp scan in each warp.  The exclusive output from each lane0 is invalid.
         T inclusive_output;
-        OuterWarpScanT(temp_storage.outer_warp_scan.Alias()[warp_id]).Scan(input, inclusive_output, exclusive_output, scan_op);
+        OuterWarpScanT(temp_storage.aliasable.outer_warp_scan.Alias()[warp_id]).Scan(
+            input, inclusive_output, exclusive_output, scan_op);
 
         // Share outer warp total
         if (lane_id == OUTER_WARP_THREADS - 1)
@@ -269,7 +275,7 @@ struct BlockScanWarpScans
 
         if (linear_tid < INNER_WARP_THREADS)
         {
-            InnerWarpScanT inner_scan(temp_storage.inner_warp_scan);
+            InnerWarpScanT inner_scan(temp_storage.aliasable.inner_warp_scan);
 
             T upsweep = temp_storage.warp_aggregates[linear_tid];
             T downsweep_prefix, block_aggregate;
@@ -322,7 +328,7 @@ struct BlockScanWarpScans
         T               &block_aggregate)               ///< [out] Threadblock-wide aggregate reduction of input items
     {
         // Compute warp scan in each warp.  The exclusive output from each lane0 is invalid.
-        OuterWarpScanT(temp_storage.outer_warp_scan.Alias()[warp_id]).InclusiveScan(
+        OuterWarpScanT(temp_storage.aliasable.outer_warp_scan.Alias()[warp_id]).InclusiveScan(
             input, inclusive_output, scan_op);
 
         // Share outer warp total
@@ -336,7 +342,7 @@ struct BlockScanWarpScans
             T outer_warp_input = temp_storage.warp_aggregates[linear_tid];
             T outer_warp_exclusive;
 
-            InnerWarpScanT(temp_storage.inner_warp_scan).ExclusiveScan(
+            InnerWarpScanT(temp_storage.aliasable.inner_warp_scan).ExclusiveScan(
                 outer_warp_input, outer_warp_exclusive, scan_op, block_aggregate);
 
             temp_storage.block_aggregate                = block_aggregate;
@@ -368,7 +374,7 @@ struct BlockScanWarpScans
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a threadblock-wide prefix to be applied to all inputs.
     {
         // Compute warp scan in each warp.  The exclusive output from each lane0 is invalid.
-        OuterWarpScanT(temp_storage.outer_warp_scan.Alias()[warp_id]).InclusiveScan(
+        OuterWarpScanT(temp_storage.aliasable.outer_warp_scan.Alias()[warp_id]).InclusiveScan(
             input, inclusive_output, scan_op);
 
         // Share outer warp total
@@ -379,7 +385,7 @@ struct BlockScanWarpScans
 
         if (linear_tid < INNER_WARP_THREADS)
         {
-            InnerWarpScanT inner_scan(temp_storage.inner_warp_scan);
+            InnerWarpScanT inner_scan(temp_storage.aliasable.inner_warp_scan);
 
             T upsweep = temp_storage.warp_aggregates[linear_tid];
             T downsweep_prefix, block_aggregate;

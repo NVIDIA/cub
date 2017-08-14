@@ -89,7 +89,7 @@ __global__ void BlockPrefixSumKernel(
     typedef BlockScan<int, BLOCK_THREADS, ALGORITHM> BlockScanT;
 
     // Shared memory
-    __shared__ union
+    __shared__ union TempStorage
     {
         typename BlockLoadT::TempStorage    load;
         typename BlockStoreT::TempStorage   store;
