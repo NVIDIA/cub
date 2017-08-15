@@ -380,7 +380,7 @@ struct AgentRle
         identity.value = 0;
 
         LengthOffsetPair thread_inclusive;
-        LengthOffsetPair thread_aggregate = ThreadReduce(lengths_and_num_runs, scan_op);
+        LengthOffsetPair thread_aggregate = internal::ThreadReduce(lengths_and_num_runs, scan_op);
         WarpScanPairs(temp_storage.aliasable.warp_scan[warp_id]).Scan(
             thread_aggregate,
             thread_inclusive,
@@ -670,7 +670,7 @@ struct AgentRle
             LengthOffsetPair    lengths_and_num_runs2[ITEMS_PER_THREAD];
 
             // Downsweep scan through lengths_and_num_runs
-            ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs2, scan_op, thread_exclusive_in_warp);
+            internal::ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs2, scan_op, thread_exclusive_in_warp);
 
             // Zip
 
@@ -761,7 +761,7 @@ struct AgentRle
             LengthOffsetPair    lengths_and_offsets[ITEMS_PER_THREAD];
             OffsetT             thread_num_runs_exclusive_in_warp[ITEMS_PER_THREAD];
 
-            ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs2, scan_op, thread_exclusive_in_warp);
+            internal::ThreadScanExclusive(lengths_and_num_runs, lengths_and_num_runs2, scan_op, thread_exclusive_in_warp);
 
             // Zip
             #pragma unroll

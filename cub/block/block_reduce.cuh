@@ -397,7 +397,7 @@ public:
         ReductionOp     reduction_op)                   ///< [in] Binary reduction functor 
     {
         // Reduce partials
-        T partial = ThreadReduce(inputs, reduction_op);
+        T partial = internal::ThreadReduce(inputs, reduction_op);
         return Reduce(partial, reduction_op);
     }
 
@@ -540,7 +540,7 @@ public:
         T   (&inputs)[ITEMS_PER_THREAD])    ///< [in] Calling thread's input segment
     {
         // Reduce partials
-        T partial = ThreadReduce(inputs, cub::Sum());
+        T partial = internal::ThreadReduce(inputs, cub::Sum());
         return Sum(partial);
     }
 

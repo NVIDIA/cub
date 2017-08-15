@@ -223,7 +223,7 @@ private:
             raking_ptr = smem_raking_ptr;
         }
 
-        return ThreadReduce<RAKING_SEGMENT>(raking_ptr, Sum());
+        return internal::ThreadReduce<RAKING_SEGMENT>(raking_ptr, Sum());
     }
 
 
@@ -238,7 +238,7 @@ private:
             smem_raking_ptr;
 
         // Exclusive raking downsweep scan
-        ThreadScanExclusive<RAKING_SEGMENT>(raking_ptr, raking_ptr, Sum(), raking_partial);
+        internal::ThreadScanExclusive<RAKING_SEGMENT>(raking_ptr, raking_ptr, Sum(), raking_partial);
 
         if (MEMOIZE_OUTER_SCAN)
         {
