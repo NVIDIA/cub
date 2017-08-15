@@ -237,7 +237,7 @@ struct WarpReduceShfl
             "  .reg .u32 hi;"
             "  .reg .pred p;"
             "  mov.b64 {lo, hi}, %1;"
-            "  shfl.down.b32 lo|p, lo, %2, %3"
+            "  shfl.down.b32 lo|p, lo, %2, %3;"
             "  shfl.down.b32 hi|p, hi, %2, %3;"
             "  mov.b64 %0, {lo, hi};"
             "  @p add.u64 %0, %0, %1;"
