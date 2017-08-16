@@ -673,28 +673,9 @@ __device__ __forceinline__ T ShuffleIndex(
 template <int LABEL_BITS>
 inline __device__ unsigned int MatchAny(unsigned int label)
 {
-
-//    unsigned int peer_mask = 0xFFFFFFFF;
-//    #pragma unroll
-//    for (int BIT = 0; BIT < LABEL_BITS; ++BIT)
-//    {
-//        // My ith label bit
-//        unsigned predicate = BFE(label, BIT, 1);
-//
-//        // Everyone whose ith bit is same as mine
-//        unsigned int bit_peer_mask = WARP_BALLOT(predicate, 0xFFFFFFF);
-//        if (!predicate)
-//            bit_peer_mask = ~bit_peer_mask;
-//
-//        // Remove peers who differ
-//        peer_mask = peer_mask & bit_peer_mask;
-//    }
-//    return peer_mask;
-
+    unsigned int retval;
 
     // Extract masks of common threads for each bit
-    unsigned int ballot_masks[LABEL_BITS];
-
     #pragma unroll
     for (int BIT = 0; BIT < LABEL_BITS; ++BIT)
     {
@@ -713,39 +694,18 @@ inline __device__ unsigned int MatchAny(unsigned int label)
             "    @p mov.b32 %0, temp;\n"
             "}\n" : "=r"(mask) : "r"(label), "r"(1 << BIT));
 
-        ballot_masks[BIT] = mask;
+        // Remove peers who differ
+        retval = (BIT == 0) ? mask : retval & mask;
     }
 
-    // Combine masks using bitwise-and (3-element LOP3)
-    if (LABEL_BITS == 1)
-    {
-        // One mask (1-bit label)
-        return ballot_masks[0];
-    }
-    else if (LABEL_BITS == 2)
-    {
-        // Two masks (2-bit label)
-        return ballot_masks[0] & ballot_masks[1];
-    }
-    else
-    {
-        // First three masks...
-        unsigned int retval;
-        asm ("lop3.b32 %0, %1, %2, %3, 0x80;" : "=r"(retval) : "r"(ballot_masks[0]), "r"(ballot_masks[1]), "r"(ballot_masks[2]));
+    return retval;
 
-        // Continue by twos...
-        #pragma unroll
-        for (int ITEM = 3; ITEM + 2 <= LABEL_BITS; ITEM += 2)
-        {
-            asm ("lop3.b32 %0, %1, %2, %3, 0x80;" : "=r"(retval) : "r"(retval), "r"(ballot_masks[ITEM]), "r"(ballot_masks[ITEM + 1]));
-        }
-
-        // Last one if a odd number of bits
-        if ((LABEL_BITS & 1) == 0)
-            retval &= ballot_masks[LABEL_BITS - 1];
-
-        return retval;
-    }
+//  // VOLTA match
+//    unsigned int retval;
+//    asm ("{\n"
+//         "    match.any.sync.b32 %0, %1, 0xffffffff;\n"
+//         "}\n" : "=r"(retval) : "r"(label));
+//    return retval;
 
 }
 
