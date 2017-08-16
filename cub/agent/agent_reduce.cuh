@@ -230,8 +230,8 @@ struct AgentReduce
 
         // Reduce items within each thread stripe
         thread_aggregate = (IS_FIRST_TILE) ?
-            ThreadReduce(items, reduction_op) :
-            ThreadReduce(items, reduction_op, thread_aggregate);
+            internal::ThreadReduce(items, reduction_op) :
+            internal::ThreadReduce(items, reduction_op, thread_aggregate);
     }
 
 
@@ -269,8 +269,8 @@ struct AgentReduce
 
         // Reduce items within each thread stripe
         thread_aggregate = (IS_FIRST_TILE) ?
-            ThreadReduce(items, reduction_op) :
-            ThreadReduce(items, reduction_op, thread_aggregate);
+            internal::ThreadReduce(items, reduction_op) :
+            internal::ThreadReduce(items, reduction_op, thread_aggregate);
     }
 
 

@@ -93,17 +93,14 @@ struct BlockReduceRakingCommutativeOnly
     typedef BlockRakingLayout<T, SHARING_THREADS, PTX_ARCH> BlockRakingLayout;
 
     /// Shared memory storage layout type
-    struct _TempStorage
+    union _TempStorage
     {
-        union
+        struct
         {
-            struct
-            {
-                typename WarpReduce::TempStorage        warp_storage;        ///< Storage for warp-synchronous reduction
-                typename BlockRakingLayout::TempStorage raking_grid;         ///< Padded threadblock raking grid
-            };
-            typename FallBack::TempStorage              fallback_storage;    ///< Fall-back storage for non-commutative block scan
+            typename WarpReduce::TempStorage        warp_storage;        ///< Storage for warp-synchronous reduction
+            typename BlockRakingLayout::TempStorage raking_grid;         ///< Padded threadblock raking grid
         };
+        typename FallBack::TempStorage              fallback_storage;    ///< Fall-back storage for non-commutative block scan
     };
 
 
@@ -148,7 +145,7 @@ struct BlockReduceRakingCommutativeOnly
             {
                 // Raking reduction in grid
                 T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
-                partial = ThreadReduce<SEGMENT_LENGTH>(raking_segment, cub::Sum(), partial);
+                partial = internal::ThreadReduce<SEGMENT_LENGTH>(raking_segment, cub::Sum(), partial);
 
                 // Warpscan
                 partial = WarpReduce(temp_storage.warp_storage).Sum(partial);
@@ -185,7 +182,7 @@ struct BlockReduceRakingCommutativeOnly
             {
                 // Raking reduction in grid
                 T *raking_segment = BlockRakingLayout::RakingPtr(temp_storage.raking_grid, linear_tid);
-                partial = ThreadReduce<SEGMENT_LENGTH>(raking_segment, reduction_op, partial);
+                partial = internal::ThreadReduce<SEGMENT_LENGTH>(raking_segment, reduction_op, partial);
 
                 // Warpscan
                 partial = WarpReduce(temp_storage.warp_storage).Reduce(partial, reduction_op);

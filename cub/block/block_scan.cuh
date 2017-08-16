@@ -933,13 +933,13 @@ public:
         ScanOp            scan_op)                      ///< [in] Binary scan functor
     {
         // Reduce consecutive thread items in registers
-        T thread_prefix = ThreadReduce(input, scan_op);
+        T thread_prefix = internal::ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
         ExclusiveScan(thread_prefix, thread_prefix, initial_value, scan_op);
 
         // Exclusive scan in registers with prefix as seed
-        ThreadScanExclusive(input, output, scan_op, thread_prefix);
+        internal::ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
@@ -996,13 +996,13 @@ public:
         T                 &block_aggregate)             ///< [out] block-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
-        T thread_prefix = ThreadReduce(input, scan_op);
+        T thread_prefix = internal::ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
         ExclusiveScan(thread_prefix, thread_prefix, initial_value, scan_op, block_aggregate);
 
         // Exclusive scan in registers with prefix as seed
-        ThreadScanExclusive(input, output, scan_op, thread_prefix);
+        internal::ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
@@ -1103,13 +1103,13 @@ public:
         BlockPrefixCallbackOp   &block_prefix_callback_op)      ///< [in-out] <b>[<em>warp</em><sub>0</sub> only]</b> Call-back functor for specifying a block-wide prefix to be applied to the logical input sequence.
     {
         // Reduce consecutive thread items in registers
-        T thread_prefix = ThreadReduce(input, scan_op);
+        T thread_prefix = internal::ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
         ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_prefix_callback_op);
 
         // Exclusive scan in registers with prefix as seed
-        ThreadScanExclusive(input, output, scan_op, thread_prefix);
+        internal::ThreadScanExclusive(input, output, scan_op, thread_prefix);
     }
 
 
@@ -1190,13 +1190,13 @@ public:
         ScanOp            scan_op)                      ///< [in] Binary scan functor
     {
         // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
+        T thread_partial = internal::ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
         ExclusiveScan(thread_partial, thread_partial, scan_op);
 
         // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
+        internal::ThreadScanExclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
     }
 
 
@@ -1222,13 +1222,13 @@ public:
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
-        T thread_partial = ThreadReduce(input, scan_op);
+        T thread_partial = internal::ThreadReduce(input, scan_op);
 
         // Exclusive threadblock-scan
         ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate);
 
         // Exclusive scan in registers with prefix
-        ThreadScanExclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
+        internal::ThreadScanExclusive(input, output, scan_op, thread_partial, (linear_tid != 0));
     }
 
 
@@ -1472,13 +1472,13 @@ public:
         {
             // Reduce consecutive thread items in registers
             Sum scan_op;
-            T thread_prefix = ThreadReduce(input, scan_op);
+            T thread_prefix = internal::ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
             ExclusiveSum(thread_prefix, thread_prefix);
 
             // Inclusive scan in registers with prefix as seed
-            ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
+            internal::ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
         }
     }
 
@@ -1540,13 +1540,13 @@ public:
         {
             // Reduce consecutive thread items in registers
             Sum scan_op;
-            T thread_prefix = ThreadReduce(input, scan_op);
+            T thread_prefix = internal::ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
             ExclusiveSum(thread_prefix, thread_prefix, block_aggregate);
 
             // Inclusive scan in registers with prefix as seed
-            ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
+            internal::ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
         }
     }
 
@@ -1652,13 +1652,13 @@ public:
         {
             // Reduce consecutive thread items in registers
             Sum scan_op;
-            T thread_prefix = ThreadReduce(input, scan_op);
+            T thread_prefix = internal::ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
             ExclusiveSum(thread_prefix, thread_prefix, block_prefix_callback_op);
 
             // Inclusive scan in registers with prefix as seed
-            ThreadScanInclusive(input, output, scan_op, thread_prefix);
+            internal::ThreadScanInclusive(input, output, scan_op, thread_prefix);
         }
     }
 
@@ -1917,13 +1917,13 @@ public:
         else
         {
             // Reduce consecutive thread items in registers
-            T thread_prefix = ThreadReduce(input, scan_op);
+            T thread_prefix = internal::ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
             ExclusiveScan(thread_prefix, thread_prefix, scan_op);
 
             // Inclusive scan in registers with prefix as seed (first thread does not seed)
-            ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
+            internal::ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
         }
     }
 
@@ -1988,13 +1988,13 @@ public:
         else
         {
             // Reduce consecutive thread items in registers
-            T thread_prefix = ThreadReduce(input, scan_op);
+            T thread_prefix = internal::ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan (with no initial value)
             ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_aggregate);
 
             // Inclusive scan in registers with prefix as seed (first thread does not seed)
-            ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
+            internal::ThreadScanInclusive(input, output, scan_op, thread_prefix, (linear_tid != 0));
         }
     }
 
@@ -2102,13 +2102,13 @@ public:
         else
         {
             // Reduce consecutive thread items in registers
-            T thread_prefix = ThreadReduce(input, scan_op);
+            T thread_prefix = internal::ThreadReduce(input, scan_op);
 
             // Exclusive threadblock-scan
             ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_prefix_callback_op);
 
             // Inclusive scan in registers with prefix as seed
-            ThreadScanInclusive(input, output, scan_op, thread_prefix);
+            internal::ThreadScanInclusive(input, output, scan_op, thread_prefix);
         }
     }
 

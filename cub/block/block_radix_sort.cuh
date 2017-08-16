@@ -182,15 +182,12 @@ private:
     typedef BlockExchange<ValueT, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchangeValues;
 
     /// Shared memory storage layout type
-    struct _TempStorage
+    union _TempStorage
     {
-        union
-        {
-            typename AscendingBlockRadixRank::TempStorage  asending_ranking_storage;
-            typename DescendingBlockRadixRank::TempStorage descending_ranking_storage;
-            typename BlockExchangeKeys::TempStorage        exchange_keys;
-            typename BlockExchangeValues::TempStorage      exchange_values;
-        };
+        typename AscendingBlockRadixRank::TempStorage  asending_ranking_storage;
+        typename DescendingBlockRadixRank::TempStorage descending_ranking_storage;
+        typename BlockExchangeKeys::TempStorage        exchange_keys;
+        typename BlockExchangeValues::TempStorage      exchange_values;
     };
 
 

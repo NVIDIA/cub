@@ -42,6 +42,10 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+/// Internal namespace (to prevent ADL mishaps between static functions when mixing different CUB installations)
+namespace internal {
+
+
 /**
  * \addtogroup UtilModule
  * @{
@@ -73,28 +77,8 @@ __device__ __forceinline__ T ThreadScanExclusive(
     }
 
     return inclusive;
-
-//    T addend = *input;
-//    inclusive = scan_op(exclusive, addend);
-//    *output = exclusive;
-//    exclusive = inclusive;
-//
-//    return ThreadScanExclusive(inclusive, exclusive, input + 1, output + 1, scan_op, Int2Type<LENGTH - 1>());
 }
 
-//template <
-//    typename    T,
-//    typename    ScanOp>
-//__device__ __forceinline__ T ThreadScanExclusive(
-//    T                   inclusive,
-//    T                   /*exclusive*/,
-//    T                   * /*input*/,                ///< [in] Input array
-//    T                   * /*output*/,               ///< [out] Output array (may be aliased to \p input)
-//    ScanOp              /*scan_op*/,                ///< [in] Binary scan operator
-//    Int2Type<0>         /*length*/)
-//{
-//    return inclusive;
-//}
 
 
 /**
@@ -175,27 +159,7 @@ __device__ __forceinline__ T ThreadScanInclusive(
     }
 
     return inclusive;
-
-
-//    T addend = *input;
-//    inclusive = scan_op(inclusive, addend);
-//    output[0] = inclusive;
-//
-//    return ThreadScanInclusive(inclusive, input + 1, output + 1, scan_op, Int2Type<LENGTH - 1>());
 }
-
-//template <
-//    typename    T,
-//    typename    ScanOp>
-//__device__ __forceinline__ T ThreadScanInclusive(
-//    T                   inclusive,
-//    T                   * /*input*/,                ///< [in] Input array
-//    T                   * /*output*/,               ///< [out] Output array (may be aliased to \p input)
-//    ScanOp              /*scan_op*/,                ///< [in] Binary scan operator
-//    Int2Type<0>         /*length*/)
-//{
-//    return inclusive;
-//}
 
 
 /**
@@ -299,5 +263,6 @@ __device__ __forceinline__ T ThreadScanInclusive(
 /** @} */       // end group UtilModule
 
 
+}               // internal namespace
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)

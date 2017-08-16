@@ -199,7 +199,7 @@ struct BlockScanRaking
             CopySegment(cached_segment, smem_raking_ptr, Int2Type<0>());
         }
 
-        ThreadScanExclusive(cached_segment, cached_segment, scan_op, raking_partial, apply_prefix);
+        internal::ThreadScanExclusive(cached_segment, cached_segment, scan_op, raking_partial, apply_prefix);
 
         // Write data back to smem
         CopySegment(smem_raking_ptr, cached_segment, Int2Type<0>());
@@ -221,7 +221,7 @@ struct BlockScanRaking
             CopySegment(cached_segment, smem_raking_ptr, Int2Type<0>());
         }
 
-        ThreadScanInclusive(cached_segment, cached_segment, scan_op, raking_partial, apply_prefix);
+        internal::ThreadScanInclusive(cached_segment, cached_segment, scan_op, raking_partial, apply_prefix);
 
         // Write data back to smem
         CopySegment(smem_raking_ptr, cached_segment, Int2Type<0>());

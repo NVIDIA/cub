@@ -92,7 +92,7 @@ __global__ void BlockSortKernel(
     typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
 
     // Shared memory
-    __shared__ union
+    __shared__ union TempStorage
     {
         typename BlockLoadT::TempStorage        load;
         typename BlockRadixSortT::TempStorage   sort;

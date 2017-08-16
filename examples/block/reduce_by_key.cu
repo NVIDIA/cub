@@ -29,7 +29,7 @@ __global__ void Kernel()
         BlockScanT;
 
     // Shared memory
-    __shared__ union
+    __shared__ union TempStorage
     {
         typename BlockScanT::TempStorage                scan;           // Scan storage
         typename BlockDiscontinuityKeysT::TempStorage   discontinuity;  // Discontinuity storage

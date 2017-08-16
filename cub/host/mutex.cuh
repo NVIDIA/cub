@@ -34,13 +34,17 @@
 
 #pragma once
 
-#if __cplusplus > 199711L
+#if (__cplusplus > 199711L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
     #include <mutex>
 #else
     #if defined(_WIN32) || defined(_WIN64)
         #include <intrin.h>
+
+        #define WIN32_LEAN_AND_MEAN
+        #define NOMINMAX
         #include <windows.h>
-        #undef small            // Windows is terrible for polluting macro namespace
+        #undef WIN32_LEAN_AND_MEAN
+        #undef NOMINMAX
 
         /**
          * Compiler read/write barrier
@@ -67,7 +71,7 @@ namespace cub {
  */
 struct Mutex
 {
-#if __cplusplus > 199711L
+#if (__cplusplus > 199711L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
 
     std::mutex mtx;
 
