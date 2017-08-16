@@ -251,7 +251,7 @@ cudaError_t Dispatch(
                 d_lengths_out_wrapper);
         }
 
-        OffsetT num_runs = d_out_ends.first - d_unique_out_wrapper;
+        OffsetT num_runs = OffsetT(d_out_ends.first - d_unique_out_wrapper);
         CubDebugExit(cudaMemcpy(d_num_runs, &num_runs, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 

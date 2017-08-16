@@ -273,7 +273,7 @@ cudaError_t Dispatch(
             d_out_wrapper_end = thrust::copy_if(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper, select_op);
         }
 
-        OffsetT num_selected = d_out_wrapper_end - d_out_wrapper;
+        OffsetT num_selected = OffsetT(d_out_wrapper_end - d_out_wrapper);
         CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 
@@ -338,7 +338,7 @@ cudaError_t Dispatch(
                 select_op);
         }
 
-        OffsetT num_selected = d_out_wrapper_end.first - d_out_wrapper;
+        OffsetT num_selected = OffsetT(d_out_wrapper_end.first - d_out_wrapper);
         CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 
@@ -397,7 +397,7 @@ cudaError_t Dispatch(
             d_out_wrapper_end = thrust::copy_if(d_in_wrapper, d_in_wrapper + num_items, d_flags_wrapper, d_out_wrapper, CastOp<bool>());
         }
 
-        OffsetT num_selected = d_out_wrapper_end - d_out_wrapper;
+        OffsetT num_selected = OffsetT(d_out_wrapper_end - d_out_wrapper);
         CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 
@@ -466,7 +466,7 @@ cudaError_t Dispatch(
                 CastOp<bool>());
         }
 
-        OffsetT num_selected = d_out_wrapper_end.first - d_out_wrapper;
+        OffsetT num_selected = OffsetT(d_out_wrapper_end.first - d_out_wrapper);
         CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
     }
 
