@@ -142,18 +142,14 @@ struct AgentRadixSortDownsweep
     typedef CacheModifiedInputIterator<LOAD_MODIFIER, UnsignedBits, OffsetT>    KeysItr;
     typedef CacheModifiedInputIterator<LOAD_MODIFIER, ValueT, OffsetT>          ValuesItr;
 
-    // Radix radix ranking types
-    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, IS_DESCENDING, false, SCAN_ALGORITHM> RankBasicT;
-    typedef BlockRadixRank<BLOCK_THREADS, RADIX_BITS, IS_DESCENDING, true, SCAN_ALGORITHM>  RankMemoizeT;
-    typedef BlockRadixRankMatch<BLOCK_THREADS, RADIX_BITS, IS_DESCENDING, SCAN_ALGORITHM>   RankMatchT;
-
-
     // Radix ranking type to use
     typedef typename If<(RANK_ALGORITHM == RADIX_RANK_BASIC),
-        RankBasicT,
-        typename If<(RANK_ALGORITHM == RADIX_RANK_MEMOIZE),
-            RankMemoizeT,
-            RankMatchT>::Type>::Type BlockRadixRankT;
+            BlockRadixRank<BLOCK_THREADS, RADIX_BITS, IS_DESCENDING, false, SCAN_ALGORITHM>,
+            typename If<(RANK_ALGORITHM == RADIX_RANK_MEMOIZE),
+                BlockRadixRank<BLOCK_THREADS, RADIX_BITS, IS_DESCENDING, true, SCAN_ALGORITHM>,
+                BlockRadixRankMatch<BLOCK_THREADS, RADIX_BITS, IS_DESCENDING, SCAN_ALGORITHM>
+            >::Type
+        >::Type BlockRadixRankT;
 
     enum
     {
@@ -315,7 +311,8 @@ struct AgentRadixSortDownsweep
     {
         BlockLoadKeysT(temp_storage.load_keys).Load(
             d_keys_in + block_offset, keys);
-        __syncthreads();
+
+        CTA_SYNC();
     }
 
 
@@ -333,7 +330,8 @@ struct AgentRadixSortDownsweep
     {
         BlockLoadKeysT(temp_storage.load_keys).Load(
             d_keys_in + block_offset, keys, valid_items, oob_item);
-        __syncthreads();
+
+        CTA_SYNC();
     }
 
 
@@ -380,7 +378,8 @@ struct AgentRadixSortDownsweep
     {
         BlockLoadValuesT(temp_storage.load_values).Load(
             d_values_in + block_offset, values);
-        __syncthreads();
+
+        CTA_SYNC();
     }
 
 
@@ -397,7 +396,8 @@ struct AgentRadixSortDownsweep
     {
         BlockLoadValuesT(temp_storage.load_values).Load(
             d_values_in + block_offset, values, valid_items);
-        __syncthreads();
+
+        CTA_SYNC();
     }
 
 
@@ -425,7 +425,6 @@ struct AgentRadixSortDownsweep
         Int2Type<false>             is_full_tile,
         Int2Type<RADIX_RANK_MATCH>  rank_algorithm)
     {
-//        LoadDirectWarpStriped(threadIdx.x, d_values_in + block_offset, values);
         LoadDirectWarpStriped(threadIdx.x, d_values_in + block_offset, values, valid_items);
     }
 
@@ -496,8 +495,6 @@ struct AgentRadixSortDownsweep
             default_key,
             Int2Type<FULL_TILE>(),
             Int2Type<RANK_ALGORITHM>());
-
-        CTA_SYNC();
 
         // Twiddle key bits if necessary
         #pragma unroll
