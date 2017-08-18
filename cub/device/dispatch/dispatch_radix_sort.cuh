@@ -96,7 +96,7 @@ __global__ void DeviceRadixSortUpsweepKernel(
 
     upsweep.ProcessRegion(even_share.block_offset, even_share.block_end);
 
-    __syncthreads();
+    CTA_SYNC();
 
     // Write out digit counts (striped)
     upsweep.ExtractCounts<IS_DESCENDING>(d_spine, gridDim.x, blockIdx.x);
