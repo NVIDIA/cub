@@ -499,7 +499,7 @@ struct AgentRadixSortUpsweep
             }
         }
 
-        __syncthreads();
+        CTA_SYNC();
 
         // Rake-reduce bin_count reductions
         #pragma unroll

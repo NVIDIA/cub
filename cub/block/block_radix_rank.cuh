@@ -584,7 +584,7 @@ public:
         for (int ITEM = 0; ITEM < PADDED_RAKING_SEGMENT; ++ITEM)
             temp_storage.aliasable.raking_grid[linear_tid][ITEM] = 0;
 
-        __syncthreads();
+        CTA_SYNC();
 
         // Each warp will strip-mine its section of input, one strip at a time
 
@@ -633,7 +633,7 @@ public:
             ranks[ITEM] = warp_digit_prefix + DigitCounterT(peer_digit_prefix);
         }
 
-        __syncthreads();
+        CTA_SYNC();
 
         // Scan warp counters
 
@@ -649,7 +649,7 @@ public:
         for (int ITEM = 0; ITEM < PADDED_RAKING_SEGMENT; ++ITEM)
             temp_storage.aliasable.raking_grid[linear_tid][ITEM] = scan_counters[ITEM];
 
-        __syncthreads();
+        CTA_SYNC();
 
         // Seed ranks with counter values from previous warps
         #pragma unroll

@@ -680,19 +680,18 @@ inline __device__ unsigned int MatchAny(unsigned int label)
     for (int BIT = 0; BIT < LABEL_BITS; ++BIT)
     {
         unsigned int mask;
+        unsigned int current_bit = 1 << BIT;
         asm ("{\n"
             "    .reg .pred p;\n"
-            "    .reg .u32 temp;\n"
-            "    and.b32 temp, %1, %2;"
-            "    setp.eq.u32 p, temp, %2;\n"
+            "    and.b32 %0, %1, %2;"
+            "    setp.eq.u32 p, %0, %2;\n"
 #ifdef CUB_USE_COOPERATIVE_GROUPS
-            "    vote.ballot.sync.b32 temp, p, 0xffffffff;\n"
+            "    vote.ballot.sync.b32 %0, p, 0xffffffff;\n"
 #else
-            "    vote.ballot.b32 temp, p;\n"
+            "    vote.ballot.b32 %0, p;\n"
 #endif
-            "    not.b32 %0, temp;\n"
-            "    @p mov.b32 %0, temp;\n"
-            "}\n" : "=r"(mask) : "r"(label), "r"(1 << BIT));
+            "    @!p not.b32 %0, %0;\n"
+            "}\n" : "=r"(mask) : "r"(label), "r"(current_bit));
 
         // Remove peers who differ
         retval = (BIT == 0) ? mask : retval & mask;
