@@ -126,9 +126,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 </dd></dl>
 <dl class="section user"><dt></dt><dd>which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and sets a maximum of 6,291,455 cached bytes per device </dd></dl>
 <dl><dt><b>Examples: </b></dt><dd><a class="el" href="example_device_partition_flagged_8cu-example.html#_a0">example_device_partition_flagged.cu</a>, <a class="el" href="example_device_partition_if_8cu-example.html#_a0">example_device_partition_if.cu</a>, <a class="el" href="example_device_radix_sort_8cu-example.html#_a0">example_device_radix_sort.cu</a>, <a class="el" href="example_device_reduce_8cu-example.html#_a0">example_device_reduce.cu</a>, <a class="el" href="example_device_scan_8cu-example.html#_a0">example_device_scan.cu</a>, <a class="el" href="example_device_select_flagged_8cu-example.html#_a0">example_device_select_flagged.cu</a>, <a class="el" href="example_device_select_if_8cu-example.html#_a0">example_device_select_if.cu</a>, and <a class="el" href="example_device_select_unique_8cu-example.html#_a0">example_device_select_unique.cu</a>.</dd>
-</dl>
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00101">101</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
-</div><table class="memberdecls">
+</dl></div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Methods</h2></td></tr>
 <tr class="memitem:a00d55d2fb072b4675ab49090a28ba715"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_caching_device_allocator.html#a00d55d2fb072b4675ab49090a28ba715">CachingDeviceAllocator</a> (unsigned int bin_growth, unsigned int min_bin=1, unsigned int max_bin=<a class="el" href="structcub_1_1_caching_device_allocator.html#a8ab8dc4529c8dce2d182c5280d63b482">INVALID_BIN</a>, size_t max_cached_bytes=<a class="el" href="structcub_1_1_caching_device_allocator.html#a6ea4cd0922da32849bf73366929f6e26">INVALID_SIZE</a>, bool skip_cleanup=false, bool debug=false)</td></tr>
@@ -242,8 +240,6 @@ static const size_t&#160;</td><td class="memItemRight" valign="bottom"><a class=
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00276">276</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
-
 </div>
 </div>
 <a class="anchor" id="ae5d6095185770ffa6338d7fbac372752"></a>
@@ -289,8 +285,6 @@ static const size_t&#160;</td><td class="memItemRight" valign="bottom"><a class=
 </dd></dl>
 <p>which delineates five bin-sizes: 512B, 4KB, 32KB, 256KB, and 2MB and sets a maximum of 6,291,455 cached bytes per device </p>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00310">310</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
-
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -318,8 +312,6 @@ static const size_t&#160;</td><td class="memItemRight" valign="bottom"><a class=
 
 <p>Sets the limit on the number bytes this allocator is allowed to cache per device. </p>
 <p>Changing the ceiling of cached bytes does not cause any allocations (in-use or cached-in-reserve) to be freed. See <code><a class="el" href="structcub_1_1_caching_device_allocator.html#afbe43fd3a59ba6f4b974a4a66315c86e" title="Frees all cached device allocations on all devices. ">FreeAllCached()</a></code>. </p>
-
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00333">333</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
 
 </div>
 </div>
@@ -379,8 +371,6 @@ static const size_t&#160;</td><td class="memItemRight" valign="bottom"><a class=
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00357">357</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
-
 </div>
 </div>
 <a class="anchor" id="ab2fe4020cf8bc86ad886c797525ac8ea"></a>
@@ -432,8 +422,6 @@ static const size_t&#160;</td><td class="memItemRight" valign="bottom"><a class=
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00530">530</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
-
 </div>
 </div>
 <a class="anchor" id="a66e72cc3cc7d0dbd59148ac7c4ba0de6"></a>
@@ -471,8 +459,6 @@ static const size_t&#160;</td><td class="memItemRight" valign="bottom"><a class=
 <p>Frees a live allocation of device memory on the specified device, returning it to the allocator. </p>
 <p>Once freed, the allocation becomes available immediately for reuse within the <code>active_stream</code> with which it was associated with during allocation, and it becomes available for reuse within other streams when all prior work submitted to <code>active_stream</code> has completed. </p>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00546">546</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
-
 </div>
 </div>
 <a class="anchor" id="adbf65c59172b140420636e150325deeb"></a>
@@ -500,18 +486,16 @@ static const size_t&#160;</td><td class="memItemRight" valign="bottom"><a class=
 <p>Frees a live allocation of device memory on the current device, returning it to the allocator. </p>
 <p>Once freed, the allocation becomes available immediately for reuse within the <code>active_stream</code> with which it was associated with during allocation, and it becomes available for reuse within other streams when all prior work submitted to <code>active_stream</code> has completed. </p>
 
-<p>Definition at line <a class="el" href="util__allocator_8cuh_source.html#l00630">630</a> of file <a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a>.</p>
-
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li><a class="el" href="util__allocator_8cuh_source.html">util_allocator.cuh</a></li>
+<li>util_allocator.cuh</li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 14 2017 11:01:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -30,25 +30,25 @@
 
 /**
 
-\defgroup CollectiveModule 	SIMT "collective" primitives
-	\defgroup WarpModule 			Warp-wide
-		\ingroup CollectiveModule
-	\defgroup BlockModule 			Block-wide
-		\ingroup CollectiveModule
+\defgroup CollectiveModule     SIMT "collective" primitives
+    \defgroup WarpModule             Warp-wide
+        \ingroup CollectiveModule
+    \defgroup BlockModule             Block-wide
+        \ingroup CollectiveModule
 
-\defgroup DeviceModule		Device-wide primitives
-	\defgroup SingleModule 			Single-problem
-		\ingroup DeviceModule
-	\defgroup SegmentedModule 		Segmented-problem (batch)
-		\ingroup DeviceModule
+\defgroup DeviceModule        Device-wide primitives
+    \defgroup SingleModule             Single-problem
+        \ingroup DeviceModule
+    \defgroup SegmentedModule         Segmented-problem (batch)
+        \ingroup DeviceModule
 
-\defgroup UtilModule 	Utilities
-	\defgroup UtilIterator 	Fancy iterators
-		\ingroup UtilModule
-	\defgroup UtilIo 		Thread and thread block I/O
-		\ingroup UtilModule
-	\defgroup UtilPtx 		PTX intrinsics
-		\ingroup UtilModule
+\defgroup UtilModule     Utilities
+    \defgroup UtilIterator     Fancy iterators
+        \ingroup UtilModule
+    \defgroup UtilIo         Thread and thread block I/O
+        \ingroup UtilModule
+    \defgroup UtilPtx         PTX intrinsics
+        \ingroup UtilModule
     \defgroup UtilMgmt      Device, kernel, and storage management
         \ingroup UtilModule
 
@@ -62,7 +62,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.6.4</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.7.1</b></em></a>
 
 </td><td>
 
@@ -157,11 +157,11 @@ __global__ void BlockSortKernel(int *d_in, int *d_out)
 {
     // Specialize BlockLoad, BlockStore, and BlockRadixSort collective types
     typedef cub::BlockLoad<
-    	int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE> BlockLoadT;
+        int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE> BlockLoadT;
     typedef cub::BlockStore<
-    	int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_TRANSPOSE> BlockStoreT;
+        int*, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_STORE_TRANSPOSE> BlockStoreT;
     typedef cub::BlockRadixSort<
-    	int, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
+        int, BLOCK_THREADS, ITEMS_PER_THREAD> BlockRadixSortT;
 
     // Allocate type-safe, repurposable shared memory for collectives
     __shared__ union {
@@ -172,15 +172,15 @@ __global__ void BlockSortKernel(int *d_in, int *d_out)
 
     // Obtain this block's segment of consecutive keys (blocked across threads)
     int thread_keys[ITEMS_PER_THREAD];
-    int block_offset = blockIdx.x * (BLOCK_THREADS * ITEMS_PER_THREAD);	  
+    int block_offset = blockIdx.x * (BLOCK_THREADS * ITEMS_PER_THREAD);      
     BlockLoadT(temp_storage.load).Load(d_in + block_offset, thread_keys);
     
-    __syncthreads();	// Barrier for smem reuse
+    __syncthreads();    // Barrier for smem reuse
 
     // Collectively sort the keys
     BlockRadixSortT(temp_storage.sort).Sort(thread_keys);
 
-    __syncthreads();	// Barrier for smem reuse
+    __syncthreads();    // Barrier for smem reuse
 
     // Store the sorted segment 
     BlockStoreT(temp_storage.store).Store(d_out + block_offset, thread_keys);
@@ -330,20 +330,20 @@ fragment performing a collective prefix sum across the threads of a thread block
 __global__ void SomeKernelFoo(...)
 {
     // Specialize BlockScan for 128 threads on integer types
-	typedef cub::BlockScan<int, 128> BlockScan;
+    typedef cub::BlockScan<int, 128> BlockScan;
  
-	// Allocate shared memory for BlockScan
-	__shared__ typename BlockScan::TempStorage scan_storage;
+    // Allocate shared memory for BlockScan
+    __shared__ typename BlockScan::TempStorage scan_storage;
 
-	...
-	
-	// Obtain a segment of consecutive items that are blocked across threads
-	int thread_data_in[4];
-	int thread_data_out[4];
-	...
+    ...
+    
+    // Obtain a segment of consecutive items that are blocked across threads
+    int thread_data_in[4];
+    int thread_data_out[4];
+    ...
 
-	// Perform an exclusive block-wide prefix sum
-	BlockScan(scan_storage).ExclusiveSum(thread_data_in, thread_data_out);
+    // Perform an exclusive block-wide prefix sum
+    BlockScan(scan_storage).ExclusiveSum(thread_data_in, thread_data_out);
 
 \endcode
 
@@ -527,8 +527,25 @@ for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
+08/18/2017<br>
+[<b>CUB v1.7.1</b>](download_cub.html)
+</td><td style="vertical-align:text-top;">
+  - New Features: 
+    - Compatible with CUDA9 and SM7.x (Volta) independent thread scheduling 
+    - Updated radix sorting tuning policies and performance
+    - Shrunk repository size (purged zombie testfiles, executables, etc. from GIT history)
+  -  API Changes: 
+    - Remove cub::WarpAll() and cub::WarpAny().  These functions served to 
+      emulate __all and __any functionality for SM1.x devices, which did not have those 
+      operations.  However, the SM1.x devices are now deprecated in CUDA, and the 
+      interfaces of the these two functions are now lacking the lane-mask needed 
+      for collectives to run on Volta SMs having independent thread scheduling. 
+  - Other: 
+    - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
+
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
 12/06/2016<br>
-[<b>CUB v1.6.4</b>](download_cub.html)
+[<b>CUB v1.6.4</b>](https://github.com/NVlabs/cub/archive/1.6.4.zip)
 </td><td style="vertical-align:text-top;">
   - New Features: 
     - API change: Device-, block-, and warp-wide exclusive scans have been revised to now 
@@ -549,7 +566,7 @@ for the current feature release.
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 03/21/2016<br>
-[<b>CUB v1.5.2</b>](download_cub.html)
+[<b>CUB v1.5.2</b>](https://github.com/NVlabs/cub/archive/1.5.2.zip)
 </td><td style="vertical-align:text-top;">
   - New Features: 
     - Added new segmented device-wide operations for device-wide sort and 
@@ -562,7 +579,7 @@ for the current feature release.
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 04/13/2015<br>
-[<b>CUB v1.4.1</b>](download_cub.html)
+[<b>CUB v1.4.1</b>](https://github.com/NVlabs/cub/archive/1.4.1.zip)
 </td><td style="vertical-align:text-top;">
   - New Features: 
     - Updated cub::DeviceHistogram implementation that provides the same 
@@ -588,22 +605,22 @@ for the current feature release.
 </td><td style="vertical-align:text-top;">
   - CUB's collective (block-wide, warp-wide) primitives underwent a minor 
     interface refactoring:
-   	- To provide the appropriate support for multidimensional thread blocks,
-   	  The interfaces for collective classes are now template-parameterized 
-   	  by X, Y, and Z block dimensions (with \p BLOCK_DIM_Y and \p BLOCK_DIM_Z being 
-   	  optional, and \p BLOCK_DIM_X replacing \p BLOCK_THREADS).  Furthermore, the 
-   	  constructors that accept remapped linear thread-identifiers have been 
-   	  removed: all primitives now assume a row-major thread-ranking for 
-   	  multidimensional thread blocks.  
-    - To allow the host program (compiled by the host-pass) to 
-      accurately determine the device-specific storage requirements for 
-   	  a given collective (compiled for each device-pass), the interfaces 
-   	  for collective classes are now (optionally) template-parameterized 
-   	  by the desired PTX compute capability. This is useful when 
-   	  aliasing collective storage to shared memory that has been 
-   	  allocated dynamically by the host at the kernel call site.   
-    - Most CUB programs having typical 1D usage should not require any 
-      changes to accomodate these updates.
+       - To provide the appropriate support for multidimensional thread blocks,
+         The interfaces for collective classes are now template-parameterized 
+         by X, Y, and Z block dimensions (with \p BLOCK_DIM_Y and \p BLOCK_DIM_Z being 
+         optional, and \p BLOCK_DIM_X replacing \p BLOCK_THREADS).  Furthermore, the 
+         constructors that accept remapped linear thread-identifiers have been 
+         removed: all primitives now assume a row-major thread-ranking for 
+         multidimensional thread blocks.  
+       - To allow the host program (compiled by the host-pass) to 
+         accurately determine the device-specific storage requirements for 
+         a given collective (compiled for each device-pass), the interfaces 
+         for collective classes are now (optionally) template-parameterized 
+         by the desired PTX compute capability. This is useful when 
+         aliasing collective storage to shared memory that has been 
+         allocated dynamically by the host at the kernel call site.   
+       - Most CUB programs having typical 1D usage should not require any 
+         changes to accomodate these updates.
   - Added new "combination scan" methods to cub::WarpScan for efficiently computing 
     both inclusive and exclusive prefix scans (and sums).
   - See the [change-log](CHANGE_LOG.TXT) for further details

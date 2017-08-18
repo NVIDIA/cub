@@ -115,60 +115,58 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <li><em>Dynamic parallelism</em>. <a class="el" href="structcub_1_1_device_segmented_radix_sort.html" title="DeviceSegmentedRadixSort provides device-wide, parallel operations for computing a batched radix sort...">DeviceSegmentedRadixSort</a> methods can be called within kernel code on devices in which CUDA dynamic parallelism is supported. </li>
 </ul>
 </dd></dl>
-
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00075">75</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Methods</h2></td></tr>
 <tr><td colspan="2"><div class="groupHeader">Key-value pairs</div></td></tr>
-<tr class="memitem:a8296251cd02507841883d2e70b976854"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT &gt; </td></tr>
-<tr class="memitem:a8296251cd02507841883d2e70b976854"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a8296251cd02507841883d2e70b976854">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, const KeyT *d_keys_in, KeyT *d_keys_out, const ValueT *d_values_in, ValueT *d_values_out, int num_items, int num_segments, const int *d_begin_offsets, const int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a8296251cd02507841883d2e70b976854"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into ascending order. (~<em>2N </em>auxiliary storage required)  <a href="#a8296251cd02507841883d2e70b976854">More...</a><br/></td></tr>
-<tr class="separator:a8296251cd02507841883d2e70b976854"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1218e1804c29f62738bfe6a99fb24906"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT &gt; </td></tr>
-<tr class="memitem:a1218e1804c29f62738bfe6a99fb24906"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a1218e1804c29f62738bfe6a99fb24906">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, DoubleBuffer&lt; ValueT &gt; &amp;d_values, int num_items, int num_segments, const int *d_begin_offsets, const int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a1218e1804c29f62738bfe6a99fb24906"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into ascending order. (~<em>N </em>auxiliary storage required)  <a href="#a1218e1804c29f62738bfe6a99fb24906">More...</a><br/></td></tr>
-<tr class="separator:a1218e1804c29f62738bfe6a99fb24906"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab5c0d23bc674b553fa4bd39ca987ddbd"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT &gt; </td></tr>
-<tr class="memitem:ab5c0d23bc674b553fa4bd39ca987ddbd"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#ab5c0d23bc674b553fa4bd39ca987ddbd">SortPairsDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, const KeyT *d_keys_in, KeyT *d_keys_out, const ValueT *d_values_in, ValueT *d_values_out, int num_items, int num_segments, const int *d_begin_offsets, const int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:ab5c0d23bc674b553fa4bd39ca987ddbd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into descending order. (~<em>2N</em> auxiliary storage required).  <a href="#ab5c0d23bc674b553fa4bd39ca987ddbd">More...</a><br/></td></tr>
-<tr class="separator:ab5c0d23bc674b553fa4bd39ca987ddbd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a71665f22608791e445fde5995e4cc4bc"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT &gt; </td></tr>
-<tr class="memitem:a71665f22608791e445fde5995e4cc4bc"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a71665f22608791e445fde5995e4cc4bc">SortPairsDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, DoubleBuffer&lt; ValueT &gt; &amp;d_values, int num_items, int num_segments, const int *d_begin_offsets, const int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a71665f22608791e445fde5995e4cc4bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into descending order. (~<em>N </em>auxiliary storage required).  <a href="#a71665f22608791e445fde5995e4cc4bc">More...</a><br/></td></tr>
-<tr class="separator:a71665f22608791e445fde5995e4cc4bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0ce82f886816d1b7769ba148210538bb"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT , typename OffsetIteratorT &gt; </td></tr>
+<tr class="memitem:a0ce82f886816d1b7769ba148210538bb"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a0ce82f886816d1b7769ba148210538bb">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, const KeyT *d_keys_in, KeyT *d_keys_out, const ValueT *d_values_in, ValueT *d_values_out, int num_items, int num_segments, OffsetIteratorT d_begin_offsets, OffsetIteratorT d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a0ce82f886816d1b7769ba148210538bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into ascending order. (~<em>2N </em>auxiliary storage required)  <a href="#a0ce82f886816d1b7769ba148210538bb">More...</a><br/></td></tr>
+<tr class="separator:a0ce82f886816d1b7769ba148210538bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5bb0b6d035caf72463e0018e8721d097"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT , typename OffsetIteratorT &gt; </td></tr>
+<tr class="memitem:a5bb0b6d035caf72463e0018e8721d097"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a5bb0b6d035caf72463e0018e8721d097">SortPairs</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, DoubleBuffer&lt; ValueT &gt; &amp;d_values, int num_items, int num_segments, OffsetIteratorT d_begin_offsets, OffsetIteratorT d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a5bb0b6d035caf72463e0018e8721d097"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into ascending order. (~<em>N </em>auxiliary storage required)  <a href="#a5bb0b6d035caf72463e0018e8721d097">More...</a><br/></td></tr>
+<tr class="separator:a5bb0b6d035caf72463e0018e8721d097"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a86f4958fde5074bf8196e87078a3cf70"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT , typename OffsetIteratorT &gt; </td></tr>
+<tr class="memitem:a86f4958fde5074bf8196e87078a3cf70"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a86f4958fde5074bf8196e87078a3cf70">SortPairsDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, const KeyT *d_keys_in, KeyT *d_keys_out, const ValueT *d_values_in, ValueT *d_values_out, int num_items, int num_segments, OffsetIteratorT d_begin_offsets, OffsetIteratorT d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a86f4958fde5074bf8196e87078a3cf70"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into descending order. (~<em>2N</em> auxiliary storage required).  <a href="#a86f4958fde5074bf8196e87078a3cf70">More...</a><br/></td></tr>
+<tr class="separator:a86f4958fde5074bf8196e87078a3cf70"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbba6639f928bebd19435f185ea10618"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename ValueT , typename OffsetIteratorT &gt; </td></tr>
+<tr class="memitem:abbba6639f928bebd19435f185ea10618"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#abbba6639f928bebd19435f185ea10618">SortPairsDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, DoubleBuffer&lt; ValueT &gt; &amp;d_values, int num_items, int num_segments, OffsetIteratorT d_begin_offsets, OffsetIteratorT d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:abbba6639f928bebd19435f185ea10618"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of key-value pairs into descending order. (~<em>N </em>auxiliary storage required).  <a href="#abbba6639f928bebd19435f185ea10618">More...</a><br/></td></tr>
+<tr class="separator:abbba6639f928bebd19435f185ea10618"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Keys-only</div></td></tr>
-<tr class="memitem:afd326c6906c32c810df3b7e2c7dff068"><td class="memTemplParams" colspan="2">template&lt;typename KeyT &gt; </td></tr>
-<tr class="memitem:afd326c6906c32c810df3b7e2c7dff068"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#afd326c6906c32c810df3b7e2c7dff068">SortKeys</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, const KeyT *d_keys_in, KeyT *d_keys_out, int num_items, int num_segments, const int *d_begin_offsets, const int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:afd326c6906c32c810df3b7e2c7dff068"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into ascending order. (~<em>2N </em>auxiliary storage required)  <a href="#afd326c6906c32c810df3b7e2c7dff068">More...</a><br/></td></tr>
-<tr class="separator:afd326c6906c32c810df3b7e2c7dff068"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab2a8a7ceebf5b2ea0c212618d1c24803"><td class="memTemplParams" colspan="2">template&lt;typename KeyT &gt; </td></tr>
-<tr class="memitem:ab2a8a7ceebf5b2ea0c212618d1c24803"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#ab2a8a7ceebf5b2ea0c212618d1c24803">SortKeys</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, int num_items, int num_segments, const int *d_begin_offsets, const int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:ab2a8a7ceebf5b2ea0c212618d1c24803"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into ascending order. (~<em>N </em>auxiliary storage required).  <a href="#ab2a8a7ceebf5b2ea0c212618d1c24803">More...</a><br/></td></tr>
-<tr class="separator:ab2a8a7ceebf5b2ea0c212618d1c24803"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a148a7093e33f5e3329ec8de1016ab3fc"><td class="memTemplParams" colspan="2">template&lt;typename KeyT &gt; </td></tr>
-<tr class="memitem:a148a7093e33f5e3329ec8de1016ab3fc"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a148a7093e33f5e3329ec8de1016ab3fc">SortKeysDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, const KeyT *d_keys_in, KeyT *d_keys_out, int num_items, int num_segments, const int *d_begin_offsets, const int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a148a7093e33f5e3329ec8de1016ab3fc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into descending order. (~<em>2N</em> auxiliary storage required).  <a href="#a148a7093e33f5e3329ec8de1016ab3fc">More...</a><br/></td></tr>
-<tr class="separator:a148a7093e33f5e3329ec8de1016ab3fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7b1bfae8edef9c820d872a24955ffef6"><td class="memTemplParams" colspan="2">template&lt;typename KeyT &gt; </td></tr>
-<tr class="memitem:a7b1bfae8edef9c820d872a24955ffef6"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
-cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a7b1bfae8edef9c820d872a24955ffef6">SortKeysDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, int num_items, int num_segments, const int *d_begin_offsets, const int *d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
-<tr class="memdesc:a7b1bfae8edef9c820d872a24955ffef6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into descending order. (~<em>N </em>auxiliary storage required).  <a href="#a7b1bfae8edef9c820d872a24955ffef6">More...</a><br/></td></tr>
-<tr class="separator:a7b1bfae8edef9c820d872a24955ffef6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afb74f4a40be7f0b4c66b389d1ac8394a"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename OffsetIteratorT &gt; </td></tr>
+<tr class="memitem:afb74f4a40be7f0b4c66b389d1ac8394a"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#afb74f4a40be7f0b4c66b389d1ac8394a">SortKeys</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, const KeyT *d_keys_in, KeyT *d_keys_out, int num_items, int num_segments, OffsetIteratorT d_begin_offsets, OffsetIteratorT d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:afb74f4a40be7f0b4c66b389d1ac8394a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into ascending order. (~<em>2N </em>auxiliary storage required)  <a href="#afb74f4a40be7f0b4c66b389d1ac8394a">More...</a><br/></td></tr>
+<tr class="separator:afb74f4a40be7f0b4c66b389d1ac8394a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a175a8f431517e609e3d683076de86402"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename OffsetIteratorT &gt; </td></tr>
+<tr class="memitem:a175a8f431517e609e3d683076de86402"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a175a8f431517e609e3d683076de86402">SortKeys</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, int num_items, int num_segments, OffsetIteratorT d_begin_offsets, OffsetIteratorT d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a175a8f431517e609e3d683076de86402"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into ascending order. (~<em>N </em>auxiliary storage required).  <a href="#a175a8f431517e609e3d683076de86402">More...</a><br/></td></tr>
+<tr class="separator:a175a8f431517e609e3d683076de86402"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a699b87f3b00b9386f505d280a7a099a3"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename OffsetIteratorT &gt; </td></tr>
+<tr class="memitem:a699b87f3b00b9386f505d280a7a099a3"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a699b87f3b00b9386f505d280a7a099a3">SortKeysDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, const KeyT *d_keys_in, KeyT *d_keys_out, int num_items, int num_segments, OffsetIteratorT d_begin_offsets, OffsetIteratorT d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a699b87f3b00b9386f505d280a7a099a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into descending order. (~<em>2N</em> auxiliary storage required).  <a href="#a699b87f3b00b9386f505d280a7a099a3">More...</a><br/></td></tr>
+<tr class="separator:a699b87f3b00b9386f505d280a7a099a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85a592609829a0045639b091b41db844"><td class="memTemplParams" colspan="2">template&lt;typename KeyT , typename OffsetIteratorT &gt; </td></tr>
+<tr class="memitem:a85a592609829a0045639b091b41db844"><td class="memTemplItemLeft" align="right" valign="top">static CUB_RUNTIME_FUNCTION <br class="typebreak"/>
+cudaError_t&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="structcub_1_1_device_segmented_radix_sort.html#a85a592609829a0045639b091b41db844">SortKeysDescending</a> (void *d_temp_storage, size_t &amp;temp_storage_bytes, DoubleBuffer&lt; KeyT &gt; &amp;d_keys, int num_items, int num_segments, OffsetIteratorT d_begin_offsets, OffsetIteratorT d_end_offsets, int begin_bit=0, int end_bit=sizeof(KeyT)*8, cudaStream_t stream=0, bool debug_synchronous=false)</td></tr>
+<tr class="memdesc:a85a592609829a0045639b091b41db844"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sorts segments of keys into descending order. (~<em>N </em>auxiliary storage required).  <a href="#a85a592609829a0045639b091b41db844">More...</a><br/></td></tr>
+<tr class="separator:a85a592609829a0045639b091b41db844"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a class="anchor" id="a8296251cd02507841883d2e70b976854"></a>
+<a class="anchor" id="a0ce82f886816d1b7769ba148210538bb"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT , typename ValueT &gt; </div>
+template&lt;typename KeyT , typename ValueT , typename OffsetIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -224,13 +222,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -295,7 +293,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a8296251cd02507841883d2e70b976854" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a0ce82f886816d1b7769ba148210538bb" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes,</div>
 <div class="line">    d_keys_in, d_keys_out, d_values_in, d_values_out,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
@@ -303,7 +301,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a8296251cd02507841883d2e70b976854" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a0ce82f886816d1b7769ba148210538bb" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes,</div>
 <div class="line">    d_keys_in, d_keys_out, d_values_in, d_values_out,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
@@ -314,6 +312,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   <table class="tparams">
     <tr><td class="paramname">KeyT</td><td><b>[inferred]</b> Key type </td></tr>
     <tr><td class="paramname">ValueT</td><td><b>[inferred]</b> Value type </td></tr>
+    <tr><td class="paramname">OffsetIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading segment offsets (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -327,8 +326,8 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_values_out</td><td>Device-accessible pointer to the correspondingly-reordered output sequence of associated value items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>The total number of items to sort (across all segments) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The least-significant bit index (inclusive) needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -337,15 +336,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00140">140</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
-
 </div>
 </div>
-<a class="anchor" id="a1218e1804c29f62738bfe6a99fb24906"></a>
+<a class="anchor" id="a5bb0b6d035caf72463e0018e8721d097"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT , typename ValueT &gt; </div>
+template&lt;typename KeyT , typename ValueT , typename OffsetIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -389,13 +386,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -466,14 +463,14 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a8296251cd02507841883d2e70b976854" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a0ce82f886816d1b7769ba148210538bb" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a8296251cd02507841883d2e70b976854" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a0ce82f886816d1b7769ba148210538bb" title="Sorts segments of key-value pairs into ascending order. (~2N auxiliary storage required) ...">cub::DeviceSegmentedRadixSort::SortPairs</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys.Current()      &lt;-- [6, 7, 8, 0, 3, 5, 9]</span></div>
@@ -483,6 +480,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   <table class="tparams">
     <tr><td class="paramname">KeyT</td><td><b>[inferred]</b> Key type </td></tr>
     <tr><td class="paramname">ValueT</td><td><b>[inferred]</b> Value type </td></tr>
+    <tr><td class="paramname">OffsetIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading segment offsets (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -494,8 +492,8 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose "current" device-accessible buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>The total number of items to sort (across all segments) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The least-significant bit index (inclusive) needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -504,15 +502,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00247">247</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
-
 </div>
 </div>
-<a class="anchor" id="ab5c0d23bc674b553fa4bd39ca987ddbd"></a>
+<a class="anchor" id="a86f4958fde5074bf8196e87078a3cf70"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT , typename ValueT &gt; </div>
+template&lt;typename KeyT , typename ValueT , typename OffsetIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -568,13 +564,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -639,7 +635,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#ab5c0d23bc674b553fa4bd39ca987ddbd" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a86f4958fde5074bf8196e87078a3cf70" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes,</div>
 <div class="line">    d_keys_in, d_keys_out, d_values_in, d_values_out,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
@@ -647,7 +643,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#ab5c0d23bc674b553fa4bd39ca987ddbd" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a86f4958fde5074bf8196e87078a3cf70" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes,</div>
 <div class="line">    d_keys_in, d_keys_out, d_values_in, d_values_out,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
@@ -658,6 +654,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   <table class="tparams">
     <tr><td class="paramname">KeyT</td><td><b>[inferred]</b> Key type </td></tr>
     <tr><td class="paramname">ValueT</td><td><b>[inferred]</b> Value type </td></tr>
+    <tr><td class="paramname">OffsetIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading segment offsets (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -671,8 +668,8 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_values_out</td><td>Device-accessible pointer to the correspondingly-reordered output sequence of associated value items </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>The total number of items to sort (across all segments) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The least-significant bit index (inclusive) needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -681,15 +678,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00338">338</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
-
 </div>
 </div>
-<a class="anchor" id="a71665f22608791e445fde5995e4cc4bc"></a>
+<a class="anchor" id="abbba6639f928bebd19435f185ea10618"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT , typename ValueT &gt; </div>
+template&lt;typename KeyT , typename ValueT , typename OffsetIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -733,13 +728,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -810,14 +805,14 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#ab5c0d23bc674b553fa4bd39ca987ddbd" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a86f4958fde5074bf8196e87078a3cf70" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#ab5c0d23bc674b553fa4bd39ca987ddbd" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a86f4958fde5074bf8196e87078a3cf70" title="Sorts segments of key-value pairs into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortPairsDescending</a>(d_temp_storage, temp_storage_bytes, d_keys, d_values,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys.Current()      &lt;-- [8, 7, 6, 9, 5, 3, 0]</span></div>
@@ -827,6 +822,7 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   <table class="tparams">
     <tr><td class="paramname">KeyT</td><td><b>[inferred]</b> Key type </td></tr>
     <tr><td class="paramname">ValueT</td><td><b>[inferred]</b> Value type </td></tr>
+    <tr><td class="paramname">OffsetIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading segment offsets (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -838,8 +834,8 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">d_values</td><td>Double-buffer of values whose "current" device-accessible buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>The total number of items to sort (across all segments) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The least-significant bit index (inclusive) needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -848,15 +844,13 @@ template&lt;typename KeyT , typename ValueT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00445">445</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
-
 </div>
 </div>
-<a class="anchor" id="afd326c6906c32c810df3b7e2c7dff068"></a>
+<a class="anchor" id="afb74f4a40be7f0b4c66b389d1ac8394a"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT &gt; </div>
+template&lt;typename KeyT , typename OffsetIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -900,13 +894,13 @@ template&lt;typename KeyT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -969,14 +963,14 @@ template&lt;typename KeyT &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line">void     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#afd326c6906c32c810df3b7e2c7dff068" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#afb74f4a40be7f0b4c66b389d1ac8394a" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#afd326c6906c32c810df3b7e2c7dff068" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#afb74f4a40be7f0b4c66b389d1ac8394a" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys_out            &lt;-- [6, 7, 8, 0, 3, 5, 9]</span></div>
@@ -984,6 +978,7 @@ template&lt;typename KeyT &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">KeyT</td><td><b>[inferred]</b> Key type </td></tr>
+    <tr><td class="paramname">OffsetIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading segment offsets (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -995,8 +990,8 @@ template&lt;typename KeyT &gt; </div>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_keys_out</td><td>Device-accessible pointer to the sorted output sequence of key data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>The total number of items to sort (across all segments) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The least-significant bit index (inclusive) needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -1005,15 +1000,13 @@ template&lt;typename KeyT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00534">534</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
-
 </div>
 </div>
-<a class="anchor" id="ab2a8a7ceebf5b2ea0c212618d1c24803"></a>
+<a class="anchor" id="a175a8f431517e609e3d683076de86402"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT &gt; </div>
+template&lt;typename KeyT , typename OffsetIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -1051,13 +1044,13 @@ template&lt;typename KeyT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -1125,14 +1118,14 @@ template&lt;typename KeyT &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#afd326c6906c32c810df3b7e2c7dff068" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#afb74f4a40be7f0b4c66b389d1ac8394a" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#afd326c6906c32c810df3b7e2c7dff068" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#afb74f4a40be7f0b4c66b389d1ac8394a" title="Sorts segments of keys into ascending order. (~2N auxiliary storage required) ">cub::DeviceSegmentedRadixSort::SortKeys</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys.Current()      &lt;-- [6, 7, 8, 0, 3, 5, 9]</span></div>
@@ -1140,6 +1133,7 @@ template&lt;typename KeyT &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">KeyT</td><td><b>[inferred]</b> Key type </td></tr>
+    <tr><td class="paramname">OffsetIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading segment offsets (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -1150,8 +1144,8 @@ template&lt;typename KeyT &gt; </div>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose "current" device-accessible buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>The total number of items to sort (across all segments) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The least-significant bit index (inclusive) needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -1160,15 +1154,13 @@ template&lt;typename KeyT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00630">630</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
-
 </div>
 </div>
-<a class="anchor" id="a148a7093e33f5e3329ec8de1016ab3fc"></a>
+<a class="anchor" id="a699b87f3b00b9386f505d280a7a099a3"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT &gt; </div>
+template&lt;typename KeyT , typename OffsetIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -1212,13 +1204,13 @@ template&lt;typename KeyT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -1284,14 +1276,14 @@ template&lt;typename KeyT &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a148a7093e33f5e3329ec8de1016ab3fc" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a699b87f3b00b9386f505d280a7a099a3" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a148a7093e33f5e3329ec8de1016ab3fc" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a699b87f3b00b9386f505d280a7a099a3" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys_in, d_keys_out,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys_out            &lt;-- [8, 7, 6, 9, 5, 3, 0]</span></div>
@@ -1299,6 +1291,7 @@ template&lt;typename KeyT &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">KeyT</td><td><b>[inferred]</b> Key type </td></tr>
+    <tr><td class="paramname">OffsetIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading segment offsets (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -1310,8 +1303,8 @@ template&lt;typename KeyT &gt; </div>
     <tr><td class="paramdir">[out]</td><td class="paramname">d_keys_out</td><td>Device-accessible pointer to the sorted output sequence of key data </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>The total number of items to sort (across all segments) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The least-significant bit index (inclusive) needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -1320,15 +1313,13 @@ template&lt;typename KeyT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00716">716</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
-
 </div>
 </div>
-<a class="anchor" id="a7b1bfae8edef9c820d872a24955ffef6"></a>
+<a class="anchor" id="a85a592609829a0045639b091b41db844"></a>
 <div class="memitem">
 <div class="memproto">
 <div class="memtemplate">
-template&lt;typename KeyT &gt; </div>
+template&lt;typename KeyT , typename OffsetIteratorT &gt; </div>
 <table class="mlabels">
   <tr>
   <td class="mlabels-left">
@@ -1366,13 +1357,13 @@ template&lt;typename KeyT &gt; </div>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_begin_offsets</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const int *&#160;</td>
+          <td class="paramtype">OffsetIteratorT&#160;</td>
           <td class="paramname"><em>d_end_offsets</em>, </td>
         </tr>
         <tr>
@@ -1440,14 +1431,14 @@ template&lt;typename KeyT &gt; </div>
 <div class="line"><span class="comment">// Determine temporary device storage requirements</span></div>
 <div class="line"><span class="keywordtype">void</span>     *d_temp_storage = NULL;</div>
 <div class="line"><span class="keywordtype">size_t</span>   temp_storage_bytes = 0;</div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a148a7093e33f5e3329ec8de1016ab3fc" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a699b87f3b00b9386f505d280a7a099a3" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Allocate temporary storage</span></div>
 <div class="line">cudaMalloc(&amp;d_temp_storage, temp_storage_bytes);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// Run sorting operation</span></div>
-<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a148a7093e33f5e3329ec8de1016ab3fc" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
+<div class="line"><a class="code" href="structcub_1_1_device_segmented_radix_sort.html#a699b87f3b00b9386f505d280a7a099a3" title="Sorts segments of keys into descending order. (~2N auxiliary storage required). ">cub::DeviceSegmentedRadixSort::SortKeysDescending</a>(d_temp_storage, temp_storage_bytes, d_keys,</div>
 <div class="line">    num_items, num_segments, d_offsets, d_offsets + 1);</div>
 <div class="line"></div>
 <div class="line"><span class="comment">// d_keys.Current()      &lt;-- [8, 7, 6, 9, 5, 3, 0]</span></div>
@@ -1455,6 +1446,7 @@ template&lt;typename KeyT &gt; </div>
 <dl class="tparams"><dt>Template Parameters</dt><dd>
   <table class="tparams">
     <tr><td class="paramname">KeyT</td><td><b>[inferred]</b> Key type </td></tr>
+    <tr><td class="paramname">OffsetIteratorT</td><td><b>[inferred]</b> Random-access input iterator type for reading segment offsets (may be a simple pointer type) </td></tr>
   </table>
   </dd>
 </dl>
@@ -1465,8 +1457,8 @@ template&lt;typename KeyT &gt; </div>
     <tr><td class="paramdir">[in,out]</td><td class="paramname">d_keys</td><td>Reference to the double-buffer of keys whose "current" device-accessible buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_items</td><td>The total number of items to sort (across all segments) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">num_segments</td><td>The number of segments that comprise the sorting data </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Device-accessible pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
-    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Device-accessible pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_begin_offsets</td><td>Pointer to the sequence of beginning offsets of length <code>num_segments</code>, such that <code>d_begin_offsets[i]</code> is the first element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code> </td></tr>
+    <tr><td class="paramdir">[in]</td><td class="paramname">d_end_offsets</td><td>Pointer to the sequence of ending offsets of length <code>num_segments</code>, such that <code>d_end_offsets[i]-1</code> is the last element of the <em>i</em><sup>th</sup> data segment in <code>d_keys_*</code> and <code>d_values_*</code>. <a class="el" href="structcub_1_1_if.html" title="Type selection (IF ? ThenType : ElseType) ">If</a> <code>d_end_offsets[i]-1</code> &lt;= <code>d_begin_offsets[i]</code>, the <em>i</em><sup>th</sup> is considered empty. </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">begin_bit</td><td><b>[optional]</b> The least-significant bit index (inclusive) needed for key comparison </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">end_bit</td><td><b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8) </td></tr>
     <tr><td class="paramdir">[in]</td><td class="paramname">stream</td><td><b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>. </td></tr>
@@ -1475,18 +1467,16 @@ template&lt;typename KeyT &gt; </div>
   </dd>
 </dl>
 
-<p>Definition at line <a class="el" href="device__segmented__radix__sort_8cuh_source.html#l00811">811</a> of file <a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a>.</p>
-
 </div>
 </div>
 <hr/>The documentation for this struct was generated from the following file:<ul>
-<li><a class="el" href="device__segmented__radix__sort_8cuh_source.html">device_segmented_radix_sort.cuh</a></li>
+<li><a class="el" href="device__segmented__radix__sort_8cuh.html">device_segmented_radix_sort.cuh</a></li>
 </ul>
 </div><!-- contents -->
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 14 2017 11:01:16 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

@@ -179,8 +179,8 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_arg_min.html">ArgMin</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Arg min functor (keeps the value and offset of the first occurrence of the smallest item)  <a href="structcub_1_1_arg_min.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_cast.html">Cast</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default cast functor.  <a href="structcub_1_1_cast.html#details">More...</a><br/></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structcub_1_1_cast_op.html">CastOp</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Default cast functor.  <a href="structcub_1_1_cast_op.html#details">More...</a><br/></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classcub_1_1_swizzle_scan_op.html">SwizzleScanOp</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Binary operator wrapper for switching non-commutative scan arguments.  <a href="classcub_1_1_swizzle_scan_op.html#details">More...</a><br/></td></tr>
@@ -524,6 +524,9 @@ unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" hr
 .</div></div>
   <a href="group___warp_module.html#ga18d335d5b0c7f038389af7f552919ed2">More...</a><br/></td></tr>
 <tr class="separator:ga18d335d5b0c7f038389af7f552919ed2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7926f69b78b66ee68cab442c40e326a4"><td class="memTemplParams" colspan="2">template&lt;int LABEL_BITS&gt; </td></tr>
+<tr class="memitem:a7926f69b78b66ee68cab442c40e326a4"><td class="memTemplItemLeft" align="right" valign="top">__device__ unsigned int&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecub.html#a7926f69b78b66ee68cab442c40e326a4">MatchAny</a> (unsigned int label)</td></tr>
+<tr class="separator:a7926f69b78b66ee68cab442c40e326a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr><td colspan="2"><div class="groupHeader">Thread I/O (cache modified)</div></td></tr>
 <tr class="memitem:ga54f8f9a6645b94a484fab6f73568b81c"><td class="memTemplParams" colspan="2">template&lt;CacheLoadModifier MODIFIER, typename InputIteratorT &gt; </td></tr>
 <tr class="memitem:ga54f8f9a6645b94a484fab6f73568b81c"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ <br class="typebreak"/>
@@ -637,8 +640,6 @@ std::iterator_traits<br class="typebreak"/>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="block__histogram_8cuh_source.html#l00056">56</a> of file <a class="el" href="block__histogram_8cuh_source.html">block_histogram.cuh</a>.</p>
-
 </div>
 </div>
 <a class="anchor" id="a9d7e37497fdd99864c57adecda710401"></a>
@@ -713,8 +714,6 @@ std::iterator_traits<br class="typebreak"/>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="block__load_8cuh_source.html#l00473">473</a> of file <a class="el" href="block__load_8cuh_source.html">block_load.cuh</a>.</p>
-
 </div>
 </div>
 <a class="anchor" id="add0251c713859b8974806079e498d10a"></a>
@@ -781,8 +780,6 @@ std::iterator_traits<br class="typebreak"/>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="block__reduce_8cuh_source.html#l00060">60</a> of file <a class="el" href="block__reduce_8cuh_source.html">block_reduce.cuh</a>.</p>
-
 </div>
 </div>
 <a class="anchor" id="abec44bba36037c547e7e84906d0d23ab"></a>
@@ -836,8 +833,6 @@ std::iterator_traits<br class="typebreak"/>
 </dd></dl>
 </td></tr>
 </table>
-
-<p>Definition at line <a class="el" href="block__scan_8cuh_source.html#l00057">57</a> of file <a class="el" href="block__scan_8cuh_source.html">block_scan.cuh</a>.</p>
 
 </div>
 </div>
@@ -910,7 +905,33 @@ std::iterator_traits<br class="typebreak"/>
 </td></tr>
 </table>
 
-<p>Definition at line <a class="el" href="block__store_8cuh_source.html#l00354">354</a> of file <a class="el" href="block__store_8cuh_source.html">block_store.cuh</a>.</p>
+</div>
+</div>
+<h2 class="groupheader">Function Documentation</h2>
+<a class="anchor" id="a7926f69b78b66ee68cab442c40e326a4"></a>
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;int LABEL_BITS&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">__device__ unsigned int cub::MatchAny </td>
+          <td>(</td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>label</em>)</td><td></td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<p>Compute a 32b mask of threads having the same least-significant LABEL_BITS of <code>label</code> as the calling thread. </p>
 
 </div>
 </div>
@@ -918,7 +939,7 @@ std::iterator_traits<br class="typebreak"/>
 <!-- HTML footer for doxygen 1.8.3.1-->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 14 2017 11:01:15 for CUB by &#160;<a href="http://www.doxygen.org/index.html">
+Generated by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.4
 <br>

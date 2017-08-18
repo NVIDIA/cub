@@ -1,3 +1,18 @@
+1.7.1    08/18/2017
+    - Updated Volta radix sorting tuning policies 
+    - Bug fixes: 
+        - Issue #104 (uint64_t warp-reduce broken for cub 1.7.0 on cuda 8 and older)
+        - Issue #103 (Can't mix Thrust 9.0 and CUB)
+        - Issue #102 (CUB pulls in windows.h which defines min/max macros that conflict with std::min/std::max)
+        - Issue #99 (Radix sorting crashes NVCC on Windows 10 for SM52)
+        - Issue #98 (cuda-memcheck: --tool initcheck failed with lineOfSight)
+        - Issue #94 (Git clone size)
+        - Issue #93 (accept iterators for segment offsets)
+        - Issue #87 (CUB uses anonymous unions which is not valid C++)
+        - Issue #44 (Check for C++ 11 should be changed that Visual Studio 2013 is also recognized as C++ 11 capable)
+          		  
+//-----------------------------------------------------------------------------
+
 1.7.0    06/07/2017
     - Compatible with CUDA9 and SM7.x (Volta) independent thread scheduling 
     - API change: remove cub::WarpAll() and cub::WarpAny().  These functions served to 
