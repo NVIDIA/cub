@@ -162,7 +162,7 @@ struct AgentSegmentFixup
             ScanTileStateT>
         TilePrefixCallbackOpT;
 
-    // Shared memory type for this threadblock
+    // Shared memory type for this thread block
     union _TempStorage
     {
         struct

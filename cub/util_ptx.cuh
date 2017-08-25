@@ -404,7 +404,7 @@ __device__ __forceinline__ void ThreadTrap() {
 
 
 /**
- * \brief Returns the row-major linear thread identifier for a multidimensional threadblock
+ * \brief Returns the row-major linear thread identifier for a multidimensional thread block
  */
 __device__ __forceinline__ int RowMajorTid(int block_dim_x, int block_dim_y, int block_dim_z)
 {

@@ -55,7 +55,7 @@ namespace cub {
 
 /**
  * BlockReduceAlgorithm enumerates alternative algorithms for parallel
- * reduction across a CUDA threadblock.
+ * reduction across a CUDA thread block.
  */
 enum BlockReduceAlgorithm
 {
@@ -76,7 +76,7 @@ enum BlockReduceAlgorithm
      *
      * \par
      * \image html block_reduce.png
-     * <div class="centercaption">\p BLOCK_REDUCE_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * <div class="centercaption">\p BLOCK_REDUCE_RAKING data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
      * - This variant performs less communication than BLOCK_REDUCE_RAKING_NON_COMMUTATIVE
@@ -106,7 +106,7 @@ enum BlockReduceAlgorithm
      *
      * \par
      * \image html block_reduce.png
-     * <div class="centercaption">\p BLOCK_REDUCE_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * <div class="centercaption">\p BLOCK_REDUCE_RAKING data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
      * - This variant performs more communication than BLOCK_REDUCE_RAKING
@@ -137,7 +137,7 @@ enum BlockReduceAlgorithm
      *
      * \par
      * \image html block_scan_warpscans.png
-     * <div class="centercaption">\p BLOCK_REDUCE_WARP_REDUCTIONS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * <div class="centercaption">\p BLOCK_REDUCE_WARP_REDUCTIONS data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
      * - This variant applies more reduction operators than BLOCK_REDUCE_RAKING

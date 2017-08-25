@@ -223,7 +223,7 @@ struct AgentReduceByKey
     typedef KeyOutputT    KeyExchangeT[TILE_ITEMS + 1];
     typedef ValueOutputT  ValueExchangeT[TILE_ITEMS + 1];
 
-    // Shared memory type for this threadblock
+    // Shared memory type for this thread block
     union _TempStorage
     {
         struct

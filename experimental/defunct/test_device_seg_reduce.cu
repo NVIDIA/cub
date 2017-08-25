@@ -278,7 +278,7 @@ struct BlockSegReduceRegion
             BlockSegReduceRegionPolicy::SCAN_ALGORITHM>
         BlockScan;
 
-    // Shared memory type for this threadblock
+    // Shared memory type for this thread block
     struct _TempStorage
     {
         union
@@ -302,7 +302,7 @@ struct BlockSegReduceRegion
             Value cached_values[SMEM_VALUE_CACHE_ITEMS];
         };
 
-        IndexPair block_region_idx[2];      // The starting [0] and ending [1] pairs of segment and value indices for the threadblock's region
+        IndexPair block_region_idx[2];      // The starting [0] and ending [1] pairs of segment and value indices for the thread block's region
 
         // The first partial reduction tuple scattered by this thread block
         KeyValuePair first_tuple;
@@ -946,7 +946,7 @@ struct BlockSegReduceRegionByKey
         }
     };
 
-    // Shared memory type for this threadblock
+    // Shared memory type for this thread block
     struct _TempStorage
     {
         union
@@ -1188,7 +1188,7 @@ __global__ void SegReduceRegionKernel(
 {
     typedef KeyValuePair<OffsetT, Value> KeyValuePair;
 
-    // Specialize threadblock abstraction type for reducing a range of segmented values
+    // Specialize thread block abstraction type for reducing a range of segmented values
     typedef BlockSegReduceRegion<
             BlockSegReduceRegionPolicy,
             SegmentOffsetIterator,
@@ -1201,7 +1201,7 @@ __global__ void SegReduceRegionKernel(
     // Shared memory allocation
     __shared__ typename BlockSegReduceRegion::TempStorage temp_storage;
 
-    // Initialize threadblock even-share to tell us where to start and stop our tile-processing
+    // Initialize thread block even-share to tell us where to start and stop our tile-processing
     even_share.BlockInit();
 
     // Construct persistent thread block
@@ -1265,7 +1265,7 @@ __global__ void SegReduceRegionByKeyKernel(
     Value                   identity,                   ///< [in] Identity value (for zero-length segments)
     ReductionOp             reduction_op)               ///< [in] Reduction operator
 {
-    // Specialize threadblock abstraction type for reducing a range of values by key
+    // Specialize thread block abstraction type for reducing a range of values by key
     typedef BlockSegReduceRegionByKey<
             BlockSegReduceRegionByKeyPolicy,
             InputIteratorT,

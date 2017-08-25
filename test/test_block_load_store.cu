@@ -94,7 +94,7 @@ __global__ void Kernel(
     typedef BlockLoad<InputT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
     typedef BlockStore<OutputT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
-    // Shared memory type for this threadblock
+    // Shared memory type for this thread block
     union TempStorage
     {
         typename BlockLoad::TempStorage     load;
@@ -480,7 +480,7 @@ void TestItemsPerThread(
 
 
 /**
- * Evaluate different threadblock sizes
+ * Evaluate different thread block sizes
  */
 template <typename T>
 void TestThreads(

@@ -588,7 +588,7 @@ struct DipatchHistogram
             int blocks_per_col      = (blocks_per_row > 0) ?
                                         int(CUB_MIN(histogram_sweep_occupancy / blocks_per_row, num_rows)) :
                                         0;
-            int num_threadblocks    = blocks_per_row * blocks_per_col;
+            int num_thread_blocks   = blocks_per_row * blocks_per_col;
 
             dim3 sweep_grid_dims;
             sweep_grid_dims.x = (unsigned int) blocks_per_row;
@@ -601,7 +601,7 @@ struct DipatchHistogram
             size_t      allocation_sizes[NUM_ALLOCATIONS];
 
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
-                allocation_sizes[CHANNEL] = size_t(num_threadblocks) * (num_privatized_levels[CHANNEL] - 1) * sizeof(CounterT);
+                allocation_sizes[CHANNEL] = size_t(num_thread_blocks) * (num_privatized_levels[CHANNEL] - 1) * sizeof(CounterT);
 
             allocation_sizes[NUM_ALLOCATIONS - 1] = GridQueue<int>::AllocationSize();
 

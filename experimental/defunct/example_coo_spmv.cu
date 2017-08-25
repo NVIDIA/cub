@@ -212,7 +212,7 @@ struct NewRowOp
  ******************************************************************************/
 
 /**
- * SpMV threadblock abstraction for processing a contiguous segment of
+ * SpMV thread block abstraction for processing a contiguous segment of
  * sparse COO tiles.
  */
 template <
@@ -250,7 +250,7 @@ struct PersistentBlockSpmv
     // Parameterized BlockDiscontinuity type for setting head-flags for each new row segment
     typedef BlockDiscontinuity<HeadFlag, BLOCK_THREADS> BlockDiscontinuity;
 
-    // Shared memory type for this threadblock
+    // Shared memory type for this thread block
     struct TempStorage
     {
         union
@@ -347,7 +347,7 @@ struct PersistentBlockSpmv
         PartialProduct  partial_sums[ITEMS_PER_THREAD];
         HeadFlag        head_flags[ITEMS_PER_THREAD];
 
-        // Load a threadblock-striped tile of A (sparse row-ids, column-ids, and values)
+        // Load a thread block-striped tile of A (sparse row-ids, column-ids, and values)
         if (FULL_TILE)
         {
             // Unguarded loads
@@ -455,7 +455,7 @@ struct PersistentBlockSpmv
         {
             if (gridDim.x == 1)
             {
-                // Scatter the final aggregate (this kernel contains only 1 threadblock)
+                // Scatter the final aggregate (this kernel contains only 1 thread block)
                 d_result[prefix_op.running_prefix.row] = prefix_op.running_prefix.partial;
             }
             else
@@ -507,7 +507,7 @@ struct FinalizeSpmvBlock
     // Parameterized BlockDiscontinuity type for setting head-flags for each new row segment
     typedef BlockDiscontinuity<HeadFlag, BLOCK_THREADS> BlockDiscontinuity;
 
-    // Shared memory type for this threadblock
+    // Shared memory type for this thread block
     struct TempStorage
     {
         typename BlockScan::TempStorage           scan;               // Smem needed for reduce-value-by-row scan
@@ -656,7 +656,7 @@ struct FinalizeSpmvBlock
             ProcessTile<false>(block_offset, guarded_items);
         }
 
-        // Scatter the final aggregate (this kernel contains only 1 threadblock)
+        // Scatter the final aggregate (this kernel contains only 1 thread block)
         if (threadIdx.x == 0)
         {
             d_result[prefix_op.running_prefix.row] = prefix_op.running_prefix.partial;
@@ -689,13 +689,13 @@ __global__ void CooKernel(
     Value                           *d_vector,
     Value                           *d_result)
 {
-    // Specialize SpMV threadblock abstraction type
+    // Specialize SpMV thread block abstraction type
     typedef PersistentBlockSpmv<BLOCK_THREADS, ITEMS_PER_THREAD, VertexId, Value> PersistentBlockSpmv;
 
     // Shared memory allocation
     __shared__ typename PersistentBlockSpmv::TempStorage temp_storage;
 
-    // Initialize threadblock even-share to tell us where to start and stop our tile-processing
+    // Initialize thread block even-share to tell us where to start and stop our tile-processing
     even_share.BlockInit();
 
     // Construct persistent thread block
@@ -729,7 +729,7 @@ __global__ void CooFinalizeKernel(
     int                             num_partials,
     Value                           *d_result)
 {
-    // Specialize "fix-up" threadblock abstraction type
+    // Specialize "fix-up" thread block abstraction type
     typedef FinalizeSpmvBlock<BLOCK_THREADS, ITEMS_PER_THREAD, VertexId, Value> FinalizeSpmvBlock;
 
     // Shared memory allocation
@@ -775,7 +775,7 @@ void TestDevice(
     Value           *d_values;           // SOA graph values
     Value           *d_vector;           // Vector multiplicand
     Value           *d_result;           // Output row
-    PartialProduct  *d_block_partials;   // Temporary storage for communicating dot product partials between threadblocks
+    PartialProduct  *d_block_partials;   // Temporary storage for communicating dot product partials between thread blocks
 
     // Create SOA version of coo_graph on host
     int             num_edges   = coo_graph.coo_tuples.size();
