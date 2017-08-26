@@ -244,6 +244,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename Reduct
 <p>Computes a device-wide reduction using the specified binary <code>reduction_op</code> functor and initial value <code>init</code>. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Does not support binary reduction operators that are non-commutative.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -375,6 +376,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Uses <code>0</code> as the initial value of the reduction.</li>
 <li>Does not support <code>+</code> operators that are non-commutative..</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -498,6 +500,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Uses <code>std::numeric_limits&lt;T&gt;::max()</code> as the initial value of the reduction.</li>
 <li>Does not support <code>&lt;</code> operators that are non-commutative.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -617,6 +620,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 </ul>
 </li>
 <li>Does not support <code>&lt;</code> operators that are non-commutative.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -732,6 +736,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Uses <code>std::numeric_limits&lt;T&gt;::lowest()</code> as the initial value of the reduction.</li>
 <li>Does not support <code>&gt;</code> operators that are non-commutative.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -851,6 +856,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 </ul>
 </li>
 <li>Does not support <code>&gt;</code> operators that are non-commutative.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -990,6 +996,7 @@ template&lt;typename KeysInputIteratorT , typename UniqueOutputIteratorT , typen
 <dl class="section user"><dt></dt><dd>This operation computes segmented reductions within <code>d_values_in</code> using the specified binary <code>reduction_op</code> functor. The segments are identified by "runs" of corresponding keys in <code>d_keys_in</code>, where runs are maximal ranges of consecutive, identical keys. For the <em>i</em><sup>th</sup> run encountered, the first key of the run and the corresponding value aggregate of that run are written to <code>d_unique_out[<em>i</em>]</code> and <code>d_aggregates_out[<em>i</em>]</code>, respectively. The total number of runs encountered is written to <code>d_num_runs_out</code>.</dd></dl>
 <dl class="section user"><dt></dt><dd><ul>
 <li>The <code>==</code> equality operator is used to determine whether keys are equivalent</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>

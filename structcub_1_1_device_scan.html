@@ -215,6 +215,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <p>Computes a device-wide exclusive prefix sum. The value of 0 is applied as the initial value, and is assigned to *d_out. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative sum operators.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -349,6 +350,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <p>Computes a device-wide exclusive prefix scan using the specified binary <code>scan_op</code> functor. The <code>init_value</code> value is applied as the initial value, and is assigned to *d_out. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -478,6 +480,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT &gt; </div>
 <p>Computes a device-wide inclusive prefix sum. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative sum operators.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>
@@ -598,6 +601,7 @@ template&lt;typename InputIteratorT , typename OutputIteratorT , typename ScanOp
 <p>Computes a device-wide inclusive prefix scan using the specified binary <code>scan_op</code> functor. </p>
 <dl class="section user"><dt></dt><dd><ul>
 <li>Supports non-commutative scan operators.</li>
+<li>Provides "run-to-run" determinism for pseudo-associative reduction (e.g., addition of floating point types) on the same GPU device. However, results for pseudo-associative reduction may be inconsistent from one device to a another device of a different compute-capability because CUB can employ different tile-sizing for different architectures.</li>
 <li>When <code>d_temp_storage</code> is <code>NULL</code>, no work is done and the required allocation size is returned in <code>temp_storage_bytes</code>.</li>
 </ul>
 </dd></dl>

@@ -465,7 +465,7 @@ __device__ __forceinline__ void&#160;</td><td class="memItemRight" valign="botto
 <tr class="separator:gabd92b218494177959781f509766387ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gaa3f839b109cc6dc9d9ece4f1acf7d2ce"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gaa3f839b109cc6dc9d9ece4f1acf7d2ce"></a>
 __device__ __forceinline__ int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_ptx.html#gaa3f839b109cc6dc9d9ece4f1acf7d2ce">RowMajorTid</a> (int block_dim_x, int block_dim_y, int block_dim_z)</td></tr>
-<tr class="memdesc:gaa3f839b109cc6dc9d9ece4f1acf7d2ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the row-major linear thread identifier for a multidimensional threadblock. <br/></td></tr>
+<tr class="memdesc:gaa3f839b109cc6dc9d9ece4f1acf7d2ce"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the row-major linear thread identifier for a multidimensional thread block. <br/></td></tr>
 <tr class="separator:gaa3f839b109cc6dc9d9ece4f1acf7d2ce"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabf8633aaa6ac4f9f43a2f897a7939129"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="gabf8633aaa6ac4f9f43a2f897a7939129"></a>
 __device__ __forceinline__ <br class="typebreak"/>
@@ -725,7 +725,7 @@ std::iterator_traits<br class="typebreak"/>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>BlockReduceAlgorithm enumerates alternative algorithms for parallel reduction across a CUDA threadblock. </p>
+<p>BlockReduceAlgorithm enumerates alternative algorithms for parallel reduction across a CUDA thread block. </p>
 <table class="fieldtable">
 <tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><em><a class="anchor" id="add0251c713859b8974806079e498d10aa508e99516231cd77f27295b233ca34b9"></a>BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY</em>&nbsp;</td><td class="fielddoc">
 <dl class="section user"><dt>Overview</dt><dd>An efficient "raking" reduction algorithm that only supports commutative reduction operators (true for most operations, e.g., addition).</dd></dl>
@@ -738,7 +738,7 @@ std::iterator_traits<br class="typebreak"/>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="block_reduce.png" alt="block_reduce.png"/>
 </div>
- <div class="centercaption"><code>BLOCK_REDUCE_RAKING</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
+ <div class="centercaption"><code>BLOCK_REDUCE_RAKING</code> data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div></dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>This variant performs less communication than BLOCK_REDUCE_RAKING_NON_COMMUTATIVE and is preferable when the reduction operator is commutative. This variant applies fewer reduction operators than BLOCK_REDUCE_WARP_REDUCTIONS, and can provide higher overall throughput across the GPU when suitably occupied. However, turn-around latency may be higher than to BLOCK_REDUCE_WARP_REDUCTIONS and thus less-desirable when the GPU is under-occupied. </li>
 </ul>
@@ -755,7 +755,7 @@ std::iterator_traits<br class="typebreak"/>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="block_reduce.png" alt="block_reduce.png"/>
 </div>
- <div class="centercaption"><code>BLOCK_REDUCE_RAKING</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
+ <div class="centercaption"><code>BLOCK_REDUCE_RAKING</code> data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div></dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>This variant performs more communication than BLOCK_REDUCE_RAKING and is only preferable when the reduction operator is non-commutative. This variant applies fewer reduction operators than BLOCK_REDUCE_WARP_REDUCTIONS, and can provide higher overall throughput across the GPU when suitably occupied. However, turn-around latency may be higher than to BLOCK_REDUCE_WARP_REDUCTIONS and thus less-desirable when the GPU is under-occupied. </li>
 </ul>
@@ -772,7 +772,7 @@ std::iterator_traits<br class="typebreak"/>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="block_scan_warpscans.png" alt="block_scan_warpscans.png"/>
 </div>
- <div class="centercaption"><code>BLOCK_REDUCE_WARP_REDUCTIONS</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
+ <div class="centercaption"><code>BLOCK_REDUCE_WARP_REDUCTIONS</code> data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div></dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>This variant applies more reduction operators than BLOCK_REDUCE_RAKING or BLOCK_REDUCE_RAKING_NON_COMMUTATIVE, which may result in lower overall throughput across the GPU. However turn-around latency may be lower and thus useful when the GPU is under-occupied. </li>
 </ul>
@@ -806,7 +806,7 @@ std::iterator_traits<br class="typebreak"/>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="block_scan_raking.png" alt="block_scan_raking.png"/>
 </div>
- <div class="centercaption"><code>BLOCK_SCAN_RAKING</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
+ <div class="centercaption"><code>BLOCK_SCAN_RAKING</code> data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div></dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>Although this variant may suffer longer turnaround latencies when the GPU is under-occupied, it can often provide higher overall throughput across the GPU when suitably occupied. </li>
 </ul>
@@ -826,7 +826,7 @@ std::iterator_traits<br class="typebreak"/>
 <dl class="section user"><dt></dt><dd><div class="image">
 <img src="block_scan_warpscans.png" alt="block_scan_warpscans.png"/>
 </div>
- <div class="centercaption"><code>BLOCK_SCAN_WARP_SCANS</code> data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div></dd></dl>
+ <div class="centercaption"><code>BLOCK_SCAN_WARP_SCANS</code> data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div></dd></dl>
 <dl class="section user"><dt>Performance Considerations</dt><dd><ul>
 <li>Although this variant may suffer lower overall throughput across the GPU because due to a heavy reliance on inefficient warpscans, it can often provide lower turnaround latencies when the GPU is under-occupied. </li>
 </ul>
