@@ -746,7 +746,7 @@ struct AgentHistogram
                                         ((row_bytes & pixel_mask) == 0);                        // number of row-samples is a multiple of the alignment of the pixel
 
         // Whether rows are aligned and can be vectorized
-        if (quad_aligned_rows || pixel_aligned_rows)
+        if ((d_native_samples != nullptr) && (quad_aligned_rows || pixel_aligned_rows))
             ConsumeTiles<true>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<IS_WORK_STEALING>());
         else
             ConsumeTiles<false>(num_row_pixels, num_rows, row_stride_samples, tiles_per_row, tile_queue, Int2Type<IS_WORK_STEALING>());
