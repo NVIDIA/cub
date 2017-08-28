@@ -1,3 +1,9 @@
+1.7.2    08/28/2017
+    - Bug fixes: 
+        - Issue #110: DeviceHistogram null-pointer exception bug for iterator inputs
+          		  
+//-----------------------------------------------------------------------------
+
 1.7.2    08/26/2017
     - Bug fixes: 
         - Issue #104: Device-wide reduction is now "run-to-run" deterministic for 

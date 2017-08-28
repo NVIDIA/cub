@@ -62,7 +62,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.7.2</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.7.3</b></em></a>
 
 </td><td>
 
@@ -527,30 +527,22 @@ for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-08/26/2017<br>
-[<b>CUB v1.7.2</b>](download_cub.html)
-</td><td style="vertical-align:text-top;">
-  - Other: 
-    - Device-wide reduction is now "run-to-run" deterministic for pseudo-associative 
-      reduction operators (like floating point addition)
-</td></tr>
-
-<tr><td style="white-space: nowrap; vertical-align:text-top;">
-08/18/2017<br>
-[<b>CUB v1.7.1</b>](https://github.com/NVlabs/cub/archive/1.7.1.zip)
+08/28/2017<br>
+[<b>CUB v1.7.3</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
   - New Features: 
     - Compatible with CUDA9 and SM7.x (Volta) independent thread scheduling 
     - Updated radix sorting tuning policies and performance
     - Shrunk repository size (purged zombie testfiles, executables, etc. from GIT history)
+    - Device-wide reduction is now "run-to-run" deterministic for pseudo-associative 
+      reduction operators (like floating point addition)
   -  API Changes: 
     - Remove cub::WarpAll() and cub::WarpAny().  These functions served to 
       emulate __all and __any functionality for SM1.x devices, which did not have those 
       operations.  However, the SM1.x devices are now deprecated in CUDA, and the 
       interfaces of the these two functions are now lacking the lane-mask needed 
       for collectives to run on Volta SMs having independent thread scheduling. 
-  - Other: 
-    - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
+  - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
