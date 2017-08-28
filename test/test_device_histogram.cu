@@ -43,6 +43,7 @@
 #endif
 
 #include <cub/util_allocator.cuh>
+#include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/device/device_histogram.cuh>
 
 #include "test_util.h"
@@ -242,7 +243,7 @@ cudaError_t DispatchEven(
         error = DeviceHistogram::HistogramEven(
             d_temp_storage,
             temp_storage_bytes,
-            (const SampleT *) d_samples,
+            d_samples,
             d_histogram[0],
             num_levels[0],
             lower_level[0],
@@ -290,7 +291,7 @@ cudaError_t DispatchEven(
         error = DeviceHistogram::MultiHistogramEven<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
             d_temp_storage,
             temp_storage_bytes,
-            (const SampleT *) d_samples,
+            d_samples,
             d_histogram,
             num_levels,
             lower_level,
@@ -338,7 +339,7 @@ cudaError_t DispatchRange(
         error = DeviceHistogram::HistogramRange(
             d_temp_storage,
             temp_storage_bytes,
-            (const SampleT *) d_samples,
+            d_samples,
             d_histogram[0],
             num_levels[0],
             d_levels[0],
@@ -385,7 +386,7 @@ cudaError_t DispatchRange(
         error = DeviceHistogram::MultiHistogramRange<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
             d_temp_storage,
             temp_storage_bytes,
-            (const SampleT *) d_samples,
+            d_samples,
             d_histogram,
             num_levels,
             d_levels,
@@ -583,28 +584,65 @@ void Sample(T &datum, LevelT max_level, int entropy_reduction)
 
 
 /**
- * Initialize histogram problem (and solution)
+ * Initialize histogram samples
  */
 template <
     int             NUM_CHANNELS,
     int             NUM_ACTIVE_CHANNELS,
     typename        LevelT,
     typename        SampleT,
-    typename        CounterT,
-    typename        TransformOp,
     typename        OffsetT>
-void Initialize(
+void InitializeSamples(
     LevelT          max_level,
     int             entropy_reduction,
     SampleT         *h_samples,
+    OffsetT         num_row_pixels,         ///< [in] The number of multi-channel pixels per row in the region of interest
+    OffsetT         num_rows,               ///< [in] The number of rows in the region of interest
+    OffsetT         row_stride_bytes)       ///< [in] The number of bytes between starts of consecutive rows in the region of interest
+{
+    // Initialize samples
+    for (OffsetT row = 0; row < num_rows; ++row)
+    {
+        for (OffsetT pixel = 0; pixel < num_row_pixels; ++pixel)
+        {
+            for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+            {
+                // Sample offset
+                OffsetT offset = (row * (row_stride_bytes / sizeof(SampleT))) + (pixel * NUM_CHANNELS) + channel;
+
+                // Init sample value
+                Sample(h_samples[offset], max_level, entropy_reduction);
+                if (g_verbose_input)
+                {
+                    if (channel > 0) printf(", ");
+                    std::cout << CoutCast(h_samples[offset]);
+                }
+            }
+        }
+    }
+}
+
+
+/**
+ * Initialize histogram solutions
+ */
+template <
+    int             NUM_CHANNELS,
+    int             NUM_ACTIVE_CHANNELS,
+    typename        CounterT,
+    typename        SampleIteratorT,
+    typename        TransformOp,
+    typename        OffsetT>
+void InitializeBins(
+    SampleIteratorT h_samples,
     int             num_levels[NUM_ACTIVE_CHANNELS],        ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
     TransformOp     transform_op[NUM_ACTIVE_CHANNELS],      ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
     CounterT        *h_histogram[NUM_ACTIVE_CHANNELS],      ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
     OffsetT         num_row_pixels,                         ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT         num_rows,                               ///< [in] The number of rows in the region of interest
-    OffsetT         row_stride_bytes)                             ///< [in] The number of bytes between starts of consecutive rows in the region of interest
+    OffsetT         row_stride_bytes)                       ///< [in] The number of bytes between starts of consecutive rows in the region of interest
 {
-    printf("Initializing... "); fflush(stdout);
+    typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
 
     // Init bins
     for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
@@ -627,14 +665,6 @@ void Initialize(
                 // Sample offset
                 OffsetT offset = (row * (row_stride_bytes / sizeof(SampleT))) + (pixel * NUM_CHANNELS) + channel;
 
-                // Init sample value
-                Sample(h_samples[offset], max_level, entropy_reduction);
-                if (g_verbose_input)
-                {
-                    if (channel > 0) printf(", ");
-                    std::cout << CoutCast(h_samples[offset]);
-                }
-
                 // Update sample bin
                 int bin = transform_op[channel](h_samples[offset]);
                 if (g_verbose_input) printf(" (%d)", bin); fflush(stdout);
@@ -648,9 +678,8 @@ void Initialize(
         }
         if (g_verbose_input) printf("\n\n");
     }
-
-    printf("Done\n"); fflush(stdout);
 }
+
 
 
 /**
@@ -663,7 +692,8 @@ template <
     typename        SampleT,
     typename        CounterT,
     typename        LevelT,
-    typename        OffsetT>
+    typename        OffsetT,
+    typename        SampleIteratorT>
 void TestEven(
     LevelT          max_level,
     int             entropy_reduction,
@@ -672,13 +702,16 @@ void TestEven(
     LevelT          upper_level[NUM_ACTIVE_CHANNELS],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
     OffsetT         num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
     OffsetT         num_rows,                                   ///< [in] The number of rows in the region of interest
-    OffsetT         row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
+    OffsetT         row_stride_bytes,                           ///< [in] The number of bytes between starts of consecutive rows in the region of interest
+    SampleIteratorT h_samples,
+    SampleIteratorT d_samples)
 {
     OffsetT total_samples = num_rows * (row_stride_bytes / sizeof(SampleT));
 
     printf("\n----------------------------\n");
-    printf("%s cub::DeviceHistogramEven %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
+    printf("%s cub::DeviceHistogramEven (%s) %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
+        (IsPointer<SampleIteratorT>::VALUE) ? "pointer" : "iterator",
         (int) (num_row_pixels * num_rows),
         (int) num_rows,
         (int) num_row_pixels,
@@ -698,7 +731,6 @@ void TestEven(
     // Allocate and initialize host and device data
 
     typedef SampleT Foo;        // rename type to quelch gcc warnings (bug?)
-    SampleT*                    h_samples = new Foo[total_samples];
     CounterT*                   h_histogram[NUM_ACTIVE_CHANNELS];
     ScaleTransform<LevelT>      transform_op[NUM_ACTIVE_CHANNELS];
 
@@ -714,16 +746,12 @@ void TestEven(
             ((upper_level[channel] - lower_level[channel]) / bins));
     }
 
-    Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
-        max_level, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride_bytes);
+    InitializeBins<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride_bytes);
 
     // Allocate and initialize device data
 
-    SampleT*        d_samples = NULL;
-    CounterT*       d_histogram[NUM_ACTIVE_CHANNELS];
-
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_samples, sizeof(SampleT) * total_samples));
-    CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleT) * total_samples, cudaMemcpyHostToDevice));
+    CounterT* d_histogram[NUM_ACTIVE_CHANNELS];
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
         CubDebugExit(g_allocator.DeviceAllocate((void**)&d_histogram[channel], sizeof(CounterT) * (num_levels[channel] - 1)));
@@ -748,9 +776,9 @@ void TestEven(
         0, true);
 
     // Allocate temporary storage with "canary" zones
-    int 	canary_bytes 	= 256;
-    char 	canary_token 	= 8;
-    char* 	canary_zone 	= new char[canary_bytes];
+    int     canary_bytes    = 256;
+    char    canary_token    = 8;
+    char*   canary_zone     = new char[canary_bytes];
 
     memset(canary_zone, canary_token, canary_bytes);
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes + (canary_bytes * 2)));
@@ -814,9 +842,6 @@ void TestEven(
 
     printf("\n\n");
 
-    // Cleanup
-    if (h_samples) delete[] h_samples;
-
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
         if (h_histogram[channel])
@@ -826,7 +851,6 @@ void TestEven(
             CubDebugExit(g_allocator.DeviceFree(d_histogram[channel]));
     }
 
-    if (d_samples) CubDebugExit(g_allocator.DeviceFree(d_samples));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
@@ -836,7 +860,82 @@ void TestEven(
 }
 
 
+/**
+ * Test histogram-even (native pointer input)
+ */
+template <
+    Backend         BACKEND,
+    int             NUM_CHANNELS,
+    int             NUM_ACTIVE_CHANNELS,
+    typename        SampleT,
+    typename        CounterT,
+    typename        LevelT,
+    typename        OffsetT>
+void TestEvenNative(
+    LevelT          max_level,
+    int             entropy_reduction,
+    int             num_levels[NUM_ACTIVE_CHANNELS],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
+    LevelT          lower_level[NUM_ACTIVE_CHANNELS],           ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
+    LevelT          upper_level[NUM_ACTIVE_CHANNELS],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
+    OffsetT         num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
+    OffsetT         num_rows,                                   ///< [in] The number of rows in the region of interest
+    OffsetT         row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
+{
+    OffsetT total_samples = num_rows * (row_stride_bytes / sizeof(SampleT));
 
+    // Allocate and initialize host sample data
+    typedef SampleT Foo;        // rename type to quelch gcc warnings (bug?)
+    SampleT*                    h_samples = new Foo[total_samples];
+
+    InitializeSamples<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        max_level, entropy_reduction, h_samples, num_row_pixels, num_rows, row_stride_bytes);
+
+    // Allocate and initialize device data
+    SampleT* d_samples = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_samples, sizeof(SampleT) * total_samples));
+    CubDebugExit(cudaMemcpy(d_samples, h_samples, sizeof(SampleT) * total_samples, cudaMemcpyHostToDevice));
+
+    TestEven<BACKEND, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
+        max_level, entropy_reduction, num_levels, lower_level, upper_level,
+        num_row_pixels, num_rows, row_stride_bytes,
+        h_samples, d_samples);
+
+    // Cleanup
+    if (h_samples) delete[] h_samples;
+    if (d_samples) CubDebugExit(g_allocator.DeviceFree(d_samples));
+}
+
+
+/**
+ * Test histogram-even (native pointer input)
+ */
+template <
+    Backend         BACKEND,
+    int             NUM_CHANNELS,
+    int             NUM_ACTIVE_CHANNELS,
+    typename        SampleT,
+    typename        CounterT,
+    typename        LevelT,
+    typename        OffsetT>
+void TestEvenIterator(
+    LevelT          max_level,
+    int             entropy_reduction,
+    int             num_levels[NUM_ACTIVE_CHANNELS],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
+    LevelT          lower_level[NUM_ACTIVE_CHANNELS],           ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
+    LevelT          upper_level[NUM_ACTIVE_CHANNELS],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
+    OffsetT         num_row_pixels,                             ///< [in] The number of multi-channel pixels per row in the region of interest
+    OffsetT         num_rows,                                   ///< [in] The number of rows in the region of interest
+    OffsetT         row_stride_bytes)                                 ///< [in] The number of bytes between starts of consecutive rows in the region of interest
+{
+    SampleT sample = (SampleT) lower_level[0];
+    ConstantInputIterator<SampleT> sample_itr(sample);
+
+    TestEven<BACKEND, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
+        max_level, entropy_reduction, num_levels, lower_level, upper_level,
+        num_row_pixels, num_rows, row_stride_bytes,
+        sample_itr, sample_itr);
+
+}
 
 
 /**
@@ -901,8 +1000,11 @@ void TestRange(
         h_histogram[channel] = new CounterT[bins];
     }
 
-    Initialize<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
-        max_level, entropy_reduction, h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride_bytes);
+    InitializeSamples<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        max_level, entropy_reduction, h_samples, num_row_pixels, num_rows, row_stride_bytes);
+
+    InitializeBins<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
+        h_samples, num_levels, transform_op, h_histogram, num_row_pixels, num_rows, row_stride_bytes);
 
     // Allocate and initialize device data
     SampleT*        d_samples = NULL;
@@ -1067,7 +1169,12 @@ void TestEven(
         upper_level[channel] = (max_level + (num_bins * min_level_increment)) / 2;
     }
 
-    TestEven<BACKEND, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
+    // Test pointer-based samples
+    TestEvenNative<BACKEND, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
+        max_level, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes);
+
+    // Test iterator-based samples (CUB-only)
+    TestEvenIterator<CUB, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleT, CounterT, LevelT, OffsetT>(
         max_level, entropy_reduction, num_levels, lower_level, upper_level, num_row_pixels, num_rows, row_stride_bytes);
 }
 
@@ -1166,13 +1273,14 @@ void Test(
 {
     int num_levels[NUM_ACTIVE_CHANNELS];
 
-    // All the same level
-    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
-    {
-        num_levels[channel] = max_num_levels;
-    }
-    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels);
+// Unnecessary testing
+//    // All the same level
+//    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
+//    {
+//        num_levels[channel] = max_num_levels;
+//    }
+//    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
+//        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels);
 
     // All different levels
     num_levels[0] = max_num_levels;
@@ -1256,7 +1364,7 @@ void Test(
     LevelT          max_level,
     int             max_num_levels)
 {
-    // 0 images
+    // 0 row/col images
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         OffsetT(1920), OffsetT(0), max_level, max_num_levels);
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
@@ -1266,14 +1374,10 @@ void Test(
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         OffsetT(1920), OffsetT(1080), max_level, max_num_levels);
 
-    // 720 image
-    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        OffsetT(1280), OffsetT(720), max_level, max_num_levels);
-
-    // Sample different image sizes
-    for (OffsetT rows = 1; rows < 1000000; rows *= 100)
+    // Sample different aspect ratios sizes
+    for (OffsetT rows = 1; rows < 1000000; rows *= 1000)
     {
-        for (OffsetT cols = 1; cols < (1000000 / rows); cols *= 100)
+        for (OffsetT cols = 1; cols < (1000000 / rows); cols *= 1000)
         {
             Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
                 cols, rows, max_level, max_num_levels);
@@ -1282,7 +1386,7 @@ void Test(
 
     // Randomly select linear problem size between 1:10,000,000
     unsigned int max_int = (unsigned int) -1;
-    for (int i = 0; i < 10; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         unsigned int num_items;
         RandomBits(num_items);
