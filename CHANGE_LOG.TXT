@@ -1,4 +1,4 @@
-1.7.2    08/28/2017
+1.7.3    08/28/2017
     - Bug fixes: 
         - Issue #110: DeviceHistogram null-pointer exception bug for iterator inputs
           		  
