@@ -37,15 +37,15 @@
 #include <algorithm>
 #include <typeinfo>
 
-#include <thrust/device_ptr.h>
-#include <thrust/sort.h>
-#include <thrust/reverse.h>
-
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_segmented_radix_sort.cuh>
 
 #include "test_util.h"
+
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
+#include <thrust/reverse.h>
 
 using namespace cub;
 
@@ -929,18 +929,20 @@ void TestValueTypes(
     KeyT *h_reference_keys = NULL;
     InitializeSolution<IS_DESCENDING>(h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
 
-    // Test value types
+    // Test keys-only
+    TestBackend<IS_DESCENDING, KeyT, NullType>          (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
-    TestBackend<IS_DESCENDING, KeyT, NullType>              (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
-    TestBackend<IS_DESCENDING, KeyT, KeyT>                  (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    // Test with 8b value
+    TestBackend<IS_DESCENDING, KeyT, unsigned char>     (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
-    if (!Equals<KeyT, unsigned int>::VALUE)
-        TestBackend<IS_DESCENDING, KeyT, unsigned int>      (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    // Test with 32b value
+    TestBackend<IS_DESCENDING, KeyT, unsigned int>      (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
-    if (!Equals<KeyT, unsigned long long>::VALUE)
-        TestBackend<IS_DESCENDING, KeyT, unsigned long long>(h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    // Test with 64b value
+    TestBackend<IS_DESCENDING, KeyT, unsigned long long>(h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
-    TestBackend<IS_DESCENDING, KeyT, TestFoo>               (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    // Test with non-trivially-constructable value
+    TestBackend<IS_DESCENDING, KeyT, TestBar>           (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Cleanup
     if (h_reference_ranks) delete[] h_reference_ranks;

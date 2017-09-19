@@ -49,10 +49,10 @@
 #include <cub/util_type.cuh>
 #include <cub/util_allocator.cuh>
 
+#include "test_util.h"
+
 #include <thrust/device_ptr.h>
 #include <thrust/copy.h>
-
-#include "test_util.h"
 
 using namespace cub;
 
