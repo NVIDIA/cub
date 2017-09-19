@@ -1,3 +1,9 @@
+1.7.4    09/19/2017
+    - Bug fixes: 
+        - Issue #114: Can't pair non-trivially-constructible values in radix sort 
+          		  
+//-----------------------------------------------------------------------------
+
 1.7.3    08/28/2017
     - Bug fixes: 
         - Issue #110: DeviceHistogram null-pointer exception bug for iterator inputs
