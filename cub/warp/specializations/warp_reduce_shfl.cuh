@@ -112,9 +112,10 @@ struct WarpReduceShfl
     // Thread fields
     //---------------------------------------------------------------------
 
-    int lane_id;
 
-    int member_mask;
+    unsigned int lane_id;
+
+    unsigned int member_mask;
 
     //---------------------------------------------------------------------
     // Construction
@@ -126,9 +127,9 @@ struct WarpReduceShfl
     :
         lane_id(LaneId()),
 
-        member_mask(IS_ARCH_WARP ?
-             0xffffffff :
-             (0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << (LaneId() / LOGICAL_WARP_THREADS))
+        member_mask((0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP) ?
+            0 : // arch-width subwarps need not be tiled within the arch-warp
+            ((lane_id / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
     {}
 
 
@@ -470,13 +471,13 @@ struct WarpReduceShfl
         int             folded_items_per_warp,  ///< [in] Total number of valid items folded into each logical warp
         ReductionOp     reduction_op)           ///< [in] Binary reduction operator
     {
-        // Get the last thread in the logical warp
-        int first_warp_thread   = 0;
-        int last_warp_thread    = LOGICAL_WARP_THREADS - 1;
+        // Get the lane of the first and last thread in the logical warp
+        int first_thread   = 0;
+        int last_thread    = LOGICAL_WARP_THREADS - 1;
         if (!IS_ARCH_WARP)
         {
-            first_warp_thread = lane_id & (~(LOGICAL_WARP_THREADS - 1));
-            last_warp_thread |= lane_id;
+            first_thread = lane_id & (~(LOGICAL_WARP_THREADS - 1));
+            last_thread |= lane_id;
         }
 
         // Common case is FOLDED_ITEMS_PER_LANE = 1 (or a multiple of 32)
@@ -484,8 +485,8 @@ struct WarpReduceShfl
 
         // Get the last valid lane
         int last_lane = (ALL_LANES_VALID) ?
-            last_warp_thread :
-            CUB_MIN(last_warp_thread, first_warp_thread + lanes_with_valid_data);
+            last_thread :
+            CUB_MIN(last_thread, first_thread + lanes_with_valid_data);
 
         T output = input;
 
@@ -516,6 +517,7 @@ struct WarpReduceShfl
         // Get the start flags for each thread in the warp.
         int warp_flags = WARP_BALLOT(flag, member_mask);
 
+        // Convert to tail-segmented
         if (HEAD_SEGMENTED)
             warp_flags >>= 1;
 

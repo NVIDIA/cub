@@ -1,6 +1,7 @@
-1.7.4    09/19/2017
+1.7.4    09/20/2017
     - Bug fixes: 
-        - Issue #114: Can't pair non-trivially-constructible values in radix sort 
+        - Issue #114: Can't pair non-trivially-constructible values in radix sort
+        - Issue #115: WarpReduce segmented reduction broken in CUDA 9 for logical warp sizes < 32 
           		  
 //-----------------------------------------------------------------------------
 

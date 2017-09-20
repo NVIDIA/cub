@@ -778,7 +778,10 @@ template <int LOGICAL_WARP_THREADS>
 void Test()
 {
     Test<1, LOGICAL_WARP_THREADS>();
-    Test<2, LOGICAL_WARP_THREADS>();
+
+    // Only power-of-two subwarps can be tiled
+    if ((LOGICAL_WARP_THREADS == 32) || PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE)
+        Test<2, LOGICAL_WARP_THREADS>();
 }
 
 
