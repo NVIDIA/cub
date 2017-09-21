@@ -153,7 +153,7 @@ __device__ __forceinline__ UnsignedBits BFE(
 {
     unsigned long long int bits;
 #if CUB_PTX_ARCH >= 200
-    asm ("bfe.u64 %0, %1, %2, %3;" : "=r"(bits) : "r"((unsigned long long int) source), "r"(bit_start), "r"(num_bits));
+    asm ("bfe.u64 %0, %1, %2, %3;" : "=l"(bits) : "l"((unsigned long long int) source), "r"(bit_start), "r"(num_bits));
 #else
     const unsigned long long int MASK = (1ull << num_bits) - 1;
     bits = (source >> bit_start) & MASK;
@@ -214,7 +214,7 @@ __device__ __forceinline__ void BFI(
 {
 #if CUB_PTX_ARCH >= 200
     asm ("bfi.b64 %0, %1, %2, %3, %4;" :
-        "=r"((unsigned long long int) ret) : "r"((unsigned long long int) y), "r"((unsigned long long int) x), "r"(bit_start), "r"(num_bits));
+        "=l"((unsigned long long int) ret) : "l"((unsigned long long int) y), "l"((unsigned long long int) x), "r"(bit_start), "r"(num_bits));
 #else
     x <<= bit_start;
     unsigned long long int MASK_X = ((1 << num_bits) - 1) << bit_start;
