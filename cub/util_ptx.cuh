@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2017, NVIDIA CORPORATION.  All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the NVIDIA CORPORATION nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -124,7 +124,7 @@ __device__ __forceinline__ unsigned int SHL_ADD(
  * Bitfield-extract.
  */
 template <typename UnsignedBits, int BYTE_LEN>
-__device__ __forceinline__ unsigned int BFE(
+__device__ __forceinline__ UnsignedBits BFE(
     UnsignedBits            source,
     unsigned int            bit_start,
     unsigned int            num_bits,
@@ -145,14 +145,20 @@ __device__ __forceinline__ unsigned int BFE(
  * Bitfield-extract for 64-bit types.
  */
 template <typename UnsignedBits>
-__device__ __forceinline__ unsigned int BFE(
+__device__ __forceinline__ UnsignedBits BFE(
     UnsignedBits            source,
     unsigned int            bit_start,
     unsigned int            num_bits,
     Int2Type<8>             /*byte_len*/)
 {
-    const unsigned long long MASK = (1ull << num_bits) - 1;
-    return (source >> bit_start) & MASK;
+    unsigned long long int bits;
+#if CUB_PTX_ARCH >= 200
+    asm ("bfe.u64 %0, %1, %2, %3;" : "=r"(bits) : "r"((unsigned long long int) source), "r"(bit_start), "r"(num_bits));
+#else
+    const unsigned long long int MASK = (1ull << num_bits) - 1;
+    bits = (source >> bit_start) & MASK;
+#endif
+    return bits;
 }
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -161,7 +167,7 @@ __device__ __forceinline__ unsigned int BFE(
  * \brief Bitfield-extract.  Extracts \p num_bits from \p source starting at bit-offset \p bit_start.  The input \p source may be an 8b, 16b, 32b, or 64b unsigned integer type.
  */
 template <typename UnsignedBits>
-__device__ __forceinline__ unsigned int BFE(
+__device__ __forceinline__ UnsignedBits BFE(
     UnsignedBits source,
     unsigned int bit_start,
     unsigned int num_bits)
@@ -171,24 +177,65 @@ __device__ __forceinline__ unsigned int BFE(
 
 
 /**
- * \brief Bitfield insert.  Inserts the \p num_bits least significant bits of \p y into \p x at bit-offset \p bit_start.
+ * Bitfield insert.
  */
+template <typename UnsignedBits, int BYTE_LEN>
 __device__ __forceinline__ void BFI(
-    unsigned int &ret,
-    unsigned int x,
-    unsigned int y,
-    unsigned int bit_start,
-    unsigned int num_bits)
+    UnsignedBits            &ret,
+    UnsignedBits            x,
+    UnsignedBits            y,
+    unsigned int            bit_start,
+    unsigned int            num_bits,
+    Int2Type<BYTE_LEN>      /*byte_len*/)
 {
 #if CUB_PTX_ARCH >= 200
     asm ("bfi.b32 %0, %1, %2, %3, %4;" :
-        "=r"(ret) : "r"(y), "r"(x), "r"(bit_start), "r"(num_bits));
+        "=r"((unsigned int) ret) : "r"((unsigned int) y), "r"((unsigned int) x), "r"(bit_start), "r"(num_bits));
 #else
     x <<= bit_start;
     unsigned int MASK_X = ((1 << num_bits) - 1) << bit_start;
     unsigned int MASK_Y = ~MASK_X;
     ret = (y & MASK_Y) | (x & MASK_X);
 #endif
+}
+
+
+/**
+ * \brief Bitfield insert for 64-bit types.
+ */
+template <typename UnsignedBits>
+__device__ __forceinline__ void BFI(
+    UnsignedBits            &ret,
+    UnsignedBits            x,
+    UnsignedBits            y,
+    unsigned int            bit_start,
+    unsigned int            num_bits,
+    Int2Type<8>      /*byte_len*/)
+{
+#if CUB_PTX_ARCH >= 200
+    asm ("bfi.b64 %0, %1, %2, %3, %4;" :
+        "=r"((unsigned long long int) ret) : "r"((unsigned long long int) y), "r"((unsigned long long int) x), "r"(bit_start), "r"(num_bits));
+#else
+    x <<= bit_start;
+    unsigned long long int MASK_X = ((1 << num_bits) - 1) << bit_start;
+    unsigned long long int MASK_Y = ~MASK_X;
+    ret = (y & MASK_Y) | (x & MASK_X);
+#endif
+}
+
+
+/**
+ * \brief Bitfield insert.  Inserts the \p num_bits least significant bits of \p y into \p x at bit-offset \p bit_start.
+ */
+template <typename UnsignedBits>
+__device__ __forceinline__ void BFI(
+    UnsignedBits            &ret,
+    UnsignedBits            x,
+    UnsignedBits            y,
+    unsigned int            bit_start,
+    unsigned int            num_bits)
+{
+    return BFI(ret, x, y, bit_start, num_bits, Int2Type<sizeof(UnsignedBits)>());
 }
 
 
@@ -319,7 +366,7 @@ __device__  __forceinline__ int WARP_BALLOT(int predicate, unsigned int member_m
 /**
  * Warp synchronous shfl_up
  */
-__device__ __forceinline__ 
+__device__ __forceinline__
 unsigned int SHFL_UP_SYNC(unsigned int word, int src_offset, int first_lane, unsigned int member_mask)
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
@@ -335,7 +382,7 @@ unsigned int SHFL_UP_SYNC(unsigned int word, int src_offset, int first_lane, uns
 /**
  * Warp synchronous shfl_down
  */
-__device__ __forceinline__ 
+__device__ __forceinline__
 unsigned int SHFL_DOWN_SYNC(unsigned int word, int src_offset, int last_lane, unsigned int member_mask)
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
@@ -351,7 +398,7 @@ unsigned int SHFL_DOWN_SYNC(unsigned int word, int src_offset, int last_lane, un
 /**
  * Warp synchronous shfl_idx
  */
-__device__ __forceinline__ 
+__device__ __forceinline__
 unsigned int SHFL_IDX_SYNC(unsigned int word, int src_lane, int last_lane, unsigned int member_mask)
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
@@ -392,7 +439,7 @@ __device__ __forceinline__ float FFMA_RZ(float a, float b, float c)
  */
 __device__ __forceinline__ void ThreadExit() {
     asm volatile("exit;");
-}    
+}
 
 
 /**
@@ -518,7 +565,7 @@ __device__ __forceinline__ T ShuffleUp(
     typedef typename UnitWord<T>::ShuffleWord ShuffleWord;
 
     const int       WORDS           = (sizeof(T) + sizeof(ShuffleWord) - 1) / sizeof(ShuffleWord);
- 
+
     T               output;
     ShuffleWord     *output_alias   = reinterpret_cast<ShuffleWord *>(&output);
     ShuffleWord     *input_alias    = reinterpret_cast<ShuffleWord *>(&input);
