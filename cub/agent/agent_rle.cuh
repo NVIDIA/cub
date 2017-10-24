@@ -208,7 +208,7 @@ struct AgentRle
 
     typedef LengthOffsetPair WarpAggregates[WARPS];
 
-    // Shared memory type for this threadblock
+    // Shared memory type for this thread block
     struct _TempStorage
     {
         // Aliasable storage layout

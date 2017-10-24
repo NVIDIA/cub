@@ -68,7 +68,7 @@ enum BlockScanAlgorithm
      *
      * \par
      * \image html block_scan_raking.png
-     * <div class="centercaption">\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * <div class="centercaption">\p BLOCK_SCAN_RAKING data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
      * - Although this variant may suffer longer turnaround latencies when the
@@ -98,7 +98,7 @@ enum BlockScanAlgorithm
      *
      * \par
      * \image html block_scan_warpscans.png
-     * <div class="centercaption">\p BLOCK_SCAN_WARP_SCANS data flow for a hypothetical 16-thread threadblock and 4-thread raking warp.</div>
+     * <div class="centercaption">\p BLOCK_SCAN_WARP_SCANS data flow for a hypothetical 16-thread thread block and 4-thread raking warp.</div>
      *
      * \par Performance Considerations
      * - Although this variant may suffer lower overall throughput across the
@@ -208,7 +208,7 @@ private:
     /**
      * Ensure the template parameterization meets the requirements of the
      * specified algorithm. Currently, the BLOCK_SCAN_WARP_SCANS policy
-     * cannot be used with threadblock sizes not a multiple of the
+     * cannot be used with thread block sizes not a multiple of the
      * architectural warp size.
      */
     static const BlockScanAlgorithm SAFE_ALGORITHM =
@@ -388,7 +388,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the thread block's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - \identityzero
@@ -581,7 +581,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the thread block's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - \identityzero
@@ -787,7 +787,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the thread block's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
@@ -935,7 +935,7 @@ public:
         // Reduce consecutive thread items in registers
         T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
+        // Exclusive thread block-scan
         ExclusiveScan(thread_prefix, thread_prefix, initial_value, scan_op);
 
         // Exclusive scan in registers with prefix as seed
@@ -998,7 +998,7 @@ public:
         // Reduce consecutive thread items in registers
         T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
+        // Exclusive thread block-scan
         ExclusiveScan(thread_prefix, thread_prefix, initial_value, scan_op, block_aggregate);
 
         // Exclusive scan in registers with prefix as seed
@@ -1007,7 +1007,7 @@ public:
 
 
     /**
-     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an exclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the thread block's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
@@ -1105,7 +1105,7 @@ public:
         // Reduce consecutive thread items in registers
         T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
+        // Exclusive thread block-scan
         ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_prefix_callback_op);
 
         // Exclusive scan in registers with prefix as seed
@@ -1192,7 +1192,7 @@ public:
         // Reduce consecutive thread items in registers
         T thread_partial = internal::ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
+        // Exclusive thread block-scan
         ExclusiveScan(thread_partial, thread_partial, scan_op);
 
         // Exclusive scan in registers with prefix
@@ -1224,7 +1224,7 @@ public:
         // Reduce consecutive thread items in registers
         T thread_partial = internal::ThreadReduce(input, scan_op);
 
-        // Exclusive threadblock-scan
+        // Exclusive thread block-scan
         ExclusiveScan(thread_partial, thread_partial, scan_op, block_aggregate);
 
         // Exclusive scan in registers with prefix
@@ -1332,7 +1332,7 @@ public:
 
 
     /**
-     * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes one input element.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the thread block's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
@@ -1474,7 +1474,7 @@ public:
             Sum scan_op;
             T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-            // Exclusive threadblock-scan
+            // Exclusive thread block-scan
             ExclusiveSum(thread_prefix, thread_prefix);
 
             // Inclusive scan in registers with prefix as seed
@@ -1542,7 +1542,7 @@ public:
             Sum scan_op;
             T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-            // Exclusive threadblock-scan
+            // Exclusive thread block-scan
             ExclusiveSum(thread_prefix, thread_prefix, block_aggregate);
 
             // Inclusive scan in registers with prefix as seed
@@ -1552,7 +1552,7 @@ public:
 
 
     /**
-     * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an inclusive block-wide prefix scan using addition (+) as the scan operator.  Each thread contributes an array of consecutive input elements.  Instead of using 0 as the block-wide prefix, the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the thread block's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
@@ -1654,7 +1654,7 @@ public:
             Sum scan_op;
             T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-            // Exclusive threadblock-scan
+            // Exclusive thread block-scan
             ExclusiveSum(thread_prefix, thread_prefix, block_prefix_callback_op);
 
             // Inclusive scan in registers with prefix as seed
@@ -1768,7 +1768,7 @@ public:
 
 
     /**
-     * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes one input element.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the thread block's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
@@ -1919,7 +1919,7 @@ public:
             // Reduce consecutive thread items in registers
             T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-            // Exclusive threadblock-scan
+            // Exclusive thread block-scan
             ExclusiveScan(thread_prefix, thread_prefix, scan_op);
 
             // Inclusive scan in registers with prefix as seed (first thread does not seed)
@@ -1990,7 +1990,7 @@ public:
             // Reduce consecutive thread items in registers
             T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-            // Exclusive threadblock-scan (with no initial value)
+            // Exclusive thread block-scan (with no initial value)
             ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_aggregate);
 
             // Inclusive scan in registers with prefix as seed (first thread does not seed)
@@ -2000,7 +2000,7 @@ public:
 
 
     /**
-     * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the threadblock's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
+     * \brief Computes an inclusive block-wide prefix scan using the specified binary \p scan_op functor.  Each thread contributes an array of consecutive input elements.  the call-back functor \p block_prefix_callback_op is invoked by the first warp in the block, and the value returned by <em>lane</em><sub>0</sub> in that warp is used as the "seed" value that logically prefixes the thread block's scan inputs.  Also provides every thread with the block-wide \p block_aggregate of all inputs.
      *
      * \par
      * - The \p block_prefix_callback_op functor must implement a member function <tt>T operator()(T block_aggregate)</tt>.
@@ -2104,7 +2104,7 @@ public:
             // Reduce consecutive thread items in registers
             T thread_prefix = internal::ThreadReduce(input, scan_op);
 
-            // Exclusive threadblock-scan
+            // Exclusive thread block-scan
             ExclusiveScan(thread_prefix, thread_prefix, scan_op, block_prefix_callback_op);
 
             // Inclusive scan in registers with prefix as seed

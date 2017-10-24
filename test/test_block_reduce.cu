@@ -136,7 +136,7 @@ __global__ void FullTileReduceKernel(
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
     const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-    // Cooperative threadblock reduction utility type (returns aggregate in thread 0)
+    // Cooperative thread block reduction utility type (returns aggregate in thread 0)
     typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduceT;
 
     // Allocate temp storage in shared memory
@@ -174,7 +174,7 @@ __global__ void FullTileReduceKernel(
         // Loop over input tiles
         while (block_offset < TILE_SIZE * tiles)
         {
-            // TestBarrier between threadblock reductions
+            // TestBarrier between thread block reductions
             __syncthreads();
     
             // Load tile of data
@@ -197,7 +197,7 @@ __global__ void FullTileReduceKernel(
 #endif // CUB_PTX_ARCH == 100
             elapsed += (start > stop) ? start - stop : stop - start;
 
-            // Reduce threadblock aggregate
+            // Reduce thread block aggregate
             block_aggregate = reduction_op(block_aggregate, tile_aggregate);
         }
 
@@ -230,7 +230,7 @@ __global__ void PartialTileReduceKernel(
     ReductionOp             reduction_op,
     clock_t                 *d_elapsed)
 {
-    // Cooperative threadblock reduction utility type (returns aggregate only in thread-0)
+    // Cooperative thread block reduction utility type (returns aggregate only in thread-0)
     typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduceT;
 
     // Allocate temp storage in shared memory
@@ -447,7 +447,7 @@ void TestFullTile(
 
 
 /**
- * Run battery of tests for different threadblock dimensions
+ * Run battery of tests for different thread block dimensions
  */
 template <
     BlockReduceAlgorithm    ALGORITHM,

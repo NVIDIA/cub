@@ -98,7 +98,7 @@ struct BlockReduceRakingCommutativeOnly
         struct
         {
             typename WarpReduce::TempStorage        warp_storage;        ///< Storage for warp-synchronous reduction
-            typename BlockRakingLayout::TempStorage raking_grid;         ///< Padded threadblock raking grid
+            typename BlockRakingLayout::TempStorage raking_grid;         ///< Padded thread block raking grid
         };
         typename FallBack::TempStorage              fallback_storage;    ///< Fall-back storage for non-commutative block scan
     };
@@ -122,7 +122,7 @@ struct BlockReduceRakingCommutativeOnly
     {}
 
 
-    /// Computes a threadblock-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
+    /// Computes a thread block-wide reduction using addition (+) as the reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
     template <bool FULL_TILE>
     __device__ __forceinline__ T Sum(
         T                   partial,            ///< [in] Calling thread's input partial reductions
@@ -156,7 +156,7 @@ struct BlockReduceRakingCommutativeOnly
     }
 
 
-    /// Computes a threadblock-wide reduction using the specified reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
+    /// Computes a thread block-wide reduction using the specified reduction operator. The first num_valid threads each contribute one reduction partial.  The return value is only valid for thread<sub>0</sub>.
     template <
         bool                FULL_TILE,
         typename            ReductionOp>

@@ -510,7 +510,7 @@ T Initialize(
 
 
 /**
- * Test threadblock scan.  (Specialized for sufficient resources)
+ * Test thread block scan.  (Specialized for sufficient resources)
  */
 template <
     int                 BLOCK_DIM_X,
@@ -553,7 +553,7 @@ void Test(
     }
 
     // Run kernel
-    printf("Test-mode %d, gen-mode %d, policy %d, %s %s BlockScan, %d (%d,%d,%d) threadblock threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
+    printf("Test-mode %d, gen-mode %d, policy %d, %s %s BlockScan, %d (%d,%d,%d) thread block threads, %d items per thread, %d tile size, %s (%d bytes) elements:\n",
         TEST_MODE, gen_mode, ALGORITHM,
         (SCAN_MODE == INCLUSIVE) ? "Inclusive" : "Exclusive", typeid(ScanOpT).name(),
         BLOCK_THREADS, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z,
@@ -638,7 +638,7 @@ void Test(
 
 
 /**
- * Test threadblock scan.  (Specialized for insufficient resources)
+ * Test thread block scan.  (Specialized for insufficient resources)
  */
 template <
     int                 BLOCK_DIM_X,
@@ -659,7 +659,7 @@ void Test(
 
 
 /**
- * Test threadblock scan.
+ * Test thread block scan.
  */
 template <
     int                 BLOCK_DIM_X,
@@ -705,7 +705,7 @@ void Test(
 
 
 /**
- * Run test for different threadblock dimensions
+ * Run test for different thread block dimensions
  */
 template <
     int                 BLOCK_THREADS,
@@ -910,7 +910,7 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
     for (int i = 0; i <= g_repeat; ++i)
     {
-        // Run tests for different threadblock sizes
+        // Run tests for different thread block sizes
         Test<17>();
         Test<32>();
         Test<62>();

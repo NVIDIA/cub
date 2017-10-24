@@ -77,6 +77,11 @@ __global__ void DeviceRadixSortUpsweepKernel(
     int                     num_bits,                       ///< [in] Number of bits of current radix digit
     GridEvenShare<OffsetT>  even_share)                     ///< [in] Even-share descriptor for mapan equal number of tiles onto each thread block
 {
+    enum {
+        TILE_ITEMS = ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::BLOCK_THREADS *
+                        ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::ITEMS_PER_THREAD
+    };
+
     // Parameterize AgentRadixSortUpsweep type for the current configuration
     typedef AgentRadixSortUpsweep<
             typename If<(ALT_DIGIT_BITS),
@@ -89,8 +94,8 @@ __global__ void DeviceRadixSortUpsweepKernel(
     // Shared memory storage
     __shared__ typename AgentRadixSortUpsweepT::TempStorage temp_storage;
 
-    // Initialize even-share descriptor for this thread block
-    even_share.BlockInit();
+    // Initialize GRID_MAPPING_RAKE even-share descriptor for this thread block
+    even_share.template BlockInit<TILE_ITEMS, GRID_MAPPING_RAKE>();
 
     AgentRadixSortUpsweepT upsweep(temp_storage, d_keys, current_bit, num_bits);
 
@@ -165,6 +170,11 @@ __global__ void DeviceRadixSortDownsweepKernel(
     int                     num_bits,                       ///< [in] Number of bits of current radix digit
     GridEvenShare<OffsetT>  even_share)                     ///< [in] Even-share descriptor for mapan equal number of tiles onto each thread block
 {
+    enum {
+        TILE_ITEMS = ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::BLOCK_THREADS *
+                        ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::ITEMS_PER_THREAD
+    };
+
     // Parameterize AgentRadixSortDownsweep type for the current configuration
     typedef AgentRadixSortDownsweep<
             typename If<(ALT_DIGIT_BITS),
@@ -180,7 +190,7 @@ __global__ void DeviceRadixSortDownsweepKernel(
     __shared__  typename AgentRadixSortDownsweepT::TempStorage temp_storage;
 
     // Initialize even-share descriptor for this thread block
-    even_share.BlockInit();
+    even_share.template BlockInit<TILE_ITEMS, GRID_MAPPING_RAKE>();
 
     // Process input tiles
     AgentRadixSortDownsweepT(temp_storage, num_items, d_spine, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit, num_bits).ProcessRegion(
@@ -1096,7 +1106,7 @@ struct DispatchRadixSort :
 
                 max_downsweep_grid_size = (downsweep_config.sm_occupancy * sm_count) * CUB_SUBSCRIPTION_FACTOR(ptx_version);
 
-                even_share = GridEvenShare<OffsetT>(
+                even_share.DispatchInit(
                     num_items,
                     max_downsweep_grid_size,
                     CUB_MAX(downsweep_config.tile_size, upsweep_config.tile_size));

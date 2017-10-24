@@ -113,12 +113,14 @@ struct WarpReduceSmem
         TempStorage     &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
+
         lane_id(IS_ARCH_WARP ?
             LaneId() :
             LaneId() % LOGICAL_WARP_THREADS),
-        member_mask(!IS_POW_OF_TWO ?
-            (0xffffffff >> (32 - LOGICAL_WARP_THREADS)) :                                       // non-power-of-two subwarps cannot be tiled
-            (0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << (LaneId() / LOGICAL_WARP_THREADS))
+
+        member_mask((0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
+            0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
+            ((LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
     {}
 
     /******************************************************************************

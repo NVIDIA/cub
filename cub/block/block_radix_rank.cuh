@@ -28,7 +28,7 @@
 
 /**
  * \file
- * cub::BlockRadixRank provides operations for ranking unsigned integer types within a CUDA threadblock
+ * cub::BlockRadixRank provides operations for ranking unsigned integer types within a CUDA thread block
  */
 
 #pragma once
@@ -51,7 +51,7 @@ CUB_NS_PREFIX
 namespace cub {
 
 /**
- * \brief BlockRadixRank provides operations for ranking unsigned integer types within a CUDA threadblock.
+ * \brief BlockRadixRank provides operations for ranking unsigned integer types within a CUDA thread block.
  * \ingroup BlockModule
  *
  * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
@@ -398,7 +398,7 @@ public:
         // Extract the local ranks of each key
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
         {
-            // Add in threadblock exclusive prefix
+            // Add in thread block exclusive prefix
             ranks[ITEM] = thread_prefixes[ITEM] + *digit_counters[ITEM];
         }
     }
