@@ -1205,6 +1205,9 @@ int main(int argc, char** argv)
     if (num_items < 0)      num_items       = 48000000;
     if (num_segments < 0)   num_segments    = 5000;
 
+    Test<CUB, unsigned char, NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB, unsigned char, unsigned char, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB, unsigned char, unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
     Test<CUB_SEGMENTED, unsigned int,       NullType, IS_DESCENDING>(       num_items, num_segments,    RANDOM, entropy_reduction, 0, bits);
 

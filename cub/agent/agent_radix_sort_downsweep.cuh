@@ -129,6 +129,9 @@ struct AgentRadixSortDownsweep
 
     enum
     {
+        LOG_WARP_THREADS        = CUB_PTX_LOG_WARP_THREADS,
+        WARP_THREADS            = 1 << LOG_WARP_THREADS,
+
         BLOCK_THREADS           = AgentRadixSortDownsweepPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD        = AgentRadixSortDownsweepPolicy::ITEMS_PER_THREAD,
         RADIX_BITS              = AgentRadixSortDownsweepPolicy::RADIX_BITS,
@@ -293,7 +296,7 @@ struct AgentRadixSortDownsweep
         {
             ValueT value = exchange_values[threadIdx.x + (ITEM * BLOCK_THREADS)];
 
-            if (FULL_TILE || 
+            if (FULL_TILE ||
                 (static_cast<OffsetT>(threadIdx.x + (ITEM * BLOCK_THREADS)) < valid_items))
             {
                 d_values_out[relative_bin_offsets[ITEM] + threadIdx.x + (ITEM * BLOCK_THREADS)] = value;
@@ -411,7 +414,7 @@ struct AgentRadixSortDownsweep
     __device__ __forceinline__ void LoadValues(
         ValueT                      (&values)[ITEMS_PER_THREAD],
         OffsetT                     block_offset,
-        volatile OffsetT                     valid_items,
+        OffsetT                     valid_items,
         Int2Type<true>              is_full_tile,
         Int2Type<RADIX_RANK_MATCH>  rank_algorithm)
     {
@@ -425,7 +428,7 @@ struct AgentRadixSortDownsweep
     __device__ __forceinline__ void LoadValues(
         ValueT                      (&values)[ITEMS_PER_THREAD],
         OffsetT                     block_offset,
-        volatile OffsetT                     valid_items,
+        OffsetT                     valid_items,
         Int2Type<false>             is_full_tile,
         Int2Type<RADIX_RANK_MATCH>  rank_algorithm)
     {
@@ -444,7 +447,12 @@ struct AgentRadixSortDownsweep
         OffsetT         valid_items,
         Int2Type<false> /*is_keys_only*/)
     {
-        CTA_SYNC();
+        if (!FULL_TILE)
+        {
+            // Register pressure work-around: moving valid_items through shfl prevents compiler
+            // from reusing guards/addressing from key-loading
+            valid_items = ShuffleIndex(valid_items, 0, WARP_THREADS, 0xffffffff);
+        }
 
         ValueT values[ITEMS_PER_THREAD];
 
@@ -746,6 +754,7 @@ struct AgentRadixSortDownsweep
         else
         {
             // Process full tiles of tile_items
+            #pragma unroll 1
             while (block_offset + TILE_ITEMS <= block_end)
             {
                 ProcessTile<true>(block_offset);
