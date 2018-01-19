@@ -131,7 +131,9 @@ namespace cub {
     #define CUB_SCALED_ITEMS_PER_THREAD(NOMINAL_4B_ITEMS_PER_THREAD, NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH)     \
         CUB_MAX(                                                                                                \
             1,                                                                                                  \
-            ((NOMINAL_4B_ITEMS_PER_THREAD * NOMINAL_4B_BLOCK_THREADS * 4) / CUB_MAX(4, sizeof(T))) / CUB_SCALED_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH))
+            (sizeof(T) < 4) ?                                                                                   \
+                ((NOMINAL_4B_ITEMS_PER_THREAD * NOMINAL_4B_BLOCK_THREADS * 4) / CUB_MAX(4, sizeof(T))) / CUB_SCALED_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH) / 2 :  \
+                ((NOMINAL_4B_ITEMS_PER_THREAD * NOMINAL_4B_BLOCK_THREADS * 4) / CUB_MAX(4, sizeof(T))) / CUB_SCALED_BLOCK_THREADS(NOMINAL_4B_BLOCK_THREADS, T, PTX_ARCH))
 #endif
 
 /// Define both nominal threads-per-block and items-per-thread

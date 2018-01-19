@@ -499,7 +499,7 @@ struct DeviceRadixSortPolicy
     };
 
     // Dominant-sized key/value type
-    typedef typename If<(sizeof(KeyT) >= sizeof(ValueT)), KeyT, ValueT>::Type DominantT;
+    typedef typename If<(sizeof(ValueT) > 4) && (sizeof(KeyT) < sizeof(ValueT)), ValueT, KeyT>::Type DominantT;
 
     //------------------------------------------------------------------------------
     // Architecture-specific tuning policies
@@ -678,7 +678,7 @@ struct DeviceRadixSortPolicy
 
         // Downsweep policies
         typedef AgentRadixSortDownsweepPolicy <CUB_SCALED_GRANULARITIES(256, 25, DominantT),  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MATCH, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS>   DownsweepPolicy;
-        typedef AgentRadixSortDownsweepPolicy <CUB_SCALED_GRANULARITIES(192, 29, DominantT),  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS - 1>   AltDownsweepPolicy;
+        typedef AgentRadixSortDownsweepPolicy <CUB_SCALED_GRANULARITIES(192, 39, DominantT),  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS - 1>   AltDownsweepPolicy;
 
         // Upsweep policies
         typedef DownsweepPolicy UpsweepPolicy;
