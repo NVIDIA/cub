@@ -294,7 +294,7 @@ struct AgentReduce
         // Continue reading items (block-striped)
         while (thread_offset < valid_items)
         {
-            OutputT item        = d_wrapped_in[block_offset + thread_offset];
+            OutputT item        (d_wrapped_in[block_offset + thread_offset]);
             thread_aggregate    = reduction_op(thread_aggregate, item);
             thread_offset       += BLOCK_THREADS;
         }
