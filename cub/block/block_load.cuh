@@ -110,6 +110,10 @@ __device__ __forceinline__ void LoadDirectBlocked(
 {
     InputIteratorT thread_itr = block_itr + (linear_tid * ITEMS_PER_THREAD);
 
+    // Register pressure work-around: moving valid_items through shfl prevents compiler
+    // from reusing guards/addressing from prior guarded loads
+    valid_items = ShuffleIndex(valid_items, 0, CUB_PTX_WARP_THREADS, 0xffffffff);
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
@@ -293,6 +297,10 @@ __device__ __forceinline__ void LoadDirectStriped(
 {
     InputIteratorT thread_itr = block_itr + linear_tid;
 
+    // Register pressure work-around: moving valid_items through shfl prevents compiler
+    // from reusing guards/addressing from prior guarded loads
+    valid_items = ShuffleIndex(valid_items, 0, CUB_PTX_WARP_THREADS, 0xffffffff);
+
     #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
     {
@@ -406,6 +414,10 @@ __device__ __forceinline__ void LoadDirectWarpStriped(
     int warp_offset        = wid * CUB_PTX_WARP_THREADS * ITEMS_PER_THREAD;
 
     InputIteratorT thread_itr = block_itr + warp_offset + tid ;
+
+    // Register pressure work-around: moving valid_items through shfl prevents compiler
+    // from reusing guards/addressing from prior guarded loads
+    valid_items = ShuffleIndex(valid_items, 0, CUB_PTX_WARP_THREADS, 0xffffffff);
 
     // Load directly in warp-striped order
     #pragma unroll

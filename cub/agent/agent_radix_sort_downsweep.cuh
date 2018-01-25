@@ -129,9 +129,6 @@ struct AgentRadixSortDownsweep
 
     enum
     {
-        LOG_WARP_THREADS        = CUB_PTX_LOG_WARP_THREADS,
-        WARP_THREADS            = 1 << LOG_WARP_THREADS,
-
         BLOCK_THREADS           = AgentRadixSortDownsweepPolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD        = AgentRadixSortDownsweepPolicy::ITEMS_PER_THREAD,
         RADIX_BITS              = AgentRadixSortDownsweepPolicy::RADIX_BITS,
@@ -447,14 +444,9 @@ struct AgentRadixSortDownsweep
         OffsetT         valid_items,
         Int2Type<false> /*is_keys_only*/)
     {
-        if (!FULL_TILE)
-        {
-            // Register pressure work-around: moving valid_items through shfl prevents compiler
-            // from reusing guards/addressing from key-loading
-            valid_items = ShuffleIndex(valid_items, 0, WARP_THREADS, 0xffffffff);
-        }
-
         ValueT values[ITEMS_PER_THREAD];
+
+        CTA_SYNC();
 
         LoadValues(
             values,
