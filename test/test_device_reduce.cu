@@ -131,6 +131,10 @@ cudaError_t Dispatch(
             d_in, d_out, num_items, reduction_op, identity,
             stream, debug_synchronous);
     }
+
+    printf("\t timing_timing_iterations: %d, temp_storage_bytes: %lld\n",
+        timing_timing_iterations, temp_storage_bytes);
+
     return error;
 }
 
@@ -162,6 +166,10 @@ cudaError_t Dispatch(
     {
         error = DeviceReduce::Sum(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
+
+    printf("\t timing_timing_iterations: %d, temp_storage_bytes: %lld\n",
+        timing_timing_iterations, temp_storage_bytes);
+
     return error;
 }
 
@@ -193,6 +201,10 @@ cudaError_t Dispatch(
     {
         error = DeviceReduce::Min(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
+
+    printf("\t timing_timing_iterations: %d, temp_storage_bytes: %lld\n",
+        timing_timing_iterations, temp_storage_bytes);
+
     return error;
 }
 
@@ -224,6 +236,10 @@ cudaError_t Dispatch(
     {
         error = DeviceReduce::Max(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
+
+    printf("\t timing_timing_iterations: %d, temp_storage_bytes: %lld\n",
+        timing_timing_iterations, temp_storage_bytes);
+
     return error;
 }
 
@@ -255,6 +271,10 @@ cudaError_t Dispatch(
     {
         error = DeviceReduce::ArgMin(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
+
+    printf("\t timing_timing_iterations: %d, temp_storage_bytes: %lld\n",
+        timing_timing_iterations, temp_storage_bytes);
+
     return error;
 }
 
@@ -286,6 +306,10 @@ cudaError_t Dispatch(
     {
         error = DeviceReduce::ArgMax(d_temp_storage, temp_storage_bytes, d_in, d_out, num_items, stream, debug_synchronous);
     }
+
+    printf("\t timing_timing_iterations: %d, temp_storage_bytes: %lld\n",
+        timing_timing_iterations, temp_storage_bytes);
+
     return error;
 }
 
@@ -821,6 +845,7 @@ struct Solution<cub::ArgMax, InputValueT, OutputValueT>
 template <
     typename                BackendT,
     typename                DeviceInputIteratorT,
+    typename                DeviceOutputIteratorT,
     typename                HostReferenceIteratorT,
     typename                OffsetT,
     typename                OffsetIteratorT,
@@ -828,21 +853,19 @@ template <
 void Test(
     BackendT                backend,
     DeviceInputIteratorT    d_in,
+    DeviceOutputIteratorT   d_out,
     OffsetT                 num_items,
     OffsetT                 num_segments,
     OffsetIteratorT         d_segment_offsets,
     ReductionOpT            reduction_op,
     HostReferenceIteratorT  h_reference)
 {
-    // Input and output data types
-    typedef typename std::iterator_traits<DeviceInputIteratorT>::value_type     InputT;
-    typedef typename std::iterator_traits<HostReferenceIteratorT>::value_type   OutputT;
+    // Input data types
+    typedef typename std::iterator_traits<DeviceInputIteratorT>::value_type InputT;
 
     // Allocate CUB_CDP device arrays for temp storage size and error
-    OutputT         *d_out = NULL;
     size_t          *d_temp_storage_bytes = NULL;
     cudaError_t     *d_cdp_error = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out,                 sizeof(OutputT) * num_segments));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes,  sizeof(size_t) * 1));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cdp_error,           sizeof(cudaError_t) * 1));
 
@@ -856,16 +879,6 @@ void Test(
 
     // Allocate temp device storage
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
-
-    // Clear device output
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(OutputT) * num_segments));
-
-    // Run once with discard iterator
-    DiscardOutputIterator<OffsetT> discard_itr;
-    CubDebugExit(Dispatch(backend, 1,
-        d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, discard_itr, num_items, num_segments, d_segment_offsets,
-        reduction_op, 0, true));
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(backend, 1,
@@ -902,7 +915,6 @@ void Test(
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, giga_rate, giga_bandwidth);
     }
 
-    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
@@ -943,10 +955,18 @@ void SolveAndTest(
     OutputT *h_reference = new OutputT[num_segments];
     SolutionT::Solve(h_in, h_reference, num_segments, h_segment_offsets, reduction_op);
 
-    // Run test
-    Test(Int2Type<BACKEND>(), d_in, num_items, num_segments, d_segment_offsets, reduction_op, h_reference);
+    // Run with discard iterator
+    DiscardOutputIterator<OffsetT> discard_itr;
+    Test(Int2Type<BACKEND>(), d_in, discard_itr, num_items, num_segments, d_segment_offsets, reduction_op, h_reference);
+
+    // Run with output data (cleared for sanity-check)
+    OutputT *d_out = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(OutputT) * num_segments));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(OutputT) * num_segments));
+    Test(Int2Type<BACKEND>(), d_in, d_out, num_items, num_segments, d_segment_offsets, reduction_op, h_reference);
 
     // Cleanup
+    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
     if (h_reference) delete[] h_reference;
 }
 
@@ -1313,18 +1333,18 @@ int main(int argc, char** argv)
 
         TestType<char, int>(max_items, max_segments);
 
-        TestType<short, short>(max_items, max_segments);
-        TestType<int, int>(max_items, max_segments);
-        TestType<long, long>(max_items, max_segments);
-        TestType<long long, long long>(max_items, max_segments);
-
-        TestType<uchar2, uchar2>(max_items, max_segments);
-        TestType<uint2, uint2>(max_items, max_segments);
-        TestType<ulonglong2, ulonglong2>(max_items, max_segments);
-        TestType<ulonglong4, ulonglong4>(max_items, max_segments);
-
-        TestType<TestFoo, TestFoo>(max_items, max_segments);
-        TestType<TestBar, TestBar>(max_items, max_segments);
+//        TestType<short, short>(max_items, max_segments);
+//        TestType<int, int>(max_items, max_segments);
+//        TestType<long, long>(max_items, max_segments);
+//        TestType<long long, long long>(max_items, max_segments);
+//
+//        TestType<uchar2, uchar2>(max_items, max_segments);
+//        TestType<uint2, uint2>(max_items, max_segments);
+//        TestType<ulonglong2, ulonglong2>(max_items, max_segments);
+//        TestType<ulonglong4, ulonglong4>(max_items, max_segments);
+//
+//        TestType<TestFoo, TestFoo>(max_items, max_segments);
+//        TestType<TestBar, TestBar>(max_items, max_segments);
 
     }
 

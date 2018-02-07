@@ -422,50 +422,6 @@ struct AgentSpmv
 
 #if (CUB_PTX_ARCH >= 520)
 
-/*
-        OffsetT*    s_tile_row_end_offsets  = &temp_storage.aliasable.merge_items[tile_num_nonzeros].row_end_offset;
-        ValueT*     s_tile_nonzeros         = &temp_storage.aliasable.merge_items[0].nonzero;
-
-        OffsetT col_indices[ITEMS_PER_THREAD];
-        ValueT mat_values[ITEMS_PER_THREAD];
-        int nonzero_indices[ITEMS_PER_THREAD];
-
-        // Gather the nonzeros for the merge tile into shared memory
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            nonzero_indices[ITEM]           = threadIdx.x + (ITEM * BLOCK_THREADS);
-
-            ValueIteratorT a                = wd_values + tile_start_coord.y + nonzero_indices[ITEM];
-            ColumnIndicesIteratorT ci       = wd_column_indices + tile_start_coord.y + nonzero_indices[ITEM];
-
-            col_indices[ITEM]               = (nonzero_indices[ITEM] < tile_num_nonzeros) ? *ci : 0;
-            mat_values[ITEM]                = (nonzero_indices[ITEM] < tile_num_nonzeros) ? *a : 0.0;
-        }
-
-        CTA_SYNC();
-
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            VectorValueIteratorT x = wd_vector_x + col_indices[ITEM];
-            mat_values[ITEM] *= *x;
-        }
-
-        CTA_SYNC();
-
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            ValueT *s = s_tile_nonzeros + nonzero_indices[ITEM];
-
-            *s = mat_values[ITEM];
-        }
-
-        CTA_SYNC();
-
-*/
-
         OffsetT*    s_tile_row_end_offsets  = &temp_storage.aliasable.merge_items[0].row_end_offset;
         ValueT*     s_tile_nonzeros         = &temp_storage.aliasable.merge_items[tile_num_rows + ITEMS_PER_THREAD].nonzero;
 
