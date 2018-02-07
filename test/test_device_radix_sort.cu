@@ -901,19 +901,21 @@ void TestBackend(
         }
     }
 
+#ifdef SEGMENTED_SORT
+    // Test multi-segment implementations
+    Test<CUB_SEGMENTED, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+    Test<CUB_SEGMENTED_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+#else   // SEGMENTED_SORT
     if (num_segments == 1)
     {
         // Test single-segment implementations
         Test<CUB, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
         Test<CUB_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-#ifdef CUB_CDP
+    #ifdef CUB_CDP
         Test<CDP, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-#endif
+    #endif
     }
-
-    // Test multi-segment implementations
-    Test<CUB_SEGMENTED, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-    Test<CUB_SEGMENTED_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+#endif  // SEGMENTED_SORT
 
     if (h_values) delete[] h_values;
     if (h_reference_values) delete[] h_reference_values;
@@ -1020,6 +1022,7 @@ void TestSegments(
 {
     int *h_segment_offsets = new int[max_segments + 1];
 
+#ifdef SEGMENTED_SORT
     for (int num_segments = max_segments; num_segments > 1; num_segments = (num_segments + 32 - 1) / 32)
     {
         if (num_items / num_segments < 128 * 1000) {
@@ -1028,14 +1031,14 @@ void TestSegments(
             TestBits(h_keys, num_items, num_segments, h_segment_offsets);
         }
     }
-
+#else
     // Test single segment
     if (num_items < 128 * 1000) {
         // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
         InitializeSegments(num_items, 1, h_segment_offsets);
         TestBits(h_keys, num_items, 1, h_segment_offsets);
     }
-
+#endif
     if (h_segment_offsets) delete[] h_segment_offsets;
 }
 
