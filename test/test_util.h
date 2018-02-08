@@ -49,11 +49,14 @@
 #include <limits>
 
 #include "mersenne.h"
+#include "half.h"
 
 #include "cub/util_debug.cuh"
 #include "cub/util_device.cuh"
 #include "cub/util_type.cuh"
 #include "cub/util_macro.cuh"
+#include "cub/iterator/discard_output_iterator.cuh"
+
 
 /******************************************************************************
  * Assertion macros
@@ -381,6 +384,17 @@ __noinline__ bool IsNaN<double4>(double4 val)
 {
     return (IsNaN(val.y) || IsNaN(val.x) || IsNaN(val.w) || IsNaN(val.z));
 }
+
+
+template<>
+__noinline__ bool IsNaN<half_t>(half_t val)
+{
+    volatile unsigned short bits = reinterpret_cast<unsigned short &>(val);
+
+    return (((bits >= 0x7C01) && (bits <= 0x7FFF)) ||
+        ((bits >= 0xFC01) && (bits <= 0xFFFFFFFF)));
+}
+
 
 
 /**
@@ -1327,6 +1341,20 @@ int CompareDeviceResults(
     return 0;
 }
 
+/**
+ * Verify the contents of a device array match those
+ * of a host array
+ */
+template <typename S, typename OffsetT>
+int CompareDeviceResults(
+    S *h_reference,
+    cub::DiscardOutputIterator<OffsetT> d_data,
+    size_t num_items,
+    bool verbose = true,
+    bool display_data = false)
+{
+    return 0;
+}
 
 /**
  * Verify the contents of a device array match those

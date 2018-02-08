@@ -37,6 +37,10 @@
 #include <algorithm>
 #include <typeinfo>
 
+#if (__CUDACC_VER_MAJOR__ >= 9)
+    #include <cuda_fp16.h>
+#endif
+
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_segmented_radix_sort.cuh>
@@ -714,6 +718,13 @@ void Test(
     KeyT        *h_reference_keys,
     ValueT      *h_reference_values)
 {
+    // Key alias type
+#if (__CUDACC_VER_MAJOR__ >= 9)
+    typedef typename If<Equals<KeyT, half_t>::VALUE, __half, KeyT>::Type KeyAliasT;
+#else
+    typedef KeyT KeyAliasT;
+#endif
+
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
     printf("%s %s cub::DeviceRadixSort %d items, %d segments, %d-byte keys (%s) %d-byte values (%s), descending %d, begin_bit %d, end_bit %d\n",
@@ -732,12 +743,12 @@ void Test(
     }
 
     // Allocate device arrays
-    DoubleBuffer<KeyT>   d_keys;
-    DoubleBuffer<ValueT> d_values;
-    int                 *d_selector;
-    int                 *d_segment_offsets;
-    size_t              *d_temp_storage_bytes;
-    cudaError_t         *d_cdp_error;
+    DoubleBuffer<KeyAliasT> d_keys;
+    DoubleBuffer<ValueT>    d_values;
+    int                     *d_selector;
+    int                     *d_segment_offsets;
+    size_t                  *d_temp_storage_bytes;
+    cudaError_t             *d_cdp_error;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[0], sizeof(KeyT) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[1], sizeof(KeyT) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_selector, sizeof(int) * 1));
@@ -787,7 +798,7 @@ void Test(
 
     // Check for correctness (and display results, if specified)
     printf("Warmup done.  Checking results:\n"); fflush(stdout);
-    int compare = CompareDeviceResults(h_reference_keys, d_keys.Current(), num_items, true, g_verbose);
+    int compare = CompareDeviceResults(h_reference_keys, reinterpret_cast<KeyT*>(d_keys.Current()), num_items, true, g_verbose);
     printf("\t Compare keys (selector %d): %s ", d_keys.selector, compare ? "FAIL" : "PASS"); fflush(stdout);
     if (!KEYS_ONLY)
     {
@@ -798,7 +809,7 @@ void Test(
     if (BACKEND == CUB_NO_OVERWRITE)
     {
         // Check that input isn't overwritten
-        int input_compare = CompareDeviceResults(h_keys, d_keys.d_buffers[0], num_items, true, g_verbose);
+        int input_compare = CompareDeviceResults(h_keys, reinterpret_cast<KeyT*>(d_keys.d_buffers[0]), num_items, true, g_verbose);
         compare |= input_compare;
         printf("\t Compare input keys: %s ", input_compare ? "FAIL" : "PASS"); fflush(stdout);
     }
@@ -890,19 +901,21 @@ void TestBackend(
         }
     }
 
+#ifdef SEGMENTED_SORT
+    // Test multi-segment implementations
+    Test<CUB_SEGMENTED, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+    Test<CUB_SEGMENTED_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+#else   // SEGMENTED_SORT
     if (num_segments == 1)
     {
         // Test single-segment implementations
         Test<CUB, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
         Test<CUB_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-#ifdef CUB_CDP
+    #ifdef CUB_CDP
         Test<CDP, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-#endif
+    #endif
     }
-
-    // Test multi-segment implementations
-    Test<CUB_SEGMENTED, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-    Test<CUB_SEGMENTED_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+#endif  // SEGMENTED_SORT
 
     if (h_values) delete[] h_values;
     if (h_reference_values) delete[] h_reference_values;
@@ -1009,6 +1022,7 @@ void TestSegments(
 {
     int *h_segment_offsets = new int[max_segments + 1];
 
+#ifdef SEGMENTED_SORT
     for (int num_segments = max_segments; num_segments > 1; num_segments = (num_segments + 32 - 1) / 32)
     {
         if (num_items / num_segments < 128 * 1000) {
@@ -1017,14 +1031,14 @@ void TestSegments(
             TestBits(h_keys, num_items, num_segments, h_segment_offsets);
         }
     }
-
+#else
     // Test single segment
     if (num_items < 128 * 1000) {
         // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
         InitializeSegments(num_items, 1, h_segment_offsets);
         TestBits(h_keys, num_items, 1, h_segment_offsets);
     }
-
+#endif
     if (h_segment_offsets) delete[] h_segment_offsets;
 }
 
@@ -1205,9 +1219,12 @@ int main(int argc, char** argv)
     if (num_items < 0)      num_items       = 48000000;
     if (num_segments < 0)   num_segments    = 5000;
 
-    Test<CUB, unsigned char, NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<CUB, unsigned char, unsigned char, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<CUB, unsigned char, unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned char, NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned char, unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+
+#if (__CUDACC_VER_MAJOR__ >= 9)
+    Test<CUB,           half_t,       NullType, IS_DESCENDING>(       num_items, 1,               RANDOM, entropy_reduction, 0, bits);
+#endif
 
     Test<CUB_SEGMENTED, unsigned int,       NullType, IS_DESCENDING>(       num_items, num_segments,    RANDOM, entropy_reduction, 0, bits);
 
@@ -1264,6 +1281,9 @@ int main(int argc, char** argv)
         TestGen<long long>            (num_items, num_segments);
         TestGen<unsigned long long>   (num_items, num_segments);
 
+#if (__CUDACC_VER_MAJOR__ >= 9)
+        TestGen<half_t>                (num_items, num_segments);
+#endif
         TestGen<float>                (num_items, num_segments);
 
         if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted

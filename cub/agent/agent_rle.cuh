@@ -618,8 +618,8 @@ struct AgentRle
         OffsetT             num_items,          ///< Total number of global input items
         OffsetT             num_remaining,      ///< Number of global input items remaining (including this tile)
         int                 tile_idx,           ///< Tile index
-        OffsetT             tile_offset,       ///< Tile offset
-        ScanTileStateT       &tile_status)       ///< Global list of tile status
+        OffsetT             tile_offset,        ///< Tile offset
+        ScanTileStateT      &tile_status)       ///< Global list of tile status
     {
         if (tile_idx == 0)
         {

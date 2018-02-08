@@ -99,6 +99,8 @@ BLOCK_SCAN = 		test_block_scan_raking \
 BLOCK_RADIX_SORT = 	test_block_radix_sort_keys \
 	 				test_block_radix_sort_pairs	
 
+DEVICE_RADIX_SORT = 	test_device_radix_sort \
+	 					test_device_radix_sort_segmented	
 		
 ALL = 				link \
 	 				test_iterator \
@@ -113,7 +115,7 @@ ALL = 				link \
 				 	test_device_reduce \
 			 		test_device_histogram \
 			 		test_device_scan \
-			 		test_device_radix_sort \
+	 				$(DEVICE_RADIX_SORT) \
 					test_device_reduce_by_key\
 					test_device_run_length_encode\
 		 			test_device_select_unique \
@@ -163,6 +165,8 @@ run_block_scan :
 run_block_radix_sort : 
 	for i in $(BLOCK_RADIX_SORT); do $(MEMCHECK) ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
+run_device_radix_sort : 
+	for i in $(DEVICE_RADIX_SORT); do $(MEMCHECK) ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
 
 #-------------------------------------------------------------------------------
@@ -394,6 +398,17 @@ test_device_radix_sort: bin/test_device_radix_sort_$(SUFFIX)
 bin/test_device_radix_sort_$(SUFFIX) : test_device_radix_sort.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_device_radix_sort_$(SUFFIX) test_device_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
+
+#-------------------------------------------------------------------------------
+# make test_device_radix_sort_segmented
+#-------------------------------------------------------------------------------
+
+test_device_radix_sort_segmented: bin/test_device_radix_sort_segmented_$(SUFFIX)
+
+bin/test_device_radix_sort_segmented_$(SUFFIX) : test_device_radix_sort.cu $(DEPS)
+	mkdir -p bin
+	$(NVCC) $(DEFINES) -DSEGMENTED_SORT $(SM_TARGETS) -o bin/test_device_radix_sort_segmented_$(SUFFIX) test_device_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
