@@ -589,7 +589,6 @@ public:
         // Each warp will strip-mine its section of input, one strip at a time
 
         volatile DigitCounterT  *digit_counters[KEYS_PER_THREAD];
-        uint32_t                lane_id         = LaneId();
         uint32_t                warp_id         = linear_tid >> LOG_WARP_THREADS;
         uint32_t                lane_mask_lt    = LaneMaskLt();
 
