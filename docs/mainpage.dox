@@ -62,7 +62,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.7.4</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.7.5</b></em></a>
 
 </td><td>
 
@@ -527,8 +527,18 @@ for the current feature release.
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
+02/08/2018<br>
+[<b>CUB v1.7.5</b>](download_cub.html)
+</td><td style="vertical-align:text-top;">
+  - New Features: 
+    - Added radix-sorting support for __half keys
+    - Updated sorting policies for improved 8b-key performance 
+  - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
+</td></tr>
+
+<tr><td style="white-space: nowrap; vertical-align:text-top;">
 09/20/2017<br>
-[<b>CUB v1.7.4</b>](download_cub.html)
+[<b>CUB v1.7.4</b>](https://github.com/NVlabs/cub/archive/1.7.4.zip)
 </td><td style="vertical-align:text-top;">
   - New Features: 
     - Compatible with CUDA9 and SM7.x (Volta) independent thread scheduling 
