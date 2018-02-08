@@ -503,8 +503,6 @@ struct AgentReduceByKey
             // If the last tile is a whole tile, output the final_value
             if (num_remaining == TILE_ITEMS)
             {
-                _CubLog("output[%d] = {%d, %d}\n", num_segments, keys[ITEMS_PER_THREAD - 1], block_aggregate.value);
-
                 d_unique_out[num_segments]      = keys[ITEMS_PER_THREAD - 1];
                 d_aggregates_out[num_segments]  = total_aggregate.value;
                 num_segments++;
