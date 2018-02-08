@@ -454,13 +454,13 @@ struct AgentReduceByKey
         // Perform exclusive tile scan
         OffsetValuePairT    block_aggregate;        // Inclusive block-wide scan aggregate
         OffsetT             num_segments_prefix;    // Number of segments prior to this tile
-        ValueOutputT        total_aggregate;        // The tile prefix folded with block_aggregate
+        OffsetValuePairT    total_aggregate;        // The tile prefix folded with block_aggregate
         if (tile_idx == 0)
         {
             // Scan first tile
             BlockScanT(temp_storage.scan).ExclusiveScan(scan_items, scan_items, scan_op, block_aggregate);
             num_segments_prefix     = 0;
-            total_aggregate         = block_aggregate.value;
+            total_aggregate         = block_aggregate;
 
             // Update tile status if there are successor tiles
             if ((!IS_LAST_TILE) && (threadIdx.x == 0))
@@ -474,9 +474,7 @@ struct AgentReduceByKey
 
             block_aggregate         = prefix_op.GetBlockAggregate();
             num_segments_prefix     = prefix_op.GetExclusivePrefix().key;
-            total_aggregate         = reduction_op(
-                                        prefix_op.GetExclusivePrefix().value,
-                                        block_aggregate.value);
+            total_aggregate         = prefix_op.GetInclusivePrefix();
         }
 
         // Rezip scatter items and segment indices
@@ -505,8 +503,10 @@ struct AgentReduceByKey
             // If the last tile is a whole tile, output the final_value
             if (num_remaining == TILE_ITEMS)
             {
+                _CubLog("output[%d] = {%d, %d}\n", num_segments, keys[ITEMS_PER_THREAD - 1], block_aggregate.value);
+
                 d_unique_out[num_segments]      = keys[ITEMS_PER_THREAD - 1];
-                d_aggregates_out[num_segments]  = total_aggregate;
+                d_aggregates_out[num_segments]  = total_aggregate.value;
                 num_segments++;
             }
 
