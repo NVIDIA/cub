@@ -4,6 +4,7 @@
     - Bug fixes: 
         - Syntax tweaks to mollify Clang
         - Issue #127: DeviceRunLengthEncode::Encode returns wrong results 
+        - Issue #128: 7-bit sorting passes fail for sm61 w/ large-values
         
           		  
 //-----------------------------------------------------------------------------

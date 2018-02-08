@@ -140,7 +140,7 @@ public:
     enum
     {
         /// Number of bin-starting offsets tracked per thread
-        BINS_TRACKED_PER_THREAD = CUB_MAX(1, RADIX_DIGITS / BLOCK_THREADS),
+        BINS_TRACKED_PER_THREAD = CUB_MAX(1, (RADIX_DIGITS + BLOCK_THREADS - 1) / BLOCK_THREADS),
     };
 
 private:
@@ -495,7 +495,7 @@ public:
     enum
     {
         /// Number of bin-starting offsets tracked per thread
-        BINS_TRACKED_PER_THREAD = CUB_MAX(1, RADIX_DIGITS / BLOCK_THREADS),
+        BINS_TRACKED_PER_THREAD = CUB_MAX(1, (RADIX_DIGITS + BLOCK_THREADS - 1) / BLOCK_THREADS),
     };
 
 private:
