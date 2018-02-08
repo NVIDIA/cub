@@ -279,6 +279,10 @@ __global__ void DeviceRadixSortSingleTileKernel(
     // Load values
     if (!KEYS_ONLY)
     {
+        // Register pressure work-around: moving num_items through shfl prevents compiler
+        // from reusing guards/addressing from prior guarded loads
+        num_items = ShuffleIndex(num_items, 0, CUB_PTX_WARP_THREADS, 0xffffffff);
+
         BlockLoadValues(temp_storage.load_values).Load(d_values_in, values, num_items);
 
         CTA_SYNC();
