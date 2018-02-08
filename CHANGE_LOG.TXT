@@ -1,3 +1,11 @@
+1.7.5    02/08/2018
+    - Added radix-sorting support for __half keys
+    - Updated sorting policies for improved 8b-key performance 
+    - Bug fixes: 
+        - Syntax tweaks to mollify Clang 
+          		  
+//-----------------------------------------------------------------------------
+
 1.7.4    09/20/2017
     - Bug fixes: 
         - Issue #114: Can't pair non-trivially-constructible values in radix sort
