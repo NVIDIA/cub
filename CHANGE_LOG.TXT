@@ -2,7 +2,9 @@
     - Added radix-sorting support for __half keys
     - Updated sorting policies for improved 8b-key performance 
     - Bug fixes: 
-        - Syntax tweaks to mollify Clang 
+        - Syntax tweaks to mollify Clang
+        - Issue #127: DeviceRunLengthEncode::Encode returns wrong results 
+        
           		  
 //-----------------------------------------------------------------------------
 
