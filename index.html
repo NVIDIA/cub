@@ -115,7 +115,7 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.7.4</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.7.5</b></em></a>
 
 </td><td>
 
@@ -131,12 +131,6 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <a href="https://github.com/NVlabs/cub"><em>Browse or fork CUB at GitHub</em></a>
 
 </td><td>
-
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-<a href="http://groups.google.com/group/cub-users"><img src="groups-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
-&nbsp;&nbsp;
-<a href="http://groups.google.com/group/cub-users"><em>The cub-users discussion forum</em></a>
-
 </td></tr></table>
 
 <h1><a class="anchor" id="sec1"></a>
@@ -394,8 +388,20 @@ var searchBox = new SearchBox("searchBox", "search",false,'Search');
 <dl class="section user"><dt></dt><dd>CUB releases are labeled using version identifiers having three fields: <code>&lt;epoch&gt;.&lt;feature&gt;.&lt;update&gt;</code>. The <em>epoch</em> field corresponds to support for a major change or update to the CUDA programming model. The <em>feature</em> field corresponds to a stable set of features, functionality, and interface. The <em>update</em> field corresponds to a bug-fix or performance update for that feature set. At the moment, we do not publicly provide non-stable releases such as development snapshots, beta releases or rolling releases. (Feel free to contact us if you would like access to such things.)</dd></dl>
 <dl class="section user"><dt></dt><dd>The following table enumerates prior feature releases as well as update versions for the current feature release. <table class="doxtable">
 <tr>
+<td style="white-space: nowrap; vertical-align:text-top;">02/08/2018<br/>
+ <a href="download_cub.html"><b>CUB v1.7.5</b></a> </td><td style="vertical-align:text-top;"><ul>
+<li>New Features:<ul>
+<li>Added radix-sorting support for __half keys</li>
+<li>Updated sorting policies for improved 8b-key performance</li>
+</ul>
+</li>
+<li>See the <a href="CHANGE_LOG.TXT">change-log</a> for further details, including bug-fixes </li>
+</ul>
+<p class="endtd"></p>
+</td></tr>
+<tr>
 <td style="white-space: nowrap; vertical-align:text-top;">09/20/2017<br/>
- <a href="download_cub.html"><b>CUB v1.7.4</b></a> </td><td style="vertical-align:text-top;"><ul>
+ <a href="https://github.com/NVlabs/cub/archive/1.7.4.zip"><b>CUB v1.7.4</b></a> </td><td style="vertical-align:text-top;"><ul>
 <li>New Features:<ul>
 <li>Compatible with CUDA9 and SM7.x (Volta) independent thread scheduling</li>
 <li>Updated radix sorting tuning policies and performance</li>
