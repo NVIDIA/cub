@@ -47,6 +47,9 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
+static const int        NUM_WARPS       = 2;
+
+
 bool                    g_verbose       = false;
 int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator(true);
@@ -251,7 +254,10 @@ __global__ void WarpScanKernel(
     typedef WarpScan<T, LOGICAL_WARP_THREADS> WarpScanT;
 
     // Allocate temp storage in shared memory
-    __shared__ typename WarpScanT::TempStorage temp_storage;
+    __shared__ typename WarpScanT::TempStorage temp_storage[NUM_WARPS];
+
+    // Get warp index
+    int warp_id = threadIdx.x / LOGICAL_WARP_THREADS;
 
     // Per-thread tile data
     T data = d_in[threadIdx.x];
@@ -264,7 +270,7 @@ __global__ void WarpScanKernel(
     T aggregate;
 
     // Test scan
-    WarpScanT warp_scan(temp_storage);
+    WarpScanT warp_scan(temp_storage[warp_id]);
     DeviceTest(
         warp_scan,
         data,
@@ -306,29 +312,37 @@ __global__ void WarpScanKernel(
 template <
     typename        T,
     typename        ScanOpT>
-T Initialize(
+void Initialize(
     GenMode         gen_mode,
     T               *h_in,
     T               *h_reference,
-    int             num_items,
+    int             logical_warp_items,
     ScanOpT         scan_op,
-    T               initial_value)
+    T               initial_value,
+    T               warp_aggregates[NUM_WARPS])
 {
-    InitValue(gen_mode, h_in[0], 0);
-
-    T block_aggregate   = h_in[0];
-    h_reference[0]      = initial_value;
-    T inclusive         = scan_op(initial_value, h_in[0]);
-
-    for (int i = 1; i < num_items; ++i)
+    for (int w = 0; w < NUM_WARPS; ++w)
     {
+        int base_idx = (w * logical_warp_items);
+        int i = base_idx;
+
         InitValue(gen_mode, h_in[i], i);
-        h_reference[i] = inclusive;
-        inclusive = scan_op(inclusive, h_in[i]);
-        block_aggregate = scan_op(block_aggregate, h_in[i]);
+
+        T warp_aggregate   = h_in[i];
+        h_reference[i]      = initial_value;
+        T inclusive         = scan_op(initial_value, h_in[i]);
+
+        for (i = i + 1; i < base_idx + logical_warp_items; ++i)
+        {
+            InitValue(gen_mode, h_in[i], i);
+            h_reference[i] = inclusive;
+            inclusive = scan_op(inclusive, h_in[i]);
+            warp_aggregate = scan_op(warp_aggregate, h_in[i]);
+        }
+
+        warp_aggregates[w] = warp_aggregate;
     }
 
-    return block_aggregate;
 }
 
 
@@ -338,29 +352,36 @@ T Initialize(
 template <
     typename    T,
     typename    ScanOpT>
-T Initialize(
+void Initialize(
     GenMode     gen_mode,
     T           *h_in,
     T           *h_reference,
-    int         num_items,
+    int         logical_warp_items,
     ScanOpT     scan_op,
-    NullType)
+    NullType,
+    T           warp_aggregates[NUM_WARPS])
 {
-    InitValue(gen_mode, h_in[0], 0);
-
-    T block_aggregate   = h_in[0];
-    T inclusive         = h_in[0];
-    h_reference[0]      = inclusive;
-
-    for (int i = 1; i < num_items; ++i)
+    for (int w = 0; w < NUM_WARPS; ++w)
     {
-        InitValue(gen_mode, h_in[i], i);
-        inclusive = scan_op(inclusive, h_in[i]);
-        block_aggregate = scan_op(block_aggregate, h_in[i]);
-        h_reference[i] = inclusive;
-    }
+        int base_idx = (w * logical_warp_items);
+        int i = base_idx;
 
-    return block_aggregate;
+        InitValue(gen_mode, h_in[i], i);
+
+        T warp_aggregate    = h_in[i];
+        T inclusive         = h_in[i];
+        h_reference[i]      = inclusive;
+
+        for (i = i + 1; i < base_idx + logical_warp_items; ++i)
+        {
+            InitValue(gen_mode, h_in[i], i);
+            inclusive = scan_op(inclusive, h_in[i]);
+            warp_aggregate = scan_op(warp_aggregate, h_in[i]);
+            h_reference[i] = inclusive;
+        }
+
+        warp_aggregates[w] = warp_aggregate;
+    }
 }
 
 
@@ -378,30 +399,40 @@ void Test(
     ScanOpT         scan_op,
     InitialValueT   initial_value)
 {
+    enum {
+        TOTAL_ITEMS = LOGICAL_WARP_THREADS * NUM_WARPS,
+    };
+
     // Allocate host arrays
-    T *h_in = new T[LOGICAL_WARP_THREADS];
-    T *h_reference = new T[LOGICAL_WARP_THREADS];
-    T *h_aggregate = new T[LOGICAL_WARP_THREADS];
+    T *h_in = new T[TOTAL_ITEMS];
+    T *h_reference = new T[TOTAL_ITEMS];
+    T *h_aggregate = new T[TOTAL_ITEMS];
 
     // Initialize problem
-    T aggregate = Initialize(
+    T aggregates[NUM_WARPS];
+
+    Initialize(
         gen_mode,
         h_in,
         h_reference,
         LOGICAL_WARP_THREADS,
         scan_op,
-        initial_value);
+        initial_value,
+        aggregates);
 
     if (g_verbose)
     {
         printf("Input: \n");
-        DisplayResults(h_in, LOGICAL_WARP_THREADS);
+        DisplayResults(h_in, TOTAL_ITEMS);
         printf("\n");
     }
 
-    for (int i = 0; i < LOGICAL_WARP_THREADS; ++i)
+    for (int w = 0; w < NUM_WARPS; ++w)
     {
-        h_aggregate[i] = aggregate;
+        for (int i = 0; i < LOGICAL_WARP_THREADS; ++i)
+        {
+            h_aggregate[(w * LOGICAL_WARP_THREADS) + i] = aggregates[w];
+        }
     }
 
     // Initialize/clear device arrays
@@ -409,13 +440,13 @@ void Test(
     T *d_out = NULL;
     T *d_aggregate = NULL;
     clock_t *d_elapsed = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * LOGICAL_WARP_THREADS));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * (LOGICAL_WARP_THREADS + 1)));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_aggregate, sizeof(T) * LOGICAL_WARP_THREADS));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * TOTAL_ITEMS));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * (TOTAL_ITEMS + 1)));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_aggregate, sizeof(T) * TOTAL_ITEMS));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_elapsed, sizeof(clock_t)));
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * LOGICAL_WARP_THREADS, cudaMemcpyHostToDevice));
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * (LOGICAL_WARP_THREADS + 1)));
-    CubDebugExit(cudaMemset(d_aggregate, 0, sizeof(T) * LOGICAL_WARP_THREADS));
+    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * TOTAL_ITEMS, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * (TOTAL_ITEMS + 1)));
+    CubDebugExit(cudaMemset(d_aggregate, 0, sizeof(T) * TOTAL_ITEMS));
 
     // Run kernel
     printf("Test-mode %d (%s), gen-mode %d (%s), %s warpscan, %d warp threads, %s (%d bytes) elements:\n",
@@ -428,7 +459,7 @@ void Test(
     fflush(stdout);
 
     // Run aggregate/prefix kernel
-    WarpScanKernel<LOGICAL_WARP_THREADS, TEST_MODE><<<1, LOGICAL_WARP_THREADS>>>(
+    WarpScanKernel<LOGICAL_WARP_THREADS, TEST_MODE><<<1, TOTAL_ITEMS>>>(
         d_in,
         d_out,
         d_aggregate,
@@ -444,7 +475,7 @@ void Test(
 
     // Copy out and display results
     printf("\tScan results: ");
-    int compare = CompareDeviceResults(h_reference, d_out, LOGICAL_WARP_THREADS, g_verbose, g_verbose);
+    int compare = CompareDeviceResults(h_reference, d_out, TOTAL_ITEMS, g_verbose, g_verbose);
     printf("%s\n", compare ? "FAIL" : "PASS");
     AssertEquals(0, compare);
 
@@ -452,7 +483,7 @@ void Test(
     if (TEST_MODE == AGGREGATE)
     {
         printf("\tScan aggregate: ");
-        compare = CompareDeviceResults(h_aggregate, d_aggregate, LOGICAL_WARP_THREADS, g_verbose, g_verbose);
+        compare = CompareDeviceResults(h_aggregate, d_aggregate, TOTAL_ITEMS, g_verbose, g_verbose);
         printf("%s\n", compare ? "FAIL" : "PASS");
         AssertEquals(0, compare);
     }
@@ -617,7 +648,7 @@ int main(int argc, char** argv)
         Test<32>();
         Test<16>();
         Test<9>();
-        Test<7>();
+        Test<2>();
     }
 
 #endif

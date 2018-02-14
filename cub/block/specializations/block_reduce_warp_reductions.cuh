@@ -83,7 +83,7 @@ struct BlockReduceWarpReductions
     /// Shared memory storage layout type
     struct _TempStorage
     {
-        typename WarpReduce::TempStorage    warp_reduce[WARPS];                ///< Buffer for warp-synchronous scan
+        typename WarpReduce::TempStorage    warp_reduce[WARPS];         ///< Buffer for warp-synchronous scan
         T                                   warp_aggregates[WARPS];     ///< Shared totals from each warp-synchronous scan
         T                                   block_prefix;               ///< Shared prefix for the entire thread block
     };
