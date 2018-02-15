@@ -192,7 +192,7 @@ struct BlockReduceRaking
 
                 int valid_raking_threads = (IS_FULL_TILE) ?
                     RAKING_THREADS :
-                    (num_valid + RAKING_THREADS - 1) / RAKING_THREADS;
+                    (num_valid + SEGMENT_LENGTH - 1) / SEGMENT_LENGTH;
 
                 partial = WarpReduce(temp_storage.warp_storage).template Reduce<IS_FULL_TILE && RAKING_UNGUARDED>(
                     partial,
