@@ -62,7 +62,7 @@
 
 <a href="download_cub.html"><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
 &nbsp;&nbsp;
-<a href="download_cub.html"><em><b>Download CUB v1.7.5</b></em></a>
+<a href="download_cub.html"><em><b>Download CUB v1.8.0</b></em></a>
 
 </td><td>
 
@@ -517,30 +517,33 @@ like access to such things.)
 
 \par
 The following table enumerates prior feature releases as well as update versions 
-for the current feature release.
+for the current feature release.  (Other minor releases not listed below are 
+tagged & branched in GitHub.)
 <table>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
 02/08/2018<br>
-[<b>CUB v1.7.5</b>](download_cub.html)
+[<b>CUB v1.8.0</b>](download_cub.html)
 </td><td style="vertical-align:text-top;">
-  - New Features: 
-    - Added radix-sorting support for __half keys
-    - Updated sorting policies for improved 8b-key performance 
+  - API change: change to the interfaces of cub::ShuffleIndex, cub::ShuffleUp, and 
+    cub::ShuffleDown to better compute the PTX shfl control constant for 
+    logical warps smaller than 32 threads 
   - See the [change-log](CHANGE_LOG.TXT) for further details, including bug-fixes
 </td></tr>
 
 <tr><td style="white-space: nowrap; vertical-align:text-top;">
-09/20/2017<br>
-[<b>CUB v1.7.4</b>](https://github.com/NVlabs/cub/archive/1.7.4.zip)
+02/08/2018<br>
+[<b>CUB v1.7.5</b>](https://github.com/NVlabs/cub/archive/1.7.5.zip)
 </td><td style="vertical-align:text-top;">
   - New Features: 
+    - Added radix-sorting support for __half keys
+    - Updated sorting policies for improved 8b-key performance 
     - Compatible with CUDA9 and SM7.x (Volta) independent thread scheduling 
     - Updated radix sorting tuning policies and performance
     - Shrunk repository size (purged zombie testfiles, executables, etc. from GIT history)
     - Device-wide reduction is now "run-to-run" deterministic for pseudo-associative 
       reduction operators (like floating point addition)
-  -  API Changes: 
+  - API Changes: 
     - Remove cub::WarpAll() and cub::WarpAny().  These functions served to 
       emulate __all and __any functionality for SM1.x devices, which did not have those 
       operations.  However, the SM1.x devices are now deprecated in CUDA, and the 
