@@ -1,7 +1,7 @@
 <hr>
 <h3>About CUB</h3>
 
-Current release: v1.7.5 (02/08/2018)
+Current release: v1.8.0 (02/16/2018)
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) for further information and examples.
 
