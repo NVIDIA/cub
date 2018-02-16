@@ -1,3 +1,14 @@
+1.8.0    02/15/2018
+    - API change: change to the interfaces of cub::ShuffleIndex, cub::ShuffleUp, and 
+      cub::ShuffleDown to better compute the PTX shfl control constant for 
+      logical warps smaller than 32 threads 
+    - Bug fixes: 
+        - Issue #112: Bug in WarpScan's broadcast of warp-wide aggregate for 
+          logical warps < 32 threads 
+        
+          		  
+//-----------------------------------------------------------------------------
+
 1.7.5    02/08/2018
     - Added radix-sorting support for __half keys
     - Updated sorting policies for improved 8b-key performance 

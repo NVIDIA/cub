@@ -497,33 +497,33 @@ __device__ __forceinline__ <br class="typebreak"/>
 unsigned int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group___util_ptx.html#gad6fcfe627801d7526a5f0785d774f5fa">LaneMaskGe</a> ()</td></tr>
 <tr class="memdesc:gad6fcfe627801d7526a5f0785d774f5fa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the warp lane mask of all lanes greater than or equal to the calling thread. <br/></td></tr>
 <tr class="separator:gad6fcfe627801d7526a5f0785d774f5fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gab660be0cc3a80d04881a5c13d4049253"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:gab660be0cc3a80d04881a5c13d4049253"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#gab660be0cc3a80d04881a5c13d4049253">ShuffleUp</a> (T input, int src_offset, int first_lane, unsigned int member_mask)</td></tr>
-<tr class="memdesc:gab660be0cc3a80d04881a5c13d4049253"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-up for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>-<code>src_offset</code></sub>. For thread lanes <em>i</em> &lt; src_offset, the thread's own <code>input</code> is returned to the thread. </p>
+<tr class="memitem:ga3ce0e7cbde4118ed1031accfdc1fe9b8"><td class="memTemplParams" colspan="2">template&lt;int LOGICAL_WARP_THREADS, typename T &gt; </td></tr>
+<tr class="memitem:ga3ce0e7cbde4118ed1031accfdc1fe9b8"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga3ce0e7cbde4118ed1031accfdc1fe9b8">ShuffleUp</a> (T input, int src_offset, int first_thread, unsigned int member_mask)</td></tr>
+<tr class="memdesc:ga3ce0e7cbde4118ed1031accfdc1fe9b8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-up for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>-<code>src_offset</code></sub>. For thread lanes <em>i</em> &lt; src_offset, the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_up_logo.png" alt="shfl_up_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="group___warp_module.html#gab660be0cc3a80d04881a5c13d4049253">More...</a><br/></td></tr>
-<tr class="separator:gab660be0cc3a80d04881a5c13d4049253"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4c200aa610257222e33b35f327d31d46"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ga4c200aa610257222e33b35f327d31d46"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga4c200aa610257222e33b35f327d31d46">ShuffleDown</a> (T input, int src_offset, int last_lane, unsigned int member_mask)</td></tr>
-<tr class="memdesc:ga4c200aa610257222e33b35f327d31d46"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-down for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>+<code>src_offset</code></sub>. For thread lanes <em>i</em> &gt;= WARP_THREADS, the thread's own <code>input</code> is returned to the thread. </p>
+  <a href="group___warp_module.html#ga3ce0e7cbde4118ed1031accfdc1fe9b8">More...</a><br/></td></tr>
+<tr class="separator:ga3ce0e7cbde4118ed1031accfdc1fe9b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:gaa4c1bde331915342a88e21975ab11ad3"><td class="memTemplParams" colspan="2">template&lt;int LOGICAL_WARP_THREADS, typename T &gt; </td></tr>
+<tr class="memitem:gaa4c1bde331915342a88e21975ab11ad3"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#gaa4c1bde331915342a88e21975ab11ad3">ShuffleDown</a> (T input, int src_offset, int last_thread, unsigned int member_mask)</td></tr>
+<tr class="memdesc:gaa4c1bde331915342a88e21975ab11ad3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-down for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><em>i</em>+<code>src_offset</code></sub>. For thread lanes <em>i</em> &gt;= WARP_THREADS, the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_down_logo.png" alt="shfl_down_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="group___warp_module.html#ga4c200aa610257222e33b35f327d31d46">More...</a><br/></td></tr>
-<tr class="separator:ga4c200aa610257222e33b35f327d31d46"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga18d335d5b0c7f038389af7f552919ed2"><td class="memTemplParams" colspan="2">template&lt;typename T &gt; </td></tr>
-<tr class="memitem:ga18d335d5b0c7f038389af7f552919ed2"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga18d335d5b0c7f038389af7f552919ed2">ShuffleIndex</a> (T input, int src_lane, int logical_warp_threads, unsigned int member_mask)</td></tr>
-<tr class="memdesc:ga18d335d5b0c7f038389af7f552919ed2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-broadcast for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><code>src_lane</code></sub>. For <code>src_lane</code> &lt; 0 or <code>src_lane</code> &gt;= WARP_THREADS, then the thread's own <code>input</code> is returned to the thread. </p>
+  <a href="group___warp_module.html#gaa4c1bde331915342a88e21975ab11ad3">More...</a><br/></td></tr>
+<tr class="separator:gaa4c1bde331915342a88e21975ab11ad3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga3271b0438c771086f7faf1ced681850b"><td class="memTemplParams" colspan="2">template&lt;int LOGICAL_WARP_THREADS, typename T &gt; </td></tr>
+<tr class="memitem:ga3271b0438c771086f7faf1ced681850b"><td class="memTemplItemLeft" align="right" valign="top">__device__ __forceinline__ T&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="group___warp_module.html#ga3271b0438c771086f7faf1ced681850b">ShuffleIndex</a> (T input, int src_lane, unsigned int member_mask)</td></tr>
+<tr class="memdesc:ga3271b0438c771086f7faf1ced681850b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuffle-broadcast for any data type. Each <em>warp-lane<sub>i</sub></em> obtains the value <code>input</code> contributed by <em>warp-lane</em><sub><code>src_lane</code></sub>. For <code>src_lane</code> &lt; 0 or <code>src_lane</code> &gt;= WARP_THREADS, then the thread's own <code>input</code> is returned to the thread. </p>
 <div class="image">
 <img src="shfl_broadcast_logo.png" alt="shfl_broadcast_logo.png"/>
 <div class="caption">
 .</div></div>
-  <a href="group___warp_module.html#ga18d335d5b0c7f038389af7f552919ed2">More...</a><br/></td></tr>
-<tr class="separator:ga18d335d5b0c7f038389af7f552919ed2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+  <a href="group___warp_module.html#ga3271b0438c771086f7faf1ced681850b">More...</a><br/></td></tr>
+<tr class="separator:ga3271b0438c771086f7faf1ced681850b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7926f69b78b66ee68cab442c40e326a4"><td class="memTemplParams" colspan="2">template&lt;int LABEL_BITS&gt; </td></tr>
 <tr class="memitem:a7926f69b78b66ee68cab442c40e326a4"><td class="memTemplItemLeft" align="right" valign="top">__device__ unsigned int&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacecub.html#a7926f69b78b66ee68cab442c40e326a4">MatchAny</a> (unsigned int label)</td></tr>
 <tr class="separator:a7926f69b78b66ee68cab442c40e326a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
