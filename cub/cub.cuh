@@ -92,4 +92,5 @@
 #include "util_macro.cuh"
 #include "util_ptx.cuh"
 #include "util_type.cuh"
+#include "util_allocator.cuh"
 
