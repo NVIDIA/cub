@@ -514,6 +514,7 @@ enum GenMode
     UNIFORM,            // Assign to '2', regardless of integer seed
     INTEGER_SEED,       // Assign to integer seed
     RANDOM,             // Assign to random, regardless of integer seed
+    RANDOM_BIT,         // Assign to randomly chosen 0 or 1, regardless of integer seed
 };
 
 /**
@@ -526,8 +527,13 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
     {
 #if (CUB_PTX_ARCH == 0)
     case RANDOM:
-         RandomBits(value);
-         break;
+        RandomBits(value);
+        break;
+    case RANDOM_BIT:
+        char c;
+        RandomBits(c, 0, 0, 1);
+        value = (c > 0) ? (T) 1 : (T) -1;
+        break;
 #endif
      case UNIFORM:
         value = 2;
@@ -549,6 +555,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value
     {
 #if (CUB_PTX_ARCH == 0)
     case RANDOM:
+    case RANDOM_BIT:
         char c;
         RandomBits(c, 0, 0, 1);
         value = (c > 0);

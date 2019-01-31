@@ -1219,20 +1219,27 @@ int main(int argc, char** argv)
     if (num_items < 0)      num_items       = 48000000;
     if (num_segments < 0)   num_segments    = 5000;
 
-    Test<CUB,           unsigned char, NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<CUB,           unsigned char, unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB_SEGMENTED, unsigned int,       NullType, IS_DESCENDING>(num_items, num_segments, RANDOM, entropy_reduction, 0, bits);
+
+    printf("\n-------------------------------\n");
+
+    Test<CUB,           unsigned char,      NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned int,       NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned long long, NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+
+    printf("\n-------------------------------\n");
 
 #if (__CUDACC_VER_MAJOR__ >= 9)
-    Test<CUB,           half_t,       NullType, IS_DESCENDING>(       num_items, 1,               RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           half_t,             NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
 #endif
+    Test<CUB,           float,              NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           double,             NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
-    Test<CUB_SEGMENTED, unsigned int,       NullType, IS_DESCENDING>(       num_items, num_segments,    RANDOM, entropy_reduction, 0, bits);
+    printf("\n-------------------------------\n");
 
-    Test<CUB,           unsigned int,       NullType, IS_DESCENDING>(       num_items, 1,               RANDOM, entropy_reduction, 0, bits);
-    Test<CUB,           unsigned long long, NullType, IS_DESCENDING>(       num_items, 1,               RANDOM, entropy_reduction, 0, bits);
-
-    Test<CUB,           unsigned int,       unsigned int, IS_DESCENDING>(   num_items, 1,               RANDOM, entropy_reduction, 0, bits);
-    Test<CUB,           unsigned long long, unsigned int, IS_DESCENDING>(   num_items, 1,               RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned char,      unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned int,       unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<CUB,           unsigned long long, unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
 #elif defined(QUICK_TEST)
 
@@ -1253,9 +1260,9 @@ int main(int argc, char** argv)
     Test<CUB, unsigned int, unsigned int, false> (                  num_items, 1, RANDOM, entropy_reduction, 0, bits);
     Test<THRUST, unsigned int, unsigned int, false> (               num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
-    // Compare CUB and thrust on 64b key-value pairs
-    Test<CUB, unsigned long long, unsigned long long, false> (      num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<THRUST, unsigned long long, unsigned long long, false> (   num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    // Compare CUB and thrust on 64b key + 32b value pairs
+    Test<CUB, unsigned long long, unsigned int, false> (      num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    Test<THRUST, unsigned long long, unsigned int, false> (   num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
 
 #else

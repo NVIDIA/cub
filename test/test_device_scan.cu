@@ -687,7 +687,8 @@ void Test(
         float avg_millis = elapsed_millis / g_timing_iterations;
         float giga_rate = float(num_items) / avg_millis / 1000.0f / 1000.0f;
         float giga_bandwidth = giga_rate * (sizeof(InputT) + sizeof(OutputT));
-        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, giga_rate, giga_bandwidth, giga_bandwidth / g_device_giga_bandwidth * 100.0);
+        printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak",
+            avg_millis, giga_rate, giga_bandwidth, giga_bandwidth / g_device_giga_bandwidth * 100.0);
     }
 
     printf("\n\n");
@@ -935,8 +936,19 @@ int main(int argc, char** argv)
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
 
-    TestPointer<CUB, char, int>(         num_items    , UNIFORM, Sum(), (int) (0));
-    TestPointer<CUB, int, int>(         num_items    , UNIFORM, Sum(), (int) (0));
+    TestPointer<CUB, char, int>(            num_items    , RANDOM_BIT, Sum(), (int) (0));
+    TestPointer<CUB, short, int>(           num_items    , RANDOM_BIT, Sum(), (int) (0));
+
+    printf("----------------------------\n");
+
+    TestPointer<CUB, int, int>(             num_items    , RANDOM_BIT, Sum(), (int) (0));
+    TestPointer<CUB, long long, long long>( num_items    , RANDOM_BIT, Sum(), (long long) (0));
+
+    printf("----------------------------\n");
+
+    TestPointer<CUB, float, float>(         num_items    , RANDOM_BIT, Sum(), (float) (0));
+    TestPointer<CUB, double, double>(       num_items    , RANDOM_BIT, Sum(), (double) (0));
+
 
 #elif defined(QUICK_TEST)
 
