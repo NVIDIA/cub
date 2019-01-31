@@ -816,7 +816,7 @@ void TestEven(
 
     Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, BACKEND>::Even(
         g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes,
+        ((char *) d_temp_storage) + canary_bytes, temp_storage_bytes,
         d_samples, d_histogram, num_levels, lower_level, upper_level,
         num_row_pixels, num_rows, row_stride_bytes,
         0, false);
@@ -1054,7 +1054,7 @@ void TestRange(
     // Run warmup/correctness iteration
     Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, BACKEND>::Range(
         1, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes,
+        ((char *) d_temp_storage) + canary_bytes, temp_storage_bytes,
         d_samples,
         d_histogram,
         num_levels, d_levels,
@@ -1087,7 +1087,7 @@ void TestRange(
 
     Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, BACKEND>::Range(
         g_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes,
+        ((char *) d_temp_storage) + canary_bytes, temp_storage_bytes,
         d_samples,
         d_histogram,
         num_levels, d_levels,
@@ -1521,6 +1521,19 @@ int main(int argc, char** argv)
         if (compare_npp)
             TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
+
+    {
+        // HistogramRange: signed char 256 bins
+        typedef signed char         SampleT;
+        typedef int                 LevelT;
+
+        LevelT  max_level           = 256;
+        int     num_levels[1]       = {257};
+        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
+
+        TestRange<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
+    }
+
 
 
 #elif defined(QUICK_TEST)
