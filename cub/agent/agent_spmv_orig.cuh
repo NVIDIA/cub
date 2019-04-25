@@ -484,7 +484,12 @@ struct AgentSpmv
         #pragma unroll 1
         for (int item = threadIdx.x; item <= tile_num_rows; item += BLOCK_THREADS)
         {
-            s_tile_row_end_offsets[item] = wd_row_end_offsets[tile_start_coord.x + item];
+            auto offset = tile_start_coord.x + item;
+            if (offset < spmv_params.num_rows)
+                s_tile_row_end_offsets[item] = wd_row_end_offsets[offset];
+            else {
+                s_tile_row_end_offsets[item] = wd_row_end_offsets[spmv_params.num_rows - 1];
+            }
         }
 
         CTA_SYNC();
@@ -655,6 +660,10 @@ struct AgentSpmv
                 tile_carry.value *= spmv_params.alpha;
 
             tile_carry.key += tile_start_coord.x;
+            if (tile_carry.key >= spmv_params.num_rows){
+                tile_carry.key = spmv_params.num_rows -1;
+                tile_carry.value = 0.0;
+            }
             d_tile_carry_pairs[tile_idx]    = tile_carry;
         }
     }
