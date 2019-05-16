@@ -285,6 +285,8 @@ __device__  __forceinline__ int WARP_ANY(int predicate, unsigned int member_mask
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
     return __any_sync(member_mask, predicate);
+#elif CUDA_VERSION >= 9000
+    return __any_sync(0xffffffff, predicate);
 #else
     return ::__any(predicate);
 #endif
@@ -298,6 +300,8 @@ __device__  __forceinline__ int WARP_ALL(int predicate, unsigned int member_mask
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
     return __all_sync(member_mask, predicate);
+#elif CUDA_VERSION >= 9000
+    return __all_sync(0xffffffff, predicate);
 #else
     return ::__all(predicate);
 #endif
@@ -311,6 +315,8 @@ __device__  __forceinline__ int WARP_BALLOT(int predicate, unsigned int member_m
 {
 #ifdef CUB_USE_COOPERATIVE_GROUPS
     return __ballot_sync(member_mask, predicate);
+#elif CUDA_VERSION >= 9000
+    return __ballot_sync(0xffffffff, predicate);
 #else
     return __ballot(predicate);
 #endif
@@ -325,6 +331,9 @@ unsigned int SHFL_UP_SYNC(unsigned int word, int src_offset, int flags, unsigned
 #ifdef CUB_USE_COOPERATIVE_GROUPS
     asm volatile("shfl.sync.up.b32 %0, %1, %2, %3, %4;"
         : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags), "r"(member_mask));
+#elif CUDA_VERSION >= 9000
+    asm volatile("shfl.sync.up.b32 %0, %1, %2, %3, 0xffffffff;"
+        : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags));
 #else
     asm volatile("shfl.up.b32 %0, %1, %2, %3;"
         : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags));
@@ -341,6 +350,9 @@ unsigned int SHFL_DOWN_SYNC(unsigned int word, int src_offset, int flags, unsign
 #ifdef CUB_USE_COOPERATIVE_GROUPS
     asm volatile("shfl.sync.down.b32 %0, %1, %2, %3, %4;"
         : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags), "r"(member_mask));
+#elif CUDA_VERSION >= 9000
+    asm volatile("shfl.sync.down.b32 %0, %1, %2, %3, 0xffffffff;"
+        : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags));
 #else
     asm volatile("shfl.down.b32 %0, %1, %2, %3;"
         : "=r"(word) : "r"(word), "r"(src_offset), "r"(flags));
@@ -357,6 +369,9 @@ unsigned int SHFL_IDX_SYNC(unsigned int word, int src_lane, int flags, unsigned 
 #ifdef CUB_USE_COOPERATIVE_GROUPS
     asm volatile("shfl.sync.idx.b32 %0, %1, %2, %3, %4;"
         : "=r"(word) : "r"(word), "r"(src_lane), "r"(flags), "r"(member_mask));
+#elif CUDA_VERSION >= 9000
+    asm volatile("shfl.sync.idx.b32 %0, %1, %2, %3, 0xffffffff;"
+        : "=r"(word) : "r"(word), "r"(src_lane), "r"(flags));
 #else
     asm volatile("shfl.idx.b32 %0, %1, %2, %3;"
         : "=r"(word) : "r"(word), "r"(src_lane), "r"(flags));
@@ -714,7 +729,7 @@ inline __device__ unsigned int MatchAny(unsigned int label)
             "    .reg .pred p;\n"
             "    and.b32 %0, %1, %2;"
             "    setp.eq.u32 p, %0, %2;\n"
-#ifdef CUB_USE_COOPERATIVE_GROUPS
+#if defined(CUB_USE_COOPERATIVE_GROUPS) || CUDA_VERSION >= 9000
             "    vote.ballot.sync.b32 %0, p, 0xffffffff;\n"
 #else
             "    vote.ballot.b32 %0, p;\n"
