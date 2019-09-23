@@ -37,7 +37,7 @@
 #include <algorithm>
 #include <typeinfo>
 
-#if (__CUDACC_VER_MAJOR__ >= 9)
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000)
     #include <cuda_fp16.h>
 #endif
 
@@ -733,7 +733,7 @@ void Test(
     ValueT      *h_reference_values)
 {
     // Key alias type
-#if (__CUDACC_VER_MAJOR__ >= 9)
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000)
     typedef typename If<Equals<KeyT, half_t>::VALUE, __half, KeyT>::Type KeyAliasT;
 #else
     typedef KeyT KeyAliasT;
@@ -1240,7 +1240,7 @@ int main(int argc, char** argv)
 
     printf("\n-------------------------------\n");
 
-#if (__CUDACC_VER_MAJOR__ >= 9)
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000)
     Test<CUB,           half_t,             NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
 #endif
     Test<CUB,           float,              NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
@@ -1299,7 +1299,7 @@ int main(int argc, char** argv)
         TestGen<long long>            (num_items, num_segments);
         TestGen<unsigned long long>   (num_items, num_segments);
 
-#if (__CUDACC_VER_MAJOR__ >= 9)
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000)
         TestGen<half_t>                (num_items, num_segments);
 #endif
         TestGen<float>                (num_items, num_segments);
@@ -1313,4 +1313,3 @@ int main(int argc, char** argv)
 
     return 0;
 }
-
