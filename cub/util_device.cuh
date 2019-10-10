@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
- * 
+ * Copyright (c) 2011-2020, NVIDIA CORPORATION.  All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the NVIDIA CORPORATION nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -51,11 +51,11 @@ namespace cub {
  * @{
  */
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+#ifndef DOXYGEN_SHOULD_SKIP_THIS // Do not document
 
 
 /**
- * Alias temporaries to externally-allocated device storage (or simply return the amount of storage needed).
+ * \brief Alias temporaries to externally-allocated device storage (or simply return the amount of storage needed).
  */
 template <int ALLOCATIONS>
 __host__ __device__ __forceinline__
@@ -104,106 +104,273 @@ cudaError_t AliasTemporaries(
 
 
 /**
- * Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
+ * \brief Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
  */
 template <typename T>
 __global__ void EmptyKernel(void) { }
 
-
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 /**
- * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10)
+ * \brief Returns the current device or -1 if an error occurred.
  */
-CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int &ptx_version)
+CUB_RUNTIME_FUNCTION __forceinline__ int CurrentDevice()
 {
-    struct Dummy
-    {
-        /// Type definition of the EmptyKernel kernel entry point
-        typedef void (*EmptyKernelPtr)();
+#if defined(CUB_RUNTIME_ENABLED) // Host code or device code with the CUDA runtime.
 
-        /// Force EmptyKernel<void> to be generated if this class is used
-        CUB_RUNTIME_FUNCTION __forceinline__
-        EmptyKernelPtr Empty()
-        {
-            return EmptyKernel<void>;
-        }
-    };
+    int device = -1;
+    cudaError_t const error = cudaGetDevice(&device);
+    if (CubDebug(error)) return -1;
+    return device;
 
+#else // Device code without the CUDA runtime.
 
-#ifndef CUB_RUNTIME_ENABLED
-    (void)ptx_version;
-
-    // CUDA API calls not supported from this device
-    return cudaErrorInvalidConfiguration;
-
-#elif (CUB_PTX_ARCH > 0)
-
-    ptx_version = CUB_PTX_ARCH;
-    return cudaSuccess;
-
-#else
-
-    cudaError_t error = cudaSuccess;
-    do
-    {
-        cudaFuncAttributes empty_kernel_attrs;
-        if (CubDebug(error = cudaFuncGetAttributes(&empty_kernel_attrs, EmptyKernel<void>))) break;
-        ptx_version = empty_kernel_attrs.ptxVersion * 10;
-    }
-    while (0);
-
-    return error;
+    return -1;
 
 #endif
 }
 
+/**
+ * \brief RAII helper which saves the current device and switches to the
+ *        specified device on construction and switches to the saved device on
+ *        destruction.
+ */
+struct SwitchDevice
+{
+private:
+    int const old_device;
+
+public:
+    __host__ __forceinline__ SwitchDevice(int new_device)
+      : old_device(CurrentDevice())
+    {
+        CubDebug(cudaSetDevice(new_device));
+    }
+
+    __host__ __forceinline__ ~SwitchDevice()
+    {
+        CubDebug(cudaSetDevice(old_device));
+    }
+};
 
 /**
- * \brief Retrieves the SM version (major * 100 + minor * 10)
+ * \brief Per-device cache for a CUDA attribute value; the attribute is queried
+ *        and stored for each device upon construction.
  */
-CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int &sm_version, int device_ordinal)
+struct PerDeviceAttributeCache
 {
-#ifndef CUB_RUNTIME_ENABLED
-    (void)sm_version;
-    (void)device_ordinal;
+    int attribute[CUB_MAX_DEVICES];
+    cudaError_t error[CUB_MAX_DEVICES];
 
-    // CUDA API calls not supported from this device
-    return cudaErrorInvalidConfiguration;
+    template <typename UncachedFunction>
+    __host__ __forceinline__ PerDeviceAttributeCache(UncachedFunction uncached_function)
+    {
+        int num_devices = 0;
 
-#else
+        cudaError_t non_existent_error = cudaErrorUnknown;
+
+        if (!CubDebug(non_existent_error = cudaGetDeviceCount(&num_devices)))
+            non_existent_error = cudaErrorInvalidDevice;
+
+        int device = 0;
+
+        for (; device < num_devices; ++device)
+        {
+            // If this fails, we haven't compiled device code that can run on
+            // this device. This is only an error if we actually use this device,
+            // so we don't use CubDebug here.
+            if (error[device] = uncached_function(attribute[device], device))
+              break;
+        }
+
+        // Make sure the entries for non-existent devices are initialized.
+        for (; device < CUB_MAX_DEVICES; ++device)
+        {
+            attribute[device] = -1;
+            error[device] = non_existent_error;
+        }
+    }
+};
+
+/**
+ * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10).
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersionUncached(int &ptx_version)
+{
+    // Instantiate `EmptyKernel<void>` in both host and device code to ensure
+    // it can be called.
+    typedef void (*EmptyKernelPtr)();
+    EmptyKernelPtr empty_kernel = EmptyKernel<void>;
+
+    (void)(empty_kernel);
+
+#if (CUB_PTX_ARCH == 0) // Host code.
+
+    cudaError_t error = cudaSuccess;
+    cudaFuncAttributes empty_kernel_attrs;
+
+    do {
+        if (error = cudaFuncGetAttributes(&empty_kernel_attrs, empty_kernel))
+            // We do not `CubDebug` here because failure is not a hard error.
+            // We may be querying a device that we do not have code for but
+            // never use.
+            break;
+    }
+    while(0);
+
+    ptx_version = empty_kernel_attrs.ptxVersion * 10;
+
+    return error;
+
+#else // Device code.
+
+    // The `reinterpret_cast` is necessary to suppress a set-but-unused warnings.
+    (void)reinterpret_cast<EmptyKernelPtr>(empty_kernel);
+
+    ptx_version = CUB_PTX_ARCH;
+
+    return cudaSuccess;
+
+#endif
+}
+
+/**
+ * \brief Retrieves the PTX version that will be used on \p device (major * 100 + minor * 10).
+ */
+__host__ __forceinline__ cudaError_t PtxVersionUncached(int &ptx_version, int device)
+{
+    SwitchDevice sd(device);
+    // Neither the single argument version of `PtxVersionUncached` or this
+    // overload passes the `cudaError_t` through `CubDebug` because failure
+    // is not a hard error here. We may be querying a device that we do not
+    // have code for but never use.
+    return PtxVersionUncached(ptx_version);
+}
+
+/**
+ * \brief Retrieves the PTX version that will be used on \p device (major * 100 + minor * 10).
+ *
+ * \note This function may cache the result internally.
+ */
+__host__ __forceinline__ cudaError_t PtxVersion(int &ptx_version, int device)
+{
+#if __cplusplus >= 201103L // C++11 and later.
+
+    using FunctionPointer = cudaError_t(*)(int &, int);
+    FunctionPointer fun_ptr = PtxVersionUncached;
+
+    // C++11 guarantees that initialization of static locals is thread safe.
+    static const PerDeviceAttributeCache cache(fun_ptr);
+
+    if (!CubDebug(cache.error[device]))
+        ptx_version = cache.attribute[device];
+
+    return cache.error[device];
+
+#else // Pre C++11.
+
+    return CubDebug(PtxVersionUncached(ptx_version, device));
+
+#endif
+}
+
+/**
+ * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10).
+ *
+ * \note This function may cache the result internally.
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int &ptx_version)
+{
+#if __cplusplus >= 201103L && (CUB_PTX_ARCH == 0) // Host code and C++11.
+
+    return PtxVersion(ptx_version, CurrentDevice());
+
+#else // Device code or host code before C++11.
+
+    // Avoid an unnecessary set/reset of the CUDA current device.
+    return CubDebug(PtxVersionUncached(ptx_version));
+
+#endif
+}
+
+/**
+ * \brief Retrieves the SM version of \p device (major * 100 + minor * 10)
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersionUncached(int &sm_version, int device = CurrentDevice())
+{
+#if defined(CUB_RUNTIME_ENABLED) // Host code or device code with the CUDA runtime.
 
     cudaError_t error = cudaSuccess;
     do
     {
-        // Fill in SM version
-        int major, minor;
-        if (CubDebug(error = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device_ordinal))) break;
-        if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device_ordinal))) break;
+        int major = 0, minor = 0;
+        if (CubDebug(error = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device))) break;
+        if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device))) break;
         sm_version = major * 100 + minor * 10;
     }
     while (0);
 
     return error;
 
+#else // Device code without the CUDA runtime.
+
+    (void)sm_version;
+    (void)device;
+
+    // CUDA API calls are not supported from this device.
+    return cudaErrorInvalidConfiguration;
+
 #endif
 }
 
+/**
+ * \brief Retrieves the SM version of \p device (major * 100 + minor * 10)
+ *
+ * \note This function may cache the result internally.
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int &sm_version, int device = CurrentDevice())
+{
+#if __cplusplus >= 201103L && (CUB_PTX_ARCH == 0) // Host code and C++11.
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+    using FunctionPointer = cudaError_t(*)(int &, int);
+    FunctionPointer fun_ptr = SmVersionUncached;
+
+    // C++11 guarantees that initialization of static locals is thread safe.
+    static const PerDeviceAttributeCache cache(fun_ptr);
+
+    if (!CubDebug(cache.error[device]))
+        sm_version = cache.attribute[device];
+
+    return cache.error[device];
+
+#else // Device code or host code before C++11.
+
+    return SmVersionUncached(sm_version, device);
+
+#endif
+}
 
 /**
- * Synchronize the stream if specified
+ * Synchronize the specified \p stream.
  */
-CUB_RUNTIME_FUNCTION __forceinline__
-static cudaError_t SyncStream(cudaStream_t stream)
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SyncStream(cudaStream_t stream)
 {
-#if (CUB_PTX_ARCH == 0)
+#if (CUB_PTX_ARCH == 0) // Host code.
+
     return cudaStreamSynchronize(stream);
-#else
+
+#elif defined(CUB_RUNTIME_ENABLED) // Device code with the CUDA runtime.
+
     (void)stream;
     // Device can't yet sync on a specific stream
     return cudaDeviceSynchronize();
+
+#else // Device code without the CUDA runtime.
+
+    (void)stream;
+    // CUDA API calls are not supported from this device.
+    return cudaErrorInvalidConfiguration;
+
 #endif
 }
 
@@ -248,6 +415,7 @@ cudaError_t MaxSmOccupancy(
     int                 dynamic_smem_bytes = 0)
 {
 #ifndef CUB_RUNTIME_ENABLED
+
     (void)dynamic_smem_bytes;
     (void)block_threads;
     (void)kernel_ptr;
@@ -258,7 +426,7 @@ cudaError_t MaxSmOccupancy(
 
 #else
 
-    return cudaOccupancyMaxActiveBlocksPerMultiprocessor (
+    return cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &max_sm_occupancy,
         kernel_ptr,
         block_threads,
@@ -332,11 +500,6 @@ struct ChainedPolicy<PTX_VERSION, PolicyT, PolicyT>
         return op.template Invoke<PolicyT>();
     }
 };
-
-
-
-
-#endif  // Do not document
 
 
 
