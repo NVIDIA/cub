@@ -55,7 +55,7 @@ namespace cub {
 
 
 /**
- * Alias temporaries to externally-allocated device storage (or simply return the amount of storage needed).
+ * \brief Alias temporaries to externally-allocated device storage (or simply return the amount of storage needed).
  */
 template <int ALLOCATIONS>
 __host__ __device__ __forceinline__
@@ -104,7 +104,7 @@ cudaError_t AliasTemporaries(
 
 
 /**
- * Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
+ * \brief Empty kernel for querying PTX manifest metadata (e.g., version) for the current device
  */
 template <typename T>
 __global__ void EmptyKernel(void) { }
@@ -113,9 +113,73 @@ __global__ void EmptyKernel(void) { }
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
 
 /**
- * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10)
+ * \brief Returns the current device or -1 if an error occurred.
  */
-CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int &ptx_version)
+int CurrentDevice()
+{
+    int device = -1;
+    cudaError_t const error = cudaGetDevice(&device);
+    if (CubDebug(error)) return -1;
+    return device;
+}
+
+/**
+ * \brief RAII helper which saves the current device and switches to the
+ *        specified device on construction and switches to the saved device on
+ *        destruction.
+ */
+struct SwitchDevice
+{
+private:
+    int const old_device;
+
+public:
+    SwitchDevice(int new_device) : old_device(CurrentDevice())
+    {
+        CubDebug(cudaSetDevice(new_device));
+    }
+
+    ~SwitchDevice()
+    {
+        CubDebug(cudaSetDevice(old_device));
+    }
+};
+
+/**
+ * \brief Per-device cache for a CUDA attribute value; the attribute is queried
+ *        and stored for each device upon construction.
+ */
+struct PerDeviceAttributeCache
+{
+    int attribute[CUB_MAX_DEVICES];
+    cudaError_t error;
+
+    template <typename UncachedFunction>
+    PerDeviceAttributeCache(UncachedFunction uncached_function)
+      : error(cudaSuccess)
+    {
+        int num_devices = 0;
+        CubDebug(error = cudaGetDeviceCount(&num_devices));
+
+        int device = 0;
+
+        for (; device < num_devices; ++device)
+        {
+            if (CubDebug(error = uncached_function(attribute[device], device))) break;
+        }
+
+        // Set the remaining entries to -1;
+        for (; device < CUB_MAX_DEVICES; ++device)
+        {
+            attribute[device] = -1;
+        }
+    }
+};
+
+/**
+ * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10).
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersionUncached(int &ptx_version)
 {
     struct Dummy
     {
@@ -142,47 +206,6 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int &ptx_version)
     ptx_version = CUB_PTX_ARCH;
     return cudaSuccess;
 
-#elif __cplusplus >= 201103L
-
-    struct Cache
-    {
-        struct Result {
-          int const ptx_version;
-          cudaError_t const error;
-
-          Result(int ptx_version_, cudaError_t error_)
-              : ptx_version(ptx_version_), error(error_)
-          {}
-        };
-
-        Result result;
-
-        Cache()
-            : result(
-                  [] {
-                      int ptx_version = 0;
-                      cudaError_t error = cudaSuccess;
-                      do
-                      {
-                          cudaFuncAttributes empty_kernel_attrs;
-                          if (CubDebug(error = cudaFuncGetAttributes(&empty_kernel_attrs, EmptyKernel<void>))) break;
-                          ptx_version = empty_kernel_attrs.ptxVersion * 10;
-                      }
-                      while (0);
-
-                      return Result(ptx_version, error);
-                  }()
-              )
-        {}
-    };
-
-    static Cache cache;
-
-    if (!CubDebug(cache.result.error))
-        ptx_version = cache.result.ptx_version;
-
-    return cache.result.error;
-
 #else
 
     cudaError_t error = cudaSuccess;
@@ -199,17 +222,71 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int &ptx_version)
 #endif
 }
 
+/**
+ * \brief Retrieves the PTX version that will be used on \p device (major * 100 + minor * 10).
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersionUncached(int &ptx_version, int device)
+{
+    SwitchDevice sd(device);
+    return PtxVersionUncached(ptx_version);
+}
 
 /**
- * \brief Retrieves the SM version (major * 100 + minor * 10)
+ * \brief Retrieves the PTX version that will be used on \p device (major * 100 + minor * 10).
+ *
+ * \note This function may cache the result internally.
  */
-CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int &sm_version, int device_ordinal)
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int &ptx_version, int device)
+{
+#if __cplusplus >= 201103L && (CUB_PTX_ARCH == 0)
+
+    using FunctionPointer = cudaError_t(*)(int &, int);
+    FunctionPointer fun_ptr = PtxVersionUncached;
+
+    // C++11 guarantees that initialization of static locals is thread safe.
+    static const PerDeviceAttributeCache cache(fun_ptr);
+
+    if (!CubDebug(cache.error))
+        ptx_version = cache.attribute[device];
+
+    return cache.error;
+
+#else
+
+    return PtxVersionUncached(ptx_version, device);
+
+#endif
+}
+
+/**
+ * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10).
+ *
+ * \note This function may cache the result internally.
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int &ptx_version)
+{
+#if __cplusplus >= 201103L && (CUB_PTX_ARCH == 0)
+
+    return PtxVersion(ptx_version, CurrentDevice());
+
+#else
+
+    // Avoid an unnecessary set/reset of the CUDA current device.
+    return PtxVersionUncached(ptx_version);
+
+#endif
+}
+
+/**
+ * \brief Retrieves the SM version of \p device (major * 100 + minor * 10)
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersionUncached(int &sm_version, int device = CurrentDevice())
 {
 #ifndef CUB_RUNTIME_ENABLED
     (void)sm_version;
-    (void)device_ordinal;
+    (void)device;
 
-    // CUDA API calls not supported from this device
+    // CUDA API calls are not supported from this device.
     return cudaErrorInvalidConfiguration;
 
 #else
@@ -217,10 +294,9 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int &sm_version, int 
     cudaError_t error = cudaSuccess;
     do
     {
-        // Fill in SM version
-        int major, minor;
-        if (CubDebug(error = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device_ordinal))) break;
-        if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device_ordinal))) break;
+        int major = 0, minor = 0;
+        if (CubDebug(error = cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, device))) break;
+        if (CubDebug(error = cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, device))) break;
         sm_version = major * 100 + minor * 10;
     }
     while (0);
@@ -230,6 +306,32 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int &sm_version, int 
 #endif
 }
 
+/**
+ * \brief Retrieves the SM version of \p device (major * 100 + minor * 10)
+ *
+ * \note This function may cache the result internally.
+ */
+CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int &sm_version, int device = CurrentDevice())
+{
+#if __cplusplus >= 201103L && (CUB_PTX_ARCH == 0)
+
+    using FunctionPointer = cudaError_t(*)(int &, int);
+    FunctionPointer fun_ptr = SmVersionUncached;
+
+    // C++11 guarantees that initialization of static locals is thread safe.
+    static const PerDeviceAttributeCache cache(fun_ptr);
+
+    if (!CubDebug(cache.error))
+        sm_version = cache.attribute[device];
+
+    return cache.error;
+
+#else
+
+    return SmVersionUncached(sm_version, device);
+
+#endif
+}
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
@@ -299,7 +401,7 @@ cudaError_t MaxSmOccupancy(
 
 #else
 
-    return cudaOccupancyMaxActiveBlocksPerMultiprocessor (
+    return cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &max_sm_occupancy,
         kernel_ptr,
         block_threads,
