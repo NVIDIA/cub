@@ -363,7 +363,7 @@ template <
             typename std::iterator_traits<OutputIteratorT>::value_type>::Type>                          // ... else the output iterator's value type
 struct DispatchReduce :
     DeviceReducePolicy<
-        std::iterator_traits<InputIteratorT>::value_type,
+        typename std::iterator_traits<InputIteratorT>::value_type,
         OutputT,
         OffsetT,
         ReductionOpT>
@@ -678,8 +678,8 @@ template <
             typename std::iterator_traits<OutputIteratorT>::value_type>::Type>                          // ... else the output iterator's value type
 struct DispatchSegmentedReduce :
     DeviceReducePolicy<
-        std::iterator_traits<InputIteratorT>::value_type,
-        std::iterator_traits<OutputIteratorT>::value_type,
+        typename std::iterator_traits<InputIteratorT>::value_type,
+        OutputT,
         OffsetT,
         ReductionOpT>
 {
