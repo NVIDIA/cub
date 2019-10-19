@@ -506,7 +506,7 @@ void TestTexObj()
 }
 
 
-#if CUDA_VERSION >= 5050
+#if CUDART_VERSION >= 5050
 
 /**
  * Test tex-ref texture iterator
@@ -670,7 +670,7 @@ void TestTexTransform()
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
 
-#endif  // CUDA_VERSION
+#endif  // CUDART_VERSION
 
 
 
@@ -689,11 +689,11 @@ void Test(Int2Type<false> is_integer)
     TestTexObj<T, CastT>(type_string);
 #endif  // CUB_CDP
 
-#if CUDA_VERSION >= 5050
+#if CUDART_VERSION >= 5050
     // Test tex-ref iterators for CUDA 5.5
     TestTexRef<T, CastT>();
     TestTexTransform<T, CastT>();
-#endif  // CUDA_VERSION
+#endif  // CUDART_VERSION
 }
 
 /**
