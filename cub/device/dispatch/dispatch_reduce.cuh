@@ -359,8 +359,8 @@ template <
     typename ReductionOpT>      ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> 
 struct DispatchReduce :
     DeviceReducePolicy<
-        std::iterator_traits<InputIteratorT>::value_type,
-        std::iterator_traits<OutputIteratorT>::value_type,
+        typename std::iterator_traits<InputIteratorT>::value_type,
+        typename std::iterator_traits<OutputIteratorT>::value_type,
         OffsetT,
         ReductionOpT>
 {
@@ -680,8 +680,8 @@ template <
     typename ReductionOpT>      ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt> 
 struct DispatchSegmentedReduce :
     DeviceReducePolicy<
-        std::iterator_traits<InputIteratorT>::value_type,
-        std::iterator_traits<OutputIteratorT>::value_type,
+        typename std::iterator_traits<InputIteratorT>::value_type,
+        typename std::iterator_traits<OutputIteratorT>::value_type,
         OffsetT,
         ReductionOpT>
 {
