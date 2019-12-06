@@ -244,6 +244,15 @@ __device__  __forceinline__ int CTA_SYNC_AND(int p)
 
 
 /**
+ * CTA barrier with predicate
+ */
+__device__  __forceinline__ int CTA_SYNC_OR(int p)
+{
+    return __syncthreads_or(p);
+}
+
+
+/**
  * Warp barrier
  */
 __device__  __forceinline__ void WARP_SYNC(unsigned int member_mask)
@@ -292,6 +301,7 @@ __device__  __forceinline__ int WARP_BALLOT(int predicate, unsigned int member_m
 #endif
 }
 
+
 /**
  * Warp synchronous shfl_up
  */
@@ -338,6 +348,19 @@ unsigned int SHFL_IDX_SYNC(unsigned int word, int src_lane, int flags, unsigned 
         : "=r"(word) : "r"(word), "r"(src_lane), "r"(flags));
 #endif
     return word;
+}
+
+/**
+ * Warp synchronous shfl_idx
+ */
+__device__ __forceinline__ 
+unsigned int SHFL_IDX_SYNC(unsigned int word, int src_lane, unsigned int member_mask)
+{
+#ifdef CUB_USE_COOPERATIVE_GROUPS
+  return __shfl_sync(member_mask, word, src_lane);
+#else
+  return __shfl(word, src_lane);
+#endif
 }
 
 /**
@@ -712,23 +735,6 @@ inline __device__ unsigned int MatchAny(unsigned int label)
 //    return retval;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
