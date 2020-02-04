@@ -119,8 +119,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ int CurrentDevice()
 #if defined(CUB_RUNTIME_ENABLED) // Host code or device code with the CUDA runtime.
 
     int device = -1;
-    cudaError_t const error = cudaGetDevice(&device);
-    if (CubDebug(error)) return -1;
+    if (CubDebug(cudaGetDevice(&device))) return -1;
     return device;
 
 #else // Device code without the CUDA runtime.
@@ -179,8 +178,13 @@ struct PerDeviceAttributeCache
             // If this fails, we haven't compiled device code that can run on
             // this device. This is only an error if we actually use this device,
             // so we don't use CubDebug here.
-            if (error[device] = uncached_function(attribute[device], device))
+            if (error[device] = uncached_function(attribute[device], device)) {
+              // Clear the global CUDA error state which may have been set by
+              // the last call. Otherwise, errors may "leak" to unrelated
+              // kernel launches.
+              cudaGetLastError();
               break;
+            }
         }
 
         // Make sure the entries for non-existent devices are initialized.
@@ -210,11 +214,16 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersionUncached(int &ptx_ver
     cudaFuncAttributes empty_kernel_attrs;
 
     do {
-        if (error = cudaFuncGetAttributes(&empty_kernel_attrs, empty_kernel))
-            // We do not `CubDebug` here because failure is not a hard error.
-            // We may be querying a device that we do not have code for but
-            // never use.
+        // We do not `CubDebug` here because failure is not a hard error.
+        // We may be querying a device that we do not have code for but
+        // never use.
+        if (error = cudaFuncGetAttributes(&empty_kernel_attrs, empty_kernel)) {
+            // Clear the global CUDA error state which may have been set by
+            // the last call. Otherwise, errors may "leak" to unrelated
+            // kernel launches.
+            cudaGetLastError();
             break;
+        }
     }
     while(0);
 
@@ -225,6 +234,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersionUncached(int &ptx_ver
 #else // Device code.
 
     // The `reinterpret_cast` is necessary to suppress a set-but-unused warnings.
+    // This is a meme now: https://twitter.com/blelbach/status/1222391615576100864
     (void)reinterpret_cast<EmptyKernelPtr>(empty_kernel);
 
     ptx_version = CUB_PTX_ARCH;
@@ -318,7 +328,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersionUncached(int &sm_versi
     (void)device;
 
     // CUDA API calls are not supported from this device.
-    return cudaErrorInvalidConfiguration;
+    return CubDebug(cudaErrorInvalidConfiguration);
 
 #endif
 }
@@ -357,19 +367,19 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SyncStream(cudaStream_t stream)
 {
 #if (CUB_PTX_ARCH == 0) // Host code.
 
-    return cudaStreamSynchronize(stream);
+    return CubDebug(cudaStreamSynchronize(stream));
 
 #elif defined(CUB_RUNTIME_ENABLED) // Device code with the CUDA runtime.
 
     (void)stream;
     // Device can't yet sync on a specific stream
-    return cudaDeviceSynchronize();
+    return CubDebug(cudaDeviceSynchronize());
 
 #else // Device code without the CUDA runtime.
 
     (void)stream;
     // CUDA API calls are not supported from this device.
-    return cudaErrorInvalidConfiguration;
+    return CubDebug(cudaErrorInvalidConfiguration);
 
 #endif
 }
@@ -426,11 +436,11 @@ cudaError_t MaxSmOccupancy(
 
 #else
 
-    return cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+    return CubDebug(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &max_sm_occupancy,
         kernel_ptr,
         block_threads,
-        dynamic_smem_bytes);
+        dynamic_smem_bytes));
 
 #endif  // CUB_RUNTIME_ENABLED
 }
