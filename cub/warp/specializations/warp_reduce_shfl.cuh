@@ -96,13 +96,13 @@ struct WarpReduceShfl
     //---------------------------------------------------------------------
 
     /// Lane index in logical warp
-    unsigned int lane_id;
+    int lane_id;
 
     /// Logical warp index in 32-thread physical warp
-    unsigned int warp_id;
+    int warp_id;
 
     /// 32-thread physical warp member mask of logical warp
-    unsigned int member_mask;
+    int member_mask;
 
 
     //---------------------------------------------------------------------
