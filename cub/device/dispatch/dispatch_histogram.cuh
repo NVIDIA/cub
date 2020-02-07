@@ -721,7 +721,7 @@ struct DipatchHistogram
         do
         {
             // Get PTX version
-            int ptx_version;
+            int ptx_version = 0;
     #if (CUB_PTX_ARCH == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
@@ -829,7 +829,7 @@ struct DipatchHistogram
         do
         {
             // Get PTX version
-            int ptx_version;
+            int ptx_version = 0;
     #if (CUB_PTX_ARCH == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
@@ -912,7 +912,7 @@ struct DipatchHistogram
         do
         {
             // Get PTX version
-            int ptx_version;
+            int ptx_version = 0;
     #if (CUB_PTX_ARCH == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
@@ -1024,7 +1024,7 @@ struct DipatchHistogram
         do
         {
             // Get PTX version
-            int ptx_version;
+            int ptx_version = 0;
     #if (CUB_PTX_ARCH == 0)
             if (CubDebug(error = PtxVersion(ptx_version))) break;
     #else
