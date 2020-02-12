@@ -514,7 +514,7 @@ struct DispatchReduce :
             even_share.DispatchInit(num_items, max_blocks, reduce_config.tile_size);
 
             // Temporary storage allocation requirements
-            void* allocations[1];
+            void* allocations[1] = {};
             size_t allocation_sizes[1] =
             {
                 max_blocks * sizeof(OutputT)    // bytes needed for privatized block reductions

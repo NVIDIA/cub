@@ -597,7 +597,7 @@ struct DipatchHistogram
 
             // Temporary storage allocation requirements
             const int   NUM_ALLOCATIONS = NUM_ACTIVE_CHANNELS + 1;
-            void*       allocations[NUM_ALLOCATIONS];
+            void*       allocations[NUM_ALLOCATIONS] = {};
             size_t      allocation_sizes[NUM_ALLOCATIONS];
 
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)

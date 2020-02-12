@@ -680,7 +680,7 @@ struct DispatchSpmv
             allocation_sizes[2] = (num_merge_tiles + 1) * sizeof(CoordinateT);   // bytes needed for tile starting coordinates
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
-            void* allocations[3];
+            void* allocations[3] = {};
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {

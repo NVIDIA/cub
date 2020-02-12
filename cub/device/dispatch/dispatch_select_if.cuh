@@ -400,7 +400,7 @@ struct DispatchSelectIf
             if (CubDebug(error = ScanTileStateT::AllocationSize(num_tiles, allocation_sizes[0]))) break;    // bytes needed for tile status descriptors
 
             // Compute allocation pointers into the single storage blob (or compute the necessary size of the blob)
-            void* allocations[1];
+            void* allocations[1] = {};
             if (CubDebug(error = AliasTemporaries(d_temp_storage, temp_storage_bytes, allocations, allocation_sizes))) break;
             if (d_temp_storage == NULL)
             {

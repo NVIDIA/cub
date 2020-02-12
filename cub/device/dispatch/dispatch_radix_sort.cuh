@@ -1140,14 +1140,14 @@ struct DispatchRadixSort :
             // Init regular and alternate-digit kernel configurations
             PassConfig<UpsweepKernelT, ScanKernelT, DownsweepKernelT> pass_config, alt_pass_config;
             if ((error = pass_config.template InitPassConfig<
-                    typename ActivePolicyT::UpsweepPolicy, 
-                    typename ActivePolicyT::ScanPolicy, 
+                    typename ActivePolicyT::UpsweepPolicy,
+                    typename ActivePolicyT::ScanPolicy,
                     typename ActivePolicyT::DownsweepPolicy>(
                 upsweep_kernel, scan_kernel, downsweep_kernel, ptx_version, sm_count, num_items))) break;
 
             if ((error = alt_pass_config.template InitPassConfig<
-                    typename ActivePolicyT::AltUpsweepPolicy, 
-                    typename ActivePolicyT::ScanPolicy, 
+                    typename ActivePolicyT::AltUpsweepPolicy,
+                    typename ActivePolicyT::ScanPolicy,
                     typename ActivePolicyT::AltDownsweepPolicy>(
                 alt_upsweep_kernel, scan_kernel, alt_downsweep_kernel, ptx_version, sm_count, num_items))) break;
 
@@ -1156,7 +1156,7 @@ struct DispatchRadixSort :
             int spine_length        = (max_grid_size * pass_config.radix_digits) + pass_config.scan_config.tile_size;
 
             // Temporary storage allocation requirements
-            void* allocations[3];
+            void* allocations[3] = {};
             size_t allocation_sizes[3] =
             {
                 spine_length * sizeof(OffsetT),                                         // bytes needed for privatized block digit histograms
@@ -1488,7 +1488,7 @@ struct DispatchSegmentedRadixSort :
             if ((error = alt_pass_config.template   InitPassConfig<typename ActivePolicyT::AltSegmentedPolicy>(alt_segmented_kernel))) break;
 
             // Temporary storage allocation requirements
-            void* allocations[2];
+            void* allocations[2] = {};
             size_t allocation_sizes[2] =
             {
                 (is_overwrite_okay) ? 0 : num_items * sizeof(KeyT),                      // bytes needed for 3rd keys buffer

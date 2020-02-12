@@ -320,7 +320,7 @@ struct ScanTileState<T, false>
         cudaError_t error = cudaSuccess;
         do
         {
-            void*   allocations[3] = { NULL, NULL, NULL };
+            void*   allocations[3] = {};
             size_t  allocation_sizes[3];
 
             allocation_sizes[0] = (num_tiles + TILE_STATUS_PADDING) * sizeof(StatusWord);           // bytes needed for tile status descriptors
@@ -356,7 +356,7 @@ struct ScanTileState<T, false>
         allocation_sizes[2] = (num_tiles + TILE_STATUS_PADDING) * sizeof(Uninitialized<T>);   // bytes needed for inclusives
 
         // Set the necessary size of the blob
-        void* allocations[3];
+        void* allocations[3] = {};
         return CubDebug(AliasTemporaries(NULL, temp_storage_bytes, allocations, allocation_sizes));
     }
 
