@@ -360,13 +360,14 @@ template <
     typename OutputT =          ///< Data type of the output iterator
         typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
             typename std::iterator_traits<InputIteratorT>::value_type,                                  // ... then the input iterator's value type,
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type>                          // ... else the output iterator's value type
-struct DispatchReduce :
-    DeviceReducePolicy<
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type,                          // ... else the output iterator's value type
+    typename SelectedPolicy = DeviceReducePolicy<
         typename std::iterator_traits<InputIteratorT>::value_type,
         OutputT,
         OffsetT,
-        ReductionOpT>
+        ReductionOpT> >
+struct DispatchReduce :
+    SelectedPolicy
 {
     //------------------------------------------------------------------------------
     // Problem state
@@ -675,13 +676,14 @@ template <
     typename OutputT =          ///< Data type of the output iterator
         typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
             typename std::iterator_traits<InputIteratorT>::value_type,                                  // ... then the input iterator's value type,
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type>                          // ... else the output iterator's value type
-struct DispatchSegmentedReduce :
-    DeviceReducePolicy<
+            typename std::iterator_traits<OutputIteratorT>::value_type>::Type,                          // ... else the output iterator's value type
+    typename SelectedPolicy = DeviceReducePolicy<
         typename std::iterator_traits<InputIteratorT>::value_type,
         OutputT,
         OffsetT,
-        ReductionOpT>
+        ReductionOpT> >
+struct DispatchSegmentedReduce :
+    SelectedPolicy
 {
     //------------------------------------------------------------------------------
     // Problem state

@@ -64,9 +64,10 @@ template <
     typename                ComputeT,                       ///< Dominant compute type
     int                     _VECTOR_LOAD_LENGTH,            ///< Number of items per vectorized load
     BlockReduceAlgorithm    _BLOCK_ALGORITHM,               ///< Cooperative block-wide reduction algorithm to use
-    CacheLoadModifier       _LOAD_MODIFIER>                 ///< Cache load modifier for reading input elements
+    CacheLoadModifier       _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
+    typename                ScalingType =  MemBoundScaling<NOMINAL_BLOCK_THREADS_4B, NOMINAL_ITEMS_PER_THREAD_4B, ComputeT> >
 struct AgentReducePolicy :
-    MemBoundScaling<NOMINAL_BLOCK_THREADS_4B, NOMINAL_ITEMS_PER_THREAD_4B, ComputeT>
+    ScalingType
 {
     enum
     {

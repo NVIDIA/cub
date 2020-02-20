@@ -77,9 +77,10 @@ template <
     CacheLoadModifier   _LOAD_MODIFIER,                 ///< Cache load modifier for reading keys (and values)
     RadixRankAlgorithm  _RANK_ALGORITHM,                ///< The radix ranking algorithm to use
     BlockScanAlgorithm  _SCAN_ALGORITHM,                ///< The block scan algorithm to use
-    int                 _RADIX_BITS>                    ///< The number of radix bits, i.e., log2(bins)
+    int                 _RADIX_BITS,                    ///< The number of radix bits, i.e., log2(bins)
+    typename            ScalingType = RegBoundScaling<NOMINAL_BLOCK_THREADS_4B, NOMINAL_ITEMS_PER_THREAD_4B, ComputeT> >
 struct AgentRadixSortDownsweepPolicy :
-    RegBoundScaling<NOMINAL_BLOCK_THREADS_4B, NOMINAL_ITEMS_PER_THREAD_4B, ComputeT>
+    ScalingType
 {
     enum
     {

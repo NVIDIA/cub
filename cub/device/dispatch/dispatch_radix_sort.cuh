@@ -818,9 +818,10 @@ template <
     bool     IS_DESCENDING, ///< Whether or not the sorted-order is high-to-low
     typename KeyT,          ///< Key type
     typename ValueT,        ///< Value type
-    typename OffsetT>       ///< Signed integer type for global offsets
+    typename OffsetT,       ///< Signed integer type for global offsets
+    typename SelectedPolicy = DeviceRadixSortPolicy<KeyT, ValueT, OffsetT> >
 struct DispatchRadixSort :
-    DeviceRadixSortPolicy<KeyT, ValueT, OffsetT>
+    SelectedPolicy
 {
     //------------------------------------------------------------------------------
     // Constants
@@ -1318,9 +1319,10 @@ template <
     typename KeyT,              ///< Key type
     typename ValueT,            ///< Value type
     typename OffsetIteratorT,   ///< Random-access input iterator type for reading segment offsets \iterator
-    typename OffsetT>           ///< Signed integer type for global offsets
+    typename OffsetT,           ///< Signed integer type for global offsets
+    typename SelectedPolicy = DeviceRadixSortPolicy<KeyT, ValueT, OffsetT> >
 struct DispatchSegmentedRadixSort :
-    DeviceRadixSortPolicy<KeyT, ValueT, OffsetT>
+    SelectedPolicy
 {
     //------------------------------------------------------------------------------
     // Constants
