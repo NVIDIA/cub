@@ -1,23 +1,23 @@
 <hr>
 <h3>About CUB</h3>
 
-Current release: v1.8.0 (02/16/2018)
+Current release: v1.9.8 (02/20/2020), included in CUDA 11.0.
 
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) for further information and examples.
 
-CUB provides state-of-the-art, reusable software components for every layer 
+CUB provides state-of-the-art, reusable software components for every layer
 of the CUDA programming model:
-- [<b><em>Device-wide primitives</em></b>] (https://nvlabs.github.com/cub/group___device_module.html) 
-  - Sort, prefix scan, reduction, histogram, etc.  
+- [<b><em>Device-wide primitives</em></b>] (https://nvlabs.github.com/cub/group___device_module.html)
+  - Sort, prefix scan, reduction, histogram, etc.
   - Compatible with CUDA dynamic parallelism
 - [<b><em>Block-wide "collective" primitives</em></b>] (https://nvlabs.github.com/cub/group___block_module.html)
-  - I/O, sort, prefix scan, reduction, histogram, etc.  
-  - Compatible with arbitrary thread block sizes and types 
+  - I/O, sort, prefix scan, reduction, histogram, etc.
+  - Compatible with arbitrary thread block sizes and types
 - [<b><em>Warp-wide "collective" primitives</em></b>] (https://nvlabs.github.com/cub/group___warp_module.html)
   - Warp-wide prefix scan, reduction, etc.
   - Safe and architecture-specific
 - [<b><em>Thread and resource utilities</em></b>](https://nvlabs.github.com/cub/group___thread_module.html)
-  - PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc. 
+  - PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc.
 
 ![Orientation of collective primitives within the CUDA software stack](http://nvlabs.github.com/cub/cub_overview.png)
 
@@ -26,24 +26,24 @@ of the CUDA programming model:
 
 ```C++
 #include <cub/cub.cuh>
- 
+
 // Block-sorting CUDA kernel
 __global__ void BlockSortKernel(int *d_in, int *d_out)
 {
      using namespace cub;
 
-     // Specialize BlockRadixSort, BlockLoad, and BlockStore for 128 threads 
+     // Specialize BlockRadixSort, BlockLoad, and BlockStore for 128 threads
      // owning 16 integer items each
      typedef BlockRadixSort<int, 128, 16>                     BlockRadixSort;
      typedef BlockLoad<int, 128, 16, BLOCK_LOAD_TRANSPOSE>   BlockLoad;
      typedef BlockStore<int, 128, 16, BLOCK_STORE_TRANSPOSE> BlockStore;
- 
+
      // Allocate shared memory
      __shared__ union {
          typename BlockRadixSort::TempStorage  sort;
-         typename BlockLoad::TempStorage       load; 
-         typename BlockStore::TempStorage      store; 
-     } temp_storage; 
+         typename BlockLoad::TempStorage       load;
+         typename BlockStore::TempStorage      store;
+     } temp_storage;
 
      int block_offset = blockIdx.x * (128 * 16);	  // OffsetT for this block's ment
 
@@ -56,38 +56,38 @@ __global__ void BlockSortKernel(int *d_in, int *d_out)
      BlockRadixSort(temp_storage.sort).Sort(thread_keys);
      __syncthreads();
 
-     // Store the sorted segment 
+     // Store the sorted segment
      BlockStore(temp_storage.store).Store(d_out + block_offset, thread_keys);
 }
 ```
 
-Each thread block uses cub::BlockRadixSort to collectively sort 
-its own input segment.  The class is specialized by the 
-data type being sorted, by the number of threads per block, by the number of 
-keys per thread, and implicitly by the targeted compilation architecture.  
+Each thread block uses cub::BlockRadixSort to collectively sort
+its own input segment.  The class is specialized by the
+data type being sorted, by the number of threads per block, by the number of
+keys per thread, and implicitly by the targeted compilation architecture.
 
-The cub::BlockLoad and cub::BlockStore classes are similarly specialized.    
-Furthermore, to provide coalesced accesses to device memory, these primitives are 
-configured to access memory using a striped access pattern (where consecutive threads 
-simultaneously access consecutive items) and then <em>transpose</em> the keys into 
-a [<em>blocked arrangement</em>](index.html#sec4sec3) of elements across threads. 
+The cub::BlockLoad and cub::BlockStore classes are similarly specialized.
+Furthermore, to provide coalesced accesses to device memory, these primitives are
+configured to access memory using a striped access pattern (where consecutive threads
+simultaneously access consecutive items) and then <em>transpose</em> the keys into
+a [<em>blocked arrangement</em>](index.html#sec4sec3) of elements across threads.
 
-Once specialized, these classes expose opaque \p TempStorage member types.  
-The thread block uses these storage types to statically allocate the union of 
-shared memory needed by the thread block.  (Alternatively these storage types 
+Once specialized, these classes expose opaque \p TempStorage member types.
+The thread block uses these storage types to statically allocate the union of
+shared memory needed by the thread block.  (Alternatively these storage types
 could be aliased to global memory allocations).
 
 <br><hr>
 <h3>Stable Releases</h3>
 
-CUB releases are labeled using version identifiers having three fields: 
+CUB releases are labeled using version identifiers having three fields:
 *epoch.feature.update*.  The *epoch* field corresponds to support for
-a major change in the CUDA programming model.  The *feature* field 
+a major change in the CUDA programming model.  The *feature* field
 corresponds to a stable set of features, functionality, and interface.  The
 *update* field corresponds to a bug-fix or performance update for that
-feature set.  At the moment, we do not publicly provide non-stable releases 
+feature set.  At the moment, we do not publicly provide non-stable releases
 such as development snapshots, beta releases or rolling releases.  (Feel free
-to contact us if you would like such things.)  See the 
+to contact us if you would like such things.)  See the
 [CUB Project Website](http://nvlabs.github.com/cub) for more information.
 
 <br><hr>
