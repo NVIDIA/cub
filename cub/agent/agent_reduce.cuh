@@ -39,9 +39,9 @@
 #include "../block/block_reduce.cuh"
 #include "../grid/grid_mapping.cuh"
 #include "../grid/grid_even_share.cuh"
+#include "../config.cuh"
 #include "../util_type.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
-#include "../util_namespace.cuh"
 
 
 /// Optional outer namespace(s)

@@ -38,9 +38,8 @@
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
 #include "../warp/warp_reduce.cuh"
-#include "../util_arch.cuh"
+#include "../config.cuh"
 #include "../util_device.cuh"
-#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

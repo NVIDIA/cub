@@ -41,10 +41,10 @@
 #include "../block/block_scan.cuh"
 #include "../block/block_exchange.cuh"
 #include "../block/block_discontinuity.cuh"
+#include "../config.cuh"
 #include "../grid/grid_queue.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
 #include "../iterator/constant_input_iterator.cuh"
-#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

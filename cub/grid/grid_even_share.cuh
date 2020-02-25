@@ -34,8 +34,7 @@
 
 #pragma once
 
-#include "../util_namespace.cuh"
-#include "../util_macro.cuh"
+#include "../config.cuh"
 #include "grid_mapping.cuh"
 
 /// Optional outer namespace(s)

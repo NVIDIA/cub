@@ -43,7 +43,7 @@
 #include "../../util_device.cuh"
 #include "../../thread/thread_search.cuh"
 #include "../../grid/grid_queue.cuh"
-#include "../../util_namespace.cuh"
+#include "../../config.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

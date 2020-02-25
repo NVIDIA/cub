@@ -38,11 +38,11 @@
 #include <iterator>
 
 #include "dispatch_scan.cuh"
+#include "../../config.cuh"
 #include "../../agent/agent_rle.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_device.cuh"
-#include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

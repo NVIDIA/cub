@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include "../util_namespace.cuh"
+#include "../config.cuh"
 #include "../util_debug.cuh"
 
 /// Optional outer namespace(s)

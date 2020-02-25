@@ -39,12 +39,12 @@
 #include "../block/block_reduce.cuh"
 #include "../block/block_scan.cuh"
 #include "../block/block_exchange.cuh"
+#include "../config.cuh"
 #include "../thread/thread_search.cuh"
 #include "../thread/thread_operators.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
 #include "../iterator/counting_input_iterator.cuh"
 #include "../iterator/tex_ref_input_iterator.cuh"
-#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

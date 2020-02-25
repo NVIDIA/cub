@@ -1,7 +1,6 @@
 /******************************************************************************
- * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
- * 
+ * Copyright (c) 2020, NVIDIA CORPORATION.  All rights reserved.
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +11,7 @@
  *     * Neither the name of the NVIDIA CORPORATION nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,55 +27,14 @@
 
 /**
  * \file
- * The cub::BlockHistogramAtomic class provides atomic-based methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
+ * Static configuration header for the CUB project.
  */
 
 #pragma once
 
-#include "../../config.cuh"
-
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
-
-
-/**
- * \brief The BlockHistogramAtomic class provides atomic-based methods for constructing block-wide histograms from data samples partitioned across a CUDA thread block.
- */
-template <int BINS>
-struct BlockHistogramAtomic
-{
-    /// Shared memory storage layout type
-    struct TempStorage {};
-
-
-    /// Constructor
-    __device__ __forceinline__ BlockHistogramAtomic(
-        TempStorage &temp_storage)
-    {}
-
-
-    /// Composite data onto an existing histogram
-    template <
-        typename            T,
-        typename            CounterT,     
-        int                 ITEMS_PER_THREAD>
-    __device__ __forceinline__ void Composite(
-        T                   (&items)[ITEMS_PER_THREAD],     ///< [in] Calling thread's input values to histogram
-        CounterT             histogram[BINS])                 ///< [out] Reference to shared/device-accessible memory histogram
-    {
-        // Update histogram
-        #pragma unroll
-        for (int i = 0; i < ITEMS_PER_THREAD; ++i)
-        {
-              atomicAdd(histogram + items[i], 1);
-        }
-    }
-
-};
-
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
-
+#include "util_arch.cuh"
+#include "util_compiler.cuh"
+#include "util_cpp_dialect.cuh"
+#include "util_deprecated.cuh"
+#include "util_macro.cuh"
+#include "util_namespace.cuh"

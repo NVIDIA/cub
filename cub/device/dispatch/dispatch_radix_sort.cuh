@@ -41,11 +41,11 @@
 #include "../../agent/agent_radix_sort_downsweep.cuh"
 #include "../../agent/agent_scan.cuh"
 #include "../../block/block_radix_sort.cuh"
+#include "../../config.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../util_type.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
-#include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

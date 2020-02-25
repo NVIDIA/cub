@@ -38,8 +38,7 @@
 #include <iterator>
 
 #include "dispatch/dispatch_radix_sort.cuh"
-#include "../util_arch.cuh"
-#include "../util_namespace.cuh"
+#include "../config.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

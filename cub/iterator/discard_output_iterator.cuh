@@ -36,8 +36,7 @@
 #include <iterator>
 #include <iostream>
 
-#include "../util_namespace.cuh"
-#include "../util_macro.cuh"
+#include "../config.cuh"
 
 #if (THRUST_VERSION >= 100700)
     // This iterator is compatible with Thrust API 1.7 and newer

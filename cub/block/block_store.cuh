@@ -36,10 +36,9 @@
 #include <iterator>
 
 #include "block_exchange.cuh"
+#include "../config.cuh"
 #include "../util_ptx.cuh"
-#include "../util_macro.cuh"
 #include "../util_type.cuh"
-#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

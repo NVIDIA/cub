@@ -37,9 +37,8 @@
 #include <stdio.h>
 #include <iterator>
 
+#include "../config.cuh"
 #include "dispatch/dispatch_radix_sort.cuh"
-#include "../util_arch.cuh"
-#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

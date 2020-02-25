@@ -42,9 +42,9 @@
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../iterator/arg_index_input_iterator.cuh"
+#include "../../config.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
-#include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

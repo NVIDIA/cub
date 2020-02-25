@@ -36,8 +36,8 @@
 #include "../../block/block_raking_layout.cuh"
 #include "../../warp/warp_reduce.cuh"
 #include "../../thread/thread_reduce.cuh"
+#include "../../config.cuh"
 #include "../../util_ptx.cuh"
-#include "../../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

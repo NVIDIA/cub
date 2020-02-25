@@ -35,10 +35,9 @@
 
 #include "specializations/block_scan_raking.cuh"
 #include "specializations/block_scan_warp_scans.cuh"
-#include "../util_arch.cuh"
+#include "../config.cuh"
 #include "../util_type.cuh"
 #include "../util_ptx.cuh"
-#include "../util_namespace.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX

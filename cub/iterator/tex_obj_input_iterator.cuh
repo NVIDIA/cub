@@ -40,7 +40,7 @@
 #include "../thread/thread_store.cuh"
 #include "../util_device.cuh"
 #include "../util_debug.cuh"
-#include "../util_namespace.cuh"
+#include "../config.cuh"
 
 #if (THRUST_VERSION >= 100700)
     // This iterator is compatible with Thrust API 1.7 and newer

@@ -33,6 +33,8 @@
 
 #pragma once
 
+// Static configuration
+#include "config.cuh"
 
 // Block
 #include "block/block_histogram.cuh"

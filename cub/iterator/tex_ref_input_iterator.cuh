@@ -40,7 +40,7 @@
 #include "../thread/thread_store.cuh"
 #include "../util_device.cuh"
 #include "../util_debug.cuh"
-#include "../util_namespace.cuh"
+#include "../config.cuh"
 
 #if (CUDART_VERSION >= 5050) || defined(DOXYGEN_ACTIVE)  // This iterator is compatible with CUDA 5.5 and newer
 
