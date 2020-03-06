@@ -39,6 +39,8 @@
 #include "../../util_macro.cuh"
 #include "../../util_namespace.cuh"
 
+#include <stdint.h>
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -96,13 +98,13 @@ struct WarpReduceShfl
     //---------------------------------------------------------------------
 
     /// Lane index in logical warp
-    int lane_id;
+    uint32_t  lane_id;
 
     /// Logical warp index in 32-thread physical warp
-    int warp_id;
+    uint32_t warp_id;
 
     /// 32-thread physical warp member mask of logical warp
-    int member_mask;
+    uint32_t member_mask;
 
 
     //---------------------------------------------------------------------

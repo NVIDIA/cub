@@ -1416,9 +1416,18 @@ struct DispatchSegmentedRadixSort :
 
             // Log kernel configuration
             if (debug_synchronous)
-                _CubLog("Invoking segmented_kernels<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d, bit_grain %d\n",
-                    num_segments, pass_config.segmented_config.block_threads, (long long) stream,
-                pass_config.segmented_config.items_per_thread, pass_config.segmented_config.sm_occupancy, current_bit, pass_bits);
+            {
+              _CubLog("Invoking segmented_kernels<<<%lld, %lld, 0, %lld>>>(), "
+                      "%lld items per thread, %lld SM occupancy, "
+                      "current bit %d, bit_grain %d\n",
+                      (long long)num_segments,
+                      (long long)pass_config.segmented_config.block_threads,
+                      (long long)stream,
+                      (long long)pass_config.segmented_config.items_per_thread,
+                      (long long)pass_config.segmented_config.sm_occupancy,
+                      current_bit,
+                      pass_bits);
+            }
 
             pass_config.segmented_kernel<<<num_segments, pass_config.segmented_config.block_threads, 0, stream>>>(
                 d_keys_in, d_keys_out,
