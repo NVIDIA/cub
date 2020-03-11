@@ -1,8 +1,6 @@
 <hr>
 <h3>About CUB</h3>
 
-Current release: v1.9.8 (02/20/2020), included in CUDA 11.0 EA.
-
 We recommend the [CUB Project Website](http://nvlabs.github.com/cub) for further information and examples.
 
 CUB provides state-of-the-art, reusable software components for every layer
