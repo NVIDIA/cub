@@ -333,7 +333,11 @@ public:
         T               input,                          ///< [in] Calling thread's input item
         T               &output)                        ///< [out] Calling thread's output item (may be aliased to \p input)
     {
+#if CUB_CPP_DIALECT < 2011 // T must be able to be initialized from 0 pre-c++11
         T initial_value = 0;
+#else
+        T initial_value{};
+#endif
         ExclusiveScan(input, output, initial_value, cub::Sum());
     }
 
@@ -381,7 +385,11 @@ public:
         T               &output,                        ///< [out] Calling thread's output item (may be aliased to \p input)
         T               &block_aggregate)               ///< [out] block-wide aggregate reduction of input items
     {
+#if CUB_CPP_DIALECT < 2011 // T must be able to be initialized from 0 pre-c++11
         T initial_value = 0;
+#else
+        T initial_value{};
+#endif
         ExclusiveScan(input, output, initial_value, cub::Sum(), block_aggregate);
     }
 
@@ -521,7 +529,11 @@ public:
         T                 (&input)[ITEMS_PER_THREAD],   ///< [in] Calling thread's input items
         T                 (&output)[ITEMS_PER_THREAD])  ///< [out] Calling thread's output items (may be aliased to \p input)
     {
+#if CUB_CPP_DIALECT < 2011 // T must be able to be initialized from 0 pre-c++11
         T initial_value = 0;
+#else
+        T initial_value{};
+#endif
         ExclusiveScan(input, output, initial_value, cub::Sum());
     }
 
@@ -574,7 +586,11 @@ public:
         T                 &block_aggregate)                 ///< [out] block-wide aggregate reduction of input items
     {
         // Reduce consecutive thread items in registers
+#if CUB_CPP_DIALECT < 2011 // T must be able to be initialized from 0 pre-c++11
         T initial_value = 0;
+#else
+        T initial_value{};
+#endif
         ExclusiveScan(input, output, initial_value, cub::Sum(), block_aggregate);
     }
 
