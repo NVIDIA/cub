@@ -36,14 +36,6 @@
 
 #ifndef CUB_CPP_DIALECT
 
-// MSVC prior to 2015U3 does not expose the C++ dialect and is not supported.
-// This is a hard error.
-#  ifndef CUB_IGNORE_DEPRECATED_CPP_DIALECT
-#    if defined(_MSC_FULL_VER) && _MSC_FULL_VER < 190024210
-#      error "MSVC < 2015 Update 3 is not supported by CUB."
-#    endif
-#  endif
-
 // MSVC does not define __cplusplus correctly. _MSVC_LANG is used instead
 // (MSVC 2015U3+ only)
 #  ifdef _MSVC_LANG
