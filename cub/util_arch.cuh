@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include "util_cpp_dialect.cuh"
 #include "util_namespace.cuh"
 #include "util_macro.cuh"
 
@@ -88,7 +89,7 @@ namespace cub {
     #define CUB_MAX_DEVICES 128
 #endif
 
-#if __cplusplus >= 201103L
+#if CUB_CPP_DIALECT >= 2011
     static_assert(CUB_MAX_DEVICES > 0, "CUB_MAX_DEVICES must be greater than 0.");
 #endif
 

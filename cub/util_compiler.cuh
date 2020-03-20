@@ -48,6 +48,8 @@
 // figure out which host compiler we're using
 #if defined(_MSC_VER)
 #  define CUB_HOST_COMPILER CUB_HOST_COMPILER_MSVC
+#  define CUB_MSVC_VERSION _MSC_VER
+#  define CUB_MSVC_VERSION_FULL _MSC_FULL_VER
 #elif defined(__clang__)
 #  define CUB_HOST_COMPILER CUB_HOST_COMPILER_CLANG
 #  define CUB_CLANG_VERSION                                                    \

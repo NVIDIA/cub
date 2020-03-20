@@ -36,10 +36,11 @@
 #include "util_type.cuh"
 #include "util_arch.cuh"
 #include "util_debug.cuh"
+#include "util_cpp_dialect.cuh"
 #include "util_namespace.cuh"
 #include "util_macro.cuh"
 
-#if __cplusplus >= 201103L // C++11 and later.
+#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
 #include <atomic>
 #include <array>
 #include <cassert>
@@ -183,7 +184,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ int DeviceCountUncached()
 #endif
 }
 
-#if __cplusplus >= 201103L // C++11 and later.
+#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
 
 /**
  * \brief Cache for an arbitrary value produced by a nullary function.
@@ -214,7 +215,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ int DeviceCount()
     int result = -1;
     if (CUB_IS_HOST_CODE) {
         #if CUB_INCLUDE_HOST_CODE
-            #if __cplusplus >= 201103L
+            #if CUB_CPP_DIALECT >= 2011
                 // Host code and C++11.
                 // C++11 guarantees that initialization of static locals is thread safe.
                 static ValueCache<int, DeviceCountUncached> cache;
@@ -234,7 +235,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ int DeviceCount()
     return result;
 }
 
-#if __cplusplus >= 201103L // C++11 and later.
+#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
 
 /**
  * \brief Per-device cache for a CUDA attribute value; the attribute is queried
@@ -356,7 +357,9 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersionUncached(int& ptx_ver
     typedef void (*EmptyKernelPtr)();
     EmptyKernelPtr empty_kernel = EmptyKernel<void>;
 
-    (void)(empty_kernel);
+    // This is necessary for unused variable warnings in host compilers. The
+    // usual syntax of (void)empty_kernel; was not sufficient on MSVC2015.
+    (void)reinterpret_cast<void*>(empty_kernel);
 
     cudaError_t result = cudaSuccess;
     if (CUB_IS_HOST_CODE) {
@@ -373,6 +376,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersionUncached(int& ptx_ver
         #endif
     } else {
         #if CUB_INCLUDE_DEVICE_CODE
+            // This is necessary to ensure instantiation of EmptyKernel in device code.
             // The `reinterpret_cast` is necessary to suppress a set-but-unused warnings.
             // This is a meme now: https://twitter.com/blelbach/status/1222391615576100864
             (void)reinterpret_cast<EmptyKernelPtr>(empty_kernel);
@@ -392,7 +396,7 @@ __host__ __forceinline__ cudaError_t PtxVersionUncached(int& ptx_version, int de
     return PtxVersionUncached(ptx_version);
 }
 
-#if __cplusplus >= 201103L // C++11 and later.
+#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
 template <typename Tag>
 __host__ __forceinline__ PerDeviceAttributeCache& GetPerDeviceAttributeCache()
 {
@@ -414,7 +418,7 @@ struct SmVersionCacheTag {};
  */
 __host__ __forceinline__ cudaError_t PtxVersion(int& ptx_version, int device)
 {
-#if __cplusplus >= 201103L // C++11 and later.
+#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
 
     auto const payload = GetPerDeviceAttributeCache<PtxVersionCacheTag>()(
       // If this call fails, then we get the error code back in the payload,
@@ -446,7 +450,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int& ptx_version)
     cudaError_t result = cudaErrorUnknown;
     if (CUB_IS_HOST_CODE) {
         #if CUB_INCLUDE_HOST_CODE
-            #if __cplusplus >= 201103L
+            #if CUB_CPP_DIALECT >= 2011
                 // Host code and C++11.
                 auto const device = CurrentDevice();
 
@@ -516,7 +520,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int& sm_version, int 
     cudaError_t result = cudaErrorUnknown;
     if (CUB_IS_HOST_CODE) {
         #if CUB_INCLUDE_HOST_CODE
-            #if __cplusplus >= 201103L
+            #if CUB_CPP_DIALECT >= 2011
                 // Host code and C++11
                 auto const payload = GetPerDeviceAttributeCache<SmVersionCacheTag>()(
                   // If this call fails, then we get the error code back in the payload,
