@@ -348,32 +348,29 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersionUncached(int& ptx_ver
 
     (void)(empty_kernel);
 
-#if (CUB_PTX_ARCH == 0) // Host code.
+    cudaError_t result = cudaSuccess;
+    if (CUB_IS_HOST_CODE) {
+       #if CUB_INCLUDE_HOST_CODE
+            cudaFuncAttributes empty_kernel_attrs;
 
-    cudaError_t error = cudaSuccess;
-    cudaFuncAttributes empty_kernel_attrs;
+            do {
+                if (CubDebug(result = cudaFuncGetAttributes(&empty_kernel_attrs, empty_kernel)))
+                    break;
+            }
+            while(0);
 
-    do {
-        if (CubDebug(error = cudaFuncGetAttributes(&empty_kernel_attrs, empty_kernel)))
-            break;
+            ptx_version = empty_kernel_attrs.ptxVersion * 10;
+        #endif
+    } else {
+        #if CUB_INCLUDE_DEVICE_CODE
+            // The `reinterpret_cast` is necessary to suppress a set-but-unused warnings.
+            // This is a meme now: https://twitter.com/blelbach/status/1222391615576100864
+            (void)reinterpret_cast<EmptyKernelPtr>(empty_kernel);
+
+            ptx_version = CUB_PTX_ARCH;
+        #endif
     }
-    while (0);
-
-    ptx_version = empty_kernel_attrs.ptxVersion * 10;
-
-    return error;
-
-#else // Device code.
-
-    // The `reinterpret_cast` is necessary to suppress a set-but-unused warnings.
-    // This is a meme now: https://twitter.com/blelbach/status/1222391615576100864
-    (void)reinterpret_cast<EmptyKernelPtr>(empty_kernel);
-
-    ptx_version = CUB_PTX_ARCH;
-
-    return cudaSuccess;
-
-#endif
+    return result;
 }
 
 /**
@@ -436,26 +433,35 @@ __host__ __forceinline__ cudaError_t PtxVersion(int& ptx_version, int device)
  */
 CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t PtxVersion(int& ptx_version)
 {
-#if __cplusplus >= 201103L && (CUB_PTX_ARCH == 0) // Host code and C++11.
+    cudaError_t result = cudaErrorUnknown;
+    if (CUB_IS_HOST_CODE) {
+        #if CUB_INCLUDE_HOST_CODE
+            #if __cplusplus >= 201103L
+                // Host code and C++11.
+                auto const device = CurrentDevice();
 
-    auto const device = CurrentDevice();
+                auto const payload = GetPerDeviceAttributeCache<PtxVersionCacheTag>()(
+                  // If this call fails, then we get the error code back in the payload,
+                  // which we check with `CubDebug` below.
+                  [=] (int& pv) { return PtxVersionUncached(pv, device); },
+                  device);
 
-    auto const payload = GetPerDeviceAttributeCache<PtxVersionCacheTag>()(
-      // If this call fails, then we get the error code back in the payload,
-      // which we check with `CubDebug` below.
-      [=] (int& pv) { return PtxVersionUncached(pv, device); },
-      device);
+                if (!CubDebug(payload.error))
+                    ptx_version = payload.attribute;
 
-    if (!CubDebug(payload.error))
-        ptx_version = payload.attribute;
-
-    return payload.error;
-
-#else // Device code or host code before C++11.
-
-    return PtxVersionUncached(ptx_version);
-
-#endif
+                result = payload.error;
+            #else
+                // Host code and C++98.
+                result = PtxVersionUncached(ptx_version);
+            #endif
+        #endif
+    } else {
+        #if CUB_INCLUDE_DEVICE_CODE
+            // Device code.
+            result = PtxVersionUncached(ptx_version);
+        #endif
+    }
+    return result;
 }
 
 /**
@@ -497,24 +503,32 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersionUncached(int& sm_versi
  */
 CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int& sm_version, int device = CurrentDevice())
 {
-#if __cplusplus >= 201103L && (CUB_PTX_ARCH == 0) // Host code and C++11.
+    cudaError_t result = cudaErrorUnknown;
+    if (CUB_IS_HOST_CODE) {
+        #if CUB_INCLUDE_HOST_CODE
+            #if __cplusplus >= 201103L
+                // Host code and C++11
+                auto const payload = GetPerDeviceAttributeCache<SmVersionCacheTag>()(
+                  // If this call fails, then we get the error code back in the payload,
+                  // which we check with `CubDebug` below.
+                  [=] (int& pv) { return SmVersionUncached(pv, device); },
+                  device);
 
-    auto const payload = GetPerDeviceAttributeCache<SmVersionCacheTag>()(
-      // If this call fails, then we get the error code back in the payload,
-      // which we check with `CubDebug` below.
-      [=] (int& pv) { return SmVersionUncached(pv, device); },
-      device);
+                if (!CubDebug(payload.error))
+                    sm_version = payload.attribute;
 
-    if (!CubDebug(payload.error))
-        sm_version = payload.attribute;
-
-    return payload.error;
-
-#else // Device code or host code before C++11.
-
-    return SmVersionUncached(sm_version, device);
-
-#endif
+                result = payload.error;
+            #else
+                // Host code and C++98
+                result = SmVersionUncached(sm_version, device);
+            #endif
+        #endif
+    } else {
+        #if CUB_INCLUDE_DEVICE_CODE
+            result = SmVersionUncached(sm_version, device);
+        #endif
+    }
+    return result;
 }
 
 /**
@@ -522,23 +536,25 @@ CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SmVersion(int& sm_version, int 
  */
 CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SyncStream(cudaStream_t stream)
 {
-#if (CUB_PTX_ARCH == 0) // Host code.
-
-    return CubDebug(cudaStreamSynchronize(stream));
-
-#elif defined(CUB_RUNTIME_ENABLED) // Device code with the CUDA runtime.
-
-    (void)stream;
-    // Device can't yet sync on a specific stream
-    return CubDebug(cudaDeviceSynchronize());
-
-#else // Device code without the CUDA runtime.
-
-    (void)stream;
-    // CUDA API calls are not supported from this device.
-    return CubDebug(cudaErrorInvalidConfiguration);
-
-#endif
+    cudaError_t result = cudaErrorUnknown;
+    if (CUB_IS_HOST_CODE) {
+        #if CUB_INCLUDE_HOST_CODE
+            result = CubDebug(cudaStreamSynchronize(stream));
+        #endif
+    } else {
+        #if CUB_INCLUDE_DEVICE_CODE
+            #if defined(CUB_RUNTIME_ENABLED) // Device code with the CUDA runtime.
+                (void)stream;
+                // Device can't yet sync on a specific stream
+                result = CubDebug(cudaDeviceSynchronize());
+            #else // Device code without the CUDA runtime.
+                (void)stream;
+                // CUDA API calls are not supported from this device.
+                result = CubDebug(cudaErrorInvalidConfiguration);
+            #endif
+        #endif
+    }
+    return result;
 }
 
 

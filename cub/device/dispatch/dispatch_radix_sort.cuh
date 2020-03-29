@@ -47,6 +47,8 @@
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -922,7 +924,9 @@ struct DispatchRadixSort :
                     ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD, 1, begin_bit, ActivePolicyT::SingleTilePolicy::RADIX_BITS);
 
             // Invoke upsweep_kernel with same grid size as downsweep_kernel
-            single_tile_kernel<<<1, ActivePolicyT::SingleTilePolicy::BLOCK_THREADS, 0, stream>>>(
+            thrust::cuda_cub::launcher::triple_chevron(
+                1, ActivePolicyT::SingleTilePolicy::BLOCK_THREADS, 0, stream
+            ).doit(single_tile_kernel,
                 d_keys.Current(),
                 d_keys.Alternate(),
                 d_values.Current(),
@@ -980,7 +984,10 @@ struct DispatchRadixSort :
                 pass_config.upsweep_config.items_per_thread, pass_config.upsweep_config.sm_occupancy, current_bit, pass_bits);
 
             // Invoke upsweep_kernel with same grid size as downsweep_kernel
-            pass_config.upsweep_kernel<<<pass_config.even_share.grid_size, pass_config.upsweep_config.block_threads, 0, stream>>>(
+            thrust::cuda_cub::launcher::triple_chevron(
+                pass_config.even_share.grid_size,
+                pass_config.upsweep_config.block_threads, 0, stream
+            ).doit(pass_config.upsweep_kernel,
                 d_keys_in,
                 d_spine,
                 num_items,
@@ -999,7 +1006,9 @@ struct DispatchRadixSort :
                 1, pass_config.scan_config.block_threads, (long long) stream, pass_config.scan_config.items_per_thread);
 
             // Invoke scan_kernel
-            pass_config.scan_kernel<<<1, pass_config.scan_config.block_threads, 0, stream>>>(
+            thrust::cuda_cub::launcher::triple_chevron(
+                1, pass_config.scan_config.block_threads, 0, stream
+            ).doit(pass_config.scan_kernel,
                 d_spine,
                 spine_length);
 
@@ -1015,7 +1024,10 @@ struct DispatchRadixSort :
                 pass_config.downsweep_config.items_per_thread, pass_config.downsweep_config.sm_occupancy);
 
             // Invoke downsweep_kernel
-            pass_config.downsweep_kernel<<<pass_config.even_share.grid_size, pass_config.downsweep_config.block_threads, 0, stream>>>(
+            thrust::cuda_cub::launcher::triple_chevron(
+                pass_config.even_share.grid_size,
+                pass_config.downsweep_config.block_threads, 0, stream
+            ).doit(pass_config.downsweep_kernel,
                 d_keys_in,
                 d_keys_out,
                 d_values_in,
@@ -1429,7 +1441,10 @@ struct DispatchSegmentedRadixSort :
                       pass_bits);
             }
 
-            pass_config.segmented_kernel<<<num_segments, pass_config.segmented_config.block_threads, 0, stream>>>(
+            thrust::cuda_cub::launcher::triple_chevron(
+                num_segments, pass_config.segmented_config.block_threads, 0,
+                stream
+            ).doit(pass_config.segmented_kernel,
                 d_keys_in, d_keys_out,
                 d_values_in,  d_values_out,
                 d_begin_offsets, d_end_offsets, num_segments,

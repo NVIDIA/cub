@@ -44,6 +44,8 @@
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -367,7 +369,9 @@ struct DispatchScan:
             if (debug_synchronous) _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke init_kernel to initialize tile descriptors
-            init_kernel<<<init_grid_size, INIT_KERNEL_THREADS, 0, stream>>>(
+            thrust::cuda_cub::launcher::triple_chevron(
+                init_grid_size, INIT_KERNEL_THREADS, 0, stream
+            ).doit(init_kernel,
                 tile_state,
                 num_tiles);
 
@@ -398,7 +402,9 @@ struct DispatchScan:
                     start_tile, scan_grid_size, Policy::BLOCK_THREADS, (long long) stream, Policy::ITEMS_PER_THREAD, scan_sm_occupancy);
 
                 // Invoke scan_kernel
-                scan_kernel<<<scan_grid_size, Policy::BLOCK_THREADS, 0, stream>>>(
+                thrust::cuda_cub::launcher::triple_chevron(
+                    scan_grid_size, Policy::BLOCK_THREADS, 0, stream
+                ).doit(scan_kernel,
                     d_in,
                     d_out,
                     tile_state,

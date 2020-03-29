@@ -82,12 +82,16 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 #ifdef CUB_STDERR
     if (error)
     {
-    #if (CUB_PTX_ARCH == 0)
-        fprintf(stderr, "CUDA error %d [%s, %d]: %s\n", error, filename, line, cudaGetErrorString(error));
-        fflush(stderr);
-    #elif (CUB_PTX_ARCH >= 200)
-        printf("CUDA error %d [block (%d,%d,%d) thread (%d,%d,%d), %s, %d]\n", error, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, filename, line);
-    #endif
+        if (CUB_IS_HOST_CODE) {
+            #if CUB_INCLUDE_HOST_CODE
+                fprintf(stderr, "CUDA error %d [%s, %d]: %s\n", error, filename, line, cudaGetErrorString(error));
+                fflush(stderr);
+            #endif
+        } else {
+            #if CUB_INCLUDE_DEVICE_CODE
+                printf("CUDA error %d [block (%d,%d,%d) thread (%d,%d,%d), %s, %d]\n", error, blockIdx.z, blockIdx.y, blockIdx.x, threadIdx.z, threadIdx.y, threadIdx.x, filename, line);
+            #endif
+        }
     }
 #endif
     return error;
@@ -114,7 +118,13 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
  * \brief Log macro for printf statements.
  */
 #if !defined(_CubLog)
-    #if !(defined(__clang__) && defined(__CUDA__))
+    #if defined(__NVCOMPILER_CUDA__)
+        #define _CubLog(format, ...) (__builtin_is_device_code() \
+            ? printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, \
+                     blockIdx.z, blockIdx.y, blockIdx.x, \
+                     threadIdx.z, threadIdx.y, threadIdx.x, __VA_ARGS__) \
+            : printf(format, __VA_ARGS__));
+    #elif !(defined(__clang__) && defined(__CUDA__))
         #if (CUB_PTX_ARCH == 0)
             #define _CubLog(format, ...) printf(format,__VA_ARGS__);
         #elif (CUB_PTX_ARCH >= 200)
