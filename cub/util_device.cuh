@@ -263,7 +263,7 @@ public:
     /**
      * \brief Construct the cache.
      */
-    __host__ __forceinline__ PerDeviceAttributeCache() : entries_{}
+    __host__ __forceinline__ PerDeviceAttributeCache() : entries_()
     {
         assert(DeviceCount() <= CUB_MAX_DEVICES);
     }

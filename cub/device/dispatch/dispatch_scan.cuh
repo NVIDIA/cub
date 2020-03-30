@@ -105,7 +105,7 @@ __global__ void DeviceScanKernel(
     OutputIteratorT     d_out,              ///< Output data
     ScanTileStateT      tile_state,         ///< Tile status interface
     int                 start_tile,         ///< The starting tile for the current grid
-    ScanOpT             scan_op,            ///< Binary scan functor 
+    ScanOpT             scan_op,            ///< Binary scan functor
     InitValueT          init_value,         ///< Initial value to seed the exclusive scan
     OffsetT             num_items)          ///< Total number of scan items for the entire problem
 {
@@ -308,7 +308,7 @@ struct DispatchScan:
     debug_synchronous(debug_synchronous),
     ptx_version(ptx_version)
     {}
-    
+
     template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
     cudaError_t Invoke(InitKernel init_kernel, ScanKernel scan_kernel)
@@ -323,8 +323,9 @@ struct DispatchScan:
 
 #else
 
-        using Policy = typename ActivePolicyT::ScanPolicyT;
-        using ScanTileStateT = typename cub::ScanTileState<OutputT>;
+        typedef typename ActivePolicyT::ScanPolicyT Policy;
+        typedef typename cub::ScanTileState<OutputT> ScanTileStateT;
+
         cudaError error = cudaSuccess;
         do
         {
@@ -424,8 +425,8 @@ struct DispatchScan:
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
     cudaError_t Invoke()
     {
-        using Policy = typename ActivePolicyT::ScanPolicyT;
-        using ScanTileStateT = typename cub::ScanTileState<OutputT>;
+        typedef typename ActivePolicyT::ScanPolicyT Policy;
+        typedef typename cub::ScanTileState<OutputT> ScanTileStateT;
         // Ensure kernels are instantiated.
         return Invoke<ActivePolicyT>(
             DeviceScanInitKernel<ScanTileStateT>,
@@ -452,7 +453,7 @@ struct DispatchScan:
         typedef typename DispatchScan::MaxPolicy MaxPolicyT;
 
         cudaError_t error;
-        do 
+        do
         {
             // Get PTX version
             int ptx_version = 0;
