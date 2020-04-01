@@ -293,7 +293,8 @@ public:
             // it by trying to set the state from `DeviceEntryReady` to
             // `DeviceEntryInitializing`.
             if (flag.compare_exchange_strong(old_status, DeviceEntryInitializing,
-                                                  std::memory_order_acq_rel))
+                                             std::memory_order_acq_rel,
+                                             std::memory_order_acquire))
             {
                 // We successfully set the state to `DeviceEntryInitializing`;
                 // we have the lock and it's our job to initialize this entry
