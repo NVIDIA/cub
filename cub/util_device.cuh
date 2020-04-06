@@ -211,18 +211,27 @@ struct ValueCache
  */
 CUB_RUNTIME_FUNCTION __forceinline__ int DeviceCount()
 {
-#if __cplusplus >= 201103L && (CUB_PTX_ARCH == 0) // Host code and C++11.
+    int result = -1;
+    if (CUB_IS_HOST_CODE) {
+        #if CUB_INCLUDE_HOST_CODE
+            #if __cplusplus >= 201103L
+                // Host code and C++11.
+                // C++11 guarantees that initialization of static locals is thread safe.
+                static ValueCache<int, DeviceCountUncached> cache;
 
-    // C++11 guarantees that initialization of static locals is thread safe.
-    static ValueCache<int, DeviceCountUncached> cache;
-
-    return cache.value;
-
-#else // Device code or host code before C++11.
-
-    return DeviceCountUncached();
-
-#endif
+                result = cache.value;
+            #else
+                // Host code and C++98.
+                result = DeviceCountUncached();
+            #endif
+        #endif
+    } else {
+        #if CUB_INCLUDE_DEVICE_CODE
+            // Device code.
+            result = DeviceCountUncached();
+        #endif
+    }
+    return result;
 }
 
 #if __cplusplus >= 201103L // C++11 and later.
