@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include "version.cuh"
+
 // For example:
 //#define CUB_NS_PREFIX namespace thrust{ namespace detail {
 //#define CUB_NS_POSTFIX } }
