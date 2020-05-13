@@ -1681,7 +1681,7 @@ int main(int argc, char** argv)
         TestChannels <unsigned short,   int, int,   int>(8192,  8192 + 1, Int2Type<true>());
         TestChannels <float,            int, float, int>(1.0,   256 + 1, Int2Type<true>());
 
-		// Test down-conversion of size_t offsets to int
+        // Test down-conversion of size_t offsets to int
         TestChannels <unsigned char,    int, int,   long long>(256, 256 + 1, Int2Type<(sizeof(size_t) != sizeof(int))>());
     }
 

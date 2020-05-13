@@ -35,11 +35,21 @@
 
 COMMA = ,
 ifdef sm
-	SM_ARCH = $(subst $(COMMA),-,$(sm))
+    SM_ARCH = $(subst $(COMMA),-,$(sm))
 else
     SM_ARCH = 600
 endif
 
+ifeq (800, $(findstring 800, $(SM_ARCH)))
+    SM_TARGETS 	+= -gencode=arch=compute_80,code=\"sm_80,compute_80\"
+    SM_DEF 		+= -DSM800
+    TEST_ARCH 	= 800
+endif
+ifeq (750, $(findstring 700, $(SM_ARCH)))
+    SM_TARGETS 	+= -gencode=arch=compute_75,code=\"sm_75,compute_75\"
+    SM_DEF 		+= -DSM750
+    TEST_ARCH 	= 750
+endif
 ifeq (700, $(findstring 700, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_70,code=\"sm_70,compute_70\"
     SM_DEF 		+= -DSM700
@@ -148,7 +158,7 @@ NVCC ?= "$(shell which nvcc)"
 ifdef nvccver
     NVCC_VERSION = $(nvccver)
 else
-    NVCC_VERSION = $(strip $(shell nvcc --version | grep release | sed 's/.*release //' |  sed 's/,.*//'))
+    NVCC_VERSION = $(strip $(shell $(NVCC) --version | grep release | sed 's/.*release //' |  sed 's/,.*//'))
 endif
 
 # detect OS

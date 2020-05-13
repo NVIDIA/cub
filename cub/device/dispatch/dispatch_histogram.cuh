@@ -174,7 +174,7 @@ template <
     typename    CounterT,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    LevelT,                     ///< Type for specifying bin level boundaries
     typename    OffsetT>                    ///< Signed integer type for global offsets
-struct DipatchHistogram
+struct DispatchHistogram
 {
     //---------------------------------------------------------------------
     // Types and constants
@@ -371,13 +371,47 @@ struct DipatchHistogram
             HistogramSweepPolicy;
     };
 
+    /// SM70
+    struct Policy700
+    {
+        // HistogramSweepPolicy
+        typedef AgentHistogramPolicy<
+                384,
+                TScale<16>::VALUE,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_DEFAULT,
+                true,
+                SMEM,
+                false>
+            HistogramSweepPolicy;
+    };
 
+    /// SM80
+    struct Policy800
+    {
+        // HistogramSweepPolicy
+        typedef AgentHistogramPolicy<
+                384,
+                TScale<16>::VALUE,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_DEFAULT,
+                true,
+                SMEM,
+                false>
+            HistogramSweepPolicy;
+    };
 
     //---------------------------------------------------------------------
     // Tuning policies of current PTX compiler pass
     //---------------------------------------------------------------------
 
-#if (CUB_PTX_ARCH >= 500)
+#if (CUB_PTX_ARCH >= 800)
+    typedef Policy800 PtxPolicy;
+
+#elif (CUB_PTX_ARCH >= 700)
+    typedef Policy700 PtxPolicy;
+
+#elif (CUB_PTX_ARCH >= 500)
     typedef Policy500 PtxPolicy;
 
 #else
@@ -414,7 +448,15 @@ struct DipatchHistogram
         {
             #if CUB_INCLUDE_HOST_CODE
                 // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-                if (ptx_version >= 500)
+                if (ptx_version >= 800)
+                {
+                    result = histogram_sweep_config.template Init<typename Policy800::HistogramSweepPolicy>();
+                }
+                else if (ptx_version >= 700)
+                {
+                    result = histogram_sweep_config.template Init<typename Policy700::HistogramSweepPolicy>();
+                }
+                else if (ptx_version >= 500)
                 {
                     result = histogram_sweep_config.template Init<typename Policy500::HistogramSweepPolicy>();
                 }

@@ -147,6 +147,42 @@ struct DeviceRleDispatch
      * Tuning policies
      ******************************************************************************/
 
+    /// SM80
+    struct Policy800
+    {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 17,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
+        typedef AgentRlePolicy<
+                256,
+                ITEMS_PER_THREAD,
+                BLOCK_LOAD_TRANSPOSE,
+                LOAD_DEFAULT,
+                true,
+                BLOCK_SCAN_WARP_SCANS>
+            RleSweepPolicy;
+    };
+
+    /// SM70
+    struct Policy700
+    {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 17,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(T)))),
+        };
+
+        typedef AgentRlePolicy<
+                256,
+                ITEMS_PER_THREAD,
+                BLOCK_LOAD_TRANSPOSE,
+                LOAD_DEFAULT,
+                true,
+                BLOCK_SCAN_WARP_SCANS>
+            RleSweepPolicy;
+    };
+
     /// SM35
     struct Policy350
     {
@@ -169,7 +205,16 @@ struct DeviceRleDispatch
      * Tuning policies of current PTX compiler pass
      ******************************************************************************/
 
+#if (CUB_PTX_ARCH >= 800)
+    typedef Policy800 PtxPolicy;
+
+#elif (CUB_PTX_ARCH >= 700)
+    typedef Policy700 PtxPolicy;
+
+#else // if (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
+
+#endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxRleSweepPolicy : PtxPolicy::RleSweepPolicy {};
@@ -198,10 +243,18 @@ struct DeviceRleDispatch
         {
             #if CUB_INCLUDE_HOST_CODE
                 // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-
-                // (There's only one policy right now)
-                (void)ptx_version;
-                device_rle_config.template Init<typename Policy350::RleSweepPolicy>();
+                if (ptx_version >= 800)
+                {
+                    device_rle_config.template Init<typename Policy800::RleSweepPolicy>();
+                }
+                else if (ptx_version >= 700)
+                {
+                    device_rle_config.template Init<typename Policy700::RleSweepPolicy>();
+                }
+                else // if (ptx_version >= 350)
+                {
+                    device_rle_config.template Init<typename Policy350::RleSweepPolicy>();
+                }
             #endif
         }
     }

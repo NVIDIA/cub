@@ -429,7 +429,7 @@ int Solve(
     EqualityOp      equality_op,
     int             num_items)
 {
-    if (num_items == 0) 
+    if (num_items == 0)
         return 0;
 
     // First item
@@ -572,7 +572,7 @@ void Test(
     {
         float avg_millis = elapsed_millis / g_timing_iterations;
         float giga_rate = float(num_items) / avg_millis / 1000.0f / 1000.0f;
-        int bytes_moved = (num_items * sizeof(T)) + (num_runs * (sizeof(OffsetT) + sizeof(LengthT)));
+        size_t bytes_moved = (size_t(num_items) * sizeof(T)) + (size_t(num_runs) * (sizeof(OffsetT) + sizeof(LengthT)));
         float giga_bandwidth = float(bytes_moved) / avg_millis / 1000.0f / 1000.0f;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s", avg_millis, giga_rate, giga_bandwidth);
     }

@@ -153,6 +153,40 @@ struct DispatchSelectIf
      * Tuning policies
      ******************************************************************************/
 
+    /// SM80
+    struct Policy800
+    {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = (KEEP_REJECTS) ? 32 : 20,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(OutputT)))),
+        };
+
+        typedef AgentSelectIfPolicy<
+                256,
+                ITEMS_PER_THREAD,
+                BLOCK_LOAD_VECTORIZE,
+                LOAD_DEFAULT,
+                BLOCK_SCAN_WARP_SCANS>
+            SelectIfPolicyT;
+    };
+
+    /// SM70
+    struct Policy700
+    {
+        enum {
+            NOMINAL_4B_ITEMS_PER_THREAD = 15,
+            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(OutputT)))),
+        };
+
+        typedef AgentSelectIfPolicy<
+                128,
+                ITEMS_PER_THREAD,
+                BLOCK_LOAD_TRANSPOSE,
+                LOAD_DEFAULT,
+                BLOCK_SCAN_WARP_SCANS>
+            SelectIfPolicyT;
+    };
+
     /// SM35
     struct Policy350
     {
@@ -173,8 +207,16 @@ struct DispatchSelectIf
     /******************************************************************************
      * Tuning policies of current PTX compiler pass
      ******************************************************************************/
+#if (CUB_PTX_ARCH >= 800)
+    typedef Policy800 PtxPolicy;
 
+#elif (CUB_PTX_ARCH >= 700)
+    typedef Policy700 PtxPolicy;
+
+#else // if (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
+
+#endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxSelectIfPolicyT : PtxPolicy::SelectIfPolicyT {};
@@ -204,10 +246,18 @@ struct DispatchSelectIf
         {
             #if CUB_INCLUDE_HOST_CODE
                 // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-
-                // (There's only one policy right now)
-                (void)ptx_version;
-                select_if_config.template Init<typename Policy350::SelectIfPolicyT>();
+                if (ptx_version >= 800)
+                {
+                    select_if_config.template Init<typename Policy800::SelectIfPolicyT>();
+                }
+                else if (ptx_version >= 700)
+                {
+                    select_if_config.template Init<typename Policy700::SelectIfPolicyT>();
+                }
+                else // if (ptx_version >= 350)
+                {
+                    select_if_config.template Init<typename Policy350::SelectIfPolicyT>();
+                }
             #endif
         }
     }

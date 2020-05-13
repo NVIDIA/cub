@@ -189,8 +189,34 @@ struct DeviceScanPolicy
             ScanPolicyT;
     };
 
+    /// SM700
+    struct Policy700 : ChainedPolicy<700, Policy700, Policy600>
+    {
+        typedef AgentScanPolicy<
+                256, 25,                                        ///< Threads per block, items per thread
+                OutputT,
+                BLOCK_LOAD_TRANSPOSE,
+                LOAD_DEFAULT,
+                BLOCK_STORE_TRANSPOSE,
+                BLOCK_SCAN_WARP_SCANS>
+            ScanPolicyT;
+    };
+
+    /// SM800
+    struct Policy800 : ChainedPolicy<800, Policy800, Policy700>
+    {
+        typedef AgentScanPolicy<
+                256, 25,                                        ///< Threads per block, items per thread
+                OutputT,
+                BLOCK_LOAD_TRANSPOSE,
+                LOAD_DEFAULT,
+                BLOCK_STORE_TRANSPOSE,
+                BLOCK_SCAN_WARP_SCANS>
+            ScanPolicyT;
+    };
+
     /// MaxPolicy
-    typedef Policy600 MaxPolicy;
+    typedef Policy800 MaxPolicy;
 };
 
 
