@@ -472,7 +472,7 @@ private:
         {
             int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            temp_storage.buff[item_offset] = input_items[ITEM];
+            new (&temp_storage.buff[item_offset]) InputT (input_items[ITEM]);
         }
 
         WARP_SYNC(0xffffffff);
