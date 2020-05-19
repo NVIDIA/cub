@@ -151,24 +151,24 @@ typename IteratorTexRef<T>::template TexId<UNIQUE_ID>::TexRef IteratorTexRef<T>:
  * \brief A random-access input wrapper for dereferencing array values through texture cache.  Uses older Tesla/Fermi-style texture references.
  *
  * \par Overview
- * - TexRefInputIteratorTwraps a native device pointer of type <tt>ValueType*</tt>. References
+ * - TexRefInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
  *   to elements are to be loaded through texture cache.
  * - Can be used to load any data type from memory through texture cache.
  * - Can be manipulated and exchanged within and between host and device
  *   functions, can only be constructed within host functions, and can only be
  *   dereferenced within device functions.
  * - The \p UNIQUE_ID template parameter is used to statically name the underlying texture
- *   reference.  Only one TexRefInputIteratorTinstance can be bound at any given time for a
+ *   reference.  Only one TexRefInputIterator instance can be bound at any given time for a
  *   specific combination of (1) data type \p T, (2) \p UNIQUE_ID, (3) host
  *   thread, and (4) compilation .o unit.
- * - With regard to nested/dynamic parallelism, TexRefInputIteratorTiterators may only be
+ * - With regard to nested/dynamic parallelism, TexRefInputIterator iterators may only be
  *   created by the host thread and used by a top-level kernel (i.e. the one which is launched
  *   from the host).
  * - Compatible with Thrust API v1.7 or newer.
  * - Compatible with CUDA toolkit v5.5 or newer.
  *
  * \par Snippet
- * The code snippet below illustrates the use of \p TexRefInputIteratorTto
+ * The code snippet below illustrates the use of \p TexRefInputIterator to
  * dereference a device array of doubles through texture cache.
  * \par
  * \code

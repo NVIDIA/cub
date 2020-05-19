@@ -66,18 +66,18 @@ namespace cub {
  * \brief A random-access input wrapper for dereferencing array values through texture cache.  Uses newer Kepler-style texture objects.
  *
  * \par Overview
- * - TexObjInputIteratorTwraps a native device pointer of type <tt>ValueType*</tt>. References
+ * - TexObjInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
  *   to elements are to be loaded through texture cache.
  * - Can be used to load any data type from memory through texture cache.
  * - Can be manipulated and exchanged within and between host and device
  *   functions, can only be constructed within host functions, and can only be
  *   dereferenced within device functions.
- * - With regard to nested/dynamic parallelism, TexObjInputIteratorTiterators may only be
+ * - With regard to nested/dynamic parallelism, TexObjInputIterator iterators may only be
  *   created by the host thread, but can be used by any descendant kernel.
  * - Compatible with Thrust API v1.7 or newer.
  *
  * \par Snippet
- * The code snippet below illustrates the use of \p TexRefInputIteratorTto
+ * The code snippet below illustrates the use of \p TexRefInputIterator to
  * dereference a device array of doubles through texture cache.
  * \par
  * \code
