@@ -1,23 +1,25 @@
 <hr>
 <h3>About CUB</h3>
 
-We recommend the [CUB Project Website](http://nvlabs.github.com/cub) for further information and examples.
-
 CUB provides state-of-the-art, reusable software components for every layer
 of the CUDA programming model:
-- [<b><em>Device-wide primitives</em></b>] (https://nvlabs.github.com/cub/group___device_module.html)
+- [<b><em>Device-wide primitives</em></b>](https://nvlabs.github.com/cub/group___device_module.html)
   - Sort, prefix scan, reduction, histogram, etc.
   - Compatible with CUDA dynamic parallelism
-- [<b><em>Block-wide "collective" primitives</em></b>] (https://nvlabs.github.com/cub/group___block_module.html)
+- [<b><em>Block-wide "collective" primitives</em></b>](https://nvlabs.github.com/cub/group___block_module.html)
   - I/O, sort, prefix scan, reduction, histogram, etc.
   - Compatible with arbitrary thread block sizes and types
-- [<b><em>Warp-wide "collective" primitives</em></b>] (https://nvlabs.github.com/cub/group___warp_module.html)
+- [<b><em>Warp-wide "collective" primitives</em></b>](https://nvlabs.github.com/cub/group___warp_module.html)
   - Warp-wide prefix scan, reduction, etc.
   - Safe and architecture-specific
 - [<b><em>Thread and resource utilities</em></b>](https://nvlabs.github.com/cub/group___thread_module.html)
   - PTX intrinsics, device reflection, texture-caching iterators, caching memory allocators, etc.
 
 ![Orientation of collective primitives within the CUDA software stack](http://nvlabs.github.com/cub/cub_overview.png)
+
+CUB is included in the NVIDIA HPC SDK and the CUDA Toolkit.
+
+We recommend the [CUB Project Website](http://nvlabs.github.com/cub) for further information and examples.
 
 <br><hr>
 <h3>A Simple Example</h3>
@@ -59,39 +61,72 @@ __global__ void BlockSortKernel(int *d_in, int *d_out)
 }
 ```
 
-Each thread block uses cub::BlockRadixSort to collectively sort
+Each thread block uses `cub::BlockRadixSort` to collectively sort
 its own input segment.  The class is specialized by the
 data type being sorted, by the number of threads per block, by the number of
 keys per thread, and implicitly by the targeted compilation architecture.
 
-The cub::BlockLoad and cub::BlockStore classes are similarly specialized.
+The `cub::BlockLoad` and `cub::BlockStore` classes are similarly specialized.
 Furthermore, to provide coalesced accesses to device memory, these primitives are
 configured to access memory using a striped access pattern (where consecutive threads
 simultaneously access consecutive items) and then <em>transpose</em> the keys into
 a [<em>blocked arrangement</em>](index.html#sec4sec3) of elements across threads.
 
-Once specialized, these classes expose opaque \p TempStorage member types.
+Once specialized, these classes expose opaque `TempStorage` member types.
 The thread block uses these storage types to statically allocate the union of
 shared memory needed by the thread block.  (Alternatively these storage types
 could be aliased to global memory allocations).
 
 <br><hr>
-<h3>Stable Releases</h3>
+<h3>Releases</h3>
 
-CUB releases are labeled using version identifiers having three fields:
-*epoch.feature.update*.  The *epoch* field corresponds to support for
-a major change in the CUDA programming model.  The *feature* field
-corresponds to a stable set of features, functionality, and interface.  The
-*update* field corresponds to a bug-fix or performance update for that
-feature set.  At the moment, we do not publicly provide non-stable releases
-such as development snapshots, beta releases or rolling releases.  (Feel free
-to contact us if you would like such things.)  See the
-[CUB Project Website](http://nvlabs.github.com/cub) for more information.
+CUB is distributed with the NVIDIA HPC SDK and the CUDA Toolkit in addition
+to GitHub.
+
+See the [changelog](CHANGELOG.md) for details about specific releases.
+
+| CUB Release               | Included In                    |
+| ------------------------- | ------------------------------ |
+| 1.9.10                    | NVIDIA HPC SDK 20.5            |
+| 1.9.9                     | CUDA Toolkit 11.0              |
+| 1.9.8-1                   | NVIDIA HPC SDK 20.3            |
+| 1.9.8                     | CUDA Toolkit 11.0 Early Access |
+| 1.9.8                     | CUDA 11.0 Early Access         |
+| 1.8.0                     |                                |
+| 1.7.5                     | Thrust 1.9.2                   |
+| 1.7.4                     | Thrust 1.9.1-2                 |
+| 1.7.3                     |                                |
+| 1.7.2                     |                                |
+| 1.7.1                     |                                |
+| 1.7.0                     | Thrust 1.9.0-5                 |
+| 1.6.4                     |                                |
+| 1.6.3                     |                                |
+| 1.6.2 (previously 1.5.5)  |                                |
+| 1.6.1 (previously 1.5.4)  |                                |
+| 1.6.0 (previously 1.5.3)  |                                |
+| 1.5.2                     |                                |
+| 1.5.1                     |                                |
+| 1.5.0                     |                                |
+| 1.4.1                     |                                |
+| 1.4.0                     |                                |
+| 1.3.2                     |                                |
+| 1.3.1                     |                                |
+| 1.3.0                     |                                |
+| 1.2.3                     |                                |
+| 1.2.2                     |                                |
+| 1.2.0                     |                                |
+| 1.1.1                     |                                |
+| 1.0.2                     |                                |
+| 1.0.1                     |                                |
+| 0.9.4                     |                                |
+| 0.9.2                     |                                |
+| 0.9.1                     |                                |
+| 0.9.0                     |                                |
 
 <br><hr>
-<h3>Contributors</h3>
+<h3>Development Model</h3>
 
-CUB is developed as an open-source project by [NVIDIA Research](http://research.nvidia.com).  The primary contributor is [Duane Merrill](http://github.com/dumerrill).
+For information on development model, see [this document](DEVELOPMENT_MODEL.md).
 
 <br><hr>
 <h3>Open Source License</h3>
