@@ -482,7 +482,7 @@ private:
         {
             int item_offset = warp_offset + ITEM + (lane_id * ITEMS_PER_THREAD);
             if (INSERT_PADDING) item_offset += item_offset >> LOG_SMEM_BANKS;
-            output_items[ITEM] = temp_storage.buff[item_offset];
+            new(&output_items[ITEM]) OutputT(temp_storage.buff[item_offset]);
         }
     }
 
