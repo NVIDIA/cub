@@ -485,14 +485,9 @@ struct DipatchHistogram
                 {
                     result = histogram_sweep_config.template Init<typename Policy200::HistogramSweepPolicy>();
                 }
-                else if (ptx_version >= 110)
-                {
-                    result = histogram_sweep_config.template Init<typename Policy110::HistogramSweepPolicy>();
-                }
                 else
                 {
-                    // No global atomic support
-                    result = cudaErrorNotSupported;
+                    result = histogram_sweep_config.template Init<typename Policy110::HistogramSweepPolicy>();
                 }
             #endif
         }
