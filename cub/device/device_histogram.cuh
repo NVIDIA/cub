@@ -551,8 +551,8 @@ struct DeviceHistogram
             num_levels1,
             d_levels1,
             num_samples,
-            1,
-            sizeof(SampleT) * num_samples,
+            (OffsetT)1,
+            (size_t)(sizeof(SampleT) * num_samples),
             stream,
             debug_synchronous);
     }
@@ -741,8 +741,8 @@ struct DeviceHistogram
             num_levels,
             d_levels,
             num_pixels,
-            1,
-            sizeof(SampleT) * NUM_CHANNELS * num_pixels,
+            (OffsetT)1,
+            (size_t)(sizeof(SampleT) * NUM_CHANNELS * num_pixels),
             stream,
             debug_synchronous);
     }
