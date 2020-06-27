@@ -81,10 +81,10 @@ enum Backend
 template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>               dispatch_to,
+    Int2Type<CUB>               /*dispatch_to*/,
     int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t                      &temp_storage_bytes,
@@ -115,10 +115,10 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __host__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<THRUST>            dispatch_to,
+    Int2Type<THRUST>            /*dispatch_to*/,
     int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
@@ -126,8 +126,8 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    cudaStream_t                /*stream*/,
+    bool                        /*debug_synchronous*/)
 {
     // The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
@@ -184,6 +184,16 @@ __global__ void CnpDispatchKernel(
 {
 
 #ifndef CUB_CDP
+    (void)timing_timing_iterations;
+    (void)d_temp_storage_bytes;
+    (void)d_cdp_error;
+    (void)d_temp_storage;
+    (void)temp_storage_bytes;
+    (void)d_in;
+    (void)d_out;
+    (void)d_num_selected_out;
+    (void)num_items;
+    (void)debug_synchronous;
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,

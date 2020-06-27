@@ -175,8 +175,11 @@ public:
 
         CTA_SYNC();
 
-        if ((linear_tid + distance >= 0) && (linear_tid + distance < BLOCK_THREADS))
-            output = temp_storage[linear_tid + distance].prev;
+        const int offset_tid = static_cast<int>(linear_tid) + distance;
+        if ((offset_tid >= 0) && (offset_tid < BLOCK_THREADS))
+        {
+            output = temp_storage[static_cast<size_t>(offset_tid)].prev;
+        }
     }
 
 

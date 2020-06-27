@@ -722,7 +722,7 @@ struct DipatchHistogram
         OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-        Int2Type<false>     is_byte_sample)                             ///< [in] Marker type indicating whether or not SampleT is a 8b type
+        Int2Type<false>     /*is_byte_sample*/)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
         do
@@ -826,7 +826,7 @@ struct DipatchHistogram
         OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-        Int2Type<true>      is_byte_sample)                             ///< [in] Marker type indicating whether or not SampleT is a 8b type
+        Int2Type<true>      /*is_byte_sample*/)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
         do
@@ -905,7 +905,7 @@ struct DipatchHistogram
         OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-        Int2Type<false>     is_byte_sample)                             ///< [in] Marker type indicating whether or not SampleT is a 8b type
+        Int2Type<false>     /*is_byte_sample*/)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
         do
@@ -1013,7 +1013,7 @@ struct DipatchHistogram
         OffsetT             row_stride_samples,                         ///< [in] The number of samples between starts of consecutive rows in the region of interest
         cudaStream_t        stream,                                     ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous,                          ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
-        Int2Type<true>      is_byte_sample)                             ///< [in] Marker type indicating whether or not SampleT is a 8b type
+        Int2Type<true>      /*is_byte_sample*/)                         ///< [in] Marker type indicating whether or not SampleT is a 8b type
     {
         cudaError error = cudaSuccess;
         do

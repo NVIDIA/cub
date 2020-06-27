@@ -39,9 +39,9 @@
 #include <cuda_runtime.h>
 
 #include <stdio.h>
-#include <math.h>
 #include <float.h>
 
+#include <cmath>
 #include <string>
 #include <vector>
 #include <sstream>
@@ -57,6 +57,22 @@
 #include "cub/util_macro.cuh"
 #include "cub/iterator/discard_output_iterator.cuh"
 
+/******************************************************************************
+ * Type conversion macros
+ ******************************************************************************/
+
+/**
+ * Return a value of type `T` with the same bitwise representation of `in`.
+ * Types `T` and `U` must be the same size.
+ */
+template <typename T, typename U>
+T SafeBitCast(const U& in)
+{
+  static_assert(sizeof(T) == sizeof(U), "Types must be same size.");
+  T out;
+  memcpy(&out, &in, sizeof(T));
+  return out;
+}
 
 /******************************************************************************
  * Assertion macros
@@ -270,7 +286,7 @@ struct CommandLineArgs
 
             CubDebugExit(cudaMemGetInfo(&device_free_physmem, &device_total_physmem));
 
-            int ptx_version;
+            int ptx_version = 0;
             error = CubDebug(cub::PtxVersion(ptx_version));
             if (error) break;
 
@@ -317,15 +333,12 @@ int g_num_rand_samples = 0;
 
 
 template <typename T>
-bool IsNaN(T val) { return false; }
+bool IsNaN(T /* val */) { return false; }
 
 template<>
 __noinline__ bool IsNaN<float>(float val)
 {
-    volatile unsigned int bits = reinterpret_cast<unsigned int &>(val);
-
-    return (((bits >= 0x7F800001) && (bits <= 0x7FFFFFFF)) || 
-        ((bits >= 0xFF800001) && (bits <= 0xFFFFFFFF)));
+  return std::isnan(val);
 }
 
 template<>
@@ -355,10 +368,7 @@ __noinline__ bool IsNaN<float4>(float4 val)
 template<>
 __noinline__ bool IsNaN<double>(double val)
 {
-    volatile unsigned long long bits = *reinterpret_cast<unsigned long long *>(&val);
-
-    return (((bits >= 0x7FF0000000000001) && (bits <= 0x7FFFFFFFFFFFFFFF)) || 
-        ((bits >= 0xFFF0000000000001) && (bits <= 0xFFFFFFFFFFFFFFFF)));
+  return std::isnan(val);
 }
 
 template<>
@@ -389,10 +399,11 @@ __noinline__ bool IsNaN<double4>(double4 val)
 template<>
 __noinline__ bool IsNaN<half_t>(half_t val)
 {
-    volatile unsigned short bits = reinterpret_cast<unsigned short &>(val);
+    const auto bits = SafeBitCast<unsigned short>(val);
 
+    // commented bit is always true, leaving for documentation:
     return (((bits >= 0x7C01) && (bits <= 0x7FFF)) ||
-        ((bits >= 0xFC01) && (bits <= 0xFFFFFFFF)));
+        ((bits >= 0xFC01) /*&& (bits <= 0xFFFFFFFF)*/));
 }
 
 
@@ -575,7 +586,9 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value
 /**
  * cub::NullType test initialization
  */
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, cub::NullType &value, int index = 0)
+__host__ __device__ __forceinline__ void InitValue(GenMode /* gen_mode */,
+						   cub::NullType &/* value */,
+						   int /* index */ = 0)
 {}
 
 
@@ -1339,11 +1352,11 @@ int CompareResults(double* computed, double* reference, OffsetT len, bool verbos
  * of a host array
  */
 int CompareDeviceResults(
-    cub::NullType *h_reference,
-    cub::NullType *d_data,
-    size_t num_items,
-    bool verbose = true,
-    bool display_data = false)
+    cub::NullType */* h_reference */,
+    cub::NullType */* d_data */,
+    size_t /* num_items */,
+    bool /* verbose */ = true,
+    bool /* display_data */ = false)
 {
     return 0;
 }
@@ -1457,8 +1470,8 @@ int CompareDeviceDeviceResults(
  * Print the contents of a host array
  */
 void DisplayResults(
-    cub::NullType   *h_data,
-    size_t          num_items)
+    cub::NullType   */* h_data */,
+    size_t          /* num_items */)
 {}
 
 

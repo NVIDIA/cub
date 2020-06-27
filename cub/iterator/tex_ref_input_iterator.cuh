@@ -49,7 +49,6 @@
     #include <thrust/iterator/iterator_traits.h>
 #endif // THRUST_VERSION
 
-
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -245,7 +244,7 @@ public:
     template <typename QualifiedT>
     cudaError_t BindTexture(
         QualifiedT      *ptr,                   ///< Native pointer to wrap that is aligned to cudaDeviceProp::textureAlignment
-        size_t          bytes = size_t(-1),     ///< Number of bytes in the range
+        size_t          /*bytes*/ = size_t(-1), ///< Number of bytes in the range
         size_t          tex_offset = 0)         ///< OffsetT (in items) from \p ptr denoting the position of the iterator
     {
         this->ptr = const_cast<typename RemoveQualifiers<QualifiedT>::Type *>(ptr);
@@ -363,7 +362,7 @@ public:
     }
 
     /// ostream operator
-    friend std::ostream& operator<<(std::ostream& os, const self_type& itr)
+    friend std::ostream& operator<<(std::ostream& os, const self_type& /*itr*/)
     {
         return os;
     }

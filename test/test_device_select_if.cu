@@ -96,17 +96,17 @@ struct LessThan
 template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>               dispatch_to,
-    Int2Type<false>             is_flagged,
-    Int2Type<false>             is_partition,
+    Int2Type<CUB>               /*dispatch_to*/,
+    Int2Type<false>             /*is_flagged*/,
+    Int2Type<false>             /*is_partition*/,
     int                         timing_timing_iterations,
-    size_t*                     d_temp_storage_bytes,
-    cudaError_t*                d_cdp_error,
+    size_t*                     /*d_temp_storage_bytes*/,
+    cudaError_t*                /*d_cdp_error*/,
 
     void*                       d_temp_storage,
     size_t&                     temp_storage_bytes,
     InputIteratorT              d_in,
-    FlagIteratorT               d_flags,
+    FlagIteratorT               /*d_flags*/,
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
@@ -129,17 +129,17 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>               dispatch_to,
-    Int2Type<false>             is_flagged,
-    Int2Type<true>              is_partition,
+    Int2Type<CUB>               /*dispatch_to*/,
+    Int2Type<false>             /*is_flagged*/,
+    Int2Type<true>              /*is_partition*/,
     int                         timing_timing_iterations,
-    size_t*                     d_temp_storage_bytes,
-    cudaError_t*                d_cdp_error,
+    size_t*                     /*d_temp_storage_bytes*/,
+    cudaError_t*                /*d_cdp_error*/,
 
     void*                       d_temp_storage,
     size_t&                     temp_storage_bytes,
     InputIteratorT              d_in,
-    FlagIteratorT               d_flags,
+    FlagIteratorT               /*d_flags*/,
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
@@ -162,12 +162,12 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>               dispatch_to,
-    Int2Type<true>              is_flagged,
-    Int2Type<false>             partition,
+    Int2Type<CUB>               /*dispatch_to*/,
+    Int2Type<true>              /*is_flagged*/,
+    Int2Type<false>             /*partition*/,
     int                         timing_timing_iterations,
-    size_t*                     d_temp_storage_bytes,
-    cudaError_t*                d_cdp_error,
+    size_t*                     /*d_temp_storage_bytes*/,
+    cudaError_t*                /*d_cdp_error*/,
 
     void*                       d_temp_storage,
     size_t&                     temp_storage_bytes,
@@ -176,7 +176,7 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    SelectOpT                   select_op,
+    SelectOpT                   /*select_op*/,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -195,12 +195,12 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>               dispatch_to,
-    Int2Type<true>              is_flagged,
-    Int2Type<true>              partition,
+    Int2Type<CUB>               /*dispatch_to*/,
+    Int2Type<true>              /*is_flagged*/,
+    Int2Type<true>              /*partition*/,
     int                         timing_timing_iterations,
-    size_t*                     d_temp_storage_bytes,
-    cudaError_t*                d_cdp_error,
+    size_t*                     /*d_temp_storage_bytes*/,
+    cudaError_t*                /*d_cdp_error*/,
 
     void*                       d_temp_storage,
     size_t&                     temp_storage_bytes,
@@ -209,7 +209,7 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    SelectOpT                   select_op,
+    SelectOpT                   /*select_op*/,
     cudaStream_t                stream,
     bool                        debug_synchronous)
 {
@@ -232,23 +232,23 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __host__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<THRUST>            dispatch_to,
-    Int2Type<false>             is_flagged,
-    Int2Type<false>             is_partition,
+    Int2Type<THRUST>            /*dispatch_to*/,
+    Int2Type<false>             /*is_flagged*/,
+    Int2Type<false>             /*is_partition*/,
     int                         timing_timing_iterations,
-    size_t*                     d_temp_storage_bytes,
-    cudaError_t*                d_cdp_error,
+    size_t*                     /*d_temp_storage_bytes*/,
+    cudaError_t*                /*d_cdp_error*/,
 
     void*                       d_temp_storage,
     size_t&                     temp_storage_bytes,
     InputIteratorT              d_in,
-    FlagIteratorT               d_flags,
+    FlagIteratorT               /*d_flags*/,
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     SelectOpT                   select_op,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    cudaStream_t                /*stream*/,
+    bool                        /*debug_synchronous*/)
 {
     // The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
@@ -287,23 +287,23 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __host__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<THRUST>            dispatch_to,
-    Int2Type<false>             is_flagged,
-    Int2Type<true>              is_partition,
+    Int2Type<THRUST>            /*dispatch_to*/,
+    Int2Type<false>             /*is_flagged*/,
+    Int2Type<true>              /*is_partition*/,
     int                         timing_timing_iterations,
-    size_t*                     d_temp_storage_bytes,
-    cudaError_t*                d_cdp_error,
+    size_t*                     /*d_temp_storage_bytes*/,
+    cudaError_t*                /*d_cdp_error*/,
 
     void*                       d_temp_storage,
     size_t&                     temp_storage_bytes,
     InputIteratorT              d_in,
-    FlagIteratorT               d_flags,
+    FlagIteratorT               /*d_flags*/,
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     SelectOpT                   select_op,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    cudaStream_t                /*stream*/,
+    bool                        /*debug_synchronous*/)
 {
     // The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
@@ -352,12 +352,12 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __host__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<THRUST>            dispatch_to,
-    Int2Type<true>              is_flagged,
-    Int2Type<false>             is_partition,
+    Int2Type<THRUST>            /*dispatch_to*/,
+    Int2Type<true>              /*is_flagged*/,
+    Int2Type<false>             /*is_partition*/,
     int                         timing_timing_iterations,
-    size_t*                     d_temp_storage_bytes,
-    cudaError_t*                d_cdp_error,
+    size_t*                     /*d_temp_storage_bytes*/,
+    cudaError_t*                /*d_cdp_error*/,
 
     void*                       d_temp_storage,
     size_t&                     temp_storage_bytes,
@@ -366,9 +366,9 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    SelectOpT                   select_op,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    SelectOpT                   /*select_op*/,
+    cudaStream_t                /*stream*/,
+    bool                        /*debug_synchronous*/)
 {
     // The flag type
     typedef typename std::iterator_traits<FlagIteratorT>::value_type FlagT;
@@ -411,12 +411,12 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __host__ __forceinline__
 cudaError_t Dispatch(
-    Int2Type<THRUST>            dispatch_to,
-    Int2Type<true>              is_flagged,
-    Int2Type<true>              is_partition,
+    Int2Type<THRUST>            /*dispatch_to*/,
+    Int2Type<true>              /*is_flagged*/,
+    Int2Type<true>              /*is_partition*/,
     int                         timing_timing_iterations,
-    size_t*                     d_temp_storage_bytes,
-    cudaError_t*                d_cdp_error,
+    size_t*                     /*d_temp_storage_bytes*/,
+    cudaError_t*                /*d_cdp_error*/,
 
     void*                       d_temp_storage,
     size_t&                     temp_storage_bytes,
@@ -425,9 +425,9 @@ cudaError_t Dispatch(
     OutputIteratorT             d_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
-    SelectOpT                   select_op,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    SelectOpT                   /*select_op*/,
+    cudaStream_t                /*stream*/,
+    bool                        /*debug_synchronous*/)
 {
     // The flag type
     typedef typename std::iterator_traits<FlagIteratorT>::value_type FlagT;
@@ -501,6 +501,19 @@ __global__ void CnpDispatchKernel(
 {
 
 #ifndef CUB_CDP
+    (void)is_flagged;
+    (void)is_partition;
+    (void)timing_timing_iterations;
+    (void)d_temp_storage_bytes;
+    (void)d_temp_storage;
+    (void)temp_storage_bytes;
+    (void)d_in;
+    (void)d_flags;
+    (void)d_out;
+    (void)d_num_selected_out;
+    (void)num_items;
+    (void)select_op;
+    (void)debug_synchronous;
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(Int2Type<CUB>(), is_flagged, is_partition, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,

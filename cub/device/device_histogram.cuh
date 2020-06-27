@@ -448,7 +448,7 @@ struct DeviceHistogram
         Int2Type<sizeof(SampleT) == 1> is_byte_sample;
 
         if ((sizeof(OffsetT) > sizeof(int)) &&
-            ((unsigned long long) (num_rows * row_stride_bytes) < (unsigned long long) std::numeric_limits<int>::max()))
+            ((unsigned long long) (num_rows * row_stride_bytes) < (unsigned long long) INT_MAX))
         {
             // Down-convert OffsetT data type
 
@@ -840,7 +840,7 @@ struct DeviceHistogram
         Int2Type<sizeof(SampleT) == 1> is_byte_sample;
 
         if ((sizeof(OffsetT) > sizeof(int)) &&
-            ((unsigned long long) (num_rows * row_stride_bytes) < (unsigned long long) std::numeric_limits<int>::max()))
+            ((unsigned long long) (num_rows * row_stride_bytes) < (unsigned long long) INT_MAX))
         {
             // Down-convert OffsetT data type
             return DipatchHistogram<NUM_CHANNELS, NUM_ACTIVE_CHANNELS, SampleIteratorT, CounterT, LevelT, int>::DispatchRange(

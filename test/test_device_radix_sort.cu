@@ -88,19 +88,19 @@ template <typename KeyT, typename ValueT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>         is_descending,
-    Int2Type<CUB>           dispatch_to,
-    int                     *d_selector,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
+    Int2Type<false>         /*is_descending*/,
+    Int2Type<CUB>           /*dispatch_to*/,
+    int                     */*d_selector*/,
+    size_t                  */*d_temp_storage_bytes*/,
+    cudaError_t             */*d_cdp_error*/,
 
     void*                   d_temp_storage,
     size_t&                 temp_storage_bytes,
     DoubleBuffer<KeyT>      &d_keys,
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
-    int                     num_segments,
-    const int               *d_segment_offsets,
+    int                     /*num_segments*/,
+    const int               */*d_segment_offsets*/,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -119,19 +119,19 @@ template <typename KeyT, typename ValueT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>             is_descending,
-    Int2Type<CUB_NO_OVERWRITE>  dispatch_to,
-    int                         *d_selector,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    Int2Type<false>             /*is_descending*/,
+    Int2Type<CUB_NO_OVERWRITE>  /*dispatch_to*/,
+    int                         */*d_selector*/,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void*                   d_temp_storage,
     size_t&                 temp_storage_bytes,
     DoubleBuffer<KeyT>      &d_keys,
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
-    int                     num_segments,
-    const int               *d_segment_offsets,
+    int                     /*num_segments*/,
+    const int               */*d_segment_offsets*/,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -157,19 +157,19 @@ template <typename KeyT, typename ValueT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
-    Int2Type<true>          is_descending,
-    Int2Type<CUB>           dispatch_to,
-    int                     *d_selector,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
+    Int2Type<true>          /*is_descending*/,
+    Int2Type<CUB>           /*dispatch_to*/,
+    int                     */*d_selector*/,
+    size_t                  */*d_temp_storage_bytes*/,
+    cudaError_t             */*d_cdp_error*/,
 
     void*                   d_temp_storage,
     size_t&                 temp_storage_bytes,
     DoubleBuffer<KeyT>      &d_keys,
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
-    int                     num_segments,
-    const int               *d_segment_offsets,
+    int                     /*num_segments*/,
+    const int               */*d_segment_offsets*/,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -189,19 +189,19 @@ template <typename KeyT, typename ValueT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
-    Int2Type<true>              is_descending,
-    Int2Type<CUB_NO_OVERWRITE>  dispatch_to,
-    int                         *d_selector,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    Int2Type<true>              /*is_descending*/,
+    Int2Type<CUB_NO_OVERWRITE>  /*dispatch_to*/,
+    int                         */*d_selector*/,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void*                   d_temp_storage,
     size_t&                 temp_storage_bytes,
     DoubleBuffer<KeyT>      &d_keys,
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
-    int                     num_segments,
-    const int               *d_segment_offsets,
+    int                     /*num_segments*/,
+    const int               */*d_segment_offsets*/,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -231,11 +231,11 @@ template <typename KeyT, typename ValueT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>         is_descending,
-    Int2Type<CUB_SEGMENTED> dispatch_to,
-    int                     *d_selector,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
+    Int2Type<false>         /*is_descending*/,
+    Int2Type<CUB_SEGMENTED> /*dispatch_to*/,
+    int                     */*d_selector*/,
+    size_t                  */*d_temp_storage_bytes*/,
+    cudaError_t             */*d_cdp_error*/,
 
     void*                   d_temp_storage,
     size_t&                 temp_storage_bytes,
@@ -263,11 +263,11 @@ template <typename KeyT, typename ValueT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
-    Int2Type<false>                         is_descending,
-    Int2Type<CUB_SEGMENTED_NO_OVERWRITE>    dispatch_to,
-    int                                     *d_selector,
-    size_t                                  *d_temp_storage_bytes,
-    cudaError_t                             *d_cdp_error,
+    Int2Type<false>                         /*is_descending*/,
+    Int2Type<CUB_SEGMENTED_NO_OVERWRITE>    /*dispatch_to*/,
+    int                                     */*d_selector*/,
+    size_t                                  */*d_temp_storage_bytes*/,
+    cudaError_t                             */*d_cdp_error*/,
 
     void*                   d_temp_storage,
     size_t&                 temp_storage_bytes,
@@ -303,11 +303,11 @@ template <typename KeyT, typename ValueT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
-    Int2Type<true>          is_descending,
-    Int2Type<CUB_SEGMENTED> dispatch_to,
-    int                     *d_selector,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
+    Int2Type<true>          /*is_descending*/,
+    Int2Type<CUB_SEGMENTED> /*dispatch_to*/,
+    int                     */*d_selector*/,
+    size_t                  */*d_temp_storage_bytes*/,
+    cudaError_t             */*d_cdp_error*/,
 
     void*                   d_temp_storage,
     size_t&                 temp_storage_bytes,
@@ -335,11 +335,11 @@ template <typename KeyT, typename ValueT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
-    Int2Type<true>                          is_descending,
-    Int2Type<CUB_SEGMENTED_NO_OVERWRITE>    dispatch_to,
-    int                                     *d_selector,
-    size_t                                  *d_temp_storage_bytes,
-    cudaError_t                             *d_cdp_error,
+    Int2Type<true>                          /*is_descending*/,
+    Int2Type<CUB_SEGMENTED_NO_OVERWRITE>    /*dispatch_to*/,
+    int                                     */*d_selector*/,
+    size_t                                  */*d_temp_storage_bytes*/,
+    cudaError_t                             */*d_cdp_error*/,
 
     void*                   d_temp_storage,
     size_t&                 temp_storage_bytes,
@@ -377,23 +377,23 @@ cudaError_t Dispatch(
  */
 template <int IS_DESCENDING, typename KeyT>
 cudaError_t Dispatch(
-    Int2Type<IS_DESCENDING> is_descending,
-    Int2Type<THRUST>        dispatch_to,
-    int                     *d_selector,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
+    Int2Type<IS_DESCENDING> /*is_descending*/,
+    Int2Type<THRUST>        /*dispatch_to*/,
+    int                     */*d_selector*/,
+    size_t                  */*d_temp_storage_bytes*/,
+    cudaError_t             */*d_cdp_error*/,
 
     void                    *d_temp_storage,
     size_t                  &temp_storage_bytes,
     DoubleBuffer<KeyT>      &d_keys,
-    DoubleBuffer<NullType>  &d_values,
+    DoubleBuffer<NullType>  &/*d_values*/,
     int                     num_items,
-    int                     num_segments,
-    const int               *d_segment_offsets,
-    int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     /*num_segments*/,
+    const int               */*d_segment_offsets*/,
+    int                     /*begin_bit*/,
+    int                     /*end_bit*/,
+    cudaStream_t            /*stream*/,
+    bool                    /*debug_synchronous*/)
 {
 
     if (d_temp_storage == 0)
@@ -418,23 +418,23 @@ cudaError_t Dispatch(
  */
 template <int IS_DESCENDING, typename KeyT, typename ValueT>
 cudaError_t Dispatch(
-    Int2Type<IS_DESCENDING> is_descending,
-    Int2Type<THRUST>        dispatch_to,
-    int                     *d_selector,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
+    Int2Type<IS_DESCENDING> /*is_descending*/,
+    Int2Type<THRUST>        /*dispatch_to*/,
+    int                     */*d_selector*/,
+    size_t                  */*d_temp_storage_bytes*/,
+    cudaError_t             */*d_cdp_error*/,
 
     void                    *d_temp_storage,
     size_t                  &temp_storage_bytes,
     DoubleBuffer<KeyT>      &d_keys,
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
-    int                     num_segments,
-    const int               *d_segment_offsets,
-    int                     begin_bit,
-    int                     end_bit,
-    cudaStream_t            stream,
-    bool                    debug_synchronous)
+    int                     /*num_segments*/,
+    const int               */*d_segment_offsets*/,
+    int                     /*begin_bit*/,
+    int                     /*end_bit*/,
+    cudaStream_t            /*stream*/,
+    bool                    /*debug_synchronous*/)
 {
 
     if (d_temp_storage == 0)
@@ -489,6 +489,20 @@ __global__ void CnpDispatchKernel(
     bool                    debug_synchronous)
 {
 #ifndef CUB_CDP
+  (void)is_descending;
+  (void)d_selector;
+  (void)d_temp_storage_bytes;
+  (void)d_cdp_error;
+  (void)d_temp_storage;
+  (void)temp_storage_bytes;
+  (void)d_keys;
+  (void)d_values;
+  (void)num_items;
+  (void)num_segments;
+  (void)d_segment_offsets;
+  (void)begin_bit;
+  (void)end_bit;
+  (void)debug_synchronous;
     *d_cdp_error            = cudaErrorNotSupported;
 #else
     *d_cdp_error            = Dispatch(
@@ -608,8 +622,8 @@ struct Pair<KeyT, ValueT, true>
         typedef typename Traits<KeyT>::UnsignedBits UnsignedBits;
 
         // Return true if key is negative zero and b.key is positive zero
-        UnsignedBits key_bits   = *reinterpret_cast<UnsignedBits*>(const_cast<KeyT*>(&key));
-        UnsignedBits b_key_bits = *reinterpret_cast<UnsignedBits*>(const_cast<KeyT*>(&b.key));
+        UnsignedBits key_bits   = SafeBitCast<UnsignedBits>(key);
+        UnsignedBits b_key_bits = SafeBitCast<UnsignedBits>(b.key);
         UnsignedBits HIGH_BIT   = Traits<KeyT>::HIGH_BIT;
 
         return ((key_bits & HIGH_BIT) != 0) && ((b_key_bits & HIGH_BIT) == 0);
@@ -625,7 +639,7 @@ void InitializeKeyBits(
     GenMode         gen_mode,
     KeyT            *h_keys,
     int             num_items,
-    int             entropy_reduction)
+    int             /*entropy_reduction*/)
 {
     for (int i = 0; i < num_items; ++i)
         InitValue(gen_mode, h_keys[i], i);
@@ -655,7 +669,7 @@ void InitializeSolution(
     {
 
         // Mask off unwanted portions
-        if (num_bits < sizeof(KeyT) * 8)
+        if (num_bits < static_cast<int>(sizeof(KeyT) * 8))
         {
             unsigned long long base = 0;
             memcpy(&base, &h_keys[i], sizeof(KeyT));
@@ -1069,11 +1083,8 @@ void TestGen(
     int             max_items,
     int             max_segments)
 {
-    int ptx_version;
-    CubDebugExit(PtxVersion(ptx_version));
-
     if (max_items < 0)
-        max_items = (ptx_version > 100) ? 9000003 : max_items = 5000003;
+        max_items = 9000003;
 
     if (max_segments < 0)
         max_segments = 5003;
@@ -1206,7 +1217,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
 #ifdef QUICKER_TEST

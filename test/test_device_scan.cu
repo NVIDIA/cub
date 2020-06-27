@@ -96,11 +96,11 @@ struct WrapperFunctor
 template <typename IsPrimitiveT, typename InputIteratorT, typename OutputIteratorT, typename ScanOpT, typename InitialValueT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
-    IsPrimitiveT        is_primitive,
+    Int2Type<CUB>       /*dispatch_to*/,
+    IsPrimitiveT        /*is_primitive*/,
     int                 timing_timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
@@ -127,18 +127,18 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename InitialValueT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
-    Int2Type<true>      is_primitive,
+    Int2Type<CUB>       /*dispatch_to*/,
+    Int2Type<true>      /*is_primitive*/,
     int                 timing_timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    Sum                 scan_op,
-    InitialValueT       initial_value,
+    Sum                 /*scan_op*/,
+    InitialValueT       /*initial_value*/,
     OffsetT             num_items,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -158,18 +158,18 @@ cudaError_t Dispatch(
 template <typename IsPrimitiveT, typename InputIteratorT, typename OutputIteratorT, typename ScanOpT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
-    IsPrimitiveT        is_primitive,
+    Int2Type<CUB>       /*dispatch_to*/,
+    IsPrimitiveT        /*is_primitive*/,
     int                 timing_timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     ScanOpT             scan_op,
-    NullType            initial_value,
+    NullType            /*initial_value*/,
     OffsetT             num_items,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -189,18 +189,18 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
-    Int2Type<true>      is_primitive,
+    Int2Type<CUB>       /*dispatch_to*/,
+    Int2Type<true>      /*is_primitive*/,
     int                 timing_timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    Sum                 scan_op,
-    NullType            initial_value,
+    Sum                 /*scan_op*/,
+    NullType            /*initial_value*/,
     OffsetT             num_items,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -222,11 +222,11 @@ cudaError_t Dispatch(
  */
 template <typename IsPrimitiveT, typename InputIteratorT, typename OutputIteratorT, typename ScanOpT, typename InitialValueT, typename OffsetT>
 cudaError_t Dispatch(
-    Int2Type<THRUST>    dispatch_to,
-    IsPrimitiveT        is_primitive,
+    Int2Type<THRUST>    /*dispatch_to*/,
+    IsPrimitiveT        /*is_primitive*/,
     int                 timing_timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
@@ -235,8 +235,8 @@ cudaError_t Dispatch(
     ScanOpT             scan_op,
     InitialValueT       initial_value,
     OffsetT             num_items,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+    cudaStream_t        /*stream*/,
+    bool                /*debug_synchronous*/)
 {
     // The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
@@ -269,21 +269,21 @@ cudaError_t Dispatch(
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename InitialValueT, typename OffsetT>
 cudaError_t Dispatch(
-    Int2Type<THRUST>    dispatch_to,
-    Int2Type<true>      is_primitive,
+    Int2Type<THRUST>    /*dispatch_to*/,
+    Int2Type<true>      /*is_primitive*/,
     int                 timing_timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    Sum                 scan_op,
-    InitialValueT       initial_value,
+    Sum                 /*scan_op*/,
+    InitialValueT       /*initial_value*/,
     OffsetT             num_items,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+    cudaStream_t        /*stream*/,
+    bool                /*debug_synchronous*/)
 {
     // The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
@@ -316,21 +316,21 @@ cudaError_t Dispatch(
  */
 template <typename IsPrimitiveT, typename InputIteratorT, typename OutputIteratorT, typename ScanOpT, typename OffsetT>
 cudaError_t Dispatch(
-    Int2Type<THRUST>    dispatch_to,
-    IsPrimitiveT        is_primitive,
+    Int2Type<THRUST>    /*dispatch_to*/,
+    IsPrimitiveT        /*is_primitive*/,
     int                 timing_timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     ScanOpT             scan_op,
-    NullType            initial_value,
+    NullType            /*initial_value*/,
     OffsetT             num_items,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+    cudaStream_t        /*stream*/,
+    bool                /*debug_synchronous*/)
 {
     // The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
@@ -363,21 +363,21 @@ cudaError_t Dispatch(
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetT>
 cudaError_t Dispatch(
-    Int2Type<THRUST>    dispatch_to,
-    Int2Type<true>      is_primitive,
+    Int2Type<THRUST>    /*dispatch_to*/,
+    Int2Type<true>      /*is_primitive*/,
     int                 timing_timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    Sum                 scan_op,
-    NullType            initial_value,
+    Sum                 /*scan_op*/,
+    NullType            /*initial_value*/,
     OffsetT             num_items,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+    cudaStream_t        /*stream*/,
+    bool                /*debug_synchronous*/)
 {
     // The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
@@ -430,6 +430,18 @@ __global__ void CnpDispatchKernel(
     bool                debug_synchronous)
 {
 #ifndef CUB_CDP
+    (void)is_primitive;
+    (void)timing_timing_iterations;
+    (void)d_temp_storage_bytes;
+    (void)d_cdp_error;
+    (void)d_temp_storage;
+    (void)temp_storage_bytes;
+    (void)d_in;
+    (void)d_out;
+    (void)scan_op;
+    (void)initial_value;
+    (void)num_items;
+    (void)debug_synchronous;
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(

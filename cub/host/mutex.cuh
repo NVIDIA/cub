@@ -86,11 +86,6 @@ struct Mutex
         mtx.unlock();
     }
 
-    void TryLock()
-    {
-        mtx.try_lock();
-    }
-
 #else       // C++11
 
     #if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC

@@ -87,10 +87,10 @@ template <
     typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>               dispatch_to,
+    Int2Type<CUB>               /*dispatch_to*/,
     int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
@@ -99,7 +99,7 @@ cudaError_t Dispatch(
     ValueInputIteratorT         d_values_in,
     ValueOutputIteratorT        d_values_out,
     NumRunsIteratorT            d_num_runs,
-    EqualityOpT                  equality_op,
+    EqualityOpT                  /*equality_op*/,
     ReductionOpT                 reduction_op,
     OffsetT                     num_items,
     cudaStream_t                stream,
@@ -142,10 +142,10 @@ template <
     typename                    ReductionOpT,
     typename                    OffsetT>
 cudaError_t Dispatch(
-    Int2Type<THRUST>            dispatch_to,
+    Int2Type<THRUST>            /*dispatch_to*/,
     int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
@@ -154,11 +154,11 @@ cudaError_t Dispatch(
     ValueInputIteratorT         d_values_in,
     ValueOutputIteratorT        d_values_out,
     NumRunsIteratorT            d_num_runs,
-    EqualityOpT                 equality_op,
-    ReductionOpT                reduction_op,
+    EqualityOpT                 /*equality_op*/,
+    ReductionOpT                /*reduction_op*/,
     OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    cudaStream_t                /*stream*/,
+    bool                        /*debug_synchronous*/)
 {
     // The input keys type
     typedef typename std::iterator_traits<KeyInputIteratorT>::value_type KeyInputT;
@@ -775,7 +775,7 @@ int main(int argc, char** argv)
     printf("\n");
 
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
 #ifdef QUICKER_TEST

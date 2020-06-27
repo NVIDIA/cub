@@ -94,20 +94,20 @@ template <
     typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<RLE>               method,
-    Int2Type<CUB>               dispatch_to,
+    Int2Type<RLE>               /*method*/,
+    Int2Type<CUB>               /*dispatch_to*/,
     int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
     UniqueOutputIteratorT       d_unique_out,
-    OffsetsOutputIteratorT      d_offsets_out,
+    OffsetsOutputIteratorT      /*d_offsets_out*/,
     LengthsOutputIteratorT      d_lengths_out,
     NumRunsIterator             d_num_runs,
-    cub::Equality               equality_op,
+    cub::Equality               /*equality_op*/,
     OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
@@ -142,20 +142,20 @@ template <
     typename                    OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<NON_TRIVIAL>       method,
-    Int2Type<CUB>               dispatch_to,
+    Int2Type<NON_TRIVIAL>       /*method*/,
+    Int2Type<CUB>               /*dispatch_to*/,
     int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    UniqueOutputIteratorT       d_unique_out,
+    UniqueOutputIteratorT       /*d_unique_out*/,
     OffsetsOutputIteratorT      d_offsets_out,
     LengthsOutputIteratorT      d_lengths_out,
     NumRunsIterator             d_num_runs,
-    cub::Equality               equality_op,
+    cub::Equality               /*equality_op*/,
     OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
@@ -194,23 +194,23 @@ template <
     typename                    NumRunsIterator,
     typename                    OffsetT>
 cudaError_t Dispatch(
-    Int2Type<RLE>               method,
-    Int2Type<THRUST>            dispatch_to,
+    Int2Type<RLE>               /*method*/,
+    Int2Type<THRUST>            /*dispatch_to*/,
     int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+    size_t                      */*d_temp_storage_bytes*/,
+    cudaError_t                 */*d_cdp_error*/,
 
     void                        *d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
     UniqueOutputIteratorT       d_unique_out,
-    OffsetsOutputIteratorT      d_offsets_out,
+    OffsetsOutputIteratorT      /*d_offsets_out*/,
     LengthsOutputIteratorT      d_lengths_out,
     NumRunsIterator             d_num_runs,
-    cub::Equality               equality_op,
+    cub::Equality               /*equality_op*/,
     OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+    cudaStream_t                /*stream*/,
+    bool                        /*debug_synchronous*/)
 {
     // The input value type
     typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
@@ -663,7 +663,7 @@ template <
     typename        LengthT>
 void TestIterator(
     int             num_items,
-    Int2Type<true>  is_primitive)
+    Int2Type<true>  /*is_primitive*/)
 {
     // Allocate host arrays
     T* h_unique_reference       = new T[num_items];
@@ -702,8 +702,8 @@ template <
     typename        OffsetT,
     typename        LengthT>
 void TestIterator(
-    int             num_items,
-    Int2Type<false> is_primitive)
+    int             /*num_items*/,
+    Int2Type<false> /*is_primitive*/)
 {}
 
 
@@ -837,7 +837,7 @@ int main(int argc, char** argv)
     printf("\n");
 
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
 #ifdef QUICKER_TEST

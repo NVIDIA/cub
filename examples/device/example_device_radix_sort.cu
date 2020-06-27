@@ -80,8 +80,8 @@ struct Pair
             return false;
 
         // Return true if key is negative zero and b.key is positive zero
-        unsigned int key_bits   = *reinterpret_cast<unsigned*>(const_cast<float*>(&key));
-        unsigned int b_key_bits = *reinterpret_cast<unsigned*>(const_cast<float*>(&b.key));
+        unsigned int key_bits   = SafeBitCast<unsigned int>(key);
+        unsigned int b_key_bits = SafeBitCast<unsigned int>(b.key);
         unsigned int HIGH_BIT   = 1u << 31;
 
         return ((key_bits & HIGH_BIT) != 0) && ((b_key_bits & HIGH_BIT) == 0);

@@ -98,18 +98,18 @@ struct CustomMax
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT, typename ReductionOpT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
+    Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     int                 num_items,
-    int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    int                 /*max_segments*/,
+    OffsetIteratorT     /*d_segment_offsets*/,
     ReductionOpT        reduction_op,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -142,19 +142,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
+    Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     int                 num_items,
-    int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
-    cub::Sum            reduction_op,
+    int                 /*max_segments*/,
+    OffsetIteratorT     /*d_segment_offsets*/,
+    cub::Sum            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -174,19 +174,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
+    Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     int                 num_items,
-    int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
-    cub::Min            reduction_op,
+    int                 /*max_segments*/,
+    OffsetIteratorT     /*d_segment_offsets*/,
+    cub::Min            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -206,19 +206,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
+    Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     int                 num_items,
-    int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
-    cub::Max            reduction_op,
+    int                 /*max_segments*/,
+    OffsetIteratorT     /*d_segment_offsets*/,
+    cub::Max            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -238,19 +238,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
+    Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     int                 num_items,
-    int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
-    cub::ArgMin         reduction_op,
+    int                 /*max_segments*/,
+    OffsetIteratorT     /*d_segment_offsets*/,
+    cub::ArgMin         /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -270,19 +270,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB>       dispatch_to,
+    Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     int                 num_items,
-    int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
-    cub::ArgMax         reduction_op,
+    int                 /*max_segments*/,
+    OffsetIteratorT     /*d_segment_offsets*/,
+    cub::ArgMax         /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -307,16 +307,16 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT, typename ReductionOpT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    int                 num_items,
+    int                 /*num_items*/,
     int                 max_segments,
     OffsetIteratorT     d_segment_offsets,
     ReductionOpT        reduction_op,
@@ -351,19 +351,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    int                 num_items,
+    int                 /*num_items*/,
     int                 max_segments,
     OffsetIteratorT     d_segment_offsets,
-    cub::Sum            reduction_op,
+    cub::Sum            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -384,19 +384,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    int                 num_items,
+    int                 /*num_items*/,
     int                 max_segments,
     OffsetIteratorT     d_segment_offsets,
-    cub::Min            reduction_op,
+    cub::Min            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -417,19 +417,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    int                 num_items,
+    int                 /*num_items*/,
     int                 max_segments,
     OffsetIteratorT     d_segment_offsets,
-    cub::Max            reduction_op,
+    cub::Max            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -450,19 +450,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    int                 num_items,
+    int                 /*num_items*/,
     int                 max_segments,
     OffsetIteratorT     d_segment_offsets,
-    cub::ArgMin         reduction_op,
+    cub::ArgMin         /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -483,19 +483,19 @@ cudaError_t Dispatch(
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
-    Int2Type<CUB_SEGMENTED>       dispatch_to,
+    Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
-    int                 num_items,
+    int                 /*num_items*/,
     int                 max_segments,
     OffsetIteratorT     d_segment_offsets,
-    cub::ArgMax         reduction_op,
+    cub::ArgMax         /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
@@ -520,21 +520,21 @@ cudaError_t Dispatch(
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT, typename ReductionOpT>
 cudaError_t Dispatch(
-    Int2Type<THRUST>    dispatch_to,
+    Int2Type<THRUST>    /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     int                 num_items,
-    int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    int                 /*max_segments*/,
+    OffsetIteratorT     /*d_segment_offsets*/,
     ReductionOpT         reduction_op,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+    cudaStream_t        /*stream*/,
+    bool                /*debug_synchronous*/)
 {
     // The output value type
     typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
@@ -569,21 +569,21 @@ cudaError_t Dispatch(
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
 cudaError_t Dispatch(
-    Int2Type<THRUST>    dispatch_to,
+    Int2Type<THRUST>    /*dispatch_to*/,
     int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+    size_t              */*d_temp_storage_bytes*/,
+    cudaError_t         */*d_cdp_error*/,
 
     void*               d_temp_storage,
     size_t&             temp_storage_bytes,
     InputIteratorT      d_in,
     OutputIteratorT     d_out,
     int                 num_items,
-    int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
-    Sum                 reduction_op,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+    int                 /*max_segments*/,
+    OffsetIteratorT     /*d_segment_offsets*/,
+    Sum                 /*reduction_op*/,
+    cudaStream_t        /*stream*/,
+    bool                /*debug_synchronous*/)
 {
     // The output value type
     typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
@@ -639,6 +639,18 @@ __global__ void CnpDispatchKernel(
     bool                debug_synchronous)
 {
 #ifndef CUB_CDP
+    (void)timing_iterations;
+    (void)d_temp_storage_bytes;
+    (void)d_cdp_error;
+    (void)d_temp_storage;
+    (void)temp_storage_bytes;
+    (void)d_in;
+    (void)d_out;
+    (void)num_items;
+    (void)max_segments;
+    (void)d_segment_offsets;
+    (void)reduction_op;
+    (void)debug_synchronous;
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
@@ -1264,8 +1276,6 @@ int main(int argc, char** argv)
 
     // Get SM count
     g_sm_count = args.deviceProp.multiProcessorCount;
-
-    std::numeric_limits<float>::max();
 
 #ifdef QUICKER_TEST
 

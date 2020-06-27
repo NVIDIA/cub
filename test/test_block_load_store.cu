@@ -214,7 +214,7 @@ template <
 void TestNative(
     int                 grid_size,
     float               fraction_valid,
-    Int2Type<true>      sufficient_resources)
+    Int2Type<true>      /*sufficient_resources*/)
 {
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
     int guarded_elements = int(fraction_valid * float(unguarded_elements));
@@ -278,9 +278,9 @@ template <
     BlockLoadAlgorithm  LOAD_ALGORITHM,
     BlockStoreAlgorithm STORE_ALGORITHM>
 void TestNative(
-    int                 grid_size,
-    float               fraction_valid,
-    Int2Type<false>      sufficient_resources)
+    int                 /*grid_size*/,
+    float               /*fraction_valid*/,
+    Int2Type<false>     /*sufficient_resources*/)
 {}
 
 
@@ -298,7 +298,7 @@ template <
 void TestIterator(
     int                 grid_size,
     float               fraction_valid,
-    Int2Type<true>      sufficient_resources)
+    Int2Type<true>      /*sufficient_resources*/)
 {
     int unguarded_elements = grid_size * BLOCK_THREADS * ITEMS_PER_THREAD;
     int guarded_elements = int(fraction_valid * float(unguarded_elements));
@@ -365,9 +365,9 @@ template <
     CacheLoadModifier   LOAD_MODIFIER,
     CacheStoreModifier  STORE_MODIFIER>
 void TestIterator(
-    int                 grid_size,
-    float               fraction_valid,
-    Int2Type<false>     sufficient_resources)
+    int                 /*grid_size*/,
+    float               /*fraction_valid*/,
+    Int2Type<false>     /*sufficient_resources*/)
 {}
 
 
@@ -434,7 +434,7 @@ template <
 void TestStrategy(
     int             grid_size,
     float           fraction_valid,
-    Int2Type<false> is_warp_multiple)
+    Int2Type<false> /*is_warp_multiple*/)
 {
     TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_DIRECT, BLOCK_STORE_DIRECT>(grid_size, fraction_valid);
     TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_TRANSPOSE, BLOCK_STORE_TRANSPOSE>(grid_size, fraction_valid);
@@ -452,7 +452,7 @@ template <
 void TestStrategy(
     int             grid_size,
     float           fraction_valid,
-    Int2Type<true>  is_warp_multiple)
+    Int2Type<true>  /*is_warp_multiple*/)
 {
     TestStrategy<T, BLOCK_THREADS, ITEMS_PER_THREAD>(grid_size, fraction_valid, Int2Type<false>());
     TestPointerType<T, BLOCK_THREADS, ITEMS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(grid_size, fraction_valid);
@@ -518,7 +518,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
 #ifdef QUICK_TEST

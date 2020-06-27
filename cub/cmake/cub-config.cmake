@@ -4,6 +4,10 @@
 # Defines a CUB::CUB target that may be linked from user projects to include
 # CUB.
 
+if (TARGET CUB::CUB)
+  return()
+endif()
+
 function(_cub_declare_interface_alias alias_name ugly_name)
   # 1) Only IMPORTED and ALIAS targets can be placed in a namespace.
   # 2) When an IMPORTED library is linked to another target, its include
@@ -31,15 +35,18 @@ _cub_declare_interface_alias(CUB::CUB _CUB_CUB)
 get_filename_component(_CUB_INCLUDE_DIR "../.." ABSOLUTE BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 target_include_directories(_CUB_CUB INTERFACE "${_CUB_INCLUDE_DIR}")
 
-if (CUB_IGNORE_DEPRECATED_CPP_DIALECT)
+if (CUB_IGNORE_DEPRECATED_CPP_DIALECT OR
+    THRUST_IGNORE_DEPRECATED_CPP_DIALECT)
   target_compile_definitions(_CUB_CUB INTERFACE "CUB_IGNORE_DEPRECATED_CPP_DIALECT")
 endif()
 
-if (CUB_IGNORE_DEPRECATED_CPP_11)
+if (CUB_IGNORE_DEPRECATED_CPP_11 OR
+    THRUST_IGNORE_DEPRECATED_CPP_11)
   target_compile_definitions(_CUB_CUB INTERFACE "CUB_IGNORE_DEPRECATED_CPP_11")
 endif()
 
-if (CUB_IGNORE_DEPRECATED_COMPILER)
+if (CUB_IGNORE_DEPRECATED_COMPILER OR
+    THRUST_IGNORE_DEPRECATED_COMPILER)
   target_compile_definitions(_CUB_CUB INTERFACE "CUB_IGNORE_DEPRECATED_COMPILER")
 endif()
 

@@ -1,1 +1,1 @@
-#include <cub/${CUB_HEADER}>
+#include <cub/${header}>

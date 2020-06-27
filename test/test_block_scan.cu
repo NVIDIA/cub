@@ -526,7 +526,7 @@ void Test(
     GenMode             gen_mode,
     ScanOpT             scan_op,
     T                   initial_value,
-    Int2Type<true>      sufficient_resources)
+    Int2Type<true>      /*sufficient_resources*/)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
     const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
@@ -651,10 +651,10 @@ template <
     typename            ScanOpT,
     typename            T>
 void Test(
-    GenMode             gen_mode,
-    ScanOpT             scan_op,
-    T                   initial_value,
-    Int2Type<false>     sufficient_resources)
+    GenMode             /*gen_mode*/,
+    ScanOpT             /*scan_op*/,
+    T                   /*initial_value*/,
+    Int2Type<false>     /*sufficient_resources*/)
 {}
 
 
@@ -740,6 +740,9 @@ void Test(
     ScanOpT     scan_op,
     T           initial_value)
 {
+  (void)gen_mode;
+  (void)scan_op;
+  (void)initial_value;
 #ifdef TEST_RAKING
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, initial_value);
 #endif
@@ -814,7 +817,7 @@ template <
 void Test()
 {
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
     // primitive

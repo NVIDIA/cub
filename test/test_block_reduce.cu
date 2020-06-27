@@ -35,7 +35,7 @@
 
 #include <stdio.h>
 
-#include <device_functions.h>
+#include <cuda_runtime_api.h>
 #include <typeinfo>
 
 #include <cub/block/block_reduce.cuh>
@@ -328,7 +328,7 @@ void TestFullTile(
     GenMode                 gen_mode,
     int                     tiles,
     ReductionOp             reduction_op,
-    Int2Type<true>          sufficient_resources)
+    Int2Type<true>          /*sufficient_resources*/)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
     const int TILE_SIZE         = BLOCK_THREADS * ITEMS_PER_THREAD;
@@ -519,7 +519,7 @@ void TestPartialTile(
     GenMode                 gen_mode,
     int                     num_items,
     ReductionOp             reduction_op,
-    Int2Type<true>          sufficient_resources)
+    Int2Type<true>          /*sufficient_resources*/)
 {
     const int BLOCK_THREADS     = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
     const int TILE_SIZE         = BLOCK_THREADS;
@@ -695,6 +695,7 @@ template <
 void Test(
     ReductionOp     reduction_op)
 {
+  (void)reduction_op;
 #ifdef TEST_RAKING
     Test<BLOCK_REDUCE_RAKING, BLOCK_THREADS, T>(reduction_op);
     Test<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY, BLOCK_THREADS, T>(reduction_op);
@@ -759,7 +760,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
 #ifdef QUICK_TEST

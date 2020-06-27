@@ -536,7 +536,7 @@ void Test(GenMode gen_mode)
     CubDebugExit(cudaGetDevice(&device_ordinal));
 
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
     // primitive

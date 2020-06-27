@@ -243,8 +243,8 @@ struct Pair<Key, Value, true>
         typedef typename Traits<Key>::UnsignedBits UnsignedBits;
 
         // Return true if key is negative zero and b.key is positive zero
-        UnsignedBits key_bits   = *reinterpret_cast<UnsignedBits*>(const_cast<Key*>(&key));
-        UnsignedBits b_key_bits = *reinterpret_cast<UnsignedBits*>(const_cast<Key*>(&b.key));
+        UnsignedBits key_bits   = SafeBitCast<UnsignedBits>(key);
+        UnsignedBits b_key_bits = SafeBitCast<UnsignedBits>(b.key);
         UnsignedBits HIGH_BIT   = Traits<Key>::HIGH_BIT;
 
         return ((key_bits & HIGH_BIT) != 0) && ((b_key_bits & HIGH_BIT) == 0);
@@ -267,6 +267,8 @@ void Initialize(
     int             begin_bit,
     int             end_bit)
 {
+    (void)entropy_reduction; // unused
+
     Pair<Key, Value> *h_pairs = new Pair<Key, Value>[num_items];
 
     for (int i = 0; i < num_items; ++i)
@@ -277,7 +279,7 @@ void Initialize(
 
         // Mask off unwanted portions
         int num_bits = end_bit - begin_bit;
-        if ((begin_bit > 0) || (end_bit < sizeof(Key) * 8))
+        if ((begin_bit > 0) || (end_bit < static_cast<int>(sizeof(Key) * 8)))
         {
             unsigned long long base = 0;
             memcpy(&base, &h_keys[i], sizeof(Key));
@@ -442,13 +444,15 @@ template <
     bool                    BLOCKED_OUTPUT,
     typename                Key,
     typename                Value>
-void TestValid(Int2Type<true> fits_smem_capacity)
+void TestValid(Int2Type<true> /*fits_smem_capacity*/)
 {
     // Iterate begin_bit
     for (int begin_bit = 0; begin_bit <= 1; begin_bit++)
     {
         // Iterate end bit
-        for (int end_bit = begin_bit + 1; end_bit <= sizeof(Key) * 8; end_bit = end_bit * 2 + begin_bit)
+        for (int end_bit = begin_bit + 1;
+             end_bit <= static_cast<int>(sizeof(Key) * 8);
+             end_bit = end_bit * 2 + begin_bit)
         {
             // Uniform key distribution
             TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
@@ -573,7 +577,7 @@ template <
 void Test()
 {
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
 #ifdef TEST_KEYS_ONLY

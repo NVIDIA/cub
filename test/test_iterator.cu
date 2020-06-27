@@ -296,7 +296,7 @@ void TestModified()
     // Test iterator manipulation in kernel
     //
 
-    const unsigned int TEST_VALUES = 11000;
+    constexpr int TEST_VALUES = 11000;
 
     T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
@@ -368,7 +368,7 @@ void TestTransform()
     // Test iterator manipulation in kernel
     //
 
-    const unsigned int TEST_VALUES = 11000;
+    constexpr int TEST_VALUES = 11000;
 
     T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
@@ -520,9 +520,9 @@ void TestTexRef()
     // Test iterator manipulation in kernel
     //
 
-    const unsigned int TEST_VALUES          = 11000;
-    const unsigned int DUMMY_OFFSET         = 500;
-    const unsigned int DUMMY_TEST_VALUES    = TEST_VALUES - DUMMY_OFFSET;
+    constexpr int TEST_VALUES                   = 11000;
+    constexpr unsigned int DUMMY_OFFSET         = 500;
+    constexpr unsigned int DUMMY_TEST_VALUES    = TEST_VALUES - DUMMY_OFFSET;
 
     T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
@@ -602,7 +602,7 @@ void TestTexTransform()
     // Test iterator manipulation in kernel
     //
 
-    const unsigned int TEST_VALUES = 11000;
+    constexpr int TEST_VALUES = 11000;
 
     T *h_data = new T[TEST_VALUES];
     for (int i = 0; i < TEST_VALUES; ++i)
@@ -679,7 +679,7 @@ void TestTexTransform()
  * Run non-integer tests
  */
 template <typename T, typename CastT>
-void Test(Int2Type<false> is_integer)
+void Test(Int2Type<false> /* is_integer */)
 {
     TestModified<T, CastT>();
     TestTransform<T, CastT>();
@@ -700,7 +700,7 @@ void Test(Int2Type<false> is_integer)
  * Run integer tests
  */
 template <typename T, typename CastT>
-void Test(Int2Type<true> is_integer)
+void Test(Int2Type<true> /* is_integer */)
 {
     TestConstant<T>(0);
     TestConstant<T>(99);
@@ -753,7 +753,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
     // Evaluate different data types

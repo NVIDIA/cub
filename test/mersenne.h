@@ -59,7 +59,7 @@ static int mti = N + 1;     /* mti==N+1 means mt[N] is not initialized */
 void init_genrand(unsigned int s)
 {
     mt[0] = s & 0xffffffff;
-    for (mti = 1; mti < N; mti++)
+    for (mti = 1; mti < static_cast<int>(N); mti++)
     {
         mt[mti] = (1812433253 * (mt[mti - 1] ^ (mt[mti - 1] >> 30)) + mti);
 
@@ -83,7 +83,9 @@ void init_by_array(unsigned int init_key[], int key_length)
     init_genrand(19650218);
     i = 1;
     j = 0;
-    k = (N > key_length ? N : key_length);
+    k = (static_cast<int>(N) > key_length
+	 ? static_cast<int>(N)
+	 : key_length);
     for (; k; k--)
     {
         mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1664525))
@@ -91,7 +93,7 @@ void init_by_array(unsigned int init_key[], int key_length)
         mt[i] &= 0xffffffff;    /* for WORDSIZE > 32 machines */
         i++;
         j++;
-        if (i >= N)
+        if (i >= static_cast<int>(N))
         {
             mt[0] = mt[N - 1];
             i = 1;
@@ -103,7 +105,7 @@ void init_by_array(unsigned int init_key[], int key_length)
         mt[i] = (mt[i] ^ ((mt[i - 1] ^ (mt[i - 1] >> 30)) * 1566083941)) - i; /* non linear */
         mt[i] &= 0xffffffff; /* for WORDSIZE > 32 machines */
         i++;
-        if (i >= N)
+        if (i >= static_cast<int>(N))
         {
             mt[0] = mt[N - 1];
             i = 1;
@@ -121,19 +123,19 @@ unsigned int genrand_int32(void)
 
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
-    if (mti >= N)
+    if (mti >= static_cast<int>(N))
     { /* generate N words at one time */
         int kk;
 
         if (mti == N + 1) /* if init_genrand() has not been called, */
         init_genrand(5489); /* a defat initial seed is used */
 
-        for (kk = 0; kk < N - M; kk++)
+        for (kk = 0; kk < static_cast<int>(N - M); kk++)
         {
             y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
             mt[kk] = mt[kk + M] ^ (y >> 1) ^ mag01[y & 0x1];
         }
-        for (; kk < N - 1; kk++)
+        for (; kk < static_cast<int>(N - 1); kk++)
         {
             y = (mt[kk] & UPPER_MASK) | (mt[kk + 1] & LOWER_MASK);
             mt[kk] = mt[kk + (M - N)] ^ (y >> 1) ^ mag01[y & 0x1];

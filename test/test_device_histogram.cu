@@ -222,8 +222,8 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
     //CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Range(
         int                     timing_timing_iterations,
-        size_t                  *d_temp_storage_bytes,
-        cudaError_t             *d_cdp_error,
+        size_t                  */*d_temp_storage_bytes*/,
+        cudaError_t             */*d_cdp_error*/,
 
         void*               d_temp_storage,
         size_t&             temp_storage_bytes,
@@ -265,8 +265,8 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
     //CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Even(
         int                     timing_timing_iterations,
-        size_t                  *d_temp_storage_bytes,
-        cudaError_t             *d_cdp_error,
+        size_t                  */*d_temp_storage_bytes*/,
+        cudaError_t             */*d_cdp_error*/,
 
         void*               d_temp_storage,
         size_t&             temp_storage_bytes,
@@ -317,8 +317,8 @@ struct Dispatch<1, 1, CUB>
     //CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Range(
         int                     timing_timing_iterations,
-        size_t                  *d_temp_storage_bytes,
-        cudaError_t             *d_cdp_error,
+        size_t                  */*d_temp_storage_bytes*/,
+        cudaError_t             */*d_cdp_error*/,
 
         void*               d_temp_storage,
         size_t&             temp_storage_bytes,
@@ -359,8 +359,8 @@ struct Dispatch<1, 1, CUB>
     //CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Even(
         int                     timing_timing_iterations,
-        size_t                  *d_temp_storage_bytes,
-        cudaError_t             *d_cdp_error,
+        size_t                  */*d_temp_storage_bytes*/,
+        cudaError_t             */*d_cdp_error*/,
 
         void*               d_temp_storage,
         size_t&             temp_storage_bytes,
@@ -1415,7 +1415,7 @@ template <
 void TestChannels(
     LevelT          max_level,
     int             max_num_levels,
-    Int2Type<true>  is_valid_tag)
+    Int2Type<true>  /*is_valid_tag*/)
 {
     Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
     Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
@@ -1433,9 +1433,9 @@ template <
     typename        LevelT,
     typename        OffsetT>
 void TestChannels(
-    LevelT          max_level,
-    int             max_num_levels,
-    Int2Type<false> is_valid_tag)
+    LevelT          /*max_level*/,
+    int             /*max_num_levels*/,
+    Int2Type<false> /*is_valid_tag*/)
 {}
 
 
@@ -1478,10 +1478,10 @@ int main(int argc, char** argv)
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
-            "[--n=<pixels per row> "
-            "[--rows=<number of rows> "
-            "[--stride=<row stride in pixels> "
-            "[--i=<timing iterations> "
+            "[--n=<pixels per row>] "
+            "[--rows=<number of rows>] "
+            "[--stride=<row stride in pixels>] "
+            "[--i=<timing iterations>] "
             "[--device=<device-id>] "
             "[--repeat=<repetitions of entire test suite>]"
             "[--entropy=<entropy-reduction factor (default 0)>]"
@@ -1496,7 +1496,7 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
 
     // Get ptx version
-    int ptx_version;
+    int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
     if (num_row_pixels < 0)
@@ -1518,8 +1518,10 @@ int main(int argc, char** argv)
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
         TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-        if (compare_npp)
-            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
+        // The NPP path doesn't compile as of 2020-06:
+        // No Dispatch<int, int, NPP> specialization defined.
+//        if (compare_npp)
+//            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1549,8 +1551,10 @@ int main(int argc, char** argv)
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
         TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-        if (compare_npp)
-            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
+        // The NPP path doesn't compile as of 2020-06:
+        // No Dispatch<int, int, NPP> specialization defined.
+//        if (compare_npp)
+//            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1575,8 +1579,10 @@ int main(int argc, char** argv)
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
 
         TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-        if (compare_npp)
-            TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
+        // The NPP path doesn't compile as of 2020-06:
+        // No Dispatch<int, int, NPP> specialization defined.
+//        if (compare_npp)
+//            TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {

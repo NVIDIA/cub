@@ -39,6 +39,12 @@
 
 #include <cub/util_type.cuh>
 
+#ifdef __GNUC__
+// There's a ton of type-punning going on in this file.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+
 
 /******************************************************************************
  * half_t
@@ -305,3 +311,7 @@ struct cub::FpLimits<half_t>
 
 template <> struct cub::NumericTraits<half_t> : cub::BaseTraits<FLOATING_POINT, true, false, unsigned short, half_t> {};
 
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
