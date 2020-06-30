@@ -67,4 +67,4 @@
  *  \brief The preprocessor macro \p CUB_PATCH_NUMBER encodes the
  *         patch number of the CUB library.
  */
-#define CUB_PATCH_NUMBER 0
+#define CUB_PATCH_NUMBER 1
