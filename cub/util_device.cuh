@@ -203,6 +203,17 @@ struct ValueCache
 
 #endif
 
+#if CUB_CPP_DIALECT >= 2011
+// Host code, only safely usable in C++11 or newer, where thread-safe
+// initialization of static locals is guaranteed.  This is a separate function
+// to avoid defining a local static in a host/device function.
+__host__ __forceinline__ int DeviceCountCachedValue()
+{
+    static ValueCache<int, DeviceCountUncached> cache;
+    return cache.value;
+}
+#endif
+
 /**
  * \brief Returns the number of CUDA devices available.
  *
@@ -217,10 +228,7 @@ CUB_RUNTIME_FUNCTION __forceinline__ int DeviceCount()
         #if CUB_INCLUDE_HOST_CODE
             #if CUB_CPP_DIALECT >= 2011
                 // Host code and C++11.
-                // C++11 guarantees that initialization of static locals is thread safe.
-                static ValueCache<int, DeviceCountUncached> cache;
-
-                result = cache.value;
+                result = DeviceCountCachedValue();
             #else
                 // Host code and C++98.
                 result = DeviceCountUncached();
