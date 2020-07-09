@@ -124,9 +124,36 @@ See the [changelog](CHANGELOG.md) for details about specific releases.
 | 0.9.0                     |                                |
 
 <br><hr>
-<h3>Development Model</h3>
+<h3>Development Process</h3>
 
-For information on development model, see [this document](DEVELOPMENT_MODEL.md).
+CUB uses the [CMake build system](https://cmake.org/) to build unit tests,
+examples, and header tests. To build CUB as a developer, the following
+recipe should be followed:
+
+```
+# Clone CUB repo from github:
+git clone https://github.com/thrust/cub.git
+cd cub
+
+# Create build directory:
+mkdir build
+cd build
+
+# Configure -- use one of the following:
+cmake ..   # Command line interface.
+ccmake ..  # ncurses GUI (Linux only)
+cmake-gui  # Graphical UI, set source/build directories in the app
+
+# Build:
+cmake --build . -j <num jobs>   # invokes make (or ninja, etc)
+
+# Run tests and examples:
+ctest
+```
+
+By default, the C++14 standard is targeted, but this can be changed in CMake.
+More information on configuring your CUB build and creating a pull request is
+found in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 <br><hr>
 <h3>Open Source License</h3>
