@@ -6,7 +6,7 @@ on:
 jobs:
   mirror_job:
     runs-on: ubuntu-latest
-    name: Mirror SOURCE to DEST
+    name: Mirror main branch to master branch
     steps:
     - name: Mirror action step
       id: mirror
