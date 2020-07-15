@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.18)
+
+# Remove this when we use the new CUDA_ARCHITECTURES properties:
+cmake_policy(SET CMP0104 OLD)
 
 project(CUB CUDA CXX)
 
@@ -266,7 +269,7 @@ foreach (CUB_TEST_SOURCE IN LISTS CUB_TESTS)
   target_link_libraries(${CUB_TEST} CUB)
 
   target_include_directories(
-    ${CUB_TEST} 
+    ${CUB_TEST}
     PRIVATE ${PROJECT_SOURCE_DIR}/test
   )
 
