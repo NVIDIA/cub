@@ -1,7 +1,10 @@
-cmake_minimum_required(VERSION 3.18)
+# Will be increased to 3.18 when C++17 is enabled:
+cmake_minimum_required(VERSION 3.15)
 
-# Remove this when we use the new CUDA_ARCHITECTURES properties:
-cmake_policy(SET CMP0104 OLD)
+# Remove this when we use the new CUDA_ARCHITECTURES properties.
+if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
+  cmake_policy(SET CMP0104 OLD)
+endif()
 
 # CXX is only needed for AppendOptionIfAvailable.
 project(CUB CUDA CXX)
