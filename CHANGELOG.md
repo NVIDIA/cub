@@ -1,3 +1,16 @@
+# CUB 1.9.10-1 (NVIDIA HPC SDK 20.7, CUDA Toolkit 11.1)
+
+## Summary
+
+CUB 1.9.10-1 is the minor release accompanying the NVIDIA HPC SDK 20.7 release
+  and the CUDA Toolkit 11.1 release.
+
+## Bug Fixes
+
+- #1217: Move static local in `cub::DeviceCount` to a separate host-only
+    function because NVC++ doesn't support static locals in host-device
+    functions.
+
 # CUB 1.9.10 (NVIDIA HPC SDK 20.5)
 
 ## Summary
