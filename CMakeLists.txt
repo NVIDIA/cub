@@ -15,6 +15,19 @@ include(cmake/CubBuildTargetList.cmake)
 include(cmake/CubCudaConfig.cmake)
 include(cmake/CubInstallRules.cmake)
 
+option(CUB_ENABLE_HEADER_TESTING "Test that all public headers compile." ON)
+option(CUB_ENABLE_TESTING "Build CUB testing suite." ON)
+option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
+
+# Check if we're actually building anything before continuing. If not, no need
+# to search for deps, etc. This is a common approach for packagers that just
+# need the install rules. See GH issue thrust/thrust#1211.
+if (NOT (CUB_ENABLE_HEADER_TESTING OR
+         CUB_ENABLE_TESTING OR
+         CUB_ENABLE_EXAMPLES))
+  return()
+endif()
+
 if ("" STREQUAL "${CMAKE_BUILD_TYPE}")
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build." FORCE)
 
@@ -32,10 +45,6 @@ set(CUB_LIBRARY_OUTPUT_DIR "${CMAKE_BINARY_DIR}/lib")
 set(CUB_EXECUTABLE_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
 
 cub_build_target_list()
-
-option(CUB_ENABLE_HEADER_TESTING "Test that all public headers compile." ON)
-option(CUB_ENABLE_TESTING "Build CUB testing suite." ON)
-option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
 
 if (CUB_ENABLE_HEADER_TESTING)
   include(cmake/CubHeaderTesting.cmake)
