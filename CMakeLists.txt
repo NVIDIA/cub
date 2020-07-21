@@ -13,6 +13,7 @@ include(cmake/AppendOptionIfAvailable.cmake)
 include(cmake/CubBuildCompilerTargets.cmake)
 include(cmake/CubBuildTargetList.cmake)
 include(cmake/CubCudaConfig.cmake)
+include(cmake/CubInstallRules.cmake)
 
 if ("" STREQUAL "${CMAKE_BUILD_TYPE}")
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build." FORCE)
