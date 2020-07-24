@@ -51,20 +51,29 @@ define_property(TARGET PROPERTY _CUB_PREFIX
 function(cub_set_target_properties target_name dialect prefix)
   set_target_properties(${target_name}
     PROPERTIES
-    _CUB_DIALECT ${dialect}
-    _CUB_PREFIX ${prefix}
+      _CUB_DIALECT ${dialect}
+      _CUB_PREFIX ${prefix}
   )
 
   get_target_property(type ${target_name} TYPE)
   if (NOT ${type} STREQUAL "INTERFACE_LIBRARY")
     set_target_properties(${target_name}
       PROPERTIES
-      CXX_STANDARD ${dialect}
-      CUDA_STANDARD ${dialect}
-      ARCHIVE_OUTPUT_DIRECTORY "${CUB_LIBRARY_OUTPUT_DIR}"
-      LIBRARY_OUTPUT_DIRECTORY "${CUB_LIBRARY_OUTPUT_DIR}"
-      RUNTIME_OUTPUT_DIRECTORY "${CUB_EXECUTABLE_OUTPUT_DIR}"
+        CXX_STANDARD ${dialect}
+        CUDA_STANDARD ${dialect}
+        ARCHIVE_OUTPUT_DIRECTORY "${CUB_LIBRARY_OUTPUT_DIR}"
+        LIBRARY_OUTPUT_DIRECTORY "${CUB_LIBRARY_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${CUB_EXECUTABLE_OUTPUT_DIR}"
     )
+
+    # CMake still emits errors about empty CUDA_ARCHITECTURES when CMP0104
+    # is set to OLD. This suppresses the errors for good.
+    if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
+      set_target_properties(${target_name}
+        PROPERTIES
+          CUDA_ARCHITECTURES OFF
+      )
+    endif()
   endif()
 endfunction()
 
