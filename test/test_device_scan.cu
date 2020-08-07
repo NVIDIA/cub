@@ -544,24 +544,28 @@ void Initialize(
 template <
     typename        InputIteratorT,
     typename        OutputT,
-    typename        ScanOpT>
+    typename        ScanOpT,
+    typename        InitialValueT>
 void Solve(
     InputIteratorT  h_in,
     OutputT         *h_reference,
     int             num_items,
     ScanOpT         scan_op,
-    OutputT         initial_value)
+    InitialValueT   initial_value)
 {
+    // Use the initial value type for accumulation per P0571
+    using AccumT = InitialValueT;
+
     if (num_items > 0)
     {
-        OutputT val         = h_in[0];
-        h_reference[0]      = initial_value;
-        OutputT inclusive   = scan_op(initial_value, val);
+        AccumT val         = static_cast<AccumT>(h_in[0]);
+        h_reference[0]     = initial_value;
+        AccumT inclusive   = scan_op(initial_value, val);
 
         for (int i = 1; i < num_items; ++i)
         {
-            val = h_in[i];
-            h_reference[i] = inclusive;
+            val = static_cast<AccumT>(h_in[i]);
+            h_reference[i] = static_cast<OutputT>(inclusive);
             inclusive = scan_op(inclusive, val);
         }
     }
@@ -582,16 +586,20 @@ void Solve(
     ScanOpT         scan_op,
     NullType)
 {
+    // When no initial value type is supplied, use InputT for accumulation
+    // per P0571
+    using AccumT = typename std::iterator_traits<InputIteratorT>::value_type;
+
     if (num_items > 0)
     {
-        OutputT inclusive   = h_in[0];
-        h_reference[0]      = inclusive;
+        AccumT inclusive    = h_in[0];
+        h_reference[0]      = static_cast<OutputT>(inclusive);
 
         for (int i = 1; i < num_items; ++i)
         {
-            OutputT val = h_in[i];
+            AccumT val = h_in[i];
             inclusive = scan_op(inclusive, val);
-            h_reference[i] = inclusive;
+            h_reference[i] = static_cast<OutputT>(inclusive);
         }
     }
 }
@@ -746,7 +754,22 @@ void TestPointer(
 
     // Initialize problem and solution
     Initialize(gen_mode, h_in, num_items);
-    Solve(h_in, h_reference, num_items, scan_op, initial_value);
+
+    // If the output type is primitive and the operator is cub::Sum, the test
+    // dispatcher throws away scan_op and initial_value for exclusive scan.
+    // Without an initial_value arg, the accumulator switches to the input value
+    // type.
+    // Do the same thing here:
+    if (Traits<OutputT>::PRIMITIVE &&
+        Equals<ScanOpT, cub::Sum>::VALUE &&
+        !Equals<InitialValueT, NullType>::VALUE)
+    {
+      Solve(h_in, h_reference, num_items, cub::Sum{}, InputT{});
+    }
+    else
+    {
+      Solve(h_in, h_reference, num_items, scan_op, initial_value);
+    }
 
     // Allocate problem device arrays
     InputT *d_in = NULL;

@@ -254,9 +254,10 @@ template <
     typename InitValueT,          ///< The init_value element type for ScanOpT (cub::NullType for inclusive scans)
     typename OffsetT,            ///< Signed integer type for global offsets
     typename SelectedPolicy = DeviceScanPolicy<
-        typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type> >
+      // Accumulator type.
+      typename If<Equals<InitValueT, NullType>::VALUE,
+                  typename std::iterator_traits<InputIteratorT>::value_type,
+                  InitValueT>::Type>>
 struct DispatchScan:
     SelectedPolicy
 {
@@ -269,11 +270,14 @@ struct DispatchScan:
         INIT_KERNEL_THREADS = 128
     };
 
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+    // The input value type
+    using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
 
+    // The output value type -- used as the intermediate accumulator
+    // Per https://wg21.link/P0571, use InitValueT if provided, otherwise the
+    // input iterator's value type.
+    using OutputT =
+      typename If<Equals<InitValueT, NullType>::VALUE, InputT, InitValueT>::Type;
 
     void*           d_temp_storage;         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t&         temp_storage_bytes;     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
