@@ -335,10 +335,6 @@ struct DispatchScan:
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
-            // Get SM count
-            int sm_count;
-            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
-
             // Number of input tiles
             int tile_size = Policy::BLOCK_THREADS * Policy::ITEMS_PER_THREAD;
             int num_tiles = (num_items + tile_size - 1) / tile_size;
