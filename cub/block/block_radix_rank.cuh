@@ -395,6 +395,7 @@ public:
         CTA_SYNC();
 
         // Extract the local ranks of each key
+        #pragma unroll
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
         {
             // Add in thread block exclusive prefix
