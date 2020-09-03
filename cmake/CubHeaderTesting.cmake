@@ -4,6 +4,9 @@
 # .inl files are not globbed for, because they are not supposed to be used as public
 # entrypoints.
 
+# Meta target for all configs' header builds:
+add_custom_target(cub.all.headers)
+
 file(GLOB_RECURSE headers
   RELATIVE "${CUB_SOURCE_DIR}/cub"
   CONFIGURE_DEPENDS
@@ -25,5 +28,6 @@ foreach(cub_target IN LISTS CUB_TARGETS)
   target_link_libraries(${headertest_target} PUBLIC ${cub_target})
   cub_clone_target_properties(${headertest_target} ${cub_target})
 
+  add_dependencies(cub.all.headers ${headertest_target})
   add_dependencies(${config_prefix}.all ${headertest_target})
 endforeach()
