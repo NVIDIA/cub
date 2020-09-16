@@ -1,3 +1,45 @@
+# CUB 1.10.0 (NVIDIA HPC SDK 20.9)
+
+## Summary
+
+CUB 1.10.0 is the major release accompanying the NVIDIA HPC SDK 20.9 release.
+It drops support for C++03, GCC < 5, Clang < 6, and MSVC < 2017.
+It also overhauls CMake support.
+Finally, we now have a Code of Conduct for contributors:
+https://github.com/thrust/cub/blob/main/CODE_OF_CONDUCT.md
+
+## Breaking Changes
+
+- C++03 is no longer supported.
+- GCC < 5, Clang < 6, and MSVC < 2017 are no longer supported.
+- C++11 is deprecated.
+  Using this dialect will generate a compile-time warning.
+  These warnings can be suppressed by defining
+    `CUB_IGNORE_DEPRECATED_CPP_DIALECT` or `CUB_IGNORE_DEPRECATED_CPP_11`.
+  Suppression is only a short term solution.
+  We will be dropping support for C++11 in the near future.
+- CMake < 3.15 is no longer supported.
+- The default branch on GitHub is now called `main`.
+
+## Other Enhancements
+
+- Added install targets to CMake builds.
+- C++17 support.
+
+## Bug Fixes
+
+- thrust/thrust#1244: Check for macro collisions with system headers during
+    header testing.
+- thrust/thrust#1153: Switch to placement new instead of assignment to
+    construct items in uninitialized memory.
+  Thanks to Hugh Winkler for this contribution.
+- thrust/cub#38: Fix `cub::DeviceHistogram` for `size_t` `OffsetT`s.
+  Thanks to Leo Fang for this contribution.
+- thrust/cub#35: Fix GCC-5 maybe-uninitialized warning.
+  Thanks to Rong Ou for this contribution.
+- thrust/cub#36: Qualify namespace for `va_printf` in `_CubLog`.
+  Thanks to Andrei Tchouprakov for this contribution.
+
 # CUB 1.9.10-1 (NVIDIA HPC SDK 20.7, CUDA Toolkit 11.1)
 
 ## Summary
@@ -7,9 +49,9 @@ CUB 1.9.10-1 is the minor release accompanying the NVIDIA HPC SDK 20.7 release
 
 ## Bug Fixes
 
-- #1217: Move static local in `cub::DeviceCount` to a separate host-only
-    function because NVC++ doesn't support static locals in host-device
-    functions.
+- thrust/thrust#1217: Move static local in cub::DeviceCount to a separate
+  host-only function because NVC++ doesn't support static locals in host-device
+  functions.
 
 # CUB 1.9.10 (NVIDIA HPC SDK 20.5)
 
