@@ -1,3 +1,11 @@
+# Support adding CUB to a parent project via add_subdirectory.
+# See examples/cmake/add_subdir/CMakeLists.txt for details.
+if (NOT "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_LIST_DIR}" AND
+    NOT CUB_IN_THRUST)
+  include(cmake/CubAddSubdir.cmake)
+  return()
+endif()
+
 # Will be increased to 3.18 when C++17 is enabled:
 cmake_minimum_required(VERSION 3.15)
 
