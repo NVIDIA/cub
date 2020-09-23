@@ -134,7 +134,7 @@ recipe should be followed:
 
 ```
 # Clone CUB repo from github:
-git clone https://github.com/nvidia/cub.git
+git clone https://github.com/NVIDIA/cub.git
 cd cub
 
 # Create build directory:
