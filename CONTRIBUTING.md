@@ -350,7 +350,8 @@ The following tag names are used in the CUB project:
 
   * `github/nvhpc-X.Y`: the tag that directly corresponds to what has been shipped in the NVIDIA HPC SDK release X.Y.
   * `github/cuda-X.Y`: the tag that directly corresponds to what has been shipped in the CUDA Toolkit release X.Y.
-  * `github/A.B.C`: the tag that directly corresponds to a CUB version A.B.C.
+  * `github/A.B.C`: the tag that directly corresponds to CUB version A.B.C.
+  * `github/A.B.C-rcN`: the tag that directly corresponds to CUB version A.B.C release candidate N.
 
 The following branch names are used in the CUB project:
 
