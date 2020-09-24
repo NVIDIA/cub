@@ -6,7 +6,7 @@ CUB 1.10.0 is the major release accompanying the NVIDIA HPC SDK 20.9 release.
 It drops support for C++03, GCC < 5, Clang < 6, and MSVC < 2017.
 It also overhauls CMake support.
 Finally, we now have a Code of Conduct for contributors:
-https://github.com/thrust/cub/blob/main/CODE_OF_CONDUCT.md
+https://github.com/NVIDIA/cub/blob/main/CODE_OF_CONDUCT.md
 
 ## Breaking Changes
 
@@ -28,16 +28,16 @@ https://github.com/thrust/cub/blob/main/CODE_OF_CONDUCT.md
 
 ## Bug Fixes
 
-- thrust/thrust#1244: Check for macro collisions with system headers during
+- NVIDIA/thrust#1244: Check for macro collisions with system headers during
     header testing.
-- thrust/thrust#1153: Switch to placement new instead of assignment to
+- NVIDIA/thrust#1153: Switch to placement new instead of assignment to
     construct items in uninitialized memory.
   Thanks to Hugh Winkler for this contribution.
-- thrust/cub#38: Fix `cub::DeviceHistogram` for `size_t` `OffsetT`s.
+- NVIDIA/cub#38: Fix `cub::DeviceHistogram` for `size_t` `OffsetT`s.
   Thanks to Leo Fang for this contribution.
-- thrust/cub#35: Fix GCC-5 maybe-uninitialized warning.
+- NVIDIA/cub#35: Fix GCC-5 maybe-uninitialized warning.
   Thanks to Rong Ou for this contribution.
-- thrust/cub#36: Qualify namespace for `va_printf` in `_CubLog`.
+- NVIDIA/cub#36: Qualify namespace for `va_printf` in `_CubLog`.
   Thanks to Andrei Tchouprakov for this contribution.
 
 # CUB 1.9.10-1 (NVIDIA HPC SDK 20.7, CUDA Toolkit 11.1)
@@ -49,7 +49,7 @@ CUB 1.9.10-1 is the minor release accompanying the NVIDIA HPC SDK 20.7 release
 
 ## Bug Fixes
 
-- thrust/thrust#1217: Move static local in cub::DeviceCount to a separate
+- NVIDIA/thrust#1217: Move static local in cub::DeviceCount to a separate
   host-only function because NVC++ doesn't support static locals in host-device
   functions.
 
