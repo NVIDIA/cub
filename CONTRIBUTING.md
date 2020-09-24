@@ -27,7 +27,7 @@ An overview of this process is:
 To get started, clone the main repository to your local computer:
 
 ```
-git clone https://github.com/thrust/cub.git
+git clone https://github.com/NVIDIA/cub.git
 cd cub
 ```
 
@@ -37,7 +37,7 @@ You'll need a fork of CUB on Github to create a pull request. To setup your
 fork:
 
 1. Create a Github account (if needed)
-2. Go to [the CUB Github page](https://github.com/thrust/cub)
+2. Go to [the CUB Github page](https://github.com/NVIDIA/cub)
 3. Click "Fork" and follow any prompts that appear.
 
 Once your fork is created, setup a new remote repo in your local CUB clone:
@@ -85,21 +85,21 @@ See [CMake Options](#cmake-options) for details on customizing the build.
 ## Create a Development Branch
 
 All work should be done in a development branch (also called a "topic branch")
-and not directly in the `master` branch. This makes it easier to manage multiple
+and not directly in the `main` branch. This makes it easier to manage multiple
 in-progress patches at once, and provides a descriptive label for your patch
 as it passes through the review system.
 
-To create a new branch based on the current `master`:
+To create a new branch based on the current `main`:
 
 ```
-# Checkout local master branch:
+# Checkout local main branch:
 cd /path/to/cub/sources
-git checkout master
+git checkout main
 
-# Sync local master branch with github:
+# Sync local main branch with github:
 git pull
 
-# Create a new branch named `my_descriptive_branch_name` based on master:
+# Create a new branch named `my_descriptive_branch_name` based on main:
 git checkout -b my_descriptive_branch_name
 
 # Verify that the branch has been created and is currently checked out:
@@ -171,7 +171,7 @@ CUB repository, you should reference it with a `#` symbol, e.g.
 #1023 for issue 1023.
 
 For issues / pull requests in a different github repo, reference them using
-the full syntax, e.g. thrust/thrust#4 for issue 4 in the thrust/thrust repo.
+the full syntax, e.g. NVIDIA/thrust#4 for issue 4 in the NVIDIA/thrust repo.
 
 Markdown is recommended for formatting more detailed messages, as these will
 be nicely rendered on Github, etc.
@@ -242,7 +242,7 @@ At this point, the pull request should show your recent changes.
 
 Once your pull request is approved by the CUB team, no further action is
 needed from you. We will handle integrating it since we must coordinate changes
-to `master` with NVIDIA's internal perforce repository.
+to `main` with NVIDIA's internal perforce repository.
 
 # CMake Options
 
@@ -305,15 +305,15 @@ CUB is distributed in three ways:
 ## Trunk Based Development
 
 CUB uses [trunk based development](https://trunkbaseddevelopment.com). There is a single long-lived
-branch called `master`. Engineers may create branches for feature development. Such branches always
-merge into `master`. There are no release branches. Releases are produced by taking a snapshot of
-`master` ("snapping"). After a release has been snapped from `master`, it will never be changed.
+branch called `main`. Engineers may create branches for feature development. Such branches always
+merge into `main`. There are no release branches. Releases are produced by taking a snapshot of
+`main` ("snapping"). After a release has been snapped from `main`, it will never be changed.
 
 ## Repositories
 
 As CUB is developed both on GitHub and internally at NVIDIA, there are three main places where code lives:
 
-   * The Source of Truth, the [public CUB repository](https://github.com/thrust/cub), referred to as
+   * The Source of Truth, the [public CUB repository](https://github.com/NVIDIA/cub), referred to as
      `github` later in this document.
    * An internal GitLab repository, referred to as `gitlab` later in this document.
    * An internal Perforce repository, referred to as `perforce` later in this document.
@@ -355,12 +355,12 @@ The following tag names are used in the CUB project:
 
 The following branch names are used in the CUB project:
 
-  * `github/master`: the Source of Truth development branch of CUB.
+  * `github/main`: the Source of Truth development branch of CUB.
   * `github/old-master`: the old Source of Truth branch, before unification of public and internal repositories.
   * `github/feature/<name>`: feature branch for a feature under development.
   * `github/bug/<bug-system>/<bug-description>-<bug-id>`: bug fix branch, where `bug-system` is `github` or `nvidia`.
-  * `gitlab/master`: mirror of `github/master`.
-  * `perforce/private`: mirrored `github/master`, plus files necessary for internal NVIDIA testing systems.
+  * `gitlab/main`: mirror of `github/main`.
+  * `perforce/private`: mirrored `github/main`, plus files necessary for internal NVIDIA testing systems.
 
 On the rare occasion that we cannot do work in the open, for example when developing a change specific to an
 unreleased product, these branches may exist on `gitlab` instead of `github`. By default, everything should be

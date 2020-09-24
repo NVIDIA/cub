@@ -21,7 +21,7 @@ option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
 
 # Check if we're actually building anything before continuing. If not, no need
 # to search for deps, etc. This is a common approach for packagers that just
-# need the install rules. See GH issue thrust/thrust#1211.
+# need the install rules. See GH issue NVIDIA/thrust#1211.
 if (NOT (CUB_ENABLE_HEADER_TESTING OR
          CUB_ENABLE_TESTING OR
          CUB_ENABLE_EXAMPLES))
