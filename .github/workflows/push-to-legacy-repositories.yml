@@ -1,7 +1,8 @@
 on: push
 
 jobs:
-  repo-sync:
+  push-to-legacy-repositories:
+    name: Push to legacy repositories
     runs-on: ubuntu-latest
     steps:
     - name: Push `main` to github.com/nvlabs/cub
