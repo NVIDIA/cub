@@ -405,8 +405,22 @@ struct CachingDeviceAllocator
                 // To prevent races with reusing blocks returned by the host but still
                 // in use by the device, only consider cached blocks that are
                 // either (from the active stream) or (from an idle stream)
-                if ((active_stream == block_itr->associated_stream) ||
-                    (CubDebug(cudaEventQuery(block_itr->ready_event) != cudaErrorNotReady)))
+                bool is_reusable = false;
+                if (active_stream == block_itr->associated_stream)
+                {
+                    is_reusable = true;
+                }
+                else
+                {
+                    const cudaError_t event_status = cudaEventQuery(block_itr->ready_event);
+                    if(event_status != cudaErrorNotReady)
+                    {
+                        CubDebug(event_status);
+                        is_reusable = true;
+                    }
+                }
+
+                if(is_reusable)
                 {
                     // Reuse existing cache block.  Insert into live blocks.
                     found = true;
