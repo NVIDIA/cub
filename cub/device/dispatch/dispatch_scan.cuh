@@ -139,6 +139,14 @@ template <
     typename OutputT> ///< Data type
 struct DeviceScanPolicy
 {
+    // For large values, use timesliced loads/stores to fit shared memory.
+    static constexpr bool LargeValues = sizeof(OutputT) > 128;
+    static constexpr BlockLoadAlgorithm ScanTransposedLoad =
+      LargeValues ? BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED
+                  : BLOCK_LOAD_WARP_TRANSPOSE;
+    static constexpr BlockStoreAlgorithm ScanTransposedStore =
+      LargeValues ? BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED
+                  : BLOCK_STORE_WARP_TRANSPOSE;
 
     /// SM35
     struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
@@ -163,7 +171,7 @@ struct DeviceScanPolicy
                 OutputT,
                 BLOCK_LOAD_DIRECT,
                 LOAD_LDG,
-                BLOCK_STORE_WARP_TRANSPOSE,
+                ScanTransposedStore,
                 BLOCK_SCAN_WARP_SCANS>
             ScanPolicyT;
     };
@@ -174,9 +182,9 @@ struct DeviceScanPolicy
         typedef AgentScanPolicy<
                 128, 15,                                        ///< Threads per block, items per thread
                 OutputT,
-                BLOCK_LOAD_TRANSPOSE,
+                ScanTransposedLoad,
                 LOAD_DEFAULT,
-                BLOCK_STORE_TRANSPOSE,
+                ScanTransposedStore,
                 BLOCK_SCAN_WARP_SCANS>
             ScanPolicyT;
     };

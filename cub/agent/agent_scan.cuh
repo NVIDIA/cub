@@ -294,9 +294,19 @@ struct AgentScan
         OutputT items[ITEMS_PER_THREAD];
 
         if (IS_LAST_TILE)
-            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, num_remaining);
+        {
+            // Fill last element with the first element because collectives are
+            // not suffix guarded.
+            BlockLoadT(temp_storage.load)
+              .Load(d_in + tile_offset,
+                    items,
+                    num_remaining,
+                    *(d_in + tile_offset));
+        }
         else
+        {
             BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
+        }
 
         CTA_SYNC();
 
@@ -330,7 +340,7 @@ struct AgentScan
      * Scan tiles of items as part of a dynamic chained scan
      */
     __device__ __forceinline__ void ConsumeRange(
-        int                 num_items,          ///< Total number of input items
+        OffsetT             num_items,          ///< Total number of input items
         ScanTileStateT&     tile_state,         ///< Global tile state descriptor
         int                 start_tile)         ///< The starting tile for the current grid
     {
@@ -371,9 +381,19 @@ struct AgentScan
         OutputT items[ITEMS_PER_THREAD];
 
         if (IS_LAST_TILE)
-            BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items, valid_items);
+        {
+            // Fill last element with the first element because collectives are
+            // not suffix guarded.
+            BlockLoadT(temp_storage.load)
+              .Load(d_in + tile_offset,
+                    items,
+                    valid_items,
+                    *(d_in + tile_offset));
+        }
         else
+        {
             BlockLoadT(temp_storage.load).Load(d_in + tile_offset, items);
+        }
 
         CTA_SYNC();
 
