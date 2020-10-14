@@ -264,83 +264,6 @@ struct DispatchSpmv
     // Tuning policies
     //---------------------------------------------------------------------
 
-    /// SM11
-    struct Policy110
-    {
-        typedef AgentSpmvPolicy<
-                128,
-                1,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                false,
-                BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
-
-        typedef AgentSegmentFixupPolicy<
-                128,
-                4,
-                BLOCK_LOAD_VECTORIZE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_WARP_SCANS>
-            SegmentFixupPolicyT;
-    };
-
-    /// SM20
-    struct Policy200
-    {
-        typedef AgentSpmvPolicy<
-                96,
-                18,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                false,
-                BLOCK_SCAN_RAKING>
-            SpmvPolicyT;
-
-        typedef AgentSegmentFixupPolicy<
-                128,
-                4,
-                BLOCK_LOAD_VECTORIZE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_WARP_SCANS>
-            SegmentFixupPolicyT;
-
-    };
-
-
-
-    /// SM30
-    struct Policy300
-    {
-        typedef AgentSpmvPolicy<
-                96,
-                6,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                false,
-                BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
-
-        typedef AgentSegmentFixupPolicy<
-                128,
-                4,
-                BLOCK_LOAD_VECTORIZE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_WARP_SCANS>
-            SegmentFixupPolicyT;
-
-    };
-
-
     /// SM35
     struct Policy350
     {
@@ -457,17 +380,8 @@ struct DispatchSpmv
 #elif (CUB_PTX_ARCH >= 370)
     typedef Policy370 PtxPolicy;
 
-#elif (CUB_PTX_ARCH >= 350)
-    typedef Policy350 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 300)
-    typedef Policy300 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 200)
-    typedef Policy200 PtxPolicy;
-
 #else
-    typedef Policy110 PtxPolicy;
+    typedef Policy350 PtxPolicy;
 
 #endif
 
@@ -517,25 +431,10 @@ struct DispatchSpmv
                     spmv_config.template            Init<typename Policy370::SpmvPolicyT>();
                     segment_fixup_config.template   Init<typename Policy370::SegmentFixupPolicyT>();
                 }
-                else if (ptx_version >= 350)
+                else
                 {
                     spmv_config.template            Init<typename Policy350::SpmvPolicyT>();
                     segment_fixup_config.template   Init<typename Policy350::SegmentFixupPolicyT>();
-                }
-                else if (ptx_version >= 300)
-                {
-                    spmv_config.template            Init<typename Policy300::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy300::SegmentFixupPolicyT>();
-                }
-                else if (ptx_version >= 200)
-                {
-                    spmv_config.template            Init<typename Policy200::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy200::SegmentFixupPolicyT>();
-                }
-                else
-                {
-                    spmv_config.template            Init<typename Policy110::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy110::SegmentFixupPolicyT>();
                 }
             #endif
         }

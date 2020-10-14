@@ -341,52 +341,6 @@ struct DipatchHistogram
         };
     };
 
-
-    /// SM11
-    struct Policy110
-    {
-        // HistogramSweepPolicy
-        typedef AgentHistogramPolicy<
-                512,
-                (NUM_CHANNELS == 1) ? 8 : 2,
-                BLOCK_LOAD_DIRECT,
-                LOAD_DEFAULT,
-                true,
-                GMEM,
-                false>
-            HistogramSweepPolicy;
-    };
-
-    /// SM20
-    struct Policy200
-    {
-        // HistogramSweepPolicy
-        typedef AgentHistogramPolicy<
-                (NUM_CHANNELS == 1) ? 256 : 128,
-                (NUM_CHANNELS == 1) ? 8 : 3,
-                (NUM_CHANNELS == 1) ? BLOCK_LOAD_DIRECT : BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                true,
-                SMEM,
-                false>
-            HistogramSweepPolicy;
-    };
-
-    /// SM30
-    struct Policy300
-    {
-        // HistogramSweepPolicy
-        typedef AgentHistogramPolicy<
-                512,
-                (NUM_CHANNELS == 1) ? 8 : 2,
-                BLOCK_LOAD_DIRECT,
-                LOAD_DEFAULT,
-                true,
-                GMEM,
-                false>
-            HistogramSweepPolicy;
-    };
-
     /// SM35
     struct Policy350
     {
@@ -426,17 +380,8 @@ struct DipatchHistogram
 #if (CUB_PTX_ARCH >= 500)
     typedef Policy500 PtxPolicy;
 
-#elif (CUB_PTX_ARCH >= 350)
-    typedef Policy350 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 300)
-    typedef Policy300 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 200)
-    typedef Policy200 PtxPolicy;
-
 #else
-    typedef Policy110 PtxPolicy;
+    typedef Policy350 PtxPolicy;
 
 #endif
 
@@ -473,21 +418,9 @@ struct DipatchHistogram
                 {
                     result = histogram_sweep_config.template Init<typename Policy500::HistogramSweepPolicy>();
                 }
-                else if (ptx_version >= 350)
-                {
-                    result = histogram_sweep_config.template Init<typename Policy350::HistogramSweepPolicy>();
-                }
-                else if (ptx_version >= 300)
-                {
-                    result = histogram_sweep_config.template Init<typename Policy300::HistogramSweepPolicy>();
-                }
-                else if (ptx_version >= 200)
-                {
-                    result = histogram_sweep_config.template Init<typename Policy200::HistogramSweepPolicy>();
-                }
                 else
                 {
-                    result = histogram_sweep_config.template Init<typename Policy110::HistogramSweepPolicy>();
+                    result = histogram_sweep_config.template Init<typename Policy350::HistogramSweepPolicy>();
                 }
             #endif
         }

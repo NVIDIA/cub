@@ -246,46 +246,8 @@ struct DeviceReducePolicy
     // Architecture-specific tuning policies
     //------------------------------------------------------------------------------
 
-    /// SM13
-    struct Policy130 : ChainedPolicy<130, Policy130, Policy130>
-    {
-        // ReducePolicy
-        typedef AgentReducePolicy<
-                128, 8, InputT,                        ///< Threads per block, items per thread, compute type
-                2,                                      ///< Number of items per vectorized load
-                BLOCK_REDUCE_RAKING,                    ///< Cooperative block-wide reduction algorithm to use
-                LOAD_DEFAULT>                           ///< Cache load modifier
-            ReducePolicy;
-
-        // SingleTilePolicy
-        typedef ReducePolicy SingleTilePolicy;
-
-        // SegmentedReducePolicy
-        typedef ReducePolicy SegmentedReducePolicy;
-    };
-
-
-    /// SM20
-    struct Policy200 : ChainedPolicy<200, Policy200, Policy130>
-    {
-        // ReducePolicy (GTX 580: 178.9 GB/s @ 48M 4B items, 158.1 GB/s @ 192M 1B items)
-        typedef AgentReducePolicy<
-                128, 8, InputT,                        ///< Threads per block, items per thread, compute type
-                4,                                      ///< Number of items per vectorized load
-                BLOCK_REDUCE_RAKING,                    ///< Cooperative block-wide reduction algorithm to use
-                LOAD_DEFAULT>                           ///< Cache load modifier
-            ReducePolicy;
-
-        // SingleTilePolicy
-        typedef ReducePolicy SingleTilePolicy;
-
-        // SegmentedReducePolicy
-        typedef ReducePolicy SegmentedReducePolicy;
-    };
-
-
     /// SM30
-    struct Policy300 : ChainedPolicy<300, Policy300, Policy200>
+    struct Policy300 : ChainedPolicy<300, Policy300, Policy300>
     {
         // ReducePolicy (GTX670: 154.0 @ 48M 4B items)
         typedef AgentReducePolicy<
