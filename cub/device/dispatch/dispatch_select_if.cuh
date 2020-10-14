@@ -170,95 +170,11 @@ struct DispatchSelectIf
             SelectIfPolicyT;
     };
 
-    /// SM30
-    struct Policy300
-    {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 7,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(3, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(OutputT)))),
-        };
-
-        typedef AgentSelectIfPolicy<
-                128,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_WARP_SCANS>
-            SelectIfPolicyT;
-    };
-
-    /// SM20
-    struct Policy200
-    {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = (KEEP_REJECTS) ? 7 : 15,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(OutputT)))),
-        };
-
-        typedef AgentSelectIfPolicy<
-                128,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_WARP_SCANS>
-            SelectIfPolicyT;
-    };
-
-    /// SM13
-    struct Policy130
-    {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 9,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(OutputT)))),
-        };
-
-        typedef AgentSelectIfPolicy<
-                64,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_RAKING_MEMOIZE>
-            SelectIfPolicyT;
-    };
-
-    /// SM10
-    struct Policy100
-    {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 9,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 4 / sizeof(OutputT)))),
-        };
-
-        typedef AgentSelectIfPolicy<
-                64,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_RAKING>
-            SelectIfPolicyT;
-    };
-
-
     /******************************************************************************
      * Tuning policies of current PTX compiler pass
      ******************************************************************************/
 
-#if (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 300)
-    typedef Policy300 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 200)
-    typedef Policy200 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 130)
-    typedef Policy130 PtxPolicy;
-
-#else
-    typedef Policy100 PtxPolicy;
-
-#endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxSelectIfPolicyT : PtxPolicy::SelectIfPolicyT {};
@@ -288,26 +204,10 @@ struct DispatchSelectIf
         {
             #if CUB_INCLUDE_HOST_CODE
                 // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-                if (ptx_version >= 350)
-                {
-                    select_if_config.template Init<typename Policy350::SelectIfPolicyT>();
-                }
-                else if (ptx_version >= 300)
-                {
-                    select_if_config.template Init<typename Policy300::SelectIfPolicyT>();
-                }
-                else if (ptx_version >= 200)
-                {
-                    select_if_config.template Init<typename Policy200::SelectIfPolicyT>();
-                }
-                else if (ptx_version >= 130)
-                {
-                    select_if_config.template Init<typename Policy130::SelectIfPolicyT>();
-                }
-                else
-                {
-                    select_if_config.template Init<typename Policy100::SelectIfPolicyT>();
-                }
+
+                // (There's only one policy right now)
+                (void)ptx_version;
+                select_if_config.template Init<typename Policy350::SelectIfPolicyT>();
             #endif
         }
     }

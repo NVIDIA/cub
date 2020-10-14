@@ -140,61 +140,8 @@ template <
 struct DeviceScanPolicy
 {
 
-    /// SM10
-    struct Policy100 : ChainedPolicy<100, Policy100, Policy100>
-    {
-        typedef AgentScanPolicy<
-                64, 9,                                          ///< Threads per block, items per thread
-                OutputT,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
-                BLOCK_SCAN_WARP_SCANS>
-            ScanPolicyT;
-    };
-
-    /// SM13
-    struct Policy130 : ChainedPolicy<130, Policy130, Policy100>
-    {
-        typedef AgentScanPolicy<
-                96, 21,                                         ///< Threads per block, items per thread
-                OutputT,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
-                BLOCK_SCAN_RAKING_MEMOIZE>
-            ScanPolicyT;
-    };
-
-    /// SM20
-    struct Policy200 : ChainedPolicy<200, Policy200, Policy130>
-    {
-        // GTX 580: 20.3B items/s (162.3 GB/s) @ 48M 32-bit T
-        typedef AgentScanPolicy<
-                128, 12,                                        ///< Threads per block, items per thread
-                OutputT,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
-                BLOCK_SCAN_WARP_SCANS>
-            ScanPolicyT;
-    };
-
-    /// SM30
-    struct Policy300 : ChainedPolicy<300, Policy300, Policy200>
-    {
-        typedef AgentScanPolicy<
-                256, 9,                                         ///< Threads per block, items per thread
-                OutputT,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_STORE_WARP_TRANSPOSE,
-                BLOCK_SCAN_WARP_SCANS>
-            ScanPolicyT;
-    };
-
     /// SM35
-    struct Policy350 : ChainedPolicy<350, Policy350, Policy300>
+    struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
     {
         // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
         typedef AgentScanPolicy<

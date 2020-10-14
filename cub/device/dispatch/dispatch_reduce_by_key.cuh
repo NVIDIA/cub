@@ -179,95 +179,11 @@ struct DispatchReduceByKey
             ReduceByKeyPolicyT;
     };
 
-    /// SM30
-    struct Policy300
-    {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 6,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-        };
-
-        typedef AgentReduceByKeyPolicy<
-                128,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_WARP_SCANS>
-            ReduceByKeyPolicyT;
-    };
-
-    /// SM20
-    struct Policy200
-    {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 11,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-        };
-
-        typedef AgentReduceByKeyPolicy<
-                128,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_WARP_SCANS>
-            ReduceByKeyPolicyT;
-    };
-
-    /// SM13
-    struct Policy130
-    {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 7,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, ((NOMINAL_4B_ITEMS_PER_THREAD * 8) + COMBINED_INPUT_BYTES - 1) / COMBINED_INPUT_BYTES)),
-        };
-
-        typedef AgentReduceByKeyPolicy<
-                128,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_WARP_SCANS>
-            ReduceByKeyPolicyT;
-    };
-
-    /// SM11
-    struct Policy110
-    {
-        enum {
-            NOMINAL_4B_ITEMS_PER_THREAD = 5,
-            ITEMS_PER_THREAD            = CUB_MIN(NOMINAL_4B_ITEMS_PER_THREAD, CUB_MAX(1, (NOMINAL_4B_ITEMS_PER_THREAD * 8) / COMBINED_INPUT_BYTES)),
-        };
-
-        typedef AgentReduceByKeyPolicy<
-                64,
-                ITEMS_PER_THREAD,
-                BLOCK_LOAD_WARP_TRANSPOSE,
-                LOAD_DEFAULT,
-                BLOCK_SCAN_RAKING>
-            ReduceByKeyPolicyT;
-    };
-
-
     /******************************************************************************
      * Tuning policies of current PTX compiler pass
      ******************************************************************************/
 
-#if (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 300)
-    typedef Policy300 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 200)
-    typedef Policy200 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 130)
-    typedef Policy130 PtxPolicy;
-
-#else
-    typedef Policy110 PtxPolicy;
-
-#endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxReduceByKeyPolicy : PtxPolicy::ReduceByKeyPolicyT {};
@@ -298,26 +214,10 @@ struct DispatchReduceByKey
         {
             #if CUB_INCLUDE_HOST_CODE
                 // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-                if (ptx_version >= 350)
-                {
-                    reduce_by_key_config.template Init<typename Policy350::ReduceByKeyPolicyT>();
-                }
-                else if (ptx_version >= 300)
-                {
-                    reduce_by_key_config.template Init<typename Policy300::ReduceByKeyPolicyT>();
-                }
-                else if (ptx_version >= 200)
-                {
-                    reduce_by_key_config.template Init<typename Policy200::ReduceByKeyPolicyT>();
-                }
-                else if (ptx_version >= 130)
-                {
-                    reduce_by_key_config.template Init<typename Policy130::ReduceByKeyPolicyT>();
-                }
-                else
-                {
-                    reduce_by_key_config.template Init<typename Policy110::ReduceByKeyPolicyT>();
-                }
+
+                // (There's only one policy right now)
+                (void)ptx_version;
+                reduce_by_key_config.template Init<typename Policy350::ReduceByKeyPolicyT>();
             #endif
         }
     }
