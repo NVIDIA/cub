@@ -330,7 +330,7 @@ struct AgentScan
      * Scan tiles of items as part of a dynamic chained scan
      */
     __device__ __forceinline__ void ConsumeRange(
-        int                 num_items,          ///< Total number of input items
+        OffsetT             num_items,          ///< Total number of input items
         ScanTileStateT&     tile_state,         ///< Global tile state descriptor
         int                 start_tile)         ///< The starting tile for the current grid
     {
