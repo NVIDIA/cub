@@ -1,11 +1,3 @@
-# Support adding CUB to a parent project via add_subdirectory.
-# See examples/cmake/add_subdir/CMakeLists.txt for details.
-if (NOT "${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_LIST_DIR}" AND
-    NOT CUB_IN_THRUST)
-  include(cmake/CubAddSubdir.cmake)
-  return()
-endif()
-
 # Will be increased to 3.18 when C++17 is enabled:
 cmake_minimum_required(VERSION 3.15)
 
@@ -17,11 +9,36 @@ endif()
 # CXX is only needed for AppendOptionIfAvailable.
 project(CUB CUDA CXX)
 
+# Determine whether CUB is the top-level project or included into
+# another project via add_subdirectory().
+if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_LIST_DIR}")
+  set(CUB_TOPLEVEL_PROJECT ON)
+else()
+  set(CUB_TOPLEVEL_PROJECT OFF)
+endif()
+
+# Thrust has its own copy of CUB install rules to handle packaging usecases
+# where we want to install CUB headers but aren't actually building anything.
+# In these cases the add_subdirectory(dependencies/cub) line in Thrust won't get
+# called so we can't rely on CUB providing its own rules.
+if (NOT CUB_IN_THRUST)
+  option(CUB_ENABLE_INSTALL_RULES "Enable installation of CUB" ${CUB_TOPLEVEL_PROJECT})
+  if (CUB_ENABLE_INSTALL_RULES)
+    include(cmake/CubInstallRules.cmake)
+  endif()
+endif()
+
+# Support adding CUB to a parent project via add_subdirectory.
+# See examples/cmake/add_subdir/CMakeLists.txt for details.
+if (NOT CUB_TOPLEVEL_PROJECT AND NOT CUB_IN_THRUST)
+  include(cmake/CubAddSubdir.cmake)
+  return()
+endif()
+
 include(cmake/AppendOptionIfAvailable.cmake)
 include(cmake/CubBuildCompilerTargets.cmake)
 include(cmake/CubBuildTargetList.cmake)
 include(cmake/CubCudaConfig.cmake)
-include(cmake/CubInstallRules.cmake)
 
 option(CUB_ENABLE_HEADER_TESTING "Test that all public headers compile." ON)
 option(CUB_ENABLE_TESTING "Build CUB testing suite." ON)
