@@ -346,7 +346,7 @@ struct AgentSegmentFixup
      * Scan tiles of items as part of a dynamic chained scan
      */
     __device__ __forceinline__ void ConsumeRange(
-        int                 num_items,          ///< Total number of input items
+        OffsetT             num_items,          ///< Total number of input items
         int                 num_tiles,          ///< Total number of input tiles
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
