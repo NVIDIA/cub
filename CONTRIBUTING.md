@@ -290,6 +290,10 @@ The configuration options for CUB are:
 - `CUB_ENABLE_EXAMPLES_WITH_RDC={ON, OFF}`
   - Whether to enable Relocatable Device Code when building examples.
     Default is `OFF`.
+- `CUB_ENABLE_INSTALL_RULES={ON, OFF}`
+  - If true, installation rules will be generated for CUB. Default is `ON` when
+    building CUB alone, and `OFF` when CUB is a subproject added via CMake's
+    `add_subdirectory`.
 
 # Development Model
 
