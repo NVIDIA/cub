@@ -126,7 +126,7 @@ private:
         PACKING_RATIO               = sizeof(PackedCounter) / sizeof(DigitCounter),
         LOG_PACKING_RATIO           = Log2<PACKING_RATIO>::VALUE,
 
-        LOG_COUNTER_LANES           = CUB_MAX((RADIX_BITS - LOG_PACKING_RATIO), 0),                // Always at least one lane
+        LOG_COUNTER_LANES           = CUB_MAX((int(RADIX_BITS) - int(LOG_PACKING_RATIO)), 0),                // Always at least one lane
         COUNTER_LANES               = 1 << LOG_COUNTER_LANES,
 
         // The number of packed counters per thread (plus one for padding)

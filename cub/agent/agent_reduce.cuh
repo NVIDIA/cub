@@ -126,7 +126,7 @@ struct AgentReduce
     {
         BLOCK_THREADS       = AgentReducePolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD    = AgentReducePolicy::ITEMS_PER_THREAD,
-        VECTOR_LOAD_LENGTH  = CUB_MIN(ITEMS_PER_THREAD, AgentReducePolicy::VECTOR_LOAD_LENGTH),
+        VECTOR_LOAD_LENGTH  = CUB_MIN(int(ITEMS_PER_THREAD), int(AgentReducePolicy::VECTOR_LOAD_LENGTH)),
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Can vectorize according to the policy if the input iterator is a native pointer to a primitive type
