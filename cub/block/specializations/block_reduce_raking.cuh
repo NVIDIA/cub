@@ -90,7 +90,7 @@ struct BlockReduceRaking
         SEGMENT_LENGTH = BlockRakingLayout::SEGMENT_LENGTH,
 
         /// Cooperative work can be entirely warp synchronous
-        WARP_SYNCHRONOUS = (RAKING_THREADS == BLOCK_THREADS),
+        WARP_SYNCHRONOUS = (int(RAKING_THREADS) == int(BLOCK_THREADS)),
 
         /// Whether or not warp-synchronous reduction should be unguarded (i.e., the warp-reduction elements is a power of two
         WARP_SYNCHRONOUS_UNGUARDED = PowerOfTwo<RAKING_THREADS>::VALUE,

@@ -170,8 +170,8 @@ template <
     typename                ValueT,                         ///< Value type
     typename                OffsetT>                        ///< Signed integer type for global offsets
 __launch_bounds__ (int((ALT_DIGIT_BITS) ?
-    ChainedPolicyT::ActivePolicy::AltDownsweepPolicy::BLOCK_THREADS :
-    ChainedPolicyT::ActivePolicy::DownsweepPolicy::BLOCK_THREADS))
+    int(ChainedPolicyT::ActivePolicy::AltDownsweepPolicy::BLOCK_THREADS) :
+    int(ChainedPolicyT::ActivePolicy::DownsweepPolicy::BLOCK_THREADS)))
 __global__ void DeviceRadixSortDownsweepKernel(
     const KeyT              *d_keys_in,                     ///< [in] Input keys buffer
     KeyT                    *d_keys_out,                    ///< [in] Output keys buffer

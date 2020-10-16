@@ -84,7 +84,7 @@ struct BlockScanRaking
         SEGMENT_LENGTH = BlockRakingLayout::SEGMENT_LENGTH,
 
         /// Cooperative work can be entirely warp synchronous
-        WARP_SYNCHRONOUS = (BLOCK_THREADS == RAKING_THREADS),
+        WARP_SYNCHRONOUS = (int(BLOCK_THREADS) == int(RAKING_THREADS)),
     };
 
     ///  WarpScan utility type

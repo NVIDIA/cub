@@ -121,7 +121,7 @@ struct AgentRadixSortUpsweep
         PACKING_RATIO           = sizeof(PackedCounter) / sizeof(DigitCounter),
         LOG_PACKING_RATIO       = Log2<PACKING_RATIO>::VALUE,
 
-        LOG_COUNTER_LANES       = CUB_MAX(0, RADIX_BITS - LOG_PACKING_RATIO),
+        LOG_COUNTER_LANES       = CUB_MAX(0, int(RADIX_BITS) - int(LOG_PACKING_RATIO)),
         COUNTER_LANES           = 1 << LOG_COUNTER_LANES,
 
         // To prevent counter overflow, we must periodically unpack and aggregate the

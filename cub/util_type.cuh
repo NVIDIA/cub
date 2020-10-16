@@ -358,7 +358,7 @@ struct UnitWord
     {
         enum {
             UNIT_ALIGN_BYTES    = AlignBytes<Unit>::ALIGN_BYTES,
-            IS_MULTIPLE         = (sizeof(T) % sizeof(Unit) == 0) && (ALIGN_BYTES % UNIT_ALIGN_BYTES == 0)
+            IS_MULTIPLE         = (sizeof(T) % sizeof(Unit) == 0) && (int(ALIGN_BYTES) % int(UNIT_ALIGN_BYTES) == 0)
         };
     };
 
