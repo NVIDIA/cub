@@ -1,5 +1,5 @@
-# Parse version information from version.h:
-file(READ "${CMAKE_CURRENT_LIST_DIR}/../version.cuh" CUB_VERSION_HEADER)
+# Parse version information from version.cuh:
+file(READ "${CMAKE_CURRENT_LIST_DIR}/../../../include/cub/version.cuh" CUB_VERSION_HEADER)
 string(REGEX MATCH "#define[ \t]+CUB_VERSION[ \t]+([0-9]+)" DUMMY "${CUB_VERSION_HEADER}")
 set(CUB_VERSION_FLAT ${CMAKE_MATCH_1})
 # Note that CUB calls this the PATCH number, CMake calls it the TWEAK number:

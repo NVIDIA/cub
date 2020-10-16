@@ -11,5 +11,10 @@ install(DIRECTORY "${CUB_SOURCE_DIR}/cub"
   TYPE INCLUDE
   FILES_MATCHING
     PATTERN "*.cuh"
+)
+
+install(DIRECTORY "${CUB_SOURCE_DIR}/cub"
+  TYPE LIB
+  FILES_MATCHING
     PATTERN "*.cmake"
 )

@@ -32,7 +32,7 @@ endfunction()
 
 _cub_declare_interface_alias(CUB::CUB _CUB_CUB)
 # Strip out the 'cub/cmake/' from 'cub/cmake/cub-config.cmake':
-get_filename_component(_CUB_INCLUDE_DIR "../.." ABSOLUTE BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+get_filename_component(_CUB_INCLUDE_DIR "../../../include" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
 target_include_directories(_CUB_CUB INTERFACE "${_CUB_INCLUDE_DIR}")
 
 if (CUB_IGNORE_DEPRECATED_CPP_DIALECT OR
