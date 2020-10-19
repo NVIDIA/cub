@@ -1,3 +1,5 @@
+add_subdirectory(cmake)
+
 # TODO investigate whether this is really needed:
 math(EXPR CUB_TEST_ARCH "${CUB_MINIMAL_ENABLED_ARCH} * 10")
 message(STATUS "CUB Test architecture (TEST_ARCH): ${CUB_TEST_ARCH}")
