@@ -320,7 +320,8 @@ public:
 
                 // We don't use `CubDebug` here because we let the user code
                 // decide whether or not errors are hard errors.
-                if (payload.error = std::forward<Invocable>(f)(payload.attribute))
+                payload.error = std::forward<Invocable>(f)(payload.attribute);
+                if (payload.error)
                     // Clear the global CUDA error state which may have been
                     // set by the last call. Otherwise, errors may "leak" to
                     // unrelated kernel launches.
