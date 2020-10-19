@@ -4,6 +4,9 @@ if (CUB_IN_THRUST)
   return()
 endif()
 
+# Bring in CMAKE_INSTALL_LIBDIR
+include(GNUInstallDirs)
+
 # CUB is a header library; no need to build anything before installing:
 set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
 
@@ -13,8 +16,6 @@ install(DIRECTORY "${CUB_SOURCE_DIR}/cub"
     PATTERN "*.cuh"
 )
 
-install(DIRECTORY "${CUB_SOURCE_DIR}/cub"
-  TYPE LIB
-  FILES_MATCHING
-    PATTERN "*.cmake"
+install(DIRECTORY "${CUB_SOURCE_DIR}/cub/cmake/"
+  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/cub"
 )

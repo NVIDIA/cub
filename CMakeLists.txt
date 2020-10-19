@@ -7,7 +7,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
 endif()
 
 # CXX is only needed for AppendOptionIfAvailable.
-project(CUB CUDA CXX)
+project(CUB)
 
 # Determine whether CUB is the top-level project or included into
 # another project via add_subdirectory().
@@ -16,6 +16,17 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_LIST_DIR}")
 else()
   set(CUB_TOPLEVEL_PROJECT OFF)
 endif()
+
+# This must be done before any languages are enabled:
+if (CUB_TOPLEVEL_PROJECT)
+  include(cmake/CubCompilerHacks.cmake)
+endif()
+
+# This must appear after our Compiler Hacks or else CMake will delete the cache
+# and reconfigure from scratch.
+# This must also appear before the installation rules, as it is required by the
+# GNUInstallDirs CMake module.
+enable_language(CXX)
 
 # Thrust has its own copy of CUB install rules to handle packaging usecases
 # where we want to install CUB headers but aren't actually building anything.
@@ -35,11 +46,6 @@ if (NOT CUB_TOPLEVEL_PROJECT AND NOT CUB_IN_THRUST)
   return()
 endif()
 
-include(cmake/AppendOptionIfAvailable.cmake)
-include(cmake/CubBuildCompilerTargets.cmake)
-include(cmake/CubBuildTargetList.cmake)
-include(cmake/CubCudaConfig.cmake)
-
 option(CUB_ENABLE_HEADER_TESTING "Test that all public headers compile." ON)
 option(CUB_ENABLE_TESTING "Build CUB testing suite." ON)
 option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
@@ -52,6 +58,11 @@ if (NOT (CUB_ENABLE_HEADER_TESTING OR
          CUB_ENABLE_EXAMPLES))
   return()
 endif()
+
+include(cmake/AppendOptionIfAvailable.cmake)
+include(cmake/CubBuildCompilerTargets.cmake)
+include(cmake/CubBuildTargetList.cmake)
+include(cmake/CubCudaConfig.cmake)
 
 if ("" STREQUAL "${CMAKE_BUILD_TYPE}")
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build." FORCE)

@@ -1,12 +1,4 @@
-if (NOT ("${CMAKE_CUDA_HOST_COMPILER}" STREQUAL "" OR
-         "${CMAKE_CUDA_HOST_COMPILER}" STREQUAL "${CMAKE_CXX_COMPILER}"))
-  message(FATAL_ERROR
-    "CUB tests and examples require the C++ compiler and the CUDA host "
-    "compiler to be the same; to set this compiler, please use the "
-    "CMAKE_CXX_COMPILER variable, not the CMAKE_CUDA_HOST_COMPILER variable."
-  )
-endif()
-set(CMAKE_CUDA_HOST_COMPILER "${CMAKE_CXX_COMPILER}")
+enable_language(CUDA)
 
 #
 # Architecture options:

@@ -1,5 +1,12 @@
 # Parse version information from version.cuh:
-file(READ "${CMAKE_CURRENT_LIST_DIR}/../../../include/cub/version.cuh" CUB_VERSION_HEADER)
+unset(_CUB_VERSION_INCLUDE_DIR CACHE) # Clear old result to force search
+find_path(_CUB_VERSION_INCLUDE_DIR cub/version.cuh
+  NO_DEFAULT_PATH # Only search explicit paths below:
+  PATHS
+    ${CMAKE_CURRENT_LIST_DIR}/../..            # Source tree
+    ${CMAKE_CURRENT_LIST_DIR}/../../../include # Install tree
+)
+file(READ "${_CUB_VERSION_INCLUDE_DIR}/cub/version.cuh" CUB_VERSION_HEADER)
 string(REGEX MATCH "#define[ \t]+CUB_VERSION[ \t]+([0-9]+)" DUMMY "${CUB_VERSION_HEADER}")
 set(CUB_VERSION_FLAT ${CMAKE_MATCH_1})
 # Note that CUB calls this the PATCH number, CMake calls it the TWEAK number:
