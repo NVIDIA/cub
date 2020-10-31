@@ -1,7 +1,7 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *     * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
  *     * Neither the name of the NVIDIA CORPORATION nor the
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -36,12 +36,11 @@
     #include <sys/resource.h>
 #endif
 
-#include <cuda_runtime.h>
-
-#include <stdio.h>
-#include <float.h>
-
+#include <cstdio>
+#include <cfloat>
 #include <cmath>
+#include <cstddef>
+
 #include <string>
 #include <vector>
 #include <sstream>
@@ -99,8 +98,8 @@ struct CommandLineArgs
     std::vector<std::string>    args;
     cudaDeviceProp              deviceProp;
     float                       device_giga_bandwidth;
-    size_t                      device_free_physmem;
-    size_t                      device_total_physmem;
+    std::size_t                 device_free_physmem;
+    std::size_t                 device_total_physmem;
 
     /**
      * Constructor
@@ -148,7 +147,7 @@ struct CommandLineArgs
     {
         using namespace std;
 
-        for (int i = 0; i < int(keys.size()); ++i)
+        for (std::size_t i = 0; i < keys.size(); ++i)
         {
             if (keys[i] == string(arg_name))
                 return true;
@@ -171,7 +170,7 @@ struct CommandLineArgs
      * Returns the commandline parameter for a given index (not including flags)
      */
     template <typename T>
-    void GetCmdLineArgument(int index, T &val)
+    void GetCmdLineArgument(std::size_t index, T &val)
     {
         using namespace std;
         if (index < args.size()) {
@@ -188,7 +187,7 @@ struct CommandLineArgs
     {
         using namespace std;
 
-        for (int i = 0; i < int(keys.size()); ++i)
+        for (std::size_t i = 0; i < keys.size(); ++i)
         {
             if (keys[i] == string(arg_name))
             {
@@ -213,7 +212,7 @@ struct CommandLineArgs
             vals.clear();
 
             // Recover from multi-value string
-            for (int i = 0; i < keys.size(); ++i)
+            for (std::size_t i = 0; i < keys.size(); ++i)
             {
                 if (keys[i] == string(arg_name))
                 {
@@ -452,7 +451,7 @@ void RandomBits(
     if (end_bit < 0)
         end_bit = sizeof(K) * 8;
 
-    while (true) 
+    while (true)
     {
         // Generate random word_buff
         for (int j = 0; j < NUM_WORDS; j++)
@@ -467,7 +466,7 @@ void RandomBits(
             {
                 // Grab some of the higher bits from rand (better entropy, supposedly)
                 word &= mersenne::genrand_int32();
-                g_num_rand_samples++;                
+                g_num_rand_samples++;
             }
 
             word_buff[j] = word;
@@ -1354,7 +1353,7 @@ int CompareResults(double* computed, double* reference, OffsetT len, bool verbos
 int CompareDeviceResults(
     cub::NullType */* h_reference */,
     cub::NullType */* d_data */,
-    size_t /* num_items */,
+    std::size_t /* num_items */,
     bool /* verbose */ = true,
     bool /* display_data */ = false)
 {
@@ -1369,7 +1368,7 @@ template <typename S, typename OffsetT>
 int CompareDeviceResults(
     S *h_reference,
     cub::DiscardOutputIterator<OffsetT> d_data,
-    size_t num_items,
+    std::size_t num_items,
     bool verbose = true,
     bool display_data = false)
 {
@@ -1384,7 +1383,7 @@ template <typename S, typename T>
 int CompareDeviceResults(
     S *h_reference,
     T *d_data,
-    size_t num_items,
+    std::size_t num_items,
     bool verbose = true,
     bool display_data = false)
 {
@@ -1398,12 +1397,12 @@ int CompareDeviceResults(
     if (display_data)
     {
         printf("Reference:\n");
-        for (int i = 0; i < int(num_items); i++)
+        for (std::size_t i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
         printf("\n\nComputed:\n");
-        for (int i = 0; i < int(num_items); i++)
+        for (std::size_t i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";
         }
@@ -1428,7 +1427,7 @@ template <typename T>
 int CompareDeviceDeviceResults(
     T *d_reference,
     T *d_data,
-    size_t num_items,
+    std::size_t num_items,
     bool verbose = true,
     bool display_data = false)
 {
@@ -1443,12 +1442,12 @@ int CompareDeviceDeviceResults(
     // Display data
     if (display_data) {
         printf("Reference:\n");
-        for (int i = 0; i < num_items; i++)
+        for (std::size_t i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_reference[i]) << ", ";
         }
         printf("\n\nComputed:\n");
-        for (int i = 0; i < num_items; i++)
+        for (std::size_t i = 0; i < num_items; i++)
         {
             std::cout << CoutCast(h_data[i]) << ", ";
         }
@@ -1471,7 +1470,7 @@ int CompareDeviceDeviceResults(
  */
 void DisplayResults(
     cub::NullType   */* h_data */,
-    size_t          /* num_items */)
+    std::size_t      /* num_items */)
 {}
 
 
@@ -1481,10 +1480,10 @@ void DisplayResults(
 template <typename InputIteratorT>
 void DisplayResults(
     InputIteratorT h_data,
-    size_t num_items)
+    std::size_t num_items)
 {
     // Display data
-    for (int i = 0; i < int(num_items); i++)
+    for (std::size_t i = 0; i < num_items; i++)
     {
         std::cout << CoutCast(h_data[i]) << ", ";
     }
@@ -1498,7 +1497,7 @@ void DisplayResults(
 template <typename T>
 void DisplayDeviceResults(
     T *d_data,
-    size_t num_items)
+    std::size_t num_items)
 {
     // Allocate array on host
     T *h_data = (T*) malloc(num_items * sizeof(T));

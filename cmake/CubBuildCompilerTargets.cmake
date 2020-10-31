@@ -96,7 +96,11 @@ function(cub_build_compiler_targets)
   # Promote warnings and display diagnostic numbers for nvcc:
   target_compile_options(cub.compiler_interface INTERFACE
     # If using CUDA w/ NVCC...
+    # Display diagnostic numbers.
     $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Xcudafe=--display_error_number>
+    # Promote warnings.
     $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Xcudafe=--promote_warnings>
+    # Don't complain about deprecated GPU targets.
+    $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Wno-deprecated-gpu-targets>
   )
 endfunction()
