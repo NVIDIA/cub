@@ -43,42 +43,34 @@ endif
 ifeq (700, $(findstring 700, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_70,code=\"sm_70,compute_70\"
     SM_DEF 		+= -DSM700
-    TEST_ARCH 	= 700
 endif
 ifeq (620, $(findstring 620, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_62,code=\"sm_62,compute_62\"
     SM_DEF 		+= -DSM620
-    TEST_ARCH 	= 620
 endif
 ifeq (610, $(findstring 610, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_61,code=\"sm_61,compute_61\"
     SM_DEF 		+= -DSM610
-    TEST_ARCH 	= 610
 endif
 ifeq (600, $(findstring 600, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_60,code=\"sm_60,compute_60\"
     SM_DEF 		+= -DSM600
-    TEST_ARCH 	= 600
 endif
 ifeq (520, $(findstring 520, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_52,code=\"sm_52,compute_52\"
     SM_DEF 		+= -DSM520
-    TEST_ARCH 	= 520
 endif
 ifeq (370, $(findstring 370, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_37,code=\"sm_37,compute_37\"
     SM_DEF 		+= -DSM370
-    TEST_ARCH 	= 370
 endif
 ifeq (350, $(findstring 350, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_35,code=\"sm_35,compute_35\"
     SM_DEF 		+= -DSM350
-    TEST_ARCH 	= 350
 endif
 ifeq (300, $(findstring 300, $(SM_ARCH)))
     SM_TARGETS 	+= -gencode=arch=compute_30,code=\"sm_30,compute_30\"
     SM_DEF 		+= -DSM300
-    TEST_ARCH 	= 300
 endif
 
 
