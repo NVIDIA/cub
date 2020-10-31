@@ -445,7 +445,7 @@ void TestTexObj()
     const unsigned int DUMMY_TEST_VALUES    = TEST_VALUES - DUMMY_OFFSET;
 
     T *h_data = new T[TEST_VALUES];
-    for (int i = 0; i < TEST_VALUES; ++i)
+    for (unsigned int i = 0; i < TEST_VALUES; ++i)
     {
         RandomBits(h_data[i]);
     }
