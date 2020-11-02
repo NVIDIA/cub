@@ -1,3 +1,8 @@
+# Thrust 1.11.0 (NVIDIA HPC SDK 20.11)
+
+CUB 1.11.0 is the major release accompanying the NVIDIA HPC SDK 20.11 release.
+It introduces a new radix sort backend with improved performance.
+
 # CUB 1.10.0 (NVIDIA HPC SDK 20.9, CUDA Toolkit 11.2)
 
 ## Summary
