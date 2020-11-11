@@ -11,20 +11,29 @@ function(cub_build_compiler_targets)
   set(cxx_compile_options)
 
   if ("MSVC" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
-    # TODO Enable /Wall
+    append_option_if_available("/W4" cxx_compile_options)
+
     append_option_if_available("/WX" cxx_compile_options)
 
-    # Disabled loss-of-data conversion warnings.
-    # TODO Re-enable.
-    append_option_if_available("/wd4244" cxx_compile_options)
-    append_option_if_available("/wd4267" cxx_compile_options)
-
-    # Suppress numeric conversion-to-bool warnings.
-    # TODO Re-enable.
-    append_option_if_available("/wd4800" cxx_compile_options)
-
-    # Disable warning about applying unary operator- to unsigned type.
-    append_option_if_available("/wd4146" cxx_compile_options)
+    # Suppress overly-pedantic/unavoidable warnings brought in with /W4:
+    # C4324: structure was padded due to alignment specifier
+    append_option_if_available("/wd4324" cxx_compile_options)
+    # C4127: conditional expression is constant
+    # This can be fixed with `if constexpr` when available, but there's no way
+    # to silence these pre-C++17.
+    # TODO We should have per-dialect interface targets so we can leave these
+    # warnings enabled on C++17:
+    append_option_if_available("/wd4127" cxx_compile_options)
+    # C4505: unreferenced local function has been removed
+    # The CUDA `host_runtime.h` header emits this for
+    # `__cudaUnregisterBinaryUtil`.
+    append_option_if_available("/wd4505" cxx_compile_options)
+    # C4706: assignment within conditional expression
+    # MSVC doesn't provide an opt-out for this warning when the assignment is
+    # intentional. Clang will warn for these, but suppresses the warning when
+    # double-parentheses are used around the assignment. We'll let Clang catch
+    # unintentional assignments and suppress all such warnings on MSVC.
+    append_option_if_available("/wd4706" cxx_compile_options)
 
     # Some tests require /bigobj to fit everything into their object files:
     append_option_if_available("/bigobj" cxx_compile_options)
@@ -35,43 +44,32 @@ function(cub_build_compiler_targets)
     append_option_if_available("-Winit-self" cxx_compile_options)
     append_option_if_available("-Woverloaded-virtual" cxx_compile_options)
     append_option_if_available("-Wcast-qual" cxx_compile_options)
-    append_option_if_available("-Wno-cast-align" cxx_compile_options)
-    append_option_if_available("-Wno-long-long" cxx_compile_options)
-    append_option_if_available("-Wno-variadic-macros" cxx_compile_options)
+    append_option_if_available("-Wpointer-arith" cxx_compile_options)
+    append_option_if_available("-Wunused-local-typedef" cxx_compile_options)
+    append_option_if_available("-Wvla" cxx_compile_options)
+
+    # Disable GNU extensions (flag is clang only)
+    append_option_if_available("-Wgnu" cxx_compile_options)
+    # Calling a variadic macro with zero args is a GNU extension until C++20,
+    # but the THRUST_PP_ARITY macro is used with zero args. Need to see if this
+    # is a real problem worth fixing.
+    append_option_if_available("-Wno-gnu-zero-variadic-macro-arguments" cxx_compile_options)
+
+    # This complains about functions in CUDA system headers when used with nvcc.
     append_option_if_available("-Wno-unused-function" cxx_compile_options)
-    append_option_if_available("-Wno-unused-variable" cxx_compile_options)
 
     # CUB uses deprecated texture functions (cudaBindTexture, etc). These
     # need to be replaced, but silence the warnings for now.
+    # This can be removed once NVIDIA/cub#191 is fixed.
     append_option_if_available("-Wno-deprecated-declarations" cxx_compile_options)
   endif()
 
   if ("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 4.5)
-      # This isn't available until GCC 4.3, and misfires on TMP code until
-      # GCC 4.5.
-      append_option_if_available("-Wlogical-op" cxx_compile_options)
-    endif()
-
     if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.3)
       # GCC 7.3 complains about name mangling changes due to `noexcept`
       # becoming part of the type system; we don't care.
       append_option_if_available("-Wno-noexcept-type" cxx_compile_options)
     endif()
-  endif()
-
-  if (("Clang" STREQUAL "${CMAKE_CXX_COMPILER_ID}") OR
-      ("XL" STREQUAL "${CMAKE_CXX_COMPILER_ID}"))
-    # xlC and Clang warn about unused parameters in uninstantiated templates.
-    # This causes xlC to choke on the OMP backend, which is mostly #ifdef'd out
-    # (and thus has unused parameters) when you aren't using it.
-    append_option_if_available("-Wno-unused-parameters" cxx_compile_options)
-  endif()
-
-  if ("Clang" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
-    # -Wunneeded-internal-declaration misfires in the unit test framework
-    # on older versions of Clang.
-    append_option_if_available("-Wno-unneeded-internal-declaration" cxx_compile_options)
   endif()
 
   if ("Intel" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
