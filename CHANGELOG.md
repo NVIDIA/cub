@@ -1,7 +1,77 @@
-# Thrust 1.11.0 (NVIDIA HPC SDK 20.11)
+# CUB 1.11.0
 
-CUB 1.11.0 is the major release accompanying the NVIDIA HPC SDK 20.11 release.
-It introduces a new radix sort backend with improved performance.
+## Summary
+
+CUB 1.11.0 is a major release providing bugfixes and performance enhancements.
+
+It includes a new `DeviceRadixSort` backend that improves performance by up to
+2x on supported keys and hardware.
+
+Our CMake package and build system continue to see improvements
+with `add_subdirectory` support, installation rules, status messages, and other
+features that make CUB easier to use from CMake projects.
+
+The release includes several other bugfixes and modernizations, and received
+updates from 11 contributors.
+
+## Breaking Changes
+
+- NVIDIA/cub#201: The intermediate accumulator type used when `DeviceScan` is
+  invoked with different input/output types is now consistent
+  with [P0571](https://wg21.link/P0571). This may produce different results for
+  some edge cases when compared with earlier releases of CUB.
+
+## New Features
+
+- NVIDIA/cub#204: Faster `DeviceRadixSort`, up to 2x performance increase for
+  32/64-bit keys on Pascal and up (SM60+). Thanks to Andy Adinets for this
+  contribution.
+- Unroll loops in `BlockRadixRank` to improve performance for 32-bit keys by
+  1.5-2x on Clang CUDA. Thanks to Justin Lebar for this contribution.
+- NVIDIA/cub#200: Allow CUB to be added to CMake projects via `add_subdirectory`.
+- NVIDIA/cub#214: Optionally add install rules when included with
+  CMake's `add_subdirectory`. Thanks to Kai Germaschewski for this contribution.
+
+## Bug Fixes
+
+- NVIDIA/cub#215: Fix integer truncation in `AgentReduceByKey`, `AgentScan`,
+  and `AgentSegmentFixup`. Thanks to Rory Mitchell for this contribution.
+- NVIDIA/cub#225: Fix compile-time regression when defining `CUB_NS_PREFIX`
+  /`CUB_NS_POSTFIX` macro. Thanks to Elias Stehle for this contribution.
+- NVIDIA/cub#210: Fix some edge cases in `DeviceScan`:
+  - Use values from the input when padding temporary buffers. This prevents
+    custom functors from getting unexpected values.
+  - Prevent integer truncation when using large indices via the `DispatchScan`
+    layer.
+  - Use timesliced reads/writes for types > 128 bytes.
+- NVIDIA/cub#217: Fix and add test for cmake package install rules. Thanks to
+  Keith Kraus and Kai Germaschewski for testing and discussion.
+- NVIDIA/cub#170, NVIDIA/cub#233: Update CUDA version checks to behave on Clang
+  CUDA and `nvc++`. Thanks to Artem Belevich, Andrew Corrigan, and David Olsen
+  for these contributions.
+- NVIDIA/cub#220, NVIDIA/cub#216: Various fixes for Clang CUDA. Thanks to Andrew
+  Corrigan for these contributions.
+- NVIDIA/cub#231: Fix signedness mismatch warnings in unit tests.
+- NVIDIA/cub#231: Suppress GPU deprecation warnings.
+- NVIDIA/cub#214: Use semantic versioning rules for our CMake package's
+  compatibility checks. Thanks to Kai Germaschewski for this contribution.
+- NVIDIA/cub#214: Use `FindPackageHandleStandardArgs` to print standard status
+  messages when our CMake package is found. Thanks to Kai Germaschewski for this
+  contribution.
+- NVIDIA/cub#207: Fix `CubDebug` usage
+  in `CachingDeviceAllocator::DeviceAllocate`. Thanks to Andreas Hehn for this
+  contribution.
+- Fix documentation for `DevicePartition`. Thanks to ByteHamster for this
+  contribution.
+- Clean up unused code in `DispatchScan`. Thanks to ByteHamster for this
+  contribution.
+
+## Other Enhancements
+
+- NVIDIA/cub#213: Remove tuning policies for unsupported hardware (<SM35).
+- References to the old Github repository and branch names were updated.
+  - Github's `thrust/cub` repository is now `NVIDIA/cub`
+  - Development has moved from the `master` branch to the `main` branch.
 
 # CUB 1.10.0 (NVIDIA HPC SDK 20.9, CUDA Toolkit 11.2)
 
