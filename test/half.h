@@ -72,9 +72,7 @@ struct half_t
     }
 
     /// Default constructor
-    __host__ __device__ __forceinline__
-    half_t() : __x(0)
-    {}
+    half_t() = default;
 
     /// Constructor from float
     __host__ __device__ __forceinline__
