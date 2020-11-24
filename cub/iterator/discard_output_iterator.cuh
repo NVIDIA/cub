@@ -177,12 +177,6 @@ public:
         return;
     }
 
-    /// Assignment to self (no-op)
-    __host__ __device__ __forceinline__ void operator=(self_type const& other)
-    {
-        offset = other.offset;
-    }
-
     /// Assignment to anything else (no-op)
     template<typename T>
     __host__ __device__ __forceinline__ void operator=(T const&)
