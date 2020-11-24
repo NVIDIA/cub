@@ -200,7 +200,7 @@ float TestGpuCsrIoProxy(
     CubDebugExit(cudaGetDevice(&device_ordinal));
 
     // Get device SM version
-    int sm_version;
+    int sm_version = 0;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
     void (*kernel)(SpmvParams<ValueT, OffsetT>, TexItr) = NonZeroIoKernel<BLOCK_THREADS, ITEMS_PER_THREAD>;
