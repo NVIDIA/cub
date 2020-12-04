@@ -38,7 +38,7 @@
 #include <algorithm>
 #include <typeinfo>
 
-#if defined(QUICK_TEST) || defined(QUICKER_TEST)
+#if defined(CUB_TEST_BENCHMARK) || defined(CUB_TEST_MINIMAL)
     #include <npp.h>
 #endif
 
@@ -78,7 +78,7 @@ CachingDeviceAllocator  g_allocator(true);
 // Dispatch to NPP histogram
 //---------------------------------------------------------------------
 
-#if defined(QUICK_TEST) || defined(QUICKER_TEST)
+#if defined(CUB_TEST_BENCHMARK) || defined(CUB_TEST_MINIMAL)
 
 /**
  * Dispatch to single-channel 8b NPP histo-even
@@ -202,7 +202,7 @@ cudaError_t DispatchEven(
 }
 
 
-#endif // #if defined(QUICK_TEST) || defined(QUICKER_TEST)
+#endif // #if defined(CUB_TEST_BENCHMARK) || defined(CUB_TEST_MINIMAL)
 
 
 //---------------------------------------------------------------------
@@ -1469,7 +1469,7 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("entropy", entropy_reduction);
-#if defined(QUICK_TEST) || defined(QUICKER_TEST)
+#if defined(CUB_TEST_BENCHMARK) || defined(CUB_TEST_MINIMAL)
     bool compare_npp = args.CheckCmdLineFlag("npp");
 #endif
 
@@ -1505,7 +1505,7 @@ int main(int argc, char** argv)
         row_stride_pixels   = num_row_pixels;
     }
 
-#if defined(QUICKER_TEST)
+#if defined(CUB_TEST_MINIMAL)
 
     // Compile/run quick tests
     {
@@ -1538,7 +1538,7 @@ int main(int argc, char** argv)
 
 
 
-#elif defined(QUICK_TEST)
+#elif defined(CUB_TEST_BENCHMARK)
 
     // Compile/run quick tests
     {

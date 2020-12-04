@@ -429,7 +429,7 @@ int Solve(
     EqualityOp      equality_op,
     int             num_items)
 {
-    if (num_items == 0) 
+    if (num_items == 0)
         return 0;
 
     // First item
@@ -840,7 +840,7 @@ int main(int argc, char** argv)
     int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef QUICKER_TEST
+#ifdef CUB_TEST_MINIMAL
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
@@ -850,7 +850,7 @@ int main(int argc, char** argv)
     TestIterator<RLE,           CUB, float, int, int>(  num_items, Int2Type<Traits<float>::PRIMITIVE>());
 
 
-#elif defined(QUICK_TEST)
+#elif defined(CUB_TEST_BENCHMARK)
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;

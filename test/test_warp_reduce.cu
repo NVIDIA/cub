@@ -809,7 +809,7 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-#ifdef QUICK_TEST
+#ifdef CUB_TEST_BENCHMARK
 
     // Compile/run quick tests
     TestReduce<1, 32, int>(UNIFORM, Sum());

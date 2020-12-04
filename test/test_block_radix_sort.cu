@@ -690,7 +690,7 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-#ifdef QUICK_TEST
+#ifdef CUB_TEST_BENCHMARK
 
     {
         typedef float T;
@@ -712,7 +712,7 @@ int main(int argc, char** argv)
     Test<160>();
 
 
-#endif  // QUICK_TEST
+#endif  // CUB_TEST_BENCHMARK
 
     return 0;
 }
