@@ -363,7 +363,7 @@ CUB 1.7.2 is a minor release.
 
 ## Bug Fixes
 
-- #104: Device-wide reduction is now "run-to-run" deterministic for
+- #108: Device-wide reduction is now "run-to-run" deterministic for
     pseudo-associative reduction operators (like floating point addition).
 
 # CUB 1.7.1
