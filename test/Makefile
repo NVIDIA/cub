@@ -1,7 +1,7 @@
 #/******************************************************************************
 # * Copyright (c) 2011, Duane Merrill.  All rights reserved.
 # * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
-# * 
+# *
 # * Redistribution and use in source and binary forms, with or without
 # * modification, are permitted provided that the following conditions are met:
 # *	 * Redistributions of source code must retain the above copyright
@@ -12,7 +12,7 @@
 # *	 * Neither the name of the NVIDIA CORPORATION nor the
 # *	   names of its contributors may be used to endorse or promote products
 # *	   derived from this software without specific prior written permission.
-# * 
+# *
 # * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -35,8 +35,8 @@
 #
 #-------------------------------------------------------------------------------
 
-include ../common.mk 
- 
+include ../common.mk
+
 #-------------------------------------------------------------------------------
 # Commandline Options
 #-------------------------------------------------------------------------------
@@ -48,16 +48,16 @@ ifeq ($(quickertest), 1)
 else ifeq ($(quicktest), 1)
 	NVCCFLAGS += -DQUICK_TEST
 	TEST_SUFFIX = quick
-else 
+else
 	TEST_SUFFIX = thorough
-	NPPI = 
+	NPPI =
 endif
 
 
-# CUDA memcheck (enabled by default) 
+# CUDA memcheck (enabled by default)
 ifeq ($(memcheck), 0)
-	MEMCHECK = 
-else 
+	MEMCHECK =
+else
 	MEMCHECK = cuda-memcheck
 endif
 
@@ -67,13 +67,10 @@ endif
 #-------------------------------------------------------------------------------
 
 # Includes
-INC += -I$(CUB_DIR) -I$(CUB_DIR)test 
+INC += -I$(CUB_DIR) -I$(CUB_DIR)test
 
 # Suffix to append to each binary
 SUFFIX = $(BIN_SUFFIX)_$(TEST_SUFFIX)
-
-# Define test arch
-DEFINES += -DTEST_ARCH=$(TEST_ARCH)
 
 
 #-------------------------------------------------------------------------------
@@ -88,20 +85,20 @@ DEPS =				$(CUB_DEPS) \
 					$(CUB_DIR)test/mersenne.h \
 
 BLOCK_REDUCE = 		test_block_reduce_raking \
-	 				test_block_reduce_warp_reductions		
+	 				test_block_reduce_warp_reductions
 
 
 BLOCK_SCAN = 		test_block_scan_raking \
 	 				test_block_scan_raking_memoize \
-	 				test_block_scan_warp_scans		
+	 				test_block_scan_warp_scans
 
 
 BLOCK_RADIX_SORT = 	test_block_radix_sort_keys \
-	 				test_block_radix_sort_pairs	
+	 				test_block_radix_sort_pairs
 
 DEVICE_RADIX_SORT = 	test_device_radix_sort \
-	 					test_device_radix_sort_segmented	
-		
+	 					test_device_radix_sort_segmented
+
 ALL = 				link \
 	 				test_iterator \
 	 				test_allocator \
@@ -119,11 +116,11 @@ ALL = 				link \
 					test_device_reduce_by_key\
 					test_device_run_length_encode\
 		 			test_device_select_unique \
-					test_device_select_if 
-		
+					test_device_select_if
+
 #	 	test_grid_barrier \		fails on sm110
 #	 	test_device_seg_reduce
-		
+
 
 
 #-------------------------------------------------------------------------------
@@ -138,7 +135,7 @@ default:
 #-------------------------------------------------------------------------------
 
 clean :
-	rm -f bin/*$(CPU_ARCH_SUFFIX)* 
+	rm -f bin/*$(CPU_ARCH_SUFFIX)*
 	rm -f *.i* *.cubin *.cu.c *.cudafe* *.fatbin.c *.ptx *.hash *.cu.cpp *.o
 
 
@@ -153,19 +150,19 @@ all : $(ALL)
 # make run
 #-------------------------------------------------------------------------------
 
-run : 
+run :
 	for i in $(ALL); do $(MEMCHECK) ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
-run_block_reduce : 
+run_block_reduce :
 	for i in $(BLOCK_REDUCE); do $(MEMCHECK) ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
-run_block_scan : 
+run_block_scan :
 	for i in $(BLOCK_SCAN); do $(MEMCHECK) ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
-run_block_radix_sort : 
+run_block_radix_sort :
 	for i in $(BLOCK_RADIX_SORT); do $(MEMCHECK) ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
-run_device_radix_sort : 
+run_device_radix_sort :
 	for i in $(DEVICE_RADIX_SORT); do $(MEMCHECK) ./bin/$${i}_$(SUFFIX) --device=$(device) || exit 1; done
 
 
@@ -183,7 +180,7 @@ bin/link_$(SUFFIX) : link_a.cu link_b.cu link_main.cpp $(DEPS)
 
 
 #-------------------------------------------------------------------------------
-# make test_iterator 
+# make test_iterator
 #-------------------------------------------------------------------------------
 
 test_iterator: bin/test_iterator_$(SUFFIX)
@@ -194,7 +191,7 @@ bin/test_iterator_$(SUFFIX) : test_iterator.cu $(DEPS)
 
 
 #-------------------------------------------------------------------------------
-# make test_allocator 
+# make test_allocator
 #-------------------------------------------------------------------------------
 
 test_allocator: bin/test_allocator_$(SUFFIX)
@@ -202,39 +199,39 @@ test_allocator: bin/test_allocator_$(SUFFIX)
 bin/test_allocator_$(SUFFIX) : test_allocator.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_allocator_$(SUFFIX) test_allocator.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
-	
-	
+
+
 #-------------------------------------------------------------------------------
-# make test_grid_barrier 
+# make test_grid_barrier
 #-------------------------------------------------------------------------------
 
 test_grid_barrier: bin/test_grid_barrier_$(SUFFIX)
 
 bin/test_grid_barrier_$(SUFFIX) : test_grid_barrier.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_grid_barrier_$(SUFFIX) test_grid_barrier.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
-	
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_grid_barrier_$(SUFFIX) test_grid_barrier.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
+
 
 #-------------------------------------------------------------------------------
-# make test_warp_scan 
+# make test_warp_scan
 #-------------------------------------------------------------------------------
 
 test_warp_scan: bin/test_warp_scan_$(SUFFIX)
 
 bin/test_warp_scan_$(SUFFIX) : test_warp_scan.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_scan_$(SUFFIX) test_warp_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_scan_$(SUFFIX) test_warp_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
-# make test_warp_reduce 
+# make test_warp_reduce
 #-------------------------------------------------------------------------------
 
 test_warp_reduce: bin/test_warp_reduce_$(SUFFIX)
 
 bin/test_warp_reduce_$(SUFFIX) : test_warp_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_reduce_$(SUFFIX) test_warp_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_warp_reduce_$(SUFFIX) test_warp_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -245,22 +242,22 @@ test_block_reduce_raking: bin/test_block_reduce_raking_$(SUFFIX)
 
 bin/test_block_reduce_raking_$(SUFFIX) : test_block_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) -DTEST_RAKING $(SM_TARGETS) -o bin/test_block_reduce_raking_$(SUFFIX) test_block_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+	$(NVCC) $(DEFINES) -DTEST_RAKING $(SM_TARGETS) -o bin/test_block_reduce_raking_$(SUFFIX) test_block_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
-# make test_block_reduce_warp_reductions 
+# make test_block_reduce_warp_reductions
 #-------------------------------------------------------------------------------
 
 test_block_reduce_warp_reductions: bin/test_block_reduce_warp_reductions_$(SUFFIX)
 
 bin/test_block_reduce_warp_reductions_$(SUFFIX) : test_block_reduce.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) -DTEST_WARP_REDUCTIONS $(SM_TARGETS) -o bin/test_block_reduce_warp_reductions_$(SUFFIX) test_block_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+	$(NVCC) $(DEFINES) -DTEST_WARP_REDUCTIONS $(SM_TARGETS) -o bin/test_block_reduce_warp_reductions_$(SUFFIX) test_block_reduce.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
-# make test_block_reduce 
+# make test_block_reduce
 #-------------------------------------------------------------------------------
 
 test_block_reduce: $(BLOCK_REDUCE)
@@ -274,7 +271,7 @@ test_block_scan_raking: bin/test_block_scan_raking_$(SUFFIX)
 
 bin/test_block_scan_raking_$(SUFFIX) : test_block_scan.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) -DTEST_RAKING $(SM_TARGETS) -o bin/test_block_scan_raking_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+	$(NVCC) $(DEFINES) -DTEST_RAKING $(SM_TARGETS) -o bin/test_block_scan_raking_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -285,7 +282,7 @@ test_block_scan_raking_memoize: bin/test_block_scan_raking_memoize_$(SUFFIX)
 
 bin/test_block_scan_raking_memoize_$(SUFFIX) : test_block_scan.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) -DTEST_RAKING_MEMOIZE $(SM_TARGETS) -o bin/test_block_scan_raking_memoize_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+	$(NVCC) $(DEFINES) -DTEST_RAKING_MEMOIZE $(SM_TARGETS) -o bin/test_block_scan_raking_memoize_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
@@ -296,18 +293,18 @@ test_block_scan_warp_scans: bin/test_block_scan_warp_scans_$(SUFFIX)
 
 bin/test_block_scan_warp_scans_$(SUFFIX) : test_block_scan.cu $(DEPS)
 	mkdir -p bin
-	$(NVCC) $(DEFINES) -DTEST_WARP_SCANS $(SM_TARGETS) -o bin/test_block_scan_warp_scans_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3  
+	$(NVCC) $(DEFINES) -DTEST_WARP_SCANS $(SM_TARGETS) -o bin/test_block_scan_warp_scans_$(SUFFIX) test_block_scan.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 
 #-------------------------------------------------------------------------------
-# make test_block_scan 
+# make test_block_scan
 #-------------------------------------------------------------------------------
 
 test_block_scan: $(BLOCK_SCAN)
 
 
 #-------------------------------------------------------------------------------
-# make test_block_load_store 
+# make test_block_load_store
 #-------------------------------------------------------------------------------
 
 test_block_load_store: bin/test_block_load_store_$(SUFFIX)
@@ -315,10 +312,10 @@ test_block_load_store: bin/test_block_load_store_$(SUFFIX)
 bin/test_block_load_store_$(SUFFIX) : test_block_load_store.cu $(DEPS)
 	mkdir -p bin
 	$(NVCC) $(DEFINES) $(SM_TARGETS) -o bin/test_block_load_store_$(SUFFIX) test_block_load_store.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
-	
-	
+
+
 #-------------------------------------------------------------------------------
-# make test_block_radix_sort_keys 
+# make test_block_radix_sort_keys
 #-------------------------------------------------------------------------------
 
 test_block_radix_sort_keys: bin/test_block_radix_sort_keys_$(SUFFIX)
@@ -328,7 +325,7 @@ bin/test_block_radix_sort_keys_$(SUFFIX) : test_block_radix_sort.cu $(DEPS)
 	$(NVCC) $(DEFINES) -DTEST_KEYS_ONLY $(SM_TARGETS) -o bin/test_block_radix_sort_keys_$(SUFFIX) test_block_radix_sort.cu $(NVCCFLAGS) $(CPU_ARCH) $(INC) $(LIBS) -O3
 
 #-------------------------------------------------------------------------------
-# make test_block_radix_sort_pairs 
+# make test_block_radix_sort_pairs
 #-------------------------------------------------------------------------------
 
 test_block_radix_sort_pairs: bin/test_block_radix_sort_pairs_$(SUFFIX)
@@ -346,7 +343,7 @@ test_block_radix_sort : $(BLOCK_RADIX_SORT)
 
 
 #-------------------------------------------------------------------------------
-# make test_block_histogram 
+# make test_block_histogram
 #-------------------------------------------------------------------------------
 
 test_block_histogram: bin/test_block_histogram_$(SUFFIX)

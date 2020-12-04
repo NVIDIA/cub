@@ -6,7 +6,6 @@ enable_language(CUDA)
 
 set(all_archs 35 37 50 52 53 60 61 62 70 72 75 80)
 set(arch_message "CUB: Enabled CUDA architectures:")
-set(enabled_archs)
 
 # Thrust sets up the architecture flags in CMAKE_CUDA_FLAGS already. Just
 # reuse them if possible. After we transition to CMake 3.18 CUDA_ARCHITECTURE
@@ -19,7 +18,6 @@ if (CUB_IN_THRUST)
   foreach (arch IN LISTS all_archs)
     if (THRUST_ENABLE_COMPUTE_${arch})
       set(CUB_ENABLE_COMPUTE_${arch} True)
-      list(APPEND enabled_archs ${arch})
       string(APPEND arch_message " sm_${arch}")
     else()
       set(CUB_ENABLE_COMPUTE_${arch} False)
@@ -52,7 +50,6 @@ else() # NOT CUB_IN_THRUST
       ${option_init}
     )
     if (CUB_ENABLE_COMPUTE_${arch})
-      list(APPEND enabled_archs ${arch})
       string(APPEND arch_flags " -gencode arch=compute_${arch},code=sm_${arch}")
       string(APPEND arch_message " sm_${arch}")
     endif()
@@ -74,10 +71,6 @@ else() # NOT CUB_IN_THRUST
 endif()
 
 message(STATUS ${arch_message})
-
-# Create a variable containing the minimal target arch for tests
-list(SORT enabled_archs)
-list(GET enabled_archs 0 CUB_MINIMAL_ENABLED_ARCH)
 
 #
 # RDC options:

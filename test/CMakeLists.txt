@@ -1,9 +1,3 @@
-add_subdirectory(cmake)
-
-# TODO investigate whether this is really needed:
-math(EXPR CUB_TEST_ARCH "${CUB_MINIMAL_ENABLED_ARCH} * 10")
-message(STATUS "CUB Test architecture (TEST_ARCH): ${CUB_TEST_ARCH}")
-
 # Create meta targets that build all tests for a single configuration:
 foreach(cub_target IN LISTS CUB_TARGETS)
   cub_get_target_property(config_prefix ${cub_target} PREFIX)
@@ -44,7 +38,6 @@ function(cub_add_test target_name_var test_name test_src cub_target)
   add_executable(${test_target} "${test_src}")
   target_link_libraries(${test_target} ${cub_target})
   cub_clone_target_properties(${test_target} ${cub_target})
-  target_compile_definitions(${test_target} PRIVATE TEST_ARCH=${CUB_TEST_ARCH})
   target_include_directories(${test_target} PRIVATE "${CUB_SOURCE_DIR}/test")
 
   # Add to the active configuration's meta target

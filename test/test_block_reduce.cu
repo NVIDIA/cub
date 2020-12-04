@@ -176,7 +176,7 @@ __global__ void FullTileReduceKernel(
         {
             // TestBarrier between thread block reductions
             __syncthreads();
-    
+
             // Load tile of data
             LoadDirectBlocked(linear_tid, d_in + block_offset, data);
             block_offset += TILE_SIZE;
@@ -429,17 +429,12 @@ void TestFullTile(
     ReductionOp             reduction_op)
 {
     // Check size of smem storage for the target arch to make sure it will fit
-    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, TEST_ARCH> BlockReduceT;
+    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduceT;
 
-    enum 
+    enum
     {
-#if defined(SM100) || defined(SM110) || defined(SM130)
-        sufficient_smem       = (sizeof(typename BlockReduceT::TempStorage) <= 16 * 1024),
-        sufficient_threads    = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= 512),
-#else
         sufficient_smem       = (sizeof(typename BlockReduceT::TempStorage) <= 48 * 1024),
         sufficient_threads    = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z) <= 1024),
-#endif
     };
 
     TestFullTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, T>(gen_mode, tiles, reduction_op, Int2Type<sufficient_smem && sufficient_threads>());
@@ -613,17 +608,12 @@ void TestPartialTile(
     ReductionOp             reduction_op)
 {
     // Check size of smem storage for the target arch to make sure it will fit
-    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z, TEST_ARCH> BlockReduceT;
+    typedef BlockReduce<T, BLOCK_DIM_X, ALGORITHM, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockReduceT;
 
-    enum 
+    enum
     {
-#if defined(SM100) || defined(SM110) || defined(SM130)
-        sufficient_smem       = sizeof(typename BlockReduceT::TempStorage)  <= 16 * 1024,
-        sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)   <= 512,
-#else
         sufficient_smem       = sizeof(typename BlockReduceT::TempStorage)  <= 48 * 1024,
         sufficient_threads    = (BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)   <= 1024,
-#endif
     };
 
     TestPartialTile<ALGORITHM, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, T>(gen_mode, num_items, reduction_op, Int2Type<sufficient_smem && sufficient_threads>());

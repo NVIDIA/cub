@@ -681,21 +681,9 @@ void Test(
 
     enum
     {
-#if defined(SM100) || defined(SM110) || defined(SM130)
-        sufficient_smem         = (sizeof(typename BlockScanT::TempStorage)     <= 16 * 1024),
-        sufficient_threads      = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)    <= 512),
-#else
         sufficient_smem         = (sizeof(typename BlockScanT::TempStorage)     <= 16 * 1024),
         sufficient_threads      = ((BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z)    <= 1024),
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-        // Accommodate ptxas crash bug (access violation) on Windows
-        special_skip            = ((TEST_ARCH <= 130) && (Equals<T, TestBar>::VALUE) && (BLOCK_DIM_Z > 1)),
-#else
-        special_skip            = false,
-#endif
-        sufficient_resources    = (sufficient_smem && sufficient_threads && !special_skip),
+        sufficient_resources    = (sufficient_smem && sufficient_threads),
     };
 
     Test<BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, ALGORITHM>(
