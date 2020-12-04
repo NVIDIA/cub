@@ -992,7 +992,7 @@ int main(int argc, char** argv)
     CubDebugExit(cudaGetDevice(&device_ordinal));
 
     // Get device SM version
-    int sm_version;
+    int sm_version = 0;
     CubDebugExit(SmVersion(sm_version, device_ordinal));
 
     // Compile/run quick tests
