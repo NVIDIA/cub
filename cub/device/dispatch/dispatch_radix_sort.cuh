@@ -72,8 +72,8 @@ template <
     typename                KeyT,                           ///< Key type
     typename                OffsetT>                        ///< Signed integer type for global offsets
 __launch_bounds__ (int((ALT_DIGIT_BITS) ?
-    ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::BLOCK_THREADS :
-    ChainedPolicyT::ActivePolicy::UpsweepPolicy::BLOCK_THREADS))
+    int(ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::BLOCK_THREADS) :
+    int(ChainedPolicyT::ActivePolicy::UpsweepPolicy::BLOCK_THREADS)))
 __global__ void DeviceRadixSortUpsweepKernel(
     const KeyT              *d_keys,                        ///< [in] Input keys buffer
     OffsetT                 *d_spine,                       ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
