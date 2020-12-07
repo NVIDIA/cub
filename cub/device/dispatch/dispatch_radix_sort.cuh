@@ -51,6 +51,11 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wpass-failed"
+#endif
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -1931,4 +1936,8 @@ struct DispatchSegmentedRadixSort :
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
 
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#endif
 
