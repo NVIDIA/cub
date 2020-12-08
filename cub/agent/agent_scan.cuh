@@ -168,11 +168,11 @@ struct AgentScan
         typename BlockLoadT::TempStorage    load;       // Smem needed for tile loading
         typename BlockStoreT::TempStorage   store;      // Smem needed for tile storing
 
-        struct
+        struct ScanStorage
         {
             typename TilePrefixCallbackOpT::TempStorage  prefix;     // Smem needed for cooperative prefix callback
             typename BlockScanT::TempStorage             scan;       // Smem needed for tile scanning
-        };
+        } scan_storage;
     };
 
     // Alias wrapper allowing storage to be unioned
@@ -205,7 +205,7 @@ struct AgentScan
         OutputT             &block_aggregate,
         Int2Type<false>     /*is_inclusive*/)
     {
-        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, init_value, scan_op, block_aggregate);
+        BlockScanT(temp_storage.scan_storage.scan).ExclusiveScan(items, items, init_value, scan_op, block_aggregate);
         block_aggregate = scan_op(init_value, block_aggregate);
     }
 
@@ -221,7 +221,7 @@ struct AgentScan
         OutputT             &block_aggregate,
         Int2Type<true>      /*is_inclusive*/)
     {
-        BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate);
+        BlockScanT(temp_storage.scan_storage.scan).InclusiveScan(items, items, scan_op, block_aggregate);
     }
 
 
@@ -236,7 +236,7 @@ struct AgentScan
         PrefixCallback      &prefix_op,
         Int2Type<false>     /*is_inclusive*/)
     {
-        BlockScanT(temp_storage.scan).ExclusiveScan(items, items, scan_op, prefix_op);
+        BlockScanT(temp_storage.scan_storage.scan).ExclusiveScan(items, items, scan_op, prefix_op);
     }
 
 
@@ -251,7 +251,7 @@ struct AgentScan
         PrefixCallback      &prefix_op,
         Int2Type<true>      /*is_inclusive*/)
     {
-        BlockScanT(temp_storage.scan).InclusiveScan(items, items, scan_op, prefix_op);
+        BlockScanT(temp_storage.scan_storage.scan).InclusiveScan(items, items, scan_op, prefix_op);
     }
 
 
@@ -322,7 +322,7 @@ struct AgentScan
         else
         {
             // Scan non-first tile
-            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
+            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.scan_storage.prefix, scan_op, tile_idx);
             ScanTile(items, scan_op, prefix_op, Int2Type<IS_INCLUSIVE>());
         }
 

@@ -190,11 +190,11 @@ struct AgentRadixSortDownsweep
         typename BlockLoadValuesT::TempStorage  load_values;
         typename BlockRadixRankT::TempStorage   radix_rank;
 
-        struct
+        struct KeysAndOffsets
         {
             UnsignedBits                        exchange_keys[TILE_ITEMS];
             OffsetT                             relative_bin_offsets[RADIX_DIGITS];
-        };
+        } keys_and_offsets;
 
         Uninitialized<ValueExchangeT>           exchange_values;
 
@@ -246,7 +246,7 @@ struct AgentRadixSortDownsweep
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            temp_storage.exchange_keys[ranks[ITEM]] = twiddled_keys[ITEM];
+            temp_storage.keys_and_offsets.exchange_keys[ranks[ITEM]] = twiddled_keys[ITEM];
         }
 
         CTA_SYNC();
@@ -254,9 +254,9 @@ struct AgentRadixSortDownsweep
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            UnsignedBits key            = temp_storage.exchange_keys[threadIdx.x + (ITEM * BLOCK_THREADS)];
+            UnsignedBits key            = temp_storage.keys_and_offsets.exchange_keys[threadIdx.x + (ITEM * BLOCK_THREADS)];
             UnsignedBits digit          = digit_extractor.Digit(key);
-            relative_bin_offsets[ITEM]  = temp_storage.relative_bin_offsets[digit];
+            relative_bin_offsets[ITEM]  = temp_storage.keys_and_offsets.relative_bin_offsets[digit];
 
             // Un-twiddle
             key = Traits<KeyT>::TwiddleOut(key);
@@ -580,7 +580,7 @@ struct AgentRadixSortDownsweep
             if ((BLOCK_THREADS == RADIX_DIGITS) || (bin_idx < RADIX_DIGITS))
             {
                 bin_offset[track] -= exclusive_digit_prefix[track];
-                temp_storage.relative_bin_offsets[bin_idx] = bin_offset[track];
+                temp_storage.keys_and_offsets.relative_bin_offsets[bin_idx] = bin_offset[track];
                 bin_offset[track] += inclusive_digit_prefix[track];
             }
         }
