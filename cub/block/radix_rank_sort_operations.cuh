@@ -34,6 +34,7 @@
 #pragma once
 
 #include "../config.cuh"
+#include "../util_ptx.cuh"
 #include "../util_type.cuh"
 
 
@@ -67,20 +68,79 @@ struct RadixSortTwiddle
     }
 };
 
+/** \brief Base struct for digit extractor. Contains common code to provide
+    special handling for floating-point -0.0.
 
-/** \brief Stateful abstraction to extract digits. */
-template <typename UnsignedBits>
-struct DigitExtractor
+    \note This handles correctly both the case when the keys are
+    bitwise-complemented after twiddling for descending sort (in onesweep) as
+    well as when the keys are not bit-negated, but the implementation handles
+    descending sort separately (in other implementations in CUB). Twiddling
+    alone maps -0.0f to 0x7fffffff and +0.0f to 0x80000000 for float, which are
+    subsequent bit patterns and bitwise complements of each other. For onesweep,
+    both -0.0f and +0.0f are mapped to the bit pattern of +0.0f (0x80000000) for
+    ascending sort, and to the pattern of -0.0f (0x7fffffff) for descending
+    sort. For all other sorting implementations in CUB, both are always mapped
+    to +0.0f. Since bit patterns for both -0.0f and +0.0f are next to each other
+    and only one of them is used, the sorting works correctly. For double, the
+    same applies, but with 64-bit patterns.
+*/
+template <typename KeyT>
+struct BaseDigitExtractor
 {
-    int current_bit, mask;
-    __device__ __forceinline__ DigitExtractor() : current_bit(0), mask(0) {}
-    __device__ __forceinline__ DigitExtractor(int current_bit, int num_bits)
-        : current_bit(current_bit), mask((1 << num_bits) - 1)
+    typedef Traits<KeyT> TraitsT;
+    typedef typename TraitsT::UnsignedBits UnsignedBits;
+
+    enum
+    {
+        FLOAT_KEY = TraitsT::CATEGORY == FLOATING_POINT,
+    };
+
+    static __device__ __forceinline__ UnsignedBits ProcessFloatMinusZero(UnsignedBits key)
+    {
+        if (!FLOAT_KEY) return key;
+        
+        UnsignedBits TWIDDLED_MINUS_ZERO_BITS =
+            TraitsT::TwiddleIn(UnsignedBits(1) << UnsignedBits(8 * sizeof(UnsignedBits) - 1));
+        UnsignedBits TWIDDLED_ZERO_BITS = TraitsT::TwiddleIn(0);
+        return key == TWIDDLED_MINUS_ZERO_BITS ? TWIDDLED_ZERO_BITS : key;
+    }
+};
+
+/** \brief A wrapper type to extract digits. Uses the BFE intrinsic to extract a
+ * key from a digit. */
+template <typename KeyT>
+struct BFEDigitExtractor : BaseDigitExtractor<KeyT>
+{   
+    using typename BaseDigitExtractor<KeyT>::UnsignedBits;
+
+    uint32_t bit_start, num_bits;
+    explicit __device__ __forceinline__ BFEDigitExtractor(
+        uint32_t bit_start = 0, uint32_t num_bits = 0)
+        : bit_start(bit_start), num_bits(num_bits)
     { }
 
-    __device__ __forceinline__ int Digit(UnsignedBits key)
+    __device__ __forceinline__ uint32_t Digit(UnsignedBits key)
     {
-        return int(key >> UnsignedBits(current_bit)) & mask;
+        return BFE(ProcessFloatMinusZero(key), bit_start, num_bits);
+    }
+};
+
+/** \brief A wrapper type to extract digits. Uses a combination of shift and
+ * bitwise and to extract digits. */
+template <typename KeyT>
+struct ShiftDigitExtractor : BaseDigitExtractor<KeyT>
+{
+    using typename BaseDigitExtractor<KeyT>::UnsignedBits;
+
+    uint32_t bit_start, mask;
+    explicit __device__ __forceinline__ ShiftDigitExtractor(
+        uint32_t bit_start = 0, uint32_t num_bits = 0)
+        : bit_start(bit_start), mask((1 << num_bits) - 1)
+    { }
+
+    __device__ __forceinline__ uint32_t Digit(UnsignedBits key)
+    {
+        return uint32_t(ProcessFloatMinusZero(key) >> UnsignedBits(bit_start)) & mask;
     }
 };
 

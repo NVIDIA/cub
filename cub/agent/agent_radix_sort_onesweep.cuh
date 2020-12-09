@@ -180,8 +180,7 @@ struct AgentRadixSortOnesweep
     ValueT* d_values_out;
     const ValueT* d_values_in;
     OffsetT num_items;
-    int current_bit, num_bits;
-    DigitExtractor<UnsignedBits> digit_extractor;
+    ShiftDigitExtractor<KeyT> digit_extractor;
 
     // other thread variables
     int warp;
@@ -605,7 +604,7 @@ struct AgentRadixSortOnesweep
         int exclusive_digit_prefix[BINS_PER_THREAD];
         int bins[BINS_PER_THREAD];
         BlockRadixRankT(s.rank_temp_storage).RankKeys(
-            keys, ranks, current_bit, num_bits, exclusive_digit_prefix,
+            keys, ranks, digit_extractor, exclusive_digit_prefix,
             CountsCallback(*this, bins, keys));
         
         // scatter keys in shared memory
@@ -648,8 +647,6 @@ struct AgentRadixSortOnesweep
         , d_values_out(d_values_out)
         , d_values_in(d_values_in)
         , num_items(num_items)
-        , current_bit(current_bit)
-        , num_bits(num_bits)
         , digit_extractor(current_bit, num_bits)
         , warp(threadIdx.x / WARP_THREADS)
         , lane(LaneId())

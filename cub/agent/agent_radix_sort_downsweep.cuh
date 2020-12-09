@@ -41,6 +41,7 @@
 #include "../block/block_store.cuh"
 #include "../block/block_radix_rank.cuh"
 #include "../block/block_exchange.cuh"
+#include "../block/radix_rank_sort_operations.cuh"
 #include "../config.cuh"
 #include "../util_type.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
@@ -153,6 +154,10 @@ struct AgentRadixSortDownsweep
             >::Type
         >::Type BlockRadixRankT;
 
+    // Digit extractor type
+    typedef BFEDigitExtractor<KeyT> DigitExtractorT;
+
+
     enum
     {
         /// Number of bin-starting offsets tracked per thread
@@ -217,11 +222,8 @@ struct AgentRadixSortDownsweep
     // The global scatter base offset for each digit (valid in the first RADIX_DIGITS threads)
     OffsetT         bin_offset[BINS_TRACKED_PER_THREAD];
 
-    // The least-significant bit position of the current digit to extract
-    int             current_bit;
-
-    // Number of bits in current digit
-    int             num_bits;
+    // Digit extractor
+    DigitExtractorT digit_extractor;
 
     // Whether to short-cirucit
     int             short_circuit;
@@ -253,7 +255,7 @@ struct AgentRadixSortDownsweep
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             UnsignedBits key            = temp_storage.exchange_keys[threadIdx.x + (ITEM * BLOCK_THREADS)];
-            UnsignedBits digit          = BFE(key, current_bit, num_bits);
+            UnsignedBits digit          = digit_extractor.Digit(key);
             relative_bin_offsets[ITEM]  = temp_storage.relative_bin_offsets[digit];
 
             // Un-twiddle
@@ -522,8 +524,7 @@ struct AgentRadixSortDownsweep
         BlockRadixRankT(temp_storage.radix_rank).RankKeys(
             keys,
             ranks,
-            current_bit,
-            num_bits,
+            digit_extractor,
             exclusive_digit_prefix);
 
         CTA_SYNC();
@@ -670,8 +671,7 @@ struct AgentRadixSortDownsweep
         d_values_in(d_values_in),
         d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
         d_values_out(d_values_out),
-        current_bit(current_bit),
-        num_bits(num_bits),
+        digit_extractor(current_bit, num_bits),
         short_circuit(1)
     {
         #pragma unroll
@@ -710,8 +710,7 @@ struct AgentRadixSortDownsweep
         d_values_in(d_values_in),
         d_keys_out(reinterpret_cast<UnsignedBits*>(d_keys_out)),
         d_values_out(d_values_out),
-        current_bit(current_bit),
-        num_bits(num_bits),
+        digit_extractor(current_bit, num_bits),
         short_circuit(1)
     {
         #pragma unroll

@@ -571,8 +571,7 @@ cudaError_t Dispatch(
  */
 template <
     typename KeyT,
-    typename ValueT,
-    bool IS_FLOAT = (Traits<KeyT>::CATEGORY == FLOATING_POINT)>
+    typename ValueT>
 struct Pair
 {
     KeyT     key;
@@ -589,7 +588,7 @@ struct Pair
  * Simple key-value pairing (specialized for bool types)
  */
 template <typename ValueT>
-struct Pair<bool, ValueT, false>
+struct Pair<bool, ValueT>
 {
     bool     key;
     ValueT   value;
@@ -597,36 +596,6 @@ struct Pair<bool, ValueT, false>
     bool operator<(const Pair &b) const
     {
         return (!key && b.key);
-    }
-};
-
-
-/**
- * Simple key-value pairing (specialized for floating point types)
- */
-template <typename KeyT, typename ValueT>
-struct Pair<KeyT, ValueT, true>
-{
-    KeyT     key;
-    ValueT   value;
-
-    bool operator<(const Pair &b) const
-    {
-        if (key < b.key)
-            return true;
-
-        if (key > b.key)
-            return false;
-
-        // KeyT in unsigned bits
-        typedef typename Traits<KeyT>::UnsignedBits UnsignedBits;
-
-        // Return true if key is negative zero and b.key is positive zero
-        UnsignedBits key_bits   = SafeBitCast<UnsignedBits>(key);
-        UnsignedBits b_key_bits = SafeBitCast<UnsignedBits>(b.key);
-        UnsignedBits HIGH_BIT   = Traits<KeyT>::HIGH_BIT;
-
-        return ((key_bits & HIGH_BIT) != 0) && ((b_key_bits & HIGH_BIT) == 0);
     }
 };
 
@@ -1095,6 +1064,14 @@ void TestGen(
     {
         printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
         InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
+        TestSizes(h_keys, max_items, max_segments);
+    }
+
+    if (cub::Traits<KeyT>::CATEGORY == cub::FLOATING_POINT)
+    {
+        printf("\nTesting random %s keys with some replaced with -0.0 or +0.0 \n", typeid(KeyT).name());
+        fflush(stdout);
+        InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys, max_items, 0);
         TestSizes(h_keys, max_items, max_segments);
     }
 

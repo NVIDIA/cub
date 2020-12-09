@@ -50,6 +50,7 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+
 /**
  * \brief Radix ranking algorithm, the algorithm used to implement stable ranking of the
  * keys from a single tile. Note that different ranking algorithms require different
@@ -392,12 +393,12 @@ public:
      */
     template <
         typename        UnsignedBits,
-        int             KEYS_PER_THREAD>
+        int             KEYS_PER_THREAD,
+        typename        DigitExtractorT>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile
-        int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
-        int             num_bits)                           ///< [in] The number of bits in the current digit
+        DigitExtractorT digit_extractor)                    ///< [in] The digit extractor
     {
         DigitCounter    thread_prefixes[KEYS_PER_THREAD];   // For each key, the count of previous keys in this tile having the same digit
         DigitCounter*   digit_counters[KEYS_PER_THREAD];    // For each key, the byte-offset of its corresponding digit counter in smem
@@ -409,7 +410,7 @@ public:
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
         {
             // Get digit
-            unsigned int digit = BFE(keys[ITEM], current_bit, num_bits);
+            unsigned int digit = digit_extractor.Digit(keys[ITEM]);
 
             // Get sub-counter
             unsigned int sub_counter = digit >> LOG_COUNTER_LANES;
@@ -455,16 +456,16 @@ public:
      */
     template <
         typename        UnsignedBits,
-        int             KEYS_PER_THREAD>
+        int             KEYS_PER_THREAD,
+        typename        DigitExtractorT>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile (out parameter)
-        int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
-        int             num_bits,                           ///< [in] The number of bits in the current digit
+        DigitExtractorT digit_extractor,                    ///< [in] The digit extractor
         int             (&exclusive_digit_prefix)[BINS_TRACKED_PER_THREAD])            ///< [out] The exclusive prefix sum for the digits [(threadIdx.x * BINS_TRACKED_PER_THREAD) ... (threadIdx.x * BINS_TRACKED_PER_THREAD) + BINS_TRACKED_PER_THREAD - 1]
     {
         // Rank keys
-        RankKeys(keys, ranks, current_bit, num_bits);
+        RankKeys(keys, ranks, digit_extractor);
 
         // Get the inclusive and exclusive digit totals corresponding to the calling thread.
         #pragma unroll
@@ -662,12 +663,12 @@ public:
     template <
         typename        UnsignedBits,
         int             KEYS_PER_THREAD,
+        typename        DigitExtractorT,
         typename        CountsCallback>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile
-        int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
-        int             num_bits,                           ///< [in] The number of bits in the current digit
+        DigitExtractorT digit_extractor,                    ///< [in] The digit extractor
         CountsCallback    callback)
     {
         // Initialize shared digit counters
@@ -688,7 +689,7 @@ public:
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
         {
             // My digit
-            uint32_t digit = BFE(keys[ITEM], current_bit, num_bits);
+            uint32_t digit = digit_extractor.Digit(keys[ITEM]);
 
             if (IS_DESCENDING)
                 digit = RADIX_DIGITS - digit - 1;
@@ -752,16 +753,17 @@ public:
             ranks[ITEM] += *digit_counters[ITEM];
     }
 
-     template <
+    template <
         typename        UnsignedBits,
-        int             KEYS_PER_THREAD>
+        int             KEYS_PER_THREAD,
+        typename        DigitExtractorT>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD], int (&ranks)[KEYS_PER_THREAD],
-        int current_bit, int num_bits)
-        {
-            RankKeys(keys, ranks, current_bit, num_bits,
-                     BlockRadixRankEmptyCallback<BINS_TRACKED_PER_THREAD>());
-        }
+        DigitExtractorT digit_extractor)
+    {
+        RankKeys(keys, ranks, digit_extractor,
+                 BlockRadixRankEmptyCallback<BINS_TRACKED_PER_THREAD>());
+    }
 
     /**
      * \brief Rank keys.  For the lower \p RADIX_DIGITS threads, digit counts for each digit are provided for the corresponding thread.
@@ -769,16 +771,16 @@ public:
     template <
         typename        UnsignedBits,
         int             KEYS_PER_THREAD,
-        typename CountsCallback>
+        typename        DigitExtractorT,
+        typename        CountsCallback>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile (out parameter)
-        int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
-        int             num_bits,                           ///< [in] The number of bits in the current digit
+        DigitExtractorT digit_extractor,                    ///< [in] The digit extractor
         int             (&exclusive_digit_prefix)[BINS_TRACKED_PER_THREAD],            ///< [out] The exclusive prefix sum for the digits [(threadIdx.x * BINS_TRACKED_PER_THREAD) ... (threadIdx.x * BINS_TRACKED_PER_THREAD) + BINS_TRACKED_PER_THREAD - 1]
         CountsCallback callback)
     {
-        RankKeys(keys, ranks, current_bit, num_bits, callback);
+        RankKeys(keys, ranks, digit_extractor, callback);
 
         // Get exclusive count for each digit
         #pragma unroll
@@ -798,15 +800,15 @@ public:
 
     template <
         typename        UnsignedBits,
-        int             KEYS_PER_THREAD>
+        int             KEYS_PER_THREAD,
+        typename        DigitExtractorT>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],           ///< [in] Keys for this tile
         int             (&ranks)[KEYS_PER_THREAD],          ///< [out] For each key, the local rank within the tile (out parameter)
-        int             current_bit,                        ///< [in] The least-significant bit position of the current digit to extract
-        int             num_bits,                           ///< [in] The number of bits in the current digit
+        DigitExtractorT digit_extractor,
         int             (&exclusive_digit_prefix)[BINS_TRACKED_PER_THREAD])            ///< [out] The exclusive prefix sum for the digits [(threadIdx.x * BINS_TRACKED_PER_THREAD) ... (threadIdx.x * BINS_TRACKED_PER_THREAD) + BINS_TRACKED_PER_THREAD - 1]
     {
-        RankKeys(keys, ranks, current_bit, num_bits, exclusive_digit_prefix,
+        RankKeys(keys, ranks, digit_extractor, exclusive_digit_prefix,
                  BlockRadixRankEmptyCallback<BINS_TRACKED_PER_THREAD>());
     }
 };
@@ -866,11 +868,12 @@ struct BlockRadixRankMatchEarlyCounts
     TempStorage& temp_storage;
 
     // internal ranking implementation
-    template <typename UnsignedBits, int KEYS_PER_THREAD, typename CountsCallback>
+    template <typename UnsignedBits, int KEYS_PER_THREAD, typename DigitExtractorT,
+              typename CountsCallback>
     struct BlockRadixRankMatchInternal
     {
         TempStorage& s;
-        DigitExtractor<UnsignedBits> digit_extractor;
+        DigitExtractorT digit_extractor;
         CountsCallback callback;
         int warp;
         int lane;
@@ -1066,8 +1069,7 @@ struct BlockRadixRankMatchEarlyCounts
         }
 
         __device__ __forceinline__ BlockRadixRankMatchInternal
-        (TempStorage& temp_storage, DigitExtractor<UnsignedBits> digit_extractor,
-         CountsCallback callback)
+        (TempStorage& temp_storage, DigitExtractorT digit_extractor, CountsCallback callback)
             : s(temp_storage), digit_extractor(digit_extractor),
               callback(callback), warp(threadIdx.x / WARP_THREADS), lane(LaneId())
             {}
@@ -1079,44 +1081,42 @@ struct BlockRadixRankMatchEarlyCounts
     /**
      * \brief Rank keys.  For the lower \p RADIX_DIGITS threads, digit counts for each digit are provided for the corresponding thread.
      */
-    template <typename UnsignedBits, int KEYS_PER_THREAD, typename CountsCallback>
+    template <typename UnsignedBits, int KEYS_PER_THREAD, typename DigitExtractorT,
+        typename CountsCallback>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],
         int             (&ranks)[KEYS_PER_THREAD],
-        int current_bit, int num_bits,
+        DigitExtractorT digit_extractor,
         int             (&exclusive_digit_prefix)[BINS_PER_THREAD],
-        CountsCallback    callback)
+        CountsCallback  callback)
     {
-        DigitExtractor<UnsignedBits> digit_extractor(current_bit, num_bits);
-        BlockRadixRankMatchInternal<UnsignedBits, KEYS_PER_THREAD, CountsCallback>
+        BlockRadixRankMatchInternal<UnsignedBits, KEYS_PER_THREAD, DigitExtractorT, CountsCallback>
             internal(temp_storage, digit_extractor, callback);
         internal.RankKeys(keys, ranks, exclusive_digit_prefix);        
     }
 
-    template <typename UnsignedBits, int KEYS_PER_THREAD>
+    template <typename UnsignedBits, int KEYS_PER_THREAD, typename DigitExtractorT>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],
         int             (&ranks)[KEYS_PER_THREAD],
-        int current_bit, int num_bits,
+        DigitExtractorT digit_extractor,
         int             (&exclusive_digit_prefix)[BINS_PER_THREAD])
     {
-        DigitExtractor<UnsignedBits> digit_extractor(current_bit, num_bits);
         typedef BlockRadixRankEmptyCallback<BINS_PER_THREAD> CountsCallback;
-        BlockRadixRankMatchInternal<UnsignedBits, KEYS_PER_THREAD, CountsCallback>
+        BlockRadixRankMatchInternal<UnsignedBits, KEYS_PER_THREAD, DigitExtractorT, CountsCallback>
             internal(temp_storage, digit_extractor, CountsCallback());
         internal.RankKeys(keys, ranks, exclusive_digit_prefix);
     }
 
-    template <typename UnsignedBits, int KEYS_PER_THREAD>
+    template <typename UnsignedBits, int KEYS_PER_THREAD, typename DigitExtractorT>
     __device__ __forceinline__ void RankKeys(
         UnsignedBits    (&keys)[KEYS_PER_THREAD],
         int             (&ranks)[KEYS_PER_THREAD],
-        int current_bit, int num_bits)
+        DigitExtractorT digit_extractor)
     {
         int exclusive_digit_prefix[BINS_PER_THREAD];
-        RankKeys(keys, ranks, current_bit, num_bits, exclusive_digit_prefix);
+        RankKeys(keys, ranks, digit_extractor, exclusive_digit_prefix);
     }
-
 };
 
 

@@ -209,8 +209,7 @@ __global__ void Kernel(
  */
 template <
     typename Key,
-    typename Value,
-    bool IS_FLOAT = (Traits<Key>::CATEGORY == FLOATING_POINT)>
+    typename Value>
 struct Pair
 {
     Key     key;
@@ -219,35 +218,6 @@ struct Pair
     bool operator<(const Pair &b) const
     {
         return (key < b.key);
-    }
-};
-
-/**
- * Simple key-value pairing (specialized for floating point types)
- */
-template <typename Key, typename Value>
-struct Pair<Key, Value, true>
-{
-    Key     key;
-    Value   value;
-
-    bool operator<(const Pair &b) const
-    {
-        if (key < b.key)
-            return true;
-
-        if (key > b.key)
-            return false;
-
-        // Key in unsigned bits
-        typedef typename Traits<Key>::UnsignedBits UnsignedBits;
-
-        // Return true if key is negative zero and b.key is positive zero
-        UnsignedBits key_bits   = SafeBitCast<UnsignedBits>(key);
-        UnsignedBits b_key_bits = SafeBitCast<UnsignedBits>(b.key);
-        UnsignedBits HIGH_BIT   = Traits<Key>::HIGH_BIT;
-
-        return ((key_bits & HIGH_BIT) != 0) && ((b_key_bits & HIGH_BIT) == 0);
     }
 };
 
@@ -468,6 +438,14 @@ void TestValid(Int2Type<true> /*fits_smem_capacity*/)
                 TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
                     RANDOM, entropy_reduction, begin_bit, end_bit);
             }
+
+            // For floating-point keys, test random keys mixed with -0.0 and +0.0
+            if (cub::Traits<Key>::CATEGORY == cub::FLOATING_POINT)
+            {
+                TestDriver<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, DESCENDING, BLOCKED_OUTPUT, Key, Value>(
+                    RANDOM_MINUS_PLUS_ZERO, 0, begin_bit, end_bit);
+            }
+
         }
     }
 }
