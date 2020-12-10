@@ -1046,7 +1046,7 @@ int main(int argc, char** argv)
 
         TestSize<TestFoo>(num_items,
             TestFoo::MakeTestFoo(0, 0, 0, 0),
-            TestFoo::MakeTestFoo(1ll << 63, 1 << 31, short(1 << 15), char(1 << 7)));
+            TestFoo::MakeTestFoo(1ll << 63, 1 << 31, static_cast<short>(1 << 15), static_cast<char>(1 << 7)));
 
         TestSize<TestBar>(num_items,
             TestBar(0, 0),
