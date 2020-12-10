@@ -33,9 +33,13 @@ else() # NOT CUB_IN_THRUST
   math(EXPR max_idx "${max_idx} - 1")
   list(GET all_archs ${max_idx} highest_arch)
 
+  set(option_init OFF)
+  if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+    set(option_init ON)
+  endif()
   option(CUB_DISABLE_ARCH_BY_DEFAULT
     "If ON, then all CUDA architectures are disabled on the initial CMake run."
-    OFF
+    ${option_init}
   )
 
   set(option_init ON)
@@ -44,26 +48,43 @@ else() # NOT CUB_IN_THRUST
   endif()
 
   set(arch_flags)
+  set(num_archs_enabled 0)
   foreach (arch IN LISTS all_archs)
     option(CUB_ENABLE_COMPUTE_${arch}
       "Enable code generation for sm_${arch}."
       ${option_init}
     )
+
     if (CUB_ENABLE_COMPUTE_${arch})
-      string(APPEND arch_flags " -gencode arch=compute_${arch},code=sm_${arch}")
+      math(EXPR num_archs_enabled "${num_archs_enabled} + 1")
+
+      if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+        if (NOT ${num_archs_enabled} EQUAL 1)
+          message(FATAL_ERROR
+            "NVC++ does not support compilation for multiple device architectures "
+            "at once."
+          )
+        endif()
+        set(arch_flag "-gpu=cc${arch}")
+      else()
+        string(APPEND arch_flags " -gencode arch=compute_${arch},code=sm_${arch}")
+      endif()
+
       string(APPEND arch_message " sm_${arch}")
     endif()
   endforeach()
 
-  option(CUB_ENABLE_COMPUTE_FUTURE
-    "Enable code generation for tests for compute_${highest_arch}"
-    ${option_init}
-  )
-  if (CUB_ENABLE_COMPUTE_FUTURE)
-    string(APPEND arch_flags
-      " -gencode arch=compute_${highest_arch},code=compute_${highest_arch}"
+  if (NOT "NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+    option(CUB_ENABLE_COMPUTE_FUTURE
+      "Enable code generation for tests for compute_${highest_arch}"
+      ${option_init}
     )
-    string(APPEND arch_message " compute_${highest_arch}")
+    if (CUB_ENABLE_COMPUTE_FUTURE)
+      string(APPEND arch_flags
+        " -gencode arch=compute_${highest_arch},code=compute_${highest_arch}"
+      )
+      string(APPEND arch_message " compute_${highest_arch}")
+    endif()
   endif()
 
   # TODO Once CMake 3.18 is required, use the CUDA_ARCHITECTURE target props
@@ -76,14 +97,22 @@ message(STATUS ${arch_message})
 # RDC options:
 #
 
+# RDC is off by default in NVCC and on by default in NVC++. Turning off RDC
+# isn't currently supported by NVC++. So, we default to RDC off for NVCC and
+# RDC on for NVC++.
+set(option_init OFF)
+if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+  set(option_init ON)
+endif()
+
 option(CUB_ENABLE_TESTS_WITH_RDC
   "Build all CUB tests with RDC; tests that require RDC are not affected by this option."
-  OFF
+  ${option_init}
 )
 
 option(CUB_ENABLE_EXAMPLES_WITH_RDC
   "Build all CUB examples with RDC; examples which require RDC are not affected by this option."
-  OFF
+  ${option_init}
 )
 
 # Check for RDC/SM compatibility and error/warn if necessary

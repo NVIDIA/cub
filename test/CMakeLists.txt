@@ -50,9 +50,7 @@ function(cub_add_test target_name_var test_name test_src cub_target)
   add_dependencies(${test_meta_target} ${test_target})
 
   if (CUB_ENABLE_TESTS_WITH_RDC)
-    set_target_properties(${test_target} PROPERTIES
-      CUDA_SEPARABLE_COMPILATION ON
-    )
+    cub_enable_rdc_for_cuda_target(${test_target})
   endif()
 
   add_test(NAME ${test_target}

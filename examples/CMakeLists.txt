@@ -44,9 +44,7 @@ function(cub_add_example target_name_var example_name example_src cub_target)
   add_dependencies(${example_meta_target} ${example_target})
 
   if (CUB_ENABLE_EXAMPLES_WITH_RDC)
-    set_target_properties(${example_target} PROPERTIES
-      CUDA_SEPARABLE_COMPILATION ON
-    )
+    cub_enable_rdc_for_cuda_target(${example_target})
   endif()
 
   add_test(NAME ${example_target}
