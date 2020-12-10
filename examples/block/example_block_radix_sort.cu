@@ -248,8 +248,10 @@ void Test()
 
         // Copy clocks from device
         CubDebugExit(cudaMemcpy(h_elapsed, d_elapsed, sizeof(clock_t) * g_grid_size, cudaMemcpyDeviceToHost));
-        for (int i = 0; i < g_grid_size; i++)
-            elapsed_clocks += h_elapsed[i];
+        for (int j = 0; j < g_grid_size; j++)
+        {
+            elapsed_clocks += h_elapsed[j];
+        }
     }
 
     // Check for kernel errors and STDIO from the kernel, if any

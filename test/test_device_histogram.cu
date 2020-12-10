@@ -367,15 +367,15 @@ struct ScaleTransform
     LevelT scale;       // Bin scaling factor
 
     void Init(
-        int    num_levels,  // Number of levels in array
-        LevelT max,         // Max sample level (exclusive)
-        LevelT min,         // Min sample level (inclusive)
-        LevelT scale)       // Bin scaling factor
+        int    num_levels_,  // Number of levels in array
+        LevelT max_,         // Max sample level (exclusive)
+        LevelT min_,         // Min sample level (inclusive)
+        LevelT scale_)       // Bin scaling factor
     {
-        this->num_levels = num_levels;
-        this->max = max;
-        this->min = min;
-        this->scale = scale;
+        this->num_levels = num_levels_;
+        this->max = max_;
+        this->min = min_;
+        this->scale = scale_;
     }
 
     // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)

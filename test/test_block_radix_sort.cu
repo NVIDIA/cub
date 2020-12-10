@@ -379,7 +379,7 @@ void TestDriver(
     if (!KEYS_ONLY)
     {
         printf("\tValues: ");
-        int compare = CompareDeviceResults(h_reference_values, d_values, TILE_SIZE, g_verbose, g_verbose);
+        compare = CompareDeviceResults(h_reference_values, d_values, TILE_SIZE, g_verbose, g_verbose);
         printf("%s\n", compare ? "FAIL" : "PASS");
         AssertEquals(0, compare);
     }

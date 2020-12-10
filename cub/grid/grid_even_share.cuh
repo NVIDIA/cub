@@ -122,14 +122,14 @@ public:
      * \brief Dispatch initializer. To be called prior prior to kernel launch.
      */
     __host__ __device__ __forceinline__ void DispatchInit(
-        OffsetT num_items,          ///< Total number of input items
+        OffsetT num_items_,          ///< Total number of input items
         int     max_grid_size,      ///< Maximum grid size allowable (actual grid size may be less if not warranted by the the number of input items)
         int     tile_items)         ///< Number of data items per input tile
     {
-        this->block_offset          = num_items;    // Initialize past-the-end
-        this->block_end             = num_items;    // Initialize past-the-end
-        this->num_items             = num_items;
-        this->total_tiles           = (num_items + tile_items - 1) / tile_items;
+        this->block_offset          = num_items_;    // Initialize past-the-end
+        this->block_end             = num_items_;    // Initialize past-the-end
+        this->num_items             = num_items_;
+        this->total_tiles           = (num_items_ + tile_items - 1) / tile_items;
         this->grid_size             = CUB_MIN(total_tiles, max_grid_size);
         OffsetT avg_tiles_per_block = total_tiles / grid_size;
         this->big_shares            = total_tiles - (avg_tiles_per_block * grid_size);        // leftover grains go to big blocks

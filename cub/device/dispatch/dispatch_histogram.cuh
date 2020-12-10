@@ -203,11 +203,11 @@ struct DipatchHistogram
 
         // Initializer
         __host__ __device__ __forceinline__ void Init(
-            LevelIteratorT  d_levels,               // Pointer to levels array
-            int             num_output_levels)      // Number of levels in array
+            LevelIteratorT  d_levels_,               // Pointer to levels array
+            int             num_output_levels_)      // Number of levels in array
         {
-            this->d_levels          = d_levels;
-            this->num_output_levels = num_output_levels;
+            this->d_levels          = d_levels_;
+            this->num_output_levels = num_output_levels_;
         }
 
         // Method for converting samples to bin-ids
@@ -245,40 +245,40 @@ struct DipatchHistogram
         template <typename _LevelT>
         __host__ __device__ __forceinline__ void Init(
             int     num_output_levels,  // Number of levels in array
-            _LevelT max,                // Max sample level (exclusive)
-            _LevelT min,                // Min sample level (inclusive)
-            _LevelT scale)              // Bin scaling factor
+            _LevelT max_,                // Max sample level (exclusive)
+            _LevelT min_,                // Min sample level (inclusive)
+            _LevelT scale_)              // Bin scaling factor
         {
             this->num_bins = num_output_levels - 1;
-            this->max = max;
-            this->min = min;
-            this->scale = scale;
+            this->max = max_;
+            this->min = min_;
+            this->scale = scale_;
         }
 
         // Initializer (float specialization)
         __host__ __device__ __forceinline__ void Init(
             int    num_output_levels,   // Number of levels in array
-            float   max,                // Max sample level (exclusive)
-            float   min,                // Min sample level (inclusive)
-            float   scale)              // Bin scaling factor
+            float   max_,                // Max sample level (exclusive)
+            float   min_,                // Min sample level (inclusive)
+            float   scale_)              // Bin scaling factor
         {
             this->num_bins = num_output_levels - 1;
-            this->max = max;
-            this->min = min;
-            this->scale = float(1.0) / scale;
+            this->max = max_;
+            this->min = min_;
+            this->scale = float(1.0) / scale_;
         }
 
         // Initializer (double specialization)
         __host__ __device__ __forceinline__ void Init(
             int    num_output_levels,   // Number of levels in array
-            double max,                 // Max sample level (exclusive)
-            double min,                 // Min sample level (inclusive)
-            double scale)               // Bin scaling factor
+            double max_,                 // Max sample level (exclusive)
+            double min_,                 // Min sample level (inclusive)
+            double scale_)               // Bin scaling factor
         {
             this->num_bins = num_output_levels - 1;
-            this->max = max;
-            this->min = min;
-            this->scale = double(1.0) / scale;
+            this->max = max_;
+            this->min = min_;
+            this->scale = double(1.0) / scale_;
         }
 
         // Method for converting samples to bin-ids

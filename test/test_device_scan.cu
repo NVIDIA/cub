@@ -914,11 +914,11 @@ void TestSize(
         unsigned int max_int = (unsigned int) -1;
         for (int i = 0; i < 10; ++i)
         {
-            unsigned int num_items;
-            RandomBits(num_items);
-            num_items = (unsigned int) ((double(num_items) * double(10000000)) / double(max_int));
-            num_items = CUB_MAX(1, num_items);
-            TestOp<InputT>(num_items,  identity, initial_value);
+            unsigned int num;
+            RandomBits(num);
+            num = static_cast<unsigned int>((double(num) * double(10000000)) / double(max_int));
+            num = CUB_MAX(1, num);
+            TestOp<InputT>(num,  identity, initial_value);
         }
     }
     else
