@@ -42,6 +42,18 @@
 #include "../util_debug.cuh"
 #include "../config.cuh"
 
+// This class needs to go through a deprecation cycle and be removed, as the
+// underlying cudaBindTexture / cudaUnbindTexture APIs are deprecated.
+// See issue NVIDIA/cub#191.
+// Turn off deprecation warnings when compiling this file until then.
+#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
+#pragma warning(disable:4996)
+#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
+      CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 #if (CUDART_VERSION >= 5050) || defined(DOXYGEN_ACTIVE)  // This iterator is compatible with CUDA 5.5 and newer
 
 #if (THRUST_VERSION >= 100700)    // This iterator is compatible with Thrust API 1.7 and newer
@@ -377,3 +389,11 @@ public:
 CUB_NS_POSTFIX  // Optional outer namespace(s)
 
 #endif // CUDART_VERSION
+
+// Re-enable deprecation warnings:
+#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
+#pragma warning(default:4996)
+#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
+      CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
+#pragma GCC diagnostic pop
+#endif
