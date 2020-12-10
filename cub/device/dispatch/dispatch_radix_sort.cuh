@@ -51,6 +51,8 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
+// suppress warnings triggered by #pragma unroll:
+// "warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]"
 #if defined(__clang__)
 #  pragma clang diagnostic push
 #  pragma clang diagnostic ignored "-Wpass-failed"
