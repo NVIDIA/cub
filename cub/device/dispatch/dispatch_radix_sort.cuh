@@ -1416,17 +1416,33 @@ struct DispatchRadixSort :
 
             // Init regular and alternate-digit kernel configurations
             PassConfig<UpsweepKernelT, ScanKernelT, DownsweepKernelT> pass_config, alt_pass_config;
-            if ((error = pass_config.template InitPassConfig<
-                    typename ActivePolicyT::UpsweepPolicy,
-                    typename ActivePolicyT::ScanPolicy,
-                    typename ActivePolicyT::DownsweepPolicy>(
-                upsweep_kernel, scan_kernel, downsweep_kernel, ptx_version, sm_count, num_items))) break;
+            error = pass_config.template InitPassConfig<
+              typename ActivePolicyT::UpsweepPolicy,
+              typename ActivePolicyT::ScanPolicy,
+              typename ActivePolicyT::DownsweepPolicy>(upsweep_kernel,
+                                                       scan_kernel,
+                                                       downsweep_kernel,
+                                                       ptx_version,
+                                                       sm_count,
+                                                       num_items);
+            if (error)
+            {
+              break;
+            }
 
-            if ((error = alt_pass_config.template InitPassConfig<
-                    typename ActivePolicyT::AltUpsweepPolicy,
-                    typename ActivePolicyT::ScanPolicy,
-                    typename ActivePolicyT::AltDownsweepPolicy>(
-                alt_upsweep_kernel, scan_kernel, alt_downsweep_kernel, ptx_version, sm_count, num_items))) break;
+            error = alt_pass_config.template InitPassConfig<
+              typename ActivePolicyT::AltUpsweepPolicy,
+              typename ActivePolicyT::ScanPolicy,
+              typename ActivePolicyT::AltDownsweepPolicy>(alt_upsweep_kernel,
+                                                          scan_kernel,
+                                                          alt_downsweep_kernel,
+                                                          ptx_version,
+                                                          sm_count,
+                                                          num_items);
+            if (error)
+            {
+              break;
+            }
 
             // Get maximum spine length
             int max_grid_size       = CUB_MAX(pass_config.max_downsweep_grid_size, alt_pass_config.max_downsweep_grid_size);
