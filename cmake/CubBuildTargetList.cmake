@@ -74,6 +74,12 @@ function(cub_set_target_properties target_name dialect prefix)
           CUDA_ARCHITECTURES OFF
       )
     endif()
+
+    if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+      set_target_properties(${target_name} PROPERTIES
+        CUDA_RESOLVE_DEVICE_SYMBOLS OFF
+      )
+    endif()
   endif()
 endfunction()
 

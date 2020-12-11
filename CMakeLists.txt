@@ -1,4 +1,6 @@
-# Will be increased to 3.18 when C++17 is enabled:
+# 3.15 is the minimum.
+# 3.17 for NVC++.
+# 3.18 for C++17 + CUDA.
 cmake_minimum_required(VERSION 3.15)
 
 # Remove this when we use the new CUDA_ARCHITECTURES properties.
@@ -7,7 +9,7 @@ if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
 endif()
 
 # CXX is only needed for AppendOptionIfAvailable.
-project(CUB)
+project(CUB NONE)
 
 # Determine whether CUB is the top-level project or included into
 # another project via add_subdirectory().
@@ -66,6 +68,7 @@ include(cmake/AppendOptionIfAvailable.cmake)
 include(cmake/CubBuildCompilerTargets.cmake)
 include(cmake/CubBuildTargetList.cmake)
 include(cmake/CubCudaConfig.cmake)
+include(cmake/CubUtilities.cmake)
 
 if ("" STREQUAL "${CMAKE_BUILD_TYPE}")
   set(CMAKE_BUILD_TYPE "RelWithDebInfo" CACHE STRING "Choose the type of build." FORCE)

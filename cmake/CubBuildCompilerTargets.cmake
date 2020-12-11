@@ -74,12 +74,21 @@ function(cub_build_compiler_targets)
     append_option_if_available("-Wno-unneeded-internal-declaration" cxx_compile_options)
   endif()
 
+  if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+    # Today:
+    # * NVCC accepts CUDA C++ in .cu files but not .cpp files.
+    # * NVC++ accepts CUDA C++ in .cpp files but not .cu files.
+    # TODO: This won't be necessary in the future.
+    list(APPEND cxx_compile_options -cppsuffix=cu)
+  endif()
+
   add_library(cub.compiler_interface INTERFACE)
 
   foreach (cxx_option IN LISTS cxx_compile_options)
     target_compile_options(cub.compiler_interface INTERFACE
       $<$<COMPILE_LANGUAGE:CXX>:${cxx_option}>
-      # Only use -Xcompiler with NVCC, not Feta.
+      $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVCXX>>:${cxx_option}>
+      # Only use -Xcompiler with NVCC, not NVC++.
       #
       # CMake can't split genexs, so this can't be formatted better :(
       # This is:
