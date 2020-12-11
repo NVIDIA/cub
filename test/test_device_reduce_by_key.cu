@@ -778,7 +778,7 @@ int main(int argc, char** argv)
     int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef QUICKER_TEST
+#ifdef CUB_TEST_MINIMAL
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
@@ -787,7 +787,7 @@ int main(int argc, char** argv)
     TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
     TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
 
-#elif defined(QUICK_TEST)
+#elif defined(CUB_TEST_BENCHMARK)
 
     // Compile/run quick tests
     if (num_items < 0) num_items = 32000000;

@@ -1277,7 +1277,7 @@ int main(int argc, char** argv)
     // Get SM count
     g_sm_count = args.deviceProp.multiProcessorCount;
 
-#ifdef QUICKER_TEST
+#ifdef CUB_TEST_MINIMAL
 
     // Compile/run basic test
 
@@ -1300,7 +1300,7 @@ int main(int argc, char** argv)
     TestProblem<CUB_SEGMENTED, int, int>(max_items, max_segments, RANDOM_BIT, Sum());
 
 
-#elif defined(QUICK_TEST)
+#elif defined(CUB_TEST_BENCHMARK)
 
     // Compile/run quick comparison tests
 

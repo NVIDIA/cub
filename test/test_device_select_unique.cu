@@ -585,13 +585,13 @@ int main(int argc, char** argv)
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
 
-#ifdef QUICKER_TEST
+#ifdef CUB_TEST_MINIMAL
 
     // Compile/run basic CUB test
     if (num_items < 0) num_items = 32000000;
     TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg);
 
-#elif defined(QUICK_TEST)
+#elif defined(CUB_TEST_BENCHMARK)
 
     // Get device ordinal
     int device_ordinal;

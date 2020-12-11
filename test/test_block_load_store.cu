@@ -521,7 +521,7 @@ int main(int argc, char** argv)
     int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef QUICK_TEST
+#ifdef CUB_TEST_BENCHMARK
 
     // Compile/run quick tests
     TestNative<     int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(1, 0.8f, Int2Type<true>());

@@ -627,7 +627,7 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-#ifdef QUICK_TEST
+#ifdef CUB_TEST_BENCHMARK
 
     // Compile/run quick tests
     Test<32, AGGREGATE, int>(UNIFORM, Sum(), (int) 0);

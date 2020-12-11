@@ -753,7 +753,7 @@ int main(int argc, char** argv)
     int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef QUICK_TEST
+#ifdef CUB_TEST_BENCHMARK
 
     // Compile/run quick tests
 
