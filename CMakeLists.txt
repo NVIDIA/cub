@@ -54,6 +54,14 @@ option(CUB_ENABLE_THOROUGH_TESTING "Build CUB thorough test variants." ON)
 option(CUB_ENABLE_BENCHMARK_TESTING  "Build CUB benchmark test variants." ON)
 option(CUB_ENABLE_MINIMAL_TESTING "Build CUB minimal test variants." ON)
 option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
+# This is needed for NVCXX QA, which requires a static set of executable names.
+# Only a single dialect may be enabled when this is off.
+option(CUB_ENABLE_CPP_DIALECT_IN_NAMES
+  "Include C++ dialect information in target/object/etc names."
+  ON
+)
+
+mark_as_advanced(CUB_ENABLE_CPP_DIALECT_IN_NAMES)
 
 # Check if we're actually building anything before continuing. If not, no need
 # to search for deps, etc. This is a common approach for packagers that just

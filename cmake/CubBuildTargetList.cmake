@@ -145,6 +145,7 @@ function(cub_build_target_list)
   _cub_init_target_list()
 
   # Handle dialect options:
+  set(num_dialects_enabled 0)
   foreach (dialect IN LISTS CUB_CPP_DIALECT_OPTIONS)
     if (CUB_IN_THRUST)
       # Just use Thrust's settings:
@@ -170,7 +171,19 @@ function(cub_build_target_list)
         ${default_value}
       )
     endif()
+
+    if (CUB_ENABLE_DIALECT_CPP${dialect})
+      math(EXPR num_dialects_enabled "${num_dialects_enabled} + 1")
+    endif()
   endforeach()
+
+  # Ensure that only one C++ dialect is enabled when dialect info is hidden:
+  if ((NOT CUB_ENABLE_CPP_DIALECT_IN_NAMES) AND (NOT num_dialects_enabled EQUAL 1))
+    message(FATAL_ERROR
+      "Only one CUB_ENABLE_DIALECT_CPP## option allowed when "
+      "CUB_ENABLE_CPP_DIALECT_IN_NAMES is OFF."
+    )
+  endif()
 
   # CMake added C++17 support for CUDA targets in 3.18:
   if (CUB_ENABLE_DIALECT_CPP17)
@@ -235,8 +248,11 @@ function(cub_build_target_list)
   foreach(dialect IN LISTS CUB_CPP_DIALECT_OPTIONS)
     _cub_is_config_valid(config_valid ${dialect})
     if (config_valid)
-      set(prefix "cub.cpp${dialect}")
-      string(TOLOWER "${prefix}" prefix)
+      if (NOT CUB_ENABLE_CPP_DIALECT_IN_NAMES)
+        set(prefix "cub")
+      else()
+        set(prefix "cub.cpp${dialect}")
+      endif()
       set(target_name "${prefix}")
 
       add_library(${target_name} INTERFACE)
@@ -256,12 +272,18 @@ function(cub_build_target_list)
     RELATIVE "${CMAKE_CURRENT_LIST_DIR}"
     "${CUB_SOURCE_DIR}/cub/*.cuh"
   )
-  add_custom_target(cub.all SOURCES ${all_sources})
 
-  # Create meta targets for each config:
-  foreach(cub_target IN LISTS CUB_TARGETS)
-    cub_get_target_property(config_prefix ${cub_target} PREFIX)
-    add_custom_target(${config_prefix}.all)
-    add_dependencies(cub.all ${config_prefix}.all)
-  endforeach()
+  # Add a cub.all target that builds all configs.
+  if (NOT CUB_ENABLE_CPP_DIALECT_IN_NAMES)
+    add_custom_target(cub.all)
+  else()
+    add_custom_target(cub.all SOURCES ${all_sources})
+
+    # Create meta targets for each config:
+    foreach(cub_target IN LISTS CUB_TARGETS)
+      cub_get_target_property(config_prefix ${cub_target} PREFIX)
+      add_custom_target(${config_prefix}.all)
+      add_dependencies(cub.all ${config_prefix}.all)
+    endforeach()
+  endif()
 endfunction()
