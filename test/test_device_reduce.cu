@@ -956,7 +956,7 @@ void SolveAndTest(
 //    DiscardOutputIterator<OffsetT> discard_itr;
 //    Test(Int2Type<BACKEND>(), d_in, discard_itr, num_items, num_segments, d_segment_offsets, reduction_op, h_reference);
 
-    // Run with output data (cleared for sanity-check)
+    // Run with output data
     OutputT *d_out = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(OutputT) * num_segments));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(OutputT) * num_segments));
