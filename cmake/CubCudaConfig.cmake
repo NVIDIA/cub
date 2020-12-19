@@ -5,7 +5,7 @@ enable_language(CUDA)
 #
 
 set(all_archs 35 37 50 52 53 60 61 62 70 72 75 80)
-set(arch_message "CUB: Enabled CUDA architectures:")
+set(arch_message "CUB: Explicitly enabled CUDA architectures:")
 
 # Thrust sets up the architecture flags in CMAKE_CUDA_FLAGS already. Just
 # reuse them if possible. After we transition to CMake 3.18 CUDA_ARCHITECTURE
