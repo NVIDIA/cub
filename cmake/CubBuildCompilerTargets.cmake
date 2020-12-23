@@ -74,6 +74,12 @@ function(cub_build_compiler_targets)
     append_option_if_available("-Wno-unneeded-internal-declaration" cxx_compile_options)
   endif()
 
+  if ("Intel" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
+    # Disable warning that inlining is inhibited by compiler thresholds.
+    append_option_if_available("-diag-disable=11074" cxx_compile_options)
+    append_option_if_available("-diag-disable=11076" cxx_compile_options)
+  endif()
+
   if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
     # Today:
     # * NVCC accepts CUDA C++ in .cu files but not .cpp files.
