@@ -38,10 +38,6 @@
 #include <algorithm>
 #include <typeinfo>
 
-#if defined(CUB_TEST_BENCHMARK) || defined(CUB_TEST_MINIMAL)
-    #include <npp.h>
-#endif
-
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/device/device_histogram.cuh>
@@ -60,7 +56,6 @@ using namespace cub;
 enum Backend
 {
     CUB,        // CUB method
-    NPP,        // NPP method
     CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
 };
 
@@ -70,139 +65,6 @@ bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
 int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
-
-
-
-
-//---------------------------------------------------------------------
-// Dispatch to NPP histogram
-//---------------------------------------------------------------------
-
-#if defined(CUB_TEST_BENCHMARK) || defined(CUB_TEST_MINIMAL)
-
-/**
- * Dispatch to single-channel 8b NPP histo-even
- */
-template <typename CounterT, typename LevelT, typename OffsetT>
-//CUB_RUNTIME_FUNCTION __forceinline__
-cudaError_t DispatchEven(
-    Int2Type<1>             num_channels,
-    Int2Type<1>             num_active_channels,
-    Int2Type<NPP>           dispatch_to,
-    int                     timing_timing_iterations,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
-
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    unsigned char       *d_samples,               ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
-    CounterT            *d_histogram[1],          ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
-    int                 num_levels[1],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
-    LevelT              lower_level[1],           ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
-    LevelT              upper_level[1],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
-    OffsetT             num_row_pixels,           ///< [in] The number of multi-channel pixels per row in the region of interest
-    OffsetT             num_rows,                 ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride_bytes,         ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-    cudaStream_t        stream,
-    bool                debug_synchronous)
-{
-    typedef unsigned char SampleT;
-
-    cudaError_t error = cudaSuccess;
-    NppiSize oSizeROI = {
-        num_row_pixels,
-        num_rows
-    };
-
-    if (d_temp_storage_bytes == NULL)
-    {
-        int nDeviceBufferSize;
-        nppiHistogramEvenGetBufferSize_8u_C1R(oSizeROI, num_levels[0] ,&nDeviceBufferSize);
-        temp_storage_bytes = nDeviceBufferSize;
-    }
-    else
-    {
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            // compute the histogram
-            nppiHistogramEven_8u_C1R(
-                d_samples,
-                row_stride_bytes,
-                oSizeROI,
-                d_histogram[0],
-                num_levels[0],
-                lower_level[0],
-                upper_level[0],
-                (Npp8u*) d_temp_storage);
-        }
-    }
-
-    return error;
-}
-
-
-/**
- * Dispatch to 3/4 8b NPP histo-even
- */
-template <typename CounterT, typename LevelT, typename OffsetT>
-//CUB_RUNTIME_FUNCTION __forceinline__
-cudaError_t DispatchEven(
-    Int2Type<4>          num_channels,
-    Int2Type<3>   num_active_channels,
-    Int2Type<NPP>           dispatch_to,
-    int                     timing_timing_iterations,
-    size_t                  *d_temp_storage_bytes,
-    cudaError_t             *d_cdp_error,
-
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    unsigned char       *d_samples,               ///< [in] The pointer to the multi-channel input sequence of data samples. The samples from different channels are assumed to be interleaved (e.g., an array of 32-bit pixels where each pixel consists of four RGBA 8-bit samples).
-    CounterT            *d_histogram[3],          ///< [out] The pointers to the histogram counter output arrays, one for each active channel.  For channel<sub><em>i</em></sub>, the allocation length of <tt>d_histograms[i]</tt> should be <tt>num_levels[i]</tt> - 1.
-    int                 num_levels[3],            ///< [in] The number of boundaries (levels) for delineating histogram samples in each active channel.  Implies that the number of bins for channel<sub><em>i</em></sub> is <tt>num_levels[i]</tt> - 1.
-    LevelT              lower_level[3],           ///< [in] The lower sample value bound (inclusive) for the lowest histogram bin in each active channel.
-    LevelT              upper_level[3],           ///< [in] The upper sample value bound (exclusive) for the highest histogram bin in each active channel.
-    OffsetT             num_row_pixels,           ///< [in] The number of multi-channel pixels per row in the region of interest
-    OffsetT             num_rows,                 ///< [in] The number of rows in the region of interest
-    OffsetT             row_stride_bytes,         ///< [in] The number of bytes between starts of consecutive rows in the region of interest
-    cudaStream_t        stream,
-    bool                debug_synchronous)
-{
-    typedef unsigned char SampleT;
-
-    cudaError_t error = cudaSuccess;
-    NppiSize oSizeROI = {
-        num_row_pixels,
-        num_rows
-    };
-
-    if (d_temp_storage_bytes == NULL)
-    {
-        int nDeviceBufferSize;
-        nppiHistogramEvenGetBufferSize_8u_AC4R(oSizeROI, num_levels ,&nDeviceBufferSize);
-        temp_storage_bytes = nDeviceBufferSize;
-    }
-    else
-    {
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            // compute the histogram
-            nppiHistogramEven_8u_AC4R(
-                d_samples,
-                row_stride_bytes,
-                oSizeROI,
-                d_histogram,
-                num_levels,
-                lower_level,
-                upper_level,
-                (Npp8u*) d_temp_storage);
-        }
-    }
-
-    return error;
-}
-
-
-#endif // #if defined(CUB_TEST_BENCHMARK) || defined(CUB_TEST_MINIMAL)
 
 
 //---------------------------------------------------------------------
@@ -708,7 +570,7 @@ void TestEven(
 
     printf("\n----------------------------\n");
     printf("%s cub::DeviceHistogramEven (%s) %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         (IsPointer<SampleIteratorT>::VALUE) ? "pointer" : "iterator",
         (int) (num_row_pixels * num_rows),
         (int) num_rows,
@@ -960,7 +822,7 @@ void TestRange(
 
     printf("\n----------------------------\n");
     printf("%s cub::DeviceHistogramRange %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == NPP) ? "NPP" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         (int) (num_row_pixels * num_rows),
         (int) num_rows,
         (int) num_row_pixels,
@@ -1469,10 +1331,6 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("i", g_timing_iterations);
     args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("entropy", entropy_reduction);
-#if defined(CUB_TEST_BENCHMARK) || defined(CUB_TEST_MINIMAL)
-    bool compare_npp = args.CheckCmdLineFlag("npp");
-#endif
-
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -1487,7 +1345,6 @@ int main(int argc, char** argv)
             "[--entropy=<entropy-reduction factor (default 0)>]"
             "[--v] "
             "[--cdp]"
-            "[--npp]"
             "\n", argv[0]);
         exit(0);
     }
@@ -1518,10 +1375,6 @@ int main(int argc, char** argv)
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
         TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-        // The NPP path doesn't compile as of 2020-06:
-        // No Dispatch<int, int, NPP> specialization defined.
-//        if (compare_npp)
-//            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1551,10 +1404,6 @@ int main(int argc, char** argv)
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
 
         TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-        // The NPP path doesn't compile as of 2020-06:
-        // No Dispatch<int, int, NPP> specialization defined.
-//        if (compare_npp)
-//            TestEven<NPP, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
@@ -1579,10 +1428,6 @@ int main(int argc, char** argv)
         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
 
         TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-        // The NPP path doesn't compile as of 2020-06:
-        // No Dispatch<int, int, NPP> specialization defined.
-//        if (compare_npp)
-//            TestEven<NPP, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
     }
 
     {
