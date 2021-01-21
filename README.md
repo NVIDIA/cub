@@ -78,6 +78,19 @@ shared memory needed by the thread block.  (Alternatively these storage types
 could be aliased to global memory allocations).
 
 <br><hr>
+<h3>Supported Compilers</h3>
+
+CUB is regularly tested using the specified versions of the following
+compilers. Unsupported versions may emit deprecation warnings, which can be
+silenced by defining CUB_IGNORE_DEPRECATED_COMPILER during compilation.
+
+- NVCC 11.0+
+- NVC++ 20.9+
+- GCC 5+
+- Clang 7+
+- MSVC 2019+ (19.20/16.0/14.20)
+
+<br><hr>
 <h3>Releases</h3>
 
 CUB is distributed with the NVIDIA HPC SDK and the CUDA Toolkit in addition

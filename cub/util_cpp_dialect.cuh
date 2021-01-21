@@ -109,18 +109,18 @@
 #endif
 
 #define CUB_COMPILER_DEPRECATION(REQ, FIX) \
-  CUB_COMP_DEPR_IMPL(CUB requires REQ. Please FIX. Define CUB_IGNORE_DEPRECATED_CPP_DIALECT to suppress this message.)
+  CUB_COMP_DEPR_IMPL(CUB requires at least REQ. Please FIX. Define CUB_IGNORE_DEPRECATED_CPP_DIALECT to suppress this message.)
 
 // Minimum required compiler checks:
 #ifndef CUB_IGNORE_DEPRECATED_COMPILER
 #  if CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC && CUB_GCC_VERSION < 50000
      CUB_COMPILER_DEPRECATION(GCC 5.0, upgrade your compiler);
 #  endif
-#  if CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG && CUB_CLANG_VERSION < 60000
-     CUB_COMPILER_DEPRECATION(Clang 6.0, upgrade your compiler);
+#  if CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG && CUB_CLANG_VERSION < 70000
+     CUB_COMPILER_DEPRECATION(Clang 7.0, upgrade your compiler);
 #  endif
-#  if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC && CUB_MSVC_VERSION < 1910
-     CUB_COMPILER_DEPRECATION(MSVC 2017, upgrade your compiler);
+#  if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC && CUB_MSVC_VERSION < 1920
+     CUB_COMPILER_DEPRECATION(MSVC 2019 (19.20/16.0/14.20), upgrade your compiler);
 #  endif
 #endif
 
