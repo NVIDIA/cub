@@ -51,6 +51,13 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
+// suppress warnings triggered by #pragma unroll:
+// "warning: loop not unrolled: the optimizer was unable to perform the requested transformation; the transformation might be disabled or specified as part of an unsupported transformation ordering [-Wpass-failed=transform-warning]"
+#if defined(__clang__)
+#  pragma clang diagnostic push
+#  pragma clang diagnostic ignored "-Wpass-failed"
+#endif
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -72,8 +79,8 @@ template <
     typename                KeyT,                           ///< Key type
     typename                OffsetT>                        ///< Signed integer type for global offsets
 __launch_bounds__ (int((ALT_DIGIT_BITS) ?
-    ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::BLOCK_THREADS :
-    ChainedPolicyT::ActivePolicy::UpsweepPolicy::BLOCK_THREADS))
+    int(ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::BLOCK_THREADS) :
+    int(ChainedPolicyT::ActivePolicy::UpsweepPolicy::BLOCK_THREADS)))
 __global__ void DeviceRadixSortUpsweepKernel(
     const KeyT              *d_keys,                        ///< [in] Input keys buffer
     OffsetT                 *d_spine,                       ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
@@ -1931,4 +1938,8 @@ struct DispatchSegmentedRadixSort :
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
 
+
+#if defined(__clang__)
+#  pragma clang diagnostic pop
+#endif
 
