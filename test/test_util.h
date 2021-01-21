@@ -521,10 +521,11 @@ int CoutCast(signed char val) { return val; }
  */
 enum GenMode
 {
-    UNIFORM,            // Assign to '2', regardless of integer seed
-    INTEGER_SEED,       // Assign to integer seed
-    RANDOM,             // Assign to random, regardless of integer seed
-    RANDOM_BIT,         // Assign to randomly chosen 0 or 1, regardless of integer seed
+    UNIFORM,                 // Assign to '2', regardless of integer seed
+    INTEGER_SEED,            // Assign to integer seed
+    RANDOM,                  // Assign to random, regardless of integer seed
+    RANDOM_BIT,              // Assign to randomly chosen 0 or 1, regardless of integer seed
+    RANDOM_MINUS_PLUS_ZERO,  // Assign to random, with some values being -0.0 or +0.0 patterns
 };
 
 /**
@@ -540,10 +541,36 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
         RandomBits(value);
         break;
     case RANDOM_BIT:
+    {
         char c;
         RandomBits(c, 0, 0, 1);
         value = (c > 0) ? (T) 1 : (T) -1;
         break;
+    }
+    case RANDOM_MINUS_PLUS_ZERO:
+    {
+        // Replace roughly 1/128 of values with -0.0 or +0.0, and generate the rest randomly
+        typedef typename cub::Traits<T>::UnsignedBits UnsignedBits;
+        char c;
+        RandomBits(c);
+        if (c == 0)
+        {
+            // Replace 1/256 of values with +0.0 bit pattern
+            value = SafeBitCast<T>(UnsignedBits(0));
+        }
+        else if (c == 1)
+        {
+            // Replace 1/256 of values with -0.0 bit pattern
+            value = SafeBitCast<T>(UnsignedBits(UnsignedBits(1) <<
+                                                (sizeof(UnsignedBits) * 8) - 1));
+        }
+        else
+        {
+            // 127/128 of values are random
+            RandomBits(value);
+        }
+        break;
+    }
 #endif
      case UNIFORM:
         value = 2;

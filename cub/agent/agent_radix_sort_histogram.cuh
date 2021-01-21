@@ -187,7 +187,7 @@ struct AgentRadixSortHistogram
              current_bit < end_bit; current_bit += RADIX_BITS, ++pass)
         {
             int num_bits = CUB_MIN(RADIX_BITS, end_bit - current_bit);
-            DigitExtractor<UnsignedBits> digit_extractor(current_bit, num_bits);
+            ShiftDigitExtractor<KeyT> digit_extractor(current_bit, num_bits);
             #pragma unroll
             for (int u = 0; u < ITEMS_PER_THREAD; ++u)
             {

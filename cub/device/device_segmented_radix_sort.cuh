@@ -66,7 +66,9 @@ namespace cub {
  * half-precision floating-point type.  Although the direct radix sorting
  * method can only be applied to unsigned integral types, DeviceSegmentedRadixSort
  * is able to sort signed and floating-point types via simple bit-wise transformations
- * that ensure lexicographic key ordering.
+ * that ensure lexicographic key ordering. For floating-point types -0.0 and +0.0 are
+ * considered equal and appear in the result in the same order as they appear in
+ * the input.
  *
  * \par Usage Considerations
  * \cdp_class{DeviceSegmentedRadixSort}
