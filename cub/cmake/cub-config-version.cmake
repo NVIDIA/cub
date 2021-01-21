@@ -6,6 +6,7 @@ find_path(_CUB_VERSION_INCLUDE_DIR cub/version.cuh
     ${CMAKE_CURRENT_LIST_DIR}/../..            # Source tree
     ${CMAKE_CURRENT_LIST_DIR}/../../../include # Install tree
 )
+set_property(CACHE _CUB_VERSION_INCLUDE_DIR PROPERTY TYPE INTERNAL)
 file(READ "${_CUB_VERSION_INCLUDE_DIR}/cub/version.cuh" CUB_VERSION_HEADER)
 string(REGEX MATCH "#define[ \t]+CUB_VERSION[ \t]+([0-9]+)" DUMMY "${CUB_VERSION_HEADER}")
 set(CUB_VERSION_FLAT ${CMAKE_MATCH_1})
