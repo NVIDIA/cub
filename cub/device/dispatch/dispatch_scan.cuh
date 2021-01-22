@@ -296,7 +296,7 @@ struct DispatchScan:
 
             // Number of input tiles
             int tile_size = Policy::BLOCK_THREADS * Policy::ITEMS_PER_THREAD;
-            int num_tiles = (num_items + tile_size - 1) / tile_size;
+            int num_tiles = static_cast<int>((num_items + tile_size - 1) / tile_size);
 
             // Specify temporary storage allocation requirements
             size_t  allocation_sizes[1];

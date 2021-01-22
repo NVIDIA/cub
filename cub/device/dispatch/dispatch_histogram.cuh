@@ -865,7 +865,7 @@ struct DipatchHistogram
             for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
             {
                 int     bins    = num_output_levels[channel] - 1;
-                LevelT  scale   = (upper_level[channel] - lower_level[channel]) / bins;
+                LevelT  scale   = static_cast<LevelT>((upper_level[channel] - lower_level[channel]) / bins);
 
                 privatized_decode_op[channel].Init(num_output_levels[channel], upper_level[channel], lower_level[channel], scale);
 

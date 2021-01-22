@@ -1063,10 +1063,15 @@ CUB_VEC_OVERLOAD(double, double)
  */
 struct TestFoo
 {
-    long long   x;
-    int         y;
-    short       z;
-    char        w;
+    using x_t = long long;
+    using y_t = int;
+    using z_t = short;
+    using w_t = char;
+
+    x_t x;
+    y_t y;
+    z_t z;
+    w_t w;
 
     // Factory
     static __host__ __device__ __forceinline__ TestFoo MakeTestFoo(long long x, int y, short z, char w)
@@ -1078,10 +1083,10 @@ struct TestFoo
     // Assignment from int operator
     __host__ __device__ __forceinline__ TestFoo& operator =(int b)
     {
-        x = b;
-        y = b;
-        z = b;
-        w = b;
+        x = static_cast<x_t>(b);
+        y = static_cast<y_t>(b);
+        z = static_cast<z_t>(b);
+        w = static_cast<w_t>(b);
         return *this;
     }
 

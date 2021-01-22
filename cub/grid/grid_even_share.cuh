@@ -130,9 +130,10 @@ public:
         this->block_end             = num_items_;    // Initialize past-the-end
         this->num_items             = num_items_;
         this->total_tiles           = (num_items_ + tile_items - 1) / tile_items;
-        this->grid_size             = CUB_MIN(total_tiles, max_grid_size);
+        this->grid_size             = CUB_MIN(static_cast<int>(total_tiles), max_grid_size);
         OffsetT avg_tiles_per_block = total_tiles / grid_size;
-        this->big_shares            = total_tiles - (avg_tiles_per_block * grid_size);        // leftover grains go to big blocks
+        // leftover grains go to big blocks
+        this->big_shares = static_cast<int>(total_tiles - (avg_tiles_per_block * grid_size));
         this->normal_share_items    = avg_tiles_per_block * tile_items;
         this->normal_base_offset    = big_shares * tile_items;
         this->big_share_items       = normal_share_items + tile_items;
