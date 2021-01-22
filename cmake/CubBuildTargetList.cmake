@@ -185,9 +185,9 @@ function(cub_build_target_list)
     )
   endif()
 
-  # CMake added C++17 support for CUDA targets in 3.18:
+  # CMake fixed C++17 support for NVCC + MSVC targets in 3.18.3:
   if (CUB_ENABLE_DIALECT_CPP17)
-    cmake_minimum_required(VERSION 3.18)
+    cmake_minimum_required(VERSION 3.18.3)
   endif()
 
   # Supported versions of MSVC do not distinguish between C++11 and C++14.
