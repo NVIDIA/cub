@@ -1216,7 +1216,7 @@ struct DispatchRadixSort :
             DownsweepKernelT    downsweep_kernel,
             int                 ptx_version,
             int                 sm_count,
-            int                 num_items)
+            OffsetT             num_items)
         {
             cudaError error = cudaSuccess;
             do
