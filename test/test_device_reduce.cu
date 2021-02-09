@@ -41,6 +41,7 @@
 #include <thrust/reduce.h>
 
 #include <cub/util_allocator.cuh>
+#include <cub/util_math.cuh>
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_segmented_reduce.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
@@ -1085,7 +1086,7 @@ void TestByBackend(
     // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
     int max_items_per_segment = 128000;
 
-    for (int num_segments = (num_items + max_items_per_segment - 1) / max_items_per_segment;
+    for (int num_segments = cub::DivideAndRoundUp(num_items, max_items_per_segment);
         num_segments < max_segments;
         num_segments = (num_segments * 32) + 1)
     {

@@ -54,6 +54,7 @@
 #include "cub/util_device.cuh"
 #include "cub/util_type.cuh"
 #include "cub/util_macro.cuh"
+#include "cub/util_math.cuh"
 #include "cub/iterator/discard_output_iterator.cuh"
 
 /******************************************************************************
@@ -1560,7 +1561,7 @@ void InitializeSegments(
     if (num_segments <= 0)
         return;
 
-    unsigned int expected_segment_length = (num_items + num_segments - 1) / num_segments;
+    unsigned int expected_segment_length = cub::DivideAndRoundUp(num_items, num_segments);
     int offset = 0;
     for (int i = 0; i < num_segments; ++i)
     {

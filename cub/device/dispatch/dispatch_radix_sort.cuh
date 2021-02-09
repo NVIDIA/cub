@@ -48,6 +48,7 @@
 #include "../../util_type.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
+#include "../../util_math.cuh"
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
@@ -1261,10 +1262,9 @@ struct DispatchRadixSort :
         // parts handle inputs with >=2**30 elements, due to the way lookback works
         // for testing purposes, one part is <= 2**28 elements
         const int PART_SIZE = ((1 << 28) - 1) / ONESWEEP_TILE_ITEMS * ONESWEEP_TILE_ITEMS;
-        int num_passes = (end_bit - begin_bit + RADIX_BITS - 1) / RADIX_BITS;
-        int num_parts = ((long long)num_items + PART_SIZE - 1) / PART_SIZE;
-        OffsetT max_num_blocks = (CUB_MIN(num_items, PART_SIZE) + ONESWEEP_TILE_ITEMS - 1) /
-            ONESWEEP_TILE_ITEMS;
+        int num_passes = cub::DivideAndRoundUp(end_bit - begin_bit, RADIX_BITS);
+        int num_parts = static_cast<int>(cub::DivideAndRoundUp(num_items, PART_SIZE));
+        OffsetT max_num_blocks = cub::DivideAndRoundUp(CUB_MIN(num_items, PART_SIZE), ONESWEEP_TILE_ITEMS);
         
         size_t value_size = KEYS_ONLY ? 0 : sizeof(ValueT);
         size_t allocation_sizes[] =
@@ -1341,7 +1341,7 @@ struct DispatchRadixSort :
                 for (int part = 0; part < num_parts; ++part)
                 {
                     int part_num_items = CUB_MIN(num_items - part * PART_SIZE, PART_SIZE);
-                    int num_blocks = (part_num_items + ONESWEEP_TILE_ITEMS - 1) / ONESWEEP_TILE_ITEMS;
+                    int num_blocks = cub::DivideAndRoundUp(part_num_items, ONESWEEP_TILE_ITEMS);
                     if (CubDebug(error = cudaMemsetAsync(
                            d_lookback, 0, num_blocks * RADIX_DIGITS * sizeof(AtomicOffsetT),
                            stream))) break;
@@ -1466,7 +1466,7 @@ struct DispatchRadixSort :
 
             // Pass planning.  Run passes of the alternate digit-size configuration until we have an even multiple of our preferred digit size
             int num_bits            = end_bit - begin_bit;
-            int num_passes          = (num_bits + pass_config.radix_bits - 1) / pass_config.radix_bits;
+            int num_passes          = cub::DivideAndRoundUp(num_bits, pass_config.radix_bits);
             bool is_num_passes_odd  = num_passes & 1;
             int max_alt_passes      = (num_passes * pass_config.radix_bits) - num_bits;
             int alt_end_bit         = CUB_MIN(end_bit, begin_bit + (max_alt_passes * alt_pass_config.radix_bits));

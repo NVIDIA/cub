@@ -42,6 +42,7 @@
 #endif
 
 #include <cub/util_allocator.cuh>
+#include <cub/util_math.cuh>
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_segmented_radix_sort.cuh>
 
@@ -1035,8 +1036,10 @@ void TestSizes(
     int     max_items,
     int     max_segments)
 {
-    for (int num_items = max_items; num_items > 1; num_items = (num_items + 32 - 1) / 32)
-    {
+  for (int num_items = max_items;
+       num_items > 1;
+       num_items = cub::DivideAndRoundUp(num_items, 32))
+  {
         TestSegments(h_keys, num_items, max_segments);
     }
     TestSegments(h_keys, 1, max_segments);

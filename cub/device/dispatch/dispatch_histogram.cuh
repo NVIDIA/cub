@@ -41,6 +41,7 @@
 #include "../../agent/agent_histogram.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
+#include "../../util_math.cuh"
 #include "../../thread/thread_search.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../config.cuh"
@@ -518,7 +519,7 @@ struct DipatchHistogram
 
             // Get grid dimensions, trying to keep total blocks ~histogram_sweep_occupancy
             int pixels_per_tile     = histogram_sweep_config.block_threads * histogram_sweep_config.pixels_per_thread;
-            int tiles_per_row       = int(num_row_pixels + pixels_per_tile - 1) / pixels_per_tile;
+            int tiles_per_row       = static_cast<int>(cub::DivideAndRoundUp(num_row_pixels, pixels_per_tile));
             int blocks_per_row      = CUB_MIN(histogram_sweep_occupancy, tiles_per_row);
             int blocks_per_col      = (blocks_per_row > 0) ?
                                         int(CUB_MIN(histogram_sweep_occupancy / blocks_per_row, num_rows)) :
