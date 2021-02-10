@@ -174,7 +174,7 @@ template <
     typename    CounterT,                   ///< Integer type for counting sample occurrences per histogram bin
     typename    LevelT,                     ///< Type for specifying bin level boundaries
     typename    OffsetT>                    ///< Signed integer type for global offsets
-struct DipatchHistogram
+struct DispatchHistogram
 {
     //---------------------------------------------------------------------
     // Types and constants
