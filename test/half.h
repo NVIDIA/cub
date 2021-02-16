@@ -114,7 +114,7 @@ struct half_t
                 { /* normal */
                     ir |= ia >> (24 - 11);
                     ia = ia << (32 - (24 - 11));
-                    ir = ir + ((14 + shift) << 10);
+                    ir = static_cast<uint16_t>(ir + ((14 + shift) << 10));
                 }
                 /* IEEE-754 round to nearest of even */
                 if ((ia > 0x80000000) || ((ia == 0x80000000) && (ir & 1)))

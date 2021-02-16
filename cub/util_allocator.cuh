@@ -330,15 +330,14 @@ struct CachingDeviceAllocator
      * Changing the ceiling of cached bytes does not cause any allocations (in-use or
      * cached-in-reserve) to be freed.  See \p FreeAllCached().
      */
-    cudaError_t SetMaxCachedBytes(
-        size_t max_cached_bytes)
+    cudaError_t SetMaxCachedBytes(size_t max_cached_bytes_)
     {
         // Lock
         mutex.Lock();
 
-        if (debug) _CubLog("Changing max_cached_bytes (%lld -> %lld)\n", (long long) this->max_cached_bytes, (long long) max_cached_bytes);
+        if (debug) _CubLog("Changing max_cached_bytes (%lld -> %lld)\n", (long long) this->max_cached_bytes, (long long) max_cached_bytes_);
 
-        this->max_cached_bytes = max_cached_bytes;
+        this->max_cached_bytes = max_cached_bytes_;
 
         // Unlock
         mutex.Unlock();

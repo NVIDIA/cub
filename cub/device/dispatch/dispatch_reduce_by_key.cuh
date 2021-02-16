@@ -43,6 +43,7 @@
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_device.cuh"
+#include "../../util_math.cuh"
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
@@ -309,7 +310,7 @@ struct DispatchReduceByKey
 
             // Number of input tiles
             int tile_size = reduce_by_key_config.block_threads * reduce_by_key_config.items_per_thread;
-            int num_tiles = (num_items + tile_size - 1) / tile_size;
+            int num_tiles = static_cast<int>(cub::DivideAndRoundUp(num_items, tile_size));
 
             // Specify temporary storage allocation requirements
             size_t  allocation_sizes[1];
@@ -329,7 +330,7 @@ struct DispatchReduceByKey
             if (CubDebug(error = tile_state.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
             // Log init_kernel configuration
-            int init_grid_size = CUB_MAX(1, (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS);
+            int init_grid_size = CUB_MAX(1, cub::DivideAndRoundUp(num_tiles, INIT_KERNEL_THREADS));
             if (debug_synchronous) _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke init_kernel to initialize tile descriptors

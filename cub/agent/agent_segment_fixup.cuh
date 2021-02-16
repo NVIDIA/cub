@@ -165,11 +165,11 @@ struct AgentSegmentFixup
     // Shared memory type for this thread block
     union _TempStorage
     {
-        struct
+        struct ScanStorage
         {
             typename BlockScanT::TempStorage                scan;           // Smem needed for tile scanning
             typename TilePrefixCallbackOpT::TempStorage     prefix;         // Smem needed for cooperative prefix callback
-        };
+        } scan_storage;
 
         // Smem needed for loading keys
         typename BlockLoadPairs::TempStorage load_pairs;
@@ -289,7 +289,7 @@ struct AgentSegmentFixup
         if (tile_idx == 0)
         {
             // Exclusive scan of values and segment_flags
-            BlockScanT(temp_storage.scan).ExclusiveScan(pairs, scatter_pairs, scan_op, tile_aggregate);
+            BlockScanT(temp_storage.scan_storage.scan).ExclusiveScan(pairs, scatter_pairs, scan_op, tile_aggregate);
 
             // Update tile status if this is not the last tile
             if (threadIdx.x == 0)
@@ -305,8 +305,8 @@ struct AgentSegmentFixup
         else
         {
             // Exclusive scan of values and segment_flags
-            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.prefix, scan_op, tile_idx);
-            BlockScanT(temp_storage.scan).ExclusiveScan(pairs, scatter_pairs, scan_op, prefix_op);
+            TilePrefixCallbackOpT prefix_op(tile_state, temp_storage.scan_storage.prefix, scan_op, tile_idx);
+            BlockScanT(temp_storage.scan_storage.scan).ExclusiveScan(pairs, scatter_pairs, scan_op, prefix_op);
             tile_aggregate = prefix_op.GetBlockAggregate();
         }
 

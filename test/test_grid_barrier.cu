@@ -139,7 +139,7 @@ int main(int argc, char** argv)
     Kernel<<<grid_size, block_size>>>(global_barrier, iterations);
     gpu_timer.Stop();
 
-    retval = CubDebug(cudaThreadSynchronize());
+    retval = CubDebug(cudaDeviceSynchronize());
 
     // Output timing results
     float avg_elapsed = gpu_timer.ElapsedMillis() / float(iterations);

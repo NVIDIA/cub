@@ -43,6 +43,7 @@
 #include "../../util_type.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
+#include "../../util_math.cuh"
 #include "../../thread/thread_search.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../config.cuh"
@@ -510,8 +511,8 @@ struct DispatchSpmv
                 }
 
                 // Get search/init grid dims
-                int degen_col_kernel_block_size     = INIT_KERNEL_THREADS;
-                int degen_col_kernel_grid_size      = (spmv_params.num_rows + degen_col_kernel_block_size - 1) / degen_col_kernel_block_size;
+                int degen_col_kernel_block_size = INIT_KERNEL_THREADS;
+                int degen_col_kernel_grid_size = cub::DivideAndRoundUp(spmv_params.num_rows, degen_col_kernel_block_size);
 
                 if (debug_synchronous) _CubLog("Invoking spmv_1col_kernel<<<%d, %d, 0, %lld>>>()\n",
                     degen_col_kernel_grid_size, degen_col_kernel_block_size, (long long) stream);
@@ -552,8 +553,8 @@ struct DispatchSpmv
             int segment_fixup_tile_size     = segment_fixup_config.block_threads * segment_fixup_config.items_per_thread;
 
             // Number of tiles for kernels
-            int num_merge_tiles            = (num_merge_items + merge_tile_size - 1) / merge_tile_size;
-            int num_segment_fixup_tiles    = (num_merge_tiles + segment_fixup_tile_size - 1) / segment_fixup_tile_size;
+            int num_merge_tiles            = cub::DivideAndRoundUp(num_merge_items, merge_tile_size);
+            int num_segment_fixup_tiles    = cub::DivideAndRoundUp(num_merge_tiles, segment_fixup_tile_size);
 
             // Get SM occupancy for kernels
             int spmv_sm_occupancy;
@@ -571,12 +572,12 @@ struct DispatchSpmv
             // Get grid dimensions
             dim3 spmv_grid_size(
                 CUB_MIN(num_merge_tiles, max_dim_x),
-                (num_merge_tiles + max_dim_x - 1) / max_dim_x,
+                cub::DivideAndRoundUp(num_merge_tiles, max_dim_x),
                 1);
 
             dim3 segment_fixup_grid_size(
                 CUB_MIN(num_segment_fixup_tiles, max_dim_x),
-                (num_segment_fixup_tiles + max_dim_x - 1) / max_dim_x,
+                cub::DivideAndRoundUp(num_segment_fixup_tiles, max_dim_x),
                 1);
 
             // Get the temporary storage allocation requirements
@@ -604,7 +605,7 @@ struct DispatchSpmv
 
             // Get search/init grid dims
             int search_block_size   = INIT_KERNEL_THREADS;
-            int search_grid_size    = (num_merge_tiles + 1 + search_block_size - 1) / search_block_size;
+            int search_grid_size    = cub::DivideAndRoundUp(num_merge_tiles + 1, search_block_size);
 
             #if CUB_INCLUDE_HOST_CODE
                 if (CUB_IS_HOST_CODE)

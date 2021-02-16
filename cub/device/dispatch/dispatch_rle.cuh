@@ -43,6 +43,7 @@
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
 #include "../../util_device.cuh"
+#include "../../util_math.cuh"
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
@@ -291,7 +292,7 @@ struct DeviceRleDispatch
 
             // Number of input tiles
             int tile_size = device_rle_config.block_threads * device_rle_config.items_per_thread;
-            int num_tiles = (num_items + tile_size - 1) / tile_size;
+            int num_tiles = static_cast<int>(cub::DivideAndRoundUp(num_items, tile_size));
 
             // Specify temporary storage allocation requirements
             size_t  allocation_sizes[1];
@@ -311,7 +312,7 @@ struct DeviceRleDispatch
             if (CubDebug(error = tile_status.Init(num_tiles, allocations[0], allocation_sizes[0]))) break;
 
             // Log device_scan_init_kernel configuration
-            int init_grid_size = CUB_MAX(1, (num_tiles + INIT_KERNEL_THREADS - 1) / INIT_KERNEL_THREADS);
+            int init_grid_size = CUB_MAX(1, cub::DivideAndRoundUp(num_tiles, INIT_KERNEL_THREADS));
             if (debug_synchronous) _CubLog("Invoking device_scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke device_scan_init_kernel to initialize tile descriptors and queue descriptors
@@ -346,7 +347,7 @@ struct DeviceRleDispatch
             // Get grid size for scanning tiles
             dim3 scan_grid_size;
             scan_grid_size.z = 1;
-            scan_grid_size.y = ((unsigned int) num_tiles + max_dim_x - 1) / max_dim_x;
+            scan_grid_size.y = cub::DivideAndRoundUp(num_tiles, max_dim_x);
             scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
             // Log device_rle_sweep_kernel configuration

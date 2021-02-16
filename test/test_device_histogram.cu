@@ -367,15 +367,15 @@ struct ScaleTransform
     LevelT scale;       // Bin scaling factor
 
     void Init(
-        int    num_levels,  // Number of levels in array
-        LevelT max,         // Max sample level (exclusive)
-        LevelT min,         // Min sample level (inclusive)
-        LevelT scale)       // Bin scaling factor
+        int    num_levels_,  // Number of levels in array
+        LevelT max_,         // Max sample level (exclusive)
+        LevelT min_,         // Min sample level (inclusive)
+        LevelT scale_)       // Bin scaling factor
     {
-        this->num_levels = num_levels;
-        this->max = max;
-        this->min = min;
-        this->scale = scale;
+        this->num_levels = num_levels_;
+        this->max = max_;
+        this->min = min_;
+        this->scale = scale_;
     }
 
     // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)
@@ -402,15 +402,15 @@ struct ScaleTransform<float>
     float scale;       // Bin scaling factor
 
     void Init(
-        int    num_levels,  // Number of levels in array
-        float max,         // Max sample level (exclusive)
-        float min,         // Min sample level (inclusive)
-        float scale)       // Bin scaling factor
+        int   _num_levels,  // Number of levels in array
+        float _max,         // Max sample level (exclusive)
+        float _min,         // Min sample level (inclusive)
+        float _scale)       // Bin scaling factor
     {
-        this->num_levels = num_levels;
-        this->max = max;
-        this->min = min;
-        this->scale = 1.0f / scale;
+        this->num_levels = _num_levels;
+        this->max = _max;
+        this->min = _min;
+        this->scale = 1.0f / _scale;
     }
 
     // Functor for converting samples to bin-ids  (num_levels is returned if sample is out of range)
@@ -603,7 +603,7 @@ void TestEven(
             num_levels[channel],
             upper_level[channel],
             lower_level[channel],
-            ((upper_level[channel] - lower_level[channel]) / bins));
+            static_cast<LevelT>(((upper_level[channel] - lower_level[channel]) / bins)));
     }
 
     InitializeBins<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
@@ -1025,14 +1025,14 @@ void TestEven(
 
     // Find smallest level increment
     int max_bins = max_num_levels - 1;
-    LevelT min_level_increment = max_level / max_bins;
+    LevelT min_level_increment = static_cast<LevelT>(max_level / max_bins);
 
     // Set upper and lower levels for each channel
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
         int num_bins = num_levels[channel] - 1;
-        lower_level[channel] = (max_level - (num_bins * min_level_increment)) / 2;
-        upper_level[channel] = (max_level + (num_bins * min_level_increment)) / 2;
+        lower_level[channel] = static_cast<LevelT>((max_level - (num_bins * min_level_increment)) / 2);
+        upper_level[channel] = static_cast<LevelT>((max_level + (num_bins * min_level_increment)) / 2);
     }
 
     // Test pointer-based samples

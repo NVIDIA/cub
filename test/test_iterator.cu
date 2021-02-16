@@ -243,14 +243,14 @@ void TestCounting(T base)
 
     // Initialize reference data
     T h_reference[8];
-    h_reference[0] = base + 0;          // Value at offset 0
-    h_reference[1] = base + 100;        // Value at offset 100
-    h_reference[2] = base + 1000;       // Value at offset 1000
-    h_reference[3] = base + 10000;      // Value at offset 10000
-    h_reference[4] = base + 1;          // Value at offset 1
-    h_reference[5] = base + 21;         // Value at offset 21
-    h_reference[6] = base + 11;         // Value at offset 11
-    h_reference[7] = base + 0;          // Value at offset 0;
+    h_reference[0] = static_cast<T>(base + 0);          // Value at offset 0
+    h_reference[1] = static_cast<T>(base + 100);        // Value at offset 100
+    h_reference[2] = static_cast<T>(base + 1000);       // Value at offset 1000
+    h_reference[3] = static_cast<T>(base + 10000);      // Value at offset 10000
+    h_reference[4] = static_cast<T>(base + 1);          // Value at offset 1
+    h_reference[5] = static_cast<T>(base + 21);         // Value at offset 21
+    h_reference[6] = static_cast<T>(base + 11);         // Value at offset 11
+    h_reference[7] = static_cast<T>(base + 0);          // Value at offset 0;
 
     CountingInputIterator<T> d_itr(base);
     Test(d_itr, h_reference);
