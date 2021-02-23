@@ -1,8 +1,56 @@
-# CUB 1.11.0
+# CUB 1.12.0 (NVIDIA HPC SDK 21.3, CUDA Toolkit 11.4)
 
 ## Summary
 
-CUB 1.11.0 is a major release providing bugfixes and performance enhancements.
+CUB 1.12.0 is a bugfix release accompanying the NVIDIA HPC SDK 21.3 and
+the CUDA Toolkit 11.4.
+
+Radix sort is now stable when both +0.0 and -0.0 are present in the input (they
+are treated as equivalent).
+Many compilation warnings and subtle overflow bugs were fixed in the device
+algorithms, including a long-standing bug that returned invalid temporary
+storage requirements when `num_items` was close to (but not
+exceeding) `INT32_MAX`.
+Support for Clang < 7.0 and MSVC < 2019 (aka 19.20/16.0/14.20) is now
+deprecated.
+
+## Breaking Changes
+
+- NVIDIA/cub#256: Deprecate Clang < 7 and MSVC < 2019.
+
+## New Features
+
+- NVIDIA/cub#218: Radix sort now treats -0.0 and +0.0 as equivalent for floating
+  point types, which is required for the sort to be stable. Thanks to Andy
+  Adinets for this contribution.
+
+## Bug Fixes
+
+- NVIDIA/cub#247: Suppress newly triggered warnings in Clang. Thanks to Andrew
+  Corrigan for this contribution.
+- NVIDIA/cub#249: Enable stricter warning flags. This fixes a number of
+  outstanding issues:
+  - NVIDIA/cub#221: Overflow in `temp_storage_bytes` when `num_items` close to
+    (but not over) `INT32_MAX`.
+  - NVIDIA/cub#228: CUB uses non-standard C++ extensions that break strict
+    compilers.
+  - NVIDIA/cub#257: Warning when compiling `GridEvenShare` with unsigned
+    offsets.
+- NVIDIA/cub#258: Use correct `OffsetT` in `DispatchRadixSort::InitPassConfig`.
+  Thanks to Felix Kallenborn for this contribution.
+- NVIDIA/cub#259: Remove some problematic `__forceinline__` annotations.
+
+## Other Enhancements
+
+- NVIDIA/cub#123: Fix incorrect issue number in changelog. Thanks to Peet
+  Whittaker for this contribution.
+
+# CUB 1.11.0 (CUDA Toolkit 11.3)
+
+## Summary
+
+CUB 1.11.0 is a major release accompanying the CUDA Toolkit 11.3 release,
+providing bugfixes and performance enhancements.
 
 It includes a new `DeviceRadixSort` backend that improves performance by up to
 2x on supported keys and hardware.
