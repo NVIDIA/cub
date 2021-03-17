@@ -537,45 +537,54 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 {
     switch (gen_mode)
     {
-#if (CUB_PTX_ARCH == 0)
-    case RANDOM:
-        RandomBits(value);
-        break;
-    case RANDOM_BIT:
-    {
-        char c;
-        RandomBits(c, 0, 0, 1);
-        value = (c > 0) ? (T) 1 : (T) -1;
-        break;
-    }
-    case RANDOM_MINUS_PLUS_ZERO:
-    {
-        // Replace roughly 1/128 of values with -0.0 or +0.0, and generate the rest randomly
-        typedef typename cub::Traits<T>::UnsignedBits UnsignedBits;
-        char c;
-        RandomBits(c);
-        if (c == 0)
-        {
-            // Replace 1/256 of values with +0.0 bit pattern
-            value = SafeBitCast<T>(UnsignedBits(0));
-        }
-        else if (c == 1)
-        {
-            // Replace 1/256 of values with -0.0 bit pattern
-            value = SafeBitCast<T>(UnsignedBits(UnsignedBits(1) <<
-                                                (sizeof(UnsignedBits) * 8) - 1));
-        }
-        else
-        {
-            // 127/128 of values are random
-            RandomBits(value);
-        }
-        break;
-    }
-#endif
-     case UNIFORM:
+    case UNIFORM:
         value = 2;
         break;
+    case RANDOM:
+        if (CUB_IS_HOST_CODE) {
+            #if CUB_INCLUDE_HOST_CODE
+                RandomBits(value);
+                break;
+            #endif
+        }
+        // else fallthrough
+    case RANDOM_BIT:
+        if (CUB_IS_HOST_CODE) {
+            #if CUB_INCLUDE_HOST_CODE
+                char c;
+                RandomBits(c, 0, 0, 1);
+                value = (c > 0) ? (T) 1 : (T) -1;
+                break;
+            #endif
+        }
+        // else fallthrough
+    case RANDOM_MINUS_PLUS_ZERO:
+        if (CUB_IS_HOST_CODE) {
+            #if CUB_INCLUDE_HOST_CODE
+                // Replace roughly 1/128 of values with -0.0 or +0.0, and generate the rest randomly
+                typedef typename cub::Traits<T>::UnsignedBits UnsignedBits;
+                char c;
+                RandomBits(c);
+                if (c == 0)
+                {
+                    // Replace 1/256 of values with +0.0 bit pattern
+                    value = SafeBitCast<T>(UnsignedBits(0));
+                }
+                else if (c == 1)
+                {
+                    // Replace 1/256 of values with -0.0 bit pattern
+                    value = SafeBitCast<T>(UnsignedBits(UnsignedBits(1) <<
+                                                (sizeof(UnsignedBits) * 8) - 1));
+                }
+                else
+                {
+                    // 127/128 of values are random
+                    RandomBits(value);
+                }
+                break;
+            #endif
+        }
+        // else fallthrough
     case INTEGER_SEED:
     default:
          value = (T) index;
@@ -591,14 +600,20 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value
 {
     switch (gen_mode)
     {
-#if (CUB_PTX_ARCH == 0)
     case RANDOM:
     case RANDOM_BIT:
-        char c;
-        RandomBits(c, 0, 0, 1);
-        value = (c > 0);
+        if (CUB_IS_HOST_CODE) {
+            #if CUB_INCLUDE_HOST_CODE
+                char c;
+                RandomBits(c, 0, 0, 1);
+                value = (c > 0);
+            #endif
+        } else {
+            #if CUB_INCLUDE_DEVICE_CODE
+              value = (index > 0);
+            #endif
+        }
         break;
-#endif
      case UNIFORM:
         value = true;
         break;
