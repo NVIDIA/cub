@@ -366,6 +366,17 @@ enum BlockStoreAlgorithm
 
     /**
      * \par Overview
+     * A [<em>striped arrangement</em>](index.html#sec5sec3) of data is written
+     * directly to memory.
+     *
+     * \par Performance Considerations
+     * - The utilization of memory transactions (coalescing) decreases as the
+     *   access stride between threads increases (i.e., the number items per thread).
+     */
+     BLOCK_STORE_STRIPED,
+
+    /**
+     * \par Overview
      *
      * A [<em>blocked arrangement</em>](index.html#sec5sec3) of data is written directly
      * to memory using CUDA's built-in vectorized stores as a coalescing optimization.
@@ -432,7 +443,6 @@ enum BlockStoreAlgorithm
      *   latencies than the BLOCK_STORE_WARP_TRANSPOSE alternative.
      */
     BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
-
 };
 
 
@@ -457,6 +467,8 @@ enum BlockStoreAlgorithm
  * - BlockStore can be optionally specialized by different data movement strategies:
  *   -# <b>cub::BLOCK_STORE_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3) of data is written
  *      directly to memory. [More...](\ref cub::BlockStoreAlgorithm)
+ *   -# <b>cub::BLOCK_STORE_STRIPED</b>.  A [<em>striped arrangement</em>](index.html#sec5sec3)
+ *      of data is written directly to memory. [More...](\ref cub::BlockStoreAlgorithm)
  *   -# <b>cub::BLOCK_STORE_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3)
  *      of data is written directly to memory using CUDA's built-in vectorized stores as a
  *      coalescing optimization.  [More...](\ref cub::BlockStoreAlgorithm)
@@ -572,6 +584,49 @@ private:
             int                 valid_items)                ///< [in] Number of valid items to write
         {
             StoreDirectBlocked(linear_tid, block_itr, items, valid_items);
+        }
+    };
+
+
+    /**
+    * BLOCK_STORE_STRIPED specialization of store helper
+    */
+    template <int DUMMY>
+    struct StoreInternal<BLOCK_STORE_STRIPED, DUMMY>
+    {
+        /// Shared memory storage layout type
+        typedef NullType TempStorage;
+
+        /// Linear thread-id
+        int linear_tid;
+
+        /// Constructor
+        __device__ __forceinline__ StoreInternal(
+            TempStorage &temp_storage,
+            int linear_tid)
+        :
+            linear_tid(linear_tid)
+        {}
+
+        /// Store items into a linear segment of memory
+        template <typename OutputIteratorT>
+        __device__ __forceinline__ void Store(
+            OutputIteratorT     block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            T                   (&items)[ITEMS_PER_THREAD]) ///< [in] Data to store
+        {
+            StoreDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items);
+        }
+
+        /// Store items into a linear segment of memory, guarded by range
+        template <typename OutputIteratorT>
+        __device__ __forceinline__ void Store(
+            OutputIteratorT   block_itr,                  ///< [in] The thread block's base output iterator for storing to
+            T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
+            int                 valid_items)                ///< [in] Number of valid items to write
+        {
+            if (linear_tid == 0)
+                temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
+            StoreDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, temp_storage.valid_items);
         }
     };
 
@@ -819,6 +874,7 @@ private:
             StoreDirectWarpStriped(linear_tid, block_itr, items, temp_storage.valid_items);
         }
     };
+ 
 
     /******************************************************************************
      * Type definitions
