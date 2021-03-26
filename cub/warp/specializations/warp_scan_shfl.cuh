@@ -48,7 +48,7 @@ CUB_NAMESPACE_BEGIN
 template <
     typename    T,                      ///< Data type being scanned
     int         LOGICAL_WARP_THREADS,   ///< Number of threads per logical warp
-    int         PTX_ARCH>               ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0>    ///< The PTX compute capability for which to to specialize this collective
 struct WarpScanShfl
 {
     //---------------------------------------------------------------------
@@ -58,13 +58,13 @@ struct WarpScanShfl
     enum
     {
         /// Whether the logical warp size and the PTX warp size coincide
-        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS),
 
         /// The number of warp scan steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
 
         /// The 5-bit SHFL mask for logically splitting warps into sub-segments starts 8-bits up
-        SHFL_C = (CUB_WARP_THREADS(PTX_ARCH) - LOGICAL_WARP_THREADS) << 8
+        SHFL_C = (CUB_WARP_THREADS - LOGICAL_WARP_THREADS) << 8
     };
 
     template <typename S>
@@ -103,7 +103,7 @@ struct WarpScanShfl
     {
         lane_id = LaneId();
         warp_id = 0;
-        member_mask = 0xffffffffu >> (CUB_WARP_THREADS(PTX_ARCH) - LOGICAL_WARP_THREADS);
+        member_mask = 0xffffffffu >> (CUB_WARP_THREADS - LOGICAL_WARP_THREADS);
 
         if (!IS_ARCH_WARP)
         {

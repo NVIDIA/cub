@@ -1222,7 +1222,7 @@ struct DispatchRadixSort :
             UpsweepKernelT      upsweep_kernel,
             ScanKernelT         scan_kernel,
             DownsweepKernelT    downsweep_kernel,
-            int                 ptx_version,
+            int                 /*ptx_version*/,
             int                 sm_count,
             OffsetT             num_items)
         {
@@ -1239,7 +1239,7 @@ struct DispatchRadixSort :
                 if (CubDebug(error = scan_config.Init<ScanPolicyT>(scan_kernel))) break;
                 if (CubDebug(error = downsweep_config.Init<DownsweepPolicyT>(downsweep_kernel))) break;
 
-                max_downsweep_grid_size = (downsweep_config.sm_occupancy * sm_count) * CUB_SUBSCRIPTION_FACTOR(ptx_version);
+                max_downsweep_grid_size = (downsweep_config.sm_occupancy * sm_count) * CUB_SUBSCRIPTION_FACTOR;
 
                 even_share.DispatchInit(
                     num_items,

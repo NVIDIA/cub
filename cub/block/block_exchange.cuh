@@ -49,7 +49,7 @@ CUB_NAMESPACE_BEGIN
  * \tparam WARP_TIME_SLICING    <b>[optional]</b> When \p true, only use enough shared memory for a single warp's worth of tile data, time-slicing the block-wide exchange over multiple synchronized rounds.  Yields a smaller memory footprint at the expense of decreased parallelism.  (Default: false)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
- * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
+ * \tparam LEGACY_PTX_ARCH      <b>[optional]</b> Unused.
  *
  * \par Overview
  * - It is commonplace for blocks of threads to rearrange data items between
@@ -106,7 +106,7 @@ template <
     bool        WARP_TIME_SLICING   = false,
     int         BLOCK_DIM_Y         = 1,
     int         BLOCK_DIM_Z         = 1,
-    int         PTX_ARCH            = CUB_PTX_ARCH>
+    int         LEGACY_PTX_ARCH     = 0>
 class BlockExchange
 {
 private:
@@ -121,11 +121,11 @@ private:
         /// The thread block size in threads
         BLOCK_THREADS               = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
 
-        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(PTX_ARCH),
+        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS,
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
         WARPS                       = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
 
-        LOG_SMEM_BANKS              = CUB_LOG_SMEM_BANKS(PTX_ARCH),
+        LOG_SMEM_BANKS              = CUB_LOG_SMEM_BANKS,
         SMEM_BANKS                  = 1 << LOG_SMEM_BANKS,
 
         TILE_ITEMS                  = BLOCK_THREADS * ITEMS_PER_THREAD,
@@ -1124,7 +1124,7 @@ template <
     typename    T,
     int         ITEMS_PER_THREAD,
     int         LOGICAL_WARP_THREADS    = CUB_PTX_WARP_THREADS,
-    int         PTX_ARCH                = CUB_PTX_ARCH>
+    int         LEGACY_PTX_ARCH         = 0>
 class WarpExchange
 {
 private:
@@ -1137,11 +1137,11 @@ private:
     enum
     {
         // Whether the logical warp size and the PTX warp size coincide
-        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS),
 
         WARP_ITEMS                  = (ITEMS_PER_THREAD * LOGICAL_WARP_THREADS) + 1,
 
-        LOG_SMEM_BANKS              = CUB_LOG_SMEM_BANKS(PTX_ARCH),
+        LOG_SMEM_BANKS              = CUB_LOG_SMEM_BANKS,
         SMEM_BANKS                  = 1 << LOG_SMEM_BANKS,
 
         // Insert padding if the number of items per thread is a power of two and > 4 (otherwise we can typically use 128b loads)

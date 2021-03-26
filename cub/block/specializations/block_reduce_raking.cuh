@@ -60,7 +60,7 @@ template <
     int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
     int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
     int         BLOCK_DIM_Z,    ///< The thread block length in threads along the Z dimension
-    int         PTX_ARCH>       ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0> ///< The PTX compute capability for which to to specialize this collective
 struct BlockReduceRaking
 {
     /// Constants
@@ -71,10 +71,10 @@ struct BlockReduceRaking
     };
 
     /// Layout type for padded thread block raking grid
-    typedef BlockRakingLayout<T, BLOCK_THREADS, PTX_ARCH> BlockRakingLayout;
+    typedef BlockRakingLayout<T, BLOCK_THREADS> BlockRakingLayout;
 
     ///  WarpReduce utility type
-    typedef typename WarpReduce<T, BlockRakingLayout::RAKING_THREADS, PTX_ARCH>::InternalWarpReduce WarpReduce;
+    typedef typename WarpReduce<T, BlockRakingLayout::RAKING_THREADS>::InternalWarpReduce WarpReduce;
 
     /// Constants
     enum
