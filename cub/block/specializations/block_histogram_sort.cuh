@@ -52,7 +52,7 @@ template <
     int         BINS,               ///< The number of bins into which histogram samples may fall
     int         BLOCK_DIM_Y,        ///< The thread block length in threads along the Y dimension
     int         BLOCK_DIM_Z,        ///< The thread block length in threads along the Z dimension
-    int         PTX_ARCH>           ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0> ///< The PTX compute capability for which to to specialize this collective (unused)
 struct BlockHistogramSort
 {
     /// Constants
@@ -69,7 +69,7 @@ struct BlockHistogramSort
             ITEMS_PER_THREAD,
             NullType,
             4,
-            (PTX_ARCH >= 350) ? true : false,
+            true,
             BLOCK_SCAN_WARP_SCANS,
             cudaSharedMemBankSizeFourByte,
             BLOCK_DIM_Y,

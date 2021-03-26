@@ -445,13 +445,8 @@ template <>
 struct UnitWord <float2>
 {
     typedef int         ShuffleWord;
-#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
-    typedef float       VolatileWord;
-    typedef uint2       DeviceWord;
-#else
     typedef unsigned long long   VolatileWord;
     typedef unsigned long long   DeviceWord;
-#endif
     typedef float2      TextureWord;
 };
 
@@ -460,13 +455,8 @@ template <>
 struct UnitWord <float4>
 {
     typedef int         ShuffleWord;
-#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
-    typedef float               VolatileWord;
-    typedef uint4               DeviceWord;
-#else
     typedef unsigned long long  VolatileWord;
     typedef ulonglong2          DeviceWord;
-#endif
     typedef float4              TextureWord;
 };
 
@@ -476,13 +466,8 @@ template <>
 struct UnitWord <char2>
 {
     typedef unsigned short      ShuffleWord;
-#if (CUB_PTX_ARCH > 0) && (CUB_PTX_ARCH <= 130)
-    typedef unsigned short      VolatileWord;
-    typedef short               DeviceWord;
-#else
     typedef unsigned short      VolatileWord;
     typedef unsigned short      DeviceWord;
-#endif
     typedef unsigned short      TextureWord;
 };
 
