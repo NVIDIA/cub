@@ -47,7 +47,7 @@ CUB_NAMESPACE_BEGIN
  * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
- * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
+ * \tparam LEGACY_PTX_ARCH      <b>[optional]</b> Unused.
  *
  * \par Overview
  * It is commonplace for blocks of threads to rearrange data items between
@@ -60,7 +60,7 @@ template <
     int                 BLOCK_DIM_X,
     int                 BLOCK_DIM_Y         = 1,
     int                 BLOCK_DIM_Z         = 1,
-    int                 PTX_ARCH            = CUB_PTX_ARCH>
+    int                 LEGACY_PTX_ARCH     = 0>
 class BlockShuffle
 {
 private:
@@ -73,7 +73,7 @@ private:
     {
         BLOCK_THREADS               = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
 
-        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS(PTX_ARCH),
+        LOG_WARP_THREADS            = CUB_LOG_WARP_THREADS,
         WARP_THREADS                = 1 << LOG_WARP_THREADS,
         WARPS                       = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
     };

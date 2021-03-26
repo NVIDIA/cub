@@ -117,7 +117,7 @@ struct AgentRle
     // Constants
     enum
     {
-        WARP_THREADS            = CUB_WARP_THREADS(PTX_ARCH),
+        WARP_THREADS            = CUB_WARP_THREADS,
         BLOCK_THREADS           = AgentRlePolicyT::BLOCK_THREADS,
         ITEMS_PER_THREAD        = AgentRlePolicyT::ITEMS_PER_THREAD,
         WARP_ITEMS              = WARP_THREADS * ITEMS_PER_THREAD,

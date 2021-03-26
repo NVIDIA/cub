@@ -442,17 +442,15 @@ __device__ __forceinline__ unsigned int WarpId()
  *                              hardware warp threads).
  * @param warp_id Id of virtual warp within architectural warp
  */
-template <int LOGICAL_WARP_THREADS,
-          int PTX_ARCH = CUB_PTX_ARCH>
+template <int LOGICAL_WARP_THREADS, int LEGACY_PTX_ARCH = 0>
 __host__ __device__ __forceinline__
 unsigned int WarpMask(unsigned int warp_id)
 {
   constexpr bool is_pow_of_two = PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE;
-  constexpr bool is_arch_warp = LOGICAL_WARP_THREADS ==
-                                CUB_WARP_THREADS(PTX_ARCH);
+  constexpr bool is_arch_warp  = LOGICAL_WARP_THREADS == CUB_WARP_THREADS;
 
-  unsigned int member_mask =
-    0xFFFFFFFFu >> (CUB_WARP_THREADS(PTX_ARCH) - LOGICAL_WARP_THREADS);
+  unsigned int member_mask = 0xFFFFFFFFu >>
+                             (CUB_WARP_THREADS - LOGICAL_WARP_THREADS);
 
   if (is_pow_of_two && !is_arch_warp)
   {

@@ -57,8 +57,8 @@ CUB_NAMESPACE_BEGIN
  *   <b>[optional]</b> Value type (default: cub::NullType, which indicates a
  *   keys-only sort)
  *
- * @tparam PTX_ARCH
- *   <b>[optional]</b> \ptxversion
+ * @tparam LEGACY_PTX_ARCH
+ *   Unused.
  *
  * @par Overview
  *   WarpMergeSort arranges items into ascending order using a comparison
@@ -115,19 +115,19 @@ CUB_NAMESPACE_BEGIN
 template <
   typename    KeyT,
   int         ITEMS_PER_THREAD,
-  int         LOGICAL_WARP_THREADS    = CUB_PTX_WARP_THREADS,
+  int         LOGICAL_WARP_THREADS    = CUB_WARP_THREADS,
   typename    ValueT                  = NullType,
-  int         PTX_ARCH                = CUB_PTX_ARCH>
+  int         LEGACY_PTX_ARCH         = 0>
 class WarpMergeSort
     : public BlockMergeSortStrategy<
         KeyT,
         ValueT,
         LOGICAL_WARP_THREADS,
         ITEMS_PER_THREAD,
-        WarpMergeSort<KeyT, ITEMS_PER_THREAD, LOGICAL_WARP_THREADS, ValueT, PTX_ARCH>>
+        WarpMergeSort<KeyT, ITEMS_PER_THREAD, LOGICAL_WARP_THREADS, ValueT>>
 {
 private:
-  constexpr static bool IS_ARCH_WARP = LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH);
+  constexpr static bool IS_ARCH_WARP = LOGICAL_WARP_THREADS == CUB_WARP_THREADS;
   constexpr static bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
   constexpr static int TILE_SIZE = ITEMS_PER_THREAD * LOGICAL_WARP_THREADS;
 
@@ -150,7 +150,7 @@ public:
                                   ? LaneId()
                                   : (LaneId() % LOGICAL_WARP_THREADS))
       , warp_id(IS_ARCH_WARP ? 0 : (LaneId() / LOGICAL_WARP_THREADS))
-      , member_mask(WarpMask<LOGICAL_WARP_THREADS, PTX_ARCH>(warp_id))
+      , member_mask(WarpMask<LOGICAL_WARP_THREADS>(warp_id))
   {
   }
 

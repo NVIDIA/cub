@@ -47,7 +47,7 @@ CUB_NAMESPACE_BEGIN
 template <
     typename    T,                      ///< Data type being reduced
     int         LOGICAL_WARP_THREADS,   ///< Number of threads per logical warp
-    int         PTX_ARCH>               ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0>    ///< The PTX compute capability for which to to specialize this collective
 struct WarpReduceSmem
 {
     /******************************************************************************
@@ -57,7 +57,7 @@ struct WarpReduceSmem
     enum
     {
         /// Whether the logical warp size and the PTX warp size coincide
-        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS),
 
         /// Whether the logical warp size is a power-of-two
         IS_POW_OF_TWO = PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE,
@@ -109,8 +109,7 @@ struct WarpReduceSmem
         : temp_storage(temp_storage.Alias())
         , lane_id(IS_ARCH_WARP ? LaneId() : LaneId() % LOGICAL_WARP_THREADS)
         , member_mask(
-            WarpMask<LOGICAL_WARP_THREADS, PTX_ARCH>(
-              LaneId() / LOGICAL_WARP_THREADS))
+            WarpMask<LOGICAL_WARP_THREADS>(LaneId() / LOGICAL_WARP_THREADS))
     {}
 
     /******************************************************************************
