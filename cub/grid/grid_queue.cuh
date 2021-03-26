@@ -34,6 +34,7 @@
 #pragma once
 
 #include "../config.cuh"
+#include "../detail/target.cuh"
 #include "../util_debug.cuh"
 
 CUB_NAMESPACE_BEGIN
@@ -120,21 +121,20 @@ public:
         cudaStream_t stream = 0)
     {
         cudaError_t result = cudaErrorUnknown;
-        if (CUB_IS_DEVICE_CODE) {
-            #if CUB_INCLUDE_DEVICE_CODE
-                (void)stream;
-                d_counters[FILL] = fill_size;
-                d_counters[DRAIN] = 0;
-                result = cudaSuccess;
-            #endif
-        } else {
-            #if CUB_INCLUDE_HOST_CODE
-                OffsetT counters[2];
-                counters[FILL] = fill_size;
-                counters[DRAIN] = 0;
-                result = CubDebug(cudaMemcpyAsync(d_counters, counters, sizeof(OffsetT) * 2, cudaMemcpyHostToDevice, stream));
-            #endif
-        }
+
+        NV_IF_TARGET(NV_IS_DEVICE,
+        (
+            (void)stream;
+            d_counters[FILL] = fill_size;
+            d_counters[DRAIN] = 0;
+            result = cudaSuccess;
+        ), (
+            OffsetT counters[2];
+            counters[FILL] = fill_size;
+            counters[DRAIN] = 0;
+            result = CubDebug(cudaMemcpyAsync(d_counters, counters, sizeof(OffsetT) * 2, cudaMemcpyHostToDevice, stream));
+        ));
+
         return result;
     }
 
@@ -143,17 +143,16 @@ public:
     __host__ __device__ __forceinline__ cudaError_t ResetDrain(cudaStream_t stream = 0)
     {
         cudaError_t result = cudaErrorUnknown;
-        if (CUB_IS_DEVICE_CODE) {
-            #if CUB_INCLUDE_DEVICE_CODE
-                (void)stream;
-                d_counters[DRAIN] = 0;
-                result = cudaSuccess;
-            #endif
-        } else {
-            #if CUB_INCLUDE_HOST_CODE
-                result = CubDebug(cudaMemsetAsync(d_counters + DRAIN, 0, sizeof(OffsetT), stream));
-            #endif
-        }
+
+        NV_IF_TARGET(NV_IS_DEVICE,
+        (
+            (void)stream;
+            d_counters[DRAIN] = 0;
+            result = cudaSuccess;
+        ), (
+            result = CubDebug(cudaMemsetAsync(d_counters + DRAIN, 0, sizeof(OffsetT), stream));
+        ));
+
         return result;
     }
 
@@ -162,17 +161,16 @@ public:
     __host__ __device__ __forceinline__ cudaError_t ResetFill(cudaStream_t stream = 0)
     {
         cudaError_t result = cudaErrorUnknown;
-        if (CUB_IS_DEVICE_CODE) {
-            #if CUB_INCLUDE_DEVICE_CODE
-                (void)stream;
-                d_counters[FILL] = 0;
-                result = cudaSuccess;
-            #endif
-        } else {
-            #if CUB_INCLUDE_HOST_CODE
-                result = CubDebug(cudaMemsetAsync(d_counters + FILL, 0, sizeof(OffsetT), stream));
-            #endif
-        }
+
+        NV_IF_TARGET(NV_IS_DEVICE,
+        (
+            (void)stream;
+            d_counters[FILL] = 0;
+            result = cudaSuccess;
+        ), (
+            result = CubDebug(cudaMemsetAsync(d_counters + FILL, 0, sizeof(OffsetT), stream));
+        ));
+
         return result;
     }
 
@@ -183,17 +181,16 @@ public:
         cudaStream_t stream = 0)
     {
         cudaError_t result = cudaErrorUnknown;
-        if (CUB_IS_DEVICE_CODE) {
-            #if CUB_INCLUDE_DEVICE_CODE
-                (void)stream;
-                fill_size = d_counters[FILL];
-                result = cudaSuccess;
-            #endif
-        } else {
-            #if CUB_INCLUDE_HOST_CODE
-                result = CubDebug(cudaMemcpyAsync(&fill_size, d_counters + FILL, sizeof(OffsetT), cudaMemcpyDeviceToHost, stream));
-            #endif
-        }
+
+        NV_IF_TARGET(NV_IS_DEVICE,
+        (
+            (void)stream;
+            fill_size = d_counters[FILL];
+            result = cudaSuccess;
+        ), (
+            result = CubDebug(cudaMemcpyAsync(&fill_size, d_counters + FILL, sizeof(OffsetT), cudaMemcpyDeviceToHost, stream));
+        ));
+
         return result;
     }
 

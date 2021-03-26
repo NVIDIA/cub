@@ -36,6 +36,7 @@
 #include <iterator>
 #include <iostream>
 
+#include "../detail/target.cuh"
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
 #include "../util_device.cuh"
@@ -200,37 +201,33 @@ public:
     /// Indirection
     __host__ __device__ __forceinline__ reference operator*() const
     {
-        if (CUB_IS_HOST_CODE) {
-            #if CUB_INCLUDE_HOST_CODE
-                // Simply dereference the pointer on the host
-                return ptr[tex_offset];
-            #else
-                // Never executed, just need a return value for this codepath.
-                // The `reference` type is actually just T, so we can fake this
-                // easily.
-                return reference{};
-            #endif
-        } else {
-            #if CUB_INCLUDE_DEVICE_CODE
-                // Move array of uninitialized words, then alias and assign to return value
-                TextureWord words[TEXTURE_MULTIPLE];
+#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
+#define CUB_TEMP_UNROLL __pragma("unroll")
+#else // MSVC
+#define CUB_TEMP_UNROLL _Pragma("unroll")
+#endif // MSVC
 
-                #pragma unroll
-                for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
-                {
-                    words[i] = tex1Dfetch<TextureWord>(
-                        tex_obj,
-                        (tex_offset * TEXTURE_MULTIPLE) + i);
-                }
+        NV_IF_TARGET(NV_IS_HOST,
+        (
+            // Simply dereference the pointer on the host
+            return ptr[tex_offset];
+        ), ( // NV_IS_DEVICE
+            // Move array of uninitialized words, then alias and assign to return value
+            TextureWord words[TEXTURE_MULTIPLE];
 
-                // Load from words
-                return *reinterpret_cast<T*>(words);
-            #else
-                // This is dead code which will never be executed.  It is here
-                // only to avoid warnings about missing return statements.
-                return ptr[tex_offset];
-            #endif
-        }
+            CUB_TEMP_UNROLL
+            for (int i = 0; i < TEXTURE_MULTIPLE; ++i)
+            {
+                words[i] = tex1Dfetch<TextureWord>(
+                    tex_obj,
+                    (tex_offset * TEXTURE_MULTIPLE) + i);
+            }
+
+            // Load from words
+            return *reinterpret_cast<T*>(words);
+        ));
+
+#undef CUB_TEMP_UNROLL
     }
 
     /// Addition

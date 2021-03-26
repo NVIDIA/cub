@@ -42,6 +42,8 @@
 
 #include <cub/cub.cuh>
 
+#include <cub/detail/target.cuh>
+
 #include "test_util.h"
 
 using namespace cub;
@@ -1378,27 +1380,16 @@ struct DeviceSegReduceDispatch
         SegReduceKernelConfig       &seg_reduce_region_config,
         SegReduceByKeyKernelConfig  &seg_reduce_region_by_key_config)
     {
-    #if (CUB_PTX_ARCH > 0)
-
-        // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-        seg_reduce_region_config.Init<PtxSegReduceRegionPolicy>();
-        seg_reduce_region_by_key_config.Init<PtxSegReduceRegionByKeyPolicy>();
-
-    #else
-
-        // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-        if (ptx_version >= 350)
-        {
+        NV_IF_TARGET(NV_IS_DEVICE, (
+            // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
+            seg_reduce_region_config.Init<PtxSegReduceRegionPolicy>();
+            seg_reduce_region_by_key_config.Init<PtxSegReduceRegionByKeyPolicy>();
+        ), (
+            // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
+            (void)ptx_version; // only a single tuning currently exists..
             seg_reduce_region_config.template          Init<typename Policy350::SegReduceRegionPolicy>();
             seg_reduce_region_by_key_config.template   Init<typename Policy350::SegReduceRegionByKeyPolicy>();
-        }
-        else
-        {
-            seg_reduce_region_config.template          Init<typename Policy100::SegReduceRegionPolicy>();
-            seg_reduce_region_by_key_config.template   Init<typename Policy100::SegReduceRegionByKeyPolicy>();
-        }
-
-    #endif
+        ));
     }
 
 
@@ -1662,11 +1653,27 @@ struct DeviceSegReduceDispatch
         {
             // Get PTX version
             int ptx_version = 0;
-    #if (CUB_PTX_ARCH == 0)
-            if (CubDebug(error = PtxVersion(ptx_version))) break;
-    #else
-            ptx_version = CUB_PTX_ARCH;
-    #endif
+
+          // Define a temporary macro that expands to the current target ptx version
+          // in device code.
+          // <nv/target> may provide an abstraction for this eventually. For now,
+          // we have to keep this usage of __CUDA_ARCH__.
+#if defined(__NVCOMPILER_CUDA__)
+#define CUB_TEMP_GET_PTX __builtin_current_device_sm()
+#else
+#define CUB_TEMP_GET_PTX __CUDA_ARCH__
+#endif
+
+            NV_IF_TARGET(NV_IS_HOST, (
+                if (CubDebug(error = PtxVersion(ptx_version)))
+                {
+                  break;
+                }
+            ), ( // NV_IS_DEVICE:
+                ptx_version = CUB_TEMP_GET_PTX;
+            ));
+
+#undef CUB_TEMP_GET_PTX
 
             // Get kernel kernel dispatch configurations
             SegReduceKernelConfig seg_reduce_region_config;
