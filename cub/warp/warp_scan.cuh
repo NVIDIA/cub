@@ -158,10 +158,10 @@ private:
         IS_INTEGER = ((Traits<T>::CATEGORY == SIGNED_INTEGER) || (Traits<T>::CATEGORY == UNSIGNED_INTEGER))
     };
 
-    /// Internal specialization.  Use SHFL-based scan if (architecture is >= SM30) and (LOGICAL_WARP_THREADS is a power-of-two)
-    typedef typename If<(PTX_ARCH >= 300) && (IS_POW_OF_TWO),
-        WarpScanShfl<T, LOGICAL_WARP_THREADS, PTX_ARCH>,
-        WarpScanSmem<T, LOGICAL_WARP_THREADS, PTX_ARCH> >::Type InternalWarpScan;
+    /// Internal specialization.  Use SHFL-based scan if (LOGICAL_WARP_THREADS is a power-of-two)
+    typedef typename If<IS_POW_OF_TWO,
+        WarpScanShfl<T, LOGICAL_WARP_THREADS>,
+        WarpScanSmem<T, LOGICAL_WARP_THREADS> >::Type InternalWarpScan;
 
     /// Shared memory storage layout type for WarpScan
     typedef typename InternalWarpScan::TempStorage _TempStorage;

@@ -163,12 +163,7 @@ __global__ void FullTileReduceKernel(
         T block_aggregate = DeviceTest(block_reduce, data, reduction_op);
 
         // Stop cycle timer
- #if CUB_PTX_ARCH == 100
-        // Bug: recording stop clock causes mis-write of running prefix value
-        clock_t stop = 0;
-#else
         clock_t stop = clock();
-#endif // CUB_PTX_ARCH == 100
         clock_t elapsed = (start > stop) ? start - stop : stop - start;
 
         // Loop over input tiles
@@ -189,12 +184,7 @@ __global__ void FullTileReduceKernel(
             T tile_aggregate = DeviceTest(block_reduce, data, reduction_op);
 
             // Stop cycle timer
-#if CUB_PTX_ARCH == 100
-            // Bug: recording stop clock causes mis-write of running prefix value
-            clock_t stop = 0;
-#else
             clock_t stop = clock();
-#endif // CUB_PTX_ARCH == 100
             elapsed += (start > stop) ? start - stop : stop - start;
 
             // Reduce thread block aggregate
@@ -255,12 +245,7 @@ __global__ void PartialTileReduceKernel(
     T tile_aggregate = DeviceTest(block_reduce, partial, reduction_op, num_items);
 
     // Stop cycle timer
-#if CUB_PTX_ARCH == 100
-    // Bug: recording stop clock causes mis-write of running prefix value
-    clock_t stop = 0;
-#else
     clock_t stop = clock();
-#endif // CUB_PTX_ARCH == 100
 
     clock_t elapsed = (start > stop) ? start - stop : stop - start;
 

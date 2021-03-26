@@ -1351,53 +1351,11 @@ struct DeviceSegReduceDispatch
     };
 
 
-    /// SM10
-    struct Policy100
-    {
-        // ReduceRegionPolicy
-        typedef BlockSegReduceRegionPolicy<
-                128,                            ///< Threads per thread block
-                3,                              ///< Items per thread (per tile of input)
-                false,                          ///< Whether or not to cache incoming segment offsets in shared memory before reducing each tile
-                false,                          ///< Whether or not to cache incoming values in shared memory before reducing each tile
-                LOAD_DEFAULT,                   ///< Cache load modifier for reading segment offsets
-                LOAD_DEFAULT,                   ///< Cache load modifier for reading values
-                BLOCK_REDUCE_RAKING,            ///< The BlockReduce algorithm to use
-                BLOCK_SCAN_RAKING>              ///< The BlockScan algorithm to use
-            SegReduceRegionPolicy;
-
-        // ReduceRegionByKeyPolicy
-        typedef BlockSegReduceRegionByKeyPolicy<
-                128,                            ///< Threads per thread block
-                3,                              ///< Items per thread (per tile of input)
-                BLOCK_LOAD_WARP_TRANSPOSE,      ///< The BlockLoad algorithm to use
-                false,                          ///< Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage)
-                LOAD_DEFAULT,                   ///< Cache load modifier for reading input elements
-                BLOCK_SCAN_WARP_SCANS>          ///< The BlockScan algorithm to use
-            SegReduceRegionByKeyPolicy;
-    };
-
-
     /******************************************************************************
      * Tuning policies of current PTX compiler pass
      ******************************************************************************/
 
-#if (CUB_PTX_ARCH >= 350)
     typedef Policy350 PtxPolicy;
-/*
-#elif (CUB_PTX_ARCH >= 300)
-    typedef Policy300 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 200)
-    typedef Policy200 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 130)
-    typedef Policy130 PtxPolicy;
-*/
-#else
-    typedef Policy100 PtxPolicy;
-
-#endif
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxSegReduceRegionPolicy           : PtxPolicy::SegReduceRegionPolicy {};
@@ -1434,23 +1392,6 @@ struct DeviceSegReduceDispatch
             seg_reduce_region_config.template          Init<typename Policy350::SegReduceRegionPolicy>();
             seg_reduce_region_by_key_config.template   Init<typename Policy350::SegReduceRegionByKeyPolicy>();
         }
-/*
-        else if (ptx_version >= 300)
-        {
-            seg_reduce_region_config.template          Init<typename Policy300::SegReduceRegionPolicy>();
-            seg_reduce_region_by_key_config.template   Init<typename Policy300::SegReduceRegionByKeyPolicy>();
-        }
-        else if (ptx_version >= 200)
-        {
-            seg_reduce_region_config.template          Init<typename Policy200::SegReduceRegionPolicy>();
-            seg_reduce_region_by_key_config.template   Init<typename Policy200::SegReduceRegionByKeyPolicy>();
-        }
-        else if (ptx_version >= 130)
-        {
-            seg_reduce_region_config.template          Init<typename Policy130::SegReduceRegionPolicy>();
-            seg_reduce_region_by_key_config.template   Init<typename Policy130::SegReduceRegionByKeyPolicy>();
-        }
-*/
         else
         {
             seg_reduce_region_config.template          Init<typename Policy100::SegReduceRegionPolicy>();

@@ -368,11 +368,7 @@ struct PersistentBlockSpmv
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
-#if CUB_PTX_ARCH >= 350
             values[ITEM] *= ThreadLoad<LOAD_LDG>(d_vector + columns[ITEM]);
-#else
-            values[ITEM] *= TexVector<Value>::Load(columns[ITEM]);
-#endif
         }
 
         // Transpose from warp-striped to blocked arrangement
@@ -580,11 +576,7 @@ struct FinalizeSpmvBlock
         if (FULL_TILE)
         {
             // Full tile
-#if CUB_PTX_ARCH >= 350
             LoadDirectBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums);
-#else
-            LoadDirectBlocked(threadIdx.x, d_block_partials + block_offset, partial_sums);
-#endif
         }
         else
         {
@@ -593,11 +585,7 @@ struct FinalizeSpmvBlock
             default_sum.row = temp_storage.last_block_row;
             default_sum.partial = Value(0);
 
-#if CUB_PTX_ARCH >= 350
             LoadDirectBlocked<LOAD_LDG>(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
-#else
-            LoadDirectBlocked(threadIdx.x, d_block_partials + block_offset, partial_sums, guarded_items, default_sum);
-#endif
         }
 
         // Copy out row IDs for row-head flagging

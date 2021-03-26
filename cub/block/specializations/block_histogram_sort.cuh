@@ -69,7 +69,7 @@ struct BlockHistogramSort
             ITEMS_PER_THREAD,
             NullType,
             4,
-            (PTX_ARCH >= 350) ? true : false,
+            true,
             BLOCK_SCAN_WARP_SCANS,
             cudaSharedMemBankSizeFourByte,
             BLOCK_DIM_Y,

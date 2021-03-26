@@ -329,9 +329,7 @@ struct AgentSpmv
             ValueT  value               = wd_values[nonzero_idx];
 
             ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
-#if (CUB_PTX_ARCH >= 350)
             vector_value                = wd_vector_x[column_idx];
-#endif
             ValueT  nonzero             = value * vector_value;
 
             OffsetT row_end_offset      = s_tile_row_end_offsets[thread_current_coord.x];

@@ -164,19 +164,8 @@ private:
         BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
     };
 
-    /**
-     * Ensure the template parameterization meets the requirements of the
-     * targeted device architecture.  BLOCK_HISTO_ATOMIC can only be used
-     * on version SM120 or later.  Otherwise BLOCK_HISTO_SORT is used
-     * regardless.
-     */
-    static const BlockHistogramAlgorithm SAFE_ALGORITHM =
-        ((ALGORITHM == BLOCK_HISTO_ATOMIC) && (PTX_ARCH < 120)) ?
-            BLOCK_HISTO_SORT :
-            ALGORITHM;
-
     /// Internal specialization.
-    typedef typename If<(SAFE_ALGORITHM == BLOCK_HISTO_SORT),
+    typedef typename If<(ALGORITHM == BLOCK_HISTO_SORT),
         BlockHistogramSort<T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH>,
         BlockHistogramAtomic<BINS> >::Type InternalBlockHistogram;
 
