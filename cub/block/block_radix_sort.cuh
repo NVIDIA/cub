@@ -57,7 +57,7 @@ CUB_NAMESPACE_BEGIN
  * \tparam SMEM_CONFIG          <b>[optional]</b> Shared memory bank mode (default: \p cudaSharedMemBankSizeFourByte)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
- * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
+ * \tparam LEGACY_PTX_ARCH      <b>[optional]</b> Unused.
  *
  * \par Overview
  * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
@@ -170,7 +170,7 @@ template <
     cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte,
     int                     BLOCK_DIM_Y             = 1,
     int                     BLOCK_DIM_Z             = 1,
-    int                     PTX_ARCH                = CUB_PTX_ARCH>
+    int                     LEGACY_PTX_ARCH         = 0>
 class BlockRadixSort
 {
 private:
@@ -201,8 +201,7 @@ private:
             INNER_SCAN_ALGORITHM,
             SMEM_CONFIG,
             BLOCK_DIM_Y,
-            BLOCK_DIM_Z,
-            PTX_ARCH>
+            BLOCK_DIM_Z>
         AscendingBlockRadixRank;
 
     /// Descending BlockRadixRank utility type
@@ -214,18 +213,17 @@ private:
             INNER_SCAN_ALGORITHM,
             SMEM_CONFIG,
             BLOCK_DIM_Y,
-            BLOCK_DIM_Z,
-            PTX_ARCH>
+            BLOCK_DIM_Z>
         DescendingBlockRadixRank;
 
     /// Digit extractor type
     typedef BFEDigitExtractor<KeyT> DigitExtractorT;
 
     /// BlockExchange utility type for keys
-    typedef BlockExchange<KeyT, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchangeKeys;
+    typedef BlockExchange<KeyT, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchangeKeys;
 
     /// BlockExchange utility type for values
-    typedef BlockExchange<ValueT, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH> BlockExchangeValues;
+    typedef BlockExchange<ValueT, BLOCK_DIM_X, ITEMS_PER_THREAD, false, BLOCK_DIM_Y, BLOCK_DIM_Z> BlockExchangeValues;
 
     /// Shared memory storage layout type
     union _TempStorage

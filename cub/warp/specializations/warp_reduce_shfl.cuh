@@ -51,7 +51,7 @@ CUB_NAMESPACE_BEGIN
 template <
     typename    T,                      ///< Data type being reduced
     int         LOGICAL_WARP_THREADS,   ///< Number of threads per logical warp
-    int         PTX_ARCH>               ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0>    ///< The PTX compute capability for which to to specialize this collective
 struct WarpReduceShfl
 {
     static_assert(PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE,
@@ -64,16 +64,16 @@ struct WarpReduceShfl
     enum
     {
         /// Whether the logical warp size and the PTX warp size coincide
-        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(0)),
 
         /// The number of warp reduction steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
 
         /// Number of logical warps in a PTX warp
-        LOGICAL_WARPS = CUB_WARP_THREADS(PTX_ARCH) / LOGICAL_WARP_THREADS,
+        LOGICAL_WARPS = CUB_WARP_THREADS(0) / LOGICAL_WARP_THREADS,
 
         /// The 5-bit SHFL mask for logically splitting warps into sub-segments starts 8-bits up
-        SHFL_C = (CUB_WARP_THREADS(PTX_ARCH) - LOGICAL_WARP_THREADS) << 8
+        SHFL_C = (CUB_WARP_THREADS(0) - LOGICAL_WARP_THREADS) << 8
 
     };
 
@@ -114,7 +114,7 @@ struct WarpReduceShfl
         TempStorage &/*temp_storage*/)
         : lane_id(static_cast<int>(LaneId()))
         , warp_id(IS_ARCH_WARP ? 0 : (lane_id / LOGICAL_WARP_THREADS))
-        , member_mask(WarpMask<LOGICAL_WARP_THREADS, PTX_ARCH>(warp_id))
+        , member_mask(WarpMask<LOGICAL_WARP_THREADS>(warp_id))
     {
         if (!IS_ARCH_WARP)
         {

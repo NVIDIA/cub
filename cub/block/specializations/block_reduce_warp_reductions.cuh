@@ -48,7 +48,7 @@ template <
     int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
     int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
     int         BLOCK_DIM_Z,    ///< The thread block length in threads along the Z dimension
-    int         PTX_ARCH>       ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0> ///< The PTX compute capability for which to to specialize this collective
 struct BlockReduceWarpReductions
 {
     /// Constants
@@ -58,7 +58,7 @@ struct BlockReduceWarpReductions
         BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
 
         /// Number of warp threads
-        WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH),
+        WARP_THREADS = CUB_WARP_THREADS(0),
 
         /// Number of active warps
         WARPS = (BLOCK_THREADS + WARP_THREADS - 1) / WARP_THREADS,
@@ -72,7 +72,7 @@ struct BlockReduceWarpReductions
 
 
     ///  WarpReduce utility type
-    typedef typename WarpReduce<T, LOGICAL_WARP_SIZE, PTX_ARCH>::InternalWarpReduce WarpReduce;
+    typedef typename WarpReduce<T, LOGICAL_WARP_SIZE>::InternalWarpReduce WarpReduce;
 
 
     /// Shared memory storage layout type

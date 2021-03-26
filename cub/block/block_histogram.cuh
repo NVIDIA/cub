@@ -94,7 +94,7 @@ enum BlockHistogramAlgorithm
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockHistogramAlgorithm enumerator specifying the underlying algorithm to use (default: cub::BLOCK_HISTO_SORT)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
- * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
+ * \tparam LEGACY_PTX_ARCH      <b>[optional]</b> Unused.
  *
  * \par Overview
  * - A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
@@ -160,7 +160,7 @@ template <
     BlockHistogramAlgorithm ALGORITHM           = BLOCK_HISTO_SORT,
     int                     BLOCK_DIM_Y         = 1,
     int                     BLOCK_DIM_Z         = 1,
-    int                     PTX_ARCH            = CUB_PTX_ARCH>
+    int                     LEGACY_PTX_ARCH     = 0>
 class BlockHistogram
 {
 private:
@@ -184,8 +184,7 @@ private:
                                                     ITEMS_PER_THREAD,
                                                     BINS,
                                                     BLOCK_DIM_Y,
-                                                    BLOCK_DIM_Z,
-                                                    PTX_ARCH>,
+                                                    BLOCK_DIM_Z>,
                                  BlockHistogramAtomic<BINS>>;
 
     /// Shared memory storage layout type for BlockHistogram

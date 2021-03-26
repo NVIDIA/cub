@@ -103,7 +103,7 @@ template <
     typename    PrivatizedDecodeOpT,            ///< The transform operator type for determining privatized counter indices from samples, one for each channel
     typename    OutputDecodeOpT,                ///< The transform operator type for determining output bin-ids from privatized counter indices, one for each channel
     typename    OffsetT,                        ///< Signed integer type for global offsets
-    int         PTX_ARCH = CUB_PTX_ARCH>        ///< PTX compute capability
+    int         LEGACY_PTX_ARCH = 0>            ///< PTX compute capability (unused)
 struct AgentHistogram
 {
     //---------------------------------------------------------------------

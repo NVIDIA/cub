@@ -666,11 +666,11 @@ template <
     typename    T,
     typename    ScanOpT,
     typename    ScanTileStateT,
-    int         PTX_ARCH = CUB_PTX_ARCH>
+    int         LEGACY_PTX_ARCH = 0>
 struct TilePrefixCallbackOp
 {
     // Parameterized warp reduce
-    typedef WarpReduce<T, CUB_PTX_WARP_THREADS, PTX_ARCH> WarpReduceT;
+    typedef WarpReduce<T, CUB_PTX_WARP_THREADS> WarpReduceT;
 
     // Temporary storage type
     struct _TempStorage
