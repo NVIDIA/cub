@@ -138,7 +138,7 @@ template <
     int                     BLOCK_DIM_X,
     int                     RADIX_BITS,
     bool                    IS_DESCENDING,
-    bool                    MEMOIZE_OUTER_SCAN      = (CUB_PTX_ARCH >= 350) ? true : false,
+    bool                    MEMOIZE_OUTER_SCAN      = true,
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM    = BLOCK_SCAN_WARP_SCANS,
     cudaSharedMemConfig     SMEM_CONFIG             = cudaSharedMemBankSizeFourByte,
     int                     BLOCK_DIM_Y             = 1,

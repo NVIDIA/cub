@@ -152,7 +152,7 @@ private:
 
 public:
 
-    #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     /// Internal specialization.
     /// Use SHFL-based reduction if LOGICAL_WARP_THREADS is a power-of-two
