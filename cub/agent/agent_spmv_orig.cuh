@@ -416,7 +416,8 @@ struct AgentSpmv
         int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
         int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
 
-#if (CUB_PTX_ARCH >= 520)
+// Not porting these for NVC++; see note in DispatchSpmv in the "__NVCOMPILER_CUDA__" block.
+#if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 520)
 
         OffsetT*    s_tile_row_end_offsets  = &temp_storage.aliasable.merge_items[0].row_end_offset;
         ValueT*     s_tile_nonzeros         = &temp_storage.aliasable.merge_items[tile_num_rows + ITEMS_PER_THREAD].nonzero;
@@ -465,9 +466,8 @@ struct AgentSpmv
                 ValueT  value                   = wd_values[tile_start_coord.y + nonzero_idx];
 
                 ValueT  vector_value            = spmv_params.t_vector_x[column_idx];
-#if (CUB_PTX_ARCH >= 350)
+
                 vector_value                    = wd_vector_x[column_idx];
-#endif
                 ValueT  nonzero                 = value * vector_value;
 
                 s_tile_nonzeros[nonzero_idx]    = nonzero;

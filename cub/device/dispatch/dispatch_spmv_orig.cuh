@@ -368,19 +368,36 @@ struct DispatchSpmv
     // Tuning policies of current PTX compiler pass
     //---------------------------------------------------------------------
 
-#if (CUB_PTX_ARCH >= 600)
-    typedef Policy600 PtxPolicy;
+#ifdef __NVCOMPILER_CUDA__
 
-#elif (CUB_PTX_ARCH >= 500)
-    typedef Policy500 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 370)
-    typedef Policy370 PtxPolicy;
-
-#else
+    // cub::DeviceSpmv has not been ported to use cub::detail::ptx_dispatch
+    // and uses an older dispatch mechanism that is incompatible with nvc++.
+    //
+    // It was not ported because there are no tests and thus no way to verify
+    // whether or not the ported version works. Rather than risk breaking
+    // users code, we'll port this later, after we add tests. NV HPC doesn't
+    // require this algorithm so it's low priority for now. Tracked by
+    // NVIDIA/cub#285.
+    //
+    // This will fail to compile if the Spmv algorithm is instantiated on nvc++,
+    // but will still build if the header is just included:
+    template <typename> struct dependent_false : std::false_type {};
+    static_assert(dependent_false<ValueT>::value,
+                  "cub::DeviceSpmv is not supported on nvc++.");
+    // Define this so the headers still parse:
     typedef Policy350 PtxPolicy;
 
-#endif
+#else
+    #if (__CUDA_ARCH__ >= 600)
+        typedef Policy600 PtxPolicy;
+    #elif (__CUDA_ARCH__ >= 500)
+        typedef Policy500 PtxPolicy;
+    #elif (__CUDA_ARCH__ >= 370)
+        typedef Policy370 PtxPolicy;
+    #else
+        typedef Policy350 PtxPolicy;
+    #endif
+#endif // __NVCOMPILER_CUDA__
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxSpmvPolicyT : PtxPolicy::SpmvPolicyT {};
@@ -401,40 +418,34 @@ struct DispatchSpmv
         KernelConfig    &spmv_config,
         KernelConfig    &segment_fixup_config)
     {
-        if (CUB_IS_DEVICE_CODE)
+// Not porting these for NVC++; see note above in the "__NVCOMPILER_CUDA__" block.
+#ifdef __CUDA_ARCH__
+        // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
+        spmv_config.template Init<PtxSpmvPolicyT>();
+        segment_fixup_config.template Init<PtxSegmentFixupPolicy>();
+#else
+        // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
+        if (ptx_version >= 600)
         {
-            #if CUB_INCLUDE_DEVICE_CODE
-                // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-                spmv_config.template Init<PtxSpmvPolicyT>();
-                segment_fixup_config.template Init<PtxSegmentFixupPolicy>();
-            #endif
+            spmv_config.template            Init<typename Policy600::SpmvPolicyT>();
+            segment_fixup_config.template   Init<typename Policy600::SegmentFixupPolicyT>();
+        }
+        else if (ptx_version >= 500)
+        {
+            spmv_config.template            Init<typename Policy500::SpmvPolicyT>();
+            segment_fixup_config.template   Init<typename Policy500::SegmentFixupPolicyT>();
+        }
+        else if (ptx_version >= 370)
+        {
+            spmv_config.template            Init<typename Policy370::SpmvPolicyT>();
+            segment_fixup_config.template   Init<typename Policy370::SegmentFixupPolicyT>();
         }
         else
         {
-            #if CUB_INCLUDE_HOST_CODE
-                // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-                if (ptx_version >= 600)
-                {
-                    spmv_config.template            Init<typename Policy600::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy600::SegmentFixupPolicyT>();
-                }
-                else if (ptx_version >= 500)
-                {
-                    spmv_config.template            Init<typename Policy500::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy500::SegmentFixupPolicyT>();
-                }
-                else if (ptx_version >= 370)
-                {
-                    spmv_config.template            Init<typename Policy370::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy370::SegmentFixupPolicyT>();
-                }
-                else
-                {
-                    spmv_config.template            Init<typename Policy350::SpmvPolicyT>();
-                    segment_fixup_config.template   Init<typename Policy350::SegmentFixupPolicyT>();
-                }
-            #endif
+            spmv_config.template            Init<typename Policy350::SpmvPolicyT>();
+            segment_fixup_config.template   Init<typename Policy350::SegmentFixupPolicyT>();
         }
+#endif
     }
 
 
@@ -603,13 +614,11 @@ struct DispatchSpmv
             int search_block_size   = INIT_KERNEL_THREADS;
             int search_grid_size    = cub::DivideAndRoundUp(num_merge_tiles + 1, search_block_size);
 
-            #if CUB_INCLUDE_HOST_CODE
-                if (CUB_IS_HOST_CODE)
-                {
-                    // Init textures
-                    if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
-                }
-            #endif
+// Not porting these for NVC++; see note above in the "__NVCOMPILER_CUDA__" block.
+#ifndef __CUDA_ARCH__
+            // Init textures
+            if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
+#endif
 
             if (search_grid_size < sm_count)
 //            if (num_merge_tiles < spmv_sm_occupancy * sm_count)
@@ -686,13 +695,11 @@ struct DispatchSpmv
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
 
-            #if CUB_INCLUDE_HOST_CODE
-                if (CUB_IS_HOST_CODE)
-                {
-                    // Free textures
-                    if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
-                }
-            #endif
+// Not porting these for NVC++; see note above in the "__NVCOMPILER_CUDA__" block.
+#ifndef __CUDA_ARCH__
+            // Free textures
+            if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
+#endif
         }
         while (0);
 
