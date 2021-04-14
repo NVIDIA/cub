@@ -27,20 +27,21 @@
 
 #pragma once
 
-#include <iterator>
-#include <cstdio>
-
 #include <cub/agent/agent_three_way_partition.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/thread/thread_operators.cuh>
 #include <cub/util_deprecated.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
 
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
 #include <nv/target>
 
-#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+#include <cstdio>
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 
@@ -171,7 +172,7 @@ struct DispatchThreeWayPartitionIf
    ****************************************************************************/
 
   /// SM35
-  struct Policy350
+  struct Policy350 : cub::detail::ptx<350>
   {
     constexpr static int ITEMS_PER_THREAD = Nominal4BItemsToItems<InputT>(9);
 
@@ -183,44 +184,12 @@ struct DispatchThreeWayPartitionIf
                                         cub::BLOCK_SCAN_WARP_SCANS>;
   };
 
-  /*****************************************************************************
-   * Tuning policies of current PTX compiler pass
-   ****************************************************************************/
-
-  using PtxPolicy = Policy350;
-
-  // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-  struct PtxThreeWayPartitionPolicyT : PtxPolicy::ThreeWayPartitionPolicy {};
-
+  // List in descending order:
+  using Policies = cub::detail::type_list<Policy350>;
 
   /*****************************************************************************
    * Utilities
    ****************************************************************************/
-
-  /**
-   * Initialize kernel dispatch configurations with the policies corresponding
-   * to the PTX assembly we will use
-   */
-  template <typename KernelConfig>
-  CUB_RUNTIME_FUNCTION __forceinline__
-  static void InitConfigs(
-    int             ptx_version,
-    KernelConfig    &select_if_config)
-  {
-    NV_IF_TARGET(
-      NV_IS_DEVICE,
-      ((void)ptx_version;
-       // We're on the device, so initialize the kernel dispatch configurations
-       // with the current PTX policy
-       select_if_config.template Init<PtxThreeWayPartitionPolicyT>();),
-      (// We're on the host, so lookup and initialize the kernel dispatch
-       // configurations with the policies that match the device's PTX version
-       // (There's only one policy right now)
-       (void)ptx_version;
-       select_if_config
-         .template Init<typename Policy350::ThreeWayPartitionPolicy>();));
-  }
-
 
   /**
    * Kernel dispatch configuration.
@@ -241,30 +210,72 @@ struct DispatchThreeWayPartitionIf
     }
   };
 
+  void                     *d_temp_storage;
+  std::size_t              &temp_storage_bytes;
+  InputIteratorT            d_in;
+  FirstOutputIteratorT      d_first_part_out;
+  SecondOutputIteratorT     d_second_part_out;
+  UnselectedOutputIteratorT d_unselected_out;
+  NumSelectedIteratorT      d_num_selected_out;
+  SelectFirstPartOp         select_first_part_op;
+  SelectSecondPartOp        select_second_part_op;
+  OffsetT                   num_items;
+  cudaStream_t              stream;
+
+  /// Constructor
+  CUB_RUNTIME_FUNCTION __forceinline__
+  DispatchThreeWayPartitionIf(void                     *d_temp_storage_,
+                              std::size_t              &temp_storage_bytes_,
+                              InputIteratorT            d_in_,
+                              FirstOutputIteratorT      d_first_part_out_,
+                              SecondOutputIteratorT     d_second_part_out_,
+                              UnselectedOutputIteratorT d_unselected_out_,
+                              NumSelectedIteratorT      d_num_selected_out_,
+                              SelectFirstPartOp         select_first_part_op_,
+                              SelectSecondPartOp        select_second_part_op_,
+                              OffsetT                   num_items_,
+                              cudaStream_t              stream_)
+      : d_temp_storage(d_temp_storage_)
+      , temp_storage_bytes(temp_storage_bytes_)
+      , d_in(d_in_)
+      , d_first_part_out(d_first_part_out_)
+      , d_second_part_out(d_second_part_out_)
+      , d_unselected_out(d_unselected_out_)
+      , d_num_selected_out(d_num_selected_out_)
+      , select_first_part_op(select_first_part_op_)
+      , select_second_part_op(select_second_part_op_)
+      , num_items(num_items_)
+      , stream(stream_)
+  {}
 
   /*****************************************************************************
    * Dispatch entrypoints
    ****************************************************************************/
 
-  template <typename ScanInitKernelPtrT,
-            typename SelectIfKernelPtrT>
-  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
-  Dispatch(void *d_temp_storage,
-           std::size_t &temp_storage_bytes,
-           InputIteratorT d_in,
-           FirstOutputIteratorT d_first_part_out,
-           SecondOutputIteratorT d_second_part_out,
-           UnselectedOutputIteratorT d_unselected_out,
-           NumSelectedIteratorT d_num_selected_out,
-           SelectFirstPartOp select_first_part_op,
-           SelectSecondPartOp select_second_part_op,
-           OffsetT num_items,
-           cudaStream_t stream,
-           int /*ptx_version*/,
-           ScanInitKernelPtrT three_way_partition_init_kernel,
-           SelectIfKernelPtrT three_way_partition_kernel,
-           KernelConfig three_way_partition_config)
+  template <typename ActivePolicyT>
+  CUB_RUNTIME_FUNCTION __forceinline__
+  cudaError_t Invoke()
   {
+    using Policy = typename ActivePolicyT::ThreeWayPartitionPolicy;
+
+    auto three_way_partition_init_kernel =
+      DeviceThreeWayPartitionInitKernel<ScanTileStateT, NumSelectedIteratorT>;
+
+    auto three_way_partition_kernel =
+      DeviceThreeWayPartitionKernel<Policy,
+                                    InputIteratorT,
+                                    FirstOutputIteratorT,
+                                    SecondOutputIteratorT,
+                                    UnselectedOutputIteratorT,
+                                    NumSelectedIteratorT,
+                                    ScanTileStateT,
+                                    SelectFirstPartOp,
+                                    SelectSecondPartOp,
+                                    OffsetT>;
+
+    KernelConfig three_way_partition_config;
+    three_way_partition_config.template Init<Policy>();
+
     cudaError error = cudaSuccess;
 
     do
@@ -483,7 +494,7 @@ struct DispatchThreeWayPartitionIf
 
 
   /**
-   * Internal dispatch routine
+   * Dispatch routine
    */
   CUB_RUNTIME_FUNCTION __forceinline__
   static cudaError_t Dispatch(
@@ -499,54 +510,28 @@ struct DispatchThreeWayPartitionIf
     OffsetT                     num_items,
     cudaStream_t                stream)
   {
-    cudaError error = cudaSuccess;
+    // Dispatch on default policies:
+    using policies_t = Policies;
+    constexpr auto exec_space = cub::detail::runtime_exec_space;
+    using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-    do
-    {
-      // Get PTX version
-      int ptx_version = 0;
-      if (CubDebug(error = cub::PtxVersion(ptx_version)))
-      {
-        break;
-      }
+    // Create dispatch functor
+    DispatchThreeWayPartitionIf dispatch(d_temp_storage,
+                                         temp_storage_bytes,
+                                         d_in,
+                                         d_first_part_out,
+                                         d_second_part_out,
+                                         d_unselected_out,
+                                         d_num_selected_out,
+                                         select_first_part_op,
+                                         select_second_part_op,
+                                         num_items,
+                                         stream);
 
-      // Get kernel kernel dispatch configurations
-      KernelConfig select_if_config;
-      InitConfigs(ptx_version, select_if_config);
+    cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+    dispatcher_t::exec(invoker, dispatch);
 
-      // Dispatch
-      if (CubDebug(error = Dispatch(
-                     d_temp_storage,
-                     temp_storage_bytes,
-                     d_in,
-                     d_first_part_out,
-                     d_second_part_out,
-                     d_unselected_out,
-                     d_num_selected_out,
-                     select_first_part_op,
-                     select_second_part_op,
-                     num_items,
-                     stream,
-                     ptx_version,
-                     DeviceThreeWayPartitionInitKernel<ScanTileStateT,
-                                                       NumSelectedIteratorT>,
-                     DeviceThreeWayPartitionKernel<PtxThreeWayPartitionPolicyT,
-                                                   InputIteratorT,
-                                                   FirstOutputIteratorT,
-                                                   SecondOutputIteratorT,
-                                                   UnselectedOutputIteratorT,
-                                                   NumSelectedIteratorT,
-                                                   ScanTileStateT,
-                                                   SelectFirstPartOp,
-                                                   SelectSecondPartOp,
-                                                   OffsetT>,
-                     select_if_config)))
-      {
-        break;
-      }
-    } while (0);
-
-    return error;
+    return CubDebug(invoker.status);
   }
 
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED

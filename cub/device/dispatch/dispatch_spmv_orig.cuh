@@ -38,6 +38,8 @@
 #include <cub/agent/agent_spmv_orig.cuh>
 #include <cub/agent/single_pass_scan_operators.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_search.cuh>
 #include <cub/util_debug.cuh>
@@ -46,12 +48,13 @@
 #include <cub/util_math.cuh>
 #include <cub/util_type.cuh>
 
-#include <nv/target>
-
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <nv/target>
 
 #include <cstdio>
 #include <iterator>
+
 
 CUB_NAMESPACE_BEGIN
 
@@ -144,7 +147,6 @@ __global__ void DeviceSpmvSearchKernel(
     }
 }
 
-
 /**
  * Spmv agent entry point
  */
@@ -184,7 +186,6 @@ __global__ void DeviceSpmvKernel(
 
     // Initialize fixup tile status
     tile_state.InitializeStatus(num_segment_fixup_tiles);
-
 }
 
 
@@ -265,174 +266,98 @@ struct DispatchSpmv
     //---------------------------------------------------------------------
 
     /// SM35
-    struct Policy350
+    struct Policy350 : cub::detail::ptx<350>
     {
-        typedef AgentSpmvPolicy<
-                (sizeof(ValueT) > 4) ? 96 : 128,
-                (sizeof(ValueT) > 4) ? 4 : 7,
-                LOAD_LDG,
-                LOAD_CA,
-                LOAD_LDG,
-                LOAD_LDG,
-                LOAD_LDG,
-                (sizeof(ValueT) > 4) ? true : false,
-                BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
+      using SpmvPolicyT = AgentSpmvPolicy<(sizeof(ValueT) > 4) ? 96 : 128,
+                                          (sizeof(ValueT) > 4) ? 4 : 7,
+                                          LOAD_LDG,
+                                          LOAD_CA,
+                                          LOAD_LDG,
+                                          LOAD_LDG,
+                                          LOAD_LDG,
+                                          (sizeof(ValueT) > 4) ? true : false,
+                                          BLOCK_SCAN_WARP_SCANS>;
 
-        typedef AgentSegmentFixupPolicy<
-                128,
-                3,
-                BLOCK_LOAD_VECTORIZE,
-                LOAD_LDG,
-                BLOCK_SCAN_WARP_SCANS>
-            SegmentFixupPolicyT;
+      using SegmentFixupPolicyT =
+        AgentSegmentFixupPolicy<128,
+                                3,
+                                BLOCK_LOAD_VECTORIZE,
+                                LOAD_LDG,
+                                BLOCK_SCAN_WARP_SCANS>;
     };
 
 
     /// SM37
-    struct Policy370
+    struct Policy370 : cub::detail::ptx<370>
     {
+      using SpmvPolicyT = AgentSpmvPolicy<(sizeof(ValueT) > 4) ? 128 : 128,
+                                          (sizeof(ValueT) > 4) ? 9 : 14,
+                                          LOAD_LDG,
+                                          LOAD_CA,
+                                          LOAD_LDG,
+                                          LOAD_LDG,
+                                          LOAD_LDG,
+                                          false,
+                                          BLOCK_SCAN_WARP_SCANS>;
 
-        typedef AgentSpmvPolicy<
-                (sizeof(ValueT) > 4) ? 128 : 128,
-                (sizeof(ValueT) > 4) ? 9 : 14,
-                LOAD_LDG,
-                LOAD_CA,
-                LOAD_LDG,
-                LOAD_LDG,
-                LOAD_LDG,
-                false,
-                BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
-
-        typedef AgentSegmentFixupPolicy<
-                128,
-                3,
-                BLOCK_LOAD_VECTORIZE,
-                LOAD_LDG,
-                BLOCK_SCAN_WARP_SCANS>
-            SegmentFixupPolicyT;
+      using SegmentFixupPolicyT =
+        AgentSegmentFixupPolicy<128,
+                                3,
+                                BLOCK_LOAD_VECTORIZE,
+                                LOAD_LDG,
+                                BLOCK_SCAN_WARP_SCANS>;
     };
 
     /// SM50
-    struct Policy500
+    struct Policy500 : cub::detail::ptx<500>
     {
-        typedef AgentSpmvPolicy<
-                (sizeof(ValueT) > 4) ? 64 : 128,
-                (sizeof(ValueT) > 4) ? 6 : 7,
-                LOAD_LDG,
-                LOAD_DEFAULT,
-                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
-                (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
-                LOAD_LDG,
-                (sizeof(ValueT) > 4) ? true : false,
-                (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS : BLOCK_SCAN_RAKING_MEMOIZE>
-            SpmvPolicyT;
+      using SpmvPolicyT =
+        AgentSpmvPolicy<(sizeof(ValueT) > 4) ? 64 : 128,
+                        (sizeof(ValueT) > 4) ? 6 : 7,
+                        LOAD_LDG,
+                        LOAD_DEFAULT,
+                        (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
+                        (sizeof(ValueT) > 4) ? LOAD_LDG : LOAD_DEFAULT,
+                        LOAD_LDG,
+                        (sizeof(ValueT) > 4) ? true : false,
+                        (sizeof(ValueT) > 4) ? BLOCK_SCAN_WARP_SCANS
+                                             : BLOCK_SCAN_RAKING_MEMOIZE>;
 
-
-        typedef AgentSegmentFixupPolicy<
-                128,
-                3,
-                BLOCK_LOAD_VECTORIZE,
-                LOAD_LDG,
-                BLOCK_SCAN_RAKING_MEMOIZE>
-            SegmentFixupPolicyT;
+      using SegmentFixupPolicyT =
+        AgentSegmentFixupPolicy<128,
+                                3,
+                                BLOCK_LOAD_VECTORIZE,
+                                LOAD_LDG,
+                                BLOCK_SCAN_RAKING_MEMOIZE>;
     };
 
 
     /// SM60
-    struct Policy600
+    struct Policy600 : cub::detail::ptx<600>
     {
-        typedef AgentSpmvPolicy<
-                (sizeof(ValueT) > 4) ? 64 : 128,
-                (sizeof(ValueT) > 4) ? 5 : 7,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                LOAD_DEFAULT,
-                false,
-                BLOCK_SCAN_WARP_SCANS>
-            SpmvPolicyT;
+      using SpmvPolicyT = AgentSpmvPolicy<(sizeof(ValueT) > 4) ? 64 : 128,
+                                          (sizeof(ValueT) > 4) ? 5 : 7,
+                                          LOAD_DEFAULT,
+                                          LOAD_DEFAULT,
+                                          LOAD_DEFAULT,
+                                          LOAD_DEFAULT,
+                                          LOAD_DEFAULT,
+                                          false,
+                                          BLOCK_SCAN_WARP_SCANS>;
 
-
-        typedef AgentSegmentFixupPolicy<
-                128,
-                3,
-                BLOCK_LOAD_DIRECT,
-                LOAD_LDG,
-                BLOCK_SCAN_WARP_SCANS>
-            SegmentFixupPolicyT;
+      using SegmentFixupPolicyT =
+        AgentSegmentFixupPolicy<128,
+                                3,
+                                BLOCK_LOAD_DIRECT,
+                                LOAD_LDG,
+                                BLOCK_SCAN_WARP_SCANS>;
     };
 
-
-
-    //---------------------------------------------------------------------
-    // Tuning policies of current PTX compiler pass
-    //---------------------------------------------------------------------
-
-#if (CUB_PTX_ARCH >= 600)
-    typedef Policy600 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 500)
-    typedef Policy500 PtxPolicy;
-
-#elif (CUB_PTX_ARCH >= 370)
-    typedef Policy370 PtxPolicy;
-
-#else
-    typedef Policy350 PtxPolicy;
-
-#endif
-
-    // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxSpmvPolicyT : PtxPolicy::SpmvPolicyT {};
-    struct PtxSegmentFixupPolicy : PtxPolicy::SegmentFixupPolicyT {};
-
-
-    //---------------------------------------------------------------------
-    // Utilities
-    //---------------------------------------------------------------------
-
-    /**
-     * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
-     */
-    template <typename KernelConfig>
-    CUB_RUNTIME_FUNCTION __forceinline__
-    static void InitConfigs(
-        int             ptx_version,
-        KernelConfig    &spmv_config,
-        KernelConfig    &segment_fixup_config)
-    {
-      NV_IF_TARGET(
-        NV_IS_DEVICE,
-        ( // We're on the device, so initialize the kernel dispatch
-          // configurations with the current PTX policy
-          spmv_config.template Init<PtxSpmvPolicyT>();
-          segment_fixup_config.template Init<PtxSegmentFixupPolicy>();),
-        (
-          // We're on the host, so lookup and initialize the kernel dispatch
-          // configurations with the policies that match the device's PTX
-          // version
-          if (ptx_version >= 600) {
-            spmv_config.template Init<typename Policy600::SpmvPolicyT>();
-            segment_fixup_config
-              .template Init<typename Policy600::SegmentFixupPolicyT>();
-          } else if (ptx_version >= 500) {
-            spmv_config.template Init<typename Policy500::SpmvPolicyT>();
-            segment_fixup_config
-              .template Init<typename Policy500::SegmentFixupPolicyT>();
-          } else if (ptx_version >= 370) {
-            spmv_config.template Init<typename Policy370::SpmvPolicyT>();
-            segment_fixup_config
-              .template Init<typename Policy370::SegmentFixupPolicyT>();
-          } else {
-            spmv_config.template Init<typename Policy350::SpmvPolicyT>();
-            segment_fixup_config
-              .template Init<typename Policy350::SegmentFixupPolicyT>();
-          }));
-    }
-
+     // List in descending order:
+     using Policies = cub::detail::type_list<Policy600,
+                                             Policy500,
+                                             Policy370,
+                                             Policy350>;
 
     /**
      * Kernel kernel dispatch configuration.
@@ -453,6 +378,28 @@ struct DispatchSpmv
         }
     };
 
+    /// [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation
+    /// size is written to \p temp_storage_bytes and no work is done.
+    void *d_temp_storage;
+
+    /// [in,out] Reference to size in bytes of \p d_temp_storage allocation
+    size_t &temp_storage_bytes;
+
+    /// SpMV input parameter bundle
+    SpmvParamsT &spmv_params;
+
+    /// [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+    cudaStream_t stream;
+
+    CUB_RUNTIME_FUNCTION __forceinline__ DispatchSpmv(void *d_temp_storage_,
+                                                      size_t &temp_storage_bytes_,
+                                                      SpmvParamsT &spmv_params_,
+                                                      cudaStream_t stream_)
+        : d_temp_storage(d_temp_storage_)
+        , temp_storage_bytes(temp_storage_bytes_)
+        , spmv_params(spmv_params_)
+        , stream(stream_)
+    {}
 
     //---------------------------------------------------------------------
     // Dispatch entrypoints
@@ -465,24 +412,39 @@ struct DispatchSpmv
      * If the input is larger than a single tile, this method uses two-passes of
      * kernel invocations.
      */
-    template <
-        typename                Spmv1ColKernelT,                    ///< Function type of cub::DeviceSpmv1ColKernel
-        typename                SpmvSearchKernelT,                  ///< Function type of cub::AgentSpmvSearchKernel
-        typename                SpmvKernelT,                        ///< Function type of cub::AgentSpmvKernel
-        typename                SegmentFixupKernelT>                ///< Function type of cub::DeviceSegmentFixupKernelT
+    template <typename ActivePolicyT>
     CUB_RUNTIME_FUNCTION __forceinline__
-    static cudaError_t Dispatch(
-        void*                   d_temp_storage,                     ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t&                 temp_storage_bytes,                 ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        SpmvParamsT&            spmv_params,                        ///< SpMV input parameter bundle
-        cudaStream_t            stream,                             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        Spmv1ColKernelT         spmv_1col_kernel,                   ///< [in] Kernel function pointer to parameterization of DeviceSpmv1ColKernel
-        SpmvSearchKernelT       spmv_search_kernel,                 ///< [in] Kernel function pointer to parameterization of AgentSpmvSearchKernel
-        SpmvKernelT             spmv_kernel,                        ///< [in] Kernel function pointer to parameterization of AgentSpmvKernel
-        SegmentFixupKernelT     segment_fixup_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentFixupKernel
-        KernelConfig            spmv_config,                        ///< [in] Dispatch parameters that match the policy that \p spmv_kernel was compiled for
-        KernelConfig            segment_fixup_config)               ///< [in] Dispatch parameters that match the policy that \p segment_fixup_kernel was compiled for
+    cudaError_t Invoke()
     {
+        using SpmvPolicy         = typename ActivePolicyT::SpmvPolicyT;
+        using SegmentFixupPolicy = typename ActivePolicyT::SegmentFixupPolicyT;
+
+        auto spmv_1col_kernel =
+          DeviceSpmv1ColKernel<SpmvPolicy, ValueT, OffsetT>;
+
+        auto spmv_search_kernel =
+          DeviceSpmvSearchKernel<SpmvPolicy, OffsetT, CoordinateT, SpmvParamsT>;
+
+        auto spmv_kernel = DeviceSpmvKernel<SpmvPolicy,
+                                            ScanTileStateT,
+                                            ValueT,
+                                            OffsetT,
+                                            CoordinateT,
+                                            false,
+                                            false>;
+
+        auto segment_fixup_kernel = DeviceSegmentFixupKernel<SegmentFixupPolicy,
+                                                             KeyValuePairT *,
+                                                             ValueT *,
+                                                             OffsetT,
+                                                             ScanTileStateT>;
+
+        KernelConfig spmv_config;
+        spmv_config.template Init<SpmvPolicy>();
+
+        KernelConfig segment_fixup_config;
+        segment_fixup_config.template Init<SegmentFixupPolicy>();
+
         cudaError error = cudaSuccess;
         do
         {
@@ -759,29 +721,21 @@ struct DispatchSpmv
         SpmvParamsT&            spmv_params,                        ///< SpMV input parameter bundle
         cudaStream_t            stream = 0)                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
-        cudaError error = cudaSuccess;
-        do
-        {
-            // Get PTX version
-            int ptx_version = 0;
-            if (CubDebug(error = PtxVersion(ptx_version))) break;
+      // Dispatch on default policies:
+      using policies_t = Policies;
+      constexpr auto exec_space = cub::detail::runtime_exec_space;
+      using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-            // Get kernel kernel dispatch configurations
-            KernelConfig spmv_config, segment_fixup_config;
-            InitConfigs(ptx_version, spmv_config, segment_fixup_config);
+      // Create dispatch functor
+      DispatchSpmv dispatch(d_temp_storage,
+                            temp_storage_bytes,
+                            spmv_params,
+                            stream);
 
-            if (CubDebug(error = Dispatch(
-                d_temp_storage, temp_storage_bytes, spmv_params, stream, 
-                DeviceSpmv1ColKernel<PtxSpmvPolicyT, ValueT, OffsetT>,
-                DeviceSpmvSearchKernel<PtxSpmvPolicyT, OffsetT, CoordinateT, SpmvParamsT>,
-                DeviceSpmvKernel<PtxSpmvPolicyT, ScanTileStateT, ValueT, OffsetT, CoordinateT, false, false>,
-                DeviceSegmentFixupKernel<PtxSegmentFixupPolicy, KeyValuePairT*, ValueT*, OffsetT, ScanTileStateT>,
-                spmv_config, segment_fixup_config))) break;
+      cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+      dispatcher_t::exec(invoker, dispatch);
 
-        }
-        while (0);
-
-        return error;
+      return CubDebug(invoker.status);
     }
 
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
@@ -800,5 +754,3 @@ struct DispatchSpmv
 
 
 CUB_NAMESPACE_END
-
-

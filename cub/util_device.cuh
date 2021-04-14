@@ -645,7 +645,15 @@ struct KernelConfig
 };
 
 
-
+// cub::ChainedPolicy was replaced by `cub::detail::ptx_dispatch` in CUB 2.0 as
+// it is not compatible with the NV_IF_TARGET specialization mechanism. It
+// depends on the __CUDA_ARCH__ macro in a way that cannot be refactored into
+// an if-target statement.
+// For users who may have used this utility for their own algorithms, it may
+// be re-enabled by defining CUB_PROVIDE_LEGACY_ARCH_MACROS. However,
+// cub::ChainedPolicy should be considered deprecated and will be fully removed
+// in a future version.
+#ifdef CUB_PROVIDE_LEGACY_ARCH_MACROS
 /// Helper for dispatching into a policy chain
 template <int PTX_VERSION, typename PolicyT, typename PrevPolicyT>
 struct ChainedPolicy
@@ -659,12 +667,12 @@ struct ChainedPolicy
   /// Specializes and dispatches op in accordance to the first policy in the chain of adequate PTX version
   template <typename FunctorT>
   CUB_RUNTIME_FUNCTION __forceinline__
-  static cudaError_t Invoke(int ptx_version, FunctorT& op)
+    static cudaError_t Invoke(int ptx_version, FunctorT& op)
   {
-      if (ptx_version < PTX_VERSION) {
-          return PrevPolicyT::Invoke(ptx_version, op);
-      }
-      return op.template Invoke<PolicyT>();
+    if (ptx_version < PTX_VERSION) {
+      return PrevPolicyT::Invoke(ptx_version, op);
+    }
+    return op.template Invoke<PolicyT>();
   }
 };
 
@@ -672,19 +680,17 @@ struct ChainedPolicy
 template <int PTX_VERSION, typename PolicyT>
 struct ChainedPolicy<PTX_VERSION, PolicyT, PolicyT>
 {
-    /// The policy for the active compiler pass
-    typedef PolicyT ActivePolicy;
+  /// The policy for the active compiler pass
+  typedef PolicyT ActivePolicy;
 
-    /// Specializes and dispatches op in accordance to the first policy in the chain of adequate PTX version
-    template <typename FunctorT>
-    CUB_RUNTIME_FUNCTION __forceinline__
+  /// Specializes and dispatches op in accordance to the first policy in the chain of adequate PTX version
+  template <typename FunctorT>
+  CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Invoke(int /*ptx_version*/, FunctorT& op) {
-        return op.template Invoke<PolicyT>();
-    }
+    return op.template Invoke<PolicyT>();
+  }
 };
-
-
-
+#endif // CUB_PROVIDE_LEGACY_ARCH_MACROS
 
 /** @} */       // end group UtilMgmt
 

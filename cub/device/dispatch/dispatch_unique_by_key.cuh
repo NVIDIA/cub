@@ -32,6 +32,8 @@
  */
 
 #include <cub/agent/agent_unique_by_key.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/util_deprecated.cuh>
 #include <cub/util_macro.cuh>
@@ -101,40 +103,37 @@ struct DeviceUniqueByKeyPolicy
     using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
 
     // SM350
-    struct Policy350 : ChainedPolicy<350, Policy350, Policy350> {
-        const static int INPUT_SIZE = sizeof(KeyT);
-        enum
-        {
-            NOMINAL_4B_ITEMS_PER_THREAD = 9,
-            ITEMS_PER_THREAD = Nominal4BItemsToItems<KeyT>(NOMINAL_4B_ITEMS_PER_THREAD),
-        };
+    struct Policy350 : cub::detail::ptx<350>
+    {
+        static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 9;
+        static constexpr int ITEMS_PER_THREAD =
+          Nominal4BItemsToItems<KeyT>(NOMINAL_4B_ITEMS_PER_THREAD);
 
-        using UniqueByKeyPolicyT = AgentUniqueByKeyPolicy<128,
-                          ITEMS_PER_THREAD,
-                          cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                          cub::LOAD_LDG,
-                          cub::BLOCK_SCAN_WARP_SCANS>;
+        using UniqueByKeyPolicyT =
+          AgentUniqueByKeyPolicy<128,
+                                 ITEMS_PER_THREAD,
+                                 cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                                 cub::LOAD_LDG,
+                                 cub::BLOCK_SCAN_WARP_SCANS>;
     };
 
     // SM520
-    struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
+    struct Policy520 : cub::detail::ptx<520>
     {
-        const static int INPUT_SIZE = sizeof(KeyT);
-        enum
-        {
-            NOMINAL_4B_ITEMS_PER_THREAD = 11,
-            ITEMS_PER_THREAD = Nominal4BItemsToItems<KeyT>(NOMINAL_4B_ITEMS_PER_THREAD),
-        };
+        static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 11;
+        static constexpr int ITEMS_PER_THREAD =
+          Nominal4BItemsToItems<KeyT>(NOMINAL_4B_ITEMS_PER_THREAD);
 
-        using UniqueByKeyPolicyT =  AgentUniqueByKeyPolicy<64,
-                            ITEMS_PER_THREAD,
-                            cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                            cub::LOAD_LDG,
-                            cub::BLOCK_SCAN_WARP_SCANS>;
+        using UniqueByKeyPolicyT =
+          AgentUniqueByKeyPolicy<64,
+                                 ITEMS_PER_THREAD,
+                                 cub::BLOCK_LOAD_WARP_TRANSPOSE,
+                                 cub::LOAD_LDG,
+                                 cub::BLOCK_SCAN_WARP_SCANS>;
     };
 
-    /// MaxPolicy
-    using MaxPolicy = Policy520;
+    // List in descending order:
+    using Policies = cub::detail::type_list<Policy520, Policy350>;
 };
 
 
@@ -160,10 +159,7 @@ struct DispatchUniqueByKey: SelectedPolicy
      * Types and constants
      ******************************************************************************/
 
-    enum
-    {
-        INIT_KERNEL_THREADS = 128,
-    };
+    static constexpr int INIT_KERNEL_THREADS = 128;
 
     // The input key and value type
     using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
@@ -212,16 +208,16 @@ struct DispatchUniqueByKey: SelectedPolicy
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchUniqueByKey(
-        void*                   d_temp_storage,     
-        size_t&                 temp_storage_bytes,  
-        KeyInputIteratorT       d_keys_in,            
-        ValueInputIteratorT     d_values_in,           
-        KeyOutputIteratorT      d_keys_out,             
-        ValueOutputIteratorT    d_values_out,         
-        NumSelectedIteratorT    d_num_selected_out,    
-        EqualityOpT             equality_op,            
-        OffsetT                 num_items,           
-        cudaStream_t            stream,               
+        void*                   d_temp_storage,
+        size_t&                 temp_storage_bytes,
+        KeyInputIteratorT       d_keys_in,
+        ValueInputIteratorT     d_values_in,
+        KeyOutputIteratorT      d_keys_out,
+        ValueOutputIteratorT    d_values_out,
+        NumSelectedIteratorT    d_num_selected_out,
+        EqualityOpT             equality_op,
+        OffsetT                 num_items,
+        cudaStream_t            stream,
         bool                    debug_synchronous
     ):
         d_temp_storage(d_temp_storage),
@@ -424,50 +420,43 @@ struct DispatchUniqueByKey: SelectedPolicy
         OffsetT                 num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t            stream)                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     {
-        using MaxPolicyT = typename DispatchUniqueByKey::MaxPolicy;
+      // Dispatch on default policies:
+      using policies_t          = typename DispatchUniqueByKey::Policies;
+      constexpr auto exec_space = cub::detail::runtime_exec_space;
+      using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-        cudaError_t error;
-        do
-        {
-            // Get PTX version
-            int ptx_version = 0;
-            if (CubDebug(error = PtxVersion(ptx_version))) break;
+      // Create dispatch functor
+      DispatchUniqueByKey functor(d_temp_storage,
+                                  temp_storage_bytes,
+                                  d_keys_in,
+                                  d_values_in,
+                                  d_keys_out,
+                                  d_values_out,
+                                  d_num_selected_out,
+                                  equality_op,
+                                  num_items,
+                                  stream);
 
-            // Create dispatch functor
-            DispatchUniqueByKey dispatch(
-                d_temp_storage,
-                temp_storage_bytes,
-                d_keys_in,
-                d_values_in,
-                d_keys_out,
-                d_values_out,
-                d_num_selected_out,
-                equality_op,
-                num_items,
-                stream);
+      cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+      dispatcher_t::exec(invoker, functor);
 
-            // Dispatch to chained policy
-            if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
-        }
-        while (0);
-
-        return error;
+      return CubDebug(invoker.status);
     }
 
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*                   d_temp_storage,         
-        size_t                  &temp_storage_bytes,    
-        KeyInputIteratorT       d_keys_in,             
-        ValueInputIteratorT     d_values_in,            
-        KeyOutputIteratorT      d_keys_out,            
-        ValueOutputIteratorT    d_values_out,         
-        NumSelectedIteratorT    d_num_selected_out,  
-        EqualityOpT             equality_op,        
-        OffsetT                 num_items,              
-        cudaStream_t            stream,                
-        bool                    debug_synchronous)    
+        void*                   d_temp_storage,
+        size_t                  &temp_storage_bytes,
+        KeyInputIteratorT       d_keys_in,
+        ValueInputIteratorT     d_values_in,
+        KeyOutputIteratorT      d_keys_out,
+        ValueOutputIteratorT    d_values_out,
+        NumSelectedIteratorT    d_num_selected_out,
+        EqualityOpT             equality_op,
+        OffsetT                 num_items,
+        cudaStream_t            stream,
+        bool                    debug_synchronous)
     {
       CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
 

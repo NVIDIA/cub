@@ -88,7 +88,7 @@ struct AgentSmallAndMediumSegmentedSortPolicy
  *   Whether or not the sorted-order is high-to-low
  *
  * @tparam PolicyT
- *   Chained tuning policy
+ *   Tuning policy
  *
  * @tparam KeyT
  *   Key type

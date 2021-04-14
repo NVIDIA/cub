@@ -29,6 +29,8 @@
 
 #include <cub/agent/agent_adjacent_difference.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/detail/type_traits.cuh>
 #include <cub/util_debug.cuh>
 #include <cub/util_deprecated.cuh>
@@ -60,7 +62,7 @@ void __global__ DeviceAdjacentDifferenceInitKernel(InputIteratorT first,
                                 items_per_tile);
 }
 
-template <typename ChainedPolicyT,
+template <typename ActivePolicyT,
           typename InputIteratorT,
           typename OutputIteratorT,
           typename DifferenceOpT,
@@ -75,10 +77,7 @@ DeviceAdjacentDifferenceDifferenceKernel(InputIteratorT input,
                                          DifferenceOpT difference_op,
                                          OffsetT num_items)
 {
-  using ActivePolicyT = 
-    typename ChainedPolicyT::ActivePolicy::AdjacentDifferencePolicy;
-
-  // It is OK to introspect the return type or parameter types of the 
+  // It is OK to introspect the return type or parameter types of the
   // `operator()` function of `__device__` extended lambda within device code.
   using OutputT = detail::invoke_result_t<DifferenceOpT, InputT, InputT>;
 
@@ -117,27 +116,16 @@ struct DeviceAdjacentDifferencePolicy
   // Architecture-specific tuning policies
   //------------------------------------------------------------------------------
 
-  struct Policy300 : ChainedPolicy<300, Policy300, Policy300>
-  {
-    using AdjacentDifferencePolicy =
-      AgentAdjacentDifferencePolicy<128,
-                                    Nominal8BItemsToItems<ValueT>(7),
-                                    BLOCK_LOAD_WARP_TRANSPOSE,
-                                    LOAD_DEFAULT,
-                                    BLOCK_STORE_WARP_TRANSPOSE>;
-  };
+  struct Policy350
+      : cub::detail::ptx<350>
+      , AgentAdjacentDifferencePolicy<128,
+                                      Nominal8BItemsToItems<ValueT>(7),
+                                      BLOCK_LOAD_WARP_TRANSPOSE,
+                                      MayAlias ? LOAD_CA : LOAD_LDG,
+                                      BLOCK_STORE_WARP_TRANSPOSE>
+  {};
 
-  struct Policy350 : ChainedPolicy<350, Policy350, Policy300>
-  {
-    using AdjacentDifferencePolicy =
-      AgentAdjacentDifferencePolicy<128,
-                                    Nominal8BItemsToItems<ValueT>(7),
-                                    BLOCK_LOAD_WARP_TRANSPOSE,
-                                    MayAlias ? LOAD_CA : LOAD_LDG,
-                                    BLOCK_STORE_WARP_TRANSPOSE>;
-  };
-
-  using MaxPolicy = Policy350;
+  using Policies = cub::detail::type_list<Policy350>;
 };
 
 template <typename InputIteratorT,
@@ -202,16 +190,11 @@ struct DispatchAdjacentDifference : public SelectedPolicy
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
-    using AdjacentDifferencePolicyT =
-      typename ActivePolicyT::AdjacentDifferencePolicy;
-
-    using MaxPolicyT = typename DispatchAdjacentDifference::MaxPolicy;
-
     cudaError error = cudaSuccess;
 
     do
     {
-      const int tile_size = AdjacentDifferencePolicyT::ITEMS_PER_TILE;
+      const int tile_size = ActivePolicyT::ITEMS_PER_TILE;
       const int num_tiles =
         static_cast<int>(DivideAndRoundUp(num_items, tile_size));
 
@@ -296,16 +279,16 @@ struct DispatchAdjacentDifference : public SelectedPolicy
       _CubLog("Invoking DeviceAdjacentDifferenceDifferenceKernel"
               "<<<%d, %d, 0, %lld>>>()\n",
               num_tiles,
-              AdjacentDifferencePolicyT::BLOCK_THREADS,
+              ActivePolicyT::BLOCK_THREADS,
               reinterpret_cast<long long>(stream));
       #endif
 
       THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
         num_tiles,
-        AdjacentDifferencePolicyT::BLOCK_THREADS,
+        ActivePolicyT::BLOCK_THREADS,
         0,
         stream)
-        .doit(DeviceAdjacentDifferenceDifferenceKernel<MaxPolicyT,
+        .doit(DeviceAdjacentDifferenceDifferenceKernel<ActivePolicyT,
                                                        InputIteratorT,
                                                        OutputIteratorT,
                                                        DifferenceOpT,
@@ -320,7 +303,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
               num_items);
 
       error = detail::DebugSyncStream(stream);
-      
+
       if (CubDebug(error))
       {
         break;
@@ -345,35 +328,24 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                               DifferenceOpT difference_op,
                               cudaStream_t stream)
   {
-    using MaxPolicyT = typename DispatchAdjacentDifference::MaxPolicy;
+    // Dispatch on default policies:
+    using policies_t = typename DispatchAdjacentDifference::Policies;
+    constexpr auto exec_space = cub::detail::runtime_exec_space;
+    using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-    cudaError error = cudaSuccess;
-    do
-    {
-      // Get PTX version
-      int ptx_version = 0;
-      if (CubDebug(error = PtxVersion(ptx_version)))
-      {
-        break;
-      }
+    // Create dispatch functor
+    DispatchAdjacentDifference functor(d_temp_storage,
+                                       temp_storage_bytes,
+                                       d_input,
+                                       d_output,
+                                       num_items,
+                                       difference_op,
+                                       stream);
 
-      // Create dispatch functor
-      DispatchAdjacentDifference dispatch(d_temp_storage,
-                                          temp_storage_bytes,
-                                          d_input,
-                                          d_output,
-                                          num_items,
-                                          difference_op,
-                                          stream);
+    cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+    dispatcher_t::exec(invoker, functor);
 
-      // Dispatch to chained policy
-      if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch)))
-      {
-        break;
-      }
-    } while (0);
-
-    return error;
+    return CubDebug(invoker.status);
   }
 
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED

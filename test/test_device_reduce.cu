@@ -35,6 +35,8 @@
 
 #include <cub/util_allocator.cuh>
 #include <cub/util_math.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_segmented_reduce.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
@@ -60,7 +62,6 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-int                     g_ptx_version;
 int                     g_sm_count;
 double                  g_device_giga_bandwidth;
 bool                    g_verbose           = false;
@@ -102,7 +103,7 @@ struct CustomMax
 {
     /// Boolean max operator, returns <tt>(a > b) ? a : b</tt>
     template <typename T, typename C>
-    __host__ __device__ auto operator()(T&& a, C&& b) 
+    __host__ __device__ auto operator()(T&& a, C&& b)
       -> cub::detail::accumulator_t<cub::Max, T, C>
     {
         return CUB_MAX(a, b);
@@ -1278,7 +1279,7 @@ public:
     }
   }
 
-  __host__ __device__ CustomAccumulatorT 
+  __host__ __device__ CustomAccumulatorT
   operator+(const CustomInputT &in) const
   {
     const int multiplier = this->is_valid();
@@ -1414,11 +1415,13 @@ struct GetTileSize
 template <typename InputT, typename OutputT, typename OffsetT>
 void TestType(OffsetT max_items, OffsetT max_segments)
 {
-  // Inspect the tuning policies to determine this arch's tile size:
-  using MaxPolicyT =
-    typename DeviceReducePolicy<InputT, OffsetT, cub::Sum>::MaxPolicy;
+  using policies_t          = typename DeviceReducePolicy<InputT, OffsetT, cub::Sum>::Policies;
+  constexpr auto exec_space = cub::detail::exec_space::host;
+  using dispatch_t          = cub::detail::ptx_dispatch<policies_t, exec_space>;
   GetTileSize<InputT, OutputT, OffsetT> dispatch(max_items, max_segments);
-  CubDebugExit(MaxPolicyT::Invoke(g_ptx_version, dispatch));
+  cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+  dispatch_t::exec(invoker, dispatch);
+  CubDebugExit(invoker.status);
 
   TestBySize<InputT, OutputT>(max_items, max_segments, dispatch.tile_size);
 }
@@ -1462,9 +1465,6 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
     g_device_giga_bandwidth = args.device_giga_bandwidth;
-
-    // Get ptx version
-    CubDebugExit(PtxVersion(g_ptx_version));
 
     // Get SM count
     g_sm_count = args.deviceProp.multiProcessorCount;

@@ -34,6 +34,9 @@
 
 #include <test_util.h>
 
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
+
 #include <thrust/count.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
@@ -1543,19 +1546,18 @@ template <typename KeyT,
           typename ValueT>
 void EdgePatternsTest()
 {
-  int ptx_version = 0;
-  if (CubDebug(PtxVersion(ptx_version)))
-  {
-    return;
-  }
+  using policies_t =
+    typename cub::DeviceSegmentedSortPolicy<KeyT, ValueT>::Policies;
+  constexpr auto exec_space = cub::detail::runtime_exec_space;
+  using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-  using MaxPolicyT =
-    typename cub::DeviceSegmentedSortPolicy<KeyT, ValueT>::MaxPolicy;
   using EdgeTestDispatchT = EdgeTestDispatch<KeyT, ValueT>;
   EdgeTestDispatchT dispatch;
 
-  MaxPolicyT::Invoke(ptx_version, dispatch);
+  cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+  dispatcher_t::exec(invoker, dispatch);
 
+  AssertEquals(invoker.status, cudaSuccess);
 }
 
 template <typename KeyT,

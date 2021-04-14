@@ -14,9 +14,9 @@
  *       names of its contributors may be used to endorse or promote products
  *       derived from this software without specific prior written permission.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
  * ARE DISCLAIMED. IN NO EVENT SHALL NVIDIA CORPORATION BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
  * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
@@ -35,10 +35,10 @@
 
 #pragma once
 
-#include <iterator>
-
 #include <cub/agent/agent_scan.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_operators.cuh>
 #include <cub/util_debug.cuh>
@@ -47,6 +47,8 @@
 #include <cub/util_math.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 
@@ -111,8 +113,8 @@ __global__ void DeviceCompactInitKernel(ScanTileStateT tile_state,
  * @brief Scan kernel entry point (multi-block)
  *
  *
- * @tparam ChainedPolicyT
- *   Chained tuning policy
+ * @tparam ActivePolicyT
+ *   Active tuning policy
  *
  * @tparam InputIteratorT
  *   Random-access input iterator type for reading scan inputs \iterator
@@ -155,7 +157,7 @@ __global__ void DeviceCompactInitKernel(ScanTileStateT tile_state,
  * @paramTotal num_items
  *   number of scan items for the entire problem
  */
-template <typename ChainedPolicyT,
+template <typename ActivePolicyT,
           typename InputIteratorT,
           typename OutputIteratorT,
           typename ScanTileStateT,
@@ -163,20 +165,19 @@ template <typename ChainedPolicyT,
           typename InitValueT,
           typename OffsetT,
           typename AccumT>
-__launch_bounds__(int(ChainedPolicyT::ActivePolicy::ScanPolicyT::BLOCK_THREADS))
-  __global__ void DeviceScanKernel(InputIteratorT d_in,
-                                   OutputIteratorT d_out,
-                                   ScanTileStateT tile_state,
-                                   int start_tile,
-                                   ScanOpT scan_op,
-                                   InitValueT init_value,
-                                   OffsetT num_items)
+__launch_bounds__(int(ActivePolicyT::BLOCK_THREADS))
+__global__ void DeviceScanKernel(InputIteratorT d_in,
+                                 OutputIteratorT d_out,
+                                 ScanTileStateT tile_state,
+                                 int start_tile,
+                                 ScanOpT scan_op,
+                                 InitValueT init_value,
+                                 OffsetT num_items)
 {
   using RealInitValueT = typename InitValueT::value_type;
-  typedef typename ChainedPolicyT::ActivePolicy::ScanPolicyT ScanPolicyT;
 
   // Thread block type for scanning input tiles
-  typedef AgentScan<ScanPolicyT,
+  typedef AgentScan<ActivePolicyT,
                     InputIteratorT,
                     OutputIteratorT,
                     ScanOpT,
@@ -211,49 +212,46 @@ struct DeviceScanPolicy
     LargeValues ? BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED
                 : BLOCK_STORE_WARP_TRANSPOSE;
 
-  /// SM350
-  struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
-  {
-    // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
-    typedef AgentScanPolicy<128,
-                            12, ///< Threads per block, items per thread
-                            AccumT,
-                            BLOCK_LOAD_DIRECT,
-                            LOAD_CA,
-                            BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
-                            BLOCK_SCAN_RAKING>
-      ScanPolicyT;
-  };
+    /// SM350
+    struct Policy350 : cub::detail::ptx<350>
+    {
+      // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
+      using ScanPolicyT = AgentScanPolicy<128,
+                                          12,
+                                          AccumT,
+                                          BLOCK_LOAD_DIRECT,
+                                          LOAD_CA,
+                                          BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED,
+                                          BLOCK_SCAN_RAKING>;
+    };
 
-  /// SM520
-  struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
-  {
-    // Titan X: 32.47B items/s @ 48M 32-bit T
-    typedef AgentScanPolicy<128,
-                            12, ///< Threads per block, items per thread
-                            AccumT,
-                            BLOCK_LOAD_DIRECT,
-                            LOAD_CA,
-                            ScanTransposedStore,
-                            BLOCK_SCAN_WARP_SCANS>
-      ScanPolicyT;
-  };
+    /// SM520
+    struct Policy520 : cub::detail::ptx<520>
+    {
+      // Titan X: 32.47B items/s @ 48M 32-bit T
+      using ScanPolicyT = AgentScanPolicy<128,
+                                          12,
+                                          AccumT,
+                                          BLOCK_LOAD_DIRECT,
+                                          LOAD_CA,
+                                          ScanTransposedStore,
+                                          BLOCK_SCAN_WARP_SCANS>;
+    };
 
-  /// SM600
-  struct Policy600 : ChainedPolicy<600, Policy600, Policy520>
-  {
-    typedef AgentScanPolicy<128,
-                            15, ///< Threads per block, items per thread
-                            AccumT,
-                            ScanTransposedLoad,
-                            LOAD_DEFAULT,
-                            ScanTransposedStore,
-                            BLOCK_SCAN_WARP_SCANS>
-      ScanPolicyT;
-  };
+    /// SM600
+    struct Policy600 : cub::detail::ptx<600>
+    {
+      using ScanPolicyT = AgentScanPolicy<128,
+                                          15,
+                                          AccumT,
+                                          ScanTransposedLoad,
+                                          LOAD_DEFAULT,
+                                          ScanTransposedStore,
+                                          BLOCK_SCAN_WARP_SCANS>;
+    };
 
-  /// MaxPolicy
-  typedef Policy600 MaxPolicy;
+    // List in descending order:
+    using Policies = cub::detail::type_list<Policy600, Policy520, Policy350>;
 };
 
 /******************************************************************************
@@ -271,7 +269,7 @@ struct DeviceScanPolicy
  *   Random-access output iterator type for writing scan outputs \iterator
  *
  * @tparam ScanOpT
- *   Binary scan functor type having member 
+ *   Binary scan functor type having member
  *   `auto operator()(const T &a, const U &b)`
  *
  * @tparam InitValueT
@@ -286,9 +284,9 @@ template <typename InputIteratorT,
           typename ScanOpT,
           typename InitValueT,
           typename OffsetT,
-          typename AccumT = 
+          typename AccumT =
             detail::accumulator_t<
-              ScanOpT, 
+              ScanOpT,
               cub::detail::conditional_t<
                 std::is_same<InitValueT, NullType>::value,
                 cub::detail::value_t<InputIteratorT>,
@@ -332,10 +330,7 @@ struct DispatchScan : SelectedPolicy
   /// CUDA stream to launch kernels within. Default is stream<sub>0</sub>.
   cudaStream_t stream;
 
-  int ptx_version;
-
   /**
-   *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no
@@ -370,8 +365,7 @@ struct DispatchScan : SelectedPolicy
                                                     OffsetT num_items,
                                                     ScanOpT scan_op,
                                                     InitValueT init_value,
-                                                    cudaStream_t stream,
-                                                    int ptx_version)
+                                                    cudaStream_t stream)
       : d_temp_storage(d_temp_storage)
       , temp_storage_bytes(temp_storage_bytes)
       , d_in(d_in)
@@ -380,7 +374,6 @@ struct DispatchScan : SelectedPolicy
       , init_value(init_value)
       , num_items(num_items)
       , stream(stream)
-      , ptx_version(ptx_version)
   {}
 
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
@@ -393,7 +386,7 @@ struct DispatchScan : SelectedPolicy
                                                     InitValueT init_value,
                                                     cudaStream_t stream,
                                                     bool debug_synchronous,
-                                                    int ptx_version)
+                                                    int /* legacy_ptx_version */)
       : d_temp_storage(d_temp_storage)
       , temp_storage_bytes(temp_storage_bytes)
       , d_in(d_in)
@@ -402,23 +395,30 @@ struct DispatchScan : SelectedPolicy
       , init_value(init_value)
       , num_items(num_items)
       , stream(stream)
-      , ptx_version(ptx_version)
   {
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
   }
 
-  template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
-  CUB_RUNTIME_FUNCTION __host__ __forceinline__ cudaError_t
-  Invoke(InitKernel init_kernel, ScanKernel scan_kernel)
+  template <typename ActivePolicyT>
+  CUB_RUNTIME_FUNCTION __host__ __forceinline__ cudaError_t Invoke()
   {
-    typedef typename ActivePolicyT::ScanPolicyT Policy;
-    typedef typename cub::ScanTileState<AccumT> ScanTileStateT;
+    using Policy         = typename ActivePolicyT::ScanPolicyT;
+    using ScanTileStateT = typename cub::ScanTileState<AccumT>;
+
+    auto init_kernel = DeviceScanInitKernel<ScanTileStateT>;
+    auto scan_kernel = DeviceScanKernel<Policy,
+                                        InputIteratorT,
+                                        OutputIteratorT,
+                                        ScanTileStateT,
+                                        ScanOpT,
+                                        InitValueT,
+                                        OffsetT,
+                                        AccumT>;
 
     // `LOAD_LDG` makes in-place execution UB and doesn't lead to better
     // performance.
     static_assert(Policy::LOAD_MODIFIER != CacheLoadModifier::LOAD_LDG,
-                  "The memory consistency model does not apply to texture "
-                  "accesses");
+                  "The memory consistency model does not apply to texture accesses");
 
     cudaError error = cudaSuccess;
     do
@@ -576,23 +576,6 @@ struct DispatchScan : SelectedPolicy
     return error;
   }
 
-  template <typename ActivePolicyT>
-  CUB_RUNTIME_FUNCTION __host__ __forceinline__ cudaError_t Invoke()
-  {
-    typedef typename DispatchScan::MaxPolicy MaxPolicyT;
-    typedef typename cub::ScanTileState<AccumT> ScanTileStateT;
-    // Ensure kernels are instantiated.
-    return Invoke<ActivePolicyT>(DeviceScanInitKernel<ScanTileStateT>,
-                                 DeviceScanKernel<MaxPolicyT,
-                                                  InputIteratorT,
-                                                  OutputIteratorT,
-                                                  ScanTileStateT,
-                                                  ScanOpT,
-                                                  InitValueT,
-                                                  OffsetT,
-                                                  AccumT>);
-  }
-
   /**
    * @brief Internal dispatch routine
    *
@@ -624,47 +607,34 @@ struct DispatchScan : SelectedPolicy
    *   Default is stream<sub>0</sub>.
    *
    */
-  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
-  Dispatch(void *d_temp_storage,
-           size_t &temp_storage_bytes,
-           InputIteratorT d_in,
-           OutputIteratorT d_out,
-           ScanOpT scan_op,
-           InitValueT init_value,
-           OffsetT num_items,
-           cudaStream_t stream)
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t Dispatch(void *d_temp_storage,
+                                                                   size_t &temp_storage_bytes,
+                                                                   InputIteratorT d_in,
+                                                                   OutputIteratorT d_out,
+                                                                   ScanOpT scan_op,
+                                                                   InitValueT init_value,
+                                                                   OffsetT num_items,
+                                                                   cudaStream_t stream)
   {
-    typedef typename DispatchScan::MaxPolicy MaxPolicyT;
+    // Dispatch on default policies:
+    using policies_t          = typename DispatchScan::Policies;
+    constexpr auto exec_space = cub::detail::runtime_exec_space;
+    using dispatcher_t        = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-    cudaError_t error;
-    do
-    {
-      // Get PTX version
-      int ptx_version = 0;
-      if (CubDebug(error = PtxVersion(ptx_version)))
-      {
-        break;
-      }
+    // Create dispatch functor
+    DispatchScan dispatch(d_temp_storage,
+                          temp_storage_bytes,
+                          d_in,
+                          d_out,
+                          num_items,
+                          scan_op,
+                          init_value,
+                          stream);
 
-      // Create dispatch functor
-      DispatchScan dispatch(d_temp_storage,
-                            temp_storage_bytes,
-                            d_in,
-                            d_out,
-                            num_items,
-                            scan_op,
-                            init_value,
-                            stream,
-                            ptx_version);
+    cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+    dispatcher_t::exec(invoker, dispatch);
 
-      // Dispatch to chained policy
-      if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch)))
-      {
-        break;
-      }
-    } while (0);
-
-    return error;
+    return CubDebug(invoker.status);
   }
 
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
@@ -693,4 +663,3 @@ struct DispatchScan : SelectedPolicy
 };
 
 CUB_NAMESPACE_END
-

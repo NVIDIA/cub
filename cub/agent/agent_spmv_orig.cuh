@@ -33,17 +33,20 @@
 
 #pragma once
 
+#include <cub/block/block_exchange.cuh>
+#include <cub/block/block_reduce.cuh>
+#include <cub/block/block_scan.cuh>
+#include <cub/config.cuh>
+#include <cub/iterator/cache_modified_input_iterator.cuh>
+#include <cub/iterator/counting_input_iterator.cuh>
+#include <cub/thread/thread_operators.cuh>
+#include <cub/thread/thread_search.cuh>
+#include <cub/util_type.cuh>
+
+#include <nv/target>
+
 #include <iterator>
 
-#include "../util_type.cuh"
-#include "../block/block_reduce.cuh"
-#include "../block/block_scan.cuh"
-#include "../block/block_exchange.cuh"
-#include "../config.cuh"
-#include "../thread/thread_search.cuh"
-#include "../thread/thread_operators.cuh"
-#include "../iterator/cache_modified_input_iterator.cuh"
-#include "../iterator/counting_input_iterator.cuh"
 
 CUB_NAMESPACE_BEGIN
 
@@ -417,38 +420,6 @@ struct AgentSpmv
         int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
         int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
 
-#if (CUB_PTX_ARCH >= 520)
-
-        OffsetT*    s_tile_row_end_offsets  = &temp_storage.aliasable.merge_items[0].row_end_offset;
-        ValueT*     s_tile_nonzeros         = &temp_storage.aliasable.merge_items[tile_num_rows + ITEMS_PER_THREAD].nonzero;
-
-        // Gather the nonzeros for the merge tile into shared memory
-        #pragma unroll
-        for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
-        {
-            int nonzero_idx = threadIdx.x + (ITEM * BLOCK_THREADS);
-
-            ValueIteratorT a                = wd_values + tile_start_coord.y + nonzero_idx;
-            ColumnIndicesIteratorT ci       = wd_column_indices + tile_start_coord.y + nonzero_idx;
-            ValueT* s                       = s_tile_nonzeros + nonzero_idx;
-
-            if (nonzero_idx < tile_num_nonzeros)
-            {
-
-                OffsetT column_idx              = *ci;
-                ValueT  value                   = *a;
-
-                ValueT  vector_value            = wd_vector_x[column_idx];
-
-                ValueT  nonzero                 = value * vector_value;
-
-                *s    = nonzero;
-            }
-        }
-
-
-#else
-
         OffsetT*    s_tile_row_end_offsets  = &temp_storage.aliasable.merge_items[0].row_end_offset;
         ValueT*     s_tile_nonzeros         = &temp_storage.aliasable.merge_items[tile_num_rows + ITEMS_PER_THREAD].nonzero;
 
@@ -458,21 +429,36 @@ struct AgentSpmv
             #pragma unroll
             for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
             {
-                int     nonzero_idx             = threadIdx.x + (ITEM * BLOCK_THREADS);
-                nonzero_idx                     = CUB_MIN(nonzero_idx, tile_num_nonzeros - 1);
+                int nonzero_idx = threadIdx.x + (ITEM * BLOCK_THREADS);
 
-                OffsetT column_idx              = wd_column_indices[tile_start_coord.y + nonzero_idx];
-                ValueT  value                   = wd_values[tile_start_coord.y + nonzero_idx];
+                // clang-format off
+                NV_IF_TARGET(NV_PROVIDES_SM_52,
+                (
+                    auto a = wd_values + tile_start_coord.y + nonzero_idx;
+                    auto ci = wd_column_indices + tile_start_coord.y + nonzero_idx;
+                    auto *s = s_tile_nonzeros + nonzero_idx;
 
-                ValueT  vector_value            = wd_vector_x[column_idx];
-
-                ValueT  nonzero                 = value * vector_value;
-
-                s_tile_nonzeros[nonzero_idx]    = nonzero;
+                    if (nonzero_idx < tile_num_nonzeros)
+                    {
+                        OffsetT column_idx = *ci;
+                        ValueT  value      = *a;
+                        ValueT vector_value = wd_vector_x[column_idx];
+                        ValueT nonzero = value * vector_value;
+                        *s = nonzero;
+                    }
+                ),
+                (
+                     nonzero_idx = CUB_MIN(nonzero_idx, tile_num_nonzeros - 1);
+                     OffsetT column_idx =
+                       wd_column_indices[tile_start_coord.y + nonzero_idx];
+                     ValueT value = wd_values[tile_start_coord.y + nonzero_idx];
+                     ValueT vector_value = wd_vector_x[column_idx];
+                     ValueT nonzero = value * vector_value;
+                     s_tile_nonzeros[nonzero_idx] = nonzero;
+                ));
+                // clang-format on
             }
         }
-
-#endif
 
         // Gather the row end-offsets for the merge tile into shared memory
         #pragma unroll 1

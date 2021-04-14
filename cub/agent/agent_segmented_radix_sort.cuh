@@ -46,7 +46,7 @@ CUB_NAMESPACE_BEGIN
  *   Whether or not the sorted-order is high-to-low
  *
  * @tparam SegmentedPolicyT
- *   Chained tuning policy
+ *   Tuning policy
  *
  * @tparam KeyT
  *   Key type

@@ -33,10 +33,10 @@
 
 #pragma once
 
-#include <iterator>
-
 #include <cub/agent/agent_scan_by_key.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/thread/thread_operators.cuh>
 #include <cub/util_debug.cuh>
@@ -45,6 +45,8 @@
 #include <cub/util_math.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 
@@ -55,8 +57,8 @@ CUB_NAMESPACE_BEGIN
 /**
  * @brief Scan kernel entry point (multi-block)
  *
- * @tparam ChainedPolicyT
- *   Chained tuning policy
+ * @tparam ActivePolicyT
+ *   Tuning policy
  *
  * @tparam KeysInputIteratorT
  *   Random-access input iterator type
@@ -112,7 +114,7 @@ CUB_NAMESPACE_BEGIN
  * @param num_items
  *   Total number of scan items for the entire problem
  */
-template <typename ChainedPolicyT,
+template <typename ActivePolicyT,
           typename KeysInputIteratorT,
           typename ValuesInputIteratorT,
           typename ValuesOutputIteratorT,
@@ -123,7 +125,7 @@ template <typename ChainedPolicyT,
           typename OffsetT,
           typename AccumT,
           typename KeyT = cub::detail::value_t<KeysInputIteratorT>>
-__launch_bounds__(int(ChainedPolicyT::ActivePolicy::ScanByKeyPolicyT::BLOCK_THREADS)) 
+__launch_bounds__(int(ActivePolicyT::BLOCK_THREADS))
 __global__ void DeviceScanByKeyKernel(KeysInputIteratorT d_keys_in,
                                       KeyT *d_keys_prev_in,
                                       ValuesInputIteratorT d_values_in,
@@ -135,11 +137,8 @@ __global__ void DeviceScanByKeyKernel(KeysInputIteratorT d_keys_in,
                                       InitValueT init_value,
                                       OffsetT num_items)
 {
-  using ScanByKeyPolicyT =
-    typename ChainedPolicyT::ActivePolicy::ScanByKeyPolicyT;
-
   // Thread block type for scanning input tiles
-  using AgentScanByKeyT = AgentScanByKey<ScanByKeyPolicyT,
+  using AgentScanByKeyT = AgentScanByKey<ActivePolicyT,
                                          KeysInputIteratorT,
                                          ValuesInputIteratorT,
                                          ValuesOutputIteratorT,
@@ -200,7 +199,7 @@ struct DeviceScanByKeyPolicy
   static constexpr size_t CombinedInputBytes = sizeof(KeyT) + sizeof(AccumT);
 
   // SM350
-  struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
+  struct Policy350 : cub::detail::ptx<350>
   {
     static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 6;
     static constexpr int ITEMS_PER_THREAD =
@@ -218,7 +217,7 @@ struct DeviceScanByKeyPolicy
   };
 
   // SM520
-  struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
+  struct Policy520 : cub::detail::ptx<520>
   {
     static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 9;
     static constexpr int ITEMS_PER_THREAD =
@@ -235,7 +234,8 @@ struct DeviceScanByKeyPolicy
                                                   BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
-  using MaxPolicy = Policy520;
+    // List in descending order:
+    using Policies = cub::detail::type_list<Policy520, Policy350>;
 };
 
 /******************************************************************************
@@ -331,7 +331,6 @@ struct DispatchScanByKey : SelectedPolicy
 
   /// CUDA stream to launch kernels within.
   cudaStream_t stream;
-  int ptx_version;
 
   /**
    * @param[in] d_temp_storage
@@ -376,8 +375,7 @@ struct DispatchScanByKey : SelectedPolicy
                     ScanOpT scan_op,
                     InitValueT init_value,
                     OffsetT num_items,
-                    cudaStream_t stream,
-                    int ptx_version)
+                    cudaStream_t stream)
       : d_temp_storage(d_temp_storage)
       , temp_storage_bytes(temp_storage_bytes)
       , d_keys_in(d_keys_in)
@@ -388,7 +386,6 @@ struct DispatchScanByKey : SelectedPolicy
       , init_value(init_value)
       , num_items(num_items)
       , stream(stream)
-      , ptx_version(ptx_version)
   {}
 
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
@@ -404,7 +401,7 @@ struct DispatchScanByKey : SelectedPolicy
                     OffsetT num_items,
                     cudaStream_t stream,
                     bool debug_synchronous,
-                    int ptx_version)
+                    int /* legacy_ptx_version */)
       : d_temp_storage(d_temp_storage)
       , temp_storage_bytes(temp_storage_bytes)
       , d_keys_in(d_keys_in)
@@ -415,17 +412,27 @@ struct DispatchScanByKey : SelectedPolicy
       , init_value(init_value)
       , num_items(num_items)
       , stream(stream)
-      , ptx_version(ptx_version)
   {
     CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
   }
 
-  template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
-  CUB_RUNTIME_FUNCTION __host__ __forceinline__ cudaError_t
-  Invoke(InitKernel init_kernel, ScanKernel scan_kernel)
+  template <typename ActivePolicyT>
+  CUB_RUNTIME_FUNCTION __host__ __forceinline__ cudaError_t Invoke()
   {
-    using Policy = typename ActivePolicyT::ScanByKeyPolicyT;
+    using Policy              = typename ActivePolicyT::ScanByKeyPolicyT;
     using ScanByKeyTileStateT = ReduceByKeyScanTileState<AccumT, OffsetT>;
+
+    auto init_kernel = DeviceScanByKeyInitKernel<ScanByKeyTileStateT, KeysInputIteratorT>;
+    auto scan_kernel = DeviceScanByKeyKernel<Policy,
+                                             KeysInputIteratorT,
+                                             ValuesInputIteratorT,
+                                             ValuesOutputIteratorT,
+                                             ScanByKeyTileStateT,
+                                             EqualityOp,
+                                             ScanOpT,
+                                             InitValueT,
+                                             OffsetT,
+                                             AccumT>;
 
     cudaError error = cudaSuccess;
     do
@@ -596,27 +603,6 @@ struct DispatchScanByKey : SelectedPolicy
     return error;
   }
 
-  template <typename ActivePolicyT>
-  CUB_RUNTIME_FUNCTION __host__ __forceinline__ cudaError_t Invoke()
-  {
-    using MaxPolicyT = typename DispatchScanByKey::MaxPolicy;
-    using ScanByKeyTileStateT = ReduceByKeyScanTileState<AccumT, OffsetT>;
-
-    // Ensure kernels are instantiated.
-    return Invoke<ActivePolicyT>(
-      DeviceScanByKeyInitKernel<ScanByKeyTileStateT, KeysInputIteratorT>,
-      DeviceScanByKeyKernel<MaxPolicyT,
-                            KeysInputIteratorT,
-                            ValuesInputIteratorT,
-                            ValuesOutputIteratorT,
-                            ScanByKeyTileStateT,
-                            EqualityOp,
-                            ScanOpT,
-                            InitValueT,
-                            OffsetT,
-                            AccumT>);
-  }
-
   /**
    * @brief Internal dispatch routine
    *
@@ -664,40 +650,27 @@ struct DispatchScanByKey : SelectedPolicy
            OffsetT num_items,
            cudaStream_t stream)
   {
-    using MaxPolicyT = typename DispatchScanByKey::MaxPolicy;
+    // Dispatch on default policies:
+    using policies_t          = typename DispatchScanByKey::Policies;
+    constexpr auto exec_space = cub::detail::runtime_exec_space;
+    using dispatcher_t        = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-    cudaError_t error;
+    // Create dispatch functor
+    DispatchScanByKey dispatch(d_temp_storage,
+                               temp_storage_bytes,
+                               d_keys_in,
+                               d_values_in,
+                               d_values_out,
+                               equality_op,
+                               scan_op,
+                               init_value,
+                               num_items,
+                               stream);
 
-    do
-    {
-      // Get PTX version
-      int ptx_version = 0;
-      if (CubDebug(error = PtxVersion(ptx_version)))
-      {
-        break;
-      }
+    cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+    dispatcher_t::exec(invoker, dispatch);
 
-      // Create dispatch functor
-      DispatchScanByKey dispatch(d_temp_storage,
-                                 temp_storage_bytes,
-                                 d_keys_in,
-                                 d_values_in,
-                                 d_values_out,
-                                 equality_op,
-                                 scan_op,
-                                 init_value,
-                                 num_items,
-                                 stream,
-                                 ptx_version);
-
-      // Dispatch to chained policy
-      if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch)))
-      {
-        break;
-      }
-    } while (0);
-
-    return error;
+    return CubDebug(invoker.status);
   }
 
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED

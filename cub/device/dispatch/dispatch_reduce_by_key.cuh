@@ -35,6 +35,7 @@
 
 #include <cub/agent/agent_reduce_by_key.cuh>
 #include <cub/config.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
 #include <cub/device/dispatch/dispatch_scan.cuh>
 #include <cub/grid/grid_queue.cuh>
 #include <cub/thread/thread_operators.cuh>
@@ -247,7 +248,7 @@ struct DispatchReduceByKey
   //-------------------------------------------------------------------------
 
   /// SM35
-  struct Policy350
+  struct Policy350 : cub::detail::ptx<350>
   {
     static constexpr int NOMINAL_4B_ITEMS_PER_THREAD = 6;
     static constexpr int ITEMS_PER_THREAD =
@@ -266,43 +267,12 @@ struct DispatchReduceByKey
                                                       BLOCK_SCAN_WARP_SCANS>;
   };
 
-  /******************************************************************************
-   * Tuning policies of current PTX compiler pass
-   ******************************************************************************/
-
-  using PtxPolicy = Policy350;
-
-  // "Opaque" policies (whose parameterizations aren't reflected in the type
-  // signature)
-  struct PtxReduceByKeyPolicy : PtxPolicy::ReduceByKeyPolicyT
-  {};
+  // List in descending order:
+  using Policies = cub::detail::type_list<Policy350>;
 
   /******************************************************************************
    * Utilities
    ******************************************************************************/
-
-  /**
-   * Initialize kernel dispatch configurations with the policies corresponding
-   * to the PTX assembly we will use
-   */
-  template <typename KernelConfig>
-  CUB_RUNTIME_FUNCTION __forceinline__ static void
-  InitConfigs(int /*ptx_version*/, KernelConfig &reduce_by_key_config)
-  {
-    NV_IF_TARGET(NV_IS_DEVICE,
-                 (
-                   // We're on the device, so initialize the kernel dispatch
-                   // configurations with the current PTX policy
-                   reduce_by_key_config.template Init<PtxReduceByKeyPolicy>();),
-                 (
-                   // We're on the host, so lookup and initialize the kernel
-                   // dispatch configurations with the policies that match the
-                   // device's PTX version
-
-                   // (There's only one policy right now)
-                   reduce_by_key_config
-                     .template Init<typename Policy350::ReduceByKeyPolicyT>();));
-  }
 
   /**
    * Kernel kernel dispatch configuration.
@@ -322,90 +292,64 @@ struct DispatchReduceByKey
     }
   };
 
-  //---------------------------------------------------------------------
-  // Dispatch entrypoints
-  //---------------------------------------------------------------------
+  void *d_temp_storage;
+  size_t &temp_storage_bytes;
+  KeysInputIteratorT d_keys_in;
+  UniqueOutputIteratorT d_unique_out;
+  ValuesInputIteratorT d_values_in;
+  AggregatesOutputIteratorT d_aggregates_out;
+  NumRunsOutputIteratorT d_num_runs_out;
+  EqualityOpT equality_op;
+  ReductionOpT reduction_op;
+  OffsetT num_items;
+  cudaStream_t stream;
 
-  /**
-   * @brief Internal dispatch routine for computing a device-wide
-   *        reduce-by-key using the specified kernel functions.
-   *
-   * @tparam ScanInitKernelT
-   *   Function type of cub::DeviceScanInitKernel
-   *
-   * @tparam ReduceByKeyKernelT
-   *   Function type of cub::DeviceReduceByKeyKernelT
-   *
-   * @param[in] d_temp_storage
-   *   Device-accessible allocation of temporary storage. When `nullptr`, the
-   *   required allocation size is written to `temp_storage_bytes` and no
-   *   work is done.
-   *
-   * @param[in,out] temp_storage_bytes
-   *   Reference to size in bytes of `d_temp_storage` allocation
-   *
-   * @param[in] d_keys_in
-   *   Pointer to the input sequence of keys
-   *
-   * @param[out] d_unique_out
-   *   Pointer to the output sequence of unique keys (one key per run)
-   *
-   * @param[in] d_values_in
-   *   Pointer to the input sequence of corresponding values
-   *
-   * @param[out] d_aggregates_out
-   *   Pointer to the output sequence of value aggregates
-   *   (one aggregate per run)
-   *
-   * @param[out] d_num_runs_out
-   *   Pointer to total number of runs encountered
-   *   (i.e., the length of d_unique_out)
-   *
-   * @param[in] equality_op
-   *   KeyT equality operator
-   *
-   * @param[in] reduction_op
-   *   ValueT reduction operator
-   *
-   * @param[in] num_items
-   *   Total number of items to select from
-   *
-   * @param[in] stream
-   *   CUDA stream to launch kernels within. Default is stream<sub>0</sub>.
-   *
-   * @param[in] ptx_version
-   *   PTX version of dispatch kernels
-   *
-   * @param[in] init_kernel
-   *   Kernel function pointer to parameterization of
-   *   cub::DeviceScanInitKernel
-   *
-   * @param[in] reduce_by_key_kernel
-   *   Kernel function pointer to parameterization of
-   *   cub::DeviceReduceByKeyKernel
-   *
-   * @param[in] reduce_by_key_config
-   *   Dispatch parameters that match the policy that
-   *   `reduce_by_key_kernel` was compiled for
-   */
-  template <typename ScanInitKernelT, typename ReduceByKeyKernelT>
-  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
-  Dispatch(void *d_temp_storage,
-           size_t &temp_storage_bytes,
-           KeysInputIteratorT d_keys_in,
-           UniqueOutputIteratorT d_unique_out,
-           ValuesInputIteratorT d_values_in,
-           AggregatesOutputIteratorT d_aggregates_out,
-           NumRunsOutputIteratorT d_num_runs_out,
-           EqualityOpT equality_op,
-           ReductionOpT reduction_op,
-           OffsetT num_items,
-           cudaStream_t stream,
-           int /*ptx_version*/,
-           ScanInitKernelT init_kernel,
-           ReduceByKeyKernelT reduce_by_key_kernel,
-           KernelConfig reduce_by_key_config)
+  CUB_RUNTIME_FUNCTION __forceinline__
+  DispatchReduceByKey(void *d_temp_storage_,
+                      size_t &temp_storage_bytes_,
+                      KeysInputIteratorT d_keys_in_,
+                      UniqueOutputIteratorT d_unique_out_,
+                      ValuesInputIteratorT d_values_in_,
+                      AggregatesOutputIteratorT d_aggregates_out_,
+                      NumRunsOutputIteratorT d_num_runs_out_,
+                      EqualityOpT equality_op_,
+                      ReductionOpT reduction_op_,
+                      OffsetT num_items_,
+                      cudaStream_t stream_)
+      : d_temp_storage(d_temp_storage_)
+      , temp_storage_bytes(temp_storage_bytes_)
+      , d_keys_in(d_keys_in_)
+      , d_unique_out(d_unique_out_)
+      , d_values_in(d_values_in_)
+      , d_aggregates_out(d_aggregates_out_)
+      , d_num_runs_out(d_num_runs_out_)
+      , equality_op(equality_op_)
+      , reduction_op(reduction_op_)
+      , num_items(num_items_)
+      , stream(stream_)
+  {}
+
+  template <typename ActivePolicyT>
+  CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
+    using Policy = typename ActivePolicyT::ReduceByKeyPolicyT;
+
+    auto init_kernel          = DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>;
+    auto reduce_by_key_kernel = DeviceReduceByKeyKernel<Policy,
+                                                        KeysInputIteratorT,
+                                                        UniqueOutputIteratorT,
+                                                        ValuesInputIteratorT,
+                                                        AggregatesOutputIteratorT,
+                                                        NumRunsOutputIteratorT,
+                                                        ScanTileStateT,
+                                                        EqualityOpT,
+                                                        ReductionOpT,
+                                                        OffsetT,
+                                                        AccumT>;
+
+    KernelConfig reduce_by_key_config;
+    reduce_by_key_config.template Init<Policy>();
+
     cudaError error = cudaSuccess;
     do
     {
@@ -566,47 +510,13 @@ struct DispatchReduceByKey
     return error;
   }
 
-  template <typename ScanInitKernelT, typename ReduceByKeyKernelT>
-  CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
-  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
-  Dispatch(void *d_temp_storage,
-           size_t &temp_storage_bytes,
-           KeysInputIteratorT d_keys_in,
-           UniqueOutputIteratorT d_unique_out,
-           ValuesInputIteratorT d_values_in,
-           AggregatesOutputIteratorT d_aggregates_out,
-           NumRunsOutputIteratorT d_num_runs_out,
-           EqualityOpT equality_op,
-           ReductionOpT reduction_op,
-           OffsetT num_items,
-           cudaStream_t stream,
-           bool debug_synchronous,
-           int ptx_version,
-           ScanInitKernelT init_kernel,
-           ReduceByKeyKernelT reduce_by_key_kernel,
-           KernelConfig reduce_by_key_config)
-  {
-    CUB_DETAIL_RUNTIME_DEBUG_SYNC_USAGE_LOG
-
-    return Dispatch<ScanInitKernelT, ReduceByKeyKernelT>(d_temp_storage,
-                                                         temp_storage_bytes,
-                                                         d_keys_in,
-                                                         d_unique_out,
-                                                         d_values_in,
-                                                         d_aggregates_out,
-                                                         d_num_runs_out,
-                                                         equality_op,
-                                                         reduction_op,
-                                                         num_items,
-                                                         stream,
-                                                         ptx_version,
-                                                         init_kernel,
-                                                         reduce_by_key_kernel,
-                                                         reduce_by_key_config);
-  }
+  //---------------------------------------------------------------------
+  // Dispatch entrypoints
+  //---------------------------------------------------------------------
 
   /**
-   * Internal dispatch routine
+   * @brief Internal dispatch routine for computing a device-wide reduce-by-key.
+   *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no
@@ -657,55 +567,28 @@ struct DispatchReduceByKey
            OffsetT num_items,
            cudaStream_t stream)
   {
-    cudaError error = cudaSuccess;
+    // Dispatch on default policies:
+    using policies_t          = typename DispatchReduceByKey::Policies;
+    constexpr auto exec_space = cub::detail::runtime_exec_space;
+    using dispatcher_t        = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-    do
-    {
-      // Get PTX version
-      int ptx_version = 0;
-      if (CubDebug(error = PtxVersion(ptx_version)))
-      {
-        break;
-      }
+    // Create dispatch functor
+    DispatchReduceByKey dispatch(d_temp_storage,
+                                 temp_storage_bytes,
+                                 d_keys_in,
+                                 d_unique_out,
+                                 d_values_in,
+                                 d_aggregates_out,
+                                 d_num_runs_out,
+                                 equality_op,
+                                 reduction_op,
+                                 num_items,
+                                 stream);
 
-      // Get kernel kernel dispatch configurations
-      KernelConfig reduce_by_key_config;
-      InitConfigs(ptx_version, reduce_by_key_config);
+    cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+    dispatcher_t::exec(invoker, dispatch);
 
-      // Dispatch
-      if (CubDebug(
-            error = Dispatch(
-              d_temp_storage,
-              temp_storage_bytes,
-              d_keys_in,
-              d_unique_out,
-              d_values_in,
-              d_aggregates_out,
-              d_num_runs_out,
-              equality_op,
-              reduction_op,
-              num_items,
-              stream,
-              ptx_version,
-              DeviceCompactInitKernel<ScanTileStateT, NumRunsOutputIteratorT>,
-              DeviceReduceByKeyKernel<PtxReduceByKeyPolicy,
-                                      KeysInputIteratorT,
-                                      UniqueOutputIteratorT,
-                                      ValuesInputIteratorT,
-                                      AggregatesOutputIteratorT,
-                                      NumRunsOutputIteratorT,
-                                      ScanTileStateT,
-                                      EqualityOpT,
-                                      ReductionOpT,
-                                      OffsetT,
-                                      AccumT>,
-              reduce_by_key_config)))
-      {
-        break;
-      }
-    } while (0);
-
-    return error;
+    return CubDebug(invoker.status);
   }
 
   CUB_DETAIL_RUNTIME_DEBUG_SYNC_IS_NOT_SUPPORTED
@@ -740,4 +623,3 @@ struct DispatchReduceByKey
 };
 
 CUB_NAMESPACE_END
-
