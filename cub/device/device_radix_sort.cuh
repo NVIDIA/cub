@@ -67,6 +67,7 @@ namespace cub {
  * method can only be applied to unsigned integral types, DeviceRadixSort
  * is able to sort signed and floating-point types via simple bit-wise transformations
  * that ensure lexicographic key ordering. For floating-point types -0.0 and +0.0 are
+ * cub::DeviceRadixSort is stable
  * considered equal and appear in the result in the same order as they appear in
  * the input.
  *
