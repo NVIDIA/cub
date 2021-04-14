@@ -38,6 +38,8 @@
 
 #include "dispatch_scan.cuh"
 #include "../../config.cuh"
+#include "../../detail/device_algorithm_dispatch_invoker.cuh"
+#include "../../detail/ptx_dispatch.cuh"
 #include "../../detail/target.cuh"
 #include "../../agent/agent_select_if.cuh"
 #include "../../thread/thread_operators.cuh"
@@ -151,7 +153,7 @@ struct DispatchSelectIf
      ******************************************************************************/
 
     /// SM35
-    struct Policy350
+    struct Policy350 : cub::detail::ptx_base<350>
     {
         enum {
             NOMINAL_4B_ITEMS_PER_THREAD = 10,
@@ -167,43 +169,12 @@ struct DispatchSelectIf
             SelectIfPolicyT;
     };
 
-    /******************************************************************************
-     * Tuning policies of current PTX compiler pass
-     ******************************************************************************/
-
-    typedef Policy350 PtxPolicy;
-
-    // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
-    struct PtxSelectIfPolicyT : PtxPolicy::SelectIfPolicyT {};
-
+    // List in descending order:
+    using Policies = cub::detail::type_list<Policy350>;
 
     /******************************************************************************
      * Utilities
      ******************************************************************************/
-
-    /**
-     * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
-     */
-    template <typename KernelConfig>
-    CUB_RUNTIME_FUNCTION __forceinline__
-    static void InitConfigs(
-        int             ptx_version,
-        KernelConfig    &select_if_config)
-    {
-        NV_IF_TARGET(NV_IS_DEVICE,
-        (
-            (void)ptx_version;
-            // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-            select_if_config.template Init<PtxSelectIfPolicyT>();
-        ), (
-            // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-
-            // (There's only one policy right now)
-            (void)ptx_version;
-            select_if_config.template Init<typename Policy350::SelectIfPolicyT>();
-        ));
-    }
-
 
     /**
      * Kernel kernel dispatch configuration.
@@ -224,57 +195,68 @@ struct DispatchSelectIf
         }
     };
 
+    void*                   d_temp_storage;     ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+    size_t&                 temp_storage_bytes; ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
+    InputIteratorT          d_in;               ///< [in] Pointer to the input sequence of data items
+    FlagsInputIteratorT     d_flags;            ///< [in] Pointer to the input sequence of selection flags (if applicable)
+    SelectedOutputIteratorT d_selected_out;     ///< [in] Pointer to the output sequence of selected data items
+    NumSelectedIteratorT    d_num_selected_out; ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+    SelectOpT               select_op;          ///< [in] Selection operator
+    EqualityOpT             equality_op;        ///< [in] Equality operator
+    OffsetT                 num_items;          ///< [in] Total number of input items (i.e., length of \p d_in)
+    cudaStream_t            stream;             ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
+    bool                    debug_synchronous;  ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
 
-    /******************************************************************************
-     * Dispatch entrypoints
-     ******************************************************************************/
+    /// Constructor
+    CUB_RUNTIME_FUNCTION __forceinline__
+    DispatchSelectIf(void*                   d_temp_storage_,
+                     size_t&                 temp_storage_bytes_,
+                     InputIteratorT          d_in_,
+                     FlagsInputIteratorT     d_flags_,
+                     SelectedOutputIteratorT d_selected_out_,
+                     NumSelectedIteratorT    d_num_selected_out_,
+                     SelectOpT               select_op_,
+                     EqualityOpT             equality_op_,
+                     OffsetT                 num_items_,
+                     cudaStream_t            stream_,
+                     bool                    debug_synchronous_)
+        : d_temp_storage(d_temp_storage_)
+        , temp_storage_bytes(temp_storage_bytes_)
+        , d_in(d_in_)
+        , d_flags(d_flags_)
+        , d_selected_out(d_selected_out_)
+        , d_num_selected_out(d_num_selected_out_)
+        , select_op(select_op_)
+        , equality_op(equality_op_)
+        , num_items(num_items_)
+        , stream(stream_)
+        , debug_synchronous(debug_synchronous_)
+    {}
 
     /**
      * Internal dispatch routine for computing a device-wide selection using the
      * specified kernel functions.
      */
-    template <
-        typename                    ScanInitKernelPtrT,             ///< Function type of cub::DeviceScanInitKernel
-        typename                    SelectIfKernelPtrT>             ///< Function type of cub::SelectIfKernelPtrT
+    template <typename ActivePolicyT>
     CUB_RUNTIME_FUNCTION __forceinline__
-    static cudaError_t Dispatch(
-        void*                       d_temp_storage,                 ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-        size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
-        FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags (if applicable)
-        SelectedOutputIteratorT     d_selected_out,                 ///< [in] Pointer to the output sequence of selected data items
-        NumSelectedIteratorT        d_num_selected_out,             ///< [in] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
-        SelectOpT                   select_op,                      ///< [in] Selection operator
-        EqualityOpT                 equality_op,                    ///< [in] Equality operator
-        OffsetT                     num_items,                      ///< [in] Total number of input items (i.e., length of \p d_in)
-        cudaStream_t                stream,                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                        debug_synchronous,              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
-        int                         /*ptx_version*/,                ///< [in] PTX version of dispatch kernels
-        ScanInitKernelPtrT          scan_init_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceScanInitKernel
-        SelectIfKernelPtrT          select_if_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceSelectSweepKernel
-        KernelConfig                select_if_config)               ///< [in] Dispatch parameters that match the policy that \p select_if_kernel was compiled for
+    cudaError_t Invoke()
     {
+        auto scan_init_kernel =
+          DeviceCompactInitKernel<ScanTileStateT, NumSelectedIteratorT>;
+        auto select_if_kernel =
+          DeviceSelectSweepKernel<typename ActivePolicyT::SelectIfPolicyT,
+                                  InputIteratorT,
+                                  FlagsInputIteratorT,
+                                  SelectedOutputIteratorT,
+                                  NumSelectedIteratorT,
+                                  ScanTileStateT,
+                                  SelectOpT,
+                                  EqualityOpT,
+                                  OffsetT,
+                                  KEEP_REJECTS>;
 
-#ifndef CUB_RUNTIME_ENABLED
-        (void)d_temp_storage;
-        (void)temp_storage_bytes;
-        (void)d_in;
-        (void)d_flags;
-        (void)d_selected_out;
-        (void)d_num_selected_out;
-        (void)select_op;
-        (void)equality_op;
-        (void)num_items;
-        (void)stream;
-        (void)debug_synchronous;
-        (void)scan_init_kernel;
-        (void)select_if_kernel;
-        (void)select_if_config;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
+        KernelConfig select_if_config;
+        select_if_config.template Init<typename ActivePolicyT::SelectIfPolicyT>();
 
         cudaError error = cudaSuccess;
         do
@@ -382,13 +364,15 @@ struct DispatchSelectIf
         while (0);
 
         return error;
-
-#endif  // CUB_RUNTIME_ENABLED
     }
+
+    /******************************************************************************
+     * Dispatch entrypoints
+     ******************************************************************************/
 
 
     /**
-     * Internal dispatch routine
+     * Dispatch routine
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
@@ -404,42 +388,29 @@ struct DispatchSelectIf
         cudaStream_t                stream,                         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous)              ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
-        cudaError error = cudaSuccess;
-        do
-        {
-            // Get PTX version
-            int ptx_version = 0;
-            if (CubDebug(error = PtxVersion(ptx_version))) break;
+      // Dispatch on default policies:
+      using policies_t          = typename DispatchSelectIf::Policies;
+      constexpr auto exec_space = cub::detail::runtime_exec_space;
+      using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-            // Get kernel kernel dispatch configurations
-            KernelConfig select_if_config;
-            InitConfigs(ptx_version, select_if_config);
+      // Create dispatch functor
+      DispatchSelectIf dispatch(d_temp_storage,
+                                temp_storage_bytes,
+                                d_in,
+                                d_flags,
+                                d_selected_out,
+                                d_num_selected_out,
+                                select_op,
+                                equality_op,
+                                num_items,
+                                stream,
+                                debug_synchronous);
 
-            // Dispatch
-            if (CubDebug(error = Dispatch(
-                d_temp_storage,
-                temp_storage_bytes,
-                d_in,
-                d_flags,
-                d_selected_out,
-                d_num_selected_out,
-                select_op,
-                equality_op,
-                num_items,
-                stream,
-                debug_synchronous,
-                ptx_version,
-                DeviceCompactInitKernel<ScanTileStateT, NumSelectedIteratorT>,
-                DeviceSelectSweepKernel<PtxSelectIfPolicyT, InputIteratorT, FlagsInputIteratorT, SelectedOutputIteratorT, NumSelectedIteratorT, ScanTileStateT, SelectOpT, EqualityOpT, OffsetT, KEEP_REJECTS>,
-                select_if_config))) break;
-        }
-        while (0);
+      cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+      dispatcher_t::exec(invoker, dispatch);
 
-        return error;
+      return CubDebug(invoker.status);
     }
 };
 
-
 CUB_NAMESPACE_END
-
-

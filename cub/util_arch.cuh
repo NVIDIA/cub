@@ -50,21 +50,6 @@ CUB_NAMESPACE_BEGIN
 #define CUB_USE_COOPERATIVE_GROUPS
 #endif
 
-/// In device code, CUB_PTX_ARCH expands to the PTX version for which we are
-/// compiling. In host code, CUB_PTX_ARCH's value is implementation defined.
-#ifndef CUB_PTX_ARCH
-    #if defined(_NVHPC_CUDA)
-        // __NVCOMPILER_CUDA_ARCH__ is the target PTX version, and is defined
-        // when compiling both host code and device code. Currently, only one
-        // PTX version can be targeted.
-        #define CUB_PTX_ARCH __NVCOMPILER_CUDA_ARCH__
-    #elif !defined(__CUDA_ARCH__)
-        #define CUB_PTX_ARCH 0
-    #else
-        #define CUB_PTX_ARCH __CUDA_ARCH__
-    #endif
-#endif
-
 /// Maximum number of devices supported.
 #ifndef CUB_MAX_DEVICES
     #define CUB_MAX_DEVICES (128)

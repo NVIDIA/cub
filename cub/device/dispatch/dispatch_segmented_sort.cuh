@@ -28,13 +28,17 @@
 #pragma once
 
 #include <cub/agent/agent_segmented_radix_sort.cuh>
-#include <cub/detail/temporary_storage.cuh>
-#include <cub/detail/device_double_buffer.cuh>
 #include <cub/agent/agent_sub_warp_merge_sort.cuh>
 #include <cub/block/block_load.cuh>
 #include <cub/block/block_merge_sort.cuh>
 #include <cub/block/block_radix_rank.cuh>
 #include <cub/block/block_scan.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/device_double_buffer.cuh>
+#include <cub/detail/kernel_macros.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
+#include <cub/detail/target.cuh>
+#include <cub/detail/temporary_storage.cuh>
 #include <cub/device/device_partition.cuh>
 #include <cub/thread/thread_sort.cuh>
 #include <cub/util_device.cuh>
@@ -42,9 +46,9 @@
 #include <cub/util_namespace.cuh>
 #include <cub/warp/warp_merge_sort.cuh>
 
-#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 #include <thrust/iterator/counting_iterator.h>
 #include <thrust/iterator/reverse_iterator.h>
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include <type_traits>
 
@@ -92,14 +96,15 @@ CUB_NAMESPACE_BEGIN
  *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
  *   considered empty.
  */
+CUB_KERNEL_BEGIN
 template <bool IS_DESCENDING,
-          typename ChainedPolicyT,
+          typename ActivePolicyT,
           typename KeyT,
           typename ValueT,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(ChainedPolicyT::ActivePolicy::LargeSegmentPolicy::BLOCK_THREADS)
+__launch_bounds__(ActivePolicyT::LargeSegmentPolicy::BLOCK_THREADS)
 __global__ void DeviceSegmentedSortFallbackKernel(
     const KeyT *d_keys_in_orig,
     KeyT *d_keys_out_orig,
@@ -110,7 +115,6 @@ __global__ void DeviceSegmentedSortFallbackKernel(
     BeginOffsetIteratorT d_begin_offsets,
     EndOffsetIteratorT d_end_offsets)
 {
-  using ActivePolicyT = typename ChainedPolicyT::ActivePolicy;
   using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
   using MediumPolicyT =
     typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT::MediumPolicyT;
@@ -231,6 +235,7 @@ __global__ void DeviceSegmentedSortFallbackKernel(
     }
   }
 }
+CUB_KERNEL_END
 
 
 /**
@@ -287,14 +292,15 @@ __global__ void DeviceSegmentedSortFallbackKernel(
  *   `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the <em>i</em><sup>th</sup> is
  *   considered empty.
  */
+CUB_KERNEL_BEGIN
 template <bool IS_DESCENDING,
-          typename ChainedPolicyT,
+          typename ActivePolicyT,
           typename KeyT,
           typename ValueT,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(ChainedPolicyT::ActivePolicy::SmallAndMediumSegmentedSortPolicyT::BLOCK_THREADS)
+__launch_bounds__(ActivePolicyT::SmallAndMediumSegmentedSortPolicyT::BLOCK_THREADS)
 __global__ void DeviceSegmentedSortKernelSmall(
     unsigned int small_segments,
     unsigned int medium_segments,
@@ -311,7 +317,6 @@ __global__ void DeviceSegmentedSortKernelSmall(
   const unsigned int tid = threadIdx.x;
   const unsigned int bid = blockIdx.x;
 
-  using ActivePolicyT = typename ChainedPolicyT::ActivePolicy;
   using SmallAndMediumPolicyT =
     typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
   using MediumPolicyT = typename SmallAndMediumPolicyT::MediumPolicyT;
@@ -385,6 +390,7 @@ __global__ void DeviceSegmentedSortKernelSmall(
     }
   }
 }
+CUB_KERNEL_END
 
 /**
  * @brief Single kernel for large size (more than a few thousand items) segments.
@@ -413,14 +419,15 @@ __global__ void DeviceSegmentedSortKernelSmall(
  *   `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the <em>i</em><sup>th</sup> is
  *   considered empty.
  */
+CUB_KERNEL_BEGIN
 template <bool IS_DESCENDING,
-          typename ChainedPolicyT,
+          typename ActivePolicyT,
           typename KeyT,
           typename ValueT,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(ChainedPolicyT::ActivePolicy::LargeSegmentPolicy::BLOCK_THREADS)
+__launch_bounds__(ActivePolicyT::LargeSegmentPolicy::BLOCK_THREADS)
 __global__ void DeviceSegmentedSortKernelLarge(
     const unsigned int *d_segments_indices,
     const KeyT *d_keys_in_orig,
@@ -432,7 +439,6 @@ __global__ void DeviceSegmentedSortKernelLarge(
     BeginOffsetIteratorT d_begin_offsets,
     EndOffsetIteratorT d_end_offsets)
 {
-  using ActivePolicyT = typename ChainedPolicyT::ActivePolicy;
   using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
 
   constexpr int small_tile_size = LargeSegmentPolicyT::BLOCK_THREADS *
@@ -525,6 +531,7 @@ __global__ void DeviceSegmentedSortKernelLarge(
     }
   }
 }
+CUB_KERNEL_END
 
 
 template <typename KeyT,
@@ -540,7 +547,7 @@ struct DeviceSegmentedSortPolicy
   // Architecture-specific tuning policies
   //----------------------------------------------------------------------------
 
-  struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
+  struct Policy350 : cub::detail::ptx_base<350>
   {
     constexpr static int BLOCK_THREADS = 128;
     constexpr static int RADIX_BITS = sizeof(KeyT) > 1 ? 6 : 4;
@@ -580,7 +587,7 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_DEFAULT>>;
   };
 
-  struct Policy500 : ChainedPolicy<500, Policy500, Policy350>
+  struct Policy500 : cub::detail::ptx_base<500>
   {
     constexpr static int BLOCK_THREADS = 256;
     constexpr static int RADIX_BITS = sizeof(KeyT) > 1 ? 6 : 4;
@@ -620,7 +627,7 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_DEFAULT>>;
   };
 
-  struct Policy600 : ChainedPolicy<600, Policy600, Policy500>
+  struct Policy600 : cub::detail::ptx_base<600>
   {
     constexpr static int BLOCK_THREADS = 256;
     constexpr static int RADIX_BITS = sizeof(KeyT) > 1 ? 6 : 4;
@@ -660,7 +667,7 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_DEFAULT>>;
   };
 
-  struct Policy610 : ChainedPolicy<610, Policy610, Policy600>
+  struct Policy610 : cub::detail::ptx_base<610>
   {
     constexpr static int BLOCK_THREADS = 256;
     constexpr static int RADIX_BITS = sizeof(KeyT) > 1 ? 6 : 4;
@@ -700,7 +707,7 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_DEFAULT>>;
   };
 
-  struct Policy620 : ChainedPolicy<620, Policy620, Policy610>
+  struct Policy620 : cub::detail::ptx_base<620>
   {
     constexpr static int BLOCK_THREADS = 256;
     constexpr static int RADIX_BITS = sizeof(KeyT) > 1 ? 5 : 4;
@@ -740,7 +747,7 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_DEFAULT>>;
   };
 
-  struct Policy700 : ChainedPolicy<700, Policy700, Policy620>
+  struct Policy700 : cub::detail::ptx_base<700>
   {
     constexpr static int BLOCK_THREADS = 256;
     constexpr static int RADIX_BITS = sizeof(KeyT) > 1 ? 6 : 4;
@@ -780,7 +787,7 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_DEFAULT>>;
   };
 
-  struct Policy800 : ChainedPolicy<800, Policy800, Policy700>
+  struct Policy800 : cub::detail::ptx_base<800>
   {
     constexpr static int BLOCK_THREADS = 256;
     constexpr static int PARTITIONING_THRESHOLD = 500;
@@ -819,7 +826,7 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_DEFAULT>>;
   };
 
-  struct Policy860 : ChainedPolicy<860, Policy860, Policy800>
+  struct Policy860 : cub::detail::ptx_base<860>
   {
     constexpr static int BLOCK_THREADS = 256;
     constexpr static int PARTITIONING_THRESHOLD = 500;
@@ -860,8 +867,14 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_LDG>>;
   };
 
-  /// MaxPolicy
-  using MaxPolicy = Policy860;
+  // List in descending order:
+  using Policies = cub::detail::type_list<Policy860,
+                                          Policy800,
+                                          Policy700,
+                                          Policy620,
+                                          Policy610,
+                                          Policy500,
+                                          Policy350>;
 };
 
 template <bool IS_DESCENDING,
@@ -1010,7 +1023,6 @@ struct DispatchSegmentedSort : SelectedPolicy
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
-    using MaxPolicyT = typename DispatchSegmentedSort::MaxPolicy;
     using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
     using SmallAndMediumPolicyT =
       typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
@@ -1199,14 +1211,14 @@ struct DispatchSegmentedSort : SelectedPolicy
         error =
           SortWithPartitioning<LargeSegmentPolicyT, SmallAndMediumPolicyT>(
             DeviceSegmentedSortKernelLarge<IS_DESCENDING,
-                                           MaxPolicyT,
+                                           ActivePolicyT,
                                            KeyT,
                                            ValueT,
                                            BeginOffsetIteratorT,
                                            EndOffsetIteratorT,
                                            OffsetT>,
             DeviceSegmentedSortKernelSmall<IS_DESCENDING,
-                                           MaxPolicyT,
+                                           ActivePolicyT,
                                            KeyT,
                                            ValueT,
                                            BeginOffsetIteratorT,
@@ -1229,7 +1241,7 @@ struct DispatchSegmentedSort : SelectedPolicy
 
         error = SortWithoutPartitioning<LargeSegmentPolicyT>(
           DeviceSegmentedSortFallbackKernel<IS_DESCENDING,
-                                            MaxPolicyT,
+                                            ActivePolicyT,
                                             KeyT,
                                             ValueT,
                                             BeginOffsetIteratorT,
@@ -1260,40 +1272,28 @@ struct DispatchSegmentedSort : SelectedPolicy
            cudaStream_t stream,
            bool debug_synchronous)
   {
-    using MaxPolicyT = typename DispatchSegmentedSort::MaxPolicy;
+    // Dispatch on default policies:
+    using policies_t = typename SelectedPolicy::Policies;
+    constexpr auto exec_space = cub::detail::runtime_exec_space;
+    using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-    cudaError error = cudaSuccess;
+    // Create dispatch functor
+    DispatchSegmentedSort dispatch(d_temp_storage,
+                                   temp_storage_bytes,
+                                   d_keys,
+                                   d_values,
+                                   num_items,
+                                   num_segments,
+                                   d_begin_offsets,
+                                   d_end_offsets,
+                                   is_overwrite_okay,
+                                   stream,
+                                   debug_synchronous);
 
-    do
-    {
-      // Get PTX version
-      int ptx_version = 0;
-      if (CubDebug(error = PtxVersion(ptx_version)))
-      {
-        break;
-      }
+    cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+    dispatcher_t::exec(invoker, dispatch);
 
-      // Create dispatch functor
-      DispatchSegmentedSort dispatch(d_temp_storage,
-                                     temp_storage_bytes,
-                                     d_keys,
-                                     d_values,
-                                     num_items,
-                                     num_segments,
-                                     d_begin_offsets,
-                                     d_end_offsets,
-                                     is_overwrite_okay,
-                                     stream,
-                                     debug_synchronous);
-
-      // Dispatch to chained policy
-      if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch)))
-      {
-        break;
-      }
-    } while (false);
-
-    return error;
+    return CubDebug(invoker.status);
   }
 
 private:
@@ -1370,38 +1370,23 @@ private:
 
     unsigned int h_group_sizes[num_selected_groups];
 
-    if (CUB_IS_HOST_CODE)
-    {
-      #if CUB_INCLUDE_HOST_CODE
-      if (CubDebug(error = cudaMemcpyAsync(
-                     h_group_sizes,
-                     group_sizes.get(),
-                     num_selected_groups * sizeof(unsigned int),
-                     cudaMemcpyDeviceToHost,
-                     stream)))
-      {
-        return error;
-      }
-
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
-      #endif
-    }
-    else
-    {
-      #if CUB_INCLUDE_DEVICE_CODE
-      if (CubDebug(error = SyncStream(stream)))
-      {
-        return error;
-      }
-
-      memcpy(h_group_sizes,
-             group_sizes.get(),
-             num_selected_groups * sizeof(unsigned int));
-      #endif
-    }
+    NV_IF_TARGET(NV_IS_HOST,
+                 (if (CubDebug(error = cudaMemcpyAsync(
+                                 h_group_sizes,
+                                 group_sizes.get(),
+                                 num_selected_groups * sizeof(unsigned int),
+                                 cudaMemcpyDeviceToHost,
+                                 stream)))
+                  {
+                    return error;
+                  }),
+                 (if (CubDebug(error = SyncStream(stream)))
+                  {
+                     return error;
+                  }
+                  memcpy(h_group_sizes,
+                        group_sizes.get(),
+                        num_selected_groups * sizeof(unsigned int));));
 
     const unsigned int large_segments = h_group_sizes[0];
 

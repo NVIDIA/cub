@@ -27,19 +27,23 @@
 
 #pragma once
 
-#include <cub/util_math.cuh>
-#include <cub/util_device.cuh>
-#include <cub/util_namespace.cuh>
 #include <cub/agent/agent_merge_sort.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
+#include <cub/util_namespace.cuh>
 
-#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 #include <thrust/detail/integer_math.h>
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 CUB_NAMESPACE_BEGIN
 
 
+CUB_KERNEL_BEGIN
 template <bool UseVShmem,
-          typename ChainedPolicyT,
+          typename ActivePolicyT,
           typename KeyInputIteratorT,
           typename ValueInputIteratorT,
           typename KeyIteratorT,
@@ -48,7 +52,7 @@ template <bool UseVShmem,
           typename CompareOpT,
           typename KeyT,
           typename ValueT>
-void __global__ __launch_bounds__(ChainedPolicyT::ActivePolicy::MergeSortPolicy::BLOCK_THREADS)
+void __global__ __launch_bounds__(ActivePolicyT::BLOCK_THREADS)
 DeviceMergeSortBlockSortKernel(bool ping,
                                KeyInputIteratorT keys_in,
                                ValueInputIteratorT items_in,
@@ -61,7 +65,6 @@ DeviceMergeSortBlockSortKernel(bool ping,
                                char *vshmem)
 {
   extern __shared__ char shmem[];
-  using ActivePolicyT = typename ChainedPolicyT::ActivePolicy::MergeSortPolicy;
 
   using AgentBlockSortT = AgentBlockSort<ActivePolicyT,
                                          KeyInputIteratorT,
@@ -128,14 +131,14 @@ __global__ void DeviceMergeSortPartitionKernel(bool ping,
 }
 
 template <bool UseVShmem,
-          typename ChainedPolicyT,
+          typename ActivePolicyT,
           typename KeyIteratorT,
           typename ValueIteratorT,
           typename OffsetT,
           typename CompareOpT,
           typename KeyT,
           typename ValueT>
-void __global__ __launch_bounds__(ChainedPolicyT::ActivePolicy::MergeSortPolicy::BLOCK_THREADS)
+void __global__ __launch_bounds__(ActivePolicyT::BLOCK_THREADS)
 DeviceMergeSortMergeKernel(bool ping,
                            KeyIteratorT keys_ping,
                            ValueIteratorT items_ping,
@@ -149,7 +152,6 @@ DeviceMergeSortMergeKernel(bool ping,
 {
   extern __shared__ char shmem[];
 
-  using ActivePolicyT = typename ChainedPolicyT::ActivePolicy::MergeSortPolicy;
   using AgentMergeT = AgentMerge<ActivePolicyT,
                                  KeyIteratorT,
                                  ValueIteratorT,
@@ -182,6 +184,7 @@ DeviceMergeSortMergeKernel(bool ping,
 
   agent.Process();
 }
+CUB_KERNEL_END
 
 /*******************************************************************************
  * Policy
@@ -196,7 +199,7 @@ struct DeviceMergeSortPolicy
   // Architecture-specific tuning policies
   //----------------------------------------------------------------------------
 
-  struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
+  struct Policy350 : cub::detail::ptx_base<350>
   {
     using MergeSortPolicy =
       AgentMergeSortPolicy<256,
@@ -206,11 +209,7 @@ struct DeviceMergeSortPolicy
                            cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
-// NVBug 3384810
-#if defined(_NVHPC_CUDA)
-  using Policy520 = Policy350;
-#else
-  struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
+  struct Policy520 : cub::detail::ptx_base<520>
   {
     using MergeSortPolicy =
       AgentMergeSortPolicy<512,
@@ -219,9 +218,8 @@ struct DeviceMergeSortPolicy
                            cub::LOAD_LDG,
                            cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
-#endif
 
-  struct Policy600 : ChainedPolicy<600, Policy600, Policy520>
+  struct Policy600 : cub::detail::ptx_base<600>
   {
     using MergeSortPolicy =
       AgentMergeSortPolicy<256,
@@ -231,9 +229,15 @@ struct DeviceMergeSortPolicy
                            cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
+  // List in descending order:
+  using Policies = cub::detail::type_list<Policy600,
 
-  /// MaxPolicy
-  using MaxPolicy = Policy600;
+// NVBug 3384810
+#ifdef _NVHPC_CUDA
+                                          Policy520,
+#endif
+
+                                          Policy350>;
 };
 
 template <typename KeyInputIteratorT,
@@ -241,7 +245,6 @@ template <typename KeyInputIteratorT,
           typename KeyIteratorT,
           typename ValueIteratorT,
           typename OffsetT,
-          typename ChainedPolicyT,
           typename ActivePolicyT,
           typename CompareOpT,
           typename KeyT,
@@ -315,11 +318,11 @@ struct BlockSortLauncher
 
     THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
       num_tiles,
-      ActivePolicyT::MergeSortPolicy::BLOCK_THREADS,
+      ActivePolicyT::BLOCK_THREADS,
       use_vshmem ? 0 : block_sort_shmem_size,
       stream)
       .doit(DeviceMergeSortBlockSortKernel<use_vshmem,
-                                           ChainedPolicyT,
+                                           ActivePolicyT,
                                            KeyInputIteratorT,
                                            ValueInputIteratorT,
                                            KeyIteratorT,
@@ -344,7 +347,6 @@ struct BlockSortLauncher
 template <typename KeyIteratorT,
           typename ValueIteratorT,
           typename OffsetT,
-          typename ChainedPolicyT,
           typename ActivePolicyT,
           typename CompareOpT,
           typename KeyT,
@@ -412,11 +414,11 @@ struct MergeLauncher
 
     THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
       num_tiles,
-      ActivePolicyT::MergeSortPolicy::BLOCK_THREADS,
+      ActivePolicyT::BLOCK_THREADS,
       use_vshmem ? 0 : merge_shmem_size,
       stream)
       .doit(DeviceMergeSortMergeKernel<use_vshmem,
-                                       ChainedPolicyT,
+                                       ActivePolicyT,
                                        KeyIteratorT,
                                        ValueIteratorT,
                                        OffsetT,
@@ -486,7 +488,6 @@ struct DispatchMergeSort : SelectedPolicy
   /// check for errors. Also causes launch configurations to be printed to the
   /// console. Default is \p false.
   bool debug_synchronous;
-  int ptx_version;
 
   CUB_RUNTIME_FUNCTION __forceinline__ std::size_t
   vshmem_size(std::size_t max_shmem,
@@ -514,8 +515,7 @@ struct DispatchMergeSort : SelectedPolicy
                     OffsetT num_items,
                     CompareOpT compare_op,
                     cudaStream_t stream,
-                    bool debug_synchronous,
-                    int ptx_version)
+                    bool debug_synchronous)
       : d_temp_storage(d_temp_storage)
       , temp_storage_bytes(temp_storage_bytes)
       , d_input_keys(d_input_keys)
@@ -526,7 +526,6 @@ struct DispatchMergeSort : SelectedPolicy
       , compare_op(compare_op)
       , stream(stream)
       , debug_synchronous(debug_synchronous)
-      , ptx_version(ptx_version)
   {}
 
   // Invocation
@@ -534,7 +533,6 @@ struct DispatchMergeSort : SelectedPolicy
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
     using MergePolicyT = typename ActivePolicyT::MergeSortPolicy;
-    using MaxPolicyT = typename DispatchMergeSort::MaxPolicy;
 
     using BlockSortAgentT = AgentBlockSort<MergePolicyT,
                                            KeyInputIteratorT,
@@ -557,7 +555,9 @@ struct DispatchMergeSort : SelectedPolicy
     cudaError error = cudaSuccess;
 
     if (num_items == 0)
+    {
       return error;
+    }
 
     do
     {
@@ -697,8 +697,7 @@ struct DispatchMergeSort : SelectedPolicy
                         KeyIteratorT,
                         ValueIteratorT,
                         OffsetT,
-                        MaxPolicyT,
-                        ActivePolicyT,
+                        MergePolicyT,
                         CompareOpT,
                         KeyT,
                         ValueT,
@@ -742,8 +741,7 @@ struct DispatchMergeSort : SelectedPolicy
       MergeLauncher<KeyIteratorT,
                     ValueIteratorT,
                     OffsetT,
-                    MaxPolicyT,
-                    ActivePolicyT,
+                    MergePolicyT,
                     CompareOpT,
                     KeyT,
                     ValueT,
@@ -833,39 +831,27 @@ struct DispatchMergeSort : SelectedPolicy
            cudaStream_t stream,
            bool debug_synchronous)
   {
-    using MaxPolicyT = typename DispatchMergeSort::MaxPolicy;
+    // Dispatch on default policies:
+    using policies_t          = typename SelectedPolicy::Policies;
+    constexpr auto exec_space = cub::detail::runtime_exec_space;
+    using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-    cudaError error = cudaSuccess;
-    do
-    {
-      // Get PTX version
-      int ptx_version = 0;
-      if (CubDebug(error = PtxVersion(ptx_version)))
-      {
-        break;
-      }
+    // Create dispatch functor
+    DispatchMergeSort dispatch(d_temp_storage,
+                               temp_storage_bytes,
+                               d_input_keys,
+                               d_input_items,
+                               d_output_keys,
+                               d_output_items,
+                               num_items,
+                               compare_op,
+                               stream,
+                               debug_synchronous);
 
-      // Create dispatch functor
-      DispatchMergeSort dispatch(d_temp_storage,
-                                 temp_storage_bytes,
-                                 d_input_keys,
-                                 d_input_items,
-                                 d_output_keys,
-                                 d_output_items,
-                                 num_items,
-                                 compare_op,
-                                 stream,
-                                 debug_synchronous,
-                                 ptx_version);
+    cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+    dispatcher_t::exec(invoker, dispatch);
 
-      // Dispatch to chained policy
-      if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch)))
-      {
-        break;
-      }
-    } while (0);
-
-    return error;
+    return CubDebug(invoker.status);
   }
 };
 

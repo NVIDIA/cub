@@ -32,17 +32,20 @@
 
 #pragma once
 
-#include <iterator>
-
-#include "../../agent/agent_scan_by_key.cuh"
-#include "../../thread/thread_operators.cuh"
-#include "../../config.cuh"
-#include "../../util_debug.cuh"
-#include "../../util_device.cuh"
-#include "../../util_math.cuh"
-#include "dispatch_scan.cuh"
+#include <cub/agent/agent_scan_by_key.cuh>
+#include <cub/config.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/kernel_macros.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
+#include <cub/device/dispatch/dispatch_scan.cuh>
+#include <cub/thread/thread_operators.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 
@@ -54,8 +57,9 @@ CUB_NAMESPACE_BEGIN
 /**
  * Scan kernel entry point (multi-block)
  */
+CUB_KERNEL_BEGIN
 template <
-    typename ChainedPolicyT,              ///< Chained tuning policy
+    typename ActivePolicyT,               ///< Active tuning policy
     typename KeysInputIteratorT,          ///< Random-access input iterator type
     typename ValuesInputIteratorT,        ///< Random-access input iterator type
     typename ValuesOutputIteratorT,       ///< Random-access output iterator type
@@ -64,7 +68,7 @@ template <
     typename ScanOpT,                     ///< Scan functor type
     typename InitValueT,                  ///< The init_value element for ScanOpT type (cub::NullType for inclusive scan)
     typename OffsetT>                     ///< Signed integer type for global offsets
-__launch_bounds__ (int(ChainedPolicyT::ActivePolicy::ScanByKeyPolicyT::BLOCK_THREADS))
+__launch_bounds__ (int(ActivePolicyT::BLOCK_THREADS))
 __global__ void DeviceScanByKeyKernel(
     KeysInputIteratorT    d_keys_in,          ///< Input keys data
     ValuesInputIteratorT  d_values_in,        ///< Input values data
@@ -76,11 +80,9 @@ __global__ void DeviceScanByKeyKernel(
     InitValueT            init_value,         ///< Initial value to seed the exclusive scan
     OffsetT               num_items)          ///< Total number of scan items for the entire problem
 {
-    typedef typename ChainedPolicyT::ActivePolicy::ScanByKeyPolicyT ScanByKeyPolicyT;
-
     // Thread block type for scanning input tiles
     typedef AgentScanByKey<
-        ScanByKeyPolicyT,
+        ActivePolicyT,
         KeysInputIteratorT,
         ValuesInputIteratorT,
         ValuesOutputIteratorT,
@@ -106,7 +108,7 @@ __global__ void DeviceScanByKeyKernel(
         tile_state,
         start_tile);
 }
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Policy
@@ -126,7 +128,7 @@ struct DeviceScanByKeyPolicy
     static constexpr size_t CombinedInputBytes = sizeof(KeyT) + sizeof(ValueT);
 
     // SM350
-    struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
+    struct Policy350 : cub::detail::ptx_base<350>
     {
         enum
         {
@@ -145,7 +147,7 @@ struct DeviceScanByKeyPolicy
     };
 
     // SM520
-    struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
+    struct Policy520 : cub::detail::ptx_base<520>
     {
         enum
         {
@@ -164,8 +166,8 @@ struct DeviceScanByKeyPolicy
             ScanByKeyPolicyT;
     };
 
-    /// MaxPolicy
-    typedef Policy520 MaxPolicy;
+    // List in descending order:
+    using Policies = cub::detail::type_list<Policy520, Policy350>;
 };
 
 
@@ -224,11 +226,10 @@ struct DispatchScanByKey:
     OffsetT               num_items;              ///< [in] Total number of input items (i.e., the length of \p d_in)
     cudaStream_t          stream;                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     bool                  debug_synchronous;
-    int                   ptx_version;
 
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchScanByKey(
-        void*                 d_temp_storage,         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                 d_temp_storage,         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&               temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         KeysInputIteratorT    d_keys_in,              ///< [in] Iterator to the input sequence of key items
         ValuesInputIteratorT  d_values_in,            ///< [in] Iterator to the input sequence of value items
@@ -238,8 +239,7 @@ struct DispatchScanByKey:
         InitValueT            init_value,             ///< [in] Initial value to seed the exclusive scan
         OffsetT               num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         cudaStream_t          stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
-        bool                  debug_synchronous,
-        int                   ptx_version
+        bool                  debug_synchronous
     ):
         d_temp_storage(d_temp_storage),
         temp_storage_bytes(temp_storage_bytes),
@@ -251,25 +251,26 @@ struct DispatchScanByKey:
         init_value(init_value),
         num_items(num_items),
         stream(stream),
-        debug_synchronous(debug_synchronous),
-        ptx_version(ptx_version)
+        debug_synchronous(debug_synchronous)
     {}
 
-    template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
+    template <typename ActivePolicyT>
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
-    cudaError_t Invoke(InitKernel init_kernel, ScanKernel scan_kernel)
+    cudaError_t Invoke()
     {
-#ifndef CUB_RUNTIME_ENABLED
+        using Policy = typename ActivePolicyT::ScanByKeyPolicyT;
+        using ScanByKeyTileStateT = ReduceByKeyScanTileState<OutputT, OffsetT>;
 
-        (void)init_kernel;
-        (void)scan_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-        typedef typename ActivePolicyT::ScanByKeyPolicyT Policy;
-        typedef ReduceByKeyScanTileState<OutputT, OffsetT> ScanByKeyTileStateT;
+        auto init_kernel = DeviceScanInitKernel<ScanByKeyTileStateT>;
+        auto scan_kernel = DeviceScanByKeyKernel<Policy,
+                                                 KeysInputIteratorT,
+                                                 ValuesInputIteratorT,
+                                                 ValuesOutputIteratorT,
+                                                 ScanByKeyTileStateT,
+                                                 EqualityOp,
+                                                 ScanOpT,
+                                                 InitValueT,
+                                                 OffsetT>;
 
         cudaError error = cudaSuccess;
         do
@@ -363,28 +364,10 @@ struct DispatchScanByKey:
         while (0);
 
         return error;
-
-#endif  // CUB_RUNTIME_ENABLED
     }
-
-    template <typename ActivePolicyT>
-    CUB_RUNTIME_FUNCTION __host__  __forceinline__
-    cudaError_t Invoke()
-    {
-        typedef typename DispatchScanByKey::MaxPolicy MaxPolicyT;
-        typedef ReduceByKeyScanTileState<OutputT, OffsetT> ScanByKeyTileStateT;
-        // Ensure kernels are instantiated.
-        return Invoke<ActivePolicyT>(
-            DeviceScanInitKernel<ScanByKeyTileStateT>,
-            DeviceScanByKeyKernel<
-                MaxPolicyT, KeysInputIteratorT, ValuesInputIteratorT, ValuesOutputIteratorT,
-                ScanByKeyTileStateT, EqualityOp, ScanOpT, InitValueT, OffsetT>
-        );
-    }
-
 
     /**
-     * Internal dispatch routine
+     * Dispatch routine
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
@@ -400,36 +383,28 @@ struct DispatchScanByKey:
         cudaStream_t          stream,                 ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                  debug_synchronous)
     {
-        typedef typename DispatchScanByKey::MaxPolicy MaxPolicyT;
+      // Dispatch on default policies:
+      using policies_t = typename SelectedPolicy::Policies;
+      constexpr auto exec_space = cub::detail::runtime_exec_space;
+      using dispatcher_t = cub::detail::ptx_dispatch<policies_t, exec_space>;
 
-        cudaError_t error;
-        do
-        {
-            // Get PTX version
-            int ptx_version = 0;
-            if (CubDebug(error = PtxVersion(ptx_version))) break;
+      // Create dispatch functor
+      DispatchScanByKey dispatch(d_temp_storage,
+                                 temp_storage_bytes,
+                                 d_keys_in,
+                                 d_values_in,
+                                 d_values_out,
+                                 equality_op,
+                                 scan_op,
+                                 init_value,
+                                 num_items,
+                                 stream,
+                                 debug_synchronous);
 
-            // Create dispatch functor
-            DispatchScanByKey dispatch(
-                d_temp_storage,
-                temp_storage_bytes,
-                d_keys_in,
-                d_values_in,
-                d_values_out,
-                equality_op,
-                scan_op,
-                init_value,
-                num_items,
-                stream,
-                debug_synchronous,
-                ptx_version
-            );
-            // Dispatch to chained policy
-            if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
-        }
-        while (0);
+      cub::detail::device_algorithm_dispatch_invoker<exec_space> invoker;
+      dispatcher_t::exec(invoker, dispatch);
 
-        return error;
+      return CubDebug(invoker.status);
     }
 };
 
