@@ -651,47 +651,6 @@ struct KernelConfig
     }
 };
 
-
-
-/// Helper for dispatching into a policy chain
-template <int PTX_VERSION, typename PolicyT, typename PrevPolicyT>
-struct ChainedPolicy
-{
-   /// The policy for the active compiler pass
-   typedef typename If<(CUB_PTX_ARCH < PTX_VERSION),
-                       typename PrevPolicyT::ActivePolicy,
-                       PolicyT>::Type ActivePolicy;
-
-   /// Specializes and dispatches op in accordance to the first policy in the chain of adequate PTX version
-   template <typename FunctorT>
-   CUB_RUNTIME_FUNCTION __forceinline__
-   static cudaError_t Invoke(int ptx_version, FunctorT& op)
-   {
-       if (ptx_version < PTX_VERSION) {
-           return PrevPolicyT::Invoke(ptx_version, op);
-       }
-       return op.template Invoke<PolicyT>();
-   }
-};
-
-/// Helper for dispatching into a policy chain (end-of-chain specialization)
-template <int PTX_VERSION, typename PolicyT>
-struct ChainedPolicy<PTX_VERSION, PolicyT, PolicyT>
-{
-    /// The policy for the active compiler pass
-    typedef PolicyT ActivePolicy;
-
-    /// Specializes and dispatches op in accordance to the first policy in the chain of adequate PTX version
-    template <typename FunctorT>
-    CUB_RUNTIME_FUNCTION __forceinline__
-    static cudaError_t Invoke(int /*ptx_version*/, FunctorT& op) {
-        return op.template Invoke<PolicyT>();
-    }
-};
-
-
-
-
 /** @} */       // end group UtilMgmt
 
 CUB_NAMESPACE_END

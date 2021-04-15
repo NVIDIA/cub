@@ -499,12 +499,6 @@ struct DispatchSpmv
         KernelConfig            spmv_config,                        ///< [in] Dispatch parameters that match the policy that \p spmv_kernel was compiled for
         KernelConfig            segment_fixup_config)               ///< [in] Dispatch parameters that match the policy that \p segment_fixup_kernel was compiled for
     {
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-
-#else
         cudaError error = cudaSuccess;
         do
         {
@@ -704,8 +698,6 @@ struct DispatchSpmv
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 

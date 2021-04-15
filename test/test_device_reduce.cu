@@ -42,6 +42,8 @@
 
 #include <cub/util_allocator.cuh>
 #include <cub/util_math.cuh>
+#include <cub/detail/device_algorithm_dispatch_invoker.cuh>
+#include <cub/detail/ptx_dispatch.cuh>
 #include <cub/device/device_reduce.cuh>
 #include <cub/device/device_segmented_reduce.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
@@ -57,7 +59,6 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-int                     g_ptx_version;
 int                     g_sm_count;
 double                  g_device_giga_bandwidth;
 bool                    g_verbose           = false;
@@ -1291,11 +1292,11 @@ void TestType(
     OffsetT     max_items,
     OffsetT     max_segments)
 {
-    typedef typename DeviceReducePolicy<InputT, OutputT, OffsetT, cub::Sum>::MaxPolicy MaxPolicyT;
-
+    using policies_t = typename DeviceReducePolicy<InputT, OutputT, OffsetT, cub::Sum>::Policies;
+    using dispatch_t = cub::detail::ptx_dispatch<policies_t, cub::detail::exec_space::host>;
     TestBySize<InputT, OutputT, OffsetT> dispatch(max_items, max_segments);
-
-    MaxPolicyT::Invoke(g_ptx_version, dispatch);
+    cub::detail::device_algorithm_dispatch_invoker invoker;
+    dispatch_t::exec(invoker, dispatch);
 }
 
 
@@ -1341,9 +1342,6 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
     g_device_giga_bandwidth = args.device_giga_bandwidth;
-
-    // Get ptx version
-    CubDebugExit(PtxVersion(g_ptx_version));
 
     // Get SM count
     g_sm_count = args.deviceProp.multiProcessorCount;
