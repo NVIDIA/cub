@@ -69,11 +69,9 @@ cudaError_t Debug(cudaError_t error, const char *filename, int line)
   (void)filename;
   (void)line;
 
-#ifdef CUB_RUNTIME_ENABLED
   // Clear the global CUDA error state which may have been set by the last
   // call. Otherwise, errors may "leak" to unrelated kernel launches.
   cudaGetLastError();
-#endif
 
 #ifdef CUB_STDERR
   if (error)
