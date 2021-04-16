@@ -782,13 +782,13 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             PRIMITIVE       = false,                        \
             NULL_TYPE       = false,                        \
         };                                                  \
-        static T Max()                                      \
+        static __host__ __device__ T Max()                  \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T Lowest()                                   \
+        static __host__ __device__ T Lowest()               \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Lowest()};            \
@@ -870,14 +870,14 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             PRIMITIVE       = false,                        \
             NULL_TYPE       = false,                        \
         };                                                  \
-        static T Max()                                      \
+        static __host__ __device__ T Max()                  \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Max(),                \
                 NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T Lowest()                                   \
+        static __host__ __device__  T Lowest()              \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Lowest(),             \
@@ -967,7 +967,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             PRIMITIVE       = false,                        \
             NULL_TYPE       = false,                        \
         };                                                  \
-        static T Max()                                      \
+        static __host__ __device__ T Max()                  \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Max(),                \
@@ -975,7 +975,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
                 NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T Lowest()                                   \
+        static __host__ __device__ T Lowest()               \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Lowest(),             \
@@ -1072,7 +1072,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             PRIMITIVE       = false,                        \
             NULL_TYPE       = false,                        \
         };                                                  \
-        static T Max()                                      \
+        static __host__ __device__ T Max()                  \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Max(),                \
@@ -1081,7 +1081,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
                 NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T Lowest()                                   \
+        static __host__ __device__ T Lowest()               \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Lowest(),             \
@@ -1224,7 +1224,7 @@ struct NumericTraits<TestFoo>
         PRIMITIVE       = false,
         NULL_TYPE       = false,
     };
-    static TestFoo Max()
+  __host__ __device__ static TestFoo Max()
     {
         return TestFoo::MakeTestFoo(
             NumericTraits<long long>::Max(),
@@ -1233,7 +1233,7 @@ struct NumericTraits<TestFoo>
             NumericTraits<char>::Max());
     }
 
-    static TestFoo Lowest()
+  __host__ __device__ static TestFoo Lowest()
     {
         return TestFoo::MakeTestFoo(
             NumericTraits<long long>::Lowest(),
@@ -1340,14 +1340,14 @@ struct NumericTraits<TestBar>
         PRIMITIVE       = false,
         NULL_TYPE       = false,
     };
-    static TestBar Max()
+    __host__ __device__ static TestBar Max()
     {
         return TestBar(
             NumericTraits<long long>::Max(),
             NumericTraits<int>::Max());
     }
 
-    static TestBar Lowest()
+    __host__ __device__ static TestBar Lowest()
     {
         return TestBar(
             NumericTraits<long long>::Lowest(),
