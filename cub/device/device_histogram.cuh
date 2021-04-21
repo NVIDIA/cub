@@ -346,7 +346,7 @@ struct DeviceHistogram
             lower_level,
             upper_level,
             num_pixels,
-            1,
+            static_cast<OffsetT>(1),
             sizeof(SampleT) * NUM_CHANNELS * num_pixels,
             stream,
             debug_synchronous);
