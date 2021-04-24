@@ -69,6 +69,11 @@ struct DeviceSegmentedReduce
      *
      * \par
      * - Does not support binary reduction operators that are non-commutative.
+     * - Provides "run-to-run" determinism for pseudo-associative reduction
+     *   (e.g., addition of floating point types) on the same GPU device.
+     *   However, results for pseudo-associative reduction may be inconsistent
+     *   from one device to a another device of a different compute-capability
+     *   because CUB can employ different tile-sizing for different architectures.
      * - When input a contiguous sequence of segments, a single sequence
      *   \p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
      *   for both the \p d_begin_offsets and \p d_end_offsets parameters (where
