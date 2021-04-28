@@ -96,7 +96,7 @@ struct CustomMax
 /**
  * Dispatch to reduce entrypoint (custom-max)
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT, typename ReductionOpT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
@@ -110,7 +110,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 /*max_segments*/,
-    OffsetIteratorT     /*d_segment_offsets*/,
+    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT  /*d_segment_end_offsets*/,
     ReductionOpT        reduction_op,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -140,7 +141,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to sum entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
@@ -154,7 +155,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 /*max_segments*/,
-    OffsetIteratorT     /*d_segment_offsets*/,
+    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT  /*d_segment_end_offsets*/,
     cub::Sum            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -172,7 +174,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to min entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
@@ -186,7 +188,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 /*max_segments*/,
-    OffsetIteratorT     /*d_segment_offsets*/,
+    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT  /*d_segment_end_offsets*/,
     cub::Min            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -204,7 +207,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to max entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
@@ -218,7 +221,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 /*max_segments*/,
-    OffsetIteratorT     /*d_segment_offsets*/,
+    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT  /*d_segment_end_offsets*/,
     cub::Max            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -236,7 +240,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to argmin entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
@@ -250,7 +254,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 /*max_segments*/,
-    OffsetIteratorT     /*d_segment_offsets*/,
+    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT  /*d_segment_end_offsets*/,
     cub::ArgMin         /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -268,7 +273,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to argmax entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
@@ -282,7 +287,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 /*max_segments*/,
-    OffsetIteratorT     /*d_segment_offsets*/,
+    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT  /*d_segment_end_offsets*/,
     cub::ArgMax         /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -305,7 +311,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to reduce entrypoint (custom-max)
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT, typename ReductionOpT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
@@ -319,7 +325,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 /*num_items*/,
     int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT  d_segment_end_offsets,
     ReductionOpT        reduction_op,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -340,7 +347,7 @@ cudaError_t Dispatch(
     for (int i = 0; i < timing_iterations; ++i)
     {
         error = DeviceSegmentedReduce::Reduce(d_temp_storage, temp_storage_bytes,
-            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1, reduction_op, identity,
+            d_in, d_out, max_segments, d_segment_begin_offsets, d_segment_end_offsets, reduction_op, identity,
             stream, debug_synchronous);
     }
     return error;
@@ -349,7 +356,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to sum entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
@@ -363,7 +370,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 /*num_items*/,
     int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT  d_segment_end_offsets,
     cub::Sum            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -373,7 +381,7 @@ cudaError_t Dispatch(
     for (int i = 0; i < timing_iterations; ++i)
     {
         error = DeviceSegmentedReduce::Sum(d_temp_storage, temp_storage_bytes,
-            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1,
+            d_in, d_out, max_segments, d_segment_begin_offsets, d_segment_end_offsets,
             stream, debug_synchronous);
     }
     return error;
@@ -382,7 +390,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to min entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
@@ -396,7 +404,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 /*num_items*/,
     int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT  d_segment_end_offsets,
     cub::Min            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -406,7 +415,7 @@ cudaError_t Dispatch(
     for (int i = 0; i < timing_iterations; ++i)
     {
         error = DeviceSegmentedReduce::Min(d_temp_storage, temp_storage_bytes,
-            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1,
+            d_in, d_out, max_segments, d_segment_begin_offsets, d_segment_end_offsets,
             stream, debug_synchronous);
     }
     return error;
@@ -415,7 +424,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to max entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
@@ -429,7 +438,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 /*num_items*/,
     int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT  d_segment_end_offsets,
     cub::Max            /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -439,7 +449,7 @@ cudaError_t Dispatch(
     for (int i = 0; i < timing_iterations; ++i)
     {
         error = DeviceSegmentedReduce::Max(d_temp_storage, temp_storage_bytes,
-            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1,
+            d_in, d_out, max_segments, d_segment_begin_offsets, d_segment_end_offsets,
             stream, debug_synchronous);
     }
     return error;
@@ -448,7 +458,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to argmin entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
@@ -462,7 +472,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 /*num_items*/,
     int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT  d_segment_end_offsets,
     cub::ArgMin         /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -472,7 +483,7 @@ cudaError_t Dispatch(
     for (int i = 0; i < timing_iterations; ++i)
     {
         error = DeviceSegmentedReduce::ArgMin(d_temp_storage, temp_storage_bytes,
-            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1,
+            d_in, d_out, max_segments, d_segment_begin_offsets, d_segment_end_offsets,
             stream, debug_synchronous);
     }
     return error;
@@ -481,7 +492,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to argmax entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
@@ -495,7 +506,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 /*num_items*/,
     int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT  d_segment_end_offsets,
     cub::ArgMax         /*reduction_op*/,
     cudaStream_t        stream,
     bool                debug_synchronous)
@@ -505,7 +517,7 @@ cudaError_t Dispatch(
     for (int i = 0; i < timing_iterations; ++i)
     {
         error = DeviceSegmentedReduce::ArgMax(d_temp_storage, temp_storage_bytes,
-            d_in, d_out, max_segments, d_segment_offsets, d_segment_offsets + 1,
+            d_in, d_out, max_segments, d_segment_begin_offsets, d_segment_end_offsets,
             stream, debug_synchronous);
     }
     return error;
@@ -519,7 +531,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to reduction entrypoint (min or max specialization)
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT, typename ReductionOpT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
 cudaError_t Dispatch(
     Int2Type<THRUST>    /*dispatch_to*/,
     int                 timing_iterations,
@@ -532,7 +544,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 /*max_segments*/,
-    OffsetIteratorT     /*d_segment_offsets*/,
+    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT  /*d_segment_end_offsets*/,
     ReductionOpT         reduction_op,
     cudaStream_t        /*stream*/,
     bool                /*debug_synchronous*/)
@@ -568,7 +581,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to reduction entrypoint (sum specialization)
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 cudaError_t Dispatch(
     Int2Type<THRUST>    /*dispatch_to*/,
     int                 timing_iterations,
@@ -581,7 +594,8 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 /*max_segments*/,
-    OffsetIteratorT     /*d_segment_offsets*/,
+    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT  /*d_segment_end_offsets*/,
     Sum                 /*reduction_op*/,
     cudaStream_t        /*stream*/,
     bool                /*debug_synchronous*/)
@@ -622,7 +636,8 @@ cudaError_t Dispatch(
 template <
     typename            InputIteratorT,
     typename            OutputIteratorT,
-    typename            OffsetIteratorT,
+    typename            BeginOffsetIteratorT,
+    typename            EndOffsetIteratorT,
     typename            ReductionOpT>
 __global__ void CnpDispatchKernel(
     int                 timing_iterations,
@@ -635,7 +650,8 @@ __global__ void CnpDispatchKernel(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT  d_segment_end_offsets,
     ReductionOpT        reduction_op,
     bool                debug_synchronous)
 {
@@ -649,13 +665,14 @@ __global__ void CnpDispatchKernel(
     (void)d_out;
     (void)num_items;
     (void)max_segments;
-    (void)d_segment_offsets;
+    (void)d_segment_begin_offsets;
+    (void)d_segment_end_offsets;
     (void)reduction_op;
     (void)debug_synchronous;
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, d_out, num_items, max_segments, d_segment_offsets, reduction_op, 0, debug_synchronous);
+        d_in, d_out, num_items, max_segments, d_segment_begin_offsets, d_segment_end_offsets, reduction_op, 0, debug_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
@@ -664,7 +681,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CUB_CDP kernel
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetIteratorT, typename ReductionOpT>
+template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB_CDP>       dispatch_to,
@@ -678,14 +695,15 @@ cudaError_t Dispatch(
     OutputIteratorT     d_out,
     int                 num_items,
     int                 max_segments,
-    OffsetIteratorT     d_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT  d_segment_end_offsets,
     ReductionOpT        reduction_op,
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
     // Invoke kernel to invoke device-side dispatch
     CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, d_out, num_items, max_segments, d_segment_offsets, reduction_op, debug_synchronous);
+        d_in, d_out, num_items, max_segments, d_segment_begin_offsets, d_segment_end_offsets, reduction_op, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
@@ -729,14 +747,14 @@ struct Solution
 {
     typedef _OutputT OutputT;
 
-    template <typename HostInputIteratorT, typename OffsetT, typename OffsetIteratorT>
-    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments, OffsetIteratorT h_segment_offsets,
-        ReductionOpT reduction_op)
+    template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
+    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
+        BeginOffsetIteratorT h_segment_begin_offsets, EndOffsetIteratorT h_segment_end_offsets, ReductionOpT reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
             OutputT aggregate = Traits<InputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
-            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+            for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
                 aggregate = reduction_op(aggregate, OutputT(h_in[j]));
             h_reference[i] = aggregate;
         }
@@ -749,14 +767,14 @@ struct Solution<cub::Min, InputT, _OutputT>
 {
     typedef _OutputT OutputT;
 
-    template <typename HostInputIteratorT, typename OffsetT, typename OffsetIteratorT>
-    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments, OffsetIteratorT h_segment_offsets,
-        cub::Min reduction_op)
+    template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
+    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
+        BeginOffsetIteratorT h_segment_begin_offsets, EndOffsetIteratorT h_segment_end_offsets, cub::Min reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
             OutputT aggregate = Traits<InputT>::Max();    // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
-            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+            for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
                 aggregate = reduction_op(aggregate, OutputT(h_in[j]));
             h_reference[i] = aggregate;
         }
@@ -770,15 +788,15 @@ struct Solution<cub::Sum, InputT, _OutputT>
 {
     typedef _OutputT OutputT;
 
-    template <typename HostInputIteratorT, typename OffsetT, typename OffsetIteratorT>
-    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments, OffsetIteratorT h_segment_offsets,
-        cub::Sum reduction_op)
+    template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
+    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
+        BeginOffsetIteratorT h_segment_begin_offsets, EndOffsetIteratorT h_segment_end_offsets, cub::Sum reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
             OutputT aggregate;
             InitValue(INTEGER_SEED, aggregate, 0);
-            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+            for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
                 aggregate = reduction_op(aggregate, OutputT(h_in[j]));
             h_reference[i] = aggregate;
         }
@@ -791,16 +809,16 @@ struct Solution<cub::ArgMin, InputValueT, OutputValueT>
 {
     typedef KeyValuePair<int, OutputValueT> OutputT;
 
-    template <typename HostInputIteratorT, typename OffsetT, typename OffsetIteratorT>
-    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments, OffsetIteratorT h_segment_offsets,
-        cub::ArgMin reduction_op)
+    template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
+    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
+        BeginOffsetIteratorT h_segment_begin_offsets, EndOffsetIteratorT h_segment_end_offsets, cub::ArgMin reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
             OutputT aggregate(1, Traits<InputValueT>::Max()); // replace with std::numeric_limits<OutputT>::max() when C++ support is more prevalent
-            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+            for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
             {
-                OutputT item(j - h_segment_offsets[i], OutputValueT(h_in[j]));
+                OutputT item(j - h_segment_begin_offsets[i], OutputValueT(h_in[j]));
                 aggregate = reduction_op(aggregate, item);
             }
             h_reference[i] = aggregate;
@@ -815,16 +833,16 @@ struct Solution<cub::ArgMax, InputValueT, OutputValueT>
 {
     typedef KeyValuePair<int, OutputValueT> OutputT;
 
-    template <typename HostInputIteratorT, typename OffsetT, typename OffsetIteratorT>
-    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments, OffsetIteratorT h_segment_offsets,
-        cub::ArgMax reduction_op)
+    template <typename HostInputIteratorT, typename OffsetT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
+    static void Solve(HostInputIteratorT h_in, OutputT *h_reference, OffsetT num_segments,
+        BeginOffsetIteratorT h_segment_begin_offsets, EndOffsetIteratorT h_segment_end_offsets, cub::ArgMax reduction_op)
     {
         for (int i = 0; i < num_segments; ++i)
         {
             OutputT aggregate(1, Traits<InputValueT>::Lowest()); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
-            for (int j = h_segment_offsets[i]; j < h_segment_offsets[i + 1]; ++j)
+            for (int j = h_segment_begin_offsets[i]; j < h_segment_end_offsets[i]; ++j)
             {
-                OutputT item(j - h_segment_offsets[i], OutputValueT(h_in[j]));
+                OutputT item(j - h_segment_begin_offsets[i], OutputValueT(h_in[j]));
                 aggregate = reduction_op(aggregate, item);
             }
             h_reference[i] = aggregate;
@@ -844,7 +862,8 @@ template <
     typename                DeviceOutputIteratorT,
     typename                HostReferenceIteratorT,
     typename                OffsetT,
-    typename                OffsetIteratorT,
+    typename                BeginOffsetIteratorT,
+    typename                EndOffsetIteratorT,
     typename                ReductionOpT>
 void Test(
     BackendT                backend,
@@ -852,7 +871,8 @@ void Test(
     DeviceOutputIteratorT   d_out,
     OffsetT                 num_items,
     OffsetT                 num_segments,
-    OffsetIteratorT         d_segment_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets,
     ReductionOpT            reduction_op,
     HostReferenceIteratorT  h_reference)
 {
@@ -870,7 +890,7 @@ void Test(
     size_t          temp_storage_bytes = 0;
     CubDebugExit(Dispatch(backend, 1,
         d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, d_out, num_items, num_segments, d_segment_offsets,
+        d_in, d_out, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         reduction_op, 0, true));
 
     // Allocate temp device storage
@@ -879,7 +899,7 @@ void Test(
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(backend, 1,
         d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, d_out, num_items, num_segments, d_segment_offsets,
+        d_in, d_out, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         reduction_op, 0, true));
 
     // Check for correctness (and display results, if specified)
@@ -898,7 +918,7 @@ void Test(
 
         CubDebugExit(Dispatch(backend, g_timing_iterations,
             d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-            d_in, d_out, num_items, num_segments, d_segment_offsets,
+            d_in, d_out, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
             reduction_op, 0, false));
 
         gpu_timer.Stop();
@@ -929,15 +949,18 @@ template <
     typename                HostInputIteratorT,
     typename                DeviceInputIteratorT,
     typename                OffsetT,
-    typename                OffsetIteratorT,
+    typename                BeginOffsetIteratorT,
+    typename                EndOffsetIteratorT,
     typename                ReductionOpT>
 void SolveAndTest(
     HostInputIteratorT      h_in,
     DeviceInputIteratorT    d_in,
     OffsetT                 num_items,
     OffsetT                 num_segments,
-    OffsetIteratorT         h_segment_offsets,
-    OffsetIteratorT         d_segment_offsets,
+    BeginOffsetIteratorT    h_segment_begin_offsets,
+    EndOffsetIteratorT      h_segment_end_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets,
     ReductionOpT            reduction_op)
 {
     typedef typename std::iterator_traits<DeviceInputIteratorT>::value_type     InputValueT;
@@ -951,7 +974,7 @@ void SolveAndTest(
 
     // Allocate and solve solution
     OutputT *h_reference = new OutputT[num_segments];
-    SolutionT::Solve(h_in, h_reference, num_segments, h_segment_offsets, reduction_op);
+    SolutionT::Solve(h_in, h_reference, num_segments, h_segment_begin_offsets, h_segment_end_offsets, reduction_op);
 
 //    // Run with discard iterator
 //    DiscardOutputIterator<OffsetT> discard_itr;
@@ -961,7 +984,7 @@ void SolveAndTest(
     OutputT *d_out = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(OutputT) * num_segments));
     CubDebugExit(cudaMemset(d_out, 0, sizeof(OutputT) * num_segments));
-    Test(Int2Type<BACKEND>(), d_in, d_out, num_items, num_segments, d_segment_offsets, reduction_op, h_reference);
+    Test(Int2Type<BACKEND>(), d_in, d_out, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, reduction_op, h_reference);
 
     // Cleanup
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
@@ -1001,7 +1024,8 @@ void TestProblem(
     CubDebugExit(cudaMemcpy(d_in,               h_in,                   sizeof(InputT) * num_items, cudaMemcpyHostToDevice));
     CubDebugExit(cudaMemcpy(d_segment_offsets,  h_segment_offsets,      sizeof(OffsetT) * (num_segments + 1), cudaMemcpyHostToDevice));
 
-    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets, reduction_op);
+    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments,
+        h_segment_offsets, h_segment_offsets + 1, d_segment_offsets, d_segment_offsets + 1, reduction_op);
 
     if (h_segment_offsets)  delete[] h_segment_offsets;
     if (d_segment_offsets)  CubDebugExit(g_allocator.DeviceFree(d_segment_offsets));
@@ -1017,23 +1041,49 @@ template <
     typename            HostInputIteratorT,
     typename            DeviceInputIteratorT,
     typename            OffsetT,
-    typename            OffsetIteratorT>
+    typename            BeginOffsetIteratorT,
+    typename            EndOffsetIteratorT>
 void TestByOp(
     HostInputIteratorT      h_in,
     DeviceInputIteratorT    d_in,
     OffsetT                 num_items,
     OffsetT                 num_segments,
-    OffsetIteratorT         h_segment_offsets,
-    OffsetIteratorT         d_segment_offsets)
+    BeginOffsetIteratorT    h_segment_begin_offsets,
+    EndOffsetIteratorT      h_segment_end_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets)
 {
-    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets, CustomMax());
-    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets, Sum());
-    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets, Min());
-    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets, ArgMin());
-    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets, Max());
-    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets, ArgMax());
+    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments,
+        h_segment_begin_offsets, h_segment_end_offsets, d_segment_begin_offsets, d_segment_end_offsets, CustomMax());
+    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments,
+        h_segment_begin_offsets, h_segment_end_offsets, d_segment_begin_offsets, d_segment_end_offsets, Sum());
+    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments,
+        h_segment_begin_offsets, h_segment_end_offsets, d_segment_begin_offsets, d_segment_end_offsets, Min());
+    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments,
+        h_segment_begin_offsets, h_segment_end_offsets, d_segment_begin_offsets, d_segment_end_offsets, ArgMin());
+    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments,
+        h_segment_begin_offsets, h_segment_end_offsets, d_segment_begin_offsets, d_segment_end_offsets, Max());
+    SolveAndTest<BACKEND, OutputT>(h_in, d_in, num_items, num_segments,
+        h_segment_begin_offsets, h_segment_end_offsets, d_segment_begin_offsets, d_segment_end_offsets, ArgMax());
 }
 
+template<typename OffsetT>
+struct transform_functor1
+{
+    __host__ __device__ __forceinline__ OffsetT operator()(OffsetT offset) const
+    {
+        return offset;
+    }
+};
+
+template<typename OffsetT>
+struct transform_functor2
+{
+    __host__ __device__ __forceinline__ OffsetT operator()(OffsetT offset) const
+    {
+        return offset;
+    }
+};
 
 /// Test different backends
 template <
@@ -1067,16 +1117,19 @@ void TestByBackend(
     InitializeSegments(num_items, 1, h_segment_offsets, g_verbose_input);
 
     // Page-aligned-input tests
-    TestByOp<CUB, OutputT>(h_in, d_in, num_items, 1, h_segment_offsets, (OffsetT*) NULL);                 // Host-dispatch
+    TestByOp<CUB, OutputT>(h_in, d_in, num_items, 1,
+        h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL);                 // Host-dispatch
 #ifdef CUB_CDP
-    TestByOp<CUB_CDP, OutputT>(h_in, d_in, num_items, 1, h_segment_offsets, (OffsetT*) NULL);             // Device-dispatch
+    TestByOp<CUB_CDP, OutputT>(h_in, d_in, num_items, 1,
+        h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL);             // Device-dispatch
 #endif
 
     // Non-page-aligned-input tests
     if (num_items > 1)
     {
         InitializeSegments(num_items - 1, 1, h_segment_offsets, g_verbose_input);
-        TestByOp<CUB, OutputT>(h_in + 1, d_in + 1, num_items - 1, 1, h_segment_offsets, (OffsetT*) NULL);
+        TestByOp<CUB, OutputT>(h_in + 1, d_in + 1, num_items - 1, 1,
+            h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL);
     }
 
     //
@@ -1093,8 +1146,8 @@ void TestByBackend(
         // Test with segment pointer
         InitializeSegments(num_items, num_segments, h_segment_offsets, g_verbose_input);
         CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(OffsetT) * (num_segments + 1), cudaMemcpyHostToDevice));
-        TestByOp<CUB_SEGMENTED, OutputT>(
-            h_in, d_in, num_items, num_segments, h_segment_offsets, d_segment_offsets);
+        TestByOp<CUB_SEGMENTED, OutputT>(h_in, d_in, num_items, num_segments,
+            h_segment_offsets, h_segment_offsets + 1, d_segment_offsets, d_segment_offsets + 1);
 
         // Test with segment iterator
         typedef CastOp<OffsetT> IdentityOpT;
@@ -1106,8 +1159,20 @@ void TestByBackend(
             d_segment_offsets,
             identity_op);
 
-        TestByOp<CUB_SEGMENTED, OutputT>(
-            h_in, d_in, num_items, num_segments, h_segment_offsets_itr, d_segment_offsets_itr);
+        TestByOp<CUB_SEGMENTED, OutputT>(h_in, d_in, num_items, num_segments,
+            h_segment_offsets_itr, h_segment_offsets_itr + 1, d_segment_offsets_itr, d_segment_offsets_itr + 1);
+
+        // Test with thrust transform iterators
+
+        auto h_segment_begin_offsets_itr = thrust::make_transform_iterator(h_segment_offsets, transform_functor1<OffsetT>());
+        auto h_segment_end_offsets_itr = thrust::make_transform_iterator(h_segment_offsets + 1, transform_functor2<OffsetT>());
+
+        auto d_segment_begin_offsets_itr = thrust::make_transform_iterator(d_segment_offsets, transform_functor1<OffsetT>());
+        auto d_segment_end_offsets_itr = thrust::make_transform_iterator(d_segment_offsets + 1, transform_functor2<OffsetT>());
+
+        TestByOp<CUB_SEGMENTED, OutputT>(h_in, d_in, num_items, num_segments,
+            h_segment_begin_offsets_itr, h_segment_end_offsets_itr,
+            d_segment_begin_offsets_itr, d_segment_end_offsets_itr);
     }
 
     if (h_in)               delete[] h_in;
@@ -1145,9 +1210,11 @@ void TestByGenMode(
     OffsetT *h_segment_offsets = new OffsetT[1 + 1];
     InitializeSegments(num_items, 1, h_segment_offsets, g_verbose_input);
 
-    SolveAndTest<CUB, OutputT>(h_in, h_in, num_items, 1, h_segment_offsets, (OffsetT*) NULL, Sum());
+    SolveAndTest<CUB, OutputT>(h_in, h_in, num_items, 1,
+        h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL, Sum());
 #ifdef CUB_CDP
-    SolveAndTest<CUB_CDP, OutputT>(h_in, h_in, num_items, 1, h_segment_offsets, (OffsetT*) NULL, Sum());
+    SolveAndTest<CUB_CDP, OutputT>(h_in, h_in, num_items, 1,
+        h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL, Sum());
 #endif
 
     if (h_segment_offsets) delete[] h_segment_offsets;
