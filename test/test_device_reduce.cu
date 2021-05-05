@@ -1068,7 +1068,7 @@ void TestByOp(
 }
 
 template<typename OffsetT>
-struct transform_functor1
+struct TransformFunctor1
 {
     __host__ __device__ __forceinline__ OffsetT operator()(OffsetT offset) const
     {
@@ -1077,7 +1077,7 @@ struct transform_functor1
 };
 
 template<typename OffsetT>
-struct transform_functor2
+struct TransformFunctor2
 {
     __host__ __device__ __forceinline__ OffsetT operator()(OffsetT offset) const
     {
@@ -1162,13 +1162,16 @@ void TestByBackend(
         TestByOp<CUB_SEGMENTED, OutputT>(h_in, d_in, num_items, num_segments,
             h_segment_offsets_itr, h_segment_offsets_itr + 1, d_segment_offsets_itr, d_segment_offsets_itr + 1);
 
-        // Test with thrust transform iterators
+        // Test with transform iterators of different types
 
-        auto h_segment_begin_offsets_itr = thrust::make_transform_iterator(h_segment_offsets, transform_functor1<OffsetT>());
-        auto h_segment_end_offsets_itr = thrust::make_transform_iterator(h_segment_offsets + 1, transform_functor2<OffsetT>());
+        typedef TransformFunctor1<OffsetT> TransformFunctor1T;
+        typedef TransformFunctor2<OffsetT> TransformFunctor2T;
 
-        auto d_segment_begin_offsets_itr = thrust::make_transform_iterator(d_segment_offsets, transform_functor1<OffsetT>());
-        auto d_segment_end_offsets_itr = thrust::make_transform_iterator(d_segment_offsets + 1, transform_functor2<OffsetT>());
+        TransformInputIterator<OffsetT, TransformFunctor1T, OffsetT*, OffsetT> h_segment_begin_offsets_itr(h_segment_offsets, TransformFunctor1T());
+        TransformInputIterator<OffsetT, TransformFunctor2T, OffsetT*, OffsetT> h_segment_end_offsets_itr(h_segment_offsets + 1, TransformFunctor2T());
+
+        TransformInputIterator<OffsetT, TransformFunctor1T, OffsetT*, OffsetT> d_segment_begin_offsets_itr(d_segment_offsets, TransformFunctor1T());
+        TransformInputIterator<OffsetT, TransformFunctor2T, OffsetT*, OffsetT> d_segment_end_offsets_itr(d_segment_offsets + 1, TransformFunctor2T());
 
         TestByOp<CUB_SEGMENTED, OutputT>(h_in, d_in, num_items, num_segments,
             h_segment_begin_offsets_itr, h_segment_end_offsets_itr,

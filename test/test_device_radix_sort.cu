@@ -1016,7 +1016,7 @@ void TestBits(
 
 
 template<typename OffsetT>
-struct transform_functor1
+struct TransformFunctor1
 {
     __host__ __device__ __forceinline__ OffsetT operator()(OffsetT offset) const
     {
@@ -1025,7 +1025,7 @@ struct transform_functor1
 };
 
 template<typename OffsetT>
-struct transform_functor2
+struct TransformFunctor2
 {
     __host__ __device__ __forceinline__ OffsetT operator()(OffsetT offset) const
     {
@@ -1058,9 +1058,12 @@ void TestSegmentIterators(
 
     TestBits(h_keys, num_items, num_segments, h_segment_offsets, d_segment_offsets_itr, d_segment_offsets_itr + 1);
 
-    // Test with thrust transform iterators
-    auto d_segment_begin_offsets_itr = thrust::make_transform_iterator(d_segment_offsets, transform_functor1<int>());
-    auto d_segment_end_offsets_itr = thrust::make_transform_iterator(d_segment_offsets + 1, transform_functor2<int>());
+    // Test with transform iterators of different types
+    typedef TransformFunctor1<int> TransformFunctor1T;
+    typedef TransformFunctor2<int> TransformFunctor2T;
+
+    TransformInputIterator<int, TransformFunctor1T, int*, int> d_segment_begin_offsets_itr(d_segment_offsets, TransformFunctor1T());
+    TransformInputIterator<int, TransformFunctor2T, int*, int> d_segment_end_offsets_itr(d_segment_offsets + 1, TransformFunctor2T());
 
     TestBits(h_keys, num_items, num_segments, h_segment_offsets, d_segment_begin_offsets_itr, d_segment_end_offsets_itr);
 }
