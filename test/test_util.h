@@ -628,11 +628,16 @@ __host__ __device__ __forceinline__ void InitValue(
     cub::KeyValuePair<KeyT, ValueT>&    value,
     int                                 index = 0)
 {
+#ifndef __CUDA_ARCH__
     InitValue(gen_mode, value.value, index);
 
     // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
     RandomBits(value.key, 3);
     value.key = (value.key & 0x1);
+#else
+    printf("This overload of InitValue is not implemented on device");
+    assert(false);
+#endif
 }
 
 
