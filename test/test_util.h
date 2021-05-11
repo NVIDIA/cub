@@ -714,22 +714,18 @@ __host__ __device__ __forceinline__ void InitValue(
     // This specialization only appears to be used by test_warp_scan.
     // It initializes with uniform values and random keys, so we need to
     // protect the call to the host-only RandomBits.
-    if (CUB_IS_DEVICE_CODE)
-    {
-        #if CUB_INCLUDE_DEVICE_CODE
-            _CubLog("%s\n",
-                    "cub::InitValue cannot generate random numbers on device.");
-            CUB_NS_QUALIFIER::ThreadTrap();
-        #endif // CUB_INCLUDE_DEVICE_CODE
-    }
-    else
-    {
-        #if CUB_INCLUDE_HOST_CODE
-            // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
-            RandomBits(value.key, 3);
-            value.key = (value.key & 0x1);
-        #endif // CUB_INCLUDE_HOST_CODE
-    }
+    // clang-format off
+    NV_IF_TARGET(NV_IS_HOST, (
+        // Assign corresponding flag with a likelihood of the last bit
+        // being set with entropy-reduction level 3
+        RandomBits(value.key, 3);
+        value.key = (value.key & 0x1);
+      ), ( // NV_IS_DEVICE
+        _CubLog("%s\n",
+                "cub::InitValue cannot generate random numbers on device.");
+        CUB_NS_QUALIFIER::ThreadTrap();
+      ));
+    // clang-format on
 }
 
 
