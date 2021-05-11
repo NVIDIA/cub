@@ -46,6 +46,7 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+
 /**
  * \brief DeviceScan provides device-wide, parallel operations for computing a prefix scan across a sequence of data items residing within device-accessible memory. ![](device_scan.png)
  * \ingroup SingleModule
