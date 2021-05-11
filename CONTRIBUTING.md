@@ -347,8 +347,8 @@ The version number for a CUB release uses the following format: `MMM.mmm.ss-ppp`
    * `CUB_VERSION_SUBMINOR`/`ss`: Subminor version, up to 2 decimal digits. It is incremented
      when notable new features or bug fixes or features that are API, ABI, and semantic backwards
      compatible are added.
-   * `CUB_PATCH_NUMBER`/`ppp`: Patch number, up to 3 decimal digits. It is incremented if any
-     change in the repo whatsoever is made and no other version component has been incremented.
+   * `CUB_PATCH_NUMBER`/`ppp`: Patch number, up to 3 decimal digits. This is no longer used and
+     will be zero for all future releases.
 
 The `<cub/version.h>` header defines `CUB_*` macros for all of the version components mentioned
 above. Additionally, a `CUB_VERSION` macro is defined, which is an integer literal containing all
