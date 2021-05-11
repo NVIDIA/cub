@@ -67,7 +67,7 @@ namespace cub {
  * idea is to leverage a small, constant factor of redundant work in order to overlap the latencies
  * of global prefix propagation with local computation.  As such, our algorithm requires only
  * ~2<em>n</em> data movement (<em>n</em> inputs are read, <em>n</em> outputs are written), and typically
- * proceeds at "memcpy" speeds.
+ * proceeds at "memcpy" speeds. Our algorithm supports inplace operations.
  *
  * \par
  * [1] [Duane Merrill and Michael Garland.  "Single-pass Parallel Prefix Scan with Decoupled Look-back", <em>NVIDIA Technical Report NVR-2016-002</em>, 2016.](https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back)
