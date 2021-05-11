@@ -604,6 +604,19 @@ void Solve(
     }
 }
 
+template<typename OutputT, typename DeviceInputIteratorT, bool inplace>
+struct AllocateOutput {
+    static void run(OutputT *&d_out, DeviceInputIteratorT, int num_items) {
+        CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(OutputT) * num_items));
+    }
+};
+
+template<typename OutputT>
+struct AllocateOutput<OutputT, OutputT *, true> {
+    static void run(OutputT *&d_out, OutputT *d_in, int num_items) {
+        d_out = d_in;
+    }
+};
 
 /**
  * Test DeviceScan for a given problem input
@@ -613,7 +626,8 @@ template <
     typename            DeviceInputIteratorT,
     typename            OutputT,
     typename            ScanOpT,
-    typename            InitialValueT>
+    typename            InitialValueT,
+    bool                inplace=false>
 void Test(
     DeviceInputIteratorT    d_in,
     OutputT                 *h_reference,
@@ -625,7 +639,7 @@ void Test(
 
     // Allocate device output array
     OutputT *d_out = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(OutputT) * num_items));
+    AllocateOutput<OutputT, DeviceInputIteratorT, inplace>::run(d_out, d_in, num_items);
 
     // Allocate CDP device arrays
     size_t          *d_temp_storage_bytes = NULL;
@@ -723,6 +737,35 @@ void Test(
     AssertEquals(0, compare);
 }
 
+template <
+    Backend             BACKEND,
+    typename            DeviceInputIteratorT,
+    typename            OutputT,
+    typename            ScanOpT,
+    typename            InitialValueT>
+auto TestInplace(
+    DeviceInputIteratorT    d_in,
+    OutputT                 *h_reference,
+    int                     num_items,
+    ScanOpT                 scan_op,
+    InitialValueT           initial_value) -> typename std::enable_if<std::is_same<decltype(*d_in), OutputT>::value>::type
+{
+    Test<BACKEND, DeviceInputIteratorT, OutputT, ScanOpT, InitialValueT, true>(d_in, h_reference, num_items, scan_op, initial_value);
+}
+
+template <
+    Backend             BACKEND,
+    typename            DeviceInputIteratorT,
+    typename            OutputT,
+    typename            ScanOpT,
+    typename            InitialValueT>
+auto TestInplace(
+    DeviceInputIteratorT    d_in,
+    OutputT *,
+    int,
+    ScanOpT,
+    InitialValueT) -> typename std::enable_if<!std::is_same<decltype(*d_in), OutputT>::value>::type
+{}
 
 /**
  * Test DeviceScan on pointer type
@@ -780,6 +823,7 @@ void TestPointer(
 
     // Run Test
     Test<BACKEND>(d_in, h_reference, num_items, scan_op, initial_value);
+    TestInplace<BACKEND>(d_in, h_reference, num_items, scan_op, initial_value);
 
     // Cleanup
     if (h_in) delete[] h_in;
