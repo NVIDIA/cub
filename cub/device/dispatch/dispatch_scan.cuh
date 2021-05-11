@@ -53,6 +53,27 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+template<typename InitValueT>
+struct InitValueFromDevicePointer {
+    InitValueT *ptr;
+    InitValueFromDevicePointer(InitValueT *ptr): ptr(ptr) {}
+    __device__ operator InitValueT() {
+        return *ptr;
+    }
+};
+
+template<typename>
+struct IsDevicePointer {
+    static constexpr bool VALUE = false;
+    using TYPE = void;
+};
+
+template<typename InitValueT>
+struct IsDevicePointer<InitValueFromDevicePointer<InitValueT>> {
+    static constexpr bool VALUE = true;
+    using TYPE = InitValueT;
+};
+
 
 /******************************************************************************
  * Kernel entry points
@@ -112,20 +133,24 @@ __global__ void DeviceScanKernel(
     InitValueT          init_value,         ///< Initial value to seed the exclusive scan
     OffsetT             num_items)          ///< Total number of scan items for the entire problem
 {
+    using RealInitValueT = typename If<IsDevicePointer<InitValueT>::VALUE, typename IsDevicePointer<InitValueT>::TYPE, InitValueT>::Type;
+
     // Thread block type for scanning input tiles
     typedef AgentScan<
         ScanPolicyT,
         InputIteratorT,
         OutputIteratorT,
         ScanOpT,
-        InitValueT,
+        RealInitValueT,
         OffsetT> AgentScanT;
 
     // Shared memory for AgentScan
     __shared__ typename AgentScanT::TempStorage temp_storage;
 
+    RealInitValueT real_init_value = init_value;
+
     // Process tiles
-    AgentScanT(temp_storage, d_in, d_out, scan_op, init_value).ConsumeRange(
+    AgentScanT(temp_storage, d_in, d_out, scan_op, real_init_value).ConsumeRange(
         num_items,
         tile_state,
         start_tile);
@@ -229,11 +254,13 @@ struct DispatchScan:
     // The input value type
     using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
 
+    using RealInitValueT = typename If<IsDevicePointer<InitValueT>::VALUE, typename IsDevicePointer<InitValueT>::TYPE, InitValueT>::Type;
+
     // The output value type -- used as the intermediate accumulator
     // Per https://wg21.link/P0571, use InitValueT if provided, otherwise the
     // input iterator's value type.
     using OutputT =
-      typename If<Equals<InitValueT, NullType>::VALUE, InputT, InitValueT>::Type;
+      typename If<Equals<InitValueT, NullType>::VALUE, InputT, RealInitValueT>::Type;
 
     void*           d_temp_storage;         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t&         temp_storage_bytes;     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation

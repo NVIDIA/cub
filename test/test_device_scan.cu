@@ -723,6 +723,31 @@ void Test(
     AssertEquals(0, compare);
 }
 
+template <
+    Backend             BACKEND,
+    typename            DeviceInputIteratorT,
+    typename            OutputT,
+    typename            ScanOpT,
+    typename            InitialValueT>
+void TestInitValueFromDevicePointer(
+    DeviceInputIteratorT    d_in,
+    OutputT                 *h_reference,
+    int                     num_items,
+    ScanOpT                 scan_op,
+    InitialValueT           initial_value)
+{
+    // Allocate device initial_value
+    OutputT *d_initial_value = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_initial_value, sizeof(InitialValueT)));
+
+    // Run test
+    auto init_value_from_device_ptr = cub::InitValueFromDevicePointer<InitialValueT>(d_initial_value);
+    Test<BACKEND>(d_in, h_reference, num_items, scan_op, init_value_from_device_ptr);
+
+    // Cleanup
+    if (d_initial_value) CubDebugExit(g_allocator.DeviceFree(d_initial_value));
+}
+
 
 /**
  * Test DeviceScan on pointer type
