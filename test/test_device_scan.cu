@@ -604,7 +604,7 @@ void Solve(
     }
 }
 
-template<typename OutputT, typename DeviceInputIteratorT, bool inplace>
+template<typename OutputT, typename DeviceInputIteratorT, bool InPlace>
 struct AllocateOutput {
     static void run(OutputT *&d_out, DeviceInputIteratorT, int num_items) {
         CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(OutputT) * num_items));
@@ -627,7 +627,7 @@ template <
     typename            OutputT,
     typename            ScanOpT,
     typename            InitialValueT,
-    bool                inplace=false>
+    bool                InPlace=false>
 void Test(
     DeviceInputIteratorT    d_in,
     OutputT                 *h_reference,
@@ -639,7 +639,7 @@ void Test(
 
     // Allocate device output array
     OutputT *d_out = NULL;
-    AllocateOutput<OutputT, DeviceInputIteratorT, inplace>::run(d_out, d_in, num_items);
+    AllocateOutput<OutputT, DeviceInputIteratorT, InPlace>::run(d_out, d_in, num_items);
 
     // Allocate CDP device arrays
     size_t          *d_temp_storage_bytes = NULL;
