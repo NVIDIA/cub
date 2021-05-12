@@ -723,6 +723,55 @@ void Test(
     AssertEquals(0, compare);
 }
 
+template <typename InitialValueT>
+__global__ void FillInitValue(InitialValueT *ptr, InitialValueT initial_value) {
+    *ptr = initial_value;
+}
+
+template <
+    Backend             BACKEND,
+    typename            DeviceInputIteratorT,
+    typename            OutputT,
+    typename            ScanOpT,
+    typename            InitialValueT>
+typename std::enable_if<!std::is_same<InitialValueT, cub::NullType>::value && BACKEND != THRUST>::type
+TestInitValueFromDevicePointer(
+    DeviceInputIteratorT    d_in,
+    OutputT                 *h_reference,
+    int                     num_items,
+    ScanOpT                 scan_op,
+    InitialValueT           initial_value)
+{
+    // Allocate device initial_value
+    InitialValueT *d_initial_value = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_initial_value, sizeof(InitialValueT)));
+    FillInitValue<<<1, 1>>>(d_initial_value, initial_value);
+
+    // Run test
+    auto init_value_from_device_ptr = cub::InitValueFromDevicePointer<InitialValueT>(d_initial_value);
+    Test<BACKEND>(d_in, h_reference, num_items, scan_op, init_value_from_device_ptr);
+
+    // Cleanup
+    if (d_initial_value) CubDebugExit(g_allocator.DeviceFree(d_initial_value));
+}
+
+template <
+    Backend             BACKEND,
+    typename            DeviceInputIteratorT,
+    typename            OutputT,
+    typename            ScanOpT,
+    typename            InitialValueT>
+typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value || BACKEND == THRUST>::type
+TestInitValueFromDevicePointer(
+    DeviceInputIteratorT,
+    OutputT *,
+    int,
+    ScanOpT,
+    InitialValueT)
+{
+    // cub::NullType does not have device pointer, so nothing to do here
+}
+
 
 /**
  * Test DeviceScan on pointer type
@@ -780,6 +829,7 @@ void TestPointer(
 
     // Run Test
     Test<BACKEND>(d_in, h_reference, num_items, scan_op, initial_value);
+    TestInitValueFromDevicePointer<BACKEND>(d_in, h_reference, num_items, scan_op, initial_value);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -822,6 +872,7 @@ void TestIterator(
 
     // Run Test
     Test<BACKEND>(h_in, h_reference, num_items, scan_op, initial_value);
+    TestInitValueFromDevicePointer<BACKEND>(h_in, h_reference, num_items, scan_op, initial_value);
 
     // Cleanup
     if (h_reference) delete[] h_reference;
