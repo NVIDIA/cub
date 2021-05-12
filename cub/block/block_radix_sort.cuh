@@ -77,9 +77,9 @@ namespace cub {
  *   bit-sequences of \p RADIX_BITS as radix digit places.  Although the direct radix sorting
  *   method can only be applied to unsigned integral types, BlockRadixSort
  *   is able to sort signed and floating-point types via simple bit-wise transformations
- *   that ensure lexicographic key ordering. For floating-point types -0.0 and +0.0 are
- *   considered equal and appear in the result in the same order as they appear in
- *   the input.
+ *   that ensure lexicographic key ordering. BlockRadixSort is stable. For
+ *   floating-point types -0.0 and +0.0 are considered equal and appear in the
+ *   result in the same order as they appear in the input.
  * - \rowmajor
  *
  * \par Performance Considerations
