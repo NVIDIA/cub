@@ -49,6 +49,7 @@
 
 #include "mersenne.h"
 #include "half.h"
+#include "bfloat16.h"
 
 #include "cub/util_debug.cuh"
 #include "cub/util_device.cuh"
@@ -406,7 +407,15 @@ __noinline__ bool IsNaN<half_t>(half_t val)
         ((bits >= 0xFC01) /*&& (bits <= 0xFFFFFFFF)*/));
 }
 
+template<>
+__noinline__ bool IsNaN<bfloat16_t>(bfloat16_t val)
+{
+    const auto bits = SafeBitCast<unsigned short>(val);
 
+    // commented bit is always true, leaving for documentation:
+    return (((bits >= 0x7F81) && (bits <= 0x7FFF)) ||
+        ((bits >= 0xFF81) /*&& (bits <= 0xFFFFFFFF)*/));
+}
 
 /**
  * Generates random keys.
