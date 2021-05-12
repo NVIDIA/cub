@@ -737,7 +737,7 @@ void TestInitValueFromDevicePointer(
     InitialValueT           initial_value)
 {
     // Allocate device initial_value
-    OutputT *d_initial_value = NULL;
+    InitialValueT *d_initial_value = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_initial_value, sizeof(InitialValueT)));
 
     // Run test
@@ -805,6 +805,7 @@ void TestPointer(
 
     // Run Test
     Test<BACKEND>(d_in, h_reference, num_items, scan_op, initial_value);
+    TestInitValueFromDevicePointer<BACKEND>(d_in, h_reference, num_items, scan_op, initial_value);
 
     // Cleanup
     if (h_in) delete[] h_in;
@@ -847,6 +848,7 @@ void TestIterator(
 
     // Run Test
     Test<BACKEND>(h_in, h_reference, num_items, scan_op, initial_value);
+    TestInitValueFromDevicePointer<BACKEND>(h_in, h_reference, num_items, scan_op, initial_value);
 
     // Cleanup
     if (h_reference) delete[] h_reference;

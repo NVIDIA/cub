@@ -62,10 +62,10 @@ struct InitValueFromDevicePointer {
     }
 };
 
-template<typename>
+template<typename InitValueT>
 struct IsDevicePointer {
     static constexpr bool VALUE = false;
-    using TYPE = void;
+    using TYPE = InitValueT;
 };
 
 template<typename InitValueT>
@@ -133,7 +133,7 @@ __global__ void DeviceScanKernel(
     InitValueT          init_value,         ///< Initial value to seed the exclusive scan
     OffsetT             num_items)          ///< Total number of scan items for the entire problem
 {
-    using RealInitValueT = typename If<IsDevicePointer<InitValueT>::VALUE, typename IsDevicePointer<InitValueT>::TYPE, InitValueT>::Type;
+    using RealInitValueT = typename IsDevicePointer<InitValueT>::TYPE;
 
     // Thread block type for scanning input tiles
     typedef AgentScan<
@@ -254,7 +254,7 @@ struct DispatchScan:
     // The input value type
     using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
 
-    using RealInitValueT = typename If<IsDevicePointer<InitValueT>::VALUE, typename IsDevicePointer<InitValueT>::TYPE, InitValueT>::Type;
+    using RealInitValueT = typename IsDevicePointer<InitValueT>::TYPE;
 
     // The output value type -- used as the intermediate accumulator
     // Per https://wg21.link/P0571, use InitValueT if provided, otherwise the
