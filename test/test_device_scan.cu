@@ -723,13 +723,19 @@ void Test(
     AssertEquals(0, compare);
 }
 
+template <typename InitialValueT>
+__global__ FillInitValue(InitialValueT *ptr, InitialValueT initial_value) {
+    *ptr = init_value;
+}
+
 template <
     Backend             BACKEND,
     typename            DeviceInputIteratorT,
     typename            OutputT,
     typename            ScanOpT,
     typename            InitialValueT>
-void TestInitValueFromDevicePointer(
+typename std::enable_if<!std::is_same<InitialValueT, cub::NullType>::value>::type
+TestInitValueFromDevicePointer(
     DeviceInputIteratorT    d_in,
     OutputT                 *h_reference,
     int                     num_items,
@@ -739,6 +745,7 @@ void TestInitValueFromDevicePointer(
     // Allocate device initial_value
     InitialValueT *d_initial_value = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_initial_value, sizeof(InitialValueT)));
+    FillInitValue<<<1, 1>>>(d_initial_value, initial_value);
 
     // Run test
     auto init_value_from_device_ptr = cub::InitValueFromDevicePointer<InitialValueT>(d_initial_value);
@@ -746,6 +753,22 @@ void TestInitValueFromDevicePointer(
 
     // Cleanup
     if (d_initial_value) CubDebugExit(g_allocator.DeviceFree(d_initial_value));
+}
+
+template <
+    Backend             BACKEND,
+    typename            DeviceInputIteratorT,
+    typename            OutputT,
+    typename            ScanOpT,
+    typename            InitialValueT>
+typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value>::type TestInitValueFromDevicePointer(
+    DeviceInputIteratorT,
+    OutputT *,
+    int,
+    ScanOpT,
+    InitialValueT)
+{
+    // cub::NullType does not have device pointer, so nothing to do here
 }
 
 
