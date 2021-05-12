@@ -761,7 +761,8 @@ template <
     typename            OutputT,
     typename            ScanOpT,
     typename            InitialValueT>
-typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value || BACKEND == THRUST>::type TestInitValueFromDevicePointer(
+typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value || BACKEND == THRUST>::type
+TestInitValueFromDevicePointer(
     DeviceInputIteratorT,
     OutputT *,
     int,
