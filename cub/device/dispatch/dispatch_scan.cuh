@@ -238,7 +238,7 @@ template <
       // Accumulator type.
       typename If<Equals<InitValueT, NullType>::VALUE,
                   typename std::iterator_traits<InputIteratorT>::value_type,
-                  InitValueT>::Type>>
+                  typename IsDevicePointer<InitValueT>::TYPE>::Type>>
 struct DispatchScan:
     SelectedPolicy
 {

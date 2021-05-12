@@ -724,8 +724,8 @@ void Test(
 }
 
 template <typename InitialValueT>
-__global__ FillInitValue(InitialValueT *ptr, InitialValueT initial_value) {
-    *ptr = init_value;
+__global__ void FillInitValue(InitialValueT *ptr, InitialValueT initial_value) {
+    *ptr = initial_value;
 }
 
 template <
@@ -734,7 +734,7 @@ template <
     typename            OutputT,
     typename            ScanOpT,
     typename            InitialValueT>
-typename std::enable_if<!std::is_same<InitialValueT, cub::NullType>::value>::type
+typename std::enable_if<!std::is_same<InitialValueT, cub::NullType>::value && BACKEND != THRUST>::type
 TestInitValueFromDevicePointer(
     DeviceInputIteratorT    d_in,
     OutputT                 *h_reference,
@@ -761,7 +761,7 @@ template <
     typename            OutputT,
     typename            ScanOpT,
     typename            InitialValueT>
-typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value>::type TestInitValueFromDevicePointer(
+typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value || BACKEND == THRUST>::type TestInitValueFromDevicePointer(
     DeviceInputIteratorT,
     OutputT *,
     int,
