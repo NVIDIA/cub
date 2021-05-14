@@ -368,7 +368,7 @@ struct DispatchSpmv
     // Tuning policies of current PTX compiler pass
     //---------------------------------------------------------------------
 
-#ifdef __NVCOMPILER_CUDA__
+#ifdef _NVHPC_CUDA
 
     // cub::DeviceSpmv has not been ported to use cub::detail::ptx_dispatch
     // and uses an older dispatch mechanism that is incompatible with nvc++.
@@ -397,7 +397,7 @@ struct DispatchSpmv
     #else
         typedef Policy350 PtxPolicy;
     #endif
-#endif // __NVCOMPILER_CUDA__
+#endif // _NVHPC_CUDA
 
     // "Opaque" policies (whose parameterizations aren't reflected in the type signature)
     struct PtxSpmvPolicyT : PtxPolicy::SpmvPolicyT {};
@@ -418,7 +418,7 @@ struct DispatchSpmv
         KernelConfig    &spmv_config,
         KernelConfig    &segment_fixup_config)
     {
-// Not porting these for NVC++; see note above in the "__NVCOMPILER_CUDA__" block.
+// Not porting these for NVC++; see note above in the "_NVHPC_CUDA" block.
 #ifdef __CUDA_ARCH__
         // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
         spmv_config.template Init<PtxSpmvPolicyT>();
@@ -608,7 +608,7 @@ struct DispatchSpmv
             int search_block_size   = INIT_KERNEL_THREADS;
             int search_grid_size    = cub::DivideAndRoundUp(num_merge_tiles + 1, search_block_size);
 
-// Not porting these for NVC++; see note above in the "__NVCOMPILER_CUDA__" block.
+// Not porting these for NVC++; see note above in the "_NVHPC_CUDA" block.
 #ifndef __CUDA_ARCH__
             // Init textures
             if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
@@ -689,7 +689,7 @@ struct DispatchSpmv
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
 
-// Not porting these for NVC++; see note above in the "__NVCOMPILER_CUDA__" block.
+// Not porting these for NVC++; see note above in the "_NVHPC_CUDA" block.
 #ifndef __CUDA_ARCH__
             // Free textures
             if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;

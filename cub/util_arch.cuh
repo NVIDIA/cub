@@ -44,7 +44,7 @@ CUB_NAMESPACE_BEGIN
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-#if ((__CUDACC_VER_MAJOR__ >= 9) || defined(__NVCOMPILER_CUDA__) ||            \
+#if ((__CUDACC_VER_MAJOR__ >= 9) || defined(_NVHPC_CUDA) ||            \
      CUDA_VERSION >= 9000) &&                                                  \
   !defined(CUB_USE_COOPERATIVE_GROUPS)
 #define CUB_USE_COOPERATIVE_GROUPS

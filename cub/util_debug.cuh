@@ -125,7 +125,7 @@ cudaError_t Debug(cudaError_t error, const char *filename, int line)
  * \brief Log macro for printf statements.
  */
 #if !defined(_CubLog)
-    #if defined(__NVCOMPILER_CUDA__) || \
+    #if defined(_NVHPC_CUDA) || \
         !(defined(__clang__) && defined(__CUDA__))
 
         // NVCC / NVC++

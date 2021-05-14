@@ -414,7 +414,7 @@ struct AgentSpmv
         int         tile_num_rows           = tile_end_coord.x - tile_start_coord.x;
         int         tile_num_nonzeros       = tile_end_coord.y - tile_start_coord.y;
 
-// Not porting these for NVC++; see note in DispatchSpmv in the "__NVCOMPILER_CUDA__" block.
+// Not porting these for NVC++; see note in DispatchSpmv in the "_NVHPC_CUDA" block.
 #if defined(__CUDA_ARCH__) && (__CUDA_ARCH__ >= 520)
 
         OffsetT*    s_tile_row_end_offsets  = &temp_storage.aliasable.merge_items[0].row_end_offset;
