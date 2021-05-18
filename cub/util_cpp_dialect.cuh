@@ -108,27 +108,43 @@
 #  define CUB_COMP_DEPR_IMPL1 /* intentionally blank */
 #endif
 
-#define CUB_COMPILER_DEPRECATION(REQ, FIX) \
-  CUB_COMP_DEPR_IMPL(CUB requires at least REQ. Please FIX. Define CUB_IGNORE_DEPRECATED_CPP_DIALECT to suppress this message.)
+#define CUB_COMPILER_DEPRECATION(REQ) \
+  CUB_COMP_DEPR_IMPL(CUB requires at least REQ. Define CUB_IGNORE_DEPRECATED_CPP_DIALECT to suppress this message.)
 
-// Minimum required compiler checks:
+#define CUB_COMPILER_DEPRECATION_SOFT(REQ, CUR) \
+  CUB_COMP_DEPR_IMPL(CUB requires at least REQ. CUR is deprecated but still supported. CUR support will be removed in a future release. Define CUB_IGNORE_DEPRECATED_CPP_DIALECT to suppress this message.)
+
 #ifndef CUB_IGNORE_DEPRECATED_COMPILER
+
+// Compiler checks:
 #  if CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC && CUB_GCC_VERSION < 50000
-     CUB_COMPILER_DEPRECATION(GCC 5.0, upgrade your compiler);
+     CUB_COMPILER_DEPRECATION(GCC 5.0);
+#  elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG && CUB_CLANG_VERSION < 70000
+     CUB_COMPILER_DEPRECATION(Clang 7.0);
+#  elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC && CUB_MSVC_VERSION < 1910
+     // <2017. Hard upgrade message:
+     CUB_COMPILER_DEPRECATION(MSVC 2019 (19.20/16.0/14.20));
+#  elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC && CUB_MSVC_VERSION < 1920
+     // >=2017, <2019. Soft deprecation message:
+     CUB_COMPILER_DEPRECATION_SOFT(MSVC 2019 (19.20/16.0/14.20), MSVC 2017);
 #  endif
-#  if CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG && CUB_CLANG_VERSION < 70000
-     CUB_COMPILER_DEPRECATION(Clang 7.0, upgrade your compiler);
-#  endif
-#  if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC && CUB_MSVC_VERSION < 1920
-     CUB_COMPILER_DEPRECATION(MSVC 2019 (19.20/16.0/14.20), upgrade your compiler);
-#  endif
-#endif
 
-#if !defined(CUB_IGNORE_DEPRECATED_CPP_DIALECT) && CUB_CPP_DIALECT < 2014 && \
-    (CUB_CPP_DIALECT != 2011 || !defined(CUB_IGNORE_DEPRECATED_CPP_11))
-  CUB_COMPILER_DEPRECATION(C++14, pass -std=c++14 to your compiler);
-#endif
+#endif // CUB_IGNORE_DEPRECATED_COMPILER
 
+#ifndef CUB_IGNORE_DEPRECATED_DIALECT
+
+// Dialect checks:
+#  if CUB_CPP_DIALECT < 2011
+     // <C++11. Hard upgrade message:
+     CUB_COMPILER_DEPRECATION(C++14);
+#  elif CUB_CPP_DIALECT == 2011 && !defined(CUB_IGNORE_DEPRECATED_CPP_11)
+     // =C++11. Soft upgrade message:
+     CUB_COMPILER_DEPRECATION_SOFT(C++14, C++11);
+#  endif
+
+#endif // CUB_IGNORE_DEPRECATED_DIALECT
+
+#undef CUB_COMPILER_DEPRECATION_SOFT
 #undef CUB_COMPILER_DEPRECATION
 #undef CUB_COMP_DEPR_IMPL
 #undef CUB_COMP_DEPR_IMPL0
