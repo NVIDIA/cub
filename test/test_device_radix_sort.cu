@@ -45,6 +45,7 @@
 #include <cub/util_math.cuh>
 #include <cub/device/device_radix_sort.cuh>
 #include <cub/device/device_segmented_radix_sort.cuh>
+#include <cub/iterator/transform_input_iterator.cuh>
 
 #include "test_util.h"
 
@@ -85,7 +86,7 @@ enum Backend
 /**
  * Dispatch to CUB sorting entrypoint (specialized for ascending)
  */
-template <typename KeyT, typename ValueT>
+template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
@@ -101,7 +102,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     /*num_segments*/,
-    const int               */*d_segment_offsets*/,
+    BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -116,7 +118,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to CUB_NO_OVERWRITE sorting entrypoint (specialized for ascending)
  */
-template <typename KeyT, typename ValueT>
+template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
@@ -132,7 +134,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     /*num_segments*/,
-    const int               */*d_segment_offsets*/,
+    BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -154,7 +157,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to CUB sorting entrypoint (specialized for descending)
  */
-template <typename KeyT, typename ValueT>
+template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
@@ -170,7 +173,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     /*num_segments*/,
-    const int               */*d_segment_offsets*/,
+    BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -186,7 +190,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to CUB_NO_OVERWRITE sorting entrypoint (specialized for descending)
  */
-template <typename KeyT, typename ValueT>
+template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
@@ -202,7 +206,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     /*num_segments*/,
-    const int               */*d_segment_offsets*/,
+    BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -228,7 +233,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to CUB_SEGMENTED sorting entrypoint (specialized for ascending)
  */
-template <typename KeyT, typename ValueT>
+template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
@@ -244,7 +249,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    const int               *d_segment_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -253,14 +259,14 @@ cudaError_t Dispatch(
     return DeviceSegmentedRadixSort::SortPairs(
         d_temp_storage, temp_storage_bytes,
         d_keys, d_values,
-        num_items, num_segments, d_segment_offsets, d_segment_offsets + 1,
+        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, stream, debug_synchronous);
 }
 
 /**
  * Dispatch to CUB_SEGMENTED_NO_OVERWRITE sorting entrypoint (specialized for ascending)
  */
-template <typename KeyT, typename ValueT>
+template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
@@ -276,7 +282,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    const int               *d_segment_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -288,7 +295,7 @@ cudaError_t Dispatch(
     cudaError_t retval = DeviceSegmentedRadixSort::SortPairs(
         d_temp_storage, temp_storage_bytes,
         const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
-        num_items, num_segments, d_segment_offsets, d_segment_offsets + 1,
+        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, stream, debug_synchronous);
 
     d_keys.selector ^= 1;
@@ -300,7 +307,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch to CUB_SEGMENTED sorting entrypoint (specialized for descending)
  */
-template <typename KeyT, typename ValueT>
+template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
@@ -316,7 +323,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    const int               *d_segment_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -325,14 +333,14 @@ cudaError_t Dispatch(
     return DeviceSegmentedRadixSort::SortPairsDescending(
         d_temp_storage, temp_storage_bytes,
         d_keys, d_values,
-        num_items, num_segments, d_segment_offsets, d_segment_offsets + 1,
+        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, stream, debug_synchronous);
 }
 
 /**
  * Dispatch to CUB_SEGMENTED_NO_OVERWRITE sorting entrypoint (specialized for descending)
  */
-template <typename KeyT, typename ValueT>
+template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 CUB_RUNTIME_FUNCTION
 __forceinline__
 cudaError_t Dispatch(
@@ -348,7 +356,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    const int               *d_segment_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -360,7 +369,7 @@ cudaError_t Dispatch(
     cudaError_t retval = DeviceSegmentedRadixSort::SortPairsDescending(
         d_temp_storage, temp_storage_bytes,
         const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
-        num_items, num_segments, d_segment_offsets, d_segment_offsets + 1,
+        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, stream, debug_synchronous);
 
     d_keys.selector ^= 1;
@@ -376,7 +385,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch keys-only to Thrust sorting entrypoint
  */
-template <int IS_DESCENDING, typename KeyT>
+template <int IS_DESCENDING, typename KeyT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 cudaError_t Dispatch(
     Int2Type<IS_DESCENDING> /*is_descending*/,
     Int2Type<THRUST>        /*dispatch_to*/,
@@ -390,7 +399,8 @@ cudaError_t Dispatch(
     DoubleBuffer<NullType>  &/*d_values*/,
     int                     num_items,
     int                     /*num_segments*/,
-    const int               */*d_segment_offsets*/,
+    BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     /*begin_bit*/,
     int                     /*end_bit*/,
     cudaStream_t            /*stream*/,
@@ -417,7 +427,7 @@ cudaError_t Dispatch(
 /**
  * Dispatch key-value pairs to Thrust sorting entrypoint
  */
-template <int IS_DESCENDING, typename KeyT, typename ValueT>
+template <int IS_DESCENDING, typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 cudaError_t Dispatch(
     Int2Type<IS_DESCENDING> /*is_descending*/,
     Int2Type<THRUST>        /*dispatch_to*/,
@@ -431,7 +441,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     /*num_segments*/,
-    const int               */*d_segment_offsets*/,
+    BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
+    EndOffsetIteratorT      /*d_segment_end_offsets*/,
     int                     /*begin_bit*/,
     int                     /*end_bit*/,
     cudaStream_t            /*stream*/,
@@ -471,7 +482,7 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceRadixSort
  */
-template <int IS_DESCENDING, typename KeyT, typename ValueT>
+template <int IS_DESCENDING, typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 __global__ void CnpDispatchKernel(
     Int2Type<IS_DESCENDING> is_descending,
     int                     *d_selector,
@@ -484,7 +495,8 @@ __global__ void CnpDispatchKernel(
     DoubleBuffer<ValueT>    d_values,
     int                     num_items,
     int                     num_segments,
-    const int               *d_segment_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
     int                     end_bit,
     bool                    debug_synchronous)
@@ -500,7 +512,8 @@ __global__ void CnpDispatchKernel(
   (void)d_values;
   (void)num_items;
   (void)num_segments;
-  (void)d_segment_offsets;
+  (void)d_segment_begin_offsets;
+  (void)d_segment_end_offsets;
   (void)begin_bit;
   (void)end_bit;
   (void)debug_synchronous;
@@ -509,7 +522,7 @@ __global__ void CnpDispatchKernel(
     *d_cdp_error            = Dispatch(
                                 is_descending, Int2Type<CUB>(), d_selector, d_temp_storage_bytes, d_cdp_error,
                                 d_temp_storage, temp_storage_bytes, d_keys, d_values,
-                                num_items, num_segments, d_segment_offsets,
+                                num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
                                 begin_bit, end_bit, 0, debug_synchronous);
     *d_temp_storage_bytes   = temp_storage_bytes;
     *d_selector             = d_keys.selector;
@@ -520,7 +533,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <int IS_DESCENDING, typename KeyT, typename ValueT>
+template <int IS_DESCENDING, typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 cudaError_t Dispatch(
     Int2Type<IS_DESCENDING> is_descending,
     Int2Type<CDP>           dispatch_to,
@@ -534,7 +547,8 @@ cudaError_t Dispatch(
     DoubleBuffer<ValueT>    &d_values,
     int                     num_items,
     int                     num_segments,
-    const int               *d_segment_offsets,
+    BeginOffsetIteratorT    d_segment_begin_offsets,
+    EndOffsetIteratorT      d_segment_end_offsets,
     int                     begin_bit,
     int                     end_bit,
     cudaStream_t            stream,
@@ -544,7 +558,7 @@ cudaError_t Dispatch(
     CnpDispatchKernel<<<1,1>>>(
         is_descending, d_selector, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes, d_keys, d_values,
-        num_items, num_segments, d_segment_offsets,
+        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, debug_synchronous);
 
     // Copy out selector
@@ -690,17 +704,20 @@ template <
     Backend     BACKEND,
     bool        IS_DESCENDING,
     typename    KeyT,
-    typename    ValueT>
+    typename    ValueT,
+    typename    BeginOffsetIteratorT,
+    typename    EndOffsetIteratorT>
 void Test(
-    KeyT        *h_keys,
-    ValueT      *h_values,
-    int         num_items,
-    int         num_segments,
-    int         *h_segment_offsets,
-    int         begin_bit,
-    int         end_bit,
-    KeyT        *h_reference_keys,
-    ValueT      *h_reference_values)
+    KeyT                 *h_keys,
+    ValueT               *h_values,
+    int                  num_items,
+    int                  num_segments,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT   d_segment_end_offsets,
+    int                  begin_bit,
+    int                  end_bit,
+    KeyT                 *h_reference_keys,
+    ValueT               *h_reference_values)
 {
     // Key alias type
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
@@ -730,13 +747,11 @@ void Test(
     DoubleBuffer<KeyAliasT> d_keys;
     DoubleBuffer<ValueT>    d_values;
     int                     *d_selector;
-    int                     *d_segment_offsets;
     size_t                  *d_temp_storage_bytes;
     cudaError_t             *d_cdp_error;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[0], sizeof(KeyT) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys.d_buffers[1], sizeof(KeyT) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_selector, sizeof(int) * 1));
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(int) * (num_segments + 1)));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes, sizeof(size_t) * 1));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_cdp_error, sizeof(cudaError_t) * 1));
     if (!KEYS_ONLY)
@@ -751,7 +766,7 @@ void Test(
     CubDebugExit(Dispatch(
         Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error,
         d_temp_storage, temp_storage_bytes, d_keys, d_values,
-        num_items, num_segments, d_segment_offsets,
+        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, 0, true));
 
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes + 1));
@@ -767,13 +782,12 @@ void Test(
         CubDebugExit(cudaMemcpy(d_values.d_buffers[0], h_values, sizeof(ValueT) * num_items, cudaMemcpyHostToDevice));
         CubDebugExit(cudaMemset(d_values.d_buffers[1], 0, sizeof(ValueT) * num_items));
     }
-    CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(int) * (num_segments + 1), cudaMemcpyHostToDevice));
 
     // Run warmup/correctness iteration
     CubDebugExit(Dispatch(
         Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error,
         mis_aligned_temp, temp_storage_bytes, d_keys, d_values,
-        num_items, num_segments, d_segment_offsets,
+        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, 0, true));
 
     // Flush any stdout/stderr
@@ -819,7 +833,7 @@ void Test(
         CubDebugExit(Dispatch(
             Int2Type<IS_DESCENDING>(), Int2Type<BACKEND>(), d_selector, d_temp_storage_bytes, d_cdp_error,
             mis_aligned_temp, temp_storage_bytes, d_keys, d_values,
-            num_items, num_segments, d_segment_offsets,
+            num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
             begin_bit, end_bit, 0, false));
         gpu_timer.Stop();
         elapsed_millis += gpu_timer.ElapsedMillis();
@@ -846,7 +860,6 @@ void Test(
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_selector) CubDebugExit(g_allocator.DeviceFree(d_selector));
-    if (d_segment_offsets) CubDebugExit(g_allocator.DeviceFree(d_segment_offsets));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
 
     // Correctness asserts
@@ -857,16 +870,17 @@ void Test(
 /**
  * Test backend
  */
-template <bool IS_DESCENDING, typename KeyT, typename ValueT>
+template <bool IS_DESCENDING, typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 void TestBackend(
-    KeyT    *h_keys,
-    int     num_items,
-    int     num_segments,
-    int     *h_segment_offsets,
-    int     begin_bit,
-    int     end_bit,
-    KeyT    *h_reference_keys,
-    int     *h_reference_ranks)
+    KeyT                 *h_keys,
+    int                  num_items,
+    int                  num_segments,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT   d_segment_end_offsets,
+    int                  begin_bit,
+    int                  end_bit,
+    KeyT                 *h_reference_keys,
+    int                  *h_reference_ranks)
 {
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
@@ -887,16 +901,16 @@ void TestBackend(
 
 #ifdef SEGMENTED_SORT
     // Test multi-segment implementations
-    Test<CUB_SEGMENTED, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-    Test<CUB_SEGMENTED_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+    Test<CUB_SEGMENTED, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+    Test<CUB_SEGMENTED_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
 #else   // SEGMENTED_SORT
     if (num_segments == 1)
     {
         // Test single-segment implementations
-        Test<CUB, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-        Test<CUB_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+        Test<CUB, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+        Test<CUB_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
     #ifdef CUB_CDP
-        Test<CDP, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
+        Test<CDP, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
     #endif
     }
 #endif  // SEGMENTED_SORT
@@ -911,14 +925,16 @@ void TestBackend(
 /**
  * Test value type
  */
-template <bool IS_DESCENDING, typename KeyT>
+template <bool IS_DESCENDING, typename KeyT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 void TestValueTypes(
-    KeyT    *h_keys,
-    int     num_items,
-    int     num_segments,
-    int     *h_segment_offsets,
-    int     begin_bit,
-    int     end_bit)
+    KeyT                 *h_keys,
+    int                  num_items,
+    int                  num_segments,
+    int                  *h_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT   d_segment_end_offsets,
+    int                  begin_bit,
+    int                  end_bit)
 {
     // Initialize the solution
 
@@ -927,19 +943,19 @@ void TestValueTypes(
     InitializeSolution<IS_DESCENDING>(h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
 
     // Test keys-only
-    TestBackend<IS_DESCENDING, KeyT, NullType>          (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    TestBackend<IS_DESCENDING, KeyT, NullType>          (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Test with 8b value
-    TestBackend<IS_DESCENDING, KeyT, unsigned char>     (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    TestBackend<IS_DESCENDING, KeyT, unsigned char>     (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Test with 32b value
-    TestBackend<IS_DESCENDING, KeyT, unsigned int>      (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    TestBackend<IS_DESCENDING, KeyT, unsigned int>      (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Test with 64b value
-    TestBackend<IS_DESCENDING, KeyT, unsigned long long>(h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    TestBackend<IS_DESCENDING, KeyT, unsigned long long>(h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Test with non-trivially-constructable value
-    TestBackend<IS_DESCENDING, KeyT, TestBar>           (h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+    TestBackend<IS_DESCENDING, KeyT, TestBar>           (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Cleanup
     if (h_reference_ranks) delete[] h_reference_ranks;
@@ -951,29 +967,33 @@ void TestValueTypes(
 /**
  * Test ascending/descending
  */
-template <typename KeyT>
+template <typename KeyT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 void TestDirection(
-    KeyT    *h_keys,
-    int     num_items,
-    int     num_segments,
-    int     *h_segment_offsets,
-    int     begin_bit,
-    int     end_bit)
+    KeyT                 *h_keys,
+    int                  num_items,
+    int                  num_segments,
+    int                  *h_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT   d_segment_end_offsets,
+    int                  begin_bit,
+    int                  end_bit)
 {
-    TestValueTypes<true>(h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit);
-    TestValueTypes<false>(h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit);
+    TestValueTypes<true>(h_keys, num_items, num_segments, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit);
+    TestValueTypes<false>(h_keys, num_items, num_segments, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit);
 }
 
 
 /**
  * Test different bit ranges
  */
-template <typename KeyT>
+template <typename KeyT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
 void TestBits(
-    KeyT    *h_keys,
-    int     num_items,
-    int     num_segments,
-    int     *h_segment_offsets)
+    KeyT                 *h_keys,
+    int                  num_items,
+    int                  num_segments,
+    int                  *h_segment_offsets,
+    BeginOffsetIteratorT d_segment_begin_offsets,
+    EndOffsetIteratorT   d_segment_end_offsets)
 {
     // Don't test partial-word sorting for boolean, fp, or signed types (the bit-flipping techniques get in the way)
     if ((Traits<KeyT>::CATEGORY == UNSIGNED_INTEGER) && (!Equals<KeyT, bool>::VALUE))
@@ -982,16 +1002,70 @@ void TestBits(
         int begin_bit = 1;
         int end_bit = (sizeof(KeyT) * 8) - 1;
         printf("Testing key bits [%d,%d)\n", begin_bit, end_bit); fflush(stdout);
-        TestDirection(h_keys, num_items, num_segments, h_segment_offsets, begin_bit, end_bit);
+        TestDirection(h_keys, num_items, num_segments, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit);
 
         // Across subword boundaries
         int mid_bit = sizeof(KeyT) * 4;
         printf("Testing key bits [%d,%d)\n", mid_bit - 1, mid_bit + 1); fflush(stdout);
-        TestDirection(h_keys, num_items, num_segments, h_segment_offsets, mid_bit - 1, mid_bit + 1);
+        TestDirection(h_keys, num_items, num_segments, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, mid_bit - 1, mid_bit + 1);
     }
 
     printf("Testing key bits [%d,%d)\n", 0, int(sizeof(KeyT)) * 8); fflush(stdout);
-    TestDirection(h_keys, num_items, num_segments, h_segment_offsets, 0, sizeof(KeyT) * 8);
+    TestDirection(h_keys, num_items, num_segments, h_segment_offsets, d_segment_begin_offsets, d_segment_end_offsets, 0, sizeof(KeyT) * 8);
+}
+
+
+template<typename OffsetT>
+struct TransformFunctor1
+{
+    __host__ __device__ __forceinline__ OffsetT operator()(OffsetT offset) const
+    {
+        return offset;
+    }
+};
+
+template<typename OffsetT>
+struct TransformFunctor2
+{
+    __host__ __device__ __forceinline__ OffsetT operator()(OffsetT offset) const
+    {
+        return offset;
+    }
+};
+
+
+/**
+* Test different segment iterators
+*/
+template <typename KeyT>
+void TestSegmentIterators(
+    KeyT    *h_keys,
+    int     num_items,
+    int     num_segments,
+    int     *h_segment_offsets,
+    int     *d_segment_offsets)
+{
+    InitializeSegments(num_items, num_segments, h_segment_offsets);
+    CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(int) * (num_segments + 1), cudaMemcpyHostToDevice));
+
+    // Test with segment pointer
+    TestBits(h_keys, num_items, num_segments, h_segment_offsets, d_segment_offsets, d_segment_offsets + 1);
+
+    // Test with segment iterator
+    typedef CastOp<int> IdentityOpT;
+    IdentityOpT identity_op;
+    TransformInputIterator<int, IdentityOpT, int*, int> d_segment_offsets_itr(d_segment_offsets, identity_op);
+
+    TestBits(h_keys, num_items, num_segments, h_segment_offsets, d_segment_offsets_itr, d_segment_offsets_itr + 1);
+
+    // Test with transform iterators of different types
+    typedef TransformFunctor1<int> TransformFunctor1T;
+    typedef TransformFunctor2<int> TransformFunctor2T;
+
+    TransformInputIterator<int, TransformFunctor1T, int*, int> d_segment_begin_offsets_itr(d_segment_offsets, TransformFunctor1T());
+    TransformInputIterator<int, TransformFunctor2T, int*, int> d_segment_end_offsets_itr(d_segment_offsets + 1, TransformFunctor2T());
+
+    TestBits(h_keys, num_items, num_segments, h_segment_offsets, d_segment_begin_offsets_itr, d_segment_end_offsets_itr);
 }
 
 
@@ -1006,24 +1080,27 @@ void TestSegments(
 {
     int *h_segment_offsets = new int[max_segments + 1];
 
+    int *d_segment_offsets = nullptr;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(int) * (max_segments + 1)));
+
 #ifdef SEGMENTED_SORT
     for (int num_segments = max_segments; num_segments > 1; num_segments = (num_segments + 32 - 1) / 32)
     {
         if (num_items / num_segments < 128 * 1000) {
             // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
-            InitializeSegments(num_items, num_segments, h_segment_offsets);
-            TestBits(h_keys, num_items, num_segments, h_segment_offsets);
+            TestSegmentIterators(h_keys, num_items, num_segments, h_segment_offsets, d_segment_offsets);
         }
     }
 #else
     // Test single segment
     if (num_items < 128 * 1000) {
         // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
-        InitializeSegments(num_items, 1, h_segment_offsets);
-        TestBits(h_keys, num_items, 1, h_segment_offsets);
+        TestSegmentIterators(h_keys, num_items, 1, h_segment_offsets, d_segment_offsets);
     }
 #endif
+
     if (h_segment_offsets) delete[] h_segment_offsets;
+    if (d_segment_offsets) CubDebugExit(g_allocator.DeviceFree(d_segment_offsets));
 }
 
 
@@ -1116,11 +1193,15 @@ void Test(
     ValueT  *h_reference_values = NULL;
     int     *h_segment_offsets  = new int[num_segments + 1];
 
+    int* d_segment_offsets = nullptr;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(int) * (num_segments + 1)));
+
     if (end_bit < 0)
         end_bit = sizeof(KeyT) * 8;
 
     InitializeKeyBits(gen_mode, h_keys, num_items, entropy_reduction);
     InitializeSegments(num_items, num_segments, h_segment_offsets);
+    CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(int) * (num_segments + 1), cudaMemcpyHostToDevice));
     InitializeSolution<IS_DESCENDING>(
         h_keys, num_items, num_segments, h_segment_offsets,
         begin_bit, end_bit, h_reference_ranks, h_reference_keys);
@@ -1141,7 +1222,7 @@ void Test(
     printf("\nTesting bits [%d,%d) of %s keys with gen-mode %d\n", begin_bit, end_bit, typeid(KeyT).name(), gen_mode); fflush(stdout);
     Test<BACKEND, IS_DESCENDING>(
         h_keys, h_values,
-        num_items, num_segments, h_segment_offsets,
+        num_items, num_segments, d_segment_offsets, d_segment_offsets + 1,
         begin_bit, end_bit, h_reference_keys, h_reference_values);
 
     if (h_keys)             delete[] h_keys;
@@ -1149,6 +1230,7 @@ void Test(
     if (h_values)           delete[] h_values;
     if (h_reference_values) delete[] h_reference_values;
     if (h_segment_offsets)  delete[] h_segment_offsets;
+    if (d_segment_offsets) CubDebugExit(g_allocator.DeviceFree(d_segment_offsets));
 }
 
 
