@@ -60,15 +60,44 @@ namespace cub {
  * of the symbolic alphabet, the radix sorting method produces a lexicographic
  * ordering of those keys.
  *
- * \par
+ * \par Supported Types
  * DeviceRadixSort can sort all of the built-in C++ numeric primitive types
  * (<tt>unsigned char</tt>, \p int, \p double, etc.) as well as CUDA's \p __half
- * half-precision floating-point type.  Although the direct radix sorting
- * method can only be applied to unsigned integral types, DeviceRadixSort
- * is able to sort signed and floating-point types via simple bit-wise transformations
- * that ensure lexicographic key ordering. DeviceRadixSort is stable. For
- * floating-point types -0.0 and +0.0 are considered equal and appear in the
- * result in the same order as they appear in the input.
+ * half-precision floating-point type.
+ *
+ * \par Transformations
+ * Although the direct radix sorting method can only be applied to unsigned
+ * integral types, DeviceRadixSort is able to sort signed and floating-point
+ * types via simple bit-wise transformations that ensure lexicographic key
+ * ordering. Additional transformations occur for descending sorts. These
+ * transformations must be considered when restricting the
+ * `[begin_bit, end_bit)` range, as the bitwise transformations will occur
+ * before the bit-range truncation.
+ *
+ * Any transformations applied to the keys prior to sorting are reversed
+ * while writing to the final output buffer.
+ *
+ * \par Type Specific Bitwise Transformations
+ * To convert the input values into a radix-sortable bitwise representation,
+ * the following transformations take place prior to sorting:
+ *
+ * - For unsigned integral values, the keys are used directly.
+ * - For signed integral values, the sign bit is inverted.
+ * - For positive floating point values, the sign bit is inverted.
+ * - For negative floating point values, the full key is inverted.
+ *
+ * For floating point types, positive and negative zero are a special case and
+ * will be considered equivalent during sorting.
+ *
+ * \par Descending Sort Bitwise Transformations
+ * If descending sort is used, the keys are inverted after performing any
+ * type-specific transformations, and the resulting keys are sorted in ascending
+ * order.
+ *
+ * \par Stability
+ * DeviceRadixSort is stable. For floating-point types, -0.0 and +0.0 are
+ * considered equal and appear in the result in the same order as they appear in
+ * the input.
  *
  * \par Usage Considerations
  * \cdp_class{DeviceRadixSort}
