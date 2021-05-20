@@ -62,8 +62,8 @@ namespace cub {
  *
  * \par Supported Types
  * DeviceRadixSort can sort all of the built-in C++ numeric primitive types
- * (<tt>unsigned char</tt>, \p int, \p double, etc.) as well as CUDA's \p __half
- * half-precision floating-point type.
+ * (`unsigned char`, `int`, `double`, etc.) as well as CUDA's `__half`
+ * and `__nv_bfloat16` 16-bit floating-point types.
  *
  * \par Floating-Point Special Cases
  *
