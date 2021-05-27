@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <cub/detail/detect_cuda_runtime.cuh>
 #include <cub/detail/exec_check_disable.cuh>
 #include <cub/detail/target.cuh>
 #include <cub/util_arch.cuh>
