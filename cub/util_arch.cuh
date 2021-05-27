@@ -37,6 +37,9 @@
 #include "util_namespace.cuh"
 #include "util_macro.cuh"
 
+// Legacy include; this used to be defined in here.
+#include "detail/detect_cuda_runtime.cuh"
+
 CUB_NAMESPACE_BEGIN
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
@@ -89,17 +92,6 @@ CUB_NAMESPACE_BEGIN
 #if CUB_CPP_DIALECT >= 2011
     static_assert(CUB_MAX_DEVICES > 0, "CUB_MAX_DEVICES must be greater than 0.");
 #endif
-
-/// Whether or not the source targeted by the active compiler pass is allowed to  invoke device kernels or methods from the CUDA runtime API.
-#ifndef CUB_RUNTIME_FUNCTION
-    #if !defined(__CUDA_ARCH__) || (__CUDA_ARCH__>= 350 && defined(__CUDACC_RDC__))
-        #define CUB_RUNTIME_ENABLED
-        #define CUB_RUNTIME_FUNCTION __host__ __device__
-    #else
-        #define CUB_RUNTIME_FUNCTION __host__
-    #endif
-#endif
-
 
 /// Number of threads per warp
 #ifndef CUB_LOG_WARP_THREADS
