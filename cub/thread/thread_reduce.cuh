@@ -60,7 +60,6 @@ __device__ __forceinline__ T ThreadReduce(
 {
     T retval = prefix;
 
-    #pragma unroll
     for (int i = 0; i < LENGTH; ++i)
         retval = reduction_op(retval, input[i]);
 
