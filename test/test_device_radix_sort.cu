@@ -114,7 +114,6 @@ static const char* BackendToString(Backend b)
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<false>         /*is_descending*/,
     Int2Type<CUB>           /*dispatch_to*/,
@@ -147,7 +146,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<false>             /*is_descending*/,
     Int2Type<CUB_NO_OVERWRITE>  /*dispatch_to*/,
@@ -187,7 +185,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<true>          /*is_descending*/,
     Int2Type<CUB>           /*dispatch_to*/,
@@ -221,7 +218,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<true>              /*is_descending*/,
     Int2Type<CUB_NO_OVERWRITE>  /*dispatch_to*/,
@@ -286,7 +282,6 @@ __host__ __device__ bool ValidateNumItemsForSegmentedSort(NumItemsT num_items)
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<false>         /*is_descending*/,
     Int2Type<CUB_SEGMENTED> /*dispatch_to*/,
@@ -332,7 +327,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<false>                         /*is_descending*/,
     Int2Type<CUB_SEGMENTED_NO_OVERWRITE>    /*dispatch_to*/,
@@ -389,7 +383,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<true>          /*is_descending*/,
     Int2Type<CUB_SEGMENTED> /*dispatch_to*/,
@@ -436,7 +429,6 @@ cudaError_t Dispatch(
 template <typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT,
           typename NumItemsT>
 CUB_RUNTIME_FUNCTION
-__forceinline__
 cudaError_t Dispatch(
     Int2Type<true>                          /*is_descending*/,
     Int2Type<CUB_SEGMENTED_NO_OVERWRITE>    /*dispatch_to*/,

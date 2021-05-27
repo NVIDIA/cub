@@ -94,7 +94,7 @@ struct CustomMax
  * Dispatch to reduce entrypoint (custom-max)
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -137,7 +137,7 @@ cudaError_t Dispatch(
  * Dispatch to sum entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -170,7 +170,7 @@ cudaError_t Dispatch(
  * Dispatch to min entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -203,7 +203,7 @@ cudaError_t Dispatch(
  * Dispatch to max entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -236,7 +236,7 @@ cudaError_t Dispatch(
  * Dispatch to argmin entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -269,7 +269,7 @@ cudaError_t Dispatch(
  * Dispatch to argmax entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -307,7 +307,7 @@ cudaError_t Dispatch(
  * Dispatch to reduce entrypoint (custom-max)
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -350,7 +350,7 @@ cudaError_t Dispatch(
  * Dispatch to sum entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -384,7 +384,7 @@ cudaError_t Dispatch(
  * Dispatch to min entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -418,7 +418,7 @@ cudaError_t Dispatch(
  * Dispatch to max entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -452,7 +452,7 @@ cudaError_t Dispatch(
  * Dispatch to argmin entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,
@@ -486,7 +486,7 @@ cudaError_t Dispatch(
  * Dispatch to argmax entrypoint
  */
 template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-CUB_RUNTIME_FUNCTION __forceinline__
+CUB_RUNTIME_FUNCTION
 cudaError_t Dispatch(
     Int2Type<CUB_SEGMENTED>       /*dispatch_to*/,
     int                 timing_iterations,

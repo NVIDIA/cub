@@ -220,16 +220,6 @@ struct DispatchUniqueByKey: SelectedPolicy
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
     cudaError_t Invoke(InitKernel init_kernel, ScanKernel scan_kernel)
     {
-#ifndef CUB_RUNTIME_ENABLED
-
-        (void)init_kernel;
-        (void)scan_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
         using Policy = typename ActivePolicyT::UniqueByKeyPolicyT;
         using UniqueByKeyAgentT = AgentUniqueByKey<Policy,
                                                    KeyInputIteratorT,
@@ -356,8 +346,6 @@ struct DispatchUniqueByKey: SelectedPolicy
         while(0);
 
         return error;
-
-#endif  // CUB_RUNTIME_ENABLED
     }
 
     template <typename ActivePolicyT>

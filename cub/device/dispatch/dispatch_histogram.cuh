@@ -35,12 +35,12 @@
 #pragma once
 
 #include <cub/agent/agent_histogram.cuh>
+#include <cub/config.cuh>
+#include <cub/grid/grid_queue.cuh>
+#include <cub/thread/thread_search.cuh>
 #include <cub/util_debug.cuh>
 #include <cub/util_device.cuh>
 #include <cub/util_math.cuh>
-#include <cub/thread/thread_search.cuh>
-#include <cub/grid/grid_queue.cuh>
-#include <cub/config.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
@@ -530,13 +530,6 @@ public:
         cudaStream_t                        stream,                                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                                debug_synchronous)                              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-    #ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-    #else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -683,8 +676,6 @@ public:
         while (0);
 
         return error;
-
-    #endif // CUB_RUNTIME_ENABLED
     }
 
 

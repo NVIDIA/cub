@@ -1044,11 +1044,6 @@ struct DispatchRadixSort :
     cudaError_t InvokeSingleTile(
         SingleTileKernelT       single_tile_kernel)     ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortSingleTileKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-        (void)single_tile_kernel;
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
         cudaError error = cudaSuccess;
         do
         {
@@ -1090,8 +1085,6 @@ struct DispatchRadixSort :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 
@@ -1483,17 +1476,6 @@ struct DispatchRadixSort :
         DownsweepKernelT    downsweep_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
         DownsweepKernelT    alt_downsweep_kernel)   ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceRadixSortDownsweepKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-        (void)upsweep_kernel;
-        (void)alt_upsweep_kernel;
-        (void)scan_kernel;
-        (void)downsweep_kernel;
-        (void)alt_downsweep_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -1606,8 +1588,6 @@ struct DispatchRadixSort :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 
@@ -1893,14 +1873,6 @@ struct DispatchSegmentedRadixSort :
         SegmentedKernelT     segmented_kernel,          ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
         SegmentedKernelT     alt_segmented_kernel)      ///< [in] Alternate kernel function pointer to parameterization of cub::DeviceSegmentedRadixSortKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-      (void)segmented_kernel;
-      (void)alt_segmented_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -1979,8 +1951,6 @@ struct DispatchSegmentedRadixSort :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 

@@ -261,14 +261,6 @@ struct DeviceRleDispatch
         DeviceRleSweepKernelPtr     device_rle_sweep_kernel,        ///< [in] Kernel function pointer to parameterization of cub::DeviceRleSweepKernel
         KernelConfig                device_rle_config)              ///< [in] Dispatch parameters that match the policy that \p device_rle_sweep_kernel was compiled for
     {
-
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -363,8 +355,6 @@ struct DeviceRleDispatch
         while (0);
 
         return error;
-
-#endif  // CUB_RUNTIME_ENABLED
     }
 
 

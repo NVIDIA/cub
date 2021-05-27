@@ -34,7 +34,6 @@
 #pragma once
 
 #include <cub/detail/device_synchronize.cuh>
-
 #include <cub/util_arch.cuh>
 #include <cub/util_cpp_dialect.cuh>
 #include <cub/util_debug.cuh>
@@ -121,17 +120,9 @@ __global__ void EmptyKernel(void) { }
  */
 CUB_RUNTIME_FUNCTION inline int CurrentDevice()
 {
-#if defined(CUB_RUNTIME_ENABLED) // Host code or device code with the CUDA runtime.
-
     int device = -1;
     if (CubDebug(cudaGetDevice(&device))) return -1;
     return device;
-
-#else // Device code without the CUDA runtime.
-
-    return -1;
-
-#endif
 }
 
 /**
@@ -165,8 +156,6 @@ public:
  */
 CUB_RUNTIME_FUNCTION inline int DeviceCountUncached()
 {
-#if defined(CUB_RUNTIME_ENABLED) // Host code or device code with the CUDA runtime.
-
     int count = -1;
     if (CubDebug(cudaGetDeviceCount(&count)))
         // CUDA makes no guarantees about the state of the output parameter if
@@ -174,12 +163,6 @@ CUB_RUNTIME_FUNCTION inline int DeviceCountUncached()
         // paranoia we'll reset `count` to `-1`.
         count = -1;
     return count;
-
-#else // Device code without the CUDA runtime.
-
-    return -1;
-
-#endif
 }
 
 /**
@@ -471,8 +454,6 @@ CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersion(int &ptx_version)
  */
 CUB_RUNTIME_FUNCTION inline cudaError_t SmVersionUncached(int& sm_version, int device = CurrentDevice())
 {
-#if defined(CUB_RUNTIME_ENABLED) // Host code or device code with the CUDA runtime.
-
     cudaError_t error = cudaSuccess;
     do
     {
@@ -484,16 +465,6 @@ CUB_RUNTIME_FUNCTION inline cudaError_t SmVersionUncached(int& sm_version, int d
     while (0);
 
     return error;
-
-#else // Device code without the CUDA runtime.
-
-    (void)sm_version;
-    (void)device;
-
-    // CUDA API calls are not supported from this device.
-    return CubDebug(cudaErrorInvalidConfiguration);
-
-#endif
 }
 
 /**
@@ -543,7 +514,7 @@ CUB_RUNTIME_FUNCTION inline cudaError_t SyncStream(cudaStream_t stream)
                ((void)stream;
                 result = CubDebug(cub::detail::device_synchronize());));
 
-    return result;
+  return result;
 }
 
 
@@ -586,25 +557,11 @@ cudaError_t MaxSmOccupancy(
     int                 block_threads,              ///< [in] Number of threads per thread block
     int                 dynamic_smem_bytes = 0)	    ///< [in] Dynamically allocated shared memory in bytes. Default is 0.
 {
-#ifndef CUB_RUNTIME_ENABLED
-
-    (void)dynamic_smem_bytes;
-    (void)block_threads;
-    (void)kernel_ptr;
-    (void)max_sm_occupancy;
-
-    // CUDA API calls not supported from this device
-    return CubDebug(cudaErrorInvalidConfiguration);
-
-#else
-
     return CubDebug(cudaOccupancyMaxActiveBlocksPerMultiprocessor(
         &max_sm_occupancy,
         kernel_ptr,
         block_threads,
         dynamic_smem_bytes));
-
-#endif  // CUB_RUNTIME_ENABLED
 }
 
 
