@@ -251,7 +251,6 @@ struct AgentHistogram
     __device__ __forceinline__ void InitBinCounters(CounterT* privatized_histograms[NUM_ACTIVE_CHANNELS])
     {
         // Initialize histogram bin counts to zeros
-        #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
             for (int privatized_bin = threadIdx.x; privatized_bin < num_privatized_bins[CHANNEL]; privatized_bin += BLOCK_THREADS)
@@ -295,7 +294,6 @@ struct AgentHistogram
         CTA_SYNC();
 
         // Apply privatized bin counts to output bin counts
-        #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
             int channel_bins = num_privatized_bins[CHANNEL];
@@ -348,13 +346,11 @@ struct AgentHistogram
         CounterT*           privatized_histograms[NUM_ACTIVE_CHANNELS],
         Int2Type<true>      is_rle_compress)
     {
-        #pragma unroll
         for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
         {
             // Bin pixels
             int bins[PIXELS_PER_THREAD];
 
-            #pragma unroll
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
             {
                 bins[PIXEL] = -1;
@@ -363,7 +359,6 @@ struct AgentHistogram
 
             CounterT accumulator = 1;
 
-            #pragma unroll
             for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD - 1; ++PIXEL)
             {
                 if (bins[PIXEL] != bins[PIXEL + 1])
@@ -390,10 +385,8 @@ struct AgentHistogram
         CounterT*           privatized_histograms[NUM_ACTIVE_CHANNELS],
         Int2Type<false>     is_rle_compress)
     {
-        #pragma unroll
         for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
         {
-            #pragma unroll
             for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
             {
                 int bin = -1;
@@ -559,7 +552,6 @@ struct AgentHistogram
             Int2Type<IS_ALIGNED>());
 
         // Set valid flags
-        #pragma unroll
         for (int PIXEL = 0; PIXEL < PIXELS_PER_THREAD; ++PIXEL)
             is_valid[PIXEL] = IS_FULL_TILE || (((threadIdx.x * PIXELS_PER_THREAD + PIXEL) * NUM_CHANNELS) < valid_samples);
 
