@@ -38,6 +38,12 @@ set(_CUB_INCLUDE_DIR "${_CUB_VERSION_INCLUDE_DIR}"
 unset(_CUB_VERSION_INCLUDE_DIR CACHE) # Clear tmp variable from cache
 target_include_directories(_CUB_CUB INTERFACE "${_CUB_INCLUDE_DIR}")
 
+if (CUB_PTX_TARGETS)
+  target_compile_definitions(_CUB_CUB INTERFACE
+    "CUB_PTX_TARGETS=${CUB_PTX_TARGETS}"
+  )
+endif()
+
 if (CUB_IGNORE_DEPRECATED_API OR THRUST_IGNORE_DEPRECATED_API)
   target_compile_definitions(_CUB_CUB INTERFACE "CUB_IGNORE_DEPRECATED_API")
 endif()
