@@ -89,6 +89,12 @@ _cub_declare_interface_alias(CUB::CUB _CUB_CUB)
 target_include_directories(_CUB_CUB INTERFACE "${_CUB_INCLUDE_DIR}")
 target_link_libraries(_CUB_CUB INTERFACE CUB::libcudacxx)
 
+if (CUB_PTX_TARGETS)
+  target_compile_definitions(_CUB_CUB INTERFACE
+    "CUB_PTX_TARGETS=${CUB_PTX_TARGETS}"
+  )
+endif()
+
 if (CUB_IGNORE_DEPRECATED_API OR THRUST_IGNORE_DEPRECATED_API)
   target_compile_definitions(_CUB_CUB INTERFACE "CUB_IGNORE_DEPRECATED_API")
 endif()
