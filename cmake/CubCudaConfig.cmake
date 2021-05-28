@@ -3,9 +3,9 @@ enable_language(CUDA)
 #
 # Architecture options:
 #
-
 set(all_archs 35 37 50 52 53 60 61 62 70 72 75 80 86)
 set(arch_message "CUB: Explicitly enabled compute architectures:")
+set(ptx_targets)
 
 # Thrust sets up the architecture flags in CMAKE_CUDA_FLAGS already. Just
 # reuse them if possible. After we transition to CMake 3.18 CUDA_ARCHITECTURE
@@ -19,6 +19,7 @@ if (CUB_IN_THRUST)
     if (THRUST_ENABLE_COMPUTE_${arch})
       set(CUB_ENABLE_COMPUTE_${arch} True)
       string(APPEND arch_message " sm_${arch}")
+      list(APPEND ptx_targets "${arch}0")
     else()
       set(CUB_ENABLE_COMPUTE_${arch} False)
     endif()
@@ -71,6 +72,7 @@ else() # NOT CUB_IN_THRUST
       endif()
 
       string(APPEND arch_message " sm_${arch}")
+      list(APPEND ptx_targets "${arch}0")
     endif()
   endforeach()
 
@@ -92,6 +94,17 @@ else() # NOT CUB_IN_THRUST
 endif()
 
 message(STATUS ${arch_message})
+
+# Define CUB_PTX_TARGETS to restrict the number of kernel tunings that are
+# instantiated. This is distinct from the logic in cub-config.cmake, since
+# CUB detects PTX arches after finding the CUB package.
+# After 11.5, __CUDA_ARCH_LIST__ should be available, and CUB will automatically
+# use that instead.
+if (CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA" AND
+    CMAKE_CUDA_COMPILER_VERSION VERSION_LESS 11.5)
+  list(JOIN ptx_targets "\\," ptx_targets)
+  target_compile_definitions(_CUB_CUB INTERFACE "CUB_PTX_TARGETS=${ptx_targets}")
+endif()
 
 #
 # RDC options:
