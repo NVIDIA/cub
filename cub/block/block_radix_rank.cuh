@@ -257,7 +257,6 @@ private:
         if (MEMOIZE_OUTER_SCAN)
         {
             // Copy data into registers
-            #pragma unroll
             for (int i = 0; i < RAKING_SEGMENT; i++)
             {
                 cached_segment[i] = smem_raking_ptr[i];
@@ -289,7 +288,6 @@ private:
         if (MEMOIZE_OUTER_SCAN)
         {
             // Copy data back to smem
-            #pragma unroll
             for (int i = 0; i < RAKING_SEGMENT; i++)
             {
                 smem_raking_ptr[i] = cached_segment[i];
@@ -304,7 +302,6 @@ private:
     __device__ __forceinline__ void ResetCounters()
     {
         // Reset shared memory digit counters
-        #pragma unroll
         for (int LANE = 0; LANE < PADDED_COUNTER_LANES; LANE++)
         {
             *((PackedCounter*) temp_storage.aliasable.digit_counters[LANE][linear_tid]) = 0;
@@ -322,7 +319,6 @@ private:
             PackedCounter block_prefix = 0;
 
             // Propagate totals in packed fields
-            #pragma unroll
             for (int PACKED = 1; PACKED < PACKING_RATIO; PACKED++)
             {
                 block_prefix += block_aggregate << (sizeof(DigitCounter) * 8 * PACKED);
@@ -406,7 +402,6 @@ public:
         // Reset shared memory digit counters
         ResetCounters();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
         {
             // Get digit
@@ -442,7 +437,6 @@ public:
         CTA_SYNC();
 
         // Extract the local ranks of each key
-        #pragma unroll
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
         {
             // Add in thread block exclusive prefix
@@ -468,7 +462,6 @@ public:
         RankKeys(keys, ranks, digit_extractor);
 
         // Get the inclusive and exclusive digit totals corresponding to the calling thread.
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (linear_tid * BINS_TRACKED_PER_THREAD) + track;
@@ -631,7 +624,6 @@ public:
     {
         int bins[BINS_TRACKED_PER_THREAD];
         // Get count for each digit
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (linear_tid * BINS_TRACKED_PER_THREAD) + track;
@@ -673,7 +665,6 @@ public:
     {
         // Initialize shared digit counters
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < PADDED_RAKING_SEGMENT; ++ITEM)
             temp_storage.aliasable.raking_grid[linear_tid][ITEM] = 0;
 
@@ -685,7 +676,6 @@ public:
         uint32_t                warp_id         = linear_tid >> LOG_WARP_THREADS;
         uint32_t                lane_mask_lt    = LaneMaskLt();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
         {
             // My digit
@@ -731,13 +721,11 @@ public:
 
         DigitCounterT scan_counters[PADDED_RAKING_SEGMENT];
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < PADDED_RAKING_SEGMENT; ++ITEM)
             scan_counters[ITEM] = temp_storage.aliasable.raking_grid[linear_tid][ITEM];
 
         BlockScanT(temp_storage.block_scan).ExclusiveSum(scan_counters, scan_counters);
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < PADDED_RAKING_SEGMENT; ++ITEM)
             temp_storage.aliasable.raking_grid[linear_tid][ITEM] = scan_counters[ITEM];
 
@@ -748,7 +736,6 @@ public:
         }
 
         // Seed ranks with counter values from previous warps
-        #pragma unroll
         for (int ITEM = 0; ITEM < KEYS_PER_THREAD; ++ITEM)
             ranks[ITEM] += *digit_counters[ITEM];
     }
@@ -783,7 +770,6 @@ public:
         RankKeys(keys, ranks, digit_extractor, callback);
 
         // Get exclusive count for each digit
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (linear_tid * BINS_TRACKED_PER_THREAD) + track;
@@ -896,10 +882,8 @@ struct BlockRadixRankMatchEarlyCounts
             //int* warp_offsets = &s.warp_offsets[warp][0];
             int (&warp_histograms)[RADIX_DIGITS][NUM_PARTS] = s.warp_histograms[warp];
             // compute warp-private histograms
-            #pragma unroll
             for (int bin = lane; bin < RADIX_DIGITS; bin += WARP_THREADS)
             {
-                #pragma unroll
                 for (int part = 0; part < NUM_PARTS; ++part)
                 {
                     warp_histograms[bin][part] = 0;
@@ -908,7 +892,6 @@ struct BlockRadixRankMatchEarlyCounts
             if (MATCH_ALGORITHM == WARP_MATCH_ATOMIC_OR)
             {
                 int* match_masks = &s.match_masks[warp][0];
-                #pragma unroll
                 for (int bin = lane; bin < RADIX_DIGITS; bin += WARP_THREADS)
                 {
                     match_masks[bin] = 0;
@@ -918,7 +901,6 @@ struct BlockRadixRankMatchEarlyCounts
 
             // compute private per-part histograms
             int part = lane % NUM_PARTS;
-            #pragma unroll
             for (int u = 0; u < KEYS_PER_THREAD; ++u)
             {
                 atomicAdd(&warp_histograms[Digit(keys[u])][part], 1);
@@ -932,7 +914,6 @@ struct BlockRadixRankMatchEarlyCounts
                 // TODO: handle RADIX_DIGITS % WARP_THREADS != 0 if it becomes necessary
                 const int WARP_BINS_PER_THREAD = RADIX_DIGITS / WARP_THREADS;
                 int bins[WARP_BINS_PER_THREAD];
-                #pragma unroll
                 for (int u = 0; u < WARP_BINS_PER_THREAD; ++u)
                 {
                     int bin = lane + u * WARP_THREADS;
@@ -942,7 +923,6 @@ struct BlockRadixRankMatchEarlyCounts
 
                 // store the resulting histogram in shared memory
                 int* warp_offsets = &s.warp_offsets[warp][0];
-                #pragma unroll
                 for (int u = 0; u < WARP_BINS_PER_THREAD; ++u)
                 {
                     int bin = lane + u * WARP_THREADS;
@@ -955,14 +935,12 @@ struct BlockRadixRankMatchEarlyCounts
         void ComputeOffsetsWarpUpsweep(int (&bins)[BINS_PER_THREAD])
         {
             // sum up warp-private histograms
-            #pragma unroll
-            for (int u = 0; u < BINS_PER_THREAD; ++u) 
+            for (int u = 0; u < BINS_PER_THREAD; ++u)
             {
                 bins[u] = 0;
                 int bin = ThreadBin(u);
                 if (FULL_BINS || (bin >= 0 && bin < RADIX_DIGITS))
                 {
-                    #pragma unroll
                     for (int j_warp = 0; j_warp < BLOCK_WARPS; ++j_warp)
                     {
                         int warp_offset = s.warp_offsets[j_warp][bin];
@@ -976,14 +954,12 @@ struct BlockRadixRankMatchEarlyCounts
         __device__ __forceinline__
         void ComputeOffsetsWarpDownsweep(int (&offsets)[BINS_PER_THREAD])
         {
-            #pragma unroll
             for (int u = 0; u < BINS_PER_THREAD; ++u)
             {
                 int bin = ThreadBin(u);
                 if (FULL_BINS || (bin >= 0 && bin < RADIX_DIGITS))
                 {
                     int digit_offset = offsets[u];
-                    #pragma unroll
                     for (int j_warp = 0; j_warp < BLOCK_WARPS; ++j_warp)
                     {
                         s.warp_offsets[j_warp][bin] += digit_offset;
@@ -1001,7 +977,7 @@ struct BlockRadixRankMatchEarlyCounts
             int lane_mask = 1 << lane;
             int* warp_offsets = &s.warp_offsets[warp][0];
             int* match_masks = &s.match_masks[warp][0];
-            #pragma unroll
+
             for (int u = 0; u < KEYS_PER_THREAD; ++u)
             {
                 int bin = Digit(keys[u]);
@@ -1031,7 +1007,7 @@ struct BlockRadixRankMatchEarlyCounts
         {
             // compute key ranks
             int* warp_offsets = &s.warp_offsets[warp][0];
-            #pragma unroll
+
             for (int u = 0; u < KEYS_PER_THREAD; ++u)
             {
                 int bin = Digit(keys[u]);
