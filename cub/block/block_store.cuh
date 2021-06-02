@@ -465,6 +465,10 @@ enum BlockStoreAlgorithm
  *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3)
  *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec5sec3) which is
  *      then written to memory.  [More...](\ref cub::BlockStoreAlgorithm)
+ *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3)
+ *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec5sec3) which is
+ *      then written to memory. To reduce the shared memory requireent, only one warp's worth of shared
+ *      memory is provisioned and is subsequently time-sliced among warps.  [More...](\ref cub::BlockStoreAlgorithm)
  * - \rowmajor
  *
  * \par A Simple Example
