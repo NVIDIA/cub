@@ -34,6 +34,7 @@
 #pragma once
 
 #include <iterator>
+#include <type_traits>
 
 #include "block_exchange.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
@@ -1282,6 +1283,17 @@ public:
 
     //@}  end member group
 
+};
+
+template <class Policy,
+          class It,
+          class T = typename std::iterator_traits<It>::value_type>
+struct BlockLoadType
+{
+  using type = cub::BlockLoad<T,
+                              Policy::BLOCK_THREADS,
+                              Policy::ITEMS_PER_THREAD,
+                              Policy::LOAD_ALGORITHM>;
 };
 
 
