@@ -71,5 +71,40 @@ DivideAndRoundUp(NumeratorT n, DenominatorT d)
   return static_cast<NumeratorT>(n / d + (n % d != 0 ? 1 : 0));
 }
 
+template <typename T>
+constexpr __device__ __host__ int
+Nominal4BItemsToItems(int nominal_4b_items_per_thread)
+{
+  constexpr int type_size = static_cast<int>(sizeof(T));
+
+  return (cub::min)(
+    nominal_4b_items_per_thread,
+    (cub::max)(1, (nominal_4b_items_per_thread * 4 / type_size)));
+}
+
+template <typename ItemT>
+constexpr __device__ __host__ int
+Nominal8BItemsToItems(int nominal_8b_items_per_thread)
+{
+  constexpr int input_size = sizeof(ItemT);
+  return input_size <= 8
+           ? nominal_8b_items_per_thread
+           : (cub::min)(nominal_8b_items_per_thread,
+                        (cub::max)(1,
+                                   ((nominal_8b_items_per_thread * 8) +
+                                    input_size - 1) /
+                                     input_size));
+}
+
+/**
+ * \brief Computes the midpoint of the integers
+ * \return Half the sum of \p begin and \p end
+ */
+template <typename T>
+constexpr __device__ __host__ T MidPoint(T begin, T end)
+{
+  return begin + (end - begin) / 2;
+}
+
 } // namespace cub
 CUB_NS_POSTFIX // Optional outer namespace(s)
