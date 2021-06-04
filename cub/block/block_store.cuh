@@ -34,6 +34,7 @@
 #pragma once
 
 #include <iterator>
+#include <type_traits>
 
 #include "block_exchange.cuh"
 #include "../config.cuh"
@@ -1046,6 +1047,16 @@ public:
     }
 };
 
+template <class Policy,
+          class It,
+          class T = typename std::iterator_traits<It>::value_type>
+struct BlockStoreType
+{
+  using type = cub::BlockStore<T,
+                               Policy::BLOCK_THREADS,
+                               Policy::ITEMS_PER_THREAD,
+                               Policy::STORE_ALGORITHM>;
+};
 
 CUB_NAMESPACE_END
 
