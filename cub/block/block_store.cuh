@@ -600,18 +600,12 @@ private:
         /// Shared memory storage layout type
         typedef NullType TempStorage;
 
-        /// Alias wrapper allowing storage to be unioned
-        struct TempStorage : Uninitialized<_TempStorage> {};
-
-        /// Thread reference to shared storage
-        _TempStorage &temp_storage;
-
         /// Linear thread-id
         int linear_tid;
 
         /// Constructor
         __device__ __forceinline__ StoreInternal(
-            TempStorage &temp_storage,
+            TempStorage &/*temp_storage*/,
             int linear_tid)
         :
             temp_storage(temp_storage.Alias()),
@@ -634,9 +628,7 @@ private:
             T                   (&items)[ITEMS_PER_THREAD], ///< [in] Data to store
             int                 valid_items)                ///< [in] Number of valid items to write
         {
-            if (linear_tid == 0)
-                temp_storage.valid_items = valid_items;     // Move through volatile smem as a workaround to prevent RF spilling on subsequent loads
-            StoreDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, temp_storage.valid_items);
+            StoreDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
         }
     };
 
