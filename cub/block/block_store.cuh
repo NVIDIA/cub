@@ -373,7 +373,7 @@ enum BlockStoreAlgorithm
      * - The utilization of memory transactions (coalescing) decreases as the
      *   access stride between threads increases (i.e., the number items per thread).
      */
-     BLOCK_STORE_STRIPED,
+    BLOCK_STORE_STRIPED,
 
     /**
      * \par Overview
