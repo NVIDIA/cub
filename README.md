@@ -100,7 +100,8 @@ See the [changelog](CHANGELOG.md) for details about specific releases.
 
 | CUB Release               | Included In                             |
 | ------------------------- | --------------------------------------- |
-| 1.12.0                    | NVIDIA HPC SDK 21.3 & CUDA Toolkit 11.4 |
+| 1.12.1                    | CUDA Toolkit 11.4                       |
+| 1.12.0                    | NVIDIA HPC SDK 21.3                     |
 | 1.11.0                    | CUDA Toolkit 11.3                       |
 | 1.10.0                    | NVIDIA HPC SDK 20.9 & CUDA Toolkit 11.2 |
 | 1.9.10-1                  | NVIDIA HPC SDK 20.7 & CUDA Toolkit 11.1 |
@@ -143,23 +144,27 @@ See the [changelog](CHANGELOG.md) for details about specific releases.
 <br><hr>
 <h3>Development Process</h3>
 
+CUB and Thrust depend on each other. It is recommended to clone Thrust
+and build CUB as a component of Thrust.
+
 CUB uses the [CMake build system](https://cmake.org/) to build unit tests,
 examples, and header tests. To build CUB as a developer, the following
 recipe should be followed:
 
 ```
-# Clone CUB repo from github:
-git clone https://github.com/NVIDIA/cub.git
-cd cub
+# Clone Thrust and CUB from Github. CUB is located in Thrust's
+# `dependencies/cub` submodule.
+git clone --recursive https://github.com/NVIDIA/thrust.git
+cd thrust
 
 # Create build directory:
 mkdir build
 cd build
 
 # Configure -- use one of the following:
-cmake ..   # Command line interface.
-ccmake ..  # ncurses GUI (Linux only)
-cmake-gui  # Graphical UI, set source/build directories in the app
+cmake -DTHRUST_INCLUDE_CUB_CMAKE=ON ..   # Command line interface.
+ccmake -DTHRUST_INCLUDE_CUB_CMAKE=ON ..  # ncurses GUI (Linux only)
+cmake-gui  # Graphical UI, set source/build directories and options in the app
 
 # Build:
 cmake --build . -j <num jobs>   # invokes make (or ninja, etc)

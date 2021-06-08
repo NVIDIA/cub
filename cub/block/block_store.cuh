@@ -455,7 +455,6 @@ enum BlockStoreAlgorithm
  * \tparam BLOCK_DIM_X          The thread block length in threads along the X dimension
  * \tparam ITEMS_PER_THREAD     The number of consecutive items partitioned onto each thread.
  * \tparam ALGORITHM            <b>[optional]</b> cub::BlockStoreAlgorithm tuning policy enumeration.  default: cub::BLOCK_STORE_DIRECT.
- * \tparam WARP_TIME_SLICING    <b>[optional]</b> Whether or not only one warp's worth of shared memory should be allocated and time-sliced among block-warps during any load-related data transpositions (versus each warp having its own storage). (default: false)
  * \tparam BLOCK_DIM_Y          <b>[optional]</b> The thread block length in threads along the Y dimension (default: 1)
  * \tparam BLOCK_DIM_Z          <b>[optional]</b> The thread block length in threads along the Z dimension (default: 1)
  * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
@@ -478,6 +477,10 @@ enum BlockStoreAlgorithm
  *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3)
  *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec5sec3) which is
  *      then written to memory.  [More...](\ref cub::BlockStoreAlgorithm)
+ *   -# <b>cub::BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3)
+ *      is locally transposed into a [<em>warp-striped arrangement</em>](index.html#sec5sec3) which is
+ *      then written to memory. To reduce the shared memory requireent, only one warp's worth of shared
+ *      memory is provisioned and is subsequently time-sliced among warps.  [More...](\ref cub::BlockStoreAlgorithm)
  * - \rowmajor
  *
  * \par A Simple Example

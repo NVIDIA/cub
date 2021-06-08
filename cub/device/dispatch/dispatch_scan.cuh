@@ -95,14 +95,14 @@ __global__ void DeviceCompactInitKernel(
  * Scan kernel entry point (multi-block)
  */
 template <
-    typename            ScanPolicyT,        ///< Parameterized ScanPolicyT tuning policy type
+    typename            ChainedPolicyT,     ///< Chained tuning policy
     typename            InputIteratorT,     ///< Random-access input iterator type for reading scan inputs \iterator
     typename            OutputIteratorT,    ///< Random-access output iterator type for writing scan outputs \iterator
     typename            ScanTileStateT,     ///< Tile status interface type
     typename            ScanOpT,            ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename            InitValueT,         ///< Initial value to seed the exclusive scan (cub::NullType for inclusive scans)
     typename            OffsetT>            ///< Signed integer type for global offsets
-__launch_bounds__ (int(ScanPolicyT::BLOCK_THREADS))
+__launch_bounds__ (int(ChainedPolicyT::ActivePolicy::ScanPolicyT::BLOCK_THREADS))
 __global__ void DeviceScanKernel(
     InputIteratorT      d_in,               ///< Input data
     OutputIteratorT     d_out,              ///< Output data
@@ -112,6 +112,8 @@ __global__ void DeviceScanKernel(
     InitValueT          init_value,         ///< Initial value to seed the exclusive scan
     OffsetT             num_items)          ///< Total number of scan items for the entire problem
 {
+    typedef typename ChainedPolicyT::ActivePolicy::ScanPolicyT ScanPolicyT;
+
     // Thread block type for scanning input tiles
     typedef AgentScan<
         ScanPolicyT,
@@ -387,12 +389,12 @@ struct DispatchScan:
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
     cudaError_t Invoke()
     {
-        typedef typename ActivePolicyT::ScanPolicyT Policy;
+        typedef typename DispatchScan::MaxPolicy MaxPolicyT;
         typedef typename cub::ScanTileState<OutputT> ScanTileStateT;
         // Ensure kernels are instantiated.
         return Invoke<ActivePolicyT>(
             DeviceScanInitKernel<ScanTileStateT>,
-            DeviceScanKernel<Policy, InputIteratorT, OutputIteratorT, ScanTileStateT, ScanOpT, InitValueT, OffsetT>
+            DeviceScanKernel<MaxPolicyT, InputIteratorT, OutputIteratorT, ScanTileStateT, ScanOpT, InitValueT, OffsetT>
         );
     }
 

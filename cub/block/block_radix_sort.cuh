@@ -64,23 +64,60 @@ namespace cub {
  * \tparam PTX_ARCH             <b>[optional]</b> \ptxversion
  *
  * \par Overview
- * - The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
- *   items into ascending order.  It relies upon a positional representation for
- *   keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
- *   characters, etc.) specified from least-significant to most-significant.  For a
- *   given input sequence of keys and a set of rules specifying a total ordering
- *   of the symbolic alphabet, the radix sorting method produces a lexicographic
- *   ordering of those keys.
- * - BlockRadixSort can sort all of the built-in C++ numeric primitive types
- *   (<tt>unsigned char</tt>, \p int, \p double, etc.) as well as CUDA's \p __half
- *   half-precision floating-point type. Within each key, the implementation treats fixed-length
- *   bit-sequences of \p RADIX_BITS as radix digit places.  Although the direct radix sorting
- *   method can only be applied to unsigned integral types, BlockRadixSort
- *   is able to sort signed and floating-point types via simple bit-wise transformations
- *   that ensure lexicographic key ordering. For floating-point types -0.0 and +0.0 are
- *   considered equal and appear in the result in the same order as they appear in
- *   the input.
- * - \rowmajor
+ * The [<em>radix sorting method</em>](http://en.wikipedia.org/wiki/Radix_sort) arranges
+ * items into ascending order.  It relies upon a positional representation for
+ * keys, i.e., each key is comprised of an ordered sequence of symbols (e.g., digits,
+ * characters, etc.) specified from least-significant to most-significant.  For a
+ * given input sequence of keys and a set of rules specifying a total ordering
+ * of the symbolic alphabet, the radix sorting method produces a lexicographic
+ * ordering of those keys.
+ *
+ * \rowmajor
+ *
+ * \par Supported Types
+ * BlockRadixSort can sort all of the built-in C++ numeric primitive types
+ * (<tt>unsigned char</tt>, \p int, \p double, etc.) as well as CUDA's \p __half
+ * half-precision floating-point type.
+ *
+ * \par Floating-Point Special Cases
+ *
+ * - Positive and negative zeros are considered equivalent, and will be treated
+ *   as such in the output.
+ * - No special handling is implemented for NaN values; these are sorted
+ *   according to their bit representations after any transformations.
+ *
+ * \par Bitwise Key Transformations
+ * Although the direct radix sorting method can only be applied to unsigned
+ * integral types, BlockRadixSort is able to sort signed and floating-point
+ * types via simple bit-wise transformations that ensure lexicographic key
+ * ordering.
+ *
+ * These transformations must be considered when restricting the
+ * `[begin_bit, end_bit)` range, as the bitwise transformations will occur
+ * before the bit-range truncation.
+ *
+ * Any transformations applied to the keys prior to sorting are reversed
+ * while writing to the final output buffer.
+ *
+ * \par Type Specific Bitwise Transformations
+ * To convert the input values into a radix-sortable bitwise representation,
+ * the following transformations take place prior to sorting:
+ *
+ * - For unsigned integral values, the keys are used directly.
+ * - For signed integral values, the sign bit is inverted.
+ * - For positive floating point values, the sign bit is inverted.
+ * - For negative floating point values, the full key is inverted.
+ *
+ * \par No Descending Sort Transformations
+ * Unlike `DeviceRadixSort`, `BlockRadixSort` does not invert the input key bits
+ * when performing a descending sort. Instead, it has special logic to reverse
+ * the order of the keys while sorting.
+ *
+ * \par Stability
+ * BlockRadixSort is stable. For floating-point types -0.0 and +0.0
+ * are considered equal and appear in the result in the same order as they
+ * appear in the input.
+ *
  *
  * \par Performance Considerations
  * - \granularity

@@ -60,13 +60,49 @@ namespace cub {
  * of the symbolic alphabet, the radix sorting method produces a lexicographic
  * ordering of those keys.
  *
- * \par
+ * \par Supported Types
  * DeviceRadixSort can sort all of the built-in C++ numeric primitive types
- * (<tt>unsigned char</tt>, \p int, \p double, etc.) as well as CUDA's \p __half
- * half-precision floating-point type.  Although the direct radix sorting
- * method can only be applied to unsigned integral types, DeviceRadixSort
- * is able to sort signed and floating-point types via simple bit-wise transformations
- * that ensure lexicographic key ordering. For floating-point types -0.0 and +0.0 are
+ * (`unsigned char`, `int`, `double`, etc.) as well as CUDA's `__half`
+ * and `__nv_bfloat16` 16-bit floating-point types.
+ *
+ * \par Floating-Point Special Cases
+ *
+ * - Positive and negative zeros are considered equivalent, and will be treated
+ *   as such in the output.
+ * - No special handling is implemented for NaN values; these are sorted
+ *   according to their bit representations after any transformations.
+ *
+ * \par Transformations
+ * Although the direct radix sorting method can only be applied to unsigned
+ * integral types, DeviceRadixSort is able to sort signed and floating-point
+ * types via simple bit-wise transformations that ensure lexicographic key
+ * ordering. Additional transformations occur for descending sorts. These
+ * transformations must be considered when restricting the
+ * `[begin_bit, end_bit)` range, as the bitwise transformations will occur
+ * before the bit-range truncation.
+ *
+ * Any transformations applied to the keys prior to sorting are reversed
+ * while writing to the final output buffer.
+ *
+ * \par Type Specific Bitwise Transformations
+ * To convert the input values into a radix-sortable bitwise representation,
+ * the following transformations take place prior to sorting:
+ *
+ * - For unsigned integral values, the keys are used directly.
+ * - For signed integral values, the sign bit is inverted.
+ * - For positive floating point values, the sign bit is inverted.
+ * - For negative floating point values, the full key is inverted.
+ *
+ * For floating point types, positive and negative zero are a special case and
+ * will be considered equivalent during sorting.
+ *
+ * \par Descending Sort Bitwise Transformations
+ * If descending sort is used, the keys are inverted after performing any
+ * type-specific transformations, and the resulting keys are sorted in ascending
+ * order.
+ *
+ * \par Stability
+ * DeviceRadixSort is stable. For floating-point types, -0.0 and +0.0 are
  * considered equal and appear in the result in the same order as they appear in
  * the input.
  *
@@ -93,7 +129,15 @@ struct DeviceRadixSort
      * \brief Sorts key-value pairs into ascending order. (~<em>2N </em>auxiliary storage required)
      *
      * \par
-     * - The contents of the input data are not altered by the sorting operation
+     * - The contents of the input data are not altered by the sorting operation.
+     * - Pointers to contiguous memory must be used; iterators are not currently
+     *   supported.
+     * - In-place operations are not supported. There must be no overlap between
+     *   any of the provided ranges:
+     *   - `[d_keys_in,    d_keys_in    + num_items)`
+     *   - `[d_keys_out,   d_keys_out   + num_items)`
+     *   - `[d_values_in,  d_values_in  + num_items)`
+     *   - `[d_values_out, d_values_out + num_items)`
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
@@ -162,6 +206,11 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
+        // We cast away const-ness, but will *not* write to these arrays.
+        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
+        // create a new double-buffer internally when the `is_overwrite_ok` flag
+        // is not set.
+        constexpr bool is_overwrite_okay = false;
         DoubleBuffer<KeyT>       d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
         DoubleBuffer<ValueT>     d_values(const_cast<ValueT*>(d_values_in), d_values_out);
 
@@ -173,7 +222,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            false,
+            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -189,6 +238,12 @@ struct DeviceRadixSort
      *   contains the input data to be sorted).
      * - The contents of both buffers within each pair may be altered by the sorting
      *   operation.
+     * - In-place operations are not supported. There must be no overlap between
+     *   any of the provided ranges:
+     *   - `[d_keys.Current(),     d_keys.Current()     + num_items)`
+     *   - `[d_keys.Alternate(),   d_keys.Alternate()   + num_items)`
+     *   - `[d_values.Current(),   d_values.Current()   + num_items)`
+     *   - `[d_values.Alternate(), d_values.Alternate() + num_items)`
      * - Upon completion, the sorting operation will update the "current" indicator
      *   within each DoubleBuffer wrapper to reference which of the two buffers
      *   now contains the sorted output sequence (a function of the number of key bits
@@ -261,6 +316,8 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
+        constexpr bool is_overwrite_okay = true;
+
         return DispatchRadixSort<false, KeyT, ValueT, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
@@ -269,7 +326,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            true,
+            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -279,7 +336,15 @@ struct DeviceRadixSort
      * \brief Sorts key-value pairs into descending order. (~<em>2N</em> auxiliary storage required).
      *
      * \par
-     * - The contents of the input data are not altered by the sorting operation
+     * - The contents of the input data are not altered by the sorting operation.
+     * - Pointers to contiguous memory must be used; iterators are not currently
+     *   supported.
+     * - In-place operations are not supported. There must be no overlap between
+     *   any of the provided ranges:
+     *   - `[d_keys_in,    d_keys_in    + num_items)`
+     *   - `[d_keys_out,   d_keys_out   + num_items)`
+     *   - `[d_values_in,  d_values_in  + num_items)`
+     *   - `[d_values_out, d_values_out + num_items)`
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
@@ -343,6 +408,11 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
+        // We cast away const-ness, but will *not* write to these arrays.
+        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
+        // create a new double-buffer internally when the `is_overwrite_ok` flag
+        // is not set.
+        constexpr bool is_overwrite_okay = false;
         DoubleBuffer<KeyT>       d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
         DoubleBuffer<ValueT>     d_values(const_cast<ValueT*>(d_values_in), d_values_out);
 
@@ -354,7 +424,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            false,
+            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -370,6 +440,12 @@ struct DeviceRadixSort
      *   contains the input data to be sorted).
      * - The contents of both buffers within each pair may be altered by the sorting
      *   operation.
+     * - In-place operations are not supported. There must be no overlap between
+     *   any of the provided ranges:
+     *   - `[d_keys.Current(),     d_keys.Current()     + num_items)`
+     *   - `[d_keys.Alternate(),   d_keys.Alternate()   + num_items)`
+     *   - `[d_values.Current(),   d_values.Current()   + num_items)`
+     *   - `[d_values.Alternate(), d_values.Alternate() + num_items)`
      * - Upon completion, the sorting operation will update the "current" indicator
      *   within each DoubleBuffer wrapper to reference which of the two buffers
      *   now contains the sorted output sequence (a function of the number of key bits
@@ -437,6 +513,8 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
+        constexpr bool is_overwrite_okay = true;
+
         return DispatchRadixSort<true, KeyT, ValueT, OffsetT>::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
@@ -445,7 +523,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            true,
+            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -462,7 +540,13 @@ struct DeviceRadixSort
      * \brief Sorts keys into ascending order. (~<em>2N </em>auxiliary storage required)
      *
      * \par
-     * - The contents of the input data are not altered by the sorting operation
+     * - The contents of the input data are not altered by the sorting operation.
+     * - Pointers to contiguous memory must be used; iterators are not currently
+     *   supported.
+     * - In-place operations are not supported. There must be no overlap between
+     *   any of the provided ranges:
+     *   - `[d_keys_in,    d_keys_in    + num_items)`
+     *   - `[d_keys_out,   d_keys_out   + num_items)`
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
@@ -519,8 +603,13 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // Null value type
+        // We cast away const-ness, but will *not* write to these arrays.
+        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
+        // create a new double-buffer internally when the `is_overwrite_ok` flag
+        // is not set.
+        constexpr bool is_overwrite_okay = false;
         DoubleBuffer<KeyT>      d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
+        // Null value type
         DoubleBuffer<NullType>  d_values;
 
         return DispatchRadixSort<false, KeyT, NullType, OffsetT>::Dispatch(
@@ -531,7 +620,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            false,
+            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -545,6 +634,10 @@ struct DeviceRadixSort
      *   DoubleBuffer structure that indicates which of the two buffers is
      *   "current" (and thus contains the input data to be sorted).
      * - The contents of both buffers may be altered by the sorting operation.
+     * - In-place operations are not supported. There must be no overlap between
+     *   any of the provided ranges:
+     *   - `[d_keys.Current(),     d_keys.Current()     + num_items)`
+     *   - `[d_keys.Alternate(),   d_keys.Alternate()   + num_items)`
      * - Upon completion, the sorting operation will update the "current" indicator
      *   within the DoubleBuffer wrapper to reference which of the two buffers
      *   now contains the sorted output sequence (a function of the number of key bits
@@ -607,6 +700,8 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
+        constexpr bool is_overwrite_okay = true;
+
         // Null value type
         DoubleBuffer<NullType> d_values;
 
@@ -618,7 +713,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            true,
+            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -627,7 +722,13 @@ struct DeviceRadixSort
      * \brief Sorts keys into descending order. (~<em>2N</em> auxiliary storage required).
      *
      * \par
-     * - The contents of the input data are not altered by the sorting operation
+     * - The contents of the input data are not altered by the sorting operation.
+     * - Pointers to contiguous memory must be used; iterators are not currently
+     *   supported.
+     * - In-place operations are not supported. There must be no overlap between
+     *   any of the provided ranges:
+     *   - `[d_keys_in,    d_keys_in    + num_items)`
+     *   - `[d_keys_out,   d_keys_out   + num_items)`
      * - An optional bit subrange <tt>[begin_bit, end_bit)</tt> of differentiating key bits can be specified.  This can reduce overall sorting overhead and yield a corresponding performance improvement.
      * - \devicestorageNP  For sorting using only <em>O</em>(<tt>P</tt>) temporary storage, see the sorting interface using DoubleBuffer wrappers below.
      * - \devicestorage
@@ -683,6 +784,11 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
+        // We cast away const-ness, but will *not* write to these arrays.
+        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
+        // create a new double-buffer internally when the `is_overwrite_ok` flag
+        // is not set.
+        constexpr bool is_overwrite_okay = false;
         DoubleBuffer<KeyT>      d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
         DoubleBuffer<NullType>  d_values;
 
@@ -694,7 +800,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            false,
+            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -708,6 +814,10 @@ struct DeviceRadixSort
      *   DoubleBuffer structure that indicates which of the two buffers is
      *   "current" (and thus contains the input data to be sorted).
      * - The contents of both buffers may be altered by the sorting operation.
+     * - In-place operations are not supported. There must be no overlap between
+     *   any of the provided ranges:
+     *   - `[d_keys.Current(),     d_keys.Current()     + num_items)`
+     *   - `[d_keys.Alternate(),   d_keys.Alternate()   + num_items)`
      * - Upon completion, the sorting operation will update the "current" indicator
      *   within the DoubleBuffer wrapper to reference which of the two buffers
      *   now contains the sorted output sequence (a function of the number of key bits
@@ -766,6 +876,8 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
+        constexpr bool is_overwrite_okay = true;
+
         // Null value type
         DoubleBuffer<NullType> d_values;
 
@@ -777,7 +889,7 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            true,
+            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
