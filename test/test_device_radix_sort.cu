@@ -41,6 +41,10 @@
     #include <cuda_fp16.h>
 #endif
 
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+    #include <cuda_bf16.h>
+#endif
+
 #include <cub/util_allocator.cuh>
 #include <cub/util_math.cuh>
 #include <cub/device/device_radix_sort.cuh>
@@ -696,6 +700,24 @@ void InitializeSolution(
 // Test generation
 //---------------------------------------------------------------------
 
+template <typename T>
+struct UnwrapHalfAndBfloat16 {
+    using Type = T;
+};
+
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
+template <>
+struct UnwrapHalfAndBfloat16<half_t> {
+    using Type = __half;
+};
+#endif
+
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+template <>
+struct UnwrapHalfAndBfloat16<bfloat16_t> {
+    using Type = __nv_bfloat16;
+};
+#endif
 
 /**
  * Test DeviceRadixSort
@@ -720,11 +742,7 @@ void Test(
     ValueT               *h_reference_values)
 {
     // Key alias type
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
-    typedef typename If<Equals<KeyT, half_t>::VALUE, __half, KeyT>::Type KeyAliasT;
-#else
-    typedef KeyT KeyAliasT;
-#endif
+    using KeyAliasT = typename UnwrapHalfAndBfloat16<KeyT>::Type;
 
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
@@ -1305,6 +1323,9 @@ int main(int argc, char** argv)
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
     Test<CUB,           half_t,             NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
 #endif
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+    Test<CUB,           bfloat16_t,         NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+#endif
     Test<CUB,           float,              NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
     Test<CUB,           double,             NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
 
@@ -1362,7 +1383,10 @@ int main(int argc, char** argv)
         TestGen<unsigned long long>   (num_items, num_segments);
 
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
-        TestGen<half_t>                (num_items, num_segments);
+        TestGen<half_t>               (num_items, num_segments);
+#endif
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+        TestGen<bfloat16_t>           (num_items, num_segments);
 #endif
         TestGen<float>                (num_items, num_segments);
 
