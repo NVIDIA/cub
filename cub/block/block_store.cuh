@@ -600,6 +600,12 @@ private:
         /// Shared memory storage layout type
         typedef NullType TempStorage;
 
+        /// Alias wrapper allowing storage to be unioned
+        struct TempStorage : Uninitialized<_TempStorage> {};
+
+        /// Thread reference to shared storage
+        _TempStorage &temp_storage;
+
         /// Linear thread-id
         int linear_tid;
 
