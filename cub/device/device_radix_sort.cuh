@@ -65,6 +65,13 @@ namespace cub {
  * (<tt>unsigned char</tt>, \p int, \p double, etc.) as well as CUDA's \p __half
  * half-precision floating-point type.
  *
+ * \par Floating-Point Special Cases
+ *
+ * - Positive and negative zeros are considered equivalent, and will be treated
+ *   as such in the output.
+ * - No special handling is implemented for NaN values; these are sorted
+ *   according to their bit representations after any transformations.
+ *
  * \par Transformations
  * Although the direct radix sorting method can only be applied to unsigned
  * integral types, DeviceRadixSort is able to sort signed and floating-point
