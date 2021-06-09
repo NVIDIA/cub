@@ -729,7 +729,7 @@ private:
 
         /// Constructor
         __device__ __forceinline__ LoadInternal(
-            TempStorage &temp_storage,
+            TempStorage &/*temp_storage*/,
             int linear_tid)
         :
             linear_tid(linear_tid)

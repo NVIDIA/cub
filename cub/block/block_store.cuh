@@ -608,7 +608,6 @@ private:
             TempStorage &/*temp_storage*/,
             int linear_tid)
         :
-            temp_storage(temp_storage.Alias()),
             linear_tid(linear_tid)
         {}
 
