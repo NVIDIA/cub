@@ -42,18 +42,6 @@
 #include "../util_debug.cuh"
 #include "../config.cuh"
 
-// This class needs to go through a deprecation cycle and be removed, as the
-// underlying cudaBindTexture / cudaUnbindTexture APIs are deprecated.
-// See issue NVIDIA/cub#191.
-// Turn off deprecation warnings when compiling this file until then.
-#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
-#pragma warning(disable:4996)
-#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
-      CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#endif
-
 #if (CUDART_VERSION >= 5050) || defined(DOXYGEN_ACTIVE)  // This iterator is compatible with CUDA 5.5 and newer
 
 #if (THRUST_VERSION >= 100700)    // This iterator is compatible with Thrust API 1.7 and newer
@@ -79,8 +67,21 @@ namespace {
 
 /// Global texture reference specialized by type
 template <typename T>
-struct IteratorTexRef
+struct CUB_DEPRECATED IteratorTexRef
 {
+
+// This class uses the deprecated cudaBindTexture / cudaUnbindTexture APIs.
+// See issue NVIDIA/cub#191.
+// Turn off deprecation warnings when compiling class implementation in favor
+// of deprecating TexRefInputIterator instead.
+#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
+#pragma warning(disable:4996)
+#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
+      CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
     /// And by unique ID
     template <int UNIQUE_ID>
     struct TexId
@@ -143,6 +144,13 @@ template <typename  T>
 template <int       UNIQUE_ID>
 typename IteratorTexRef<T>::template TexId<UNIQUE_ID>::TexRef IteratorTexRef<T>::template TexId<UNIQUE_ID>::ref = 0;
 
+// Re-enable deprecation warnings:
+#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
+#pragma warning(default:4996)
+#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
+      CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
+#pragma GCC diagnostic pop
+#endif
 
 } // Anonymous namespace
 
@@ -161,6 +169,9 @@ typename IteratorTexRef<T>::template TexId<UNIQUE_ID>::TexRef IteratorTexRef<T>:
 /**
  * \brief A random-access input wrapper for dereferencing array values through texture cache.  Uses older Tesla/Fermi-style texture references.
  *
+ * \deprecated [Since 1.13.0] The CUDA texture management APIs used by
+ * TexRefInputIterator are deprecated. Use cub::TexObjInputIterator instead.
+ *
  * \par Overview
  * - TexRefInputIterator wraps a native device pointer of type <tt>ValueType*</tt>. References
  *   to elements are to be loaded through texture cache.
@@ -176,7 +187,6 @@ typename IteratorTexRef<T>::template TexId<UNIQUE_ID>::TexRef IteratorTexRef<T>:
  *   created by the host thread and used by a top-level kernel (i.e. the one which is launched
  *   from the host).
  * - Compatible with Thrust API v1.7 or newer.
- * - Compatible with CUDA toolkit v5.5 or newer.
  *
  * \par Snippet
  * The code snippet below illustrates the use of \p TexRefInputIterator to
@@ -212,8 +222,21 @@ template <
     typename    T,
     int         UNIQUE_ID,
     typename    OffsetT = ptrdiff_t>
-class TexRefInputIterator
+class CUB_DEPRECATED TexRefInputIterator
 {
+
+// This class uses the deprecated cudaBindTexture / cudaUnbindTexture APIs.
+// See issue NVIDIA/cub#191.
+// Turn off deprecation warnings when compiling class implementation in favor
+// of deprecating TexRefInputIterator instead.
+#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
+#pragma warning(disable:4996)
+#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
+      CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
 public:
 
     // Required iterator traits
@@ -379,6 +402,14 @@ public:
         return os;
     }
 
+// Re-enable deprecation warnings:
+#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
+#pragma warning(default:4996)
+#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
+      CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
+#pragma GCC diagnostic pop
+#endif
+
 };
 
 
@@ -389,11 +420,3 @@ public:
 CUB_NS_POSTFIX  // Optional outer namespace(s)
 
 #endif // CUDART_VERSION
-
-// Re-enable deprecation warnings:
-#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
-#pragma warning(default:4996)
-#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
-      CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
-#pragma GCC diagnostic pop
-#endif

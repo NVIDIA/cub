@@ -77,7 +77,7 @@ namespace cub {
  * - Compatible with Thrust API v1.7 or newer.
  *
  * \par Snippet
- * The code snippet below illustrates the use of \p TexRefInputIterator to
+ * The code snippet below illustrates the use of \p TexObjInputIterator to
  * dereference a device array of doubles through texture cache.
  * \par
  * \code
