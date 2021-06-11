@@ -473,6 +473,18 @@ enum BlockLoadAlgorithm
     BLOCK_LOAD_DIRECT,
 
     /**
+    * \par Overview
+    *
+    * A [<em>striped arrangement</em>](index.html#sec5sec3) of data is read
+    * directly from memory.
+    *
+    * \par Performance Considerations
+    * - The utilization of memory transactions (coalescing) decreases as the
+    *   access stride between threads increases (i.e., the number items per thread).
+    */
+    BLOCK_LOAD_STRIPED,
+
+    /**
      * \par Overview
      *
      * A [<em>blocked arrangement</em>](index.html#sec5sec3) of data is read
@@ -507,7 +519,6 @@ enum BlockLoadAlgorithm
      */
     BLOCK_LOAD_TRANSPOSE,
 
-
     /**
      * \par Overview
      *
@@ -527,7 +538,6 @@ enum BlockLoadAlgorithm
      *   BLOCK_LOAD_WARP_TRANSPOSE_TIMESLICED alternative.
      */
     BLOCK_LOAD_WARP_TRANSPOSE,
-
 
     /**
      * \par Overview
@@ -571,6 +581,8 @@ enum BlockLoadAlgorithm
  *   performance policies for different architectures, data types, granularity sizes, etc.
  * - BlockLoad can be optionally specialized by different data movement strategies:
  *   -# <b>cub::BLOCK_LOAD_DIRECT</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3)
+ *      of data is read directly from memory.  [More...](\ref cub::BlockLoadAlgorithm)
+*    -# <b>cub::BLOCK_LOAD_STRIPED,</b>.  A [<em>striped arrangement</em>](index.html#sec5sec3)
  *      of data is read directly from memory.  [More...](\ref cub::BlockLoadAlgorithm)
  *   -# <b>cub::BLOCK_LOAD_VECTORIZE</b>.  A [<em>blocked arrangement</em>](index.html#sec5sec3)
  *      of data is read directly from memory using CUDA's built-in vectorized loads as a
@@ -698,6 +710,59 @@ private:
             DefaultT        oob_default)                    ///< [in] Default value to assign out-of-bound items
         {
             LoadDirectBlocked(linear_tid, block_itr, items, valid_items, oob_default);
+        }
+
+    };
+
+
+    /**
+    * BLOCK_LOAD_STRIPED specialization of load helper
+    */
+    template <int DUMMY>
+    struct LoadInternal<BLOCK_LOAD_STRIPED, DUMMY>
+    {
+        /// Shared memory storage layout type
+        typedef NullType TempStorage;
+
+        /// Linear thread-id
+        int linear_tid;
+
+        /// Constructor
+        __device__ __forceinline__ LoadInternal(
+            TempStorage &/*temp_storage*/,
+            int linear_tid)
+        :
+            linear_tid(linear_tid)
+        {}
+
+        /// Load a linear segment of items from memory
+        template <typename InputIteratorT>
+        __device__ __forceinline__ void Load(
+            InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputT          (&items)[ITEMS_PER_THREAD])     ///< [out] Data to load{
+        {
+            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items);
+        }
+
+        /// Load a linear segment of items from memory, guarded by range
+        template <typename InputIteratorT>
+        __device__ __forceinline__ void Load(
+            InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputT          (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
+            int             valid_items)                    ///< [in] Number of valid items to load
+        {
+            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items);
+        }
+
+        /// Load a linear segment of items from memory, guarded by range, with a fall-back assignment of out-of-bound elements
+        template <typename InputIteratorT, typename DefaultT>
+        __device__ __forceinline__ void Load(
+            InputIteratorT  block_itr,                      ///< [in] The thread block's base input iterator for loading from
+            InputT          (&items)[ITEMS_PER_THREAD],     ///< [out] Data to load
+            int             valid_items,                    ///< [in] Number of valid items to load
+            DefaultT        oob_default)                    ///< [in] Default value to assign out-of-bound items
+        {
+            LoadDirectStriped<BLOCK_THREADS>(linear_tid, block_itr, items, valid_items, oob_default);
         }
 
     };
