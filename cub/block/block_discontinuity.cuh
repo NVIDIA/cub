@@ -747,13 +747,13 @@ public:
         T preds[ITEMS_PER_THREAD];
 
         // Set flag for first thread-item
-        preds[0] = temp_storage.last_items[linear_tid - 1];
         if (linear_tid == 0)
         {
             head_flags[0] = 1;
         }
         else
         {
+            preds[0] = temp_storage.last_items[linear_tid - 1];
             head_flags[0] = ApplyOp<FlagOp>::FlagT(
                 flag_op,
                 preds[0],
