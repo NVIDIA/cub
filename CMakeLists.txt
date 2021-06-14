@@ -60,8 +60,18 @@ option(CUB_ENABLE_CPP_DIALECT_IN_NAMES
   "Include C++ dialect information in target/object/etc names."
   ON
 )
-
 mark_as_advanced(CUB_ENABLE_CPP_DIALECT_IN_NAMES)
+
+# By default, suppress deprecation warnings when building our test suite,
+# since we'll need to test deprecated APIs with `-Werror`. This option is only
+# used when CUB is built stand-alone; otherwise the Thrust option has the same
+# effect.
+if (NOT CUB_IN_THRUST)
+  option(CUB_IGNORE_DEPRECATED_API
+    "Suppress warnings about deprecated Thrust/CUB API."
+    ON
+  )
+endif()
 
 # Check if we're actually building anything before continuing. If not, no need
 # to search for deps, etc. This is a common approach for packagers that just

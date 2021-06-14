@@ -77,7 +77,7 @@ namespace cub {
  * - Compatible with Thrust API v1.7 or newer.
  *
  * \par Snippet
- * The code snippet below illustrates the use of \p TexRefInputIterator to
+ * The code snippet below illustrates the use of \p TexObjInputIterator to
  * dereference a device array of doubles through texture cache.
  * \par
  * \code
@@ -208,6 +208,11 @@ public:
             #if CUB_INCLUDE_HOST_CODE
                 // Simply dereference the pointer on the host
                 return ptr[tex_offset];
+            #else
+                // Never executed, just need a return value for this codepath.
+                // The `reference` type is actually just T, so we can fake this
+                // easily.
+                return reference{};
             #endif
         } else {
             #if CUB_INCLUDE_DEVICE_CODE

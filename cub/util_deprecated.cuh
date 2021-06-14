@@ -33,8 +33,17 @@
 #pragma once
 
 #include "util_compiler.cuh"
+#include "util_cpp_dialect.cuh"
 
-#if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
+#if defined(THRUST_IGNORE_DEPRECATED_API) && !defined(CUB_IGNORE_DEPRECATED_API)
+#  define CUB_IGNORE_DEPRECATED_API
+#endif
+
+#ifdef CUB_IGNORE_DEPRECATED_API
+#  define CUB_DEPRECATED
+#elif CUB_CPP_DIALECT >= 2014
+#  define CUB_DEPRECATED [[deprecated]]
+#elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
 #  define CUB_DEPRECATED __declspec(deprecated)
 #elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
 #  define CUB_DEPRECATED __attribute__((deprecated))
@@ -43,4 +52,3 @@
 #else
 #  define CUB_DEPRECATED
 #endif
-

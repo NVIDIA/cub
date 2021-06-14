@@ -44,7 +44,7 @@
 #include "../thread/thread_operators.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
 #include "../iterator/counting_input_iterator.cuh"
-#include "../iterator/tex_ref_input_iterator.cuh"
+#include "../iterator/tex_obj_input_iterator.cuh"
 
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
@@ -109,7 +109,7 @@ struct SpmvParams
     ValueT          alpha;               ///< Alpha multiplicand
     ValueT          beta;                ///< Beta addend-multiplicand
 
-    TexRefInputIterator<ValueT, 66778899, OffsetT>  t_vector_x;
+    TexObjInputIterator<ValueT, OffsetT>  t_vector_x;
 };
 
 

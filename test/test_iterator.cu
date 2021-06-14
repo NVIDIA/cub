@@ -629,7 +629,7 @@ void TestTexTransform()
     h_reference[7] = op(h_data[0]);          // Value at offset 0;
 
     // Create and bind texture iterator
-    typedef TexRefInputIterator<T, __LINE__> TextureIterator;
+    typedef TexObjInputIterator<T> TextureIterator;
 
     TextureIterator d_tex_itr;
     CubDebugExit(d_tex_itr.BindTexture((CastT*) d_data, sizeof(T) * TEST_VALUES));
