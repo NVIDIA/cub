@@ -1,3 +1,67 @@
+# CUB 1.13.0 (NVIDIA HPC SDK 21.7)
+
+CUB 1.13.0 is the major release accompanying the NVIDIA HPC SDK 21.7 release.
+
+## Breaking Changes
+
+- NVIDIA/cub#320: Deprecated `cub::TexRefInputIterator<T, UNIQUE_ID>`. Use
+  `cub::TexObjInputIterator<T>` as a replacement.
+
+## New Features
+
+- NVIDIA/cub#274: Add `BLOCK_LOAD_STRIPED` and `BLOCK_STORE_STRIPED`
+  functionality to `cub::BlockLoadAlgorithm` and `cub::BlockStoreAlgorithm`.
+  Thanks to Matthew Nicely (@mnicely) for this contribution.
+- NVIDIA/cub#291: `cub::DeviceSegmentedRadixSort` and
+  `cub::DeviceSegmentedReduce` now support different types for begin/end
+  offset iterators. Thanks to Sergey Pavlov (@psvvsp) for this contribution.
+- NVIDIA/cub#306: Add `bfloat16` support to `cub::DeviceRadixSort`. Thanks to
+  Xiang Gao (@zasdfgbnm) for this contribution.
+- NVIDIA/cub#320: Introduce a new `CUB_IGNORE_DEPRECATED_API` macro that
+  disables deprecation warnings on Thrust and CUB APIs.
+
+## Bug Fixes
+
+- NVIDIA/cub#277: Fixed sanitizer warnings in `RadixSortScanBinsKernels`. Thanks
+  to Andy Adinets (@canonizer) for this contribution.
+- NVIDIA/cub#287: `cub::DeviceHistogram` now correctly handles cases
+  where `OffsetT` is not an `int`. Thanks to Dominique LaSalle (@nv-dlasalle)
+  for this contribution.
+- NVIDIA/cub#311: Fixed several bugs and added tests for the `cub::BlockShuffle`
+  collective operations.
+- NVIDIA/cub#312: Eliminate unnecessary kernel instantiations when
+  compiling `cub::DeviceScan`. Thanks to Elias Stehle (@elstehle) for this
+  contribution.
+- NVIDIA/cub#319: Fixed out-of-bounds memory access on debugging builds
+  of `cub::BlockDiscontinuity::FlagHeadsAndTails`.
+- NVIDIA/cub#320: Fixed harmless missing return statement warning in
+  unreachable `cub::TexObjInputIterator` code path.
+
+## Other Enhancements
+
+- Several documentation fixes are included in this release.
+    - NVIDIA/cub#275: Fixed comments describing the `cub::If` and `cub::Equals`
+      utilities. Thanks to Rukshan Jayasekara (@rukshan99) for this
+      contribution.
+    - NVIDIA/cub#290: Documented that `cub::DeviceSegmentedReduce` will produce
+      consistent results run-to-run on the same device for pseudo-associated
+      reduction operators. Thanks to Himanshu (@himanshu007-creator) for this
+      contribution.
+    - NVIDIA/cub#298: `CONTRIBUTING.md` now refers to Thrust's build
+      instructions for developer builds, which is the preferred way to build the
+      CUB test harness. Thanks to Xiang Gao (@zasdfgbnm) for contributing.
+    - NVIDIA/cub#301: Expand `cub::DeviceScan` documentation to include in-place
+      support and add tests. Thanks to Xiang Gao (@zasdfgbnm) for this
+      contribution.
+    - NVIDIA/cub#307: Expand `cub::DeviceRadixSort` and `cub::BlockRadixSort`
+      documentation to clarify stability, in-place support, and type-specific
+      bitwise transformations. Thanks to Himanshu (@himanshu007-creator) for
+      contributing.
+    - NVIDIA/cub#316: Move `WARP_TIME_SLICING` documentation to the correct
+      location. Thanks to Peter Han (@peter9606) for this contribution.
+    - NVIDIA/cub#321: Update URLs from deprecated github.com to preferred
+      github.io. Thanks to Lilo Huang (@lilohuang) for this contribution.
+
 # CUB 1.12.1 (CUDA Toolkit 11.4)
 
 CUB 1.12.1 is a trivial patch release that slightly changes the phrasing of
