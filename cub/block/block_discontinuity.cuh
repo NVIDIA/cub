@@ -70,7 +70,7 @@ CUB_NAMESPACE_BEGIN
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+ *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
  *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
  *
  *     // Allocate shared memory for BlockDiscontinuity
@@ -382,7 +382,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
      *
      *     // Allocate shared memory for BlockDiscontinuity
@@ -446,7 +446,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
      *
      *     // Allocate shared memory for BlockDiscontinuity
@@ -524,7 +524,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
      *
      *     // Allocate shared memory for BlockDiscontinuity
@@ -603,7 +603,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
      *
      *     // Allocate shared memory for BlockDiscontinuity
@@ -702,7 +702,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
      *
      *     // Allocate shared memory for BlockDiscontinuity
@@ -814,7 +814,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
      *
      *     // Allocate shared memory for BlockDiscontinuity
@@ -932,7 +932,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
      *
      *     // Allocate shared memory for BlockDiscontinuity
@@ -1051,7 +1051,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads on type int
+     *     // Specialize BlockDiscontinuity for a 1D block of 128 threads of type int
      *     typedef cub::BlockDiscontinuity<int, 128> BlockDiscontinuity;
      *
      *     // Allocate shared memory for BlockDiscontinuity

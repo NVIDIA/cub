@@ -191,7 +191,7 @@ enum BlockReduceAlgorithm
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Specialize BlockReduce for a 1D block of 128 threads on type int
+ *     // Specialize BlockReduce for a 1D block of 128 threads of type int
  *     typedef cub::BlockReduce<int, 128> BlockReduce;
  *
  *     // Allocate shared memory for BlockReduce
@@ -328,7 +328,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads of type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -372,7 +372,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads of type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -420,7 +420,7 @@ public:
      *
      * __global__ void ExampleKernel(int num_valid, ...)
      * {
-     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads of type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -479,7 +479,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads of type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -519,7 +519,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads of type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce
@@ -563,7 +563,7 @@ public:
      *
      * __global__ void ExampleKernel(int num_valid, ...)
      * {
-     *     // Specialize BlockReduce for a 1D block of 128 threads on type int
+     *     // Specialize BlockReduce for a 1D block of 128 threads of type int
      *     typedef cub::BlockReduce<int, 128> BlockReduce;
      *
      *     // Allocate shared memory for BlockReduce

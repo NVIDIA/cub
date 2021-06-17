@@ -38,6 +38,7 @@
 
 // Block
 #include "block/block_histogram.cuh"
+#include "block/block_adjacent_difference.cuh"
 #include "block/block_discontinuity.cuh"
 #include "block/block_exchange.cuh"
 #include "block/block_load.cuh"
@@ -62,6 +63,7 @@
 #include "device/device_segmented_reduce.cuh"
 #include "device/device_select.cuh"
 #include "device/device_spmv.cuh"
+#include "device/device_adjacent_difference.cuh"
 
 // Grid
 //#include "grid/grid_barrier.cuh"
