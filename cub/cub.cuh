@@ -60,6 +60,7 @@
 #include "device/device_segmented_reduce.cuh"
 #include "device/device_select.cuh"
 #include "device/device_spmv.cuh"
+#include "device/device_adjacent_difference.cuh"
 
 // Grid
 //#include "grid/grid_barrier.cuh"
