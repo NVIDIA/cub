@@ -40,11 +40,7 @@
 #include "dispatch/dispatch_radix_sort.cuh"
 #include "../config.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /**
@@ -904,7 +900,6 @@ struct DeviceRadixSort
  * \example example_device_radix_sort.cu
  */
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 
 

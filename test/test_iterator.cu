@@ -214,9 +214,9 @@ void TestConstant(T base)
         h_copy[i] = d_itr[i];
 
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * copy_items));
-    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
 
-    thrust::copy_if(d_itr, d_itr + copy_items, d_copy_wrapper, SelectOp());
+    THRUST_NS_QUALIFIER::copy_if(d_itr, d_itr + copy_items, d_copy_wrapper, SelectOp());
 
     int compare = CompareDeviceResults(h_copy, d_copy, copy_items, g_verbose, g_verbose);
     printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
@@ -270,8 +270,8 @@ void TestCounting(T base)
         h_copy[i] = d_itr[i];
 
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * copy_items));
-    thrust::device_ptr<T> d_copy_wrapper(d_copy);
-    thrust::copy_if(d_itr, d_itr + copy_items, d_copy_wrapper, SelectOp());
+    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
+    THRUST_NS_QUALIFIER::copy_if(d_itr, d_itr + copy_items, d_copy_wrapper, SelectOp());
 
     int compare = CompareDeviceResults(h_copy, d_copy, copy_items, g_verbose, g_verbose);
     printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
@@ -340,7 +340,7 @@ void TestModified()
     CacheModifiedInputIterator<LOAD_CG, T> d_in_itr((CastT*) d_data);
     CacheModifiedOutputIterator<STORE_CG, T> d_out_itr((CastT*) d_copy);
 
-    thrust::copy_if(d_in_itr, d_in_itr + TEST_VALUES, d_out_itr, SelectOp());
+    THRUST_NS_QUALIFIER::copy_if(d_in_itr, d_in_itr + TEST_VALUES, d_out_itr, SelectOp());
 
     int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
     printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
@@ -409,9 +409,9 @@ void TestTransform()
 
     T *d_copy = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
 
-    thrust::copy_if(d_itr, d_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+    THRUST_NS_QUALIFIER::copy_if(d_itr, d_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
 
     int compare = CompareDeviceResults(h_copy, d_copy, TEST_VALUES, g_verbose, g_verbose);
     printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
@@ -484,10 +484,10 @@ void TestTexObj()
 
     T *d_copy = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
 
     CubDebugExit(cudaMemset(d_copy, 0, sizeof(T) * TEST_VALUES));
-    thrust::copy_if(d_obj_itr, d_obj_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+    THRUST_NS_QUALIFIER::copy_if(d_obj_itr, d_obj_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
 
     int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
     printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
@@ -568,10 +568,10 @@ void TestTexRef()
 
     T *d_copy = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
 
     CubDebugExit(cudaMemset(d_copy, 0, sizeof(T) * TEST_VALUES));
-    thrust::copy_if(d_ref_itr, d_ref_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+    THRUST_NS_QUALIFIER::copy_if(d_ref_itr, d_ref_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
 
     int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
     printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
@@ -651,9 +651,9 @@ void TestTexTransform()
 
     T *d_copy = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-    thrust::device_ptr<T> d_copy_wrapper(d_copy);
+    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
 
-    thrust::copy_if(xform_itr, xform_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
+    THRUST_NS_QUALIFIER::copy_if(xform_itr, xform_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
 
     int compare = CompareDeviceResults(h_copy, d_copy, TEST_VALUES, g_verbose, g_verbose);
     printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");

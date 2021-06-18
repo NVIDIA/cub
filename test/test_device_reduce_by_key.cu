@@ -182,17 +182,17 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<KeyInputT> d_keys_in_wrapper(d_keys_in);
-        thrust::device_ptr<KeyOutputT> d_keys_out_wrapper(d_keys_out);
+        THRUST_NS_QUALIFIER::device_ptr<KeyInputT> d_keys_in_wrapper(d_keys_in);
+        THRUST_NS_QUALIFIER::device_ptr<KeyOutputT> d_keys_out_wrapper(d_keys_out);
 
-        thrust::device_ptr<ValueInputT> d_values_in_wrapper(d_values_in);
-        thrust::device_ptr<ValueOuputT> d_values_out_wrapper(d_values_out);
+        THRUST_NS_QUALIFIER::device_ptr<ValueInputT> d_values_in_wrapper(d_values_in);
+        THRUST_NS_QUALIFIER::device_ptr<ValueOuputT> d_values_out_wrapper(d_values_out);
 
-        thrust::pair<thrust::device_ptr<KeyOutputT>, thrust::device_ptr<ValueOuputT> > d_out_ends;
+        THRUST_NS_QUALIFIER::pair<THRUST_NS_QUALIFIER::device_ptr<KeyOutputT>, THRUST_NS_QUALIFIER::device_ptr<ValueOuputT> > d_out_ends;
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            d_out_ends = thrust::reduce_by_key(
+            d_out_ends = THRUST_NS_QUALIFIER::reduce_by_key(
                 d_keys_in_wrapper,
                 d_keys_in_wrapper + num_items,
                 d_values_in_wrapper,

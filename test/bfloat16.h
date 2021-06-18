@@ -224,15 +224,18 @@ std::ostream& operator<<(std::ostream &out, const __nv_bfloat16 &x)
  ******************************************************************************/
 
 template <>
-struct cub::FpLimits<bfloat16_t>
+struct CUB_NS_QUALIFIER::FpLimits<bfloat16_t>
 {
     static __host__ __device__ __forceinline__ bfloat16_t Max() { return bfloat16_t::max(); }
 
     static __host__ __device__ __forceinline__ bfloat16_t Lowest() { return bfloat16_t::lowest(); }
 };
 
-template <> struct cub::NumericTraits<bfloat16_t> : cub::BaseTraits<FLOATING_POINT, true, false, unsigned short, bfloat16_t> {};
-
+template <>
+struct CUB_NS_QUALIFIER::NumericTraits<bfloat16_t>
+    : CUB_NS_QUALIFIER::
+        BaseTraits<FLOATING_POINT, true, false, unsigned short, bfloat16_t>
+{};
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

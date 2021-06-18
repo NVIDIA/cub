@@ -417,11 +417,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<KeyT> d_keys_wrapper(d_keys.Current());
+        THRUST_NS_QUALIFIER::device_ptr<KeyT> d_keys_wrapper(d_keys.Current());
 
-        if (IS_DESCENDING) thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
-        thrust::sort(d_keys_wrapper, d_keys_wrapper + num_items);
-        if (IS_DESCENDING) thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
+        if (IS_DESCENDING) THRUST_NS_QUALIFIER::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
+        THRUST_NS_QUALIFIER::sort(d_keys_wrapper, d_keys_wrapper + num_items);
+        if (IS_DESCENDING) THRUST_NS_QUALIFIER::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
     }
 
     return cudaSuccess;
@@ -459,19 +459,19 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<KeyT>     d_keys_wrapper(d_keys.Current());
-        thrust::device_ptr<ValueT>   d_values_wrapper(d_values.Current());
+        THRUST_NS_QUALIFIER::device_ptr<KeyT>     d_keys_wrapper(d_keys.Current());
+        THRUST_NS_QUALIFIER::device_ptr<ValueT>   d_values_wrapper(d_values.Current());
 
         if (IS_DESCENDING) {
-            thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
-            thrust::reverse(d_values_wrapper, d_values_wrapper + num_items);
+            THRUST_NS_QUALIFIER::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
+            THRUST_NS_QUALIFIER::reverse(d_values_wrapper, d_values_wrapper + num_items);
         }
 
-        thrust::sort_by_key(d_keys_wrapper, d_keys_wrapper + num_items, d_values_wrapper);
+        THRUST_NS_QUALIFIER::sort_by_key(d_keys_wrapper, d_keys_wrapper + num_items, d_values_wrapper);
 
         if (IS_DESCENDING) {
-            thrust::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
-            thrust::reverse(d_values_wrapper, d_values_wrapper + num_items);
+            THRUST_NS_QUALIFIER::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
+            THRUST_NS_QUALIFIER::reverse(d_values_wrapper, d_values_wrapper + num_items);
         }
     }
 

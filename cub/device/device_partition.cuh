@@ -40,11 +40,7 @@
 #include "dispatch/dispatch_select_if.cuh"
 #include "../config.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /**
@@ -267,7 +263,6 @@ struct DevicePartition
  * \example example_device_partition_if.cu
  */
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 
 

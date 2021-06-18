@@ -47,11 +47,7 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 /******************************************************************************
  * Kernel entry points
@@ -334,7 +330,7 @@ struct DispatchReduceByKey
             if (debug_synchronous) _CubLog("Invoking init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke init_kernel to initialize tile descriptors
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 init_grid_size, INIT_KERNEL_THREADS, 0, stream
             ).doit(init_kernel,
                 tile_state,
@@ -371,7 +367,7 @@ struct DispatchReduceByKey
                     start_tile, scan_grid_size, reduce_by_key_config.block_threads, (long long) stream, reduce_by_key_config.items_per_thread, reduce_by_key_sm_occupancy);
 
                 // Invoke reduce_by_key_kernel
-                thrust::cuda_cub::launcher::triple_chevron(
+                THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                     scan_grid_size, reduce_by_key_config.block_threads, 0,
                     stream
                 ).doit(reduce_by_key_kernel,
@@ -455,7 +451,6 @@ struct DispatchReduceByKey
     }
 };
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 
 

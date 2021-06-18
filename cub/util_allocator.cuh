@@ -42,11 +42,7 @@
 #include "host/mutex.cuh"
 #include <math.h>
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /**
@@ -718,5 +714,4 @@ struct CachingDeviceAllocator
 
 /** @} */       // end group UtilMgmt
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END

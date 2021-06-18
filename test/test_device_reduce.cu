@@ -564,11 +564,11 @@ cudaError_t Dispatch(
         OutputT init;
         CubDebugExit(cudaMemcpy(&init, d_in + 0, sizeof(OutputT), cudaMemcpyDeviceToHost));
 
-        thrust::device_ptr<OutputT> d_in_wrapper(d_in);
+        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_in_wrapper(d_in);
         OutputT retval;
         for (int i = 0; i < timing_iterations; ++i)
         {
-            retval = thrust::reduce(d_in_wrapper, d_in_wrapper + num_items, init, reduction_op);
+            retval = THRUST_NS_QUALIFIER::reduce(d_in_wrapper, d_in_wrapper + num_items, init, reduction_op);
         }
 
         if (!Equals<OutputIteratorT, DiscardOutputIterator<int> >::VALUE)
@@ -611,11 +611,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<OutputT> d_in_wrapper(d_in);
+        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_in_wrapper(d_in);
         OutputT retval;
         for (int i = 0; i < timing_iterations; ++i)
         {
-            retval = thrust::reduce(d_in_wrapper, d_in_wrapper + num_items);
+            retval = THRUST_NS_QUALIFIER::reduce(d_in_wrapper, d_in_wrapper + num_items);
         }
 
         if (!Equals<OutputIteratorT, DiscardOutputIterator<int> >::VALUE)

@@ -39,11 +39,7 @@
 #include "../util_type.cuh"
 #include "../util_ptx.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /******************************************************************************
@@ -2136,6 +2132,5 @@ public:
  * \example example_block_scan.cu
  */
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 

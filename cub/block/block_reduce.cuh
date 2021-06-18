@@ -41,11 +41,7 @@
 #include "../util_type.cuh"
 #include "../thread/thread_operators.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 
@@ -602,6 +598,5 @@ public:
  * \example example_block_reduce.cu
  */
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 

@@ -26,6 +26,11 @@ foreach(cub_target IN LISTS CUB_TARGETS)
   set(headertest_target ${config_prefix}.headers)
   add_library(${headertest_target} OBJECT ${headertest_srcs})
   target_link_libraries(${headertest_target} PUBLIC ${cub_target})
+  # Wrap Thrust/CUB in a custom namespace to check proper use of ns macros:
+  target_compile_definitions(${headertest_target} PRIVATE
+    "THRUST_WRAPPED_NAMESPACE=wrapped_thrust"
+    "CUB_WRAPPED_NAMESPACE=wrapped_cub"
+  )
   cub_clone_target_properties(${headertest_target} ${cub_target})
 
   add_dependencies(cub.all.headers ${headertest_target})

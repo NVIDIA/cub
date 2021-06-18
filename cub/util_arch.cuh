@@ -37,11 +37,7 @@
 #include "util_namespace.cuh"
 #include "util_macro.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
@@ -183,5 +179,4 @@ struct MemBoundScaling
 
 #endif  // Do not document
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END

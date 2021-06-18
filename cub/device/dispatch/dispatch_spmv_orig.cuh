@@ -50,11 +50,7 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /******************************************************************************
@@ -518,7 +514,7 @@ struct DispatchSpmv
                     degen_col_kernel_grid_size, degen_col_kernel_block_size, (long long) stream);
 
                 // Invoke spmv_search_kernel
-                thrust::cuda_cub::launcher::triple_chevron(
+                THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                     degen_col_kernel_grid_size, degen_col_kernel_block_size, 0,
                     stream
                 ).doit(spmv_1col_kernel,
@@ -630,7 +626,7 @@ struct DispatchSpmv
                     search_grid_size, search_block_size, (long long) stream);
 
                 // Invoke spmv_search_kernel
-                thrust::cuda_cub::launcher::triple_chevron(
+                THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                     search_grid_size, search_block_size, 0, stream
                 ).doit(spmv_search_kernel,
                     num_merge_tiles,
@@ -649,7 +645,7 @@ struct DispatchSpmv
                 spmv_grid_size.x, spmv_grid_size.y, spmv_grid_size.z, spmv_config.block_threads, (long long) stream, spmv_config.items_per_thread, spmv_sm_occupancy);
 
             // Invoke spmv_kernel
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 spmv_grid_size, spmv_config.block_threads, 0, stream
             ).doit(spmv_kernel,
                 spmv_params,
@@ -673,7 +669,7 @@ struct DispatchSpmv
                     segment_fixup_grid_size.x, segment_fixup_grid_size.y, segment_fixup_grid_size.z, segment_fixup_config.block_threads, (long long) stream, segment_fixup_config.items_per_thread, segment_fixup_sm_occupancy);
 
                 // Invoke segment_fixup_kernel
-                thrust::cuda_cub::launcher::triple_chevron(
+                THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                     segment_fixup_grid_size, segment_fixup_config.block_threads,
                     0, stream
                 ).doit(segment_fixup_kernel,
@@ -744,7 +740,6 @@ struct DispatchSpmv
 };
 
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 
 
