@@ -48,11 +48,7 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 
@@ -590,7 +586,7 @@ struct DispatchHistogram
                 histogram_init_grid_dims, histogram_init_block_threads, (long long) stream);
 
             // Invoke histogram_init_kernel
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 histogram_init_grid_dims, histogram_init_block_threads, 0,
                 stream
             ).doit(histogram_init_kernel,
@@ -608,7 +604,7 @@ struct DispatchHistogram
                 histogram_sweep_config.block_threads, (long long) stream, histogram_sweep_config.pixels_per_thread, histogram_sweep_sm_occupancy);
 
             // Invoke histogram_sweep_kernel
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 sweep_grid_dims, histogram_sweep_config.block_threads, 0, stream
             ).doit(histogram_sweep_kernel,
                 d_samples,
@@ -1015,7 +1011,6 @@ struct DispatchHistogram
 };
 
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 
 

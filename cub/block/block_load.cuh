@@ -41,11 +41,7 @@
 #include "../util_ptx.cuh"
 #include "../util_type.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 /**
  * \addtogroup UtilIo
@@ -1289,6 +1285,5 @@ public:
 };
 
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 

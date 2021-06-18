@@ -47,11 +47,7 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 /******************************************************************************
  * Kernel entry points
@@ -322,7 +318,7 @@ struct DispatchSelectIf
             if (debug_synchronous) _CubLog("Invoking scan_init_kernel<<<%d, %d, 0, %lld>>>()\n", init_grid_size, INIT_KERNEL_THREADS, (long long) stream);
 
             // Invoke scan_init_kernel to initialize tile descriptors
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 init_grid_size, INIT_KERNEL_THREADS, 0, stream
             ).doit(scan_init_kernel,
                 tile_status,
@@ -361,7 +357,7 @@ struct DispatchSelectIf
                 scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, select_if_config.block_threads, (long long) stream, select_if_config.items_per_thread, range_select_sm_occupancy);
 
             // Invoke select_if_kernel
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 scan_grid_size, select_if_config.block_threads, 0, stream
             ).doit(select_if_kernel,
                 d_in,
@@ -441,7 +437,6 @@ struct DispatchSelectIf
 };
 
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 
 

@@ -143,12 +143,12 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<OutputT> d_out_wrapper_end;
-        thrust::device_ptr<InputT> d_in_wrapper(d_in);
-        thrust::device_ptr<OutputT> d_out_wrapper(d_out);
+        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper_end;
+        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
+        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            d_out_wrapper_end = thrust::unique_copy(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
+            d_out_wrapper_end = THRUST_NS_QUALIFIER::unique_copy(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
         }
 
         OffsetT num_selected = OffsetT(d_out_wrapper_end - d_out_wrapper);

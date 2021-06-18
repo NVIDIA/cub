@@ -41,11 +41,7 @@
 #include "dispatch/dispatch_rle.cuh"
 #include "dispatch/dispatch_reduce_by_key.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /**
@@ -272,7 +268,6 @@ struct DeviceRunLengthEncode
 };
 
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 
 

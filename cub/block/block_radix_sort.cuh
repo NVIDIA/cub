@@ -41,11 +41,7 @@
 #include "../util_ptx.cuh"
 #include "../util_type.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 /**
  * \brief The BlockRadixSort class provides [<em>collective</em>](index.html#sec0) methods for sorting items partitioned across a CUDA thread block using a radix sorting method.  ![](sorting_logo.png)
@@ -898,6 +894,5 @@ public:
  * \example example_block_radix_sort.cu
  */
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 

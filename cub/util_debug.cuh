@@ -40,11 +40,7 @@
 #include "util_namespace.cuh"
 #include "util_arch.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /**
@@ -102,7 +98,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
  * \brief Debug macro
  */
 #ifndef CubDebug
-    #define CubDebug(e) cub::Debug((cudaError_t) (e), __FILE__, __LINE__)
+    #define CubDebug(e) CUB_NS_QUALIFIER::Debug((cudaError_t) (e), __FILE__, __LINE__)
 #endif
 
 
@@ -110,7 +106,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
  * \brief Debug macro with exit
  */
 #ifndef CubDebugExit
-    #define CubDebugExit(e) if (cub::Debug((cudaError_t) (e), __FILE__, __LINE__)) { exit(1); }
+    #define CubDebugExit(e) if (CUB_NS_QUALIFIER::Debug((cudaError_t) (e), __FILE__, __LINE__)) { exit(1); }
 #endif
 
 
@@ -146,9 +142,9 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
         #endif
             }
         #ifndef __CUDA_ARCH__
-            #define _CubLog(format, ...) cub::va_printf(format,__VA_ARGS__);
+            #define _CubLog(format, ...) CUB_NS_QUALIFIER::va_printf(format,__VA_ARGS__);
         #else
-            #define _CubLog(format, ...) cub::va_printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, __VA_ARGS__);
+            #define _CubLog(format, ...) CUB_NS_QUALIFIER::va_printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, __VA_ARGS__);
         #endif
     #endif
 #endif
@@ -158,5 +154,4 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
 
 /** @} */       // end group UtilMgmt
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END

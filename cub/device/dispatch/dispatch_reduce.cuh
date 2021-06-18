@@ -48,11 +48,7 @@
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 /******************************************************************************
  * Kernel entry points
@@ -415,7 +411,7 @@ struct DispatchReduce :
                 ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD);
 
             // Invoke single_reduce_sweep_kernel
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 1, ActivePolicyT::SingleTilePolicy::BLOCK_THREADS, 0, stream
             ).doit(single_tile_kernel,
                 d_in,
@@ -511,7 +507,7 @@ struct DispatchReduce :
                 reduce_config.sm_occupancy);
 
             // Invoke DeviceReduceKernel
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 reduce_grid_size, ActivePolicyT::ReducePolicy::BLOCK_THREADS,
                 0, stream
             ).doit(reduce_kernel,
@@ -534,7 +530,7 @@ struct DispatchReduce :
                 ActivePolicyT::SingleTilePolicy::ITEMS_PER_THREAD);
 
             // Invoke DeviceReduceSingleTileKernel
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 1, ActivePolicyT::SingleTilePolicy::BLOCK_THREADS, 0, stream
             ).doit(single_tile_kernel,
                 d_block_reductions,
@@ -751,7 +747,7 @@ struct DispatchSegmentedReduce :
                 segmented_reduce_config.sm_occupancy);
 
             // Invoke DeviceReduceKernel
-            thrust::cuda_cub::launcher::triple_chevron(
+            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 num_segments,
                 ActivePolicyT::SegmentedReducePolicy::BLOCK_THREADS, 0, stream
             ).doit(segmented_reduce_kernel,
@@ -843,7 +839,6 @@ struct DispatchSegmentedReduce :
 
 
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 
 
