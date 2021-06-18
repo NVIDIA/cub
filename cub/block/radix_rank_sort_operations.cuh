@@ -93,12 +93,14 @@ struct BaseDigitExtractor
 
     static __device__ __forceinline__ UnsignedBits ProcessFloatMinusZero(UnsignedBits key)
     {
-        if (!FLOAT_KEY) return key;
-        
-        UnsignedBits TWIDDLED_MINUS_ZERO_BITS =
-            TraitsT::TwiddleIn(UnsignedBits(1) << UnsignedBits(8 * sizeof(UnsignedBits) - 1));
-        UnsignedBits TWIDDLED_ZERO_BITS = TraitsT::TwiddleIn(0);
-        return key == TWIDDLED_MINUS_ZERO_BITS ? TWIDDLED_ZERO_BITS : key;
+        if (!FLOAT_KEY) {
+            return key;
+        } else {
+            UnsignedBits TWIDDLED_MINUS_ZERO_BITS =
+                TraitsT::TwiddleIn(UnsignedBits(1) << UnsignedBits(8 * sizeof(UnsignedBits) - 1));
+            UnsignedBits TWIDDLED_ZERO_BITS = TraitsT::TwiddleIn(0);
+            return key == TWIDDLED_MINUS_ZERO_BITS ? TWIDDLED_ZERO_BITS : key;
+        }
     }
 };
 
