@@ -765,7 +765,9 @@ auto TestInplace(
     int,
     ScanOpT,
     InitialValueT) -> typename std::enable_if<!std::is_same<decltype(*d_in), OutputT>::value>::type
-{}
+{
+  (void)d_in;
+}
 
 /**
  * Test DeviceScan on pointer type
