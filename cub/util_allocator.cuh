@@ -680,10 +680,11 @@ struct CachingDeviceAllocator
             // Reduce balance and erase entry
             cached_bytes[current_device].free -= begin->bytes;
 
+            cached_blocks.erase(begin);
+
             if (debug) _CubLog("\tDevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
                 current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device].free, (long long) live_blocks.size(), (long long) cached_bytes[current_device].live);
 
-            cached_blocks.erase(begin);
         }
 
         mutex.Unlock();
