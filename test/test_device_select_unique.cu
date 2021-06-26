@@ -85,12 +85,11 @@ cudaError_t Dispatch(
     int                         timing_timing_iterations,
     size_t                      */*d_temp_storage_bytes*/,
     cudaError_t                 */*d_cdp_error*/,
-
-    void*               d_temp_storage,
+    void*                       d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)

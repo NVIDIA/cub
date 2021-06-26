@@ -702,9 +702,9 @@ void Test(
     {
         float   avg_millis          = elapsed_millis / g_timing_iterations;
         float   giga_rate           = float(num_items) / avg_millis / 1000.0f / 1000.0f;
-        int     num_output_items    = (IS_PARTITION) ? num_items : num_selected;
-        int     num_flag_items      = (IS_FLAGGED) ? num_items : 0;
-        size_t  num_bytes           = sizeof(T) * (num_items + num_output_items) + sizeof(FlagT) * num_flag_items;
+        size_t  num_output_items    = (IS_PARTITION) ? num_items : num_selected;
+        size_t  num_flag_items      = (IS_FLAGGED) ? num_items : 0;
+        size_t  num_bytes           = sizeof(T) * (size_t(num_items) + num_output_items) + sizeof(FlagT) * num_flag_items;
         float   giga_bandwidth      = float(num_bytes) / avg_millis / 1000.0f / 1000.0f;
 
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, giga_rate, giga_bandwidth, giga_bandwidth / g_device_giga_bandwidth * 100.0);
