@@ -2,6 +2,17 @@
 
 CUB 1.13.0 is the major release accompanying the NVIDIA HPC SDK 21.7 release.
 
+Notable new features include support for striped data arrangements in block
+load/store utilities, `bfloat16` radix sort support, and fewer restrictions on
+offset iterators in segmented device algorithms. Several bugs
+in `cub::BlockShuffle`, `cub::BlockDiscontinuity`, and `cub::DeviceHistogram`
+have been addressed. The amount of code generated in `cub::DeviceScan` has been
+greatly reduced, leading to significant compile-time improvements when targeting
+multiple PTX architectures.
+
+This release also includes several user-contributed documentation fixes that
+will be reflected in CUB's online documentation in the coming weeks.
+
 ## Breaking Changes
 
 - NVIDIA/cub#320: Deprecated `cub::TexRefInputIterator<T, UNIQUE_ID>`. Use
