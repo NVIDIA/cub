@@ -542,11 +542,10 @@ enum GenMode
  * Initialize value
  */
 template <typename T>
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)
+void InitValue(GenMode gen_mode, T &value, int index = 0)
 {
     switch (gen_mode)
     {
-#if (CUB_PTX_ARCH == 0)
     case RANDOM:
         RandomBits(value);
         break;
@@ -581,7 +580,6 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
         }
         break;
     }
-#endif
      case UNIFORM:
         value = 2;
         break;
@@ -596,18 +594,16 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 /**
  * Initialize value (bool)
  */
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, int index = 0)
+void InitValue(GenMode gen_mode, bool &value, int index = 0)
 {
     switch (gen_mode)
     {
-#if (CUB_PTX_ARCH == 0)
     case RANDOM:
     case RANDOM_BIT:
         char c;
         RandomBits(c, 0, 0, 1);
         value = (c > 0);
         break;
-#endif
      case UNIFORM:
         value = true;
         break;
@@ -622,7 +618,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value
 /**
  * cub::NullType test initialization
  */
-__host__ __device__ __forceinline__ void InitValue(GenMode /* gen_mode */,
+void InitValue(GenMode /* gen_mode */,
 						   cub::NullType &/* value */,
 						   int /* index */ = 0)
 {}
@@ -632,7 +628,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode /* gen_mode */,
  * cub::KeyValuePair<OffsetT, ValueT>test initialization
  */
 template <typename KeyT, typename ValueT>
-__host__ __device__ __forceinline__ void InitValue(
+void InitValue(
     GenMode                             gen_mode,
     cub::KeyValuePair<KeyT, ValueT>&    value,
     int                                 index = 0)
@@ -692,7 +688,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         return (a.x == b.x);                                \
     }                                                       \
     /* Test initialization */                               \
-    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
     }                                                       \
@@ -775,7 +771,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             (a.y == b.y);                                   \
     }                                                       \
     /* Test initialization */                               \
-    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -868,7 +864,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             (a.z == b.z);                                   \
     }                                                       \
     /* Test initialization */                               \
-    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -969,7 +965,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             (a.w == b.w);                                   \
     }                                                       \
     /* Test initialization */                               \
-    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    void InitValue(GenMode gen_mode, T &value, int index = 0)   \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -1150,7 +1146,7 @@ std::ostream& operator<<(std::ostream& os, const TestFoo& val)
 /**
  * TestFoo test initialization
  */
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestFoo &value, int index = 0)
+void InitValue(GenMode gen_mode, TestFoo &value, int index = 0)
 {
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);
@@ -1269,7 +1265,7 @@ std::ostream& operator<<(std::ostream& os, const TestBar& val)
 /**
  * TestBar test initialization
  */
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &value, int index = 0)
+void InitValue(GenMode gen_mode, TestBar &value, int index = 0)
 {
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);
