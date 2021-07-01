@@ -91,13 +91,13 @@ function(cub_build_compiler_targets)
   foreach (cxx_option IN LISTS cxx_compile_options)
     target_compile_options(cub.compiler_interface INTERFACE
       $<$<COMPILE_LANGUAGE:CXX>:${cxx_option}>
-      $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVCXX>>:${cxx_option}>
+      $<$<COMPILE_LANG_AND_ID:CUDA,NVCXX>:${cxx_option}>
       # Only use -Xcompiler with NVCC, not NVC++.
       #
       # CMake can't split genexs, so this can't be formatted better :(
       # This is:
       # if (using CUDA and CUDA_COMPILER is NVCC) add -Xcompiler=opt:
-      $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Xcompiler=${cxx_option}>
+      $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcompiler=${cxx_option}>
     )
   endforeach()
 
@@ -110,11 +110,11 @@ function(cub_build_compiler_targets)
   target_compile_options(cub.compiler_interface INTERFACE
     # If using CUDA w/ NVCC...
     # Display diagnostic numbers.
-    $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Xcudafe=--display_error_number>
+    $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--display_error_number>
     # Promote warnings.
-    $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Xcudafe=--promote_warnings>
+    $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--promote_warnings>
     # Don't complain about deprecated GPU targets.
-    $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Wno-deprecated-gpu-targets>
+    $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Wno-deprecated-gpu-targets>
     # Suppress deprecation warnings in nvcc < 11.5.
     # TexRefInputIterator uses deprecated CUDART APIs, see NVIDIA/cub#191.
     # After 11.5, we will suppress these in-code via pragma, but for older nvcc
