@@ -115,5 +115,10 @@ function(cub_build_compiler_targets)
     $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Xcudafe=--promote_warnings>
     # Don't complain about deprecated GPU targets.
     $<$<AND:$<COMPILE_LANGUAGE:CUDA>,$<CUDA_COMPILER_ID:NVIDIA>>:-Wno-deprecated-gpu-targets>
+    # Suppress deprecation warnings in nvcc < 11.5.
+    # TexRefInputIterator uses deprecated CUDART APIs, see NVIDIA/cub#191.
+    # After 11.5, we will suppress these in-code via pragma, but for older nvcc
+    # we have to use the big hammer:
+    $<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<VERSION_LESS:$<CUDA_COMPILER_VERSION>,11.5>>:-Wno-deprecated-declarations>
   )
 endfunction()
