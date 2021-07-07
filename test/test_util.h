@@ -56,6 +56,7 @@
 #include "cub/util_type.cuh"
 #include "cub/util_macro.cuh"
 #include "cub/util_math.cuh"
+#include "cub/util_ptx.cuh"
 #include "cub/iterator/discard_output_iterator.cuh"
 
 /******************************************************************************
@@ -541,11 +542,13 @@ enum GenMode
 /**
  * Initialize value
  */
+#pragma nv_exec_check_disable
 template <typename T>
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)
 {
     switch (gen_mode)
     {
+      // RandomBits is host-only.
 #if (CUB_PTX_ARCH == 0)
     case RANDOM:
         RandomBits(value);
@@ -581,6 +584,14 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
         }
         break;
     }
+#else
+     case RANDOM:
+     case RANDOM_BIT:
+     case RANDOM_MINUS_PLUS_ZERO:
+         _CubLog("%s\n",
+                 "cub::InitValue cannot generate random numbers on device.");
+         cub::ThreadTrap();
+         break;
 #endif
      case UNIFORM:
         value = 2;
@@ -596,6 +607,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 /**
  * Initialize value (bool)
  */
+#pragma nv_exec_check_disable
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, int index = 0)
 {
     switch (gen_mode)
@@ -606,6 +618,14 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value
         char c;
         RandomBits(c, 0, 0, 1);
         value = (c > 0);
+        break;
+#else
+      case RANDOM:
+      case RANDOM_BIT:
+      case RANDOM_MINUS_PLUS_ZERO:
+        _CubLog("%s\n",
+                "cub::InitValue cannot generate random numbers on device.");
+        cub::ThreadTrap();
         break;
 #endif
      case UNIFORM:
@@ -631,6 +651,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode /* gen_mode */,
 /**
  * cub::KeyValuePair<OffsetT, ValueT>test initialization
  */
+#pragma nv_exec_check_disable
 template <typename KeyT, typename ValueT>
 __host__ __device__ __forceinline__ void InitValue(
     GenMode                             gen_mode,
@@ -639,8 +660,18 @@ __host__ __device__ __forceinline__ void InitValue(
 {
     InitValue(gen_mode, value.value, index);
 
+    // This specialization only appears to be used by test_warp_scan.
+    // It initializes with uniform values and random keys, so we need to
+    // protect the call to the host-only RandomBits.
+#if (CUB_PTX_ARCH == 0)
     // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
     RandomBits(value.key, 3);
+#else
+    _CubLog("%s\n",
+            "cub::InitValue cannot generate random numbers on device.");
+    cub::ThreadTrap();
+#endif
+
     value.key = (value.key & 0x1);
 }
 
