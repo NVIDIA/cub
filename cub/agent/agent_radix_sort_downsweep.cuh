@@ -243,7 +243,6 @@ struct AgentRadixSortDownsweep
         int             (&ranks)[ITEMS_PER_THREAD],
         OffsetT         valid_items)
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             temp_storage.keys_and_offsets.exchange_keys[ranks[ITEM]] = twiddled_keys[ITEM];
@@ -251,7 +250,6 @@ struct AgentRadixSortDownsweep
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             UnsignedBits key            = temp_storage.keys_and_offsets.exchange_keys[threadIdx.x + (ITEM * BLOCK_THREADS)];
@@ -284,7 +282,6 @@ struct AgentRadixSortDownsweep
 
         ValueExchangeT &exchange_values = temp_storage.exchange_values.Alias();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             exchange_values[ranks[ITEM]] = values[ITEM];
@@ -292,7 +289,6 @@ struct AgentRadixSortDownsweep
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             ValueT value = exchange_values[threadIdx.x + (ITEM * BLOCK_THREADS)];
@@ -513,7 +509,6 @@ struct AgentRadixSortDownsweep
             Int2Type<LOAD_WARP_STRIPED>());
 
         // Twiddle key bits if necessary
-        #pragma unroll
         for (int KEY = 0; KEY < ITEMS_PER_THREAD; KEY++)
         {
             keys[KEY] = Traits<KeyT>::TwiddleIn(keys[KEY]);
@@ -530,7 +525,6 @@ struct AgentRadixSortDownsweep
         CTA_SYNC();
 
         // Share exclusive digit prefix
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (threadIdx.x * BINS_TRACKED_PER_THREAD) + track;
@@ -547,7 +541,6 @@ struct AgentRadixSortDownsweep
         // Get inclusive digit prefix
         int inclusive_digit_prefix[BINS_TRACKED_PER_THREAD];
 
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (threadIdx.x * BINS_TRACKED_PER_THREAD) + track;
@@ -573,7 +566,6 @@ struct AgentRadixSortDownsweep
         CTA_SYNC();
 
         // Update global scatter base offsets for each digit
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (threadIdx.x * BINS_TRACKED_PER_THREAD) + track;
@@ -674,7 +666,6 @@ struct AgentRadixSortDownsweep
         digit_extractor(current_bit, num_bits),
         short_circuit(1)
     {
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             this->bin_offset[track] = bin_offset[track];
@@ -713,7 +704,6 @@ struct AgentRadixSortDownsweep
         digit_extractor(current_bit, num_bits),
         short_circuit(1)
     {
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (threadIdx.x * BINS_TRACKED_PER_THREAD) + track;
@@ -755,7 +745,6 @@ struct AgentRadixSortDownsweep
         else
         {
             // Process full tiles of tile_items
-            #pragma unroll 1
             while (block_offset + TILE_ITEMS <= block_end)
             {
                 ProcessTile<true>(block_offset);

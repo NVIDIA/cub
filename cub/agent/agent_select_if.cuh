@@ -269,7 +269,6 @@ struct AgentSelectIf
         OffsetT                     (&selection_flags)[ITEMS_PER_THREAD],
         Int2Type<USE_SELECT_OP>     /*select_method*/)
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             // Out-of-bounds items are selection_flags
@@ -307,7 +306,6 @@ struct AgentSelectIf
         }
 
         // Convert flag type to selection_flags type
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             selection_flags[ITEM] = flags[ITEM];
@@ -345,7 +343,6 @@ struct AgentSelectIf
         }
 
         // Set selection flags for out-of-bounds items
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             // Set selection_flags for out-of-bounds items
@@ -370,7 +367,6 @@ struct AgentSelectIf
         OffsetT num_selections)
     {
         // Scatter flagged items
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             if (selection_flags[ITEM])
@@ -401,7 +397,6 @@ struct AgentSelectIf
         CTA_SYNC();
 
         // Compact and scatter items
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             int local_scatter_offset = selection_indices[ITEM] - num_selections_prefix;
@@ -439,7 +434,6 @@ struct AgentSelectIf
         int tile_num_rejections = num_tile_items - num_tile_selections;
 
         // Scatter items to shared memory (rejections first)
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             int item_idx                = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
@@ -455,7 +449,6 @@ struct AgentSelectIf
         CTA_SYNC();
 
         // Gather items from shared memory and scatter to global
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
             int item_idx            = (ITEM * BLOCK_THREADS) + threadIdx.x;

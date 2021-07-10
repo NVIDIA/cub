@@ -201,8 +201,7 @@ struct AgentRadixSortOnesweep
 
     __device__ __forceinline__ void LookbackPartial(int (&bins)[BINS_PER_THREAD])
     {
-        #pragma unroll
-        for (int u = 0; u < BINS_PER_THREAD; ++u) 
+        for (int u = 0; u < BINS_PER_THREAD; ++u)
         {
             int bin = ThreadBin(u);
             if (FULL_BINS || bin < RADIX_DIGITS)
@@ -228,7 +227,6 @@ struct AgentRadixSortOnesweep
             : agent(agent), bins(bins), keys(keys) {}
         __device__ __forceinline__ void operator()(int (&other_bins)[BINS_PER_THREAD])
         {
-            #pragma unroll
             for (int u = 0; u < BINS_PER_THREAD; ++u)
             {
                 bins[u] = other_bins[u];
@@ -241,7 +239,6 @@ struct AgentRadixSortOnesweep
   
     __device__ __forceinline__ void LookbackGlobal(int (&bins)[BINS_PER_THREAD])
     {
-        #pragma unroll
         for (int u = 0; u < BINS_PER_THREAD; ++u)
         {
             int bin = ThreadBin(u);
@@ -285,7 +282,6 @@ struct AgentRadixSortOnesweep
                                   num_items - tile_offset, Twiddle::DefaultKey());
         }
 
-        #pragma unroll
         for (int u = 0; u < ITEMS_PER_THREAD; ++u)
         {
             keys[u] = Twiddle::In(keys[u]);
@@ -323,7 +319,6 @@ struct AgentRadixSortOnesweep
     {
         // check if any bin can be short-circuited
         bool short_circuit = false;
-        #pragma unroll
         for (int u = 0; u < BINS_PER_THREAD; ++u)
         {
             if (FULL_BINS || ThreadBin(u) < RADIX_DIGITS)
@@ -345,7 +340,6 @@ struct AgentRadixSortOnesweep
         // compute offsets
         int common_bin = Digit(keys[0]);
         int offsets[BINS_PER_THREAD];
-        #pragma unroll
         for (int u = 0; u < BINS_PER_THREAD; ++u)
         {
             int bin = ThreadBin(u);
@@ -360,7 +354,6 @@ struct AgentRadixSortOnesweep
 
         // scatter the keys
         OffsetT global_offset = s.global_offsets[common_bin];
-        #pragma unroll
         for (int u = 0; u < ITEMS_PER_THREAD; ++u)
         {
             keys[u] = Twiddle::Out(keys[u]);
@@ -401,7 +394,6 @@ struct AgentRadixSortOnesweep
     void ScatterKeysShared(UnsignedBits (&keys)[ITEMS_PER_THREAD], int (&ranks)[ITEMS_PER_THREAD])
     {
         // write to shared memory
-        #pragma unroll
         for (int u = 0; u < ITEMS_PER_THREAD; ++u)
         {
             s.keys_out[ranks[u]] = keys[u];
@@ -412,7 +404,6 @@ struct AgentRadixSortOnesweep
     void ScatterValuesShared(ValueT (&values)[ITEMS_PER_THREAD], int (&ranks)[ITEMS_PER_THREAD])
     {
         // write to shared memory
-        #pragma unroll
         for (int u = 0; u < ITEMS_PER_THREAD; ++u)
         {
             s.values_out[ranks[u]] = values[u];
@@ -422,7 +413,6 @@ struct AgentRadixSortOnesweep
     __device__ __forceinline__ void LoadBinsToOffsetsGlobal(int (&offsets)[BINS_PER_THREAD])
     {
         // global offset - global part
-        #pragma unroll
         for (int u = 0; u < BINS_PER_THREAD; ++u)
         {
             int bin = ThreadBin(u);
@@ -439,7 +429,6 @@ struct AgentRadixSortOnesweep
         bool last_block = (block_idx + 1) * TILE_ITEMS >= num_items;
         if (d_bins_out != NULL && last_block)
         {
-            #pragma unroll
             for (int u = 0; u < BINS_PER_THREAD; ++u)
             {
                 int bin = ThreadBin(u);
@@ -455,7 +444,7 @@ struct AgentRadixSortOnesweep
     __device__ __forceinline__ void ScatterKeysGlobalDirect()
     {
         int tile_items = FULL_TILE ? TILE_ITEMS : num_items - block_idx * TILE_ITEMS;
-        #pragma unroll
+
         for (int u = 0; u < ITEMS_PER_THREAD; ++u)
         {
             int idx = threadIdx.x + u * BLOCK_THREADS;
@@ -473,7 +462,7 @@ struct AgentRadixSortOnesweep
     __device__ __forceinline__ void ScatterValuesGlobalDirect(int (&digits)[ITEMS_PER_THREAD])
     {
         int tile_items = FULL_TILE ? TILE_ITEMS : num_items - block_idx * TILE_ITEMS;
-        #pragma unroll
+
         for (int u = 0; u < ITEMS_PER_THREAD; ++u)
         {
             int idx = threadIdx.x + u * BLOCK_THREADS;
@@ -560,7 +549,6 @@ struct AgentRadixSortOnesweep
 
     __device__ __forceinline__ void ComputeKeyDigits(int (&digits)[ITEMS_PER_THREAD])
     {
-        #pragma unroll
         for (int u = 0; u < ITEMS_PER_THREAD; ++u)
         {
             int idx = threadIdx.x + u * BLOCK_THREADS;

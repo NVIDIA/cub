@@ -200,7 +200,6 @@ private:
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         Int2Type<false> /*time_slicing*/)
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
@@ -210,7 +209,6 @@ private:
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
@@ -289,7 +287,6 @@ private:
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         Int2Type<false> /*time_slicing*/)
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = warp_offset + ITEM + (lane_id * ITEMS_PER_THREAD);
@@ -299,7 +296,6 @@ private:
 
         WARP_SYNC(0xffffffff);
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
@@ -376,7 +372,6 @@ private:
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         Int2Type<false> /*time_slicing*/)
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
@@ -387,7 +382,6 @@ private:
         CTA_SYNC();
 
         // No timeslicing
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
@@ -467,7 +461,6 @@ private:
         OutputT         output_items[ITEMS_PER_THREAD],     ///< [out] Items to exchange, converting between <em>blocked</em> and <em>striped</em> arrangements.
         Int2Type<false> /*time_slicing*/)
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = warp_offset + (ITEM * WARP_TIME_SLICED_THREADS) + lane_id;
@@ -477,7 +470,6 @@ private:
 
         WARP_SYNC(0xffffffff);
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = warp_offset + ITEM + (lane_id * ITEMS_PER_THREAD);
@@ -535,7 +527,6 @@ private:
         OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<false> /*time_slicing*/)
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = ranks[ITEM];
@@ -545,7 +536,6 @@ private:
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (linear_tid * ITEMS_PER_THREAD) + ITEM;
@@ -617,7 +607,6 @@ private:
         OffsetT         ranks[ITEMS_PER_THREAD],    ///< [in] Corresponding scatter ranks
         Int2Type<false> /*time_slicing*/)
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = ranks[ITEM];
@@ -627,7 +616,6 @@ private:
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
@@ -991,7 +979,6 @@ public:
         OutputT     output_items[ITEMS_PER_THREAD],     ///< [out] Items from exchange, converting between <em>striped</em> and <em>blocked</em> arrangements.
         OffsetT     ranks[ITEMS_PER_THREAD])            ///< [in] Corresponding scatter ranks
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = ranks[ITEM];
@@ -1002,7 +989,6 @@ public:
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
@@ -1030,7 +1016,6 @@ public:
         OffsetT     ranks[ITEMS_PER_THREAD],            ///< [in] Corresponding scatter ranks
         ValidFlag   is_valid[ITEMS_PER_THREAD])         ///< [in] Corresponding flag denoting item validity
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = ranks[ITEM];
@@ -1041,7 +1026,6 @@ public:
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = int(ITEM * BLOCK_THREADS) + linear_tid;
@@ -1212,7 +1196,6 @@ public:
         T               items[ITEMS_PER_THREAD],        ///< [in-out] Items to exchange
         OffsetT         ranks[ITEMS_PER_THREAD])        ///< [in] Corresponding scatter ranks
     {
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             if (INSERT_PADDING) ranks[ITEM] = SHR_ADD(ranks[ITEM], LOG_SMEM_BANKS, ranks[ITEM]);
@@ -1221,7 +1204,6 @@ public:
 
         WARP_SYNC(0xffffffff);
 
-        #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ITEM++)
         {
             int item_offset = (ITEM * LOGICAL_WARP_THREADS) + lane_id;

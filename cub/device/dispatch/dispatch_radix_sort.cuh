@@ -340,7 +340,6 @@ __global__ void DeviceRadixSortSingleTileKernel(
         Int2Type<KEYS_ONLY>());
 
     // Store keys and values
-    #pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
         int item_offset = ITEM * BLOCK_THREADS + threadIdx.x;
@@ -454,7 +453,6 @@ __global__ void DeviceSegmentedRadixSortKernel(
     if (IS_DESCENDING)
     {
         // Reverse bin counts
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (threadIdx.x * BINS_TRACKED_PER_THREAD) + track;
@@ -465,7 +463,6 @@ __global__ void DeviceSegmentedRadixSortKernel(
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (threadIdx.x * BINS_TRACKED_PER_THREAD) + track;
@@ -479,7 +476,6 @@ __global__ void DeviceSegmentedRadixSortKernel(
     OffsetT bin_offset[BINS_TRACKED_PER_THREAD];     // The global scatter base offset for each digit value in this pass (valid in the first RADIX_DIGITS threads)
     DigitScanT(temp_storage.scan).ExclusiveSum(bin_count, bin_offset);
 
-    #pragma unroll
     for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
     {
         bin_offset[track] += segment_begin;
@@ -488,7 +484,6 @@ __global__ void DeviceSegmentedRadixSortKernel(
     if (IS_DESCENDING)
     {
         // Reverse bin offsets
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (threadIdx.x * BINS_TRACKED_PER_THREAD) + track;
@@ -499,7 +494,6 @@ __global__ void DeviceSegmentedRadixSortKernel(
 
         CTA_SYNC();
 
-        #pragma unroll
         for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
         {
             int bin_idx = (threadIdx.x * BINS_TRACKED_PER_THREAD) + track;
@@ -586,7 +580,6 @@ __global__ void DeviceRadixSortExclusiveSumKernel(OffsetT* d_bins)
     // load the bins
     OffsetT bins[BINS_PER_THREAD];
     int bin_start = blockIdx.x * RADIX_DIGITS;
-    #pragma unroll
     for (int u = 0; u < BINS_PER_THREAD; ++u)
     {
         int bin = threadIdx.x * BINS_PER_THREAD + u;
@@ -598,7 +591,6 @@ __global__ void DeviceRadixSortExclusiveSumKernel(OffsetT* d_bins)
     BlockScan(temp_storage).ExclusiveSum(bins, bins);
 
     // store the offsets
-    #pragma unroll
     for (int u = 0; u < BINS_PER_THREAD; ++u)
     {
         int bin = threadIdx.x * BINS_PER_THREAD + u;
