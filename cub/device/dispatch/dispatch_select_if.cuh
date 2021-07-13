@@ -39,6 +39,7 @@
 #include "dispatch_scan.cuh"
 #include "../../config.cuh"
 #include "../../detail/device_algorithm_dispatch_invoker.cuh"
+#include "../../detail/kernel_macros.cuh"
 #include "../../detail/ptx_dispatch.cuh"
 #include "../../detail/target.cuh"
 #include "../../agent/agent_select_if.cuh"
@@ -62,6 +63,7 @@ CUB_NAMESPACE_BEGIN
  * Otherwise performs flag-based selection if FlagsInputIterator's value type != NullType
  * Otherwise performs discontinuity selection (keep unique)
  */
+CUB_KERNEL_BEGIN
 template <
     typename            AgentSelectIfPolicyT,       ///< Parameterized AgentSelectIfPolicyT tuning policy type
     typename            InputIteratorT,             ///< Random-access input iterator type for reading input items
@@ -105,7 +107,7 @@ __global__ void DeviceSelectSweepKernel(
         tile_status,
         d_num_selected_out);
 }
-
+CUB_KERNEL_END
 
 
 

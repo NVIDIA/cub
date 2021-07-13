@@ -39,6 +39,7 @@
 
 #include "../../agent/agent_reduce.cuh"
 #include "../../detail/device_algorithm_dispatch_invoker.cuh"
+#include "../../detail/kernel_macros.cuh"
 #include "../../detail/ptx_dispatch.cuh"
 #include "../../iterator/arg_index_input_iterator.cuh"
 #include "../../thread/thread_operators.cuh"
@@ -59,6 +60,7 @@ CUB_NAMESPACE_BEGIN
 /**
  * Reduce region kernel entry point (multi-block).  Computes privatized reductions, one per thread block.
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ActivePolicyT,              ///< Active tuning policy
     typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
@@ -97,11 +99,12 @@ __global__ void DeviceReduceKernel(
     if (threadIdx.x == 0)
         d_out[blockIdx.x] = block_aggregate;
 }
-
+CUB_KERNEL_END
 
 /**
  * Reduce a single tile kernel entry point (single-block).  Can be used to aggregate privatized thread block reductions from a previous multi-block reduction pass.
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ActivePolicyT,              ///< Active tuning policy
     typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
@@ -146,6 +149,7 @@ __global__ void DeviceReduceSingleTileKernel(
     if (threadIdx.x == 0)
         *d_out = reduction_op(init, block_aggregate);
 }
+CUB_KERNEL_END
 
 
 /// Normalize input iterator to segment offset
@@ -173,6 +177,7 @@ void NormalizeReductionOutput(
 /**
  * Segmented reduction (one block per segment)
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ActivePolicyT,              ///< Active tuning policy
     typename                InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
@@ -226,7 +231,7 @@ __global__ void DeviceSegmentedReduceKernel(
     if (threadIdx.x == 0)
         d_out[blockIdx.x] = reduction_op(init, block_aggregate);;
 }
-
+CUB_KERNEL_END
 
 
 

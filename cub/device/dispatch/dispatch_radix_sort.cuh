@@ -45,6 +45,7 @@
 #include "../../block/block_radix_sort.cuh"
 #include "../../config.cuh"
 #include "../../detail/device_algorithm_dispatch_invoker.cuh"
+#include "../../detail/kernel_macros.cuh"
 #include "../../detail/ptx_dispatch.cuh"
 #include "../../grid/grid_even_share.cuh"
 #include "../../util_type.cuh"
@@ -71,6 +72,7 @@ CUB_NAMESPACE_BEGIN
 /**
  * Upsweep digit-counting kernel entry point (multi-block).  Computes privatized digit histograms, one per block.
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ActivePolicyT,                  ///< Tuning policy
     bool                    ALT_DIGIT_BITS,                 ///< Whether or not to use the alternate (lower-bits) policy
@@ -128,11 +130,12 @@ __global__ void DeviceRadixSortUpsweepKernel(
     // Write out digit counts (striped)
     upsweep.template ExtractCounts<IS_DESCENDING>(d_spine, gridDim.x, blockIdx.x);
 }
-
+CUB_KERNEL_END
 
 /**
  * Spine scan kernel entry point (single-block).  Computes an exclusive prefix sum over the privatized digit histograms
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ActivePolicyT,                 ///< Active tuning policy
     typename                OffsetT>                        ///< Signed integer type for global offsets
@@ -173,11 +176,12 @@ __global__ void RadixSortScanBinsKernel(
                                                      num_counts - block_offset);
     }
 }
-
+CUB_KERNEL_END
 
 /**
  * Downsweep pass kernel entry point (multi-block).  Scatters keys (and values) into corresponding bins for the current digit place.
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ActivePolicyT,                  ///< Active tuning policy
     bool                    ALT_DIGIT_BITS,                 ///< Whether or not to use the alternate (lower-bits) policy
@@ -237,11 +241,12 @@ __global__ void DeviceRadixSortDownsweepKernel(
         even_share.block_offset,
         even_share.block_end);
 }
-
+CUB_KERNEL_END
 
 /**
  * Single pass kernel entry point (single-block).  Fully sorts a tile of input.
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ActivePolicyT,                  ///< Active tuning policy
     bool                    IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
@@ -350,11 +355,12 @@ __global__ void DeviceRadixSortSingleTileKernel(
         }
     }
 }
-
+CUB_KERNEL_END
 
 /**
  * Segmented radix sorting pass (one block per segment)
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ActivePolicyT,                  ///< Active tuning policy
     bool                    ALT_DIGIT_BITS,                 ///< Whether or not to use the alternate (lower-bits) policy
@@ -513,7 +519,7 @@ __global__ void DeviceSegmentedRadixSortKernel(
     BlockDownsweepT downsweep(temp_storage.downsweep, bin_offset, num_items, d_keys_in, d_keys_out, d_values_in, d_values_out, current_bit, pass_bits);
     downsweep.ProcessRegion(segment_begin, segment_end);
 }
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Onesweep kernels
@@ -526,6 +532,7 @@ __global__ void DeviceSegmentedRadixSortKernel(
 /**
  * Histogram kernel
  */
+CUB_KERNEL_BEGIN
 template <
     typename ActivePolicyT,
     bool IS_DESCENDING,
@@ -541,7 +548,9 @@ DeviceRadixSortHistogramKernel
     AgentT agent(temp_storage, d_bins_out, d_keys_in, num_items, start_bit, end_bit);
     agent.Process();
 }
+CUB_KERNEL_END
 
+CUB_KERNEL_BEGIN
 template <
     typename ActivePolicyT,
     bool IS_DESCENDING,
@@ -563,11 +572,12 @@ DeviceRadixSortOnesweepKernel
                  d_values_out, d_values_in, num_items, current_bit, num_bits);
     agent.Process();
 }
-
+CUB_KERNEL_END
 
 /** 
  * Exclusive sum kernel
  */
+CUB_KERNEL_BEGIN
 template <
     typename ActivePolicyT,
     typename OffsetT>
@@ -604,7 +614,7 @@ __global__ void DeviceRadixSortExclusiveSumKernel(OffsetT* d_bins)
         d_bins[bin_start + bin] = bins[u];
     }
 }
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Policy

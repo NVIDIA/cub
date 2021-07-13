@@ -39,6 +39,7 @@
 
 #include "../../agent/agent_scan.cuh"
 #include "../../detail/device_algorithm_dispatch_invoker.cuh"
+#include "../../detail/kernel_macros.cuh"
 #include "../../detail/ptx_dispatch.cuh"
 #include "../../thread/thread_operators.cuh"
 #include "../../grid/grid_queue.cuh"
@@ -59,6 +60,7 @@ CUB_NAMESPACE_BEGIN
 /**
  * Initialization kernel for tile status initialization (multi-block)
  */
+CUB_KERNEL_BEGIN
 template <
     typename            ScanTileStateT>     ///< Tile status interface type
 __global__ void DeviceScanInitKernel(
@@ -68,10 +70,12 @@ __global__ void DeviceScanInitKernel(
     // Initialize tile status
     tile_state.InitializeStatus(num_tiles);
 }
+CUB_KERNEL_END
 
 /**
  * Initialization kernel for tile status initialization (multi-block)
  */
+CUB_KERNEL_BEGIN
 template <
     typename                ScanTileStateT,         ///< Tile status interface type
     typename                NumSelectedIteratorT>   ///< Output iterator type for recording the number of items selected
@@ -87,11 +91,12 @@ __global__ void DeviceCompactInitKernel(
     if ((blockIdx.x == 0) && (threadIdx.x == 0))
         *d_num_selected_out = 0;
 }
-
+CUB_KERNEL_END
 
 /**
  * Scan kernel entry point (multi-block)
  */
+CUB_KERNEL_BEGIN
 template <
     typename            ActivePolicyT,     ///< Chained tuning policy
     typename            InputIteratorT,     ///< Random-access input iterator type for reading scan inputs \iterator
@@ -128,7 +133,7 @@ __global__ void DeviceScanKernel(
         tile_state,
         start_tile);
 }
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Policy
