@@ -39,6 +39,7 @@
 #include "dispatch_scan.cuh"
 #include "../../config.cuh"
 #include "../../detail/device_algorithm_dispatch_invoker.cuh"
+#include "../../detail/kernel_macros.cuh"
 #include "../../detail/ptx_dispatch.cuh"
 #include "../../detail/target.cuh"
 #include "../../agent/agent_rle.cuh"
@@ -63,6 +64,7 @@ CUB_NAMESPACE_BEGIN
  * Otherwise performs flag-based selection if FlagIterator's value type != NullType
  * Otherwise performs discontinuity selection (keep unique)
  */
+CUB_KERNEL_BEGIN
 template <
     typename            AgentRlePolicyT,        ///< Parameterized AgentRlePolicyT tuning policy type
     typename            InputIteratorT,             ///< Random-access input iterator type for reading input items \iterator
@@ -101,9 +103,7 @@ __global__ void DeviceRleSweepKernel(
         tile_status,
         d_num_runs_out);
 }
-
-
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Dispatch

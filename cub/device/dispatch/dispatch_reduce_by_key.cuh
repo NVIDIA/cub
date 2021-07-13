@@ -39,6 +39,7 @@
 #include "dispatch_scan.cuh"
 #include "../../config.cuh"
 #include "../../detail/device_algorithm_dispatch_invoker.cuh"
+#include "../../detail/kernel_macros.cuh"
 #include "../../detail/ptx_dispatch.cuh"
 #include "../../agent/agent_reduce_by_key.cuh"
 #include "../../thread/thread_operators.cuh"
@@ -59,6 +60,7 @@ CUB_NAMESPACE_BEGIN
 /**
  * Multi-block reduce-by-key sweep kernel entry point
  */
+CUB_KERNEL_BEGIN
 template <
     typename            AgentReduceByKeyPolicyT,                 ///< Parameterized AgentReduceByKeyPolicyT tuning policy type
     typename            KeysInputIteratorT,                     ///< Random-access input iterator type for keys
@@ -105,9 +107,7 @@ __global__ void DeviceReduceByKeyKernel(
         tile_state,
         start_tile);
 }
-
-
-
+CUB_KERNEL_END
 
 /******************************************************************************
  * Dispatch

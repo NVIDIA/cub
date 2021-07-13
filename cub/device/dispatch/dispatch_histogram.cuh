@@ -40,6 +40,7 @@
 
 #include "../../agent/agent_histogram.cuh"
 #include "../../detail/device_algorithm_dispatch_invoker.cuh"
+#include "../../detail/kernel_macros.cuh"
 #include "../../detail/ptx_dispatch.cuh"
 #include "../../detail/target.cuh"
 #include "../../util_debug.cuh"
@@ -62,6 +63,7 @@ CUB_NAMESPACE_BEGIN
 /**
  * Histogram initialization kernel entry point
  */
+CUB_KERNEL_BEGIN
 template <
     int                                             NUM_ACTIVE_CHANNELS,            ///< Number of channels actively being histogrammed
     typename                                        CounterT,                       ///< Integer type for counting sample occurrences per histogram bin
@@ -83,11 +85,12 @@ __global__ void DeviceHistogramInitKernel(
             d_output_histograms_wrapper.array[CHANNEL][output_bin] = 0;
     }
 }
-
+CUB_KERNEL_END
 
 /**
  * Histogram privatized sweep kernel entry point (multi-block).  Computes privatized histograms, one per thread block.
  */
+CUB_KERNEL_BEGIN
 template <
     typename                                            AgentHistogramPolicyT,          ///< Parameterized AgentHistogramPolicy tuning policy type
     int                                                 PRIVATIZED_SMEM_BINS,           ///< Maximum number of histogram bins per channel (e.g., up to 256)
@@ -154,7 +157,7 @@ __global__ void DeviceHistogramSweepKernel(
     agent.StoreOutput();
 
 }
-
+CUB_KERNEL_END
 
 
 
