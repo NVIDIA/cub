@@ -68,10 +68,16 @@ struct WrapperFunctor
     template <typename T>
     inline __host__ __device__ T operator()(const T &a, const T &b) const
     {
-#if CUB_PTX_ARCH != 0
-        if ((cub::LaneId() % LOGICAL_WARP_THREADS) >= num_valid)
-            cub::ThreadTrap();
-#endif
+      if (CUB_IS_DEVICE_CODE)
+      {
+          #if CUB_INCLUDE_DEVICE_CODE != 0
+              if ((cub::LaneId() % LOGICAL_WARP_THREADS) >= num_valid)
+              {
+                  _CubLog("%s\n", "Invalid lane ID in cub::WrapperFunctor::operator()");
+                  cub::ThreadTrap();
+              }
+          #endif
+      }
 
         return op(a, b);
     }
