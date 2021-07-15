@@ -546,60 +546,77 @@ enum GenMode
 template <typename T>
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)
 {
-    switch (gen_mode)
+    // RandomBits is host-only.
+    if (CUB_IS_DEVICE_CODE)
     {
-      // RandomBits is host-only.
-#if (CUB_PTX_ARCH == 0)
-    case RANDOM:
-        RandomBits(value);
-        break;
-    case RANDOM_BIT:
-    {
-        char c;
-        RandomBits(c, 0, 0, 1);
-        value = (c > 0) ? (T) 1 : (T) -1;
-        break;
+        #if CUB_INCLUDE_DEVICE_CODE
+            switch (gen_mode)
+            {
+                case RANDOM:
+                case RANDOM_BIT:
+                case RANDOM_MINUS_PLUS_ZERO:
+                    _CubLog("%s\n",
+                            "cub::InitValue cannot generate random numbers on device.");
+                    cub::ThreadTrap();
+                    break;
+                case UNIFORM:
+                    value = 2;
+                    break;
+                case INTEGER_SEED:
+                default:
+                    value = (T) index;
+                    break;
+            }
+        #endif // CUB_INCLUDE_DEVICE_CODE
     }
-    case RANDOM_MINUS_PLUS_ZERO:
+    else
     {
-        // Replace roughly 1/128 of values with -0.0 or +0.0, and generate the rest randomly
-        typedef typename cub::Traits<T>::UnsignedBits UnsignedBits;
-        char c;
-        RandomBits(c);
-        if (c == 0)
-        {
-            // Replace 1/256 of values with +0.0 bit pattern
-            value = SafeBitCast<T>(UnsignedBits(0));
-        }
-        else if (c == 1)
-        {
-            // Replace 1/256 of values with -0.0 bit pattern
-            value = SafeBitCast<T>(UnsignedBits(UnsignedBits(1) <<
-                                                (sizeof(UnsignedBits) * 8) - 1));
-        }
-        else
-        {
-            // 127/128 of values are random
-            RandomBits(value);
-        }
-        break;
-    }
-#else
-     case RANDOM:
-     case RANDOM_BIT:
-     case RANDOM_MINUS_PLUS_ZERO:
-         _CubLog("%s\n",
-                 "cub::InitValue cannot generate random numbers on device.");
-         cub::ThreadTrap();
-         break;
-#endif
-     case UNIFORM:
-        value = 2;
-        break;
-    case INTEGER_SEED:
-    default:
-         value = (T) index;
-        break;
+        #if CUB_INCLUDE_HOST_CODE
+            switch (gen_mode)
+            {
+                case RANDOM:
+                    RandomBits(value);
+                    break;
+                case RANDOM_BIT:
+                {
+                    char c;
+                    RandomBits(c, 0, 0, 1);
+                    value = (c > 0) ? (T) 1 : (T) -1;
+                    break;
+                }
+                case RANDOM_MINUS_PLUS_ZERO:
+                {
+                    // Replace roughly 1/128 of values with -0.0 or +0.0, and generate the rest randomly
+                    typedef typename cub::Traits<T>::UnsignedBits UnsignedBits;
+                    char c;
+                    RandomBits(c);
+                    if (c == 0)
+                    {
+                        // Replace 1/256 of values with +0.0 bit pattern
+                        value = SafeBitCast<T>(UnsignedBits(0));
+                    }
+                    else if (c == 1)
+                    {
+                        // Replace 1/256 of values with -0.0 bit pattern
+                        value = SafeBitCast<T>(UnsignedBits(UnsignedBits(1) <<
+                                                            (sizeof(UnsignedBits) * 8) - 1));
+                    }
+                    else
+                    {
+                        // 127/128 of values are random
+                        RandomBits(value);
+                    }
+                    break;
+                }
+                case UNIFORM:
+                    value = 2;
+                    break;
+                case INTEGER_SEED:
+                default:
+                    value = (T) index;
+                    break;
+            }
+        #endif // CUB_INCLUDE_HOST_CODE
     }
 }
 
@@ -610,31 +627,50 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 #pragma nv_exec_check_disable
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, int index = 0)
 {
-    switch (gen_mode)
+    // RandomBits is host-only.
+    if (CUB_IS_DEVICE_CODE)
     {
-#if (CUB_PTX_ARCH == 0)
-    case RANDOM:
-    case RANDOM_BIT:
-        char c;
-        RandomBits(c, 0, 0, 1);
-        value = (c > 0);
-        break;
-#else
-      case RANDOM:
-      case RANDOM_BIT:
-      case RANDOM_MINUS_PLUS_ZERO:
-        _CubLog("%s\n",
-                "cub::InitValue cannot generate random numbers on device.");
-        cub::ThreadTrap();
-        break;
-#endif
-     case UNIFORM:
-        value = true;
-        break;
-    case INTEGER_SEED:
-    default:
-        value = (index > 0);
-        break;
+        #if CUB_INCLUDE_DEVICE_CODE
+            switch (gen_mode)
+            {
+                case RANDOM:
+                case RANDOM_BIT:
+                case RANDOM_MINUS_PLUS_ZERO:
+                    _CubLog("%s\n",
+                            "cub::InitValue cannot generate random numbers on device.");
+                    cub::ThreadTrap();
+                    break;
+                case UNIFORM:
+                    value = true;
+                    break;
+                case INTEGER_SEED:
+                default:
+                    value = (index > 0);
+                    break;
+            }
+        #endif // CUB_INCLUDE_DEVICE_CODE
+    }
+    else
+    {
+        #if CUB_INCLUDE_HOST_CODE
+            switch (gen_mode)
+            {
+                case RANDOM:
+                case RANDOM_BIT:
+                case RANDOM_MINUS_PLUS_ZERO:
+                    char c;
+                    RandomBits(c, 0, 0, 1);
+                    value = (c > 0);
+                    break;
+                case UNIFORM:
+                    value = true;
+                    break;
+                case INTEGER_SEED:
+                default:
+                    value = (index > 0);
+                    break;
+            }
+        #endif // CUB_INCLUDE_HOST_CODE
     }
 }
 
@@ -663,16 +699,22 @@ __host__ __device__ __forceinline__ void InitValue(
     // This specialization only appears to be used by test_warp_scan.
     // It initializes with uniform values and random keys, so we need to
     // protect the call to the host-only RandomBits.
-#if (CUB_PTX_ARCH == 0)
-    // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
-    RandomBits(value.key, 3);
-#else
-    _CubLog("%s\n",
-            "cub::InitValue cannot generate random numbers on device.");
-    cub::ThreadTrap();
-#endif
-
-    value.key = (value.key & 0x1);
+    if (CUB_IS_DEVICE_CODE)
+    {
+        #if CUB_INCLUDE_DEVICE_CODE
+            _CubLog("%s\n",
+                    "cub::InitValue cannot generate random numbers on device.");
+            cub::ThreadTrap();
+        #endif // CUB_INCLUDE_DEVICE_CODE
+    }
+    else
+    {
+        #if CUB_INCLUDE_HOST_CODE
+            // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
+            RandomBits(value.key, 3);
+            value.key = (value.key & 0x1);
+        #endif // CUB_INCLUDE_HOST_CODE
+    }
 }
 
 
