@@ -1,6 +1,6 @@
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) 2011-2021, NVIDIA CORPORATION.  All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,7 +28,7 @@
 
 /**
  * \file
- * The cub::BlockDiscontinuity class provides [<em>collective</em>](index.html#sec0) methods for flagging discontinuities within an ordered set of items partitioned across a CUDA thread block.
+ * The cub::BlockAdjacentDifference class provides [<em>collective</em>](index.html#sec0) methods for computing the differences of adjacent elements partitioned across a CUDA thread block.
  */
 
 #pragma once
@@ -43,6 +43,77 @@ CUB_NS_PREFIX
 /// CUB namespace
 namespace cub {
 
+/**
+ * \brief BlockAdjacentDifference provides [<em>collective</em>](index.html#sec0) methods for computing the differences of adjacent elements partitioned across a CUDA thread block.
+ * \ingroup SingleModule
+ *
+ * \par Overview
+ * - BlockAdjacentDifference calculates the differences of adjacent elements in
+ *   the elements partitioned across a CUDA thread block. Because the binary
+ *   operation could be noncommutative, there are two sets of methods.
+ *   Methods named SubtractLeft subtract left element <tt>i - 1</tt> of
+ *   input sequence from current element <tt>i</tt>. Methods named SubtractRight
+ *   subtract current element <tt>i</tt> from the right one <tt>i + 1</tt>:
+ *   \par
+ *   \code
+ *   int values[4]; // [1, 2, 3, 4]
+ *   //...
+ *   int subtract_left_result[4];  <-- [  1,  1,  1,  1 ]
+ *   int subtract_right_result[4]; <-- [ -1, -1, -1,  4 ]
+ *   \endcode
+ * - For SubtractLeft, if the left element <tt>i - 1 < 0</tt> is out of bounds, the
+ *   output value is assigned to <tt>input[0]</tt> without modification.
+ * - For SubtractRight, if the right element is out of bounds, the iterator is
+ *   assigned to corresponding input value without modification.
+ *
+ * \par Snippet
+ * The code snippet below illustrates how to use \p BlockAdjacentDifference to
+ * compute the left difference between adjacent elements.
+ *
+ * \par
+ * \code
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_adjacent_difference.cuh>
+ *
+ * struct CustomDifference
+ * {
+ *   template <typename DataType>
+ *   __device__ DataType operator()(DataType &lhs, DataType &rhs)
+ *   {
+ *     return lhs - rhs;
+ *   }
+ * };
+ *
+ * __global__ void ExampleKernel(...)
+ * {
+ *     // Specialize BlockAdjacentDifference for a 1D block of 128 threads on type int
+ *     using BlockAdjacentDifferenceT =
+ *        cub::BlockAdjacentDifference<int, 128>;
+ *
+ *     // Allocate shared memory for BlockDiscontinuity
+ *     __shared__ typename BlockAdjacentDifferenceT::TempStorage temp_storage;
+ *
+ *     // Obtain a segment of consecutive items that are blocked across threads
+ *     int thread_data[4];
+ *     ...
+ *
+ *     // Collectively compute adjacent_difference
+ *     int result[4];
+ *     int thread_preds[4];
+ *
+ *     BlockAdjacentDifferenceT(temp_storage).SubtractLeft(
+ *         result,
+ *         thread_data,
+ *         thread_preds,
+ *         CustomDifference());
+ *
+ * \endcode
+ * \par
+ * Suppose the set of input \p thread_data across the block of threads is
+ * <tt>{ [4,2,1,1], [1,1,1,1], [2,3,3,3], [3,4,1,4], ... }</tt>.
+ * The corresponding output \p result in those threads will be
+ * <tt>{ [4,-2,-1,0], [0,0,0,0], [1,1,0,0], [0,1,-3,3], ... }</tt>.
+ *
+ */
 template <
     typename    T,
     int         BLOCK_DIM_X,
@@ -58,12 +129,9 @@ private:
      ******************************************************************************/
 
     /// Constants
-    enum
-    {
-        /// The thread block size in threads
-        BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
-    };
 
+    /// The thread block size in threads
+    static constexpr int BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
 
     /// Shared memory storage layout type (last element from each thread's input)
     struct _TempStorage
@@ -239,11 +307,357 @@ public:
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
+    /**
+     * \brief Subtracts the left element of each adjacent pair of elements partitioned across a CUDA thread block.
+     * \ingroup SingleModule
+     *
+     * \par Snippet
+     * The code snippet below illustrates how to use \p BlockAdjacentDifference to
+     * compute the left difference between adjacent elements.
+     *
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_adjacent_difference.cuh>
+     *
+     * struct CustomDifference
+     * {
+     *   template <typename DataType>
+     *   __device__ DataType operator()(DataType &lhs, DataType &rhs)
+     *   {
+     *     return lhs - rhs;
+     *   }
+     * };
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize BlockAdjacentDifference for a 1D block of 128 threads on type int
+     *     using BlockAdjacentDifferenceT =
+     *        cub::BlockAdjacentDifference<int, 128>;
+     *
+     *     // Allocate shared memory for BlockDiscontinuity
+     *     __shared__ typename BlockAdjacentDifferenceT::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive items that are blocked across threads
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Collectively compute adjacent_difference
+     *     int result[4];
+     *     int thread_preds[4];
+     *
+     *     BlockAdjacentDifferenceT(temp_storage).SubtractLeft(
+     *         result,
+     *         thread_data,
+     *         thread_preds,
+     *         CustomDifference());
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [4,2,1,1], [1,1,1,1], [2,3,3,3], [3,4,1,4], ... }</tt>.
+     * The corresponding output \p result in those threads will be
+     * <tt>{ [4,-2,-1,0], [0,0,0,0], [1,1,0,0], [0,1,-3,3], ... }</tt>.
+     */
+    template <int ITEMS_PER_THREAD,
+              typename OutputType,
+              typename DifferenceOpT>
+    __device__ __forceinline__ void
+    SubtractLeft(OutputType (&output)[ITEMS_PER_THREAD], ///< [out] Calling thread's adjacent difference result
+                 T (&input)[ITEMS_PER_THREAD],           ///< [in] Calling thread's input items
+                 T (&preds)[ITEMS_PER_THREAD],           ///< [out] Calling thread's predecessor items
+                 DifferenceOpT difference_op)            ///< [in] Binary difference operator
+    {
+      // Share last item
+      temp_storage.last_items[linear_tid] = input[ITEMS_PER_THREAD - 1];
+
+      CTA_SYNC();
+
+      if (linear_tid == 0)
+      {
+        // preds[0] is undefined
+        output[0] = input[0];
+      }
+      else
+      {
+        preds[0]  = temp_storage.last_items[linear_tid - 1];
+        output[0] = difference_op(input[0], preds[0]);
+      }
+
+      #pragma unroll
+      for (int item = 1; item < ITEMS_PER_THREAD; item++)
+      {
+        preds[item] = input[item - 1];
+        output[item] = difference_op(input[item], preds[item]);
+      }
+    }
+
+    /**
+     * \brief Subtracts the left element of each adjacent pair of elements partitioned across a CUDA thread block.
+     * \ingroup SingleModule
+     *
+     * \par Snippet
+     * The code snippet below illustrates how to use \p BlockAdjacentDifference to
+     * compute the left difference between adjacent elements.
+     *
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_adjacent_difference.cuh>
+     *
+     * struct CustomDifference
+     * {
+     *   template <typename DataType>
+     *   __device__ DataType operator()(DataType &lhs, DataType &rhs)
+     *   {
+     *     return lhs - rhs;
+     *   }
+     * };
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize BlockAdjacentDifference for a 1D block of 128 threads on type int
+     *     using BlockAdjacentDifferenceT =
+     *        cub::BlockAdjacentDifference<int, 128>;
+     *
+     *     // Allocate shared memory for BlockDiscontinuity
+     *     __shared__ typename BlockAdjacentDifferenceT::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive items that are blocked across threads
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Collectively compute adjacent_difference
+     *     int result[4];
+     *     int thread_preds[4];
+     *
+     *     BlockAdjacentDifferenceT(temp_storage).SubtractLeft(
+     *         result,
+     *         thread_data,
+     *         thread_preds,
+     *         CustomDifference(),
+     *         tile_predecessor_item);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ [4,2,1,1], [1,1,1,1], [2,3,3,3], [3,4,1,4], ... }</tt>.
+     * and that \p tile_predecessor_item is \p 3. The corresponding output \p result in those threads will be
+     * <tt>{ [1,-2,-1,0], [0,0,0,0], [1,1,0,0], [0,1,-3,3], ... }</tt>.
+     */
+    template <int ITEMS_PER_THREAD,
+              typename OutputT,
+              typename DifferenceOpT>
+    __device__ __forceinline__ void
+    SubtractLeft(OutputT         (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's adjacent difference result
+                 T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
+                 T               (&preds)[ITEMS_PER_THREAD],         ///< [out] Calling thread's predecessor items
+                 DifferenceOpT   difference_op,                      ///< [in] Binary difference operator
+                 T               tile_predecessor_item)              ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> item which is going to be subtracted from the first tile item (<tt>input<sub>0</sub></tt> from <em>thread</em><sub>0</sub>).
+    {
+      // Share last item
+      temp_storage.last_items[linear_tid] = input[ITEMS_PER_THREAD - 1];
+
+      CTA_SYNC();
+
+      // Set flag for first thread-item
+      preds[0] = (linear_tid == 0) ? tile_predecessor_item : // First thread
+                   temp_storage.last_items[linear_tid - 1];
+
+      head_flags[0] = difference_op(input[0], preds[0]);
+
+      #pragma unroll
+      for (int item = 1; item < ITEMS_PER_THREAD; item++)
+      {
+        preds[item] = input[item - 1];
+        head_flags[item] = difference_op(input[item], preds[item]);
+      }
+    }
+
+    /**
+     * \brief Subtracts the right element of each adjacent pair of elements partitioned across a CUDA thread block.
+     * \ingroup SingleModule
+     *
+     * \par Snippet
+     * The code snippet below illustrates how to use \p BlockAdjacentDifference to
+     * compute the right difference between adjacent elements.
+     *
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_adjacent_difference.cuh>
+     *
+     * struct CustomDifference
+     * {
+     *   template <typename DataType>
+     *   __device__ DataType operator()(DataType &lhs, DataType &rhs)
+     *   {
+     *     return lhs - rhs;
+     *   }
+     * };
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize BlockAdjacentDifference for a 1D block of 128 threads on type int
+     *     using BlockAdjacentDifferenceT =
+     *        cub::BlockAdjacentDifference<int, 128>;
+     *
+     *     // Allocate shared memory for BlockDiscontinuity
+     *     __shared__ typename BlockAdjacentDifferenceT::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive items that are blocked across threads
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Collectively compute adjacent_difference
+     *     int result[4];
+     *
+     *     BlockAdjacentDifferenceT(temp_storage).SubtractRight(
+     *         result,
+     *         thread_data,
+     *         CustomDifference(),
+     *         tile_successor_item);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ ...3], [4,2,1,1], [1,1,1,1], [2,3,3,3], [3,4,1,4] }</tt>.
+     * and that \p tile_successor_item is \p 3. The corresponding output \p result in those threads will be
+     * <tt>{ ..., [-1,2,1,0], [0,0,0,-1], [-1,0,0,0], [-1,3,-3,1] }</tt>.
+     */
+    template <int ITEMS_PER_THREAD,
+    typename OutputT,
+    typename DifferenceOpT>
+    __device__ __forceinline__ void
+    SubtractRight(OutputT       (&tail_flags)[ITEMS_PER_THREAD], ///< [out] Calling thread's adjacent difference result
+                  T             (&input)[ITEMS_PER_THREAD],      ///< [in] Calling thread's input items
+                  DifferenceOpT difference_op,                   ///< [in] Binary difference operator
+                  T             tile_successor_item)             ///< [in] <b>[<em>thread</em><sub><tt>BLOCK_THREADS</tt>-1</sub> only]</b> item which is going to be subtracted from the last tile item (<tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> from <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>).
+    {
+      // Share first item
+      temp_storage.first_items[linear_tid] = input[0];
+
+      CTA_SYNC();
+
+      // Set flag for last thread-item
+      T successor_item = (linear_tid == BLOCK_THREADS - 1)
+                           ? tile_successor_item // Last thread
+                           : temp_storage.first_items[linear_tid + 1];
+
+      tail_flags[ITEMS_PER_THREAD - 1] =
+        difference_op(input[ITEMS_PER_THREAD - 1], successor_item);
+
+      #pragma unroll
+      for (int item = 0; item < ITEMS_PER_THREAD - 1; item++)
+      {
+        tail_flags[item] = difference_op(input[item], input[item + 1]);
+      }
+    }
+
+    /**
+     * \brief Subtracts the right element of each adjacent pair in range of elements partitioned across a CUDA thread block.
+     * \ingroup SingleModule
+     *
+     * \par Snippet
+     * The code snippet below illustrates how to use \p BlockAdjacentDifference to
+     * compute the right difference between adjacent elements.
+     *
+     * \par
+     * \code
+     * #include <cub/cub.cuh>   // or equivalently <cub/block/block_adjacent_difference.cuh>
+     *
+     * struct CustomDifference
+     * {
+     *   template <typename DataType>
+     *   __device__ DataType operator()(DataType &lhs, DataType &rhs)
+     *   {
+     *     return lhs - rhs;
+     *   }
+     * };
+     *
+     * __global__ void ExampleKernel(...)
+     * {
+     *     // Specialize BlockAdjacentDifference for a 1D block of 128 threads on type int
+     *     using BlockAdjacentDifferenceT =
+     *        cub::BlockAdjacentDifference<int, 128>;
+     *
+     *     // Allocate shared memory for BlockDiscontinuity
+     *     __shared__ typename BlockAdjacentDifferenceT::TempStorage temp_storage;
+     *
+     *     // Obtain a segment of consecutive items that are blocked across threads
+     *     int thread_data[4];
+     *     ...
+     *
+     *     // Collectively compute adjacent_difference
+     *     int result[4];
+     *
+     *     BlockAdjacentDifferenceT(temp_storage).SubtractRightPartialTile(
+     *         result,
+     *         thread_data,
+     *         CustomDifference(),
+     *         valid_items);
+     *
+     * \endcode
+     * \par
+     * Suppose the set of input \p thread_data across the block of threads is
+     * <tt>{ ...3], [4,2,1,1], [1,1,1,1], [2,3,3,3], [3,4,1,4] }</tt>.
+     * and that \p valid_items is \p 507. The corresponding output \p result in those threads will be
+     * <tt>{ ..., [-1,2,1,0], [0,0,0,-1], [-1,0,3,3], [3,4,1,4] }</tt>.
+     */
+    template <int ITEMS_PER_THREAD,
+              typename OutputT,
+              typename DifferenceOpT>
+    __device__ __forceinline__ void
+    SubtractRightPartialTile(OutputT       (&tail_flags)[ITEMS_PER_THREAD], ///< [out] Calling thread's adjacent difference result
+                             T             (&input)[ITEMS_PER_THREAD],      ///< [in] Calling thread's input items
+                             DifferenceOpT difference_op,                   ///< [in] Binary difference operator
+                             int           valid_items)                     ///< [in] Number of valid items in thread block
+    {
+      // Share first item
+      temp_storage.first_items[linear_tid] = input[0];
+
+      CTA_SYNC();
+
+      if ((linear_tid + 1) * ITEMS_PER_THREAD < valid_items)
+      {
+        tail_flags[ITEMS_PER_THREAD - 1] =
+          difference_op(input[ITEMS_PER_THREAD - 1],
+                  temp_storage.first_items[linear_tid + 1]);
+
+        #pragma unroll
+        for (int item = 0; item < ITEMS_PER_THREAD - 1; item++)
+        {
+           tail_flags[item] = difference_op(input[item], input[item + 1]);
+        }
+      }
+      else
+      {
+        #pragma unroll
+        for (int item = 0; item < ITEMS_PER_THREAD; item++)
+        {
+          const int idx = linear_tid * ITEMS_PER_THREAD + item;
+
+          // Right element of input[valid_items - 1] is out of bounds.
+          // According to the API it's copied into output array
+          // without modification.
+          if (idx < valid_items - 1)
+          {
+            tail_flags[item] = difference_op(input[item], input[item + 1]);
+          }
+          else
+          {
+            tail_flags[item] = input[item];
+          }
+        }
+      }
+    }
+
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagHeads
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractLeft instead.
+     */
     template <
         int             ITEMS_PER_THREAD,
         typename        FlagT,
         typename        FlagOp>
-    __device__ __forceinline__ void FlagHeads(
+    CUB_DEPRECATED __device__ __forceinline__ void FlagHeads(
         FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
         T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
         T               (&preds)[ITEMS_PER_THREAD],         ///< [out] Calling thread's predecessor items
@@ -269,11 +683,14 @@ public:
         Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
     }
 
-    template <
-        int             ITEMS_PER_THREAD,
-        typename        FlagT,
-        typename        FlagOp>
-    __device__ __forceinline__ void FlagHeads(
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagHeads
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractLeft instead.
+     */
+    template <int             ITEMS_PER_THREAD,
+              typename        FlagT,
+              typename        FlagOp>
+    CUB_DEPRECATED __device__ __forceinline__ void FlagHeads(
         FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
         T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
         T               (&preds)[ITEMS_PER_THREAD],         ///< [out] Calling thread's predecessor items
@@ -298,42 +715,49 @@ public:
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-
-    template <
-        int             ITEMS_PER_THREAD,
-        typename        FlagT,
-        typename        FlagOp>
-    __device__ __forceinline__ void FlagHeads(
-        FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
-        T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
-        FlagOp          flag_op)                            ///< [in] Binary boolean flag predicate
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagHeads
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractLeft instead.
+     */
+    template <int ITEMS_PER_THREAD,
+              typename FlagT,
+              typename FlagOp>
+    CUB_DEPRECATED __device__ __forceinline__ void
+    FlagHeads(FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
+              T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
+              FlagOp          flag_op)                            ///< [in] Binary boolean flag predicate
     {
         T preds[ITEMS_PER_THREAD];
         FlagHeads(head_flags, input, preds, flag_op);
     }
 
-
-    template <
-        int             ITEMS_PER_THREAD,
-        typename        FlagT,
-        typename        FlagOp>
-    __device__ __forceinline__ void FlagHeads(
-        FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
-        T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
-        FlagOp          flag_op,                            ///< [in] Binary boolean flag predicate
-        T               tile_predecessor_item)              ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt> from <em>thread</em><sub>0</sub>).
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagHeads
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractLeft instead.
+     */
+    template <int ITEMS_PER_THREAD,
+              typename FlagT,
+              typename FlagOp>
+    CUB_DEPRECATED __device__ __forceinline__ void
+    FlagHeads(FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
+              T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
+              FlagOp          flag_op,                            ///< [in] Binary boolean flag predicate
+              T               tile_predecessor_item)              ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt> from <em>thread</em><sub>0</sub>).
     {
         T preds[ITEMS_PER_THREAD];
         FlagHeads(head_flags, input, preds, flag_op, tile_predecessor_item);
     }
 
 
-
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagTails
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractRight instead.
+     */
     template <
-        int             ITEMS_PER_THREAD,
-        typename        FlagT,
-        typename        FlagOp>
-    __device__ __forceinline__ void FlagTails(
+      int             ITEMS_PER_THREAD,
+      typename        FlagT,
+      typename        FlagOp>
+    CUB_DEPRECATED __device__ __forceinline__ void FlagTails(
         FlagT           (&tail_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity tail_flags
         T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
         FlagOp          flag_op)                            ///< [in] Binary boolean flag predicate
@@ -357,11 +781,15 @@ public:
     }
 
 
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagTails
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractRight instead.
+     */
     template <
-        int             ITEMS_PER_THREAD,
-        typename        FlagT,
-        typename        FlagOp>
-    __device__ __forceinline__ void FlagTails(
+      int             ITEMS_PER_THREAD,
+      typename        FlagT,
+      typename        FlagOp>
+    CUB_DEPRECATED __device__ __forceinline__ void FlagTails(
         FlagT           (&tail_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity tail_flags
         T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
         FlagOp          flag_op,                            ///< [in] Binary boolean flag predicate
@@ -388,11 +816,16 @@ public:
     }
 
 
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagHeadsAndTails
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractLeft or
+     * cub::BlockAdjacentDifference::SubtractRight instead.
+     */
     template <
-        int             ITEMS_PER_THREAD,
-        typename        FlagT,
-        typename        FlagOp>
-    __device__ __forceinline__ void FlagHeadsAndTails(
+      int             ITEMS_PER_THREAD,
+      typename        FlagT,
+      typename        FlagOp>
+    CUB_DEPRECATED __device__ __forceinline__ void FlagHeadsAndTails(
         FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
         FlagT           (&tail_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity tail_flags
         T               (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
@@ -439,11 +872,16 @@ public:
     }
 
 
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagHeadsAndTails
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractLeft or
+     * cub::BlockAdjacentDifference::SubtractRight instead.
+     */
     template <
-        int             ITEMS_PER_THREAD,
-        typename        FlagT,
-        typename        FlagOp>
-    __device__ __forceinline__ void FlagHeadsAndTails(
+      int             ITEMS_PER_THREAD,
+      typename        FlagT,
+      typename        FlagOp>
+    CUB_DEPRECATED __device__ __forceinline__ void FlagHeadsAndTails(
         FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
         FlagT           (&tail_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity tail_flags
         T               tile_successor_item,                ///< [in] <b>[<em>thread</em><sub><tt>BLOCK_THREADS</tt>-1</sub> only]</b> Item with which to compare the last tile item (<tt>input</tt><sub><em>ITEMS_PER_THREAD</em>-1</sub> from <em>thread</em><sub><em>BLOCK_THREADS</em>-1</sub>).
@@ -491,11 +929,16 @@ public:
         Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, tail_flags, input, flag_op);
     }
 
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagHeadsAndTails
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractLeft or
+     * cub::BlockAdjacentDifference::SubtractRight instead.
+     */
     template <
-        int             ITEMS_PER_THREAD,
-        typename        FlagT,
-        typename        FlagOp>
-    __device__ __forceinline__ void FlagHeadsAndTails(
+      int             ITEMS_PER_THREAD,
+      typename        FlagT,
+      typename        FlagOp>
+    CUB_DEPRECATED __device__ __forceinline__ void FlagHeadsAndTails(
         FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
         T               tile_predecessor_item,              ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt> from <em>thread</em><sub>0</sub>).
         FlagT           (&tail_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity tail_flags
@@ -538,11 +981,16 @@ public:
     }
 
 
+    /**
+     * \deprecated [Since 1.14.0] The cub::BlockAdjacentDifference::FlagHeadsAndTails
+     * APIs are deprecated. Use cub::BlockAdjacentDifference::SubtractLeft or
+     * cub::BlockAdjacentDifference::SubtractRight instead.
+     */
     template <
         int             ITEMS_PER_THREAD,
         typename        FlagT,
         typename        FlagOp>
-    __device__ __forceinline__ void FlagHeadsAndTails(
+    CUB_DEPRECATED __device__ __forceinline__ void FlagHeadsAndTails(
         FlagT           (&head_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity head_flags
         T               tile_predecessor_item,              ///< [in] <b>[<em>thread</em><sub>0</sub> only]</b> Item with which to compare the first tile item (<tt>input<sub>0</sub></tt> from <em>thread</em><sub>0</sub>).
         FlagT           (&tail_flags)[ITEMS_PER_THREAD],    ///< [out] Calling thread's discontinuity tail_flags

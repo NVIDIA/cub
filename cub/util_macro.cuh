@@ -34,6 +34,8 @@
 
 #include "util_namespace.cuh"
 
+#include <utility>
+
 /// Optional outer namespace(s)
 CUB_NS_PREFIX
 
@@ -55,6 +57,24 @@ namespace cub {
         #define CUB_ALIGN(bytes) __attribute__((aligned(bytes)))
     #endif
 #endif
+
+#define CUB_PREVENT_MACRO_SUBSTITUTION
+
+template <typename T, typename U>
+constexpr __host__ __device__ auto min CUB_PREVENT_MACRO_SUBSTITUTION(T &&t,
+                                                                      U &&u)
+  -> decltype(t < u ? std::forward<T>(t) : std::forward<U>(u))
+{
+  return t < u ? std::forward<T>(t) : std::forward<U>(u);
+}
+
+template <typename T, typename U>
+constexpr __host__ __device__ auto max CUB_PREVENT_MACRO_SUBSTITUTION(T &&t,
+                                                                      U &&u)
+  -> decltype(t < u ? std::forward<U>(u) : std::forward<T>(t))
+{
+  return t < u ? std::forward<U>(u) : std::forward<T>(t);
+}
 
 #ifndef CUB_MAX
     /// Select maximum(a, b)

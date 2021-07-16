@@ -49,6 +49,7 @@
 //#include "block/block_shift.cuh"
 
 // Device
+#include "device/device_merge_sort.cuh"
 #include "device/device_histogram.cuh"
 #include "device/device_partition.cuh"
 #include "device/device_radix_sort.cuh"
@@ -59,6 +60,7 @@
 #include "device/device_segmented_reduce.cuh"
 #include "device/device_select.cuh"
 #include "device/device_spmv.cuh"
+#include "device/device_adjacent_difference.cuh"
 
 // Grid
 //#include "grid/grid_barrier.cuh"
