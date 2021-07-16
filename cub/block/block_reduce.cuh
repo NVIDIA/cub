@@ -210,6 +210,49 @@ enum BlockReduceAlgorithm
  *
  * \endcode
  *
+ * \par Re-using dynamically allocating shared memory
+ * The code snippet below illustrates usage of dynamically shared memory
+ * with BlockReduce and how to re-purpose the same memory region
+ * \par
+ * \code
+ * #include <cub/cub.cuh>   // or equivalently <cub/block/block_reduce.cuh>
+ *
+ * __global__ void ExampleKernel(...)
+ * {
+ *     typedef cub::BlockReduce<int, 128> BlockReduce;
+ *
+ *     // shared memory byte-array
+ *     extern __shared__ char smem[];
+ *     // cast to lvalue reference of expected type
+ *     auto& temp_storage = *reinterpret_cast<typename BlockReduce::TempStorage*>(smem);
+ *
+ *     // use as in example above
+ *     int aggregate = BlockReduce(temp_storage).Sum(...)
+ *     ...
+ *
+ *     // block-wide sync barrier necessary to re-use shared mem safely
+ *     __syncthreads();
+ *     int* smem_integers = reinterpret_cast<int*>(smem);
+ *     if (threadIdx.x == 0) smem_integers[0] = 42;
+ *     ...
+ * }
+ *
+ * void host_code(...)
+ * {
+ *     // the size of temporary storage can be deduced automatically
+ *     // from device code only. On the host side, the architecture must be
+ *     // specified explicitly. For a range of architectures, one could
+ *     // perform a max op over several values (600, 700, 800 etc.)
+ *     // Additionally, we specify type, block size (x dim), reduce algorithm,
+ *     // and the block sizes in y/z dim
+ *     constexpr int ARCH = 700;
+ *     // we need at least size for 1 integer in our kernel
+ *     auto smem_size = max(sizeof(int), sizeof(typename cub::BlockReduce<
+ *         int, 128, cub::BLOCK_REDUCE_WARP_REDUCTIONS,
+ *         1, 1, ARCH>::TempStorage));
+ *     ExampleKernel<<<num_blocks, 128, smem_size, stream>>>(...);
+ *
+ * \endcode
  */
 template <
     typename                T,
