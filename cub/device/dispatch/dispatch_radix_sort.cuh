@@ -550,15 +550,17 @@ template <
     typename KeyT,
     typename ValueT,
     typename OffsetT,
-    typename AtomicOffsetT = OffsetT>
+    typename PartOffsetT,
+    typename AtomicOffsetT = PartOffsetT>
 __global__ void __launch_bounds__(ChainedPolicyT::ActivePolicy::OnesweepPolicy::BLOCK_THREADS)
 DeviceRadixSortOnesweepKernel
     (AtomicOffsetT* d_lookback, AtomicOffsetT* d_ctrs, OffsetT* d_bins_out,
      const OffsetT* d_bins_in, KeyT* d_keys_out, const KeyT* d_keys_in, ValueT* d_values_out,
-     const ValueT* d_values_in, OffsetT num_items, int current_bit, int num_bits)
+     const ValueT* d_values_in, PartOffsetT num_items, int current_bit, int num_bits)
 {
     typedef typename ChainedPolicyT::ActivePolicy::OnesweepPolicy OnesweepPolicyT;
-    typedef AgentRadixSortOnesweep<OnesweepPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT> AgentT;
+    typedef AgentRadixSortOnesweep<OnesweepPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT,
+                                   PartOffsetT> AgentT;
     __shared__ typename AgentT::TempStorage s;
 
     AgentT agent(s, d_lookback, d_ctrs, d_bins_out, d_bins_in, d_keys_out, d_keys_in,
@@ -1262,7 +1264,9 @@ struct DispatchRadixSort :
     cudaError_t InvokeOnesweep()
     {
         typedef typename DispatchRadixSort::MaxPolicy MaxPolicyT;
-        typedef OffsetT AtomicOffsetT;
+        // PartOffsetT is used for offsets within a part, and must be signed.
+        typedef int PartOffsetT;
+        typedef PartOffsetT AtomicOffsetT;
 
         // compute temporary storage size
         const int RADIX_BITS = ActivePolicyT::ONESWEEP_RADIX_BITS;
@@ -1272,10 +1276,11 @@ struct DispatchRadixSort :
         const int ONESWEEP_TILE_ITEMS = ONESWEEP_ITEMS_PER_THREAD * ONESWEEP_BLOCK_THREADS;
         // parts handle inputs with >=2**30 elements, due to the way lookback works
         // for testing purposes, one part is <= 2**28 elements
-        const int PART_SIZE = ((1 << 28) - 1) / ONESWEEP_TILE_ITEMS * ONESWEEP_TILE_ITEMS;
+        const PartOffsetT PART_SIZE = ((1 << 28) - 1) / ONESWEEP_TILE_ITEMS * ONESWEEP_TILE_ITEMS;
         int num_passes = cub::DivideAndRoundUp(end_bit - begin_bit, RADIX_BITS);
-        int num_parts = static_cast<int>(cub::DivideAndRoundUp(num_items, PART_SIZE));
-        OffsetT max_num_blocks = cub::DivideAndRoundUp(CUB_MIN(num_items, PART_SIZE), ONESWEEP_TILE_ITEMS);
+        OffsetT num_parts = static_cast<OffsetT>(cub::DivideAndRoundUp(num_items, PART_SIZE));
+        PartOffsetT max_num_blocks = cub::DivideAndRoundUp(CUB_MIN(num_items, PART_SIZE),
+                                                           ONESWEEP_TILE_ITEMS);
         
         size_t value_size = KEYS_ONLY ? 0 : sizeof(ValueT);
         size_t allocation_sizes[] =
@@ -1349,15 +1354,16 @@ struct DispatchRadixSort :
                  current_bit += RADIX_BITS, ++pass)
             {
                 int num_bits = CUB_MIN(end_bit - current_bit, RADIX_BITS);
-                for (int part = 0; part < num_parts; ++part)
+                for (OffsetT part = 0; part < num_parts; ++part)
                 {
-                    int part_num_items = CUB_MIN(num_items - part * PART_SIZE, PART_SIZE);
-                    int num_blocks = cub::DivideAndRoundUp(part_num_items, ONESWEEP_TILE_ITEMS);
+                    PartOffsetT part_num_items = CUB_MIN(num_items - part * PART_SIZE, PART_SIZE);
+                    PartOffsetT num_blocks =
+                        cub::DivideAndRoundUp(part_num_items, ONESWEEP_TILE_ITEMS);
                     if (CubDebug(error = cudaMemsetAsync(
                            d_lookback, 0, num_blocks * RADIX_DIGITS * sizeof(AtomicOffsetT),
                            stream))) break;
                     auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
-                        MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT>;
+                        MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT, PartOffsetT>;
                     onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
                         (d_lookback, d_ctrs + part * num_passes + pass,
                          part < num_parts - 1 ?

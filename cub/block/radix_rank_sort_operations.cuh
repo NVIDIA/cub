@@ -144,5 +144,50 @@ struct ShiftDigitExtractor : BaseDigitExtractor<KeyT>
     }
 };
 
+// T == int, unsigned int, unsigned long long
+template <typename T>
+__device__ __forceinline__ T AtomicAdd(T* ptr, T value)
+{
+    return atomicAdd(ptr, value);
+}
+
+__device__ __forceinline__ long long AtomicAdd(long long* ptr, long long value)
+{
+    return atomicAdd((unsigned long long*)ptr, (unsigned long long)value);
+}
+
+__device__ __forceinline__ long AtomicAdd(long* ptr, long value, Int2Type<4>)
+{
+    return atomicAdd((int*)ptr, int(value));
+}
+
+__device__ __forceinline__ long AtomicAdd(long* ptr, long value, Int2Type<8>)
+{
+    return atomicAdd((unsigned long long*)ptr, (unsigned long long)value);
+}
+
+__device__ __forceinline__ long AtomicAdd(long* ptr, long value)
+{
+    return AtomicAdd(ptr, value, Int2Type<sizeof(long)>());
+}
+
+__device__ __forceinline__ unsigned long AtomicAdd
+(unsigned long* ptr, unsigned long value, Int2Type<4>)
+{
+    return atomicAdd((unsigned int*)ptr, (unsigned int)value);
+}
+
+__device__ __forceinline__ unsigned long AtomicAdd
+(unsigned long* ptr, unsigned long value, Int2Type<8>)
+{
+    return atomicAdd((unsigned long long*)ptr, (unsigned long long)value);
+}
+
+__device__ __forceinline__ unsigned long AtomicAdd
+(unsigned long* ptr, unsigned long value)
+{
+    return AtomicAdd(ptr, value, Int2Type<sizeof(unsigned long)>());
+}
+
 }               // CUB namespace
 CUB_NS_POSTFIX  // Optional outer namespace(s)
