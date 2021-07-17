@@ -252,7 +252,7 @@ struct DeviceRleDispatch
         typename                    DeviceRleSweepKernelPtr>        ///< Function type of cub::DeviceRleSweepKernelPtr
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*                       d_temp_storage,                 ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                       d_temp_storage,                 ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
         OffsetsOutputIteratorT      d_offsets_out,                  ///< [out] Pointer to the output sequence of run-offsets
@@ -281,10 +281,6 @@ struct DeviceRleDispatch
             // Get device ordinal
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
-
-            // Get SM count
-            int sm_count;
-            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
 
             // Number of input tiles
             int tile_size = device_rle_config.block_threads * device_rle_config.items_per_thread;
@@ -383,7 +379,7 @@ struct DeviceRleDispatch
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*                       d_temp_storage,                 ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                       d_temp_storage,                 ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to input sequence of data items
         OffsetsOutputIteratorT      d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets
