@@ -191,7 +191,7 @@ struct DeviceRadixSort
         typename            ValueT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairs(
-        void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                *d_temp_storage,                        ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         const KeyT          *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
         KeyT                *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
@@ -303,7 +303,7 @@ struct DeviceRadixSort
         typename            ValueT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairs(
-        void                    *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                    *d_temp_storage,                        ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         DoubleBuffer<KeyT>      &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" device-accessible buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<ValueT>    &d_values,                              ///< [in,out] Double-buffer of values whose "current" device-accessible buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
@@ -393,7 +393,7 @@ struct DeviceRadixSort
         typename            ValueT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairsDescending(
-        void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                *d_temp_storage,                        ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         const KeyT          *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
         KeyT                *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
@@ -500,7 +500,7 @@ struct DeviceRadixSort
         typename            ValueT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairsDescending(
-        void                    *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                    *d_temp_storage,                        ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         DoubleBuffer<KeyT>      &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" device-accessible buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         DoubleBuffer<ValueT>    &d_values,                              ///< [in,out] Double-buffer of values whose "current" device-accessible buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
@@ -590,7 +590,7 @@ struct DeviceRadixSort
     template <typename KeyT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeys(
-        void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                *d_temp_storage,                        ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         const KeyT          *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
         KeyT                *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
@@ -688,7 +688,7 @@ struct DeviceRadixSort
     template <typename KeyT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeys(
-        void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                *d_temp_storage,                        ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         DoubleBuffer<KeyT>  &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" device-accessible buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] Number of items to sort
@@ -771,7 +771,7 @@ struct DeviceRadixSort
     template <typename KeyT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeysDescending(
-        void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                *d_temp_storage,                        ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         const KeyT          *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
         KeyT                *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
@@ -864,7 +864,7 @@ struct DeviceRadixSort
     template <typename KeyT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeysDescending(
-        void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                *d_temp_storage,                        ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         DoubleBuffer<KeyT>  &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" device-accessible buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] Number of items to sort
