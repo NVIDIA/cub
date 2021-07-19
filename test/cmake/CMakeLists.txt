@@ -13,3 +13,12 @@ if (NOT CUB_IN_THRUST) # Thrust has its own checks for this:
       -D "CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
   )
 endif()
+
+# Check that namespace macros are used correctly:
+add_test(
+  NAME cub.test.cmake.check_namespace
+  COMMAND
+    "${CMAKE_COMMAND}"
+      -D "CUB_SOURCE_DIR=${CUB_SOURCE_DIR}"
+      -P "${CMAKE_CURRENT_LIST_DIR}/check_namespace.cmake"
+)

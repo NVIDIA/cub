@@ -46,11 +46,7 @@
 #include <cassert>
 #endif
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /**
@@ -402,6 +398,7 @@ CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersionUncached(int& ptx_version)
 __host__ inline cudaError_t PtxVersionUncached(int& ptx_version, int device)
 {
     SwitchDevice sd(device);
+    (void)sd;
     return PtxVersionUncached(ptx_version);
 }
 
@@ -712,5 +709,4 @@ struct ChainedPolicy<PTX_VERSION, PolicyT, PolicyT>
 
 /** @} */       // end group UtilMgmt
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
