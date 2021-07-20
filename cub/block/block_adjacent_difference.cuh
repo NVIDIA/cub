@@ -44,7 +44,7 @@ template <
     int         BLOCK_DIM_X,
     int         BLOCK_DIM_Y     = 1,
     int         BLOCK_DIM_Z     = 1,
-    int         PTX_ARCH        = CUB_PTX_ARCH>
+    int         LEGACY_PTX_ARCH = 0>
 class BlockAdjacentDifference
 {
 private:

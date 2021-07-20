@@ -37,115 +37,57 @@
 #include "util_namespace.cuh"
 #include "util_macro.cuh"
 
+// Legacy include; this used to be defined in here.
+#include "detail/detect_cuda_runtime.cuh"
+
 CUB_NAMESPACE_BEGIN
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
-#if ((__CUDACC_VER_MAJOR__ >= 9) || defined(__NVCOMPILER_CUDA__) ||            \
+#if ((__CUDACC_VER_MAJOR__ >= 9) || defined(_NVHPC_CUDA) ||            \
      CUDA_VERSION >= 9000) &&                                                  \
   !defined(CUB_USE_COOPERATIVE_GROUPS)
 #define CUB_USE_COOPERATIVE_GROUPS
 #endif
 
-/// In device code, CUB_PTX_ARCH expands to the PTX version for which we are
-/// compiling. In host code, CUB_PTX_ARCH's value is implementation defined.
-#ifndef CUB_PTX_ARCH
-    #if defined(__NVCOMPILER_CUDA__)
-        // __NVCOMPILER_CUDA_ARCH__ is the target PTX version, and is defined
-        // when compiling both host code and device code. Currently, only one
-        // PTX version can be targeted.
-        #define CUB_PTX_ARCH __NVCOMPILER_CUDA_ARCH__
-    #elif !defined(__CUDA_ARCH__)
-        #define CUB_PTX_ARCH 0
-    #else
-        #define CUB_PTX_ARCH __CUDA_ARCH__
-    #endif
-#endif
-
-#ifndef CUB_IS_DEVICE_CODE
-    #if defined(__NVCOMPILER_CUDA__)
-        #define CUB_IS_DEVICE_CODE __builtin_is_device_code()
-        #define CUB_IS_HOST_CODE (!__builtin_is_device_code())
-        #define CUB_INCLUDE_DEVICE_CODE 1
-        #define CUB_INCLUDE_HOST_CODE 1
-    #elif CUB_PTX_ARCH > 0
-        #define CUB_IS_DEVICE_CODE 1
-        #define CUB_IS_HOST_CODE 0
-        #define CUB_INCLUDE_DEVICE_CODE 1
-        #define CUB_INCLUDE_HOST_CODE 0
-    #else
-        #define CUB_IS_DEVICE_CODE 0
-        #define CUB_IS_HOST_CODE 1
-        #define CUB_INCLUDE_DEVICE_CODE 0
-        #define CUB_INCLUDE_HOST_CODE 1
-    #endif
-#endif
-
 /// Maximum number of devices supported.
 #ifndef CUB_MAX_DEVICES
-    #define CUB_MAX_DEVICES 128
+    #define CUB_MAX_DEVICES (128)
 #endif
 
-#if CUB_CPP_DIALECT >= 2011
-    static_assert(CUB_MAX_DEVICES > 0, "CUB_MAX_DEVICES must be greater than 0.");
-#endif
-
-/// Whether or not the source targeted by the active compiler pass is allowed to  invoke device kernels or methods from the CUDA runtime API.
-#ifndef CUB_RUNTIME_FUNCTION
-    #if !defined(__CUDA_ARCH__) || (__CUDA_ARCH__>= 350 && defined(__CUDACC_RDC__))
-        #define CUB_RUNTIME_ENABLED
-        #define CUB_RUNTIME_FUNCTION __host__ __device__
-    #else
-        #define CUB_RUNTIME_FUNCTION __host__
-    #endif
-#endif
-
+static_assert(CUB_MAX_DEVICES > 0, "CUB_MAX_DEVICES must be greater than 0.");
 
 /// Number of threads per warp
 #ifndef CUB_LOG_WARP_THREADS
-    #define CUB_LOG_WARP_THREADS(arch)                      \
-        (5)
-    #define CUB_WARP_THREADS(arch)                          \
-        (1 << CUB_LOG_WARP_THREADS(arch))
+    #define CUB_LOG_WARP_THREADS (5)
+    #define CUB_WARP_THREADS (1 << CUB_LOG_WARP_THREADS)
 
-    #define CUB_PTX_WARP_THREADS        CUB_WARP_THREADS(CUB_PTX_ARCH)
-    #define CUB_PTX_LOG_WARP_THREADS    CUB_LOG_WARP_THREADS(CUB_PTX_ARCH)
+    #define CUB_PTX_WARP_THREADS        CUB_WARP_THREADS
+    #define CUB_PTX_LOG_WARP_THREADS    CUB_LOG_WARP_THREADS
 #endif
 
 
 /// Number of smem banks
 #ifndef CUB_LOG_SMEM_BANKS
-    #define CUB_LOG_SMEM_BANKS(arch)                        \
-        ((arch >= 200) ?                                    \
-            (5) :                                           \
-            (4))
-    #define CUB_SMEM_BANKS(arch)                            \
-        (1 << CUB_LOG_SMEM_BANKS(arch))
+    #define CUB_LOG_SMEM_BANKS (5)
+    #define CUB_SMEM_BANKS (1 << CUB_LOG_SMEM_BANKS)
 
-    #define CUB_PTX_LOG_SMEM_BANKS      CUB_LOG_SMEM_BANKS(CUB_PTX_ARCH)
-    #define CUB_PTX_SMEM_BANKS          CUB_SMEM_BANKS(CUB_PTX_ARCH)
+    #define CUB_PTX_LOG_SMEM_BANKS      CUB_LOG_SMEM_BANKS
+    #define CUB_PTX_SMEM_BANKS          CUB_SMEM_BANKS
 #endif
 
 
 /// Oversubscription factor
 #ifndef CUB_SUBSCRIPTION_FACTOR
-    #define CUB_SUBSCRIPTION_FACTOR(arch)                   \
-        ((arch >= 300) ?                                    \
-            (5) :                                           \
-            ((arch >= 200) ?                                \
-                (3) :                                       \
-                (10)))
-    #define CUB_PTX_SUBSCRIPTION_FACTOR             CUB_SUBSCRIPTION_FACTOR(CUB_PTX_ARCH)
+    #define CUB_SUBSCRIPTION_FACTOR (5)
+    #define CUB_PTX_SUBSCRIPTION_FACTOR CUB_SUBSCRIPTION_FACTOR
 #endif
 
 
 /// Prefer padding overhead vs X-way conflicts greater than this threshold
 #ifndef CUB_PREFER_CONFLICT_OVER_PADDING
-    #define CUB_PREFER_CONFLICT_OVER_PADDING(arch)          \
-        ((arch >= 300) ?                                    \
-            (1) :                                           \
-            (4))
-    #define CUB_PTX_PREFER_CONFLICT_OVER_PADDING    CUB_PREFER_CONFLICT_OVER_PADDING(CUB_PTX_ARCH)
+    #define CUB_PREFER_CONFLICT_OVER_PADDING (1)
+    #define CUB_PTX_PREFER_CONFLICT_OVER_PADDING CUB_PREFER_CONFLICT_OVER_PADDING
 #endif
 
 

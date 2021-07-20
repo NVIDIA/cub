@@ -56,7 +56,9 @@
 #include "cub/util_type.cuh"
 #include "cub/util_macro.cuh"
 #include "cub/util_math.cuh"
+#include "cub/util_namespace.cuh"
 #include "cub/util_ptx.cuh"
+#include "cub/detail/target.cuh"
 #include "cub/iterator/discard_output_iterator.cuh"
 
 /******************************************************************************
@@ -544,82 +546,74 @@ enum GenMode
  */
 #pragma nv_exec_check_disable
 template <typename T>
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)
+__host__ __device__ __forceinline__
+void InitValue(GenMode gen_mode, T &value, int index = 0)
 {
-    // RandomBits is host-only.
-    if (CUB_IS_DEVICE_CODE)
-    {
-        #if CUB_INCLUDE_DEVICE_CODE
-            switch (gen_mode)
-            {
-                case RANDOM:
-                case RANDOM_BIT:
-                case RANDOM_MINUS_PLUS_ZERO:
-                    _CubLog("%s\n",
-                            "cub::InitValue cannot generate random numbers on device.");
-                    CUB_NS_QUALIFIER::ThreadTrap();
-                    break;
-                case UNIFORM:
-                    value = 2;
-                    break;
-                case INTEGER_SEED:
-                default:
-                    value = (T) index;
-                    break;
-            }
-        #endif // CUB_INCLUDE_DEVICE_CODE
-    }
-    else
-    {
-        #if CUB_INCLUDE_HOST_CODE
-            switch (gen_mode)
-            {
-                case RANDOM:
-                    RandomBits(value);
-                    break;
-                case RANDOM_BIT:
-                {
-                    char c;
-                    RandomBits(c, 0, 0, 1);
-                    value = (c > 0) ? (T) 1 : (T) -1;
-                    break;
-                }
-                case RANDOM_MINUS_PLUS_ZERO:
-                {
-                    // Replace roughly 1/128 of values with -0.0 or +0.0, and generate the rest randomly
-                    typedef typename CUB_NS_QUALIFIER::Traits<T>::UnsignedBits UnsignedBits;
-                    char c;
-                    RandomBits(c);
-                    if (c == 0)
-                    {
-                        // Replace 1/256 of values with +0.0 bit pattern
-                        value = SafeBitCast<T>(UnsignedBits(0));
-                    }
-                    else if (c == 1)
-                    {
-                        // Replace 1/256 of values with -0.0 bit pattern
-                        value = SafeBitCast<T>(UnsignedBits(UnsignedBits(1) <<
-                                                            (sizeof(UnsignedBits) * 8) - 1));
-                    }
-                    else
-                    {
-                        // 127/128 of values are random
-                        RandomBits(value);
-                    }
-                    break;
-                }
-                case UNIFORM:
-                    value = 2;
-                    break;
-                case INTEGER_SEED:
-                default:
-                    value = (T) index;
-                    break;
-            }
-        #endif // CUB_INCLUDE_HOST_CODE
-    }
+  // RandomBits is host-only.
+  NV_IF_TARGET(
+    NV_IS_HOST,
+    (
+      switch (gen_mode) {
+      case RANDOM:
+        RandomBits(value);
+        break;
+      case RANDOM_BIT: {
+        char c;
+        RandomBits(c, 0, 0, 1);
+        value = static_cast<T>((c > 0) ? 1 : -1);
+        break;
+      }
+      case RANDOM_MINUS_PLUS_ZERO: {
+        // Replace roughly 1/128 of values with -0.0 or +0.0, and
+        // generate the rest randomly
+        using UnsignedBits = typename CUB_NS_QUALIFIER::Traits<T>::UnsignedBits;
+        char c;
+        RandomBits(c);
+        if (c == 0)
+        {
+          // Replace 1/256 of values with +0.0 bit pattern
+          value = SafeBitCast<T>(UnsignedBits(0));
+        }
+        else if (c == 1)
+        {
+          // Replace 1/256 of values with -0.0 bit pattern
+          value = SafeBitCast<T>(
+            UnsignedBits(UnsignedBits(1) << (sizeof(UnsignedBits) * 8) - 1));
+        }
+        else
+        {
+          // 127/128 of values are random
+          RandomBits(value);
+        }
+        break;
+      }
+      case UNIFORM:
+        value = 2;
+        break;
+      case INTEGER_SEED:
+      default:
+        value = static_cast<T>(index);
+        break;
+      }),
+    ( // NV_IS_DEVICE:
+      switch (gen_mode) {
+      case RANDOM:
+      case RANDOM_BIT:
+      case RANDOM_MINUS_PLUS_ZERO:
+        _CubLog("%s\n",
+                "cub::InitValue cannot generate random numbers on device.");
+        CUB_NS_QUALIFIER::ThreadTrap();
+        break;
+      case UNIFORM:
+        value = 2;
+        break;
+      case INTEGER_SEED:
+      default:
+        value = (T)index;
+        break;
+      }
+    ));
 }
-
 
 /**
  * Initialize value (bool)
@@ -627,51 +621,46 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 #pragma nv_exec_check_disable
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, int index = 0)
 {
-    // RandomBits is host-only.
-    if (CUB_IS_DEVICE_CODE)
+  // RandomBits is host-only.
+  NV_IF_TARGET(
+    NV_IS_HOST,
+    (
+      switch (gen_mode)
+      {
+      case RANDOM:
+      case RANDOM_BIT:
+          char c;
+          RandomBits(c, 0, 0, 1);
+          value = (c > 0);
+          break;
+       case UNIFORM:
+          value = true;
+          break;
+      case INTEGER_SEED:
+      default:
+          value = (index > 0);
+          break;
+      }
+    ),
+  ( // NV_IS_DEVICE,
+    switch (gen_mode)
     {
-        #if CUB_INCLUDE_DEVICE_CODE
-            switch (gen_mode)
-            {
-                case RANDOM:
-                case RANDOM_BIT:
-                case RANDOM_MINUS_PLUS_ZERO:
-                    _CubLog("%s\n",
-                            "cub::InitValue cannot generate random numbers on device.");
-                    CUB_NS_QUALIFIER::ThreadTrap();
-                    break;
-                case UNIFORM:
-                    value = true;
-                    break;
-                case INTEGER_SEED:
-                default:
-                    value = (index > 0);
-                    break;
-            }
-        #endif // CUB_INCLUDE_DEVICE_CODE
+      case RANDOM:
+      case RANDOM_BIT:
+      case RANDOM_MINUS_PLUS_ZERO:
+        _CubLog("%s\n",
+                "cub::InitValue cannot generate random numbers on device.");
+        CUB_NS_QUALIFIER::ThreadTrap();
+        break;
+      case UNIFORM:
+        value = true;
+        break;
+      case INTEGER_SEED:
+      default:
+        value = (index > 0);
+        break;
     }
-    else
-    {
-        #if CUB_INCLUDE_HOST_CODE
-            switch (gen_mode)
-            {
-                case RANDOM:
-                case RANDOM_BIT:
-                case RANDOM_MINUS_PLUS_ZERO:
-                    char c;
-                    RandomBits(c, 0, 0, 1);
-                    value = (c > 0);
-                    break;
-                case UNIFORM:
-                    value = true;
-                    break;
-                case INTEGER_SEED:
-                default:
-                    value = (index > 0);
-                    break;
-            }
-        #endif // CUB_INCLUDE_HOST_CODE
-    }
+  ));
 }
 
 
@@ -699,22 +688,15 @@ __host__ __device__ __forceinline__ void InitValue(
     // This specialization only appears to be used by test_warp_scan.
     // It initializes with uniform values and random keys, so we need to
     // protect the call to the host-only RandomBits.
-    if (CUB_IS_DEVICE_CODE)
-    {
-        #if CUB_INCLUDE_DEVICE_CODE
-            _CubLog("%s\n",
-                    "cub::InitValue cannot generate random numbers on device.");
-            CUB_NS_QUALIFIER::ThreadTrap();
-        #endif // CUB_INCLUDE_DEVICE_CODE
-    }
-    else
-    {
-        #if CUB_INCLUDE_HOST_CODE
-            // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
-            RandomBits(value.key, 3);
-            value.key = (value.key & 0x1);
-        #endif // CUB_INCLUDE_HOST_CODE
-    }
+    NV_IF_TARGET(NV_IS_HOST,
+                 // Assign corresponding flag with a likelihood of the last bit
+                 // being set with entropy-reduction level 3
+                 (RandomBits(value.key, 3); value.key = (value.key & 0x1);),
+                 ( // NV_IS_DEVICE
+                   _CubLog("%s\n",
+                           "cub::InitValue cannot generate random numbers on "
+                           "device.");
+                   CUB_NS_QUALIFIER::ThreadTrap();));
 }
 
 
@@ -800,13 +782,13 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             PRIMITIVE       = false,                        \
             NULL_TYPE       = false,                        \
         };                                                  \
-        static T Max()                                      \
+        static __host__ __device__ T Max()                  \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T Lowest()                                   \
+        static __host__ __device__ T Lowest()               \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Lowest()};            \
@@ -888,14 +870,14 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             PRIMITIVE       = false,                        \
             NULL_TYPE       = false,                        \
         };                                                  \
-        static T Max()                                      \
+        static __host__ __device__ T Max()                  \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Max(),                \
                 NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T Lowest()                                   \
+        static __host__ __device__  T Lowest()              \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Lowest(),             \
@@ -985,7 +967,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             PRIMITIVE       = false,                        \
             NULL_TYPE       = false,                        \
         };                                                  \
-        static T Max()                                      \
+        static __host__ __device__ T Max()                  \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Max(),                \
@@ -993,7 +975,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
                 NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T Lowest()                                   \
+        static __host__ __device__ T Lowest()               \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Lowest(),             \
@@ -1090,7 +1072,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             PRIMITIVE       = false,                        \
             NULL_TYPE       = false,                        \
         };                                                  \
-        static T Max()                                      \
+        static __host__ __device__ T Max()                  \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Max(),                \
@@ -1099,7 +1081,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
                 NumericTraits<BaseT>::Max()};               \
             return retval;                                  \
         }                                                   \
-        static T Lowest()                                   \
+        static __host__ __device__ T Lowest()               \
         {                                                   \
             T retval = {                                    \
                 NumericTraits<BaseT>::Lowest(),             \
@@ -1242,7 +1224,7 @@ struct NumericTraits<TestFoo>
         PRIMITIVE       = false,
         NULL_TYPE       = false,
     };
-    static TestFoo Max()
+  __host__ __device__ static TestFoo Max()
     {
         return TestFoo::MakeTestFoo(
             NumericTraits<long long>::Max(),
@@ -1251,7 +1233,7 @@ struct NumericTraits<TestFoo>
             NumericTraits<char>::Max());
     }
 
-    static TestFoo Lowest()
+  __host__ __device__ static TestFoo Lowest()
     {
         return TestFoo::MakeTestFoo(
             NumericTraits<long long>::Lowest(),
@@ -1358,14 +1340,14 @@ struct NumericTraits<TestBar>
         PRIMITIVE       = false,
         NULL_TYPE       = false,
     };
-    static TestBar Max()
+    __host__ __device__ static TestBar Max()
     {
         return TestBar(
             NumericTraits<long long>::Max(),
             NumericTraits<int>::Max());
     }
 
-    static TestBar Lowest()
+    __host__ __device__ static TestBar Lowest()
     {
         return TestBar(
             NumericTraits<long long>::Lowest(),

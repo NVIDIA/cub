@@ -37,11 +37,11 @@
 #include <algorithm>
 #include <typeinfo>
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
     #include <cuda_fp16.h>
 #endif
 
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
     #include <cuda_bf16.h>
 #endif
 
@@ -705,14 +705,14 @@ struct UnwrapHalfAndBfloat16 {
     using Type = T;
 };
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
 template <>
 struct UnwrapHalfAndBfloat16<half_t> {
     using Type = __half;
 };
 #endif
 
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
 template <>
 struct UnwrapHalfAndBfloat16<bfloat16_t> {
     using Type = __nv_bfloat16;
@@ -1320,10 +1320,11 @@ int main(int argc, char** argv)
 
     printf("\n-------------------------------\n");
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
     Test<CUB,           half_t,             NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
 #endif
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
 #if !defined(__ICC)
     // Fails with `-0 != 0` with ICC for unknown reasons. See #333.
     Test<CUB,           bfloat16_t,         NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
@@ -1385,10 +1386,11 @@ int main(int argc, char** argv)
         TestGen<long long>            (num_items, num_segments);
         TestGen<unsigned long long>   (num_items, num_segments);
 
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
+#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
         TestGen<half_t>               (num_items, num_segments);
 #endif
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVCOMPILER_CUDA__
+
+#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !__NVHPC_CUDA
 #if !defined(__ICC)
         // Fails with `-0 != 0` with ICC for unknown reasons. See #333.
         TestGen<bfloat16_t>           (num_items, num_segments);

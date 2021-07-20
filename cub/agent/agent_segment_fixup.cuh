@@ -111,11 +111,10 @@ struct AgentSegmentFixup
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
 
         // Whether or not do fixup using RLE + global atomics
-        USE_ATOMIC_FIXUP    = (CUB_PTX_ARCH >= 350) && 
-                                (Equals<ValueT, float>::VALUE || 
-                                 Equals<ValueT, int>::VALUE ||
-                                 Equals<ValueT, unsigned int>::VALUE ||
-                                 Equals<ValueT, unsigned long long>::VALUE),
+        USE_ATOMIC_FIXUP = (Equals<ValueT, float>::VALUE ||
+                            Equals<ValueT, int>::VALUE ||
+                            Equals<ValueT, unsigned int>::VALUE ||
+                            Equals<ValueT, unsigned long long>::VALUE),
 
         // Whether or not the scan operation has a zero-valued identity value (true if we're performing addition on a primitive type)
         HAS_IDENTITY_ZERO   = (Equals<ReductionOpT, cub::Sum>::VALUE) && (Traits<ValueT>::PRIMITIVE),

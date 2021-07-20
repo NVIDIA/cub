@@ -47,7 +47,7 @@ template <
     int         BLOCK_DIM_X,    ///< The thread block length in threads along the X dimension
     int         BLOCK_DIM_Y,    ///< The thread block length in threads along the Y dimension
     int         BLOCK_DIM_Z,    ///< The thread block length in threads along the Z dimension
-    int         PTX_ARCH>       ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0> ///< The PTX compute capability for which to to specialize this collective
 struct BlockScanWarpScans
 {
     //---------------------------------------------------------------------
@@ -58,7 +58,7 @@ struct BlockScanWarpScans
     enum
     {
         /// Number of warp threads
-        WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH),
+        WARP_THREADS = CUB_WARP_THREADS,
 
         /// The thread block size in threads
         BLOCK_THREADS = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
@@ -68,10 +68,10 @@ struct BlockScanWarpScans
     };
 
     ///  WarpScan utility type
-    typedef WarpScan<T, WARP_THREADS, PTX_ARCH> WarpScanT;
+    typedef WarpScan<T, WARP_THREADS> WarpScanT;
 
     ///  WarpScan utility type
-    typedef WarpScan<T, WARPS, PTX_ARCH> WarpAggregateScan;
+    typedef WarpScan<T, WARPS> WarpAggregateScan;
 
     /// Shared memory storage layout type
 

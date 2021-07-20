@@ -47,7 +47,7 @@ CUB_NAMESPACE_BEGIN
 template <
     typename    T,                      ///< Data type being scanned
     int         LOGICAL_WARP_THREADS,   ///< Number of threads per logical warp
-    int         PTX_ARCH>               ///< The PTX compute capability for which to to specialize this collective
+    int         LEGACY_PTX_ARCH = 0>    ///< The PTX compute capability for which to to specialize this collective
 struct WarpScanSmem
 {
     /******************************************************************************
@@ -57,7 +57,7 @@ struct WarpScanSmem
     enum
     {
         /// Whether the logical warp size and the PTX warp size coincide
-        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
+        IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS),
 
         /// Whether the logical warp size is a power-of-two
         IS_POW_OF_TWO = PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE,
@@ -72,8 +72,8 @@ struct WarpScanSmem
         WARP_SMEM_ELEMENTS =  LOGICAL_WARP_THREADS + HALF_WARP_THREADS,
     };
 
-    /// Storage cell type (workaround for SM1x compiler bugs with custom-ops like Max() on signed chars)
-    typedef typename If<((Equals<T, char>::VALUE || Equals<T, signed char>::VALUE) && (PTX_ARCH < 200)), int, T>::Type CellT;
+    /// Storage cell type
+    typedef T CellT;
 
     /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
     typedef CellT _TempStorage[WARP_SMEM_ELEMENTS];
