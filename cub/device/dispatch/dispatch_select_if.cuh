@@ -243,7 +243,7 @@ struct DispatchSelectIf
         typename                    SelectIfKernelPtrT>             ///< Function type of cub::SelectIfKernelPtrT
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*                       d_temp_storage,                 ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                       d_temp_storage,                 ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
         FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags (if applicable)
@@ -288,10 +288,6 @@ struct DispatchSelectIf
             int device_ordinal;
             if (CubDebug(error = cudaGetDevice(&device_ordinal))) break;
 
-            // Get SM count
-            int sm_count;
-            if (CubDebug(error = cudaDeviceGetAttribute (&sm_count, cudaDevAttrMultiProcessorCount, device_ordinal))) break;
-
             // Number of input tiles
             int tile_size = select_if_config.block_threads * select_if_config.items_per_thread;
             int num_tiles = static_cast<int>(cub::DivideAndRoundUp(num_items, tile_size));
@@ -335,13 +331,6 @@ struct DispatchSelectIf
             if (num_items == 0)
                 break;
 
-            // Get SM occupancy for select_if_kernel
-            int range_select_sm_occupancy;
-            if (CubDebug(error = MaxSmOccupancy(
-                range_select_sm_occupancy,            // out
-                select_if_kernel,
-                select_if_config.block_threads))) break;
-
             // Get max x-dimension of grid
             int max_dim_x;
             if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
@@ -353,8 +342,27 @@ struct DispatchSelectIf
             scan_grid_size.x = CUB_MIN(num_tiles, max_dim_x);
 
             // Log select_if_kernel configuration
-            if (debug_synchronous) _CubLog("Invoking select_if_kernel<<<{%d,%d,%d}, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy\n",
-                scan_grid_size.x, scan_grid_size.y, scan_grid_size.z, select_if_config.block_threads, (long long) stream, select_if_config.items_per_thread, range_select_sm_occupancy);
+            if (debug_synchronous)
+            {
+              // Get SM occupancy for select_if_kernel
+              int range_select_sm_occupancy;
+              if (CubDebug(error = MaxSmOccupancy(range_select_sm_occupancy, // out
+                                                  select_if_kernel,
+                                                  select_if_config.block_threads)))
+              {
+                break;
+              }
+
+              _CubLog("Invoking select_if_kernel<<<{%d,%d,%d}, %d, 0, "
+                      "%lld>>>(), %d items per thread, %d SM occupancy\n",
+                      scan_grid_size.x,
+                      scan_grid_size.y,
+                      scan_grid_size.z,
+                      select_if_config.block_threads,
+                      (long long)stream,
+                      select_if_config.items_per_thread,
+                      range_select_sm_occupancy);
+            }
 
             // Invoke select_if_kernel
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
@@ -389,7 +397,7 @@ struct DispatchSelectIf
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*                       d_temp_storage,                 ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                       d_temp_storage,                 ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&                     temp_storage_bytes,             ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of data items
         FlagsInputIteratorT         d_flags,                        ///< [in] Pointer to the input sequence of selection flags (if applicable)

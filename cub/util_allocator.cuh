@@ -78,7 +78,7 @@ CUB_NAMESPACE_BEGIN
  * - Allocations above (\p bin_growth ^ \p max_bin) are not rounded up to the nearest
  *   bin and are simply freed when they are deallocated instead of being returned
  *   to a bin-cache.
- * - %If the total storage of cached allocations on a given device will exceed
+ * - If the total storage of cached allocations on a given device will exceed
  *   \p max_cached_bytes, allocations for that device are simply freed when they are
  *   deallocated instead of being returned to their bin-cache.
  *

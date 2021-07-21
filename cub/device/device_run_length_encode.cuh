@@ -142,12 +142,12 @@ struct DeviceRunLengthEncode
         typename                    NumRunsOutputIteratorT>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Encode(
-        void*                       d_temp_storage,                ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                       d_temp_storage,                 ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                      &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT              d_in,                           ///< [in] Pointer to the input sequence of keys
         UniqueOutputIteratorT       d_unique_out,                   ///< [out] Pointer to the output sequence of unique keys (one key per run)
         LengthsOutputIteratorT      d_counts_out,                   ///< [out] Pointer to the output sequence of run-lengths (one count per run)
-        NumRunsOutputIteratorT      d_num_runs_out,                     ///< [out] Pointer to total number of runs
+        NumRunsOutputIteratorT      d_num_runs_out,                 ///< [out] Pointer to total number of runs
         int                         num_items,                      ///< [in] Total number of associated key+value pairs (i.e., the length of \p d_in_keys and \p d_in_values)
         cudaStream_t                stream             = 0,         ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                        debug_synchronous  = false)     ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
@@ -238,7 +238,7 @@ struct DeviceRunLengthEncode
         typename                NumRunsOutputIteratorT>
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t NonTrivialRuns(
-        void*               d_temp_storage,                ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                    d_temp_storage,                ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,            ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT          d_in,                           ///< [in] Pointer to input sequence of data items
         OffsetsOutputIteratorT  d_offsets_out,                  ///< [out] Pointer to output sequence of run-offsets (one offset per non-trivial run)

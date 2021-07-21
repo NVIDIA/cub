@@ -57,7 +57,7 @@ CUB_NAMESPACE_BEGIN
 
 
 /**
- * \brief %If \p CUB_STDERR is defined and \p error is not \p cudaSuccess, the corresponding error message is printed to \p stderr (or \p stdout in device code) along with the supplied source context.
+ * \brief If \p CUB_STDERR is defined and \p error is not \p cudaSuccess, the corresponding error message is printed to \p stderr (or \p stdout in device code) along with the supplied source context.
  *
  * \return The CUDA error.
  */
