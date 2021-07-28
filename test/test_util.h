@@ -85,6 +85,8 @@ T SafeBitCast(const U& in)
  */
 #define AssertEquals(a, b) if ((a) != (b)) { std::cerr << "\n(" << __FILE__ << ": " << __LINE__ << ")\n"; exit(1);}
 
+#define AssertTrue(a) if (!(a)) { std::cerr << "\n(" << __FILE__ << ": " << __LINE__ << ")\n"; exit(1);}
+
 
 /******************************************************************************
  * Command-line parsing functionality
@@ -1760,3 +1762,77 @@ struct GpuTimer
         return elapsed;
     }
 };
+
+struct HugeDataType
+{
+  static constexpr int ELEMENTS_PER_OBJECT = 128;
+
+  __device__ __host__ HugeDataType()
+  {
+    for (int i = 0; i < ELEMENTS_PER_OBJECT; i++)
+    {
+      data[i] = 0;
+    }
+  }
+
+  __device__ __host__ HugeDataType(const HugeDataType&rhs)
+  {
+    for (int i = 0; i < ELEMENTS_PER_OBJECT; i++)
+    {
+      data[i] = rhs.data[i];
+    }
+  }
+
+  explicit __device__ __host__ HugeDataType(int val)
+  {
+    for (int i = 0; i < ELEMENTS_PER_OBJECT; i++)
+    {
+      data[i] = val;
+    }
+  }
+
+  int data[ELEMENTS_PER_OBJECT];
+};
+
+inline __device__ __host__ bool operator==(const HugeDataType &lhs,
+                                           const HugeDataType &rhs)
+{
+  for (int i = 0; i < HugeDataType::ELEMENTS_PER_OBJECT; i++)
+  {
+    if (lhs.data[i] != rhs.data[i])
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+inline __device__ __host__ bool operator<(const HugeDataType &lhs,
+                                          const HugeDataType &rhs)
+{
+  for (int i = 0; i < HugeDataType::ELEMENTS_PER_OBJECT; i++)
+  {
+    if (lhs.data[i] < rhs.data[i])
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template <typename DataType>
+__device__ __host__ bool operator!=(const HugeDataType &lhs,
+                                    const DataType &rhs)
+{
+  for (int i = 0; i < HugeDataType::ELEMENTS_PER_OBJECT; i++)
+  {
+    if (lhs.data[i] != rhs)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
