@@ -82,8 +82,8 @@ struct DeviceHistogram
      * // Declare, allocate, and initialize device-accessible pointers for input samples and
      * // output histogram
      * int      num_samples;    // e.g., 10
-     * float*   d_samples;      // e.g., [2.2, 6.0, 7.1, 2.9, 3.5, 0.3, 2.9, 2.0, 6.1, 999.5]
-     * int*     d_histogram;    // e.g., [ -, -, -, -, -, -, -, -]
+     * float*   d_samples;      // e.g., [2.2, 6.1, 7.1, 2.9, 3.5, 0.3, 2.9, 2.1, 6.1, 999.5]
+     * int*     d_histogram;    // e.g., [ -, -, -, -, -, -]
      * int      num_levels;     // e.g., 7       (seven level boundaries for six bins)
      * float    lower_level;    // e.g., 0.0     (lower sample value boundary of lowest bin)
      * float    upper_level;    // e.g., 12.0    (upper sample value boundary of upper bin)
@@ -102,7 +102,7 @@ struct DeviceHistogram
      * cub::DeviceHistogram::HistogramEven(d_temp_storage, temp_storage_bytes,
      *     d_samples, d_histogram, num_levels, lower_level, upper_level, num_samples);
      *
-     * // d_histogram   <-- [1, 0, 5, 0, 3, 0, 0, 0];
+     * // d_histogram   <-- [1, 5, 0, 3, 0, 0];
      *
      * \endcode
      *
@@ -178,9 +178,9 @@ struct DeviceHistogram
      * int      num_row_samples;    // e.g., 5
      * int      num_rows;           // e.g., 2;
      * size_t   row_stride_bytes;   // e.g., 7 * sizeof(float)
-     * float*   d_samples;          // e.g., [2.2, 6.0, 7.1, 2.9, 3.5,   -, -,
-     *                              //        0.3, 2.9, 2.0, 6.1, 999.5, -, -]
-     * int*     d_histogram;        // e.g., [ -, -, -, -, -, -, -, -]
+     * float*   d_samples;          // e.g., [2.2, 6.1, 7.1, 2.9, 3.5,   -, -,
+     *                              //        0.3, 2.9, 2.1, 6.1, 999.5, -, -]
+     * int*     d_histogram;        // e.g., [ -, -, -, -, -, -]
      * int      num_levels;         // e.g., 7       (seven level boundaries for six bins)
      * float    lower_level;        // e.g., 0.0     (lower sample value boundary of lowest bin)
      * float    upper_level;        // e.g., 12.0    (upper sample value boundary of upper bin)
@@ -201,7 +201,7 @@ struct DeviceHistogram
      *     d_samples, d_histogram, num_levels, lower_level, upper_level,
      *     num_row_samples, num_rows, row_stride_bytes);
      *
-     * // d_histogram   <-- [1, 0, 5, 0, 3, 0, 0, 0];
+     * // d_histogram   <-- [1, 5, 0, 3, 0, 0];
      *
      * \endcode
      *
@@ -488,7 +488,7 @@ struct DeviceHistogram
      * // output histogram
      * int      num_samples;    // e.g., 10
      * float*   d_samples;      // e.g., [2.2, 6.0, 7.1, 2.9, 3.5, 0.3, 2.9, 2.0, 6.1, 999.5]
-     * int*     d_histogram;    // e.g., [ -, -, -, -, -, -, -, -]
+     * int*     d_histogram;    // e.g., [ -, -, -, -, -, -]
      * int      num_levels      // e.g., 7 (seven level boundaries for six bins)
      * float*   d_levels;       // e.g., [0.0, 2.0, 4.0, 6.0, 8.0, 12.0, 16.0]
      * ...
@@ -506,7 +506,7 @@ struct DeviceHistogram
      * cub::DeviceHistogram::HistogramRange(d_temp_storage, temp_storage_bytes,
      *     d_samples, d_histogram, num_levels, d_levels, num_samples);
      *
-     * // d_histogram   <-- [1, 0, 5, 0, 3, 0, 0, 0];
+     * // d_histogram   <-- [1, 5, 0, 3, 0, 0];
      *
      * \endcode
      *
@@ -581,7 +581,7 @@ struct DeviceHistogram
      * int      row_stride_bytes;   // e.g., 7 * sizeof(float)
      * float*   d_samples;          // e.g., [2.2, 6.0, 7.1, 2.9, 3.5,   -, -,
      *                              //        0.3, 2.9, 2.0, 6.1, 999.5, -, -]
-     * int*     d_histogram;        // e.g., [ , , , , , , , ]
+     * int*     d_histogram;        // e.g., [ -, -, -, -, -, -]
      * int      num_levels          // e.g., 7 (seven level boundaries for six bins)
      * float    *d_levels;          // e.g., [0.0, 2.0, 4.0, 6.0, 8.0, 12.0, 16.0]
      * ...
@@ -601,7 +601,7 @@ struct DeviceHistogram
      *     d_samples, d_histogram, num_levels, d_levels,
      *     num_row_samples, num_rows, row_stride_bytes);
      *
-     * // d_histogram   <-- [1, 0, 5, 0, 3, 0, 0, 0];
+     * // d_histogram   <-- [1, 5, 0, 3, 0, 0];
      *
      * \endcode
      *
