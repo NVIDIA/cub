@@ -40,6 +40,12 @@
 // version.cuh.
 #include "version.cuh"
 
+// Prior to 1.13.1, only the PREFIX/POSTFIX macros were used. Notify users
+// that they must now define the qualifier macro, too.
+#if (defined(CUB_NS_PREFIX) || defined(CUB_NS_POSTFIX)) && !defined(CUB_NS_QUALIFIER)
+#error CUB requires a definition of CUB_NS_QUALIFIER when CUB_NS_PREFIX/POSTFIX are defined.
+#endif
+
 /**
  * \def THRUST_CUB_WRAPPED_NAMESPACE
  * If defined, this value will be used as the name of a namespace that wraps the
