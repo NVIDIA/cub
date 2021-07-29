@@ -42,11 +42,7 @@
 #include "host/mutex.cuh"
 #include <math.h>
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /**
@@ -598,6 +594,9 @@ struct CachingDeviceAllocator
             }
         }
 
+        // Unlock
+        mutex.Unlock();
+
         // First set to specified device (entrypoint may not be set)
         if (device != entrypoint_device)
         {
@@ -610,9 +609,6 @@ struct CachingDeviceAllocator
             // Insert the ready event in the associated stream (must have current device set properly)
             if (CubDebug(error = cudaEventRecord(search_key.ready_event, search_key.associated_stream))) return error;
         }
-
-        // Unlock
-        mutex.Unlock();
 
         if (!recached)
         {
@@ -684,10 +680,11 @@ struct CachingDeviceAllocator
             // Reduce balance and erase entry
             cached_bytes[current_device].free -= begin->bytes;
 
+            cached_blocks.erase(begin);
+
             if (debug) _CubLog("\tDevice %d freed %lld bytes.\n\t\t  %lld available blocks cached (%lld bytes), %lld live blocks (%lld bytes) outstanding.\n",
                 current_device, (long long) begin->bytes, (long long) cached_blocks.size(), (long long) cached_bytes[current_device].free, (long long) live_blocks.size(), (long long) cached_bytes[current_device].live);
 
-            cached_blocks.erase(begin);
         }
 
         mutex.Unlock();
@@ -718,5 +715,4 @@ struct CachingDeviceAllocator
 
 /** @} */       // end group UtilMgmt
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END

@@ -39,11 +39,7 @@
 #include "../../thread/thread_store.cuh"
 #include "../../util_type.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 /**
  * \brief WarpReduceSmem provides smem-based variants of parallel reduction of items partitioned across a CUDA thread warp.
@@ -368,5 +364,4 @@ struct WarpReduceSmem
 };
 
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END

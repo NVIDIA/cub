@@ -85,6 +85,8 @@ T SafeBitCast(const U& in)
  */
 #define AssertEquals(a, b) if ((a) != (b)) { std::cerr << "\n(" << __FILE__ << ": " << __LINE__ << ")\n"; exit(1);}
 
+#define AssertTrue(a) if (!(a)) { std::cerr << "\n(" << __FILE__ << ": " << __LINE__ << ")\n"; exit(1);}
+
 
 /******************************************************************************
  * Command-line parsing functionality
@@ -289,7 +291,7 @@ struct CommandLineArgs
             CubDebugExit(cudaMemGetInfo(&device_free_physmem, &device_total_physmem));
 
             int ptx_version = 0;
-            error = CubDebug(cub::PtxVersion(ptx_version));
+            error = CubDebug(CUB_NS_QUALIFIER::PtxVersion(ptx_version));
             if (error) break;
 
             error = CubDebug(cudaGetDeviceProperties(&deviceProp, dev));
@@ -546,60 +548,77 @@ enum GenMode
 template <typename T>
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)
 {
-    switch (gen_mode)
+    // RandomBits is host-only.
+    if (CUB_IS_DEVICE_CODE)
     {
-      // RandomBits is host-only.
-#if (CUB_PTX_ARCH == 0)
-    case RANDOM:
-        RandomBits(value);
-        break;
-    case RANDOM_BIT:
-    {
-        char c;
-        RandomBits(c, 0, 0, 1);
-        value = (c > 0) ? (T) 1 : (T) -1;
-        break;
+        #if CUB_INCLUDE_DEVICE_CODE
+            switch (gen_mode)
+            {
+                case RANDOM:
+                case RANDOM_BIT:
+                case RANDOM_MINUS_PLUS_ZERO:
+                    _CubLog("%s\n",
+                            "cub::InitValue cannot generate random numbers on device.");
+                    CUB_NS_QUALIFIER::ThreadTrap();
+                    break;
+                case UNIFORM:
+                    value = 2;
+                    break;
+                case INTEGER_SEED:
+                default:
+                    value = (T) index;
+                    break;
+            }
+        #endif // CUB_INCLUDE_DEVICE_CODE
     }
-    case RANDOM_MINUS_PLUS_ZERO:
+    else
     {
-        // Replace roughly 1/128 of values with -0.0 or +0.0, and generate the rest randomly
-        typedef typename cub::Traits<T>::UnsignedBits UnsignedBits;
-        char c;
-        RandomBits(c);
-        if (c == 0)
-        {
-            // Replace 1/256 of values with +0.0 bit pattern
-            value = SafeBitCast<T>(UnsignedBits(0));
-        }
-        else if (c == 1)
-        {
-            // Replace 1/256 of values with -0.0 bit pattern
-            value = SafeBitCast<T>(UnsignedBits(UnsignedBits(1) <<
-                                                (sizeof(UnsignedBits) * 8) - 1));
-        }
-        else
-        {
-            // 127/128 of values are random
-            RandomBits(value);
-        }
-        break;
-    }
-#else
-     case RANDOM:
-     case RANDOM_BIT:
-     case RANDOM_MINUS_PLUS_ZERO:
-         _CubLog("%s\n",
-                 "cub::InitValue cannot generate random numbers on device.");
-         cub::ThreadTrap();
-         break;
-#endif
-     case UNIFORM:
-        value = 2;
-        break;
-    case INTEGER_SEED:
-    default:
-         value = (T) index;
-        break;
+        #if CUB_INCLUDE_HOST_CODE
+            switch (gen_mode)
+            {
+                case RANDOM:
+                    RandomBits(value);
+                    break;
+                case RANDOM_BIT:
+                {
+                    char c;
+                    RandomBits(c, 0, 0, 1);
+                    value = (c > 0) ? (T) 1 : (T) -1;
+                    break;
+                }
+                case RANDOM_MINUS_PLUS_ZERO:
+                {
+                    // Replace roughly 1/128 of values with -0.0 or +0.0, and generate the rest randomly
+                    typedef typename CUB_NS_QUALIFIER::Traits<T>::UnsignedBits UnsignedBits;
+                    char c;
+                    RandomBits(c);
+                    if (c == 0)
+                    {
+                        // Replace 1/256 of values with +0.0 bit pattern
+                        value = SafeBitCast<T>(UnsignedBits(0));
+                    }
+                    else if (c == 1)
+                    {
+                        // Replace 1/256 of values with -0.0 bit pattern
+                        value = SafeBitCast<T>(UnsignedBits(UnsignedBits(1) <<
+                                                            (sizeof(UnsignedBits) * 8) - 1));
+                    }
+                    else
+                    {
+                        // 127/128 of values are random
+                        RandomBits(value);
+                    }
+                    break;
+                }
+                case UNIFORM:
+                    value = 2;
+                    break;
+                case INTEGER_SEED:
+                default:
+                    value = (T) index;
+                    break;
+            }
+        #endif // CUB_INCLUDE_HOST_CODE
     }
 }
 
@@ -610,31 +629,50 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
 #pragma nv_exec_check_disable
 __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, int index = 0)
 {
-    switch (gen_mode)
+    // RandomBits is host-only.
+    if (CUB_IS_DEVICE_CODE)
     {
-#if (CUB_PTX_ARCH == 0)
-    case RANDOM:
-    case RANDOM_BIT:
-        char c;
-        RandomBits(c, 0, 0, 1);
-        value = (c > 0);
-        break;
-#else
-      case RANDOM:
-      case RANDOM_BIT:
-      case RANDOM_MINUS_PLUS_ZERO:
-        _CubLog("%s\n",
-                "cub::InitValue cannot generate random numbers on device.");
-        cub::ThreadTrap();
-        break;
-#endif
-     case UNIFORM:
-        value = true;
-        break;
-    case INTEGER_SEED:
-    default:
-        value = (index > 0);
-        break;
+        #if CUB_INCLUDE_DEVICE_CODE
+            switch (gen_mode)
+            {
+                case RANDOM:
+                case RANDOM_BIT:
+                case RANDOM_MINUS_PLUS_ZERO:
+                    _CubLog("%s\n",
+                            "cub::InitValue cannot generate random numbers on device.");
+                    CUB_NS_QUALIFIER::ThreadTrap();
+                    break;
+                case UNIFORM:
+                    value = true;
+                    break;
+                case INTEGER_SEED:
+                default:
+                    value = (index > 0);
+                    break;
+            }
+        #endif // CUB_INCLUDE_DEVICE_CODE
+    }
+    else
+    {
+        #if CUB_INCLUDE_HOST_CODE
+            switch (gen_mode)
+            {
+                case RANDOM:
+                case RANDOM_BIT:
+                case RANDOM_MINUS_PLUS_ZERO:
+                    char c;
+                    RandomBits(c, 0, 0, 1);
+                    value = (c > 0);
+                    break;
+                case UNIFORM:
+                    value = true;
+                    break;
+                case INTEGER_SEED:
+                default:
+                    value = (index > 0);
+                    break;
+            }
+        #endif // CUB_INCLUDE_HOST_CODE
     }
 }
 
@@ -643,7 +681,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value
  * cub::NullType test initialization
  */
 __host__ __device__ __forceinline__ void InitValue(GenMode /* gen_mode */,
-						   cub::NullType &/* value */,
+						   CUB_NS_QUALIFIER::NullType &/* value */,
 						   int /* index */ = 0)
 {}
 
@@ -655,7 +693,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode /* gen_mode */,
 template <typename KeyT, typename ValueT>
 __host__ __device__ __forceinline__ void InitValue(
     GenMode                             gen_mode,
-    cub::KeyValuePair<KeyT, ValueT>&    value,
+    CUB_NS_QUALIFIER::KeyValuePair<KeyT, ValueT>&    value,
     int                                 index = 0)
 {
     InitValue(gen_mode, value.value, index);
@@ -663,16 +701,22 @@ __host__ __device__ __forceinline__ void InitValue(
     // This specialization only appears to be used by test_warp_scan.
     // It initializes with uniform values and random keys, so we need to
     // protect the call to the host-only RandomBits.
-#if (CUB_PTX_ARCH == 0)
-    // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
-    RandomBits(value.key, 3);
-#else
-    _CubLog("%s\n",
-            "cub::InitValue cannot generate random numbers on device.");
-    cub::ThreadTrap();
-#endif
-
-    value.key = (value.key & 0x1);
+    if (CUB_IS_DEVICE_CODE)
+    {
+        #if CUB_INCLUDE_DEVICE_CODE
+            _CubLog("%s\n",
+                    "cub::InitValue cannot generate random numbers on device.");
+            CUB_NS_QUALIFIER::ThreadTrap();
+        #endif // CUB_INCLUDE_DEVICE_CODE
+    }
+    else
+    {
+        #if CUB_INCLUDE_HOST_CODE
+            // Assign corresponding flag with a likelihood of the last bit being set with entropy-reduction level 3
+            RandomBits(value.key, 3);
+            value.key = (value.key & 0x1);
+        #endif // CUB_INCLUDE_HOST_CODE
+    }
 }
 
 
@@ -685,7 +729,7 @@ __host__ __device__ __forceinline__ void InitValue(
  * KeyValuePair ostream operator
  */
 template <typename Key, typename Value>
-std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &val)
+std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<Key, Value> &val)
 {
     os << '(' << CoutCast(val.key) << ',' << CoutCast(val.value) << ')';
     return os;
@@ -749,7 +793,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
         T retval = make_##T(a.x + b.x);                     \
         return retval;                                      \
     }                                                       \
-    namespace cub {                                         \
+    CUB_NAMESPACE_BEGIN                                     \
     template<>                                              \
     struct NumericTraits<T>                                 \
     {                                                       \
@@ -771,7 +815,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             return retval;                                  \
         }                                                   \
     };                                                      \
-    } /* namespace std */
+    CUB_NAMESPACE_END
 
 
 
@@ -837,7 +881,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             a.y + b.y);                                     \
         return retval;                                      \
     }                                                       \
-    namespace cub {                                         \
+    CUB_NAMESPACE_BEGIN                                         \
     template<>                                              \
     struct NumericTraits<T>                                 \
     {                                                       \
@@ -861,7 +905,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             return retval;                                  \
         }                                                   \
     };                                                      \
-    } /* namespace cub */
+    CUB_NAMESPACE_END
 
 
 
@@ -934,7 +978,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             a.z + b.z);                                     \
         return retval;                                      \
     }                                                       \
-    namespace cub {                                         \
+    CUB_NAMESPACE_BEGIN                                     \
     template<>                                              \
     struct NumericTraits<T>                                 \
     {                                                       \
@@ -960,7 +1004,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             return retval;                                  \
         }                                                   \
     };                                                      \
-    } /* namespace cub */
+    CUB_NAMESPACE_END
 
 
 /**
@@ -1039,7 +1083,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             a.w + b.w);                                     \
         return retval;                                      \
     }                                                       \
-    namespace cub {                                         \
+    CUB_NAMESPACE_BEGIN                                     \
     template<>                                              \
     struct NumericTraits<T>                                 \
     {                                                       \
@@ -1067,7 +1111,7 @@ std::ostream& operator<<(std::ostream& os, const cub::KeyValuePair<Key, Value> &
             return retval;                                  \
         }                                                   \
     };                                                      \
-    } /* namespace cub */
+    CUB_NAMESPACE_END
 
 /**
  * All vector overloads
@@ -1191,7 +1235,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestFoo &va
 
 
 /// numeric_limits<TestFoo> specialization
-namespace cub {
+CUB_NAMESPACE_BEGIN
 template<>
 struct NumericTraits<TestFoo>
 {
@@ -1218,7 +1262,7 @@ struct NumericTraits<TestFoo>
             NumericTraits<char>::Lowest());
     }
 };
-} // namespace cub
+CUB_NAMESPACE_END
 
 
 //---------------------------------------------------------------------
@@ -1307,7 +1351,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &va
 }
 
 /// numeric_limits<TestBar> specialization
-namespace cub {
+CUB_NAMESPACE_BEGIN
 template<>
 struct NumericTraits<TestBar>
 {
@@ -1330,7 +1374,7 @@ struct NumericTraits<TestBar>
             NumericTraits<int>::Lowest());
     }
 };
-} // namespace cub
+CUB_NAMESPACE_END
 
 
 /******************************************************************************
@@ -1388,7 +1432,7 @@ int CompareResults(float* computed, float* reference, OffsetT len, bool verbose 
  * Compares the equivalence of two arrays
  */
 template <typename OffsetT>
-int CompareResults(cub::NullType* computed, cub::NullType* reference, OffsetT len, bool verbose = true)
+int CompareResults(CUB_NS_QUALIFIER::NullType* computed, CUB_NS_QUALIFIER::NullType* reference, OffsetT len, bool verbose = true)
 {
     return 0;
 }
@@ -1424,8 +1468,8 @@ int CompareResults(double* computed, double* reference, OffsetT len, bool verbos
  * of a host array
  */
 int CompareDeviceResults(
-    cub::NullType */* h_reference */,
-    cub::NullType */* d_data */,
+    CUB_NS_QUALIFIER::NullType */* h_reference */,
+    CUB_NS_QUALIFIER::NullType */* d_data */,
     std::size_t /* num_items */,
     bool /* verbose */ = true,
     bool /* display_data */ = false)
@@ -1440,7 +1484,7 @@ int CompareDeviceResults(
 template <typename S, typename OffsetT>
 int CompareDeviceResults(
     S *h_reference,
-    cub::DiscardOutputIterator<OffsetT> d_data,
+    CUB_NS_QUALIFIER::DiscardOutputIterator<OffsetT> d_data,
     std::size_t num_items,
     bool verbose = true,
     bool display_data = false)
@@ -1542,7 +1586,7 @@ int CompareDeviceDeviceResults(
  * Print the contents of a host array
  */
 void DisplayResults(
-    cub::NullType   */* h_data */,
+    CUB_NS_QUALIFIER::NullType   */* h_data */,
     std::size_t      /* num_items */)
 {}
 
@@ -1601,7 +1645,7 @@ void InitializeSegments(
     if (num_segments <= 0)
         return;
 
-    unsigned int expected_segment_length = cub::DivideAndRoundUp(num_items, num_segments);
+    unsigned int expected_segment_length = CUB_NS_QUALIFIER::DivideAndRoundUp(num_items, num_segments);
     int offset = 0;
     for (int i = 0; i < num_segments; ++i)
     {
@@ -1718,3 +1762,77 @@ struct GpuTimer
         return elapsed;
     }
 };
+
+struct HugeDataType
+{
+  static constexpr int ELEMENTS_PER_OBJECT = 128;
+
+  __device__ __host__ HugeDataType()
+  {
+    for (int i = 0; i < ELEMENTS_PER_OBJECT; i++)
+    {
+      data[i] = 0;
+    }
+  }
+
+  __device__ __host__ HugeDataType(const HugeDataType&rhs)
+  {
+    for (int i = 0; i < ELEMENTS_PER_OBJECT; i++)
+    {
+      data[i] = rhs.data[i];
+    }
+  }
+
+  explicit __device__ __host__ HugeDataType(int val)
+  {
+    for (int i = 0; i < ELEMENTS_PER_OBJECT; i++)
+    {
+      data[i] = val;
+    }
+  }
+
+  int data[ELEMENTS_PER_OBJECT];
+};
+
+inline __device__ __host__ bool operator==(const HugeDataType &lhs,
+                                           const HugeDataType &rhs)
+{
+  for (int i = 0; i < HugeDataType::ELEMENTS_PER_OBJECT; i++)
+  {
+    if (lhs.data[i] != rhs.data[i])
+    {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+inline __device__ __host__ bool operator<(const HugeDataType &lhs,
+                                          const HugeDataType &rhs)
+{
+  for (int i = 0; i < HugeDataType::ELEMENTS_PER_OBJECT; i++)
+  {
+    if (lhs.data[i] < rhs.data[i])
+    {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template <typename DataType>
+__device__ __host__ bool operator!=(const HugeDataType &lhs,
+                                    const DataType &rhs)
+{
+  for (int i = 0; i < HugeDataType::ELEMENTS_PER_OBJECT; i++)
+  {
+    if (lhs.data[i] != rhs)
+    {
+      return true;
+    }
+  }
+
+  return false;
+}

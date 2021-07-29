@@ -40,11 +40,7 @@
 #include "util_debug.cuh"
 
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /**
@@ -736,5 +732,4 @@ inline __device__ unsigned int MatchAny(unsigned int label)
 
 }
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END

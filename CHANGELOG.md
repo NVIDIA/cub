@@ -1,3 +1,21 @@
+# CUB 1.13.1 (CUDA Toolkit 11.5)
+
+CUB 1.13.1 is a minor release accompanying the CUDA Toolkit 11.5.
+
+This release provides a new hook for embedding the `cub::` namespace inside
+a custom namespace. This is intended to work around various issues related to
+linking multiple shared libraries that use CUB. The existing `CUB_NS_PREFIX` and
+`CUB_NS_POSTFIX` macros already provided this capability; this update provides a
+simpler mechanism that is extended to and integrated with Thrust. Simply define
+`THRUST_CUB_WRAPPED_NAMESPACE` to a namespace name, and both `thrust::` and
+`cub::` will be placed inside the new namespace. Using different wrapped
+namespaces for each shared library will prevent issues like those reported in
+NVIDIA/thrust#1401.
+
+## New Features
+
+- NVIDIA/cub#326: Add `THRUST_CUB_WRAPPED_NAMESPACE` hooks.
+
 # CUB 1.13.0 (NVIDIA HPC SDK 21.7)
 
 CUB 1.13.0 is the major release accompanying the NVIDIA HPC SDK 21.7 release.

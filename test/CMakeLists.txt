@@ -135,3 +135,5 @@ foreach (test_src IN LISTS test_srcs)
     endif()
   endforeach()
 endforeach()
+
+add_subdirectory(cmake)

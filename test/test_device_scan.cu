@@ -252,11 +252,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<InputT> d_in_wrapper(d_in);
-        thrust::device_ptr<OutputT> d_out_wrapper(d_out);
+        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
+        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            thrust::exclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper, initial_value, scan_op);
+            THRUST_NS_QUALIFIER::exclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper, initial_value, scan_op);
         }
     }
 
@@ -299,11 +299,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<InputT> d_in_wrapper(d_in);
-        thrust::device_ptr<OutputT> d_out_wrapper(d_out);
+        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
+        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            thrust::exclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
+            THRUST_NS_QUALIFIER::exclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
         }
     }
 
@@ -346,11 +346,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<InputT> d_in_wrapper(d_in);
-        thrust::device_ptr<OutputT> d_out_wrapper(d_out);
+        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
+        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            thrust::inclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper, scan_op);
+            THRUST_NS_QUALIFIER::inclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper, scan_op);
         }
     }
 
@@ -393,11 +393,11 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<InputT> d_in_wrapper(d_in);
-        thrust::device_ptr<OutputT> d_out_wrapper(d_out);
+        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
+        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            thrust::inclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
+            THRUST_NS_QUALIFIER::inclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
         }
     }
 

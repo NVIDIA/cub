@@ -300,15 +300,18 @@ std::ostream& operator<<(std::ostream &out, const __half &x)
  ******************************************************************************/
 
 template <>
-struct cub::FpLimits<half_t>
+struct CUB_NS_QUALIFIER::FpLimits<half_t>
 {
     static __host__ __device__ __forceinline__ half_t Max() { return half_t::max(); }
 
     static __host__ __device__ __forceinline__ half_t Lowest() { return half_t::lowest(); }
 };
 
-template <> struct cub::NumericTraits<half_t> : cub::BaseTraits<FLOATING_POINT, true, false, unsigned short, half_t> {};
-
+template <>
+struct CUB_NS_QUALIFIER::NumericTraits<half_t>
+    : CUB_NS_QUALIFIER::
+        BaseTraits<FLOATING_POINT, true, false, unsigned short, half_t>
+{};
 
 #ifdef __GNUC__
 #pragma GCC diagnostic pop

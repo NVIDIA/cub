@@ -46,11 +46,7 @@
 #include "../iterator/counting_input_iterator.cuh"
 #include "../iterator/tex_obj_input_iterator.cuh"
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
-/// CUB namespace
-namespace cub {
+CUB_NAMESPACE_BEGIN
 
 
 /******************************************************************************
@@ -665,6 +661,5 @@ struct AgentSpmv
 
 
 
-}               // CUB namespace
-CUB_NS_POSTFIX  // Optional outer namespace(s)
+CUB_NAMESPACE_END
 

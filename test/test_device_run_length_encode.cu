@@ -231,19 +231,19 @@ cudaError_t Dispatch(
     }
     else
     {
-        thrust::device_ptr<InputT>      d_in_wrapper(d_in);
-        thrust::device_ptr<UniqueT>     d_unique_out_wrapper(d_unique_out);
-        thrust::device_ptr<LengthT>     d_lengths_out_wrapper(d_lengths_out);
+        THRUST_NS_QUALIFIER::device_ptr<InputT>      d_in_wrapper(d_in);
+        THRUST_NS_QUALIFIER::device_ptr<UniqueT>     d_unique_out_wrapper(d_unique_out);
+        THRUST_NS_QUALIFIER::device_ptr<LengthT>     d_lengths_out_wrapper(d_lengths_out);
 
-        thrust::pair<thrust::device_ptr<UniqueT>, thrust::device_ptr<LengthT> > d_out_ends;
+        THRUST_NS_QUALIFIER::pair<THRUST_NS_QUALIFIER::device_ptr<UniqueT>, THRUST_NS_QUALIFIER::device_ptr<LengthT> > d_out_ends;
 
         LengthT one_val;
         InitValue(INTEGER_SEED, one_val, 1);
-        thrust::constant_iterator<LengthT> constant_one(one_val);
+        THRUST_NS_QUALIFIER::constant_iterator<LengthT> constant_one(one_val);
 
         for (int i = 0; i < timing_timing_iterations; ++i)
         {
-            d_out_ends = thrust::reduce_by_key(
+            d_out_ends = THRUST_NS_QUALIFIER::reduce_by_key(
                 d_in_wrapper,
                 d_in_wrapper + num_items,
                 constant_one,
