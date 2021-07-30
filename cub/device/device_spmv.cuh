@@ -148,8 +148,8 @@ struct DeviceSpmv
         spmv_params.num_rows             = num_rows;
         spmv_params.num_cols             = num_cols;
         spmv_params.num_nonzeros         = num_nonzeros;
-        spmv_params.alpha                = 1.0;
-        spmv_params.beta                 = 0.0;
+        spmv_params.alpha                = ValueT{1};
+        spmv_params.beta                 = ValueT{0};
 
         return DispatchSpmv<ValueT, int>::Dispatch(
             d_temp_storage,

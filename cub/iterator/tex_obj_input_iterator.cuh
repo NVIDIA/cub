@@ -161,7 +161,7 @@ public:
         size_t          tex_offset = 0)     ///< OffsetT (in items) from \p ptr denoting the position of the iterator
     {
         this->ptr = const_cast<typename RemoveQualifiers<QualifiedT>::Type *>(ptr);
-        this->tex_offset = tex_offset;
+        this->tex_offset = static_cast<difference_type>(tex_offset);
 
         cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<TextureWord>();
         cudaResourceDesc        res_desc;
