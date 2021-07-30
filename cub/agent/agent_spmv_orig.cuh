@@ -646,9 +646,23 @@ struct AgentSpmv
         if (threadIdx.x == 0)
         {
             if (HAS_ALPHA)
+            {
                 tile_carry.value *= spmv_params.alpha;
+            }
 
             tile_carry.key += tile_start_coord.x;
+            if (tile_carry.key >= spmv_params.num_rows)
+            {
+                // FIXME: This works around an invalid memory access in the
+                // fixup kernel. The underlying issue needs to be debugged and
+                // properly fixed, but this hack prevents writes to
+                // out-of-bounds addresses. It doesn't appear to have an effect
+                // on the validity of the results, since this only affects the
+                // carry-over from last tile in the input.
+                tile_carry.key = spmv_params.num_rows - 1;
+                tile_carry.value = ValueT{};
+            };
+
             d_tile_carry_pairs[tile_idx]    = tile_carry;
         }
     }
