@@ -44,7 +44,6 @@
 #include "../thread/thread_operators.cuh"
 #include "../iterator/cache_modified_input_iterator.cuh"
 #include "../iterator/counting_input_iterator.cuh"
-#include "../iterator/tex_obj_input_iterator.cuh"
 
 CUB_NAMESPACE_BEGIN
 
@@ -104,8 +103,6 @@ struct SpmvParams
     int             num_nonzeros;        ///< Number of nonzero elements of matrix <b>A</b>.
     ValueT          alpha;               ///< Alpha multiplicand
     ValueT          beta;                ///< Beta addend-multiplicand
-
-    TexObjInputIterator<ValueT, OffsetT>  t_vector_x;
 };
 
 
@@ -328,10 +325,8 @@ struct AgentSpmv
             OffsetT column_idx          = wd_column_indices[nonzero_idx];
             ValueT  value               = wd_values[nonzero_idx];
 
-            ValueT  vector_value        = spmv_params.t_vector_x[column_idx];
-#if (CUB_PTX_ARCH >= 350)
-            vector_value                = wd_vector_x[column_idx];
-#endif
+            ValueT  vector_value        = wd_vector_x[column_idx];
+
             ValueT  nonzero             = value * vector_value;
 
             OffsetT row_end_offset      = s_tile_row_end_offsets[thread_current_coord.x];
@@ -437,8 +432,7 @@ struct AgentSpmv
                 OffsetT column_idx              = *ci;
                 ValueT  value                   = *a;
 
-                ValueT  vector_value            = spmv_params.t_vector_x[column_idx];
-                vector_value                    = wd_vector_x[column_idx];
+                ValueT  vector_value            = wd_vector_x[column_idx];
 
                 ValueT  nonzero                 = value * vector_value;
 
@@ -464,10 +458,8 @@ struct AgentSpmv
                 OffsetT column_idx              = wd_column_indices[tile_start_coord.y + nonzero_idx];
                 ValueT  value                   = wd_values[tile_start_coord.y + nonzero_idx];
 
-                ValueT  vector_value            = spmv_params.t_vector_x[column_idx];
-#if (CUB_PTX_ARCH >= 350)
-                vector_value                    = wd_vector_x[column_idx];
-#endif
+                ValueT  vector_value            = wd_vector_x[column_idx];
+
                 ValueT  nonzero                 = value * vector_value;
 
                 s_tile_nonzeros[nonzero_idx]    = nonzero;
