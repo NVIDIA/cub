@@ -497,6 +497,21 @@ struct DispatchSpmv
         cudaError error = cudaSuccess;
         do
         {
+            if (spmv_params.num_rows < 0 || spmv_params.num_cols < 0)
+            {
+              return cudaErrorInvalidValue;
+            }
+
+            if (spmv_params.num_rows == 0 || spmv_params.num_cols == 0)
+            { // Empty problem, no-op.
+                if (d_temp_storage == NULL)
+                {
+                    temp_storage_bytes = 1;
+                }
+
+                break;
+            }
+
             if (spmv_params.num_cols == 1)
             {
                 if (d_temp_storage == NULL)
