@@ -193,7 +193,7 @@ float TestGpuCsrIoProxy(
 
     typedef TexRefInputIterator<ValueT, 1234, int> TexItr;
     TexItr x_itr;
-    CubDebugExit(x_itr.BindTexture(params.d_vector_x));
+    CubDebugExit(x_itr.BindTexture(params.d_vector_x, params.num_cols * sizeof(ValueT)));
 
     // Get device ordinal
     int device_ordinal;
