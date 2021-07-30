@@ -83,10 +83,23 @@ T SafeBitCast(const U& in)
 /**
  * Assert equals
  */
-#define AssertEquals(a, b) if ((a) != (b)) { std::cerr << "\n(" << __FILE__ << ": " << __LINE__ << ")\n"; exit(1);}
+#define AssertEquals(a, b)                                                     \
+  if ((a) != (b))                                                              \
+  {                                                                            \
+    std::cerr << "\n"                                                          \
+              << __FILE__ << ": " << __LINE__                                  \
+              << ": AssertEquals(" #a ", " #b ") failed.\n";                   \
+    exit(1);                                                                   \
+  }
 
-#define AssertTrue(a) if (!(a)) { std::cerr << "\n(" << __FILE__ << ": " << __LINE__ << ")\n"; exit(1);}
-
+#define AssertTrue(a)                                                          \
+  if (!(a))                                                                    \
+  {                                                                            \
+    std::cerr << "\n"                                                          \
+              << __FILE__ << ": " << __LINE__                                  \
+              << ": AssertTrue(" #a ") failed.\n";                             \
+    exit(1);                                                                   \
+  }
 
 /******************************************************************************
  * Command-line parsing functionality
