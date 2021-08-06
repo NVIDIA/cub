@@ -33,16 +33,11 @@
 #include "block_scan.cuh"
 #include <limits>
 
-/// Optional outer namespace(s)
-CUB_NS_PREFIX
-
 /// CUB namespace
-namespace cub
-{
+CUB_NAMESPACE_BEGIN
 
 /**
- * BlockRunLengthDecodeAlgorithm enumerates alternative algorithms for parallel
- * reduction across a CUDA thread block.
+ * BlockRunLengthDecodeAlgorithm enumerates alternative specialisations of the BlockRunLengthDecode algorithm.
  */
 enum class BlockRunLengthDecodeAlgorithm
 {
@@ -431,5 +426,5 @@ public:
     __syncthreads();
   }
 };
-} // namespace cub
-CUB_NS_POSTFIX // Optional outer namespace(s)
+
+CUB_NAMESPACE_END

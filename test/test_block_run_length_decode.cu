@@ -168,7 +168,8 @@ public:
     BlockRunLengthDecodeT run_length_decode(temp_storage.run_length_decode_storage);
     run_length_decode.Init(unique_items, run_lengths, decoded_size);
 
-    // Run-length decode ("decompress") the runs into a window buffer of limited size. This is repeated
+    // Run-length decode ("decompress") the runs into a window buffer of limited size. This is repeated until all runs
+    // have been decoded.
     uint32_t decoded_window_offset = 0U;
     while (decoded_window_offset < decoded_size)
     {
