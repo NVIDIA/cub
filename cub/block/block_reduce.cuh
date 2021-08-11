@@ -207,8 +207,9 @@ enum BlockReduceAlgorithm
  * \endcode
  *
  * \par Re-using dynamically allocating shared memory
- * The following example illustrates usage of dynamically shared memory
- * with BlockReduce and how to re-purpose the same memory region:
+ * The following example under the examples/block folder illustrates usage of
+ * dynamically shared memory with BlockReduce and how to re-purpose
+ * the same memory region:
  * <a href="../../examples/block/example_block_reduce_dyn_smem.cu">example_block_reduce_dyn_smem.cu</a>
  */
 template <
