@@ -539,7 +539,7 @@ struct DispatchSpmv
 
             // Get max x-dimension of grid
             int max_dim_x;
-            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
+            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;
 
             // Total number of spmv work items
             int num_merge_items = spmv_params.num_rows + spmv_params.num_nonzeros;
@@ -607,7 +607,7 @@ struct DispatchSpmv
                 if (CUB_IS_HOST_CODE)
                 {
                     // Init textures
-                    if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x))) break;
+                    if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x, spmv_params.num_cols * sizeof(ValueT)))) break;
                 }
             #endif
 
