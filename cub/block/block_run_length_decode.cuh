@@ -38,26 +38,8 @@
 CUB_NAMESPACE_BEGIN
 
 /**
- * BlockRunLengthDecodeAlgorithm enumerates alternative specialisations of the BlockRunLengthDecode algorithm.
- */
-enum class BlockRunLengthDecodeAlgorithm
-{
-  /// If there's an unused item (amongst items representable by UniqueItemT) that will never be seen amongst the unique
-  /// items, the algorithm can internally use such unused item and provide a more efficient implementation that also
-  /// requires less shared memory
-  UNUSED,
-
-  /// This is a regular run-length decoding implementation
-  NORMAL,
-
-  /// This implementation also provides information about the relative offset within each run.
-  /// E.g., if 4, 4, 4, 1, 7, 7 was decoded, the the relative offsets are: 0, 1, 2, 0, 0, 1
-  OFFSETS,
-};
-
-/**
  * @brief
- * TODO: provide detailed desdcription on usage and examples
+ * TODO: provide detailed desdcription on usage and examples once we agreed on interface.
  *
  * @tparam UniqueItemT The data type of the
  * @tparam BLOCK_DIM_X The thread block length in threads along the X dimension
@@ -72,10 +54,9 @@ template <typename UniqueItemT,
           int BLOCK_DIM_X,
           int RUNS_PER_THREAD,
           int DECODED_ITEMS_PER_THREAD,
-          BlockRunLengthDecodeAlgorithm DECODE_ALGORITHM = BlockRunLengthDecodeAlgorithm::NORMAL,
-          typename DecodedOffsetT                        = uint32_t,
-          int BLOCK_DIM_Y                                = 1,
-          int BLOCK_DIM_Z                                = 1>
+          typename DecodedOffsetT = uint32_t,
+          int BLOCK_DIM_Y         = 1,
+          int BLOCK_DIM_Z         = 1>
 class BlockRunLengthDecode
 {
   //---------------------------------------------------------------------

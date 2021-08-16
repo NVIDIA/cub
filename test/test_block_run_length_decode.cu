@@ -64,12 +64,8 @@ private:
   using UniqueItemT = typename std::iterator_traits<UniqueItemItT>::value_type;
   using RunLengthT  = typename std::iterator_traits<RunLengthsItT>::value_type;
 
-  static constexpr BlockRunLengthDecodeAlgorithm ALGORITHM_SPECIALISATION = TEST_RELATIVE_OFFSETS_
-                                                                              ? BlockRunLengthDecodeAlgorithm::OFFSETS
-                                                                              : BlockRunLengthDecodeAlgorithm::NORMAL;
-
-  using BlockRunLengthDecodeT = cub::
-    BlockRunLengthDecode<UniqueItemT, BLOCK_DIM_X, RUNS_PER_THREAD, DECODED_ITEMS_PER_THREAD, ALGORITHM_SPECIALISATION>;
+  using BlockRunLengthDecodeT =
+    cub::BlockRunLengthDecode<UniqueItemT, BLOCK_DIM_X, RUNS_PER_THREAD, DECODED_ITEMS_PER_THREAD>;
   using BlockLoadUniqueItemT =
     cub::BlockLoad<UniqueItemT, BLOCK_DIM_X, RUNS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
   using BlockLoadRunLengthsT =
