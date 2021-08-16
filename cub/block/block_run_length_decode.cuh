@@ -153,7 +153,7 @@ public:
     // Compute the offset for the beginning of each run
     DecodedOffsetT run_offsets[RUNS_PER_THREAD];
 #pragma unroll
-    for (uint32_t i = 0; i < RUNS_PER_THREAD; i++)
+    for (int i = 0; i < RUNS_PER_THREAD; i++)
     {
       run_offsets[i] = run_lengths[i];
     }
@@ -167,7 +167,7 @@ public:
     // Keep the runs' unique items and the offsets of each run's beginning in the temporary storage
     RunOffsetT thread_dst_offset = linear_tid * RUNS_PER_THREAD;
 #pragma unroll
-    for (uint32_t i = 0; i < RUNS_PER_THREAD; i++)
+    for (int i = 0; i < RUNS_PER_THREAD; i++)
     {
       temp_storage.runs.unique_items[thread_dst_offset] = unique_items[i];
       temp_storage.runs.run_offsets[thread_dst_offset]  = run_offsets[i];
