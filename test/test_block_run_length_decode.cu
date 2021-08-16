@@ -269,9 +269,8 @@ void TestAlgorithmSpecialisation()
   constexpr uint32_t THREADS_PER_BLOCK = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z;
   constexpr uint32_t RUNS_PER_BLOCK    = RUNS_PER_THREAD * THREADS_PER_BLOCK;
 
-  using UniqueItemT = float;
-  using RunLengthT  = uint32_t;
-  // using RunLengthsItT = cub::CountingInputIterator<RunLengthT>;
+  using UniqueItemT   = float;
+  using RunLengthT    = uint32_t;
   using UniqueItemItT = cub::CountingInputIterator<UniqueItemT>;
   using RunLengthsItT = cub::TransformInputIterator<RunLengthT, ModOp, cub::CountingInputIterator<RunLengthT>>;
 
@@ -393,9 +392,9 @@ void TestAlgorithmSpecialisation()
   // Generate host-side run-length decoded data for verification
   std::vector<std::pair<UniqueItemT, RunLengthT>> host_golden;
   host_golden.reserve(*h_num_decoded_total);
-  for (int run = 0; run < num_runs; run++)
+  for (uint32_t run = 0; run < num_runs; run++)
   {
-    for (int i = 0; i < d_run_lengths[run]; i++)
+    for (RunLengthT i = 0; i < d_run_lengths[run]; i++)
     {
       host_golden.push_back({d_unique_items[run], i});
     }
@@ -419,12 +418,12 @@ void TestAlgorithmSpecialisation()
             << ", DECODED_ITEMS_PER_THREAD: " << DECODED_ITEMS_PER_THREAD
             << ", THREADS_PER_BLOCK: " << THREADS_PER_BLOCK << ", decoded size (bytes): " << decoded_bytes
             << ", relative offsets (bytes): " << relative_offsets_bytes << ", time_size (ms): " << duration_size
-            << ", time_decode (ms): " << duration_decode
-            << ", achieved decode BW (GB/s): " << ((total_bytes_written / 1.0e9) * (1000.0 / duration_decode)) << "\n";
+            << ", time_decode (ms): " << duration_decode << ", achieved decode BW (GB/s): "
+            << ((static_cast<double>(total_bytes_written) / 1.0e9) * (1000.0 / duration_decode)) << "\n";
 
   // Verify the run-length decoded data is correct
   bool cmp_eq = true;
-  for (int i = 0; i < host_golden.size(); i++)
+  for (uint32_t i = 0; i < host_golden.size(); i++)
   {
     if (host_golden[i].first != h_decoded_out[i])
     {
