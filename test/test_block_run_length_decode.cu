@@ -426,15 +426,21 @@ void TestAlgorithmSpecialisation()
   bool cmp_eq = true;
   for (int i = 0; i < host_golden.size(); i++)
   {
-    if (host_golden[i].first != h_decoded_out[i] ||
-        (TEST_RELATIVE_OFFSETS && host_golden[i].second != h_relative_offsets[i]))
+    if (host_golden[i].first != h_decoded_out[i])
     {
-      std::cout << "Mismatch at #" << i << ": CPU item: " << host_golden[i].first << ", GPU: " << h_decoded_out[i];
-      if (TEST_RELATIVE_OFFSETS)
-        std::cout << "; relative offsets: CPU: " << host_golden[i].second << ", GPU: " << h_relative_offsets[i];
-      std::cout << "\n";
-      cmp_eq = false;
-      break;
+      std::cout << "Mismatch at #" << i << ": CPU item: " << host_golden[i].first << ", GPU: " << h_decoded_out[i]
+                << "\n";
+    }
+    if (TEST_RELATIVE_OFFSETS)
+    {
+      if (host_golden[i].second != h_relative_offsets[i])
+      {
+        std::cout << "Mismatch of relative offset at #" << i << ": CPU item: " << host_golden[i].first
+                  << ", GPU: " << h_decoded_out[i] << "; relative offsets: CPU: " << host_golden[i].second
+                  << ", GPU: " << h_relative_offsets[i] << "\n";
+        cmp_eq = false;
+        break;
+      }
     }
   }
   AssertEquals(cmp_eq, true);
