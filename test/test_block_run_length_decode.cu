@@ -96,7 +96,7 @@ private:
     }
 
     // Ensure BlockLoad's temporary shared memory can be repurposed
-    __syncthreads();
+    CTA_SYNC();
 
     // Load this block's tile of run lengths
     if (num_valid_items < RUNS_PER_BLOCK)
@@ -106,7 +106,7 @@ private:
       BlockLoadRunLengthsT(temp_storage.load_run_lengths_storage).Load(d_block_run_lengths, run_lengths);
 
     // Ensure temporary shared memory can be repurposed
-    __syncthreads();
+    CTA_SYNC();
   }
 
 public:

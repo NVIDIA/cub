@@ -162,7 +162,7 @@ public:
     total_decoded_size = decoded_size_aggregate;
 
     // Ensure the prefix scan's temporary storage can be reused (may be superfluous, but depends on scan implementaiton)
-    __syncthreads();
+    CTA_SYNC();
 
     // Keep the runs' unique items and the offsets of each run's beginning in the temporary storage
     RunOffsetT thread_dst_offset = linear_tid * RUNS_PER_THREAD;
@@ -181,7 +181,7 @@ public:
     }
 
     // Ensure run offsets have been writen to shared memory
-    __syncthreads();
+    CTA_SYNC();
   }
 
   /**
