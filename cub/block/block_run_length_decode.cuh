@@ -28,6 +28,7 @@
 #pragma once
 
 #include "../config.cuh"
+#include "../thread/thread_search.cuh"
 #include "../util_ptx.cuh"
 #include "../util_type.cuh"
 #include "block_scan.cuh"
@@ -62,7 +63,7 @@ enum class BlockRunLengthDecodeAlgorithm
  * @tparam BLOCK_DIM_X The thread block length in threads along the X dimension
  * @tparam RUNS_PER_THREAD The number of consecutive runs that each thread contributes
  * @tparam DECODED_ITEMS_PER_THREAD The maximum number of decoded items that each thread holds
- * @tparam RelativeOffsetT Type used to index into the block's decoded items (large enough to hold the sum over all the
+ * @tparam DecodedOffsetT Type used to index into the block's decoded items (large enough to hold the sum over all the
  * runs' lengths)
  * @tparam BLOCK_DIM_Y The thread block length in threads along the Y dimension
  * @tparam BLOCK_DIM_Z The thread block length in threads along the Z dimension
@@ -72,7 +73,7 @@ template <typename UniqueItemT,
           int RUNS_PER_THREAD,
           int DECODED_ITEMS_PER_THREAD,
           BlockRunLengthDecodeAlgorithm DECODE_ALGORITHM = BlockRunLengthDecodeAlgorithm::NORMAL,
-          typename RelativeOffsetT                       = uint32_t,
+          typename DecodedOffsetT                        = uint32_t,
           int BLOCK_DIM_Y                                = 1,
           int BLOCK_DIM_Z                                = 1>
 class BlockRunLengthDecode
@@ -93,106 +94,7 @@ private:
 
   /// BlockScan used to determine the beginning of each run (i.e., prefix sum over the runs' length)
   using RunOffsetScanT =
-    cub::BlockScan<RelativeOffsetT, BLOCK_DIM_X, BLOCK_SCAN_RAKING_MEMOIZE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
-
-  /// Data type used to either
-  /// (a) distinguish between beginning-of-run versus continuation-of-run or
-  /// (b) track the run offset within a run but also distinguish between beginning-of-run versus continuation-of-run
-  using RelativeRunOffsetT = uint32_t;
-
-  /**
-   * [SPECIALIZATION: NORMAL OR OFFSETS ]
-   * Helper data structure to facilitate run-length decoding using a prefix scan
-   */
-  struct ZippedRunLengthDecode
-  {
-    // holding the run-length decoded items
-    UniqueItemT unique;
-    // the offset within the current run
-    RelativeRunOffsetT offset;
-  };
-
-  /**
-   * [SPECIALIZATION: NORMAL OR OFFSETS ]
-   * Helper data structure to facilitate scattering <beginning-of-run> into a shared memory buffer that is
-   * pre-initialized with <continuation-of-run> items. Prior to utilising the prefix scan to perform the run-length
-   * decoding.
-   */
-  struct UnzippedRunLengthDecodeBuffer
-  {
-    UniqueItemT uniques[BLOCK_DECODED_ITEMS];
-    RelativeRunOffsetT offsets[BLOCK_DECODED_ITEMS];
-  };
-
-  /**
-   * [SPECIALIZATION: UNUSED ]
-   */
-  struct DecodedBuffer
-  {
-    UniqueItemT uniques[BLOCK_DECODED_ITEMS];
-  };
-
-  /// The bit-offset of the is-unresolved bit-flag that indicates whether this item within the decode buffer still needs
-  /// to be resolved (i.e., yet-to-be-populated with the repetition of the correct unique item)
-  static constexpr RelativeRunOffsetT IS_UNRESOLVED_BIT_OFFSET = (8U * sizeof(RelativeRunOffsetT)) - 1;
-
-  /// Bit-mask to check the is-unresolved bit-flag
-  static constexpr RelativeRunOffsetT IS_UNRESOLVED_BIT = 0x01U << IS_UNRESOLVED_BIT_OFFSET;
-
-  /// Bit-mask to extract the item's offset relative to its run
-  /// E.g., if 4, 4, 4, 1, 7, 7 was decoded, the the relative offsets are: 0, 1, 2, 0, 0, 1
-  static constexpr RelativeRunOffsetT OFFSET_PAYLOAD_BIT_MASK = IS_UNRESOLVED_BIT - 1U;
-
-  /// Bit-mask to extract the item's offset relative to its run
-  static constexpr RelativeRunOffsetT IS_UNRESOLVED_ITEM = IS_UNRESOLVED_BIT | 0x01U;
-
-  /**
-   * [SPECIALIZATION: OFFSETS ]
-   */
-  struct DecodeScanOpWithRelativeOffset
-  {
-    __device__ __forceinline__ ZippedRunLengthDecode operator()(const ZippedRunLengthDecode &lhs,
-                                                                const ZippedRunLengthDecode &rhs)
-    {
-      // If the rhs is still unresolved, propagate the lhs (which may or may not be resolved _at this point_, but
-      // eventually _some_ lhs will provide the answer)
-      return cub::BFE(rhs.offset, IS_UNRESOLVED_BIT_OFFSET, 1U)
-               ? ZippedRunLengthDecode{lhs.unique, lhs.offset + (rhs.offset & OFFSET_PAYLOAD_BIT_MASK)}
-               : ZippedRunLengthDecode{rhs.unique, rhs.offset};
-    }
-  };
-
-  /**
-   * [SPECIALIZATION: NORMAL ]
-   */
-  struct DecodeScanNormal
-  {
-    __device__ __forceinline__ ZippedRunLengthDecode operator()(const ZippedRunLengthDecode &lhs,
-                                                                const ZippedRunLengthDecode &rhs)
-    {
-      // If the rhs is still unresolved, propagate the lhs (which may or may not be resolved _at this point_, but
-      // eventually _some_ lhs will provide the answer)
-      return rhs.offset ? lhs : rhs;
-    }
-  };
-
-  /// The actual prefix scan oeprator being used for the run-length decoding
-  using DecodeScanOpT = typename cub::If<(DECODE_ALGORITHM == BlockRunLengthDecodeAlgorithm::NORMAL),
-                                         DecodeScanNormal,
-                                         DecodeScanOpWithRelativeOffset>::Type;
-
-  /// The meta item type that is used to distinguish between <already-run-length-decoded> item and
-  /// <yet-to-be-resolved> items. If the run-length decode may use a unique unused item from the set representable by
-  /// UniqueItemT, we can simply use UniqueItemT. Otherwise, we'll have to use a meta type to distinguish between the
-  /// two item types.
-  using MetaItemT = typename cub::
-    If<(DECODE_ALGORITHM == BlockRunLengthDecodeAlgorithm::UNUSED), UniqueItemT, ZippedRunLengthDecode>::Type;
-
-  using DecodedBufferT = typename cub::
-    If<(DECODE_ALGORITHM == BlockRunLengthDecodeAlgorithm::UNUSED), DecodedBuffer, UnzippedRunLengthDecodeBuffer>::Type;
-
-  /// BlockScan used to replace <continuation-of-run> items with the run that they're a continuation of
-  using DecodeScanT = cub::BlockScan<MetaItemT, BLOCK_DIM_X, BLOCK_SCAN_WARP_SCANS, BLOCK_DIM_Y, BLOCK_DIM_Z>;
+    cub::BlockScan<DecodedOffsetT, BLOCK_DIM_X, BLOCK_SCAN_RAKING_MEMOIZE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
 
   /// Type used to index into the block's runs
   using RunOffsetT = uint32_t;
@@ -204,12 +106,7 @@ private:
     struct
     {
       UniqueItemT unique_items[BLOCK_RUNS];
-      RelativeOffsetT run_offsets[BLOCK_RUNS + 1];
-      union
-      {
-        typename DecodeScanT::TempStorage decode_scan;
-        DecodedBufferT decode_buffer;
-      };
+      DecodedOffsetT run_offsets[BLOCK_RUNS + 1];
     } runs;
   }; // union TempStorage
 
@@ -225,72 +122,6 @@ private:
 
   /// Linear thread-id
   uint32_t linear_tid;
-
-  //---------------------------------------------------------------------
-  // HELPERS: SPECIALIZATIONS IF ALGORITHM IS NORMAL OR OFFSETS
-  //---------------------------------------------------------------------
-  /**
-   * [SPECIALIZATION: NORMAL OR OFFSETS]
-   * Populates the run-length decode buffer with <continuation-of-current-run> items
-   */
-  __device__ __forceinline__ void InitDecodeBuffer(UnzippedRunLengthDecodeBuffer &decode_buffer)
-  {
-    RelativeOffsetT buffer_offset = linear_tid;
-#pragma unroll
-    for (uint32_t i = 0; i < DECODED_ITEMS_PER_THREAD; i++)
-    {
-      decode_buffer.offsets[buffer_offset] = IS_UNRESOLVED_ITEM;
-      buffer_offset += BLOCK_THREADS;
-    }
-  }
-
-  /**
-   * [SPECIALIZATION: NORMAL OR OFFSETS]
-   * Populates the run-length decode buffer with <continuation-of-current-run> items
-   */
-  template <typename DecodeBufferOffsetT>
-  __device__ __forceinline__ void WriteBeginningOfRun(UnzippedRunLengthDecodeBuffer &decode_buffer,
-                                                      DecodeBufferOffsetT buffer_offset,
-                                                      const UniqueItemT &unique_item,
-                                                      const RelativeRunOffsetT &relative_offset)
-  {
-    decode_buffer.uniques[buffer_offset] = unique_item;
-    decode_buffer.offsets[buffer_offset] = relative_offset;
-  }
-
-  /**
-   * [SPECIALIZATION: NORMAL OR OFFSETS]
-   * Populates the run-length decode buffer with <continuation-of-current-run> items
-   */
-  __device__ __forceinline__ void LoadFromDecodeBuffer(ZippedRunLengthDecode (&scan_items)[DECODED_ITEMS_PER_THREAD],
-                                                       UnzippedRunLengthDecodeBuffer &decode_buffer)
-  {
-    RelativeOffsetT run_offset = linear_tid * DECODED_ITEMS_PER_THREAD;
-#pragma unroll
-    for (uint32_t i = 0; i < DECODED_ITEMS_PER_THREAD; i++)
-    {
-      scan_items[i].unique = decode_buffer.uniques[run_offset];
-      scan_items[i].offset = decode_buffer.offsets[run_offset];
-      run_offset++;
-    }
-  }
-
-  /**
-   * [SPECIALIZATION: NORMAL OR OFFSETS]
-   * Populate registers (SOA) to return the results to the user
-   */
-  template <typename UserRelativeOffsetT>
-  __device__ __forceinline__ void PopulateReturnValues(ZippedRunLengthDecode (&scan_items)[DECODED_ITEMS_PER_THREAD],
-                                                       UniqueItemT (&uniques)[DECODED_ITEMS_PER_THREAD],
-                                                       UserRelativeOffsetT (&relative_offset)[DECODED_ITEMS_PER_THREAD])
-  {
-#pragma unroll
-    for (uint32_t i = 0; i < DECODED_ITEMS_PER_THREAD; i++)
-    {
-      uniques[i]         = scan_items[i].unique;
-      relative_offset[i] = scan_items[i].offset;
-    }
-  }
 
 public:
   struct TempStorage : Uninitialized<_TempStorage>
@@ -320,13 +151,13 @@ public:
                                        OffsetT &total_decoded_size)
   {
     // Compute the offset for the beginning of each run
-    RelativeOffsetT run_offsets[RUNS_PER_THREAD];
+    DecodedOffsetT run_offsets[RUNS_PER_THREAD];
 #pragma unroll
     for (uint32_t i = 0; i < RUNS_PER_THREAD; i++)
     {
       run_offsets[i] = run_lengths[i];
     }
-    RelativeOffsetT decoded_size_aggregate;
+    DecodedOffsetT decoded_size_aggregate;
     RunOffsetScanT(temp_storage.offset_scan).ExclusiveSum(run_offsets, run_offsets, decoded_size_aggregate);
     total_decoded_size = decoded_size_aggregate;
 
@@ -363,67 +194,47 @@ public:
    * @param from_decoded_offset If invoked with from_decoded_offset that is larger than total_decoded_size results in
    * undefined behavior.
    */
-  template <typename UserRelativeOffsetT>
+  template <typename RelativeOffsetT>
   __device__ __forceinline__ void RunLengthDecode(UniqueItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
-                                                  UserRelativeOffsetT (&item_offsets)[DECODED_ITEMS_PER_THREAD],
-                                                  int32_t from_decoded_offset = 0)
+                                                  RelativeOffsetT (&item_offsets)[DECODED_ITEMS_PER_THREAD],
+                                                  DecodedOffsetT from_decoded_offset = 0)
   {
-    // Populate run-length decode buffer with continuation-of-current-run items
-    InitDecodeBuffer(temp_storage.runs.decode_buffer);
+    // The offset of the first item decoded by this thread
+    DecodedOffsetT thread_decoded_offset = from_decoded_offset + linear_tid * DECODED_ITEMS_PER_THREAD;
 
-    // Ensure that the continuation-of-current-run items have been written to shared memory
-    __syncthreads();
+    // The run that the first decoded item of this thread belongs to
+    // If this thread's <thread_decoded_offset> is already beyond the total decoded size, it will be assigned to the
+    // last run
+    RunOffsetT assigned_run = cub::UpperBound(temp_storage.runs.run_offsets, BLOCK_RUNS + 1, thread_decoded_offset) -
+                              static_cast<RunOffsetT>(1U);
 
-    // Scatter the beginning of each run into the run-length decode buffer
-    RunOffsetT run_offset = linear_tid;
+    DecodedOffsetT assigned_run_begin = temp_storage.runs.run_offsets[assigned_run];
+    DecodedOffsetT assigned_run_end   = temp_storage.runs.run_offsets[assigned_run + 1];
+
+    UniqueItemT val = temp_storage.runs.unique_items[assigned_run];
+
 #pragma unroll
-    for (uint32_t i = 0; i < RUNS_PER_THREAD; i++)
+    for (DecodedOffsetT i = 0; i < DECODED_ITEMS_PER_THREAD; i++)
     {
-      // Fetch this thread's run and subsequently check whether it falls into this pass' run-length decode buffer
-      int32_t run_target_idx      = temp_storage.runs.run_offsets[run_offset];
-      int32_t next_run_target_idx = temp_storage.runs.run_offsets[run_offset + 1];
-      int32_t run_length          = next_run_target_idx - run_target_idx;
-
-      // Whether this run begins before the from_decoded_offset but has trailing items that still fall within the
-      // beginning of this buffer
-      bool is_a_trailing_run = (run_target_idx < from_decoded_offset) && (next_run_target_idx > from_decoded_offset);
-
-      // In particular for the trailing run, we want to scatter into index 0 (not a negative scatter index)
-      int32_t scatter_target_idx = max(0, run_target_idx - from_decoded_offset);
-      int32_t relative_offset    = is_a_trailing_run ? from_decoded_offset - run_target_idx : 0;
-
-      // Only write this beginning-of-run if the run length falls within the decoded buffer OR
-      // the run is a trailing run.
-      if (run_length > 0 && (run_target_idx >= from_decoded_offset || is_a_trailing_run) &&
-          scatter_target_idx < BLOCK_DECODED_ITEMS)
+      decoded_items[i] = val;
+      item_offsets[i]  = thread_decoded_offset - assigned_run_begin;
+      if (thread_decoded_offset == assigned_run_end - 1)
       {
-        WriteBeginningOfRun(temp_storage.runs.decode_buffer,
-                            scatter_target_idx,
-                            temp_storage.runs.unique_items[run_offset],
-                            relative_offset);
+        // If this thread is already beyond the total_decoded_size, we keep it assigned to the very last run
+        assigned_run       = min(BLOCK_THREADS * RUNS_PER_THREAD, assigned_run + 1);
+        assigned_run_begin = temp_storage.runs.run_offsets[assigned_run];
+        assigned_run_end   = temp_storage.runs.run_offsets[assigned_run + 1];
+        val                = temp_storage.runs.unique_items[assigned_run];
       }
-      run_offset += BLOCK_THREADS;
+      thread_decoded_offset++;
     }
+  }
 
-    // Ensure that the beginning of all relevant runs has been written
-    __syncthreads();
-
-    // Read in blocked-arrangement in preparation for the run-length decoding prefix scan
-    ZippedRunLengthDecode scan_items[DECODED_ITEMS_PER_THREAD];
-    LoadFromDecodeBuffer(scan_items, temp_storage.runs.decode_buffer);
-
-    // Ensure the decoded_buffer can be repurposed for the scan's temporary storage
-    __syncthreads();
-
-    // Perform the run-length decoding prefix scan (populating continuation-of-runs with the correct run's value)
-    DecodeScanT(temp_storage.runs.decode_scan).InclusiveScan(scan_items, scan_items, DecodeScanOpT());
-
-    // Prepare result to return it to the user within user-provided registers
-    PopulateReturnValues(scan_items, decoded_items, item_offsets);
-
-    // Ensure we're done using the the temporary storage (e.g., before the user is invoking another round of
-    // RunLengthDecode(...))
-    __syncthreads();
+  __device__ __forceinline__ void RunLengthDecode(UniqueItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
+                                                  DecodedOffsetT from_decoded_offset = 0)
+  {
+    DecodedOffsetT item_offsets[DECODED_ITEMS_PER_THREAD];
+    RunLengthDecode(decoded_items, item_offsets, from_decoded_offset);
   }
 };
 

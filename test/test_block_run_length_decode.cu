@@ -259,7 +259,7 @@ __launch_bounds__(AgentTestBlockRunLengthDecode::BLOCK_THREADS) __global__
 struct ModOp
 {
   using T = uint32_t;
-  __host__ __device__ __forceinline__ T operator()(const T &x) const { return x % 100; }
+  __host__ __device__ __forceinline__ T operator()(const T &x) const { return 1 + (x % 100); }
 };
 
 template <uint32_t RUNS_PER_THREAD,
@@ -411,6 +411,21 @@ void TestAlgorithmSpecialisation()
   // Verify the total run-length decoded size is correct
   AssertEquals(host_golden.size(), h_num_decoded_total[0]);
 
+  float duration_size   = 0.0f;
+  float duration_decode = 0.0f;
+  cudaEventElapsedTime(&duration_size, cuda_evt_timers[TIMER_SIZE_BEGIN], cuda_evt_timers[TIMER_SIZE_END]);
+  cudaEventElapsedTime(&duration_decode, cuda_evt_timers[TIMER_DECODE_BEGIN], cuda_evt_timers[TIMER_DECODE_END]);
+
+  size_t decoded_bytes          = host_golden.size() * sizeof(UniqueItemT);
+  size_t relative_offsets_bytes = TEST_RELATIVE_OFFSETS ? host_golden.size() * sizeof(RunLengthT) : 0ULL;
+  size_t total_bytes_written    = decoded_bytes + relative_offsets_bytes;
+  std::cout << "MODE: " << (TEST_RELATIVE_OFFSETS ? "offsets, " : "normal,  ") << "RUNS_PER_THREAD: " << RUNS_PER_THREAD
+            << ", DECODED_ITEMS_PER_THREAD: " << DECODED_ITEMS_PER_THREAD
+            << ", THREADS_PER_BLOCK: " << THREADS_PER_BLOCK << ", decoded size (bytes): " << decoded_bytes
+            << ", relative offsets (bytes): " << relative_offsets_bytes << ", time_size (ms): " << duration_size
+            << ", time_decode (ms): " << duration_decode
+            << ", achieved decode BW (GB/s): " << ((total_bytes_written / 1.0e9) * (1000.0 / duration_decode)) << "\n";
+
   // Verify the run-length decoded data is correct
   bool cmp_eq = true;
   for (int i = 0; i < host_golden.size(); i++)
@@ -427,21 +442,6 @@ void TestAlgorithmSpecialisation()
     }
   }
   AssertEquals(cmp_eq, true);
-
-  float duration_size   = 0.0f;
-  float duration_decode = 0.0f;
-  cudaEventElapsedTime(&duration_size, cuda_evt_timers[TIMER_SIZE_BEGIN], cuda_evt_timers[TIMER_SIZE_END]);
-  cudaEventElapsedTime(&duration_decode, cuda_evt_timers[TIMER_DECODE_BEGIN], cuda_evt_timers[TIMER_DECODE_END]);
-
-  size_t decoded_bytes          = host_golden.size() * sizeof(UniqueItemT);
-  size_t relative_offsets_bytes = TEST_RELATIVE_OFFSETS ? host_golden.size() * sizeof(RunLengthT) : 0ULL;
-  size_t total_bytes_written    = decoded_bytes + relative_offsets_bytes;
-  std::cout << "MODE: " << (TEST_RELATIVE_OFFSETS ? "offsets, " : "normal,  ") << "RUNS_PER_THREAD: " << RUNS_PER_THREAD
-            << ", DECODED_ITEMS_PER_THREAD: " << DECODED_ITEMS_PER_THREAD
-            << ", THREADS_PER_BLOCK: " << THREADS_PER_BLOCK << ", decoded size (bytes): " << decoded_bytes
-            << ", relative offsets (bytes): " << relative_offsets_bytes << ", time_size (ms): " << duration_size
-            << ", time_decode (ms): " << duration_decode
-            << ", achieved decode BW (GB/s): " << ((total_bytes_written / 1.0e9) * (1000.0 / duration_decode)) << "\n";
 
   // Clean up memory allocations
   CubDebugExit(cudaFree(temp_storage));
