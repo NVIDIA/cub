@@ -46,6 +46,9 @@
 
 #include "../../test/test_util.h"
 
+// Some implementation details rely on c++14
+#if CUB_CPP_DIALECT >= 2014
+
 using namespace cub;
 
 //---------------------------------------------------------------------
@@ -244,3 +247,9 @@ int main(int argc, char** argv)
 
     return 0;
 }
+
+#else // < C++14
+
+int main() {}
+
+#endif
