@@ -497,6 +497,21 @@ struct DispatchSpmv
         cudaError error = cudaSuccess;
         do
         {
+            if (spmv_params.num_rows < 0 || spmv_params.num_cols < 0)
+            {
+              return cudaErrorInvalidValue;
+            }
+
+            if (spmv_params.num_rows == 0 || spmv_params.num_cols == 0)
+            { // Empty problem, no-op.
+                if (d_temp_storage == NULL)
+                {
+                    temp_storage_bytes = 1;
+                }
+
+                break;
+            }
+
             if (spmv_params.num_cols == 1)
             {
                 if (d_temp_storage == NULL)
@@ -603,14 +618,6 @@ struct DispatchSpmv
             int search_block_size   = INIT_KERNEL_THREADS;
             int search_grid_size    = cub::DivideAndRoundUp(num_merge_tiles + 1, search_block_size);
 
-            #if CUB_INCLUDE_HOST_CODE
-                if (CUB_IS_HOST_CODE)
-                {
-                    // Init textures
-                    if (CubDebug(error = spmv_params.t_vector_x.BindTexture(spmv_params.d_vector_x, spmv_params.num_cols * sizeof(ValueT)))) break;
-                }
-            #endif
-
             if (search_grid_size < sm_count)
 //            if (num_merge_tiles < spmv_sm_occupancy * sm_count)
             {
@@ -685,14 +692,6 @@ struct DispatchSpmv
                 // Sync the stream if specified to flush runtime errors
                 if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
             }
-
-            #if CUB_INCLUDE_HOST_CODE
-                if (CUB_IS_HOST_CODE)
-                {
-                    // Free textures
-                    if (CubDebug(error = spmv_params.t_vector_x.UnbindTexture())) break;
-                }
-            #endif
         }
         while (0);
 
