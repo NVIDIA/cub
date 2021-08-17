@@ -1,3 +1,57 @@
+# CUB 1.14.0 (NVIDIA HPC SDK 21.9)
+
+## Summary
+
+CUB 1.14.0 is a major release accompanying the NVIDIA HPC SDK 21.9.
+
+This release provides the often-requested merge sort algorithm, ported from the
+`thrust::sort` implementation. Merge sort provides more flexibility than the
+existing radix sort by supporting arbitrary data types and comparators, though
+radix sorting is still faster for supported inputs. This functionality is
+provided through the new `cub::DeviceMergeSort` and `cub::BlockMergeSort`
+algorithms.
+
+The namespace wrapping mechanism has been overhauled for 1.14. The existing
+macros (`CUB_NS_PREFIX`/`CUB_NS_POSTFIX`) can now be replaced by a single macro,
+`CUB_WRAPPED_NAMESPACE`, which is set to the name of the desired wrapped
+namespace. Defining a similar `THRUST_CUB_WRAPPED_NAMESPACE` macro will embed
+both `thrust::` and `cub::` symbols in the same external namespace. The
+prefix/postfix macros are still supported, but now require a new
+`CUB_NS_QUALIFIER` macro to be defined, which provides the fully qualified CUB
+namespace (e.g. `::foo::cub`). See `cub/util_namespace.cuh` for details.
+
+## Breaking Changes
+
+- NVIDIA/cub#350: When the `CUB_NS_[PRE|POST]FIX` macros are set,
+  `CUB_NS_QUALIFIER` must also be defined to the fully qualified CUB namespace
+  (e.g. `#define CUB_NS_QUALIFIER ::foo::cub`). Note that this is handled
+  automatically when using the new `[THRUST_]CUB_WRAPPED_NAMESPACE` mechanism.
+
+## New Features
+
+- NVIDIA/cub#322: Ported the merge sort algorithm from Thrust:
+  `cub::BlockMergeSort` and `cub::DeviceMergeSort` are now available.
+- NVIDIA/cub#326: Simplify the namespace wrapper macros, and detect when
+  Thrust's symbols are in a wrapped namespace.
+
+## Bug Fixes
+
+- NVIDIA/cub#160, NVIDIA/cub#163, NVIDIA/cub#352: Fixed several bugs in
+  `cub::DeviceSpmv` and added basic tests for this algorithm. Thanks to James
+  Wyles and Seunghwa Kang for their contributions.
+- NVIDIA/cub#328: Fixed error handling bug and incorrect debugging output in
+  `cub::CachingDeviceAllocator`. Thanks to Felix Kallenborn for this
+  contribution.
+- NVIDIA/cub#335: Fixed a compile error affecting clang and NVRTC. Thanks to
+  Jiading Guo for this contribution.
+- NVIDIA/cub#351: Fixed some errors in the `cub::DeviceHistogram` documentation.
+
+## Enhancements
+
+- NVIDIA/cub#348: Add an example that demonstrates how to use dynamic shared
+  memory with a CUB block algorithm. Thanks to Matthias Jouanneaux for this
+  contribution.
+
 # CUB 1.13.1 (CUDA Toolkit 11.5)
 
 CUB 1.13.1 is a minor release accompanying the CUDA Toolkit 11.5.
