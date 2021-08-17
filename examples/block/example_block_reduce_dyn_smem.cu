@@ -83,10 +83,10 @@ constexpr auto archs_max_bytes = std::max(
 //---------------------------------------------------------------------
 
 /**
- * Simple kernel for performing a block-wide exclusive prefix sum over integers
+ * Simple kernel for performing a block-wide reduction.
  */
 template <int BLOCK_THREADS>
-__global__ void BlockSumKernel(
+__global__ void BlockReduceKernel(
     int         *d_in,          // Tile of input
     int         *d_out          // Tile aggregate
     )
@@ -182,8 +182,8 @@ void Test()
     // use default stream
     cudaStream_t stream = NULL;
 
-    // Run aggregate/prefix kernel
-    BlockSumKernel<BLOCK_THREADS>
+    // Run reduction kernel
+    BlockReduceKernel<BLOCK_THREADS>
         <<<g_grid_size, BLOCK_THREADS, smem_size, stream>>>(
             d_in,
             d_out);
