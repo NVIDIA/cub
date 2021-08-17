@@ -73,7 +73,7 @@ constexpr std::size_t arch_bytes_size = sizeof(
         ARCH>::TempStorage
 );
 template <typename T, int BLOCK_THREADS, int... Archs>
-constexpr auto archs_max_bytes = std::max(
+constexpr auto archs_max_bytes = (std::max)(
     {arch_bytes_size<T, BLOCK_THREADS, Archs>...,});
 
 
@@ -177,7 +177,7 @@ void Test()
         int, BLOCK_THREADS, 600, 700, 800>;
     // finally, we need to make sure that we can hold at least one integer
     // needed in the kernel to exchange data after reduction
-    auto smem_size = std::max(1 * sizeof(int), block_reduce_temp_bytes);
+    auto smem_size = (std::max)(1 * sizeof(int), block_reduce_temp_bytes);
 
     // use default stream
     cudaStream_t stream = NULL;
