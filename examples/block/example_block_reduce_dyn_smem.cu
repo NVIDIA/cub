@@ -95,14 +95,14 @@ __global__ void BlockReduceKernel(
     )
 {
     // Specialize BlockReduce type for our thread block
-    typedef cub::BlockReduce<int, BLOCK_THREADS> BlockReduceT;
+    using BlockReduceT = cub::BlockReduce<int, BLOCK_THREADS>;
+    using TempStorageT = typename BlockReduceT::TempStorage;
 
     // shared memory byte-array
     extern __shared__ char smem[];
     
     // cast to lvalue reference of expected type
-    auto& temp_storage = *reinterpret_cast<typename BlockReduceT::TempStorage*>(
-        smem);
+    auto& temp_storage = reinterpret_cast<TempStorageT&>(smem);
 
     int data = d_in[threadIdx.x];
 
