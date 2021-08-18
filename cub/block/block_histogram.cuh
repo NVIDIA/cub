@@ -139,6 +139,13 @@ enum BlockHistogramAlgorithm
  * - The histogram output can be constructed in shared or device-accessible memory
  * - See cub::BlockHistogramAlgorithm for performance details regarding algorithmic alternatives
  *
+ * \par Re-using dynamically allocating shared memory
+ * The following example under the examples/block folder illustrates usage of
+ * dynamically shared memory with BlockReduce and how to re-purpose
+ * the same memory region:
+ * <a href="../../examples/block/example_block_reduce_dyn_smem.cu">example_block_reduce_dyn_smem.cu</a>
+ *
+ * This example can be easily adapted to the storage required by BlockHistogram.
  */
 template <
     typename                T,

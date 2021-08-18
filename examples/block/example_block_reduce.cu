@@ -68,13 +68,13 @@ int g_grid_size = 1;
 //---------------------------------------------------------------------
 
 /**
- * Simple kernel for performing a block-wide exclusive prefix sum over integers
+ * Simple kernel for performing a block-wide reduction.
  */
 template <
     int                     BLOCK_THREADS,
     int                     ITEMS_PER_THREAD,
     BlockReduceAlgorithm    ALGORITHM>
-__global__ void BlockSumKernel(
+__global__ void BlockReduceKernel(
     int         *d_in,          // Tile of input
     int         *d_out,         // Tile aggregate
     clock_t     *d_elapsed)     // Elapsed cycle count of block reduction
@@ -167,7 +167,7 @@ void Test()
 
     // Kernel props
     int max_sm_occupancy;
-    CubDebugExit(MaxSmOccupancy(max_sm_occupancy, BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>, BLOCK_THREADS));
+    CubDebugExit(MaxSmOccupancy(max_sm_occupancy, BlockReduceKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM>, BLOCK_THREADS));
 
     // Copy problem to device
     cudaMemcpy(d_in, h_in, sizeof(int) * TILE_SIZE, cudaMemcpyHostToDevice);
@@ -176,8 +176,8 @@ void Test()
         (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         TILE_SIZE, g_timing_iterations, g_grid_size, BLOCK_THREADS, ITEMS_PER_THREAD, max_sm_occupancy);
 
-    // Run aggregate/prefix kernel
-    BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
+    // Run kernel
+    BlockReduceKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
         d_in,
         d_out,
         d_elapsed);
@@ -200,8 +200,8 @@ void Test()
 
         timer.Start();
 
-        // Run aggregate/prefix kernel
-        BlockSumKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
+        // Run kernel
+        BlockReduceKernel<BLOCK_THREADS, ITEMS_PER_THREAD, ALGORITHM><<<g_grid_size, BLOCK_THREADS>>>(
             d_in,
             d_out,
             d_elapsed);
