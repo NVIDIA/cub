@@ -36,9 +36,11 @@
 CUB_NAMESPACE_BEGIN
 
 
-// Implementation of the MergePath algorithm, as described in:
-// Odeh et al, "Merge Path - Parallel Merging Made Simple"
-// doi:10.1109/IPDPSW.2012.202
+// Additional details of the Merge-Path Algorithm can be found in:
+// S. Odeh, O. Green, Z. Mwassi, O. Shmueli, Y. Birk, " Merge Path - Parallel
+// Merging Made Simple", Multithreaded Architectures and Applications (MTAAP)
+// Workshop, IEEE 26th International Parallel & Distributed Processing
+// Symposium (IPDPS), 2012
 template <typename KeyT,
           typename KeyIteratorT,
           typename OffsetT,
