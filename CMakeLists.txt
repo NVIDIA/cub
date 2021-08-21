@@ -51,6 +51,15 @@ endif()
 option(CUB_ENABLE_HEADER_TESTING "Test that all public headers compile." ON)
 option(CUB_ENABLE_TESTING "Build CUB testing suite." ON)
 option(CUB_ENABLE_EXAMPLES "Build CUB examples." ON)
+
+option(CUB_ENABLE_CT_PROFILING "Enable compilation time profiling" OFF)
+
+if ("NVCXX" STREQUAL "${CMAKE_CUDA_COMPILER_ID}")
+  # NVBugs 200770766
+  set(CUB_SEPARATE_CATCH2 ON)
+else ()
+  option(CUB_SEPARATE_CATCH2 "Build each catch2 as a separate executable." OFF)
+endif ()
 # This is needed for NVCXX QA, which requires a static set of executable names.
 # Only a single dialect may be enabled when this is off.
 option(CUB_ENABLE_CPP_DIALECT_IN_NAMES
@@ -112,6 +121,14 @@ if (CUB_ENABLE_TESTING OR CUB_ENABLE_EXAMPLES)
 endif()
 
 if (CUB_ENABLE_TESTING)
+  include(cmake/CPM.cmake)
+  CPMAddPackage("gh:catchorg/Catch2@2.13.9")
+
+  option(METAL_BUILD_DOC OFF)
+  option(METAL_BUILD_EXAMPLES OFF)
+  option(METAL_BUILD_TESTS OFF)
+  CPMAddPackage("gh:brunocodutra/metal@2.1.4")
+
   add_subdirectory(test)
 endif()
 
