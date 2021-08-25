@@ -40,16 +40,23 @@ CUB_NAMESPACE_BEGIN
  *        across a CUDA warp using a merge sorting method.
  * @ingroup WarpModule
  *
- * @tparam KeyT Key type
- * @tparam ITEMS_PER_THREAD The number of items per thread
- * @tparam LOGICAL_WARP_THREADS <b>[optional]</b> The number of threads per
- *                              "logical" warp (may be less than the number of
- *                              hardware warp threads). Default is the warp size
- *                              of the targeted CUDA compute-capability (e.g.,
- *                              32 threads for SM86).
- * @tparam ValueT <b>[optional]</b> Value type (default: cub::NullType,
- *                which indicates a keys-only sort)
- * @tparam PTX_ARCH <b>[optional]</b> \ptxversion
+ * @tparam KeyT
+ *   Key type
+ *
+ * @tparam ITEMS_PER_THREAD
+ *   The number of items per thread
+ *
+ * @tparam LOGICAL_WARP_THREADS
+ *   <b>[optional]</b> The number of threads per "logical" warp (may be less
+ *   than the number of hardware warp threads). Default is the warp size of the
+ *   targeted CUDA compute-capability (e.g., 32 threads for SM86).
+ *
+ * @tparam ValueT
+ *   <b>[optional]</b> Value type (default: cub::NullType, which indicates a
+ *   keys-only sort)
+ *
+ * @tparam PTX_ARCH
+ *   <b>[optional]</b> \ptxversion
  *
  * @par Overview
  *   WarpMergeSort arranges items into ascending order using a comparison
@@ -81,8 +88,10 @@ CUB_NAMESPACE_BEGIN
  *     constexpr int warps_per_block = block_threads / warp_threads;
  *     const int warp_id = static_cast<int>(threadIdx.x) / warp_threads;
  *
- *     // Specialize WarpMergeSort for a virtual warp of 16 threads owning 4 integer items each
- *     using WarpMergeSortT = cub::WarpMergeSort<int, items_per_thread, warp_threads>;
+ *     // Specialize WarpMergeSort for a virtual warp of 16 threads
+ *     // owning 4 integer items each
+ *     using WarpMergeSortT =
+ *       cub::WarpMergeSort<int, items_per_thread, warp_threads>;
  *
  *     // Allocate shared memory for WarpMergeSort
  *     __shared__ typename WarpMergeSort::TempStorage temp_storage[warps_per_block];

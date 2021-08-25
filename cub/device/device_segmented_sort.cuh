@@ -77,9 +77,11 @@ CUB_NAMESPACE_BEGIN
  *
  * @par A simple example
  * @code
- * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+ * #include <cub/cub.cuh>
+ * // or equivalently <cub/device/device_segmented_sort.cuh>
  *
- * // Declare, allocate, and initialize device-accessible pointers for sorting data
+ * // Declare, allocate, and initialize device-accessible pointers
+ * // for sorting data
  * int  num_items;          // e.g., 7
  * int  num_segments;       // e.g., 3
  * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -120,14 +122,14 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of keys into ascending order. Approximately
-   *        <tt>num_items + 2*num_segments</tt> auxiliary storage required.
+   *        `num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
    * - The contents of the input data are not altered by the sorting operation
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - SortKeys is not guaranteed to be stable. That is, suppose that @p i and
    *   @p j are equivalent: neither one is less than the other. It is not
    *   guaranteed that the relative order of these two elements will be
@@ -139,9 +141,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible
+   * // pointers for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -167,42 +171,61 @@ struct DeviceSegmentedSort
    * // d_keys_out            <-- [6, 7, 8, 0, 3, 5, 9]
    * @endcode
    *
-   * @tparam KeyT <b>[inferred]</b> Key type
-   * @tparam OffsetT <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT <b>[inferred]</b> Random-access input iterator
-   *                              type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT <b>[inferred]</b> Random-access input iterator
-   *                            type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in] d_keys_in Device-accessible pointer to the input data of
-   *                      key data to sort
-   * @param[out] d_keys_out Device-accessible pointer to the sorted output
-   *                        sequence of key data
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in] d_keys_in
+   *   Device-accessible pointer to the input data of key data to sort
+   *
+   * @param[out] d_keys_out
+   *   Device-accessible pointer to the sorted output sequence of key data
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length `num_segments`, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   `num_segments`, such that `d_end_offsets[i] - 1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations to
+   *   be printed to the console. Default is `false`.
    */
   template <typename KeyT,
             typename OffsetT,
@@ -247,14 +270,14 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of keys into descending order. Approximately
-   *        <tt>num_items + 2*num_segments</tt> auxiliary storage required.
+   *        `num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
    * - The contents of the input data are not altered by the sorting operation
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments + 1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets + 1`).
    * - SortKeysDescending is not guaranteed to be stable. That is, suppose that
    *   @p i and @p j are equivalent: neither one is less than the other. It is
    *   not guaranteed that the relative order of these two elements will be
@@ -266,9 +289,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -294,40 +319,61 @@ struct DeviceSegmentedSort
    * // d_keys_out            <-- [8, 7, 6, 9, 5, 3, 0]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in] d_keys_in Device-accessible pointer to the input data of
-   *                      key data to sort
-   * @param[out] d_keys_out Device-accessible pointer to the sorted output
-   *                        sequence of key data
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no
+   *   work is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in] d_keys_in
+   *   Device-accessible pointer to the input data of key data to sort
+   *
+   * @param[out] d_keys_out
+   *   Device-accessible pointer to the sorted output sequence of key data
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i] - 1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename OffsetT,
@@ -372,7 +418,7 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of keys into ascending order. Approximately
-   *        <tt>2*num_segments</tt> auxiliary storage required.
+   *        `2*num_segments` auxiliary storage required.
    *
    * @par
    * - The sorting operation is given a pair of key buffers managed by a
@@ -384,9 +430,9 @@ struct DeviceSegmentedSort
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits and the targeted device architecture).
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - SortKeys is not guaranteed to be stable. That is, suppose that
    *   @p i and @p j are equivalent: neither one is less than the other. It is
    *   not guaranteed that the relative order of these two elements will be
@@ -398,9 +444,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible
+   * // pointers for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -429,40 +477,60 @@ struct DeviceSegmentedSort
    * // d_keys.Current()      <-- [6, 7, 8, 0, 3, 5, 9]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in,out] d_keys Reference to the double-buffer of keys whose "current"
-   *                       device-accessible buffer contains the unsorted input
-   *                       keys and, upon return, is updated to point to the
-   *                       sorted output keys
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no
+   *   work is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in,out] d_keys
+   *   Reference to the double-buffer of keys whose "current" device-accessible
+   *   buffer contains the unsorted input keys and, upon return, is updated to
+   *   point to the sorted output keys
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*`
+   *   and `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i] - 1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations to
+   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename OffsetT,
@@ -506,7 +574,7 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of keys into descending order. Approximately
-   *        <tt>2*num_segments</tt> auxiliary storage required.
+   *        `2*num_segments` auxiliary storage required.
    *
    * @par
    * - The sorting operation is given a pair of key buffers managed by a
@@ -518,9 +586,9 @@ struct DeviceSegmentedSort
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits and the targeted device architecture).
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments + 1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets + 1`).
    * - SortKeysDescending is not guaranteed to be stable. That is, suppose that
    *   @p i and @p j are equivalent: neither one is less than the other. It is
    *   not guaranteed that the relative order of these two elements will be
@@ -532,9 +600,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers for
+   * // sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -563,40 +633,60 @@ struct DeviceSegmentedSort
    * // d_keys.Current()      <-- [8, 7, 6, 9, 5, 3, 0]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in,out] d_keys Reference to the double-buffer of keys whose "current"
-   *                       device-accessible buffer contains the unsorted input
-   *                       keys and, upon return, is updated to point to the
-   *                       sorted output keys
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When `nullptr`, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in,out] d_keys
+   *   Reference to the double-buffer of keys whose "current" device-accessible
+   *   buffer contains the unsorted input keys and, upon return, is updated to
+   *   point to the sorted output keys
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i] - 1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i] - 1<= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename OffsetT,
@@ -640,14 +730,14 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of keys into ascending order. Approximately
-   *        <tt>num_items + 2*num_segments</tt> auxiliary storage required.
+   *        `num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
    * - The contents of the input data are not altered by the sorting operation
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - StableSortKeys is stable: it preserves the relative ordering of
    *   equivalent elements. That is, if @p x and @p y are elements such that
    *   @p x precedes @p y, and if the two elements are equivalent (neither
@@ -660,9 +750,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -688,40 +780,61 @@ struct DeviceSegmentedSort
    * // d_keys_out            <-- [6, 7, 8, 0, 3, 5, 9]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in] d_keys_in Device-accessible pointer to the input data of
-   *                      key data to sort
-   * @param[out] d_keys_out Device-accessible pointer to the sorted output
-   *                        sequence of key data
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in] d_keys_in
+   *   Device-accessible pointer to the input data of key data to sort
+   *
+   * @param[out] d_keys_out
+   *   Device-accessible pointer to the sorted output sequence of key data
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename OffsetT,
@@ -754,14 +867,14 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of keys into descending order. Approximately
-   *        <tt>num_items + 2*num_segments</tt> auxiliary storage required.
+   *        `num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
    * - The contents of the input data are not altered by the sorting operation
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - StableSortKeysDescending is stable: it preserves the relative ordering of
    *   equivalent elements. That is, if @p x and @p y are elements such that
    *   @p x precedes @p y, and if the two elements are equivalent (neither
@@ -774,9 +887,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -802,40 +917,61 @@ struct DeviceSegmentedSort
    * // d_keys_out            <-- [8, 7, 6, 9, 5, 3, 0]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in] d_keys_in Device-accessible pointer to the input data of
-   *                      key data to sort
-   * @param[out] d_keys_out Device-accessible pointer to the sorted output
-   *                        sequence of key data
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done.
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in] d_keys_in
+   *   Device-accessible pointer to the input data of key data to sort
+   *
+   * @param[out] d_keys_out
+   *   Device-accessible pointer to the sorted output sequence of key data
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename OffsetT,
@@ -870,7 +1006,7 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of keys into ascending order. Approximately
-   *        <tt>2*num_segments</tt> auxiliary storage required.
+   *        `2*num_segments` auxiliary storage required.
    *
    * @par
    * - The sorting operation is given a pair of key buffers managed by a
@@ -882,9 +1018,9 @@ struct DeviceSegmentedSort
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits and the targeted device architecture).
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - StableSortKeys is stable: it preserves the relative ordering of
    *   equivalent elements. That is, if @p x and @p y are elements such that
    *   @p x precedes @p y, and if the two elements are equivalent (neither
@@ -897,9 +1033,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -928,40 +1066,60 @@ struct DeviceSegmentedSort
    * // d_keys.Current()      <-- [6, 7, 8, 0, 3, 5, 9]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in,out] d_keys Reference to the double-buffer of keys whose "current"
-   *                       device-accessible buffer contains the unsorted input
-   *                       keys and, upon return, is updated to point to the
-   *                       sorted output keys
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in,out] d_keys
+   *   Reference to the double-buffer of keys whose "current" device-accessible
+   *   buffer contains the unsorted input keys and, upon return, is updated to
+   *   point to the sorted output keys
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i] - 1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename OffsetT,
@@ -992,7 +1150,7 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of keys into descending order. Approximately
-   *        <tt>2*num_segments</tt> auxiliary storage required.
+   *        `2*num_segments` auxiliary storage required.
    *
    * @par
    * - The sorting operation is given a pair of key buffers managed by a
@@ -1004,9 +1162,9 @@ struct DeviceSegmentedSort
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits and the targeted device architecture).
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - StableSortKeysDescending is stable: it preserves the relative ordering of
    *   equivalent elements. That is, if @p x and @p y are elements such that
    *   @p x precedes @p y, and if the two elements are equivalent (neither
@@ -1019,9 +1177,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -1050,40 +1210,60 @@ struct DeviceSegmentedSort
    * // d_keys.Current()      <-- [8, 7, 6, 9, 5, 3, 0]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in,out] d_keys Reference to the double-buffer of keys whose "current"
-   *                       device-accessible buffer contains the unsorted input
-   *                       keys and, upon return, is updated to point to the
-   *                       sorted output keys
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done.
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in,out] d_keys
+   *   Reference to the double-buffer of keys whose "current" device-accessible
+   *   buffer contains the unsorted input keys and, upon return, is updated to
+   *   point to the sorted output keys
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`. If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename OffsetT,
@@ -1121,15 +1301,16 @@ struct DeviceSegmentedSort
   //@{
 
   /**
-   * @brief Sorts segments of key-value pairs into ascending order. Approximately
-   *        <tt>2*num_items + 2*num_segments</tt> auxiliary storage required.
+   * @brief Sorts segments of key-value pairs into ascending order.
+   *        Approximately `2*num_items + 2*num_segments` auxiliary storage
+   *        required.
    *
    * @par
    * - The contents of the input data are not altered by the sorting operation
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - SortPairs is not guaranteed to be stable. That is, suppose that @p i and
    *   @p j are equivalent: neither one is less than the other. It is not
    *   guaranteed that the relative order of these two elements will be
@@ -1142,9 +1323,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -1175,46 +1358,72 @@ struct DeviceSegmentedSort
    * // d_values_out          <-- [1, 2, 0, 5, 4, 3, 6]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam ValueT                <b>[inferred]</b> Value type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in] d_keys_in Device-accessible pointer to the input data of
-   *                      key data to sort
-   * @param[out] d_keys_out Device-accessible pointer to the sorted output
-   *                        sequence of key data
-   * @param[in] d_values_in Device-accessible pointer to the corresponding input
-   *                        sequence of associated value items
-   * @param[out] d_values_out Device-accessible pointer to the
-   *                          correspondingly-reordered output sequence of
-   *                          associated value items
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam ValueT
+   *   <b>[inferred]</b> Value type
+   *
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When `nullptr`, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in] d_keys_in
+   *   Device-accessible pointer to the input data of key data to sort
+   *
+   * @param[out] d_keys_out
+   *   Device-accessible pointer to the sorted output sequence of key data
+   *
+   * @param[in] d_values_in
+   *   Device-accessible pointer to the corresponding input sequence of
+   *   associated value items
+   *
+   * @param[out] d_values_out
+   *   Device-accessible pointer to the correspondingly-reordered output
+   *   sequence of associated value items
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1262,14 +1471,14 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of key-value pairs into descending order. Approximately
-   *        <tt>2*num_items + 2*num_segments</tt> auxiliary storage required.
+   *        `2*num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
    * - The contents of the input data are not altered by the sorting operation
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - SortPairs is not guaranteed to be stable. That is, suppose that @p i and
    *   @p j are equivalent: neither one is less than the other. It is not
    *   guaranteed that the relative order of these two elements will be
@@ -1282,9 +1491,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers for
+   * // sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -1315,46 +1526,72 @@ struct DeviceSegmentedSort
    * // d_values_out          <-- [0, 2, 1, 6, 3, 4, 5]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam ValueT                <b>[inferred]</b> Value type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in] d_keys_in Device-accessible pointer to the input data of
-   *                      key data to sort
-   * @param[out] d_keys_out Device-accessible pointer to the sorted output
-   *                        sequence of key data
-   * @param[in] d_values_in Device-accessible pointer to the corresponding input
-   *                        sequence of associated value items
-   * @param[out] d_values_out Device-accessible pointer to the
-   *                          correspondingly-reordered output sequence of
-   *                          associated value items
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam ValueT
+   *   <b>[inferred]</b> Value type
+   *
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done.
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in] d_keys_in
+   *   Device-accessible pointer to the input data of key data to sort
+   *
+   * @param[out] d_keys_out
+   *   Device-accessible pointer to the sorted output sequence of key data
+   *
+   * @param[in] d_values_in
+   *   Device-accessible pointer to the corresponding input sequence of
+   *   associated value items
+   *
+   * @param[out] d_values_out
+   *   Device-accessible pointer to the correspondingly-reordered output
+   *   sequence of associated value items
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1401,8 +1638,8 @@ struct DeviceSegmentedSort
   }
 
   /**
-   * @brief Sorts segments of key-value pairs into ascending order. Approximately
-   *        <tt>2*num_segments</tt> auxiliary storage required.
+   * @brief Sorts segments of key-value pairs into ascending order.
+   *        Approximately `2*num_segments` auxiliary storage required.
    *
    * @par
    * - The sorting operation is given a pair of key buffers and a corresponding
@@ -1416,9 +1653,9 @@ struct DeviceSegmentedSort
    *   now contains the sorted output sequence (a function of the number of key bits
    *   specified and the targeted device architecture).
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - SortPairs is not guaranteed to be stable. That is, suppose that @p i and
    *   @p j are equivalent: neither one is less than the other. It is not
    *   guaranteed that the relative order of these two elements will be
@@ -1431,9 +1668,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -1467,45 +1706,68 @@ struct DeviceSegmentedSort
    *
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam ValueT                <b>[inferred]</b> Value type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in,out] d_keys Reference to the double-buffer of keys whose "current"
-   *                       device-accessible buffer contains the unsorted input
-   *                       keys and, upon return, is updated to point to the
-   *                       sorted output keys
-   * @param[in,out] d_values Double-buffer of values whose "current"
-   *                         device-accessible buffer contains the unsorted input
-   *                         values and, upon return, is updated to point to
-   *                         the sorted output values
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam ValueT
+   *   <b>[inferred]</b> Value type
+   *
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When `nullptr`, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done.
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in,out] d_keys
+   *   Reference to the double-buffer of keys whose "current" device-accessible
+   *   buffer contains the unsorted input keys and, upon return, is updated to
+   *   point to the sorted output keys
+   *
+   * @param[in,out] d_values
+   *   Double-buffer of values whose "current" device-accessible buffer contains
+   *   the unsorted input values and, upon return, is updated to point to the
+   *   sorted output values
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations
+   *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1548,26 +1810,26 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of key-value pairs into descending order.
-   *        Approximately <tt>2*num_segments</tt> auxiliary storage required.
+   *        Approximately `2*num_segments` auxiliary storage required.
    *
    * @par
    * - The sorting operation is given a pair of key buffers and a corresponding
    *   pair of associated value buffers. Each pair is managed by a DoubleBuffer
    *   structure that indicates which of the two buffers is "current" (and thus
    *   contains the input data to be sorted).
-   * - The contents of both buffers within each pair may be altered by the sorting
-   *   operation.
-   * - Upon completion, the sorting operation will update the "current" indicator
-   *   within each DoubleBuffer wrapper to reference which of the two buffers
-   *   now contains the sorted output sequence (a function of the number of key bits
-   *   specified and the targeted device architecture).
+   * - The contents of both buffers within each pair may be altered by the
+   *   sorting operation.
+   * - Upon completion, the sorting operation will update the "current"
+   *   indicator within each DoubleBuffer wrapper to reference which of the two
+   *   buffers now contains the sorted output sequence (a function of the number
+   *   of key bits specified and the targeted device architecture).
    * - When input a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as <tt>segment_offsets+1</tt>).
-   * - SortPairsDescending is not guaranteed to be stable. That is, suppose that @p i and
-   *   @p j are equivalent: neither one is less than the other. It is not
-   *   guaranteed that the relative order of these two elements will be
+   * - SortPairsDescending is not guaranteed to be stable. That is, suppose that
+   *   @p i and @p j are equivalent: neither one is less than the other. It is
+   *   not guaranteed that the relative order of these two elements will be
    *   preserved by sort.
    *
    * @par Snippet
@@ -1577,9 +1839,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers for
+   * // sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -1613,45 +1877,68 @@ struct DeviceSegmentedSort
    *
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam ValueT                <b>[inferred]</b> Value type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in,out] d_keys Reference to the double-buffer of keys whose "current"
-   *                       device-accessible buffer contains the unsorted input
-   *                       keys and, upon return, is updated to point to the
-   *                       sorted output keys
-   * @param[in,out] d_values Double-buffer of values whose "current"
-   *                         device-accessible buffer contains the unsorted input
-   *                         values and, upon return, is updated to point to
-   *                         the sorted output values
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam ValueT
+   *   <b>[inferred]</b> Value type
+   *
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in,out] d_keys
+   *   Reference to the double-buffer of keys whose "current" device-accessible
+   *   buffer contains the unsorted input keys and, upon return, is updated to
+   *   point to the sorted output keys
+   *
+   * @param[in,out] d_values
+   *   Double-buffer of values whose "current" device-accessible buffer contains
+   *   the unsorted input values and, upon return, is updated to point to the
+   *   sorted output values
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations to
+   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1694,14 +1981,14 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of key-value pairs into ascending order. Approximately
-   *        <tt>2*num_items + 2*num_segments</tt> auxiliary storage required.
+   *        `2*num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
    * - The contents of the input data are not altered by the sorting operation
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - StableSortPairs is stable: it preserves the relative ordering of
    *   equivalent elements. That is, if @p x and @p y are elements such that
    *   @p x precedes @p y, and if the two elements are equivalent (neither
@@ -1715,9 +2002,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -1748,46 +2037,71 @@ struct DeviceSegmentedSort
    * // d_values_out          <-- [1, 2, 0, 5, 4, 3, 6]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam ValueT                <b>[inferred]</b> Value type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in] d_keys_in Device-accessible pointer to the input data of
-   *                      key data to sort
-   * @param[out] d_keys_out Device-accessible pointer to the sorted output
-   *                        sequence of key data
-   * @param[in] d_values_in Device-accessible pointer to the corresponding input
-   *                        sequence of associated value items
-   * @param[out] d_values_out Device-accessible pointer to the
-   *                          correspondingly-reordered output sequence of
-   *                          associated value items
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam ValueT
+   *   <b>[inferred]</b> Value type
+   *
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When nullptr, the
+   *   required allocation size is written to @p temp_storage_bytes and no work is done.
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in] d_keys_in
+   *   Device-accessible pointer to the input data of key data to sort
+   *
+   * @param[out] d_keys_out
+   *   Device-accessible pointer to the sorted output sequence of key data
+   *
+   * @param[in] d_values_in
+   *   Device-accessible pointer to the corresponding input sequence of
+   *   associated value items
+   *
+   * @param[out] d_values_out
+   *   Device-accessible pointer to the correspondingly-reordered output
+   *   sequence of associated value items
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations to
+   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1828,15 +2142,15 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of key-value pairs into descending order.
-   *        Approximately <tt>2*num_items + 2*num_segments</tt> auxiliary
+   *        Approximately `2*num_items + 2*num_segments` auxiliary
    *        storage required.
    *
    * @par
    * - The contents of the input data are not altered by the sorting operation
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - StableSortPairsDescending is stable: it preserves the relative ordering
    *   of equivalent elements. That is, if @p x and @p y are elements such that
    *   @p x precedes @p y, and if the two elements are equivalent (neither
@@ -1850,9 +2164,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -1883,46 +2199,72 @@ struct DeviceSegmentedSort
    * // d_values_out          <-- [0, 2, 1, 6, 3, 4, 5]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam ValueT                <b>[inferred]</b> Value type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in] d_keys_in Device-accessible pointer to the input data of
-   *                      key data to sort
-   * @param[out] d_keys_out Device-accessible pointer to the sorted output
-   *                        sequence of key data
-   * @param[in] d_values_in Device-accessible pointer to the corresponding input
-   *                        sequence of associated value items
-   * @param[out] d_values_out Device-accessible pointer to the
-   *                          correspondingly-reordered output sequence of
-   *                          associated value items
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam ValueT
+   *   <b>[inferred]</b> Value type
+   *
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When `nullptr`, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in] d_keys_in
+   *   Device-accessible pointer to the input data of key data to sort
+   *
+   * @param[out] d_keys_out
+   *   Device-accessible pointer to the sorted output sequence of key data
+   *
+   * @param[in] d_values_in
+   *   Device-accessible pointer to the corresponding input sequence of
+   *   associated value items
+   *
+   * @param[out] d_values_out
+   *   Device-accessible pointer to the correspondingly-reordered output
+   *   sequence of associated value items
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations to
+   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -1962,24 +2304,24 @@ struct DeviceSegmentedSort
   }
 
   /**
-   * @brief Sorts segments of key-value pairs into ascending order. Approximately
-   *        <tt>2*num_segments</tt> auxiliary storage required.
+   * @brief Sorts segments of key-value pairs into ascending order.
+   *        Approximately `2*num_segments` auxiliary storage required.
    *
    * @par
    * - The sorting operation is given a pair of key buffers and a corresponding
    *   pair of associated value buffers.  Each pair is managed by a DoubleBuffer
    *   structure that indicates which of the two buffers is "current" (and thus
    *   contains the input data to be sorted).
-   * - The contents of both buffers within each pair may be altered by the sorting
-   *   operation.
-   * - Upon completion, the sorting operation will update the "current" indicator
-   *   within each DoubleBuffer wrapper to reference which of the two buffers
-   *   now contains the sorted output sequence (a function of the number of key bits
-   *   specified and the targeted device architecture).
+   * - The contents of both buffers within each pair may be altered by the
+   *   sorting operation.
+   * - Upon completion, the sorting operation will update the "current"
+   *   indicator within each DoubleBuffer wrapper to reference which of the two
+   *   buffers now contains the sorted output sequence (a function of the number
+   *   of key bits specified and the targeted device architecture).
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - StableSortPairs is stable: it preserves the relative ordering
    *   of equivalent elements. That is, if @p x and @p y are elements such that
    *   @p x precedes @p y, and if the two elements are equivalent (neither
@@ -1993,9 +2335,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -2029,45 +2373,68 @@ struct DeviceSegmentedSort
    *
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam ValueT                <b>[inferred]</b> Value type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in,out] d_keys Reference to the double-buffer of keys whose "current"
-   *                       device-accessible buffer contains the unsorted input
-   *                       keys and, upon return, is updated to point to the
-   *                       sorted output keys
-   * @param[in,out] d_values Double-buffer of values whose "current"
-   *                         device-accessible buffer contains the unsorted input
-   *                         values and, upon return, is updated to point to
-   *                         the sorted output values
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam ValueT
+   *   <b>[inferred]</b> Value type
+   *
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When `nullptr`, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in,out] d_keys
+   *   Reference to the double-buffer of keys whose "current" device-accessible
+   *   buffer contains the unsorted input keys and, upon return, is updated to
+   *   point to the sorted output keys
+   *
+   * @param[in,out] d_values
+   *   Double-buffer of values whose "current" device-accessible buffer contains
+   *   the unsorted input values and, upon return, is updated to point to the
+   *   sorted output values
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations to
+   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,
@@ -2104,7 +2471,7 @@ struct DeviceSegmentedSort
 
   /**
    * @brief Sorts segments of key-value pairs into descending order.
-   *        Approximately <tt>2*num_segments</tt> auxiliary storage required.
+   *        Approximately `2*num_segments` auxiliary storage required.
    *
    * @par
    * - The sorting operation is given a pair of key buffers and a corresponding
@@ -2118,9 +2485,9 @@ struct DeviceSegmentedSort
    *   now contains the sorted output sequence (a function of the number of key bits
    *   specified and the targeted device architecture).
    * - When input a contiguous sequence of segments, a single sequence
-   *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
+   *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
-   *   the latter is specified as <tt>segment_offsets+1</tt>).
+   *   the latter is specified as `segment_offsets+1`).
    * - StableSortPairsDescending is stable: it preserves the relative ordering
    *   of equivalent elements. That is, if @p x and @p y are elements such that
    *   @p x precedes @p y, and if the two elements are equivalent (neither
@@ -2134,9 +2501,11 @@ struct DeviceSegmentedSort
    *
    * @par
    * @code
-   * #include <cub/cub.cuh>   // or equivalently <cub/device/device_segmented_sort.cuh>
+   * #include <cub/cub.cuh>
+   * // or equivalently <cub/device/device_segmented_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers
+   * // for sorting data
    * int  num_items;          // e.g., 7
    * int  num_segments;       // e.g., 3
    * int  *d_offsets;         // e.g., [0, 3, 3, 7]
@@ -2169,45 +2538,68 @@ struct DeviceSegmentedSort
    * // d_values.Current()    <-- [0, 2, 1, 6, 3, 4, 5]
    * @endcode
    *
-   * @tparam KeyT                  <b>[inferred]</b> Key type
-   * @tparam ValueT                <b>[inferred]</b> Value type
-   * @tparam OffsetT               <b>[inferred]</b> Integer type for global offsets
-   * @tparam BeginOffsetIteratorT  <b>[inferred]</b> Random-access input iterator type for reading segment beginning offsets \iterator
-   * @tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
+   * @tparam KeyT
+   *   <b>[inferred]</b> Key type
    *
-   * @param[in] d_temp_storage  Device-accessible allocation of temporary storage.
-   *                            When nullptr, the required allocation size is written
-   *                            to @p temp_storage_bytes and no work is done.
-   * @param[in,out] temp_storage_bytes Reference to size in bytes of
-   *                                   @p d_temp_storage allocation
-   * @param[in,out] d_keys Reference to the double-buffer of keys whose "current"
-   *                       device-accessible buffer contains the unsorted input
-   *                       keys and, upon return, is updated to point to the
-   *                       sorted output keys
-   * @param[in,out] d_values Double-buffer of values whose "current"
-   *                         device-accessible buffer contains the unsorted input
-   *                         values and, upon return, is updated to point to
-   *                         the sorted output values
-   * @param[in] num_items The total number of items to sort (across all segments)
-   * @param[in] num_segments The number of segments that comprise the sorting data
-   * @param[in] d_begin_offsets Random-access input iterator to the sequence of
-   *                            beginning offsets of length @p num_segments, such
-   *                            that <tt>d_begin_offsets[i]</tt> is the first
-   *                            element of the <em>i</em><sup>th</sup> data
-   *                            segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
-   * @param[in] d_end_offsets Random-access input iterator to the sequence of
-   *                          ending offsets of length @p num_segments, such that
-   *                          <tt>d_end_offsets[i]-1</tt> is the last element of
-   *                          the <em>i</em><sup>th</sup> data segment in
-   *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
-   *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-   *                          the <em>i</em><sup>th</sup> is considered empty.
-   * @param[in] stream <b>[optional]</b> CUDA stream to launch kernels within.
-   *                   Default is stream<sub>0</sub>.
-   * @param[in] debug_synchronous <b>[optional]</b> Whether or not to synchronize
-   *                              the stream after every kernel launch to check
-   *                              for errors. Also causes launch configurations
-   *                              to be printed to the console. Default is @p false.
+   * @tparam ValueT
+   *   <b>[inferred]</b> Value type
+   *
+   * @tparam OffsetT
+   *   <b>[inferred]</b> Integer type for global offsets
+   *
+   * @tparam BeginOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   beginning offsets \iterator
+   *
+   * @tparam EndOffsetIteratorT
+   *   <b>[inferred]</b> Random-access input iterator type for reading segment
+   *   ending offsets \iterator
+   *
+   * @param[in] d_temp_storage
+   *   Device-accessible allocation of temporary storage. When `nullptr`, the
+   *   required allocation size is written to @p temp_storage_bytes and no work
+   *   is done
+   *
+   * @param[in,out] temp_storage_bytes
+   *   Reference to size in bytes of @p d_temp_storage allocation
+   *
+   * @param[in,out] d_keys
+   *   Reference to the double-buffer of keys whose "current" device-accessible
+   *   buffer contains the unsorted input keys and, upon return, is updated to
+   *   point to the sorted output keys
+   *
+   * @param[in,out] d_values
+   *   Double-buffer of values whose "current" device-accessible buffer contains
+   *   the unsorted input values and, upon return, is updated to point to the
+   *   sorted output values
+   *
+   * @param[in] num_items
+   *   The total number of items to sort (across all segments)
+   *
+   * @param[in] num_segments
+   *   The number of segments that comprise the sorting data
+   *
+   * @param[in] d_begin_offsets
+   *   Random-access input iterator to the sequence of beginning offsets of
+   *   length @p num_segments, such that `d_begin_offsets[i]` is the first
+   *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   *   `d_values_*`
+   *
+   * @param[in] d_end_offsets
+   *   Random-access input iterator to the sequence of ending offsets of length
+   *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
+   *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
+   *   <em>i</em><sup>th</sup> is considered empty.
+   *
+   * @param[in] stream
+   *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
+   *   stream<sub>0</sub>.
+   *
+   * @param[in] debug_synchronous
+   *   <b>[optional]</b> Whether or not to synchronize the stream after every
+   *   kernel launch to check for errors. Also causes launch configurations to
+   *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
             typename ValueT,

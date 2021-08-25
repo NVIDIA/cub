@@ -122,18 +122,24 @@ enum WarpLoadAlgorithm
  * @ingroup WarpModule
  * @ingroup UtilIo
  *
- * @tparam InputT The data type to read into (which must be convertible from the
- *                input iterator's value type).
- * @tparam ITEMS_PER_THREAD The number of consecutive items partitioned onto
- *                          each thread.
- * @tparam ALGORITHM <b>[optional]</b> cub::WarpLoadAlgorithm tuning policy.
- *                   default: cub::WARP_LOAD_DIRECT.
- * @tparam LOGICAL_WARP_THREADS <b>[optional]</b> The number of threads per
- *                              "logical" warp (may be less than the number of
- *                              hardware warp threads). Default is the warp size
- *                              of the targeted CUDA compute-capability (e.g.,
- *                              32 threads for SM86).
- * @tparam PTX_ARCH <b>[optional]</b> \ptxversion
+ * @tparam InputT
+ *   The data type to read into (which must be convertible from the input
+ *   iterator's value type).
+ *
+ * @tparam ITEMS_PER_THREAD
+ *   The number of consecutive items partitioned onto each thread.
+ *
+ * @tparam ALGORITHM
+ *   <b>[optional]</b> cub::WarpLoadAlgorithm tuning policy.
+ *   default: cub::WARP_LOAD_DIRECT.
+ *
+ * @tparam LOGICAL_WARP_THREADS
+ *   <b>[optional]</b> The number of threads per "logical" warp (may be less
+ *   than the number of hardware warp threads). Default is the warp size of the
+ *   targeted CUDA compute-capability (e.g., 32 threads for SM86).
+ *
+ * @tparam PTX_ARCH
+ *   <b>[optional]</b> \ptxversion
  *
  * @par Overview
  * - The WarpLoad class provides a single data movement abstraction that can be

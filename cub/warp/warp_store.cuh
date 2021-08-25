@@ -120,16 +120,23 @@ enum WarpStoreAlgorithm
  * @ingroup WarpModule
  * @ingroup UtilIo
  *
- * @tparam T The type of data to be written.
- * @tparam ITEMS_PER_THREAD The number of consecutive items partitioned onto each thread.
- * @tparam ALGORITHM <b>[optional]</b> cub::WarpStoreAlgorithm tuning policy
- *                   enumeration. default: cub::WARP_STORE_DIRECT.
- * @tparam LOGICAL_WARP_THREADS <b>[optional]</b> The number of threads per
- *                              "logical" warp (may be less than the number of
- *                              hardware warp threads). Default is the warp size
- *                              of the targeted CUDA compute-capability (e.g.,
- *                              32 threads for SM86).
- * \tparam PTX_ARCH <b>[optional]</b> \ptxversion
+ * @tparam T
+ *   The type of data to be written.
+ *
+ * @tparam ITEMS_PER_THREAD
+ *   The number of consecutive items partitioned onto each thread.
+ *
+ * @tparam ALGORITHM
+ *   <b>[optional]</b> cub::WarpStoreAlgorithm tuning policy enumeration.
+ *   default: cub::WARP_STORE_DIRECT.
+ *
+ * @tparam LOGICAL_WARP_THREADS
+ *   <b>[optional]</b> The number of threads per "logical" warp (may be less
+ *   than the number of hardware warp threads). Default is the warp size of the
+ *   targeted CUDA compute-capability (e.g., 32 threads for SM86).
+ *
+ * \tparam PTX_ARCH
+ *   <b>[optional]</b> \ptxversion
  *
  * @par Overview
  * - The WarpStore class provides a single data movement abstraction that can be

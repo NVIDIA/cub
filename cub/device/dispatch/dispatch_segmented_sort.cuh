@@ -176,33 +176,49 @@ __global__ void DeviceSegmentedSortFallbackKernel(
 
 
 /**
- * @brief Single kernel for moderate size (less than a few thousand items) segments.
+ * @brief Single kernel for moderate size (less than a few thousand items)
+ *        segments.
  *
- * @param[in] small_segments Number of segments with a few dozens items
- * @param[in] medium_segments Number of segments with a few hundred items
- * @param[in] medium_blocks Number of CTAs assigned to process medium segments
- * @param[in] d_small_segments_reordering Small segments mapping of length @p small_segments,
- *                                        such that <tt>d_small_segments_reordering[i]</tt>
- *                                        is the input segment index
- * @param[in] d_medium_segments_reordering Medium segments mapping of length @p medium_segments,
- *                                         such that <tt>d_medium_segments_reordering[i]</tt>
- *                                         is the input segment index
- * @param[in] d_keys_in_origin Input keys buffer
- * @param[out] d_keys_out_orig Output keys buffer
- * @param[in] d_values_in_origin Input values buffer
- * @param[out] d_values_out_origin Output values buffer
- * @param[in] d_begin_offsets Random-access input iterator to the sequence of
- *                            beginning offsets of length @p num_segments, such
- *                            that <tt>d_begin_offsets[i]</tt> is the first element
- *                            of the <em>i</em><sup>th</sup> data segment in
- *                            <tt>d_keys_*</tt> and <tt>d_values_*</tt>
- * @param[in] d_end_offsets Random-access input iterator to the sequence of ending
- *                          offsets of length @p num_segments, such that
- *                          <tt>d_end_offsets[i]-1</tt> is the last element of the
- *                          <em>i</em><sup>th</sup> data segment in
- *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
- *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
- *                          the <em>i</em><sup>th</sup> is considered empty.
+ * @param[in] small_segments
+ *   Number of segments with a few dozens items
+ *
+ * @param[in] medium_segments
+ *   Number of segments with a few hundred items
+ *
+ * @param[in] medium_blocks
+ *   Number of CTAs assigned to process medium segments
+ *
+ * @param[in] d_small_segments_reordering
+ *   Small segments mapping of length @p small_segments, such that
+ *   `d_small_segments_reordering[i]` is the input segment index
+ *
+ * @param[in] d_medium_segments_reordering
+ *   Medium segments mapping of length @p medium_segments, such that
+ *   `d_medium_segments_reordering[i]` is the input segment index
+ *
+ * @param[in] d_keys_in_origin
+ *   Input keys buffer
+ *
+ * @param[out] d_keys_out_orig
+ *   Output keys buffer
+ *
+ * @param[in] d_values_in_origin
+ *   Input values buffer
+ *
+ * @param[out] d_values_out_origin
+ *   Output values buffer
+ *
+ * @param[in] d_begin_offsets
+ *   Random-access input iterator to the sequence of beginning offsets of length
+ *   @p num_segments, such that `d_begin_offsets[i]` is the first element of the
+ *   <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`
+ *
+ * @param[in] d_end_offsets
+ *   Random-access input iterator to the sequence of ending offsets of length
+ *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of the
+ *   <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`. If
+ *   `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the <em>i</em><sup>th</sup> is
+ *   considered empty.
  */
 template <bool IS_DESCENDING,
           typename SegmentedPolicyT,
@@ -303,22 +319,29 @@ void DeviceSegmentedSortKernelWithReorderingSmall(
 /**
  * @brief Single kernel for large size (more than a few thousand items) segments.
  *
- * @param[in] d_keys_in_origin Input keys buffer
- * @param[out] d_keys_out_orig Output keys buffer
- * @param[in] d_values_in_origin Input values buffer
- * @param[out] d_values_out_origin Output values buffer
- * @param[in] d_begin_offsets Random-access input iterator to the sequence of
- *                            beginning offsets of length @p num_segments, such
- *                            that <tt>d_begin_offsets[i]</tt> is the first element
- *                            of the <em>i</em><sup>th</sup> data segment in
- *                            <tt>d_keys_*</tt> and <tt>d_values_*</tt>
- * @param[in] d_end_offsets Random-access input iterator to the sequence of ending
- *                          offsets of length @p num_segments, such that
- *                          <tt>d_end_offsets[i]-1</tt> is the last element of the
- *                          <em>i</em><sup>th</sup> data segment in
- *                          <tt>d_keys_*</tt> and <tt>d_values_*</tt>. If
- *                          <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
- *                          the <em>i</em><sup>th</sup> is considered empty.
+ * @param[in] d_keys_in_origin
+ *   Input keys buffer
+ *
+ * @param[out] d_keys_out_orig
+ *   Output keys buffer
+ *
+ * @param[in] d_values_in_origin
+ *   Input values buffer
+ *
+ * @param[out] d_values_out_origin
+ *   Output values buffer
+ *
+ * @param[in] d_begin_offsets
+ *   Random-access input iterator to the sequence of beginning offsets of length
+ *   @p num_segments, such that `d_begin_offsets[i]` is the first element of the
+ *   <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`
+ *
+ * @param[in] d_end_offsets
+ *   Random-access input iterator to the sequence of ending offsets of length
+ *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of the
+ *   <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`. If
+ *   `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the <em>i</em><sup>th</sup> is
+ *   considered empty.
  */
 template <bool IS_DESCENDING,
           typename SegmentedPolicyT,
@@ -391,7 +414,7 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
                               d_values_remaining_passes.Current());
     current_bit += pass_bits;
 
-#pragma unroll 1
+    #pragma unroll 1
     while (current_bit < end_bit)
     {
       pass_bits = (cub::min)(int{SegmentedPolicyT::RADIX_BITS},
@@ -417,7 +440,11 @@ template <typename KeyT,
           typename ValueT>
 struct DeviceSegmentedSortPolicy
 {
-  using DominantT = typename std::conditional<(sizeof(ValueT) > sizeof(KeyT)), ValueT, KeyT>::type;
+  using DominantT =
+    typename std::conditional<
+      (sizeof(ValueT) > sizeof(KeyT)),
+      ValueT,
+      KeyT>::type;
 
   constexpr static int KEYS_ONLY = std::is_same<ValueT, cub::NullType>::value;
 
@@ -839,45 +866,64 @@ struct DispatchSegmentedSort : SelectedPolicy
     }
   };
 
-  // Partition selects large and small groups.
-  // The middle group is unselected.
+  // Partition selects large and small groups. The middle group is not selected.
   constexpr static std::size_t num_selected_groups = 2;
 
-  void *d_temp_storage; ///< Reference to size in bytes of @p d_temp_storage allocation
-  std::size_t &temp_storage_bytes; /**< [in,out] Reference to size in bytes of
-                                                 @p d_temp_storage allocation */
-  DoubleBuffer<KeyT> &d_keys; /**< [in,out] Double-buffer whose current buffer
-                                            contains the unsorted input keys and,
-                                            upon return, is updated to point to
-                                            the sorted output keys */
-  DoubleBuffer<ValueT> &d_values; /**< [in,out] Double-buffer whose current buffer
-                                                contains the unsorted input values and,
-                                                upon return, is updated to point to
-                                                the sorted output values */
-  OffsetT num_items; ///< [in] Number of items to sort
-  unsigned int num_segments; ///< [in] The number of segments that comprise the sorting data
-  BeginOffsetIteratorT d_begin_offsets; /**< [in] Random-access input iterator to
-                                                  the sequence of beginning offsets
-                                                  of length @p num_segments, such that
-                                                  <tt>d_begin_offsets[i]</tt> is the first
-                                                  element of the <em>i</em><sup>th</sup>
-                                                  data segment in <tt>d_keys_*</tt> and
-                                                  <tt>d_values_*</tt> */
-  EndOffsetIteratorT d_end_offsets; /**< [in] Random-access input iterator to the
-                                              sequence of ending offsets of length
-                                              @p num_segments, such that
-                                              <tt>d_end_offsets[i]-1</tt> is the
-                                              last element of the <em>i</em><sup>th</sup>
-                                              data segment in <tt>d_keys_*</tt> and
-                                              <tt>d_values_*</tt>. If
-                                              <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>,
-                                              the <em>i</em><sup>th</sup> is considered empty. */
-  bool is_overwrite_okay; ///< [in] Whether is okay to overwrite source buffers
-  cudaStream_t stream; ///< [in] CUDA stream to launch kernels within.
-  bool debug_synchronous; /**< [in] Whether or not to synchronize the stream after
-                                    every kernel launch to check for errors.
-                                    Also causes launch configurations to be
-                                    printed to the console. */
+  /**
+   * Device-accessible allocation of temporary storage. When `nullptr`, the
+   * required allocation size is written to @p temp_storage_bytes and no work
+   * is done.
+   */
+  void *d_temp_storage;
+
+  /// Reference to size in bytes of @p d_temp_storage allocation
+  std::size_t &temp_storage_bytes;
+
+  /**
+   * Double-buffer whose current buffer contains the unsorted input keys and,
+   * upon return, is updated to point to the sorted output keys
+   */
+  DoubleBuffer<KeyT> &d_keys;
+
+  /**
+   * Double-buffer whose current buffer contains the unsorted input values and,
+   * upon return, is updated to point to the sorted output values
+   */
+  DoubleBuffer<ValueT> &d_values;
+
+  /// Number of items to sort
+  OffsetT num_items;
+
+  /// The number of segments that comprise the sorting data
+  unsigned int num_segments;
+
+  /**
+   * Random-access input iterator to the sequence of beginning offsets of length
+   * @p num_segments, such that `d_begin_offsets[i]` is the first element of the
+   * <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`
+   */
+  BeginOffsetIteratorT d_begin_offsets;
+
+  /**
+   * Random-access input iterator to the sequence of ending offsets of length
+   * @p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element
+   * of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
+   * `d_values_*`. If `d_end_offsets[i]-1 <= d_begin_offsets[i]`,
+   * the <em>i</em><sup>th</sup> is considered empty.
+   */
+  EndOffsetIteratorT d_end_offsets;
+
+  /// Whether is okay to overwrite source buffers
+  bool is_overwrite_okay;
+
+  /// CUDA stream to launch kernels within.
+  cudaStream_t stream;
+
+  /**
+   * Whether or not to synchronize the stream after every kernel launch to check
+   * for errors. Also causes launch configurations to be printed to the console.
+   */
+  bool debug_synchronous;
 
   CUB_RUNTIME_FUNCTION __forceinline__
   DispatchSegmentedSort(void *d_temp_storage,
@@ -1002,7 +1048,8 @@ struct DispatchSegmentedSort : SelectedPolicy
       {
         temp_storage_bytes = temporary_storage_layout.GetSize();
 
-        // Return if the caller is simply requesting the size of the storage allocation
+        // Return if the caller is simply requesting the size of the storage
+        // allocation
         break;
       }
 

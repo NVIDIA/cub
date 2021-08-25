@@ -46,14 +46,19 @@ CUB_NAMESPACE_BEGIN
  *        methods for rearranging data partitioned across a CUDA warp.
  * @ingroup WarpModule
  *
- * @tparam T                    The data type to be exchanged.
- * @tparam ITEMS_PER_THREAD     The number of items partitioned onto each thread.
- * @tparam LOGICAL_WARP_THREADS <b>[optional]</b> The number of threads per
- *                              "logical" warp (may be less than the number of
- *                              hardware warp threads). Default is the warp size
- *                              of the targeted CUDA compute-capability (e.g.,
- *                              32 threads for SM86).
- * @tparam PTX_ARCH             <b>[optional]</b> \ptxversion
+ * @tparam T
+ *   The data type to be exchanged.
+ *
+ * @tparam ITEMS_PER_THREAD
+ *   The number of items partitioned onto each thread.
+ *
+ * @tparam LOGICAL_WARP_THREADS
+ *   <b>[optional]</b> The number of threads per "logical" warp (may be less
+ *   than the number of hardware warp threads). Default is the warp size of the
+ *   targeted CUDA compute-capability (e.g., 32 threads for SM86).
+ *
+ * @tparam PTX_ARCH
+ *   <b>[optional]</b> \ptxversion
  *
  * @par Overview
  * - It is commonplace for warp of threads to rearrange data items between
@@ -85,8 +90,10 @@ CUB_NAMESPACE_BEGIN
  *     constexpr int warps_per_block = block_threads / warp_threads;
  *     const int warp_id = static_cast<int>(threadIdx.x) / warp_threads;
  *
- *     // Specialize BlockExchange for a 1D block of 128 threads owning 4 integer items each
- *     using WarpExchangeT = cub::WarpExchange<int, items_per_thread, warp_threads>;
+ *     // Specialize BlockExchange for a 1D block of 128 threads
+ *     // owning 4 integer items each
+ *     using WarpExchangeT =
+ *       cub::WarpExchange<int, items_per_thread, warp_threads>;
  *
  *     // Allocate shared memory for WarpExchange
  *     __shared__ typename WarpExchangeT::TempStorage temp_storage[warps_per_block];
@@ -216,10 +223,13 @@ public:
    * The corresponding output @p thread_data in those threads will be
    * <tt>{ [0,16,32,48], [1,17,33,49], ..., [15, 32, 47, 63] }</tt>.
    *
-   * @param[in] input_items Items to exchange, converting between
-   *                        <em>blocked</em> and <em>striped</em> arrangements.
-   * @param[out] output_items Items from exchange, converting between
-   *                          <em>striped</em> and <em>blocked</em> arrangements.
+   * @param[in] input_items
+   *   Items to exchange, converting between <em>blocked</em> and
+   *   <em>striped</em> arrangements.
+   *
+   * @param[out] output_items
+   *   Items from exchange, converting between <em>striped</em> and
+   *   <em>blocked</em> arrangements.
    */
   template <typename OutputT>
   __device__ __forceinline__ void
