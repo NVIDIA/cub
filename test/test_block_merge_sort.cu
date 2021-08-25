@@ -62,13 +62,13 @@ struct CustomType
   {}
 
   __device__ __host__ CustomType(std::uint64_t value)
-    : key(value) // overflow
+    : key(static_cast<std::uint8_t>(value))
     , count(value)
   {}
 
   __device__ __host__ void operator=(std::uint64_t value)
   {
-    key = value; // overflow
+    key = static_cast<std::uint8_t>(value);
     count = value;
   }
 };
