@@ -216,6 +216,9 @@ struct DeviceMergeSortPolicy
                            cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
+#if defined(__NVCOMPILER_CUDA__)
+  using Policy520 = Policy350;
+#else
   struct Policy520 : ChainedPolicy<520, Policy520, Policy350>
   {
     using MergeSortPolicy =
@@ -225,6 +228,7 @@ struct DeviceMergeSortPolicy
                            cub::LOAD_LDG,
                            cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
+#endif
 
   struct Policy600 : ChainedPolicy<600, Policy600, Policy520>
   {
