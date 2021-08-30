@@ -38,10 +38,18 @@
 CUB_NAMESPACE_BEGIN
 
 /**
- * @brief
- * TODO: provide detailed desdcription on usage and examples once we agreed on interface.
+ * @brief The BlockRunLengthDecode class supports decoding a run-length encoded array of items. That is, given
+ * the two arrays run_value[N] and run_lengths[N], run_value[i] is repeated run_lengths[i] many times in the output
+ * array.
+ * Due to the nature of the run-length decoding algorithm ("decompression"), the output size of the run-length decoded
+ * array is unbounded. To address this, BlockRunLengthDecode allows retrieving a "window" from the run-length decoded
+ * array. The window's offset can be specified and BLOCK_THREADS * DECODED_ITEMS_PER_THREAD (i.e., referred
+ * to as window_size) decoded items from the specified window will be returned.
  *
- * @tparam UniqueItemT The data type of the
+ * @note: Trailing runs of length 0 are supported (i.e., they may only appear at the end of the run_lengths array).
+ * A run of length zero may not be followed by a run length that is not zero.
+ *
+ * @tparam ItemT The data type of the items being run-length decoded
  * @tparam BLOCK_DIM_X The thread block length in threads along the X dimension
  * @tparam RUNS_PER_THREAD The number of consecutive runs that each thread contributes
  * @tparam DECODED_ITEMS_PER_THREAD The maximum number of decoded items that each thread holds
@@ -50,7 +58,7 @@ CUB_NAMESPACE_BEGIN
  * @tparam BLOCK_DIM_Y The thread block length in threads along the Y dimension
  * @tparam BLOCK_DIM_Z The thread block length in threads along the Z dimension
  */
-template <typename UniqueItemT,
+template <typename ItemT,
           int BLOCK_DIM_X,
           int RUNS_PER_THREAD,
           int DECODED_ITEMS_PER_THREAD,
@@ -86,7 +94,7 @@ private:
     typename RunOffsetScanT::TempStorage offset_scan;
     struct
     {
-      UniqueItemT unique_items[BLOCK_RUNS];
+      ItemT run_value[BLOCK_RUNS];
       DecodedOffsetT run_offsets[BLOCK_RUNS + 1];
     } runs;
   }; // union TempStorage
@@ -127,7 +135,7 @@ public:
    * decoded data.
    */
   template <typename RunLengthT, typename OffsetT>
-  __device__ __forceinline__ void Init(UniqueItemT (&unique_items)[RUNS_PER_THREAD],
+  __device__ __forceinline__ void Init(ItemT (&run_value)[RUNS_PER_THREAD],
                                        RunLengthT (&run_lengths)[RUNS_PER_THREAD],
                                        OffsetT &total_decoded_size)
   {
@@ -145,13 +153,13 @@ public:
     // Ensure the prefix scan's temporary storage can be reused (may be superfluous, but depends on scan implementaiton)
     CTA_SYNC();
 
-    // Keep the runs' unique items and the offsets of each run's beginning in the temporary storage
+    // Keep the runs' items and the offsets of each run's beginning in the temporary storage
     RunOffsetT thread_dst_offset = linear_tid * RUNS_PER_THREAD;
 #pragma unroll
     for (int i = 0; i < RUNS_PER_THREAD; i++)
     {
-      temp_storage.runs.unique_items[thread_dst_offset] = unique_items[i];
-      temp_storage.runs.run_offsets[thread_dst_offset]  = run_offsets[i];
+      temp_storage.runs.run_value[thread_dst_offset]   = run_value[i];
+      temp_storage.runs.run_offsets[thread_dst_offset] = run_offsets[i];
       thread_dst_offset++;
     }
 
@@ -176,7 +184,7 @@ public:
    * undefined behavior.
    */
   template <typename RelativeOffsetT>
-  __device__ __forceinline__ void RunLengthDecode(UniqueItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
+  __device__ __forceinline__ void RunLengthDecode(ItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
                                                   RelativeOffsetT (&item_offsets)[DECODED_ITEMS_PER_THREAD],
                                                   DecodedOffsetT from_decoded_offset = 0)
   {
@@ -192,7 +200,7 @@ public:
     DecodedOffsetT assigned_run_begin = temp_storage.runs.run_offsets[assigned_run];
     DecodedOffsetT assigned_run_end   = temp_storage.runs.run_offsets[assigned_run + 1];
 
-    UniqueItemT val = temp_storage.runs.unique_items[assigned_run];
+    ItemT val = temp_storage.runs.run_value[assigned_run];
 
 #pragma unroll
     for (DecodedOffsetT i = 0; i < DECODED_ITEMS_PER_THREAD; i++)
@@ -205,13 +213,13 @@ public:
         assigned_run       = min(BLOCK_THREADS * RUNS_PER_THREAD, assigned_run + 1);
         assigned_run_begin = temp_storage.runs.run_offsets[assigned_run];
         assigned_run_end   = temp_storage.runs.run_offsets[assigned_run + 1];
-        val                = temp_storage.runs.unique_items[assigned_run];
+        val                = temp_storage.runs.run_value[assigned_run];
       }
       thread_decoded_offset++;
     }
   }
 
-  __device__ __forceinline__ void RunLengthDecode(UniqueItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
+  __device__ __forceinline__ void RunLengthDecode(ItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
                                                   DecodedOffsetT from_decoded_offset = 0)
   {
     DecodedOffsetT item_offsets[DECODED_ITEMS_PER_THREAD];
