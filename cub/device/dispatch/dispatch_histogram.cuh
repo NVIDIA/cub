@@ -477,13 +477,6 @@ struct DispatchHistogram
         cudaStream_t                        stream,                                         ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                                debug_synchronous)                              ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
-    #ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-    #else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -630,8 +623,6 @@ struct DispatchHistogram
         while (0);
 
         return error;
-
-    #endif // CUB_RUNTIME_ENABLED
     }
 
 

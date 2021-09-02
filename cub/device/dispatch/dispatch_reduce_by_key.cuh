@@ -270,29 +270,6 @@ struct DispatchReduceByKey
         ReduceByKeyKernelT             reduce_by_key_kernel,       ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceByKeyKernel
         KernelConfig                reduce_by_key_config)       ///< [in] Dispatch parameters that match the policy that \p reduce_by_key_kernel was compiled for
     {
-
-#ifndef CUB_RUNTIME_ENABLED
-      (void)d_temp_storage;
-      (void)temp_storage_bytes;
-      (void)d_keys_in;
-      (void)d_unique_out;
-      (void)d_values_in;
-      (void)d_aggregates_out;
-      (void)d_num_runs_out;
-      (void)equality_op;
-      (void)reduction_op;
-      (void)num_items;
-      (void)stream;
-      (void)debug_synchronous;
-      (void)init_kernel;
-      (void)reduce_by_key_kernel;
-      (void)reduce_by_key_config;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -392,8 +369,6 @@ struct DispatchReduceByKey
         while (0);
 
         return error;
-
-#endif  // CUB_RUNTIME_ENABLED
     }
 
 

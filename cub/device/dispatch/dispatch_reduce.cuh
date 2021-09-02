@@ -388,12 +388,6 @@ struct DispatchReduce :
     cudaError_t InvokeSingleTile(
         SingleTileKernelT       single_tile_kernel)     ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceSingleTileKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-        (void)single_tile_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
         cudaError error = cudaSuccess;
         do
         {
@@ -429,8 +423,6 @@ struct DispatchReduce :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 
@@ -448,14 +440,6 @@ struct DispatchReduce :
         ReduceKernelT           reduce_kernel,          ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceKernel
         SingleTileKernelT       single_tile_kernel)     ///< [in] Kernel function pointer to parameterization of cub::DeviceReduceSingleTileKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-        (void)                  reduce_kernel;
-        (void)                  single_tile_kernel;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -548,9 +532,6 @@ struct DispatchReduce :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
-
     }
 
 
@@ -719,11 +700,6 @@ struct DispatchSegmentedReduce :
     cudaError_t InvokePasses(
         DeviceSegmentedReduceKernelT    segmented_reduce_kernel)        ///< [in] Kernel function pointer to parameterization of cub::DeviceSegmentedReduceKernel
     {
-#ifndef CUB_RUNTIME_ENABLED
-        (void)segmented_reduce_kernel;
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-#else
         cudaError error = cudaSuccess;
         do
         {
@@ -768,9 +744,6 @@ struct DispatchSegmentedReduce :
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
-
     }
 
 

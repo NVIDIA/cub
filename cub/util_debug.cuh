@@ -73,7 +73,14 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
     // Clear the global CUDA error state which may have been set by the last
     // call. Otherwise, errors may "leak" to unrelated kernel launches.
     cudaGetLastError();
-#endif
+#else
+    if (CUB_IS_HOST_CODE)
+    {
+      #if CUB_INCLUDE_HOST_CODE
+          cudaGetLastError();
+      #endif // compile-time host check
+    } // runtime host check
+#endif // CUDART check
 
 #ifdef CUB_STDERR
     if (error)

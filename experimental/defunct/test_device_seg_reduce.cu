@@ -1547,13 +1547,6 @@ struct DeviceSegReduceDispatch
         SegReduceKernelConfig           &seg_reduce_region_config,              ///< [in] Dispatch parameters that match the policy that \p seg_reduce_region_kernel was compiled for
         SegReduceByKeyKernelConfig      &seg_reduce_region_by_key_config)       ///< [in] Dispatch parameters that match the policy that \p seg_reduce_region_by_key_kernel was compiled for
     {
-#ifndef CUB_RUNTIME_ENABLED
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported );
-
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -1694,8 +1687,6 @@ struct DeviceSegReduceDispatch
         while (0);
 
         return error;
-
-#endif // CUB_RUNTIME_ENABLED
     }
 
 

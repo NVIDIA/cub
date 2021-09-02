@@ -259,28 +259,6 @@ struct DispatchSelectIf
         SelectIfKernelPtrT          select_if_kernel,               ///< [in] Kernel function pointer to parameterization of cub::DeviceSelectSweepKernel
         KernelConfig                select_if_config)               ///< [in] Dispatch parameters that match the policy that \p select_if_kernel was compiled for
     {
-
-#ifndef CUB_RUNTIME_ENABLED
-        (void)d_temp_storage;
-        (void)temp_storage_bytes;
-        (void)d_in;
-        (void)d_flags;
-        (void)d_selected_out;
-        (void)d_num_selected_out;
-        (void)select_op;
-        (void)equality_op;
-        (void)num_items;
-        (void)stream;
-        (void)debug_synchronous;
-        (void)scan_init_kernel;
-        (void)select_if_kernel;
-        (void)select_if_config;
-
-        // Kernel launch not supported from this device
-        return CubDebug(cudaErrorNotSupported);
-
-#else
-
         cudaError error = cudaSuccess;
         do
         {
@@ -379,8 +357,6 @@ struct DispatchSelectIf
         while (0);
 
         return error;
-
-#endif  // CUB_RUNTIME_ENABLED
     }
 
 
