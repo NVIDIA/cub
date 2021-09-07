@@ -138,8 +138,10 @@ public:
 
     // Init the BlockRunLengthDecode and get the total decoded size of this block's tile (i.e., the "decompressed" size)
     uint32_t decoded_size = 0U;
-    BlockRunLengthDecodeT run_length_decode(temp_storage.run_length_decode_storage);
-    run_length_decode.Init(unique_items, run_lengths, decoded_size);
+    BlockRunLengthDecodeT run_length_decode(temp_storage.run_length_decode_storage,
+                                            unique_items,
+                                            run_lengths,
+                                            decoded_size);
     return decoded_size;
   }
 
@@ -161,8 +163,10 @@ public:
 
     // Init the BlockRunLengthDecode and get the total decoded size of this block's tile (i.e., the "decompressed" size)
     uint32_t decoded_size = 0U;
-    BlockRunLengthDecodeT run_length_decode(temp_storage.run_length_decode_storage);
-    run_length_decode.Init(unique_items, run_lengths, decoded_size);
+    BlockRunLengthDecodeT run_length_decode(temp_storage.run_length_decode_storage,
+                                            unique_items,
+                                            run_lengths,
+                                            decoded_size);
 
     // Run-length decode ("decompress") the runs into a window buffer of limited size. This is repeated until all runs
     // have been decoded.
@@ -476,7 +480,7 @@ void TestForTuningParameters()
 {
   constexpr bool DO_TEST_RELATIVE_OFFSETS     = true;
   constexpr bool DO_NOT_TEST_RELATIVE_OFFSETS = false;
-  // Run BlockRunLengthDecode that also generates offsets relative to each run
+  // Run BlockRunLengthDecode that uses run lengths and generates offsets relative to each run
   TestAlgorithmSpecialisation<RUNS_PER_THREAD,
                               DECODED_ITEMS_PER_THREAD,
                               BLOCK_DIM_X,
@@ -484,7 +488,7 @@ void TestForTuningParameters()
                               BLOCK_DIM_Z,
                               DO_TEST_RELATIVE_OFFSETS>();
 
-  // Run BlockRunLengthDecode performing normal run-length decoding
+  // Run BlockRunLengthDecode that uses run lengths and performs normal run-length decoding
   TestAlgorithmSpecialisation<RUNS_PER_THREAD,
                               DECODED_ITEMS_PER_THREAD,
                               BLOCK_DIM_X,
