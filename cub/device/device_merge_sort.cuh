@@ -144,11 +144,7 @@ struct DeviceMergeSort
    *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
    *         and the ordering relation on \p KeyIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
    *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
-   * \tparam ValueIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>,
-   *         \p ValueIteratorT is mutable, and \p ValueIteratorT's \c value_type is
-   *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
-   *         and the ordering relation on \p ValueIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
-   *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
+   * \tparam ValueIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>.
    * \tparam OffsetT is an integer type for global offsets.
    * \tparam CompareOpT functor type having member <tt>bool operator()(KeyT lhs, KeyT rhs)</tt>
    *         CompareOpT is a model of <a href="https://en.cppreference.com/w/cpp/concepts/strict_weak_order">Strict Weak Ordering</a>.
@@ -189,7 +185,7 @@ struct DeviceMergeSort
    * \brief Sorts items using a merge sorting method.
    *
    * \par
-   * - SortPairs is not guaranteed to be stable. That is, suppose that i and j are
+   * - SortPairsCopy is not guaranteed to be stable. That is, suppose that i and j are
    *   equivalent: neither one is less than the other. It is not guaranteed
    *   that the relative order of these two elements will be preserved by sort.
    * - Input arrays d_input_keys and d_input_items are not modified.
@@ -231,21 +227,13 @@ struct DeviceMergeSort
    *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
    *         and the ordering relation on \p KeyInputIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
    *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
-   * \tparam ValueInputIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>,
-   *         \p ValueInputIteratorT is mutable, and \p ValueInputIteratorT's \c value_type is
-   *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
-   *         and the ordering relation on \p ValueInputIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
-   *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
+   * \tparam ValueInputIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>.
    * \tparam KeyIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>,
    *         \p KeyIteratorT is mutable, and \p KeyIteratorT's \c value_type is
    *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
    *         and the ordering relation on \p KeyIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
    *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
-   * \tparam ValueIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>,
-   *         \p ValueIteratorT is mutable, and \p ValueIteratorT's \c value_type is
-   *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
-   *         and the ordering relation on \p ValueIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
-   *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
+   * \tparam ValueIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>.
    * \tparam OffsetT is an integer type for global offsets.
    * \tparam CompareOpT functor type having member <tt>bool operator()(KeyT lhs, KeyT rhs)</tt>
    *         CompareOpT is a model of <a href="https://en.cppreference.com/w/cpp/concepts/strict_weak_order">Strict Weak Ordering</a>.
@@ -366,7 +354,7 @@ struct DeviceMergeSort
    * \brief Sorts items using a merge sorting method.
    *
    * \par
-   * - SortKeys is not guaranteed to be stable. That is, suppose that i and j are
+   * - SortKeysCopy is not guaranteed to be stable. That is, suppose that i and j are
    *   equivalent: neither one is less than the other. It is not guaranteed
    *   that the relative order of these two elements will be preserved by sort.
    * - Input array d_input_keys is not modified.
@@ -492,11 +480,7 @@ struct DeviceMergeSort
    *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
    *         and the ordering relation on \p KeyIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
    *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
-   * \tparam ValueIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>,
-   *         \p ValueIteratorT is mutable, and \p ValueIteratorT's \c value_type is
-   *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
-   *         and the ordering relation on \p ValueIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
-   *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
+   * \tparam ValueIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>.
    * \tparam OffsetT is an integer type for global offsets.
    * \tparam CompareOpT functor type having member <tt>bool operator()(KeyT lhs, KeyT rhs)</tt>
    *         CompareOpT is a model of <a href="https://en.cppreference.com/w/cpp/concepts/strict_weak_order">Strict Weak Ordering</a>.
