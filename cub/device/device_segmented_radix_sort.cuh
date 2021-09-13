@@ -283,6 +283,8 @@ struct DeviceSegmentedRadixSort
             true,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
+        d_values.selector ^= 1;
     }
 
 
@@ -497,6 +499,8 @@ struct DeviceSegmentedRadixSort
             true,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
+        d_values.selector ^= 1;
     }
 
 
@@ -697,6 +701,7 @@ struct DeviceSegmentedRadixSort
             true,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
     }
 
     /**
@@ -892,6 +897,7 @@ struct DeviceSegmentedRadixSort
             true,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
     }
 
 

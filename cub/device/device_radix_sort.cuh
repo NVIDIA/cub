@@ -343,6 +343,8 @@ struct DeviceRadixSort
             is_overwrite_okay,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
+        d_values.selector ^= 1;
     }
 
 
@@ -548,6 +550,8 @@ struct DeviceRadixSort
             is_overwrite_okay,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
+        d_values.selector ^= 1;
     }
 
 
@@ -742,6 +746,7 @@ struct DeviceRadixSort
             is_overwrite_okay,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
     }
 
     /**
@@ -923,6 +928,7 @@ struct DeviceRadixSort
             is_overwrite_okay,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
     }
 
 
