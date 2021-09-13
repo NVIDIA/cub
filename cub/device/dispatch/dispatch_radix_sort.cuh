@@ -1095,10 +1095,10 @@ struct DispatchRadixSort :
             THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 1, ActivePolicyT::SingleTilePolicy::BLOCK_THREADS, 0, stream
             ).doit(single_tile_kernel,
-                d_keys.Current(),
-                d_keys.Alternate(),
-                d_values.Current(),
-                d_values.Alternate(),
+                d_keys_in,
+                d_keys_out,
+                d_values_in,
+                d_values_out,
                 num_items,
                 begin_bit,
                 end_bit);
@@ -1108,10 +1108,6 @@ struct DispatchRadixSort :
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;
-
-            // Update selector
-            d_keys.selector ^= 1;
-            d_values.selector ^= 1;
         }
         while (0);
 
@@ -1354,7 +1350,7 @@ struct DispatchRadixSort :
             if (CubDebug(error = cudaOccupancyMaxActiveBlocksPerMultiprocessor(
                 &histo_blocks_per_sm, histogram_kernel, HISTO_BLOCK_THREADS, 0))) break;
             histogram_kernel<<<histo_blocks_per_sm * num_sms, HISTO_BLOCK_THREADS, 0, stream>>>
-                (d_bins, d_keys.Current(), num_items, begin_bit, end_bit);
+                (d_bins, d_keys_in, num_items, begin_bit, end_bit);
             if (CubDebug(error = cudaPeekAtLastError())) break;
 
             // exclusive sums to determine starts
@@ -1364,8 +1360,8 @@ struct DispatchRadixSort :
             if (CubDebug(error = cudaPeekAtLastError())) break;
             
             // use the other buffer if no overwrite is allowed
-            KeyT* d_keys_tmp = d_keys.Alternate();
-            ValueT* d_values_tmp = d_values.Alternate();
+            KeyT* d_keys_tmp = d_keys_out;
+            ValueT* d_values_tmp = d_values_out;
             if (!is_overwrite_okay && num_passes % 2 == 0)
             {
                 d_keys.d_buffers[1] = d_keys_tmp2;
