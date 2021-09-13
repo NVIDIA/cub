@@ -73,19 +73,20 @@ template <
     typename                ChainedPolicyT,                 ///< Chained tuning policy
     bool                    ALT_DIGIT_BITS,                 ///< Whether or not to use the alternate (lower-bits) policy
     bool                    IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
-    typename                KeyT,                           ///< Key type
+    typename                KeyInputIteratorT,              ///< Input key iterator type
     typename                OffsetT>                        ///< Signed integer type for global offsets
 __launch_bounds__ (int((ALT_DIGIT_BITS) ?
     int(ChainedPolicyT::ActivePolicy::AltUpsweepPolicy::BLOCK_THREADS) :
     int(ChainedPolicyT::ActivePolicy::UpsweepPolicy::BLOCK_THREADS)))
 __global__ void DeviceRadixSortUpsweepKernel(
-    const KeyT              *d_keys,                        ///< [in] Input keys buffer
+    KeyInputIteratorT       d_keys,                         ///< [in] Input keys iterator
     OffsetT                 *d_spine,                       ///< [out] Privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
     OffsetT                 /*num_items*/,                  ///< [in] Total number of input data items
     int                     current_bit,                    ///< [in] Bit position of current radix digit
     int                     num_bits,                       ///< [in] Number of bits of current radix digit
     GridEvenShare<OffsetT>  even_share)                     ///< [in] Even-share descriptor for mapan equal number of tiles onto each thread block
 {
+    using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
     typedef typename If<
             (ALT_DIGIT_BITS),
             typename ChainedPolicyT::ActivePolicy::AltUpsweepPolicy,
@@ -180,23 +181,27 @@ template <
     typename                ChainedPolicyT,                 ///< Chained tuning policy
     bool                    ALT_DIGIT_BITS,                 ///< Whether or not to use the alternate (lower-bits) policy
     bool                    IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
-    typename                KeyT,                           ///< Key type
-    typename                ValueT,                         ///< Value type
+    typename                KeyInputIteratorT,              ///< Input key iterator type
+    typename                KeyIteratorT,                   ///< Key iterator type
+    typename                ValueInputIteratorT,            ///< Input value iterator type
+    typename                ValueIteratorT,                 ///< Value iterator type
     typename                OffsetT>                        ///< Signed integer type for global offsets
 __launch_bounds__ (int((ALT_DIGIT_BITS) ?
     int(ChainedPolicyT::ActivePolicy::AltDownsweepPolicy::BLOCK_THREADS) :
     int(ChainedPolicyT::ActivePolicy::DownsweepPolicy::BLOCK_THREADS)))
 __global__ void DeviceRadixSortDownsweepKernel(
-    const KeyT              *d_keys_in,                     ///< [in] Input keys buffer
-    KeyT                    *d_keys_out,                    ///< [in] Output keys buffer
-    const ValueT            *d_values_in,                   ///< [in] Input values buffer
-    ValueT                  *d_values_out,                  ///< [in] Output values buffer
+    KeyInputIteratorT       d_keys_in,                      ///< [in] Input keys iterator
+    KeyIteratorT            d_keys_out,                     ///< [in] Output keys iterator
+    ValueInputIteratorT     d_values_in,                    ///< [in] Input values iterator
+    ValueIteratorT          d_values_out,                   ///< [in] Output values iterator
     OffsetT                 *d_spine,                       ///< [in] Scan of privatized (per block) digit histograms (striped, i.e., 0s counts from each block, then 1s counts from each block, etc.)
     OffsetT                 num_items,                      ///< [in] Total number of input data items
     int                     current_bit,                    ///< [in] Bit position of current radix digit
     int                     num_bits,                       ///< [in] Number of bits of current radix digit
     GridEvenShare<OffsetT>  even_share)                     ///< [in] Even-share descriptor for mapan equal number of tiles onto each thread block
 {
+    using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
+    using ValueT = typename std::iterator_traits<ValueInputIteratorT>::value_type;
     typedef typename If<
             (ALT_DIGIT_BITS),
             typename ChainedPolicyT::ActivePolicy::AltUpsweepPolicy,
@@ -243,19 +248,23 @@ __global__ void DeviceRadixSortDownsweepKernel(
 template <
     typename                ChainedPolicyT,                 ///< Chained tuning policy
     bool                    IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
-    typename                KeyT,                           ///< Key type
-    typename                ValueT,                         ///< Value type
+    typename                KeyInputIteratorT,              ///< Input key iterator type
+    typename                KeyIteratorT,                   ///< Key iterator type
+    typename                ValueInputIteratorT,            ///< Input value iterator type
+    typename                ValueIteratorT,                 ///< Value iterator type
     typename                OffsetT>                        ///< Signed integer type for global offsets
 __launch_bounds__ (int(ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS), 1)
 __global__ void DeviceRadixSortSingleTileKernel(
-    const KeyT              *d_keys_in,                     ///< [in] Input keys buffer
-    KeyT                    *d_keys_out,                    ///< [in] Output keys buffer
-    const ValueT            *d_values_in,                   ///< [in] Input values buffer
-    ValueT                  *d_values_out,                  ///< [in] Output values buffer
+    KeyInputIteratorT       d_keys_in,                      ///< [in] Input keys iterator
+    KeyIteratorT            d_keys_out,                     ///< [in] Output keys iterator
+    ValueInputIteratorT     d_values_in,                    ///< [in] Input values iterator
+    ValueIteratorT          d_values_out,                   ///< [in] Output values iterator
     OffsetT                 num_items,                      ///< [in] Total number of input data items
     int                     current_bit,                    ///< [in] Bit position of current radix digit
     int                     end_bit)                        ///< [in] The past-the-end (most-significant) bit index needed for key comparison
 {
+    using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
+    using ValueT = typename std::iterator_traits<ValueInputIteratorT>::value_type;
     // Constants
     enum
     {
@@ -357,8 +366,10 @@ template <
     typename                ChainedPolicyT,                 ///< Chained tuning policy
     bool                    ALT_DIGIT_BITS,                 ///< Whether or not to use the alternate (lower-bits) policy
     bool                    IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
-    typename                KeyT,                           ///< Key type
-    typename                ValueT,                         ///< Value type
+    typename                KeyInputIteratorT,              ///< Input key iterator type
+    typename                KeyIteratorT,                   ///< Key iterator type
+    typename                ValueInputIteratorT,            ///< Input value iterator type
+    typename                ValueIteratorT,                 ///< Value iterator type
     typename                BeginOffsetIteratorT,           ///< Random-access input iterator type for reading segment beginning offsets \iterator
     typename                EndOffsetIteratorT,             ///< Random-access input iterator type for reading segment ending offsets \iterator
     typename                OffsetT>                        ///< Signed integer type for global offsets
@@ -366,16 +377,18 @@ __launch_bounds__ (int((ALT_DIGIT_BITS) ?
     ChainedPolicyT::ActivePolicy::AltSegmentedPolicy::BLOCK_THREADS :
     ChainedPolicyT::ActivePolicy::SegmentedPolicy::BLOCK_THREADS))
 __global__ void DeviceSegmentedRadixSortKernel(
-    const KeyT              *d_keys_in,                     ///< [in] Input keys buffer
-    KeyT                    *d_keys_out,                    ///< [in] Output keys buffer
-    const ValueT            *d_values_in,                   ///< [in] Input values buffer
-    ValueT                  *d_values_out,                  ///< [in] Output values buffer
+    KeyInputIteratorT       d_keys_in,                      ///< [in] Input keys iterator
+    KeyIteratorT            d_keys_out,                     ///< [in] Output keys iterator
+    ValueInputIteratorT     d_values_in,                    ///< [in] Input values iterator
+    ValueIteratorT          d_values_out,                   ///< [in] Output values iterator
     BeginOffsetIteratorT    d_begin_offsets,                ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
     EndOffsetIteratorT      d_end_offsets,                  ///< [in] Random-access input iterator to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
     int                     /*num_segments*/,               ///< [in] The number of segments that comprise the sorting data
     int                     current_bit,                    ///< [in] Bit position of current radix digit
     int                     pass_bits)                      ///< [in] Number of bits of current radix digit
 {
+    using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
+    using ValueT = typename std::iterator_traits<ValueInputIteratorT>::value_type;
     //
     // Constants
     //
@@ -527,12 +540,13 @@ __global__ void DeviceSegmentedRadixSortKernel(
 template <
     typename ChainedPolicyT,
     bool IS_DESCENDING,
-    typename KeyT,
+    typename KeyInputIteratorT,
     typename OffsetT>
 __global__ void __launch_bounds__(ChainedPolicyT::ActivePolicy::HistogramPolicy::BLOCK_THREADS)
 DeviceRadixSortHistogramKernel
-    (OffsetT* d_bins_out, const KeyT* d_keys_in, OffsetT num_items, int start_bit, int end_bit)
+    (OffsetT* d_bins_out, KeyInputIteratorT d_keys_in, OffsetT num_items, int start_bit, int end_bit)
 {
+    using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
     typedef typename ChainedPolicyT::ActivePolicy::HistogramPolicy HistogramPolicyT;
     typedef AgentRadixSortHistogram<HistogramPolicyT, IS_DESCENDING, KeyT, OffsetT> AgentT;
     __shared__ typename AgentT::TempStorage temp_storage;
@@ -543,16 +557,20 @@ DeviceRadixSortHistogramKernel
 template <
     typename ChainedPolicyT,
     bool IS_DESCENDING,
-    typename KeyT,
-    typename ValueT,
+    typename KeyInputIteratorT,
+    typename KeyIteratorT,
+    typename ValueInputIteratorT,
+    typename ValueIteratorT,
     typename OffsetT,
     typename AtomicOffsetT = OffsetT>
 __global__ void __launch_bounds__(ChainedPolicyT::ActivePolicy::OnesweepPolicy::BLOCK_THREADS)
 DeviceRadixSortOnesweepKernel
     (AtomicOffsetT* d_lookback, AtomicOffsetT* d_ctrs, OffsetT* d_bins_out,
-     const OffsetT* d_bins_in, KeyT* d_keys_out, const KeyT* d_keys_in, ValueT* d_values_out,
-     const ValueT* d_values_in, OffsetT num_items, int current_bit, int num_bits)
+     const OffsetT* d_bins_in, KeyIteratorT d_keys_out, KeyInputIteratorT d_keys_in, ValueIteratorT d_values_out,
+     ValueInputIteratorT d_values_in, OffsetT num_items, int current_bit, int num_bits)
 {
+    using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
+    using ValueT = typename std::iterator_traits<ValueInputIteratorT>::value_type;
     typedef typename ChainedPolicyT::ActivePolicy::OnesweepPolicy OnesweepPolicyT;
     typedef AgentRadixSortOnesweep<OnesweepPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT> AgentT;
     __shared__ typename AgentT::TempStorage s;
@@ -954,14 +972,21 @@ struct DeviceRadixSortPolicy
  * Utility class for dispatching the appropriately-tuned kernels for device-wide radix sort
  */
 template <
-    bool     IS_DESCENDING, ///< Whether or not the sorted-order is high-to-low
-    typename KeyT,          ///< Key type
-    typename ValueT,        ///< Value type
-    typename OffsetT,       ///< Signed integer type for global offsets
-    typename SelectedPolicy = DeviceRadixSortPolicy<KeyT, ValueT, OffsetT> >
+    bool     IS_DESCENDING,            ///< Whether or not the sorted-order is high-to-low
+    typename KeyInputIteratorT,        ///< Input key iterator type
+    typename KeyIteratorT,             ///< Key iterator type
+    typename ValueInputIteratorT,      ///< Input value iterator type
+    typename ValueIteratorT,           ///< Value iterator type
+    typename OffsetT,                  ///< Signed integer type for global offsets
+    typename SelectedPolicy = DeviceRadixSortPolicy<
+        /*KeyT=*/ typename std::iterator_traits<KeyInputIteratorT>::value_type,
+        /*ValueT=*/ typename std::iterator_traits<ValueInputIteratorT>::value_type,
+        OffsetT> >
 struct DispatchRadixSort :
     SelectedPolicy
 {
+    using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
+    using ValueT = typename std::iterator_traits<ValueInputIteratorT>::value_type;
     //------------------------------------------------------------------------------
     // Constants
     //------------------------------------------------------------------------------
@@ -979,8 +1004,10 @@ struct DispatchRadixSort :
 
     void                    *d_temp_storage;        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t                  &temp_storage_bytes;    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-    DoubleBuffer<KeyT>      &d_keys;                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
-    DoubleBuffer<ValueT>    &d_values;              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
+    KeyInputIteratorT       d_keys_in;             ///< [in] Iterator for the unsorted input keys
+    KeyIteratorT            d_keys_out;            ///< [out] Iterator for the sorted output keys
+    ValueInputIteratorT     d_values_in;           ///< [in] Iterator for the unsorted input values
+    ValueIteratorT          d_values_out;          ///< [out] Iterator for the sorted output values
     OffsetT                 num_items;              ///< [in] Number of items to sort
     int                     begin_bit;              ///< [in] The beginning (least-significant) bit index needed for key comparison
     int                     end_bit;                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
@@ -999,8 +1026,10 @@ struct DispatchRadixSort :
     DispatchRadixSort(
         void*                   d_temp_storage,
         size_t                  &temp_storage_bytes,
-        DoubleBuffer<KeyT>      &d_keys,
-        DoubleBuffer<ValueT>    &d_values,
+        KeyInputIteratorT       d_keys_in,
+        KeyIteratorT            d_keys_out,
+        ValueInputIteratorT     d_values_in,
+        ValueIteratorT          d_values_out,
         OffsetT                 num_items,
         int                     begin_bit,
         int                     end_bit,
@@ -1011,8 +1040,10 @@ struct DispatchRadixSort :
     :
         d_temp_storage(d_temp_storage),
         temp_storage_bytes(temp_storage_bytes),
-        d_keys(d_keys),
-        d_values(d_values),
+        d_keys_in(d_keys_in),
+        d_keys_out(d_keys_out),
+        d_values_in(d_values_in),
+        d_values_out(d_values_out),
         num_items(num_items),
         begin_bit(begin_bit),
         end_bit(end_bit),
@@ -1100,10 +1131,10 @@ struct DispatchRadixSort :
     template <typename PassConfigT>
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t InvokePass(
-        const KeyT      *d_keys_in,
-        KeyT            *d_keys_out,
-        const ValueT    *d_values_in,
-        ValueT          *d_values_out,
+        KeyInputIteratorT   d_keys_in,
+        KeyIteratorT        d_keys_out,
+        ValueInputIteratorT d_values_in,
+        ValueIteratorT      d_values_out,
         OffsetT         *d_spine,
         int             /*spine_length*/,
         int             &current_bit,
@@ -1353,7 +1384,8 @@ struct DispatchRadixSort :
                            d_lookback, 0, num_blocks * RADIX_DIGITS * sizeof(AtomicOffsetT),
                            stream))) break;
                     auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
-                        MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT>;
+                        MaxPolicyT, IS_DESCENDING, KeyInputIteratorT, KeyIteratorT,
+                        ValueInputIteratorT, ValueIteratorT, OffsetT>;
                     onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
                         (d_lookback, d_ctrs + part * num_passes + pass,
                          part < num_parts - 1 ?
@@ -1538,11 +1570,11 @@ struct DispatchRadixSort :
         // Invoke upsweep-downsweep
         typedef typename DispatchRadixSort::MaxPolicy       MaxPolicyT;
         return InvokePasses<ActivePolicyT>(
-            DeviceRadixSortUpsweepKernel<   MaxPolicyT, false,   IS_DESCENDING, KeyT, OffsetT>,
-            DeviceRadixSortUpsweepKernel<   MaxPolicyT, true,    IS_DESCENDING, KeyT, OffsetT>,
+            DeviceRadixSortUpsweepKernel<   MaxPolicyT, false,   IS_DESCENDING, KeyInputIteratorT, OffsetT>,
+            DeviceRadixSortUpsweepKernel<   MaxPolicyT, true,    IS_DESCENDING, KeyInputIteratorT, OffsetT>,
             RadixSortScanBinsKernel<        MaxPolicyT, OffsetT>,
-            DeviceRadixSortDownsweepKernel< MaxPolicyT, false,   IS_DESCENDING, KeyT, ValueT, OffsetT>,
-            DeviceRadixSortDownsweepKernel< MaxPolicyT, true,    IS_DESCENDING, KeyT, ValueT, OffsetT>);        
+            DeviceRadixSortDownsweepKernel< MaxPolicyT, false,   IS_DESCENDING, KeyInputIteratorT, KeyIteratorT, ValueInputIteratorT, ValueIteratorT, OffsetT>,
+            DeviceRadixSortDownsweepKernel< MaxPolicyT, true,    IS_DESCENDING, KeyInputIteratorT, KeyIteratorT, ValueInputIteratorT, ValueIteratorT, OffsetT>);        
     }
 
     template <typename ActivePolicyT>
@@ -1566,7 +1598,8 @@ struct DispatchRadixSort :
         {
             // Small, single tile size
             return InvokeSingleTile<ActivePolicyT>(
-                DeviceRadixSortSingleTileKernel<MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT>);
+                DeviceRadixSortSingleTileKernel<MaxPolicyT, IS_DESCENDING,
+                    KeyInputIteratorT, KeyIteratorT, ValueInputIteratorT, ValueIteratorT, OffsetT>);
         }
         else
         {
@@ -1587,8 +1620,10 @@ struct DispatchRadixSort :
     static cudaError_t Dispatch(
         void*                   d_temp_storage,         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        DoubleBuffer<KeyT>      &d_keys,                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
-        DoubleBuffer<ValueT>    &d_values,              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
+        KeyInputIteratorT       d_keys_in,             ///< [in] Iterator for the unsorted input keys
+        KeyIteratorT            d_keys_out,            ///< [out] Iterator for the sorted output keys
+        ValueInputIteratorT     d_values_in,           ///< [in] Iterator for the unsorted input values
+        ValueIteratorT          d_values_out,          ///< [out] Iterator for the sorted output values
         OffsetT                 num_items,              ///< [in] Number of items to sort
         int                     begin_bit,              ///< [in] The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
@@ -1607,7 +1642,7 @@ struct DispatchRadixSort :
             // Create dispatch functor
             DispatchRadixSort dispatch(
                 d_temp_storage, temp_storage_bytes,
-                d_keys, d_values,
+                d_keys_in, d_keys_out, d_values_in, d_values_out,
                 num_items, begin_bit, end_bit, is_overwrite_okay,
                 stream, debug_synchronous, ptx_version);
 
@@ -1632,15 +1667,22 @@ struct DispatchRadixSort :
  */
 template <
     bool     IS_DESCENDING,     ///< Whether or not the sorted-order is high-to-low
-    typename KeyT,              ///< Key type
-    typename ValueT,            ///< Value type
-    typename BeginOffsetIteratorT,   ///< Random-access input iterator type for reading segment beginning offsets \iterator
+    typename KeyInputIteratorT,    ///< Input key iterator type
+    typename KeyIteratorT,         ///< Key iterator type
+    typename ValueInputIteratorT,  ///< Input value iterator type
+    typename ValueIteratorT,       ///< Value iterator type
+    typename BeginOffsetIteratorT, ///< Random-access input iterator type for reading segment beginning offsets \iterator
     typename EndOffsetIteratorT,   ///< Random-access input iterator type for reading segment ending offsets \iterator
     typename OffsetT,           ///< Signed integer type for global offsets
-    typename SelectedPolicy = DeviceRadixSortPolicy<KeyT, ValueT, OffsetT> >
+    typename SelectedPolicy = DeviceRadixSortPolicy<
+        /*KeyT=*/typename std::iterator_traits<KeyInputIteratorT>::value_type,
+        /*ValueT=*/typename std::iterator_traits<ValueInputIteratorT>::value_type,
+        OffsetT> >
 struct DispatchSegmentedRadixSort :
     SelectedPolicy
 {
+    using KeyT = typename std::iterator_traits<KeyInputIteratorT>::value_type;
+    using ValueT = typename std::iterator_traits<ValueInputIteratorT>::value_type;
     //------------------------------------------------------------------------------
     // Constants
     //------------------------------------------------------------------------------
@@ -1658,8 +1700,10 @@ struct DispatchSegmentedRadixSort :
 
     void                    *d_temp_storage;        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t                  &temp_storage_bytes;    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-    DoubleBuffer<KeyT>      &d_keys;                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
-    DoubleBuffer<ValueT>    &d_values;              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
+    KeyInputIteratorT       d_keys_in;             ///< [in] Iterator for the unsorted input keys
+    KeyIteratorT            d_keys_out;            ///< [out] Iterator for the sorted output keys
+    ValueInputIteratorT     d_values_in;           ///< [in] Iterator for the unsorted input values
+    ValueIteratorT          d_values_out;          ///< [out] Iterator for the sorted output values
     OffsetT                 num_items;              ///< [in] Number of items to sort
     OffsetT                 num_segments;           ///< [in] The number of segments that comprise the sorting data
     BeginOffsetIteratorT    d_begin_offsets;        ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
@@ -1681,8 +1725,10 @@ struct DispatchSegmentedRadixSort :
     DispatchSegmentedRadixSort(
         void*                   d_temp_storage,
         size_t                  &temp_storage_bytes,
-        DoubleBuffer<KeyT>      &d_keys,
-        DoubleBuffer<ValueT>    &d_values,
+        KeyInputIteratorT       d_keys_in,
+        KeyIteratorT            d_keys_out,
+        ValueInputIteratorT     d_values_in,
+        ValueIteratorT          d_values_out,
         OffsetT                 num_items,
         OffsetT                 num_segments,
         BeginOffsetIteratorT    d_begin_offsets,
@@ -1696,8 +1742,10 @@ struct DispatchSegmentedRadixSort :
     :
         d_temp_storage(d_temp_storage),
         temp_storage_bytes(temp_storage_bytes),
-        d_keys(d_keys),
-        d_values(d_values),
+        d_keys_in(d_keys_in),
+        d_keys_out(d_keys_out),
+        d_values_in(d_values_in),
+        d_values_out(d_values_out),
         num_items(num_items),
         num_segments(num_segments),
         d_begin_offsets(d_begin_offsets),
@@ -1719,12 +1767,12 @@ struct DispatchSegmentedRadixSort :
     template <typename PassConfigT>
     CUB_RUNTIME_FUNCTION __forceinline__
     cudaError_t InvokePass(
-        const KeyT      *d_keys_in,
-        KeyT            *d_keys_out,
-        const ValueT    *d_values_in,
-        ValueT          *d_values_out,
-        int             &current_bit,
-        PassConfigT     &pass_config)
+        KeyInputIteratorT   d_keys_in,
+        KeyIteratorT        d_keys_out,
+        ValueInputIteratorT d_values_in,
+        ValueIteratorT      d_values_out,
+        int                 &current_bit,
+        PassConfigT         &pass_config)
     {
         cudaError error = cudaSuccess;
         do
@@ -1921,8 +1969,10 @@ struct DispatchSegmentedRadixSort :
     static cudaError_t Dispatch(
         void*                   d_temp_storage,         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        DoubleBuffer<KeyT>      &d_keys,                ///< [in,out] Double-buffer whose current buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
-        DoubleBuffer<ValueT>    &d_values,              ///< [in,out] Double-buffer whose current buffer contains the unsorted input values and, upon return, is updated to point to the sorted output values
+        KeyInputIteratorT       d_keys_in,             ///< [in] Iterator for the unsorted input keys
+        KeyIteratorT            d_keys_out,            ///< [out] Iterator for the sorted output keys
+        ValueInputIteratorT     d_values_in,           ///< [in] Iterator for the unsorted input values
+        ValueIteratorT          d_values_out,          ///< [out] Iterator for the sorted output values
         int                     num_items,              ///< [in] Number of items to sort
         int                     num_segments,           ///< [in] The number of segments that comprise the sorting data
         BeginOffsetIteratorT    d_begin_offsets,        ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>

@@ -128,18 +128,20 @@ struct DeviceSegmentedRadixSort
      * \tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
      */
     template <
-        typename            KeyT,
-        typename            ValueT,
+        typename            KeyInputIteratorT,
+        typename            KeyIteratorT,
+        typename            ValueInputIteratorT,
+        typename            ValueIteratorT,
         typename            BeginOffsetIteratorT,
         typename            EndOffsetIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairs(
         void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        const KeyT          *d_keys_in,                             ///< [in] %Device-accessible pointer to the input data of key data to sort
-        KeyT                *d_keys_out,                            ///< [out] %Device-accessible pointer to the sorted output sequence of key data
-        const ValueT        *d_values_in,                           ///< [in] %Device-accessible pointer to the corresponding input sequence of associated value items
-        ValueT              *d_values_out,                          ///< [out] %Device-accessible pointer to the correspondingly-reordered output sequence of associated value items
+        KeyInputIteratorT   d_keys_in,                              ///< [in] Iterator to the input data of key data to sort
+        KeyIteratorT        d_keys_out,                             ///< [out] Iterator to the sorted output sequence of key data
+        ValueInputIteratorT d_values_in,                            ///< [in] Iterator to the corresponding input sequence of associated value items
+        ValueIteratorT      d_values_out,                           ///< [out] Iterator to the correspondingly-reordered output sequence of associated value items
         int                 num_items,                              ///< [in] The total number of items to sort (across all segments)
         int                 num_segments,                           ///< [in] The number of segments that comprise the sorting data
         BeginOffsetIteratorT d_begin_offsets,                       ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
@@ -155,11 +157,15 @@ struct DeviceSegmentedRadixSort
         DoubleBuffer<KeyT>       d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
         DoubleBuffer<ValueT>     d_values(const_cast<ValueT*>(d_values_in), d_values_out);
 
-        return DispatchSegmentedRadixSort<false, KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT>::Dispatch(
+        return DispatchSegmentedRadixSort<
+            false, KeyInputIteratorT, KeyIteratorT, ValueInputIteratorT, ValueIteratorT, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys_in,
+            d_keys_out,
+            d_values_in,
+            d_values_out,
             num_items,
             num_segments,
             d_begin_offsets,
@@ -261,11 +267,15 @@ struct DeviceSegmentedRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DispatchSegmentedRadixSort<false, KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT>::Dispatch(
+        return DispatchSegmentedRadixSort<false,
+            const KeyT *, KeyT *, const ValueT *, ValueT *, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys.Current(),
+            d_keys.Alternate(),
+            d_values.Current(),
+            d_values.Alternate(),
             num_items,
             num_segments,
             d_begin_offsets,
@@ -334,18 +344,20 @@ struct DeviceSegmentedRadixSort
      * \tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
      */
     template <
-        typename            KeyT,
-        typename            ValueT,
+        typename            KeyInputIteratorT,
+        typename            KeyIteratorT,
+        typename            ValueInputIteratorT,
+        typename            ValueIteratorT,
         typename            BeginOffsetIteratorT,
         typename            EndOffsetIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairsDescending(
         void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        const KeyT          *d_keys_in,                             ///< [in] %Device-accessible pointer to the input data of key data to sort
-        KeyT                *d_keys_out,                            ///< [out] %Device-accessible pointer to the sorted output sequence of key data
-        const ValueT        *d_values_in,                           ///< [in] %Device-accessible pointer to the corresponding input sequence of associated value items
-        ValueT              *d_values_out,                          ///< [out] %Device-accessible pointer to the correspondingly-reordered output sequence of associated value items
+        KeyInputIteratorT   d_keys_in,                              ///< [in] Iterator to the input data of key data to sort
+        KeyIteratorT        d_keys_out,                             ///< [out] Iterator to the sorted output sequence of key data
+        ValueInputIteratorT d_values_in,                            ///< [in] Iterator to the corresponding input sequence of associated value items
+        ValueIteratorT      d_values_out,                           ///< [out] Iterator to the correspondingly-reordered output sequence of associated value items
         int                 num_items,                              ///< [in] The total number of items to sort (across all segments)
         int                 num_segments,                           ///< [in] The number of segments that comprise the sorting data
         BeginOffsetIteratorT d_begin_offsets,                       ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
@@ -358,14 +370,15 @@ struct DeviceSegmentedRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        DoubleBuffer<KeyT>       d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
-        DoubleBuffer<ValueT>     d_values(const_cast<ValueT*>(d_values_in), d_values_out);
-
-        return DispatchSegmentedRadixSort<true, KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT>::Dispatch(
+        return DispatchSegmentedRadixSort<
+            true, KeyInputIteratorT, KeyIteratorT, ValueIteratorT, ValueIteratorT, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys_in,
+            d_keys_out,
+            d_values_in,
+            d_values_out,
             num_items,
             num_segments,
             d_begin_offsets,
@@ -467,11 +480,15 @@ struct DeviceSegmentedRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        return DispatchSegmentedRadixSort<true, KeyT, ValueT, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT>::Dispatch(
+        return DispatchSegmentedRadixSort<
+            true, const KeyT *, KeyT *, const ValueT *, ValueT *, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys.Current(),
+            d_keys.Alternate(),
+            d_values.Current(),
+            d_values.Alternate(),
             num_items,
             num_segments,
             d_begin_offsets,
@@ -540,15 +557,16 @@ struct DeviceSegmentedRadixSort
      * \tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
      */
     template <
-        typename            KeyT,
+        typename            KeyInputIteratorT,
+        typename            KeyIteratorT,
         typename            BeginOffsetIteratorT,
         typename            EndOffsetIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeys(
         void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        const KeyT          *d_keys_in,                             ///< [in] %Device-accessible pointer to the input data of key data to sort
-        KeyT                *d_keys_out,                            ///< [out] %Device-accessible pointer to the sorted output sequence of key data
+        KeyInputIteratorT   d_keys_in,                              ///< [in] Iterator to the input data of key data to sort
+        KeyIteratorT        d_keys_out,                             ///< [out] Iterator to the sorted output sequence of key data
         int                 num_items,                              ///< [in] The total number of items to sort (across all segments)
         int                 num_segments,                           ///< [in] The number of segments that comprise the sorting data
         BeginOffsetIteratorT d_begin_offsets,                        ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
@@ -561,15 +579,15 @@ struct DeviceSegmentedRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // Null value type
-        DoubleBuffer<KeyT>      d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
-        DoubleBuffer<NullType>  d_values;
-
-        return DispatchSegmentedRadixSort<false, KeyT, NullType, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT>::Dispatch(
+        return DispatchSegmentedRadixSort<
+            false, const KeyT *, KeyT *, const NullType *, NullType *, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys_in,
+            d_keys_out,
+            nullptr,
+            nullptr,
             num_items,
             num_segments,
             d_begin_offsets,
@@ -661,14 +679,15 @@ struct DeviceSegmentedRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // Null value type
-        DoubleBuffer<NullType> d_values;
-
-        return DispatchSegmentedRadixSort<false, KeyT, NullType, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT>::Dispatch(
+        return DispatchSegmentedRadixSort<
+            false, const KeyT *, KeyT *, const NullType *, NullType *, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys.Current(),
+            d_keys.Alternate(),
+            nullptr,
+            nullptr,
             num_items,
             num_segments,
             d_begin_offsets,
@@ -732,15 +751,16 @@ struct DeviceSegmentedRadixSort
      * \tparam EndOffsetIteratorT    <b>[inferred]</b> Random-access input iterator type for reading segment ending offsets \iterator
      */
     template <
-        typename            KeyT,
+        typename            KeyInputIteratorT,
+        typename            KeyIteratorT,
         typename            BeginOffsetIteratorT,
         typename            EndOffsetIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeysDescending(
         void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        const KeyT          *d_keys_in,                             ///< [in] %Device-accessible pointer to the input data of key data to sort
-        KeyT                *d_keys_out,                            ///< [out] %Device-accessible pointer to the sorted output sequence of key data
+        KeyInputIteratorT   d_keys_in,                              ///< [in] Iterator to the input data of key data to sort
+        KeyIteratorT        d_keys_out,                             ///< [out] Iterator to the sorted output sequence of key data
         int                 num_items,                              ///< [in] The total number of items to sort (across all segments)
         int                 num_segments,                           ///< [in] The number of segments that comprise the sorting data
         BeginOffsetIteratorT d_begin_offsets,                       ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
@@ -753,14 +773,15 @@ struct DeviceSegmentedRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        DoubleBuffer<KeyT>      d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
-        DoubleBuffer<NullType>  d_values;
-
-        return DispatchSegmentedRadixSort<true, KeyT, NullType, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT>::Dispatch(
+        return DispatchSegmentedRadixSort<
+            true, KeyInputIteratorT, KeyIteratorT, const NullType *, NullType *, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys_in,
+            d_keys_out,
+            nullptr,
+            nullptr,
             num_items,
             num_segments,
             d_begin_offsets,
@@ -842,7 +863,7 @@ struct DeviceSegmentedRadixSort
         DoubleBuffer<KeyT>  &d_keys,                                ///< [in,out] Reference to the double-buffer of keys whose "current" device-accessible buffer contains the unsorted input keys and, upon return, is updated to point to the sorted output keys
         int                 num_items,                              ///< [in] The total number of items to sort (across all segments)
         int                 num_segments,                           ///< [in] The number of segments that comprise the sorting data
-        BeginOffsetIteratorT d_begin_offsets,                        ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
+        BeginOffsetIteratorT d_begin_offsets,                       ///< [in] Random-access input iterator to the sequence of beginning offsets of length \p num_segments, such that <tt>d_begin_offsets[i]</tt> is the first element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>
         EndOffsetIteratorT  d_end_offsets,                          ///< [in] Random-access input iterator to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
         int                 end_bit             = sizeof(KeyT) * 8, ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
@@ -852,14 +873,15 @@ struct DeviceSegmentedRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // Null value type
-        DoubleBuffer<NullType> d_values;
-
-        return DispatchSegmentedRadixSort<true, KeyT, NullType, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT>::Dispatch(
+        return DispatchSegmentedRadixSort<
+            true, const KeyT *, KeyT *, const NullType *, NullType *, BeginOffsetIteratorT, EndOffsetIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys.Current(),
+            d_keys.Alternate(),
+            nullptr,
+            nullptr,
             num_items,
             num_segments,
             d_begin_offsets,
