@@ -1322,8 +1322,8 @@ struct DispatchRadixSort :
 
         OffsetT* d_bins = (OffsetT*)allocations[0];
         AtomicOffsetT* d_lookback = (AtomicOffsetT*)allocations[1];
-        KeyT* d_keys_tmp2 = (KeyT*)allocations[2];
-        ValueT* d_values_tmp2 = (ValueT*)allocations[3];
+        KeyT* d_keys_tmp = (KeyT*)allocations[2];
+        ValueT* d_values_tmp = (ValueT*)allocations[3];
         AtomicOffsetT* d_ctrs = (AtomicOffsetT*)allocations[4];
 
         do { 
@@ -1355,15 +1355,13 @@ struct DispatchRadixSort :
             DeviceRadixSortExclusiveSumKernel<MaxPolicyT, OffsetT>
                 <<<num_passes, SCAN_BLOCK_THREADS, 0, stream>>>(d_bins);
             if (CubDebug(error = cudaPeekAtLastError())) break;
-            
-            // use the other buffer if no overwrite is allowed
-            KeyT* d_keys_tmp = d_keys_out;
-            ValueT* d_values_tmp = d_values_out;
-            if (num_passes % 2 == 0)
-            {
-                d_keys.d_buffers[1] = d_keys_tmp2;
-                d_values.d_buffers[1] = d_values_tmp2;
-            }
+
+            bool output_is_tmp = (num_passes % 2 == 0);
+            enum InputMode {
+                INPUT,
+                TMP_STORAGE,
+                OUTPUT
+            } input_mode = INPUT;
 
             for (int current_bit = begin_bit, pass = 0; current_bit < end_bit;
                  current_bit += RADIX_BITS, ++pass)
@@ -1376,34 +1374,145 @@ struct DispatchRadixSort :
                     if (CubDebug(error = cudaMemsetAsync(
                            d_lookback, 0, num_blocks * RADIX_DIGITS * sizeof(AtomicOffsetT),
                            stream))) break;
-                    auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
-                        MaxPolicyT, IS_DESCENDING, KeyInputIteratorT, KeyIteratorT,
-                        ValueInputIteratorT, ValueIteratorT, OffsetT>;
-                    onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
-                        (d_lookback, d_ctrs + part * num_passes + pass,
-                         part < num_parts - 1 ?
-                             d_bins + ((part + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
-                         d_bins + (part * num_passes + pass) * RADIX_DIGITS,
-                         d_keys.Alternate(),
-                         d_keys.Current() + part * PART_SIZE,
-                         d_values.Alternate(),
-                         d_values.Current() + part * PART_SIZE,
-                         part_num_items, current_bit, num_bits);
+                    if (output_is_tmp) {
+                        using KeyOutIterT = KeyT *;
+                        using ValueOutIterT = ValueT *;
+                        KeyOutIterT d_keys_out_ = d_keys_tmp;
+                        ValueOutIterT d_values_out_ = d_values_tmp;
+                        switch (input_mode) {
+                            case INPUT: {
+                                using KeyInIterT = KeyInputIteratorT;
+                                using ValueInIterT = ValueInputIteratorT;
+                                auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
+                                    MaxPolicyT, IS_DESCENDING, KeyInIterT, KeyOutIterT,
+                                    ValueInIterT, ValueOutIterT, OffsetT>;
+                                KeyInIterT d_keys_in_ = d_keys_in;
+                                ValueInIterT d_values_in_ = d_values_in;
+                                onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
+                                    (d_lookback, d_ctrs + part * num_passes + pass,
+                                    part < num_parts - 1 ?
+                                        d_bins + ((part + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
+                                    d_bins + (part * num_passes + pass) * RADIX_DIGITS,
+                                    d_keys_out_,
+                                    d_keys_in_ + part * PART_SIZE,
+                                    d_values_out_,
+                                    d_values_in_ + part * PART_SIZE,
+                                    part_num_items, current_bit, num_bits);
+                                break;
+                            }
+                            case TMP_STORAGE: {
+                                using KeyInIterT = KeyT *;
+                                using ValueInIterT = ValueT *;
+                                auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
+                                    MaxPolicyT, IS_DESCENDING, KeyInIterT, KeyOutIterT,
+                                    ValueInIterT, ValueOutIterT, OffsetT>;
+                                KeyInIterT d_keys_in_ = d_keys_tmp;
+                                ValueInIterT d_values_in_ = d_values_tmp;
+                                onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
+                                    (d_lookback, d_ctrs + part * num_passes + pass,
+                                    part < num_parts - 1 ?
+                                        d_bins + ((part + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
+                                    d_bins + (part * num_passes + pass) * RADIX_DIGITS,
+                                    d_keys_out_,
+                                    d_keys_in_ + part * PART_SIZE,
+                                    d_values_out_,
+                                    d_values_in_ + part * PART_SIZE,
+                                    part_num_items, current_bit, num_bits);
+                                break;
+                            }
+                            case OUTPUT: {
+                                using KeyInIterT = KeyIteratorT;
+                                using ValueInIterT = ValueIteratorT;
+                                auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
+                                    MaxPolicyT, IS_DESCENDING, KeyInIterT, KeyOutIterT,
+                                    ValueInIterT, ValueOutIterT, OffsetT>;
+                                KeyInIterT d_keys_in_ = d_keys_out;
+                                ValueInIterT d_values_in_ = d_values_out;
+                                onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
+                                    (d_lookback, d_ctrs + part * num_passes + pass,
+                                    part < num_parts - 1 ?
+                                        d_bins + ((part + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
+                                    d_bins + (part * num_passes + pass) * RADIX_DIGITS,
+                                    d_keys_out_,
+                                    d_keys_in_ + part * PART_SIZE,
+                                    d_values_out_,
+                                    d_values_in_ + part * PART_SIZE,
+                                    part_num_items, current_bit, num_bits);
+                                break;
+                            }
+                        }
+                    } else {
+                        using KeyOutIterT = KeyIteratorT;
+                        using ValueOutIterT = ValueIteratorT;
+                        KeyOutIterT d_keys_out_ = d_keys_out;
+                        ValueOutIterT d_values_out_ = d_values_out;
+                        switch (input_mode) {
+                            case INPUT: {
+                                using KeyInIterT = KeyInputIteratorT;
+                                using ValueInIterT = ValueInputIteratorT;
+                                auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
+                                    MaxPolicyT, IS_DESCENDING, KeyInIterT, KeyOutIterT,
+                                    ValueInIterT, ValueOutIterT, OffsetT>;
+                                KeyInIterT d_keys_in_ = d_keys_in;
+                                ValueInIterT d_values_in_ = d_values_in;
+                                onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
+                                    (d_lookback, d_ctrs + part * num_passes + pass,
+                                    part < num_parts - 1 ?
+                                        d_bins + ((part + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
+                                    d_bins + (part * num_passes + pass) * RADIX_DIGITS,
+                                    d_keys_out_,
+                                    d_keys_in_ + part * PART_SIZE,
+                                    d_values_out_,
+                                    d_values_in_ + part * PART_SIZE,
+                                    part_num_items, current_bit, num_bits);
+                                break;
+                            }
+                            case TMP_STORAGE: {
+                                using KeyInIterT = KeyT *;
+                                using ValueInIterT = ValueT *;
+                                auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
+                                    MaxPolicyT, IS_DESCENDING, KeyInIterT, KeyOutIterT,
+                                    ValueInIterT, ValueOutIterT, OffsetT>;
+                                KeyInIterT d_keys_in_ = d_keys_tmp;
+                                ValueInIterT d_values_in_ = d_values_tmp;
+                                onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
+                                    (d_lookback, d_ctrs + part * num_passes + pass,
+                                    part < num_parts - 1 ?
+                                        d_bins + ((part + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
+                                    d_bins + (part * num_passes + pass) * RADIX_DIGITS,
+                                    d_keys_out_,
+                                    d_keys_in_ + part * PART_SIZE,
+                                    d_values_out_,
+                                    d_values_in_ + part * PART_SIZE,
+                                    part_num_items, current_bit, num_bits);
+                                break;
+                            }
+                            case OUTPUT: {
+                                using KeyInIterT = KeyIteratorT;
+                                using ValueInIterT = ValueIteratorT;
+                                auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
+                                    MaxPolicyT, IS_DESCENDING, KeyInIterT, KeyOutIterT,
+                                    ValueInIterT, ValueOutIterT, OffsetT>;
+                                KeyInIterT d_keys_in_ = d_keys_out;
+                                ValueInIterT d_values_in_ = d_values_out;
+                                onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
+                                    (d_lookback, d_ctrs + part * num_passes + pass,
+                                    part < num_parts - 1 ?
+                                        d_bins + ((part + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
+                                    d_bins + (part * num_passes + pass) * RADIX_DIGITS,
+                                    d_keys_out_,
+                                    d_keys_in_ + part * PART_SIZE,
+                                    d_values_out_,
+                                    d_values_in_ + part * PART_SIZE,
+                                    part_num_items, current_bit, num_bits);
+                                break;
+                            }
+                        }
+                    }
                     if (CubDebug(error = cudaPeekAtLastError())) break;
                 }
-                
-                // use the temporary buffers if no overwrite is allowed
-                if (pass == 0)
-                {
-                    d_keys = num_passes % 2 == 0 ?
-                        DoubleBuffer<KeyT>(d_keys_tmp, d_keys_tmp2) :
-                        DoubleBuffer<KeyT>(d_keys_tmp2, d_keys_tmp);
-                    d_values = num_passes % 2 == 0 ?
-                        DoubleBuffer<ValueT>(d_values_tmp, d_values_tmp2) :
-                        DoubleBuffer<ValueT>(d_values_tmp2, d_values_tmp);
-                }
-                d_keys.selector ^= 1;
-                d_values.selector ^= 1;
+                input_mode = output_is_tmp ? TMP_STORAGE : OUTPUT;
+                output_is_tmp = !output_is_tmp;
             }
         } while (0);
         
