@@ -1343,7 +1343,7 @@ struct DispatchRadixSort :
             const int HISTO_BLOCK_THREADS = ActivePolicyT::HistogramPolicy::BLOCK_THREADS;
             int histo_blocks_per_sm = 1;
             auto histogram_kernel = DeviceRadixSortHistogramKernel<
-                MaxPolicyT, IS_DESCENDING, KeyT, OffsetT>;
+                MaxPolicyT, IS_DESCENDING, KeyInputIteratorT, OffsetT>;
             if (CubDebug(error = cudaOccupancyMaxActiveBlocksPerMultiprocessor(
                 &histo_blocks_per_sm, histogram_kernel, HISTO_BLOCK_THREADS, 0))) break;
             histogram_kernel<<<histo_blocks_per_sm * num_sms, HISTO_BLOCK_THREADS, 0, stream>>>
