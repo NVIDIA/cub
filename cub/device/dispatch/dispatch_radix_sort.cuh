@@ -1401,8 +1401,8 @@ struct DispatchRadixSort :
                                 break;
                             }
                             case TMP_STORAGE: {
-                                using KeyInIterT = KeyT *;
-                                using ValueInIterT = ValueT *;
+                                using KeyInIterT = const KeyT *;
+                                using ValueInIterT = const ValueT *;
                                 auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
                                     MaxPolicyT, IS_DESCENDING, KeyInIterT, KeyOutIterT,
                                     ValueInIterT, ValueOutIterT, OffsetT>;
@@ -1468,8 +1468,8 @@ struct DispatchRadixSort :
                                 break;
                             }
                             case TMP_STORAGE: {
-                                using KeyInIterT = KeyT *;
-                                using ValueInIterT = ValueT *;
+                                using KeyInIterT = const KeyT *;
+                                using ValueInIterT = const ValueT *;
                                 auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
                                     MaxPolicyT, IS_DESCENDING, KeyInIterT, KeyOutIterT,
                                     ValueInIterT, ValueOutIterT, OffsetT>;
