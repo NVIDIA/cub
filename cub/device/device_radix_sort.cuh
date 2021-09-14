@@ -214,12 +214,6 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // We cast away const-ness, but will *not* write to these arrays.
-        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
-        // create a new double-buffer internally when the `is_overwrite_ok` flag
-        // is not set.
-        constexpr bool is_overwrite_okay = false;
-
         return DispatchRadixSort<
             false, KeyInputIteratorT, KeyIteratorT, ValueInputIteratorT, ValueIteratorT, OffsetT
         >::Dispatch(
@@ -232,7 +226,6 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -326,8 +319,6 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        constexpr bool is_overwrite_okay = true;
-
         return DispatchRadixSort<
             false , const KeyT *, KeyT *, const ValueT *, ValueT *, OffsetT
         >::Dispatch(
@@ -340,7 +331,6 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
         d_keys.selector ^= 1;
@@ -426,12 +416,6 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // We cast away const-ness, but will *not* write to these arrays.
-        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
-        // create a new double-buffer internally when the `is_overwrite_ok` flag
-        // is not set.
-        constexpr bool is_overwrite_okay = false;
-
         return DispatchRadixSort<
             true, KeyInputIteratorT, KeyIteratorT, ValueInputIteratorT, ValueIteratorT, OffsetT
         >::Dispatch(
@@ -444,7 +428,6 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -533,8 +516,6 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        constexpr bool is_overwrite_okay = true;
-
         return DispatchRadixSort<
             true, const KeyT *, KeyT *, const ValueT *, ValueT *, OffsetT
         >::Dispatch(
@@ -547,7 +528,6 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
         d_keys.selector ^= 1;
@@ -631,12 +611,6 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // We cast away const-ness, but will *not* write to these arrays.
-        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
-        // create a new double-buffer internally when the `is_overwrite_ok` flag
-        // is not set.
-        constexpr bool is_overwrite_okay = false;
-
         return DispatchRadixSort<
             false, KeyInputIteratorT, KeyIteratorT, const NullType *, NullType *, OffsetT
         >::Dispatch(
@@ -649,7 +623,6 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -729,8 +702,6 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        constexpr bool is_overwrite_okay = true;
-
         return DispatchRadixSort<
             false, const KeyT *, KeyT *, const NullType *, NullType *, OffsetT
         >::Dispatch(
@@ -743,7 +714,6 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
         d_keys.selector ^= 1;
@@ -817,12 +787,6 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // We cast away const-ness, but will *not* write to these arrays.
-        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
-        // create a new double-buffer internally when the `is_overwrite_ok` flag
-        // is not set.
-        constexpr bool is_overwrite_okay = false;
-
         return DispatchRadixSort<
             true, KeyInputIteratorT, KeyIteratorT, const NullType *, NullType *, OffsetT
         >::Dispatch(
@@ -835,7 +799,6 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -911,8 +874,6 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        constexpr bool is_overwrite_okay = true;
-
         return DispatchRadixSort<
             true, const KeyT *, KeyT *, const NullType *, NullType *, OffsetT
         >::Dispatch(
@@ -925,7 +886,6 @@ struct DeviceRadixSort
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
         d_keys.selector ^= 1;

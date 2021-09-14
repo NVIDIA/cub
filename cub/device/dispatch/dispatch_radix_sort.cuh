@@ -1014,7 +1014,6 @@ struct DispatchRadixSort :
     cudaStream_t            stream;                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     bool                    debug_synchronous;      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                     ptx_version;            ///< [in] PTX version
-    bool                    is_overwrite_okay;      ///< [in] Whether is okay to overwrite source buffers
 
 
     //------------------------------------------------------------------------------
@@ -1033,7 +1032,6 @@ struct DispatchRadixSort :
         OffsetT                 num_items,
         int                     begin_bit,
         int                     end_bit,
-        bool                    is_overwrite_okay,
         cudaStream_t            stream,
         bool                    debug_synchronous,
         int                     ptx_version)
@@ -1049,8 +1047,7 @@ struct DispatchRadixSort :
         end_bit(end_bit),
         stream(stream),
         debug_synchronous(debug_synchronous),
-        ptx_version(ptx_version),
-        is_overwrite_okay(is_overwrite_okay)
+        ptx_version(ptx_version)
     {}
 
 
@@ -1308,9 +1305,9 @@ struct DispatchRadixSort :
             // lookback
             max_num_blocks * RADIX_DIGITS * sizeof(AtomicOffsetT),
             // extra key buffer
-            is_overwrite_okay || num_passes <= 1 ? 0 : num_items * sizeof(KeyT),
+            num_passes <= 1 ? 0 : num_items * sizeof(KeyT),
             // extra value buffer
-            is_overwrite_okay || num_passes <= 1 ? 0 : num_items * value_size,
+            num_passes <= 1 ? 0 : num_items * value_size,
             // counters
             num_parts * num_passes * sizeof(AtomicOffsetT),
         };
@@ -1362,7 +1359,7 @@ struct DispatchRadixSort :
             // use the other buffer if no overwrite is allowed
             KeyT* d_keys_tmp = d_keys_out;
             ValueT* d_values_tmp = d_values_out;
-            if (!is_overwrite_okay && num_passes % 2 == 0)
+            if (num_passes % 2 == 0)
             {
                 d_keys.d_buffers[1] = d_keys_tmp2;
                 d_values.d_buffers[1] = d_values_tmp2;
@@ -1396,7 +1393,7 @@ struct DispatchRadixSort :
                 }
                 
                 // use the temporary buffers if no overwrite is allowed
-                if (!is_overwrite_okay && pass == 0)
+                if (pass == 0)
                 {
                     d_keys = num_passes % 2 == 0 ?
                         DoubleBuffer<KeyT>(d_keys_tmp, d_keys_tmp2) :
@@ -1488,8 +1485,8 @@ struct DispatchRadixSort :
             size_t allocation_sizes[3] =
             {
                 spine_length * sizeof(OffsetT),                                         // bytes needed for privatized block digit histograms
-                (is_overwrite_okay) ? 0 : num_items * sizeof(KeyT),                     // bytes needed for 3rd keys buffer
-                (is_overwrite_okay || (KEYS_ONLY)) ? 0 : num_items * sizeof(ValueT),    // bytes needed for 3rd values buffer
+                num_items * sizeof(KeyT),                     // bytes needed for 3rd keys buffer
+                (KEYS_ONLY) ? 0 : num_items * sizeof(ValueT),    // bytes needed for 3rd values buffer
             };
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
@@ -1510,12 +1507,12 @@ struct DispatchRadixSort :
             OffsetT *d_spine = static_cast<OffsetT*>(allocations[0]);
 
             DoubleBuffer<KeyT> d_keys_remaining_passes(
-                (is_overwrite_okay || is_num_passes_odd) ? d_keys.Alternate() : static_cast<KeyT*>(allocations[1]),
-                (is_overwrite_okay) ? d_keys.Current() : (is_num_passes_odd) ? static_cast<KeyT*>(allocations[1]) : d_keys.Alternate());
+                is_num_passes_odd ? d_keys.Alternate() : static_cast<KeyT*>(allocations[1]),
+                is_num_passes_odd ? static_cast<KeyT*>(allocations[1]) : d_keys.Alternate());
 
             DoubleBuffer<ValueT> d_values_remaining_passes(
-                (is_overwrite_okay || is_num_passes_odd) ? d_values.Alternate() : static_cast<ValueT*>(allocations[2]),
-                (is_overwrite_okay) ? d_values.Current() : (is_num_passes_odd) ? static_cast<ValueT*>(allocations[2]) : d_values.Alternate());
+                is_num_passes_odd ? d_values.Alternate() : static_cast<ValueT*>(allocations[2]),
+                is_num_passes_odd ? static_cast<ValueT*>(allocations[2]) : d_values.Alternate());
 
             // Run first pass, consuming from the input's current buffers
             int current_bit = begin_bit;
@@ -1540,9 +1537,7 @@ struct DispatchRadixSort :
             }
 
             // Update selector
-            if (!is_overwrite_okay) {
-                num_passes = 1; // Sorted data always ends up in the other vector
-            }
+            num_passes = 1; // Sorted data always ends up in the other vector
 
             d_keys.selector = (d_keys.selector + num_passes) & 1;
             d_values.selector = (d_values.selector + num_passes) & 1;
@@ -1623,7 +1618,6 @@ struct DispatchRadixSort :
         OffsetT                 num_items,              ///< [in] Number of items to sort
         int                     begin_bit,              ///< [in] The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
-        bool                    is_overwrite_okay,      ///< [in] Whether is okay to overwrite source buffers
         cudaStream_t            stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous)      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -1639,7 +1633,7 @@ struct DispatchRadixSort :
             DispatchRadixSort dispatch(
                 d_temp_storage, temp_storage_bytes,
                 d_keys_in, d_keys_out, d_values_in, d_values_out,
-                num_items, begin_bit, end_bit, is_overwrite_okay,
+                num_items, begin_bit, end_bit,
                 stream, debug_synchronous, ptx_version);
 
             // Dispatch to chained policy
@@ -1709,7 +1703,6 @@ struct DispatchSegmentedRadixSort :
     cudaStream_t            stream;                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
     bool                    debug_synchronous;      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     int                     ptx_version;            ///< [in] PTX version
-    bool                    is_overwrite_okay;      ///< [in] Whether is okay to overwrite source buffers
 
 
     //------------------------------------------------------------------------------
@@ -1731,7 +1724,6 @@ struct DispatchSegmentedRadixSort :
         EndOffsetIteratorT      d_end_offsets,
         int                     begin_bit,
         int                     end_bit,
-        bool                    is_overwrite_okay,
         cudaStream_t            stream,
         bool                    debug_synchronous,
         int                     ptx_version)
@@ -1748,7 +1740,6 @@ struct DispatchSegmentedRadixSort :
         d_end_offsets(d_end_offsets),
         begin_bit(begin_bit),
         end_bit(end_bit),
-        is_overwrite_okay(is_overwrite_okay),
         stream(stream),
         debug_synchronous(debug_synchronous),
         ptx_version(ptx_version)
@@ -1866,8 +1857,8 @@ struct DispatchSegmentedRadixSort :
             void* allocations[2] = {};
             size_t allocation_sizes[2] =
             {
-                (is_overwrite_okay) ? 0 : num_items * sizeof(KeyT),                      // bytes needed for 3rd keys buffer
-                (is_overwrite_okay || (KEYS_ONLY)) ? 0 : num_items * sizeof(ValueT),     // bytes needed for 3rd values buffer
+                num_items * sizeof(KeyT),                      // bytes needed for 3rd keys buffer
+                (KEYS_ONLY) ? 0 : num_items * sizeof(ValueT),     // bytes needed for 3rd values buffer
             };
 
             // Alias the temporary allocations from the single storage blob (or compute the necessary size of the blob)
@@ -1891,12 +1882,12 @@ struct DispatchSegmentedRadixSort :
             int alt_end_bit         = CUB_MIN(end_bit, begin_bit + (max_alt_passes * alt_radix_bits));
 
             DoubleBuffer<KeyT> d_keys_remaining_passes(
-                (is_overwrite_okay || is_num_passes_odd) ? d_keys.Alternate() : static_cast<KeyT*>(allocations[0]),
-                (is_overwrite_okay) ? d_keys.Current() : (is_num_passes_odd) ? static_cast<KeyT*>(allocations[0]) : d_keys.Alternate());
+                is_num_passes_odd ? d_keys.Alternate() : static_cast<KeyT*>(allocations[0]),
+                is_num_passes_odd ? static_cast<KeyT*>(allocations[0]) : d_keys.Alternate());
 
             DoubleBuffer<ValueT> d_values_remaining_passes(
-                (is_overwrite_okay || is_num_passes_odd) ? d_values.Alternate() : static_cast<ValueT*>(allocations[1]),
-                (is_overwrite_okay) ? d_values.Current() : (is_num_passes_odd) ? static_cast<ValueT*>(allocations[1]) : d_values.Alternate());
+                is_num_passes_odd ? d_values.Alternate() : static_cast<ValueT*>(allocations[1]),
+                is_num_passes_odd ? static_cast<ValueT*>(allocations[1]) : d_values.Alternate());
 
             // Run first pass, consuming from the input's current buffers
             int current_bit = begin_bit;
@@ -1922,9 +1913,7 @@ struct DispatchSegmentedRadixSort :
             }
 
             // Update selector
-            if (!is_overwrite_okay) {
-                num_passes = 1; // Sorted data always ends up in the other vector
-            }
+            num_passes = 1; // Sorted data always ends up in the other vector
 
             d_keys.selector = (d_keys.selector + num_passes) & 1;
             d_values.selector = (d_values.selector + num_passes) & 1;
@@ -1975,7 +1964,6 @@ struct DispatchSegmentedRadixSort :
         EndOffsetIteratorT      d_end_offsets,          ///< [in] Random-access input iterator to the sequence of ending offsets of length \p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last element of the <em>i</em><sup>th</sup> data segment in <tt>d_keys_*</tt> and <tt>d_values_*</tt>.  If <tt>d_end_offsets[i]-1</tt> <= <tt>d_begin_offsets[i]</tt>, the <em>i</em><sup>th</sup> is considered empty.
         int                     begin_bit,              ///< [in] The beginning (least-significant) bit index needed for key comparison
         int                     end_bit,                ///< [in] The past-the-end (most-significant) bit index needed for key comparison
-        bool                    is_overwrite_okay,      ///< [in] Whether is okay to overwrite source buffers
         cudaStream_t            stream,                 ///< [in] CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                    debug_synchronous)      ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
@@ -1992,7 +1980,7 @@ struct DispatchSegmentedRadixSort :
                 d_temp_storage, temp_storage_bytes,
                 d_keys, d_values,
                 num_items, num_segments, d_begin_offsets, d_end_offsets,
-                begin_bit, end_bit, is_overwrite_okay,
+                begin_bit, end_bit,
                 stream, debug_synchronous, ptx_version);
 
             // Dispatch to chained policy
