@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include "detail/device_synchronize.cuh"
+
 #include "util_type.cuh"
 #include "util_arch.cuh"
 #include "util_debug.cuh"
@@ -566,7 +568,7 @@ CUB_RUNTIME_FUNCTION inline cudaError_t SyncStream(cudaStream_t stream)
             #if defined(CUB_RUNTIME_ENABLED) // Device code with the CUDA runtime.
                 (void)stream;
                 // Device can't yet sync on a specific stream
-                result = CubDebug(cudaDeviceSynchronize());
+                result = CubDebug(cub::detail::device_synchronize());
             #else // Device code without the CUDA runtime.
                 (void)stream;
                 // CUDA API calls are not supported from this device.
