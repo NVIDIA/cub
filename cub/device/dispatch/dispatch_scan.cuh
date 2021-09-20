@@ -34,7 +34,6 @@
 
 #pragma once
 
-#include <stdio.h>
 #include <iterator>
 
 #include "../../agent/agent_scan.cuh"
@@ -149,7 +148,7 @@ struct DeviceScanPolicy
       LargeValues ? BLOCK_STORE_WARP_TRANSPOSE_TIMESLICED
                   : BLOCK_STORE_WARP_TRANSPOSE;
 
-    /// SM35
+    /// SM350
     struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
     {
         // GTX Titan: 29.5B items/s (232.4 GB/s) @ 48M 32-bit T
@@ -237,8 +236,8 @@ struct DispatchScan:
 
     void*           d_temp_storage;         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t&         temp_storage_bytes;     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-    InputIteratorT  d_in;                   ///< [in] Pointer to the input sequence of data items
-    OutputIteratorT d_out;                  ///< [out] Pointer to the output sequence of data items
+    InputIteratorT  d_in;                   ///< [in] Iterator to the input sequence of data items
+    OutputIteratorT d_out;                  ///< [out] Iterator to the output sequence of data items
     ScanOpT         scan_op;                ///< [in] Binary scan functor
     InitValueT      init_value;             ///< [in] Initial value to seed the exclusive scan
     OffsetT         num_items;              ///< [in] Total number of input items (i.e., the length of \p d_in)
@@ -250,8 +249,8 @@ struct DispatchScan:
     DispatchScan(
         void*           d_temp_storage,         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&         temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIteratorT  d_in,                   ///< [in] Pointer to the input sequence of data items
-        OutputIteratorT d_out,                  ///< [out] Pointer to the output sequence of data items
+        InputIteratorT  d_in,                   ///< [in] Iterator to the input sequence of data items
+        OutputIteratorT d_out,                  ///< [out] Iterator to the output sequence of data items
         OffsetT         num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
         ScanOpT         scan_op,                ///< [in] Binary scan functor
         InitValueT      init_value,             ///< [in] Initial value to seed the exclusive scan
@@ -259,16 +258,16 @@ struct DispatchScan:
         bool            debug_synchronous,
         int             ptx_version
     ):
-    d_temp_storage(d_temp_storage),
-    temp_storage_bytes(temp_storage_bytes),
-    d_in(d_in),
-    d_out(d_out),
-    num_items(num_items),
-    scan_op(scan_op),
-    init_value(init_value),
-    stream(stream),
-    debug_synchronous(debug_synchronous),
-    ptx_version(ptx_version)
+        d_temp_storage(d_temp_storage),
+        temp_storage_bytes(temp_storage_bytes),
+        d_in(d_in),
+        d_out(d_out),
+        scan_op(scan_op),
+        init_value(init_value),
+        num_items(num_items),
+        stream(stream),
+        debug_synchronous(debug_synchronous),
+        ptx_version(ptx_version)
     {}
 
     template <typename ActivePolicyT, typename InitKernel, typename ScanKernel>
@@ -404,8 +403,8 @@ struct DispatchScan:
     static cudaError_t Dispatch(
         void*           d_temp_storage,         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&         temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        InputIteratorT  d_in,                   ///< [in] Pointer to the input sequence of data items
-        OutputIteratorT d_out,                  ///< [out] Pointer to the output sequence of data items
+        InputIteratorT  d_in,                   ///< [in] Iterator to the input sequence of data items
+        OutputIteratorT d_out,                  ///< [out] Iterator to the output sequence of data items
         ScanOpT         scan_op,                ///< [in] Binary scan functor
         InitValueT      init_value,             ///< [in] Initial value to seed the exclusive scan
         OffsetT         num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
@@ -423,16 +422,16 @@ struct DispatchScan:
 
             // Create dispatch functor
             DispatchScan dispatch(
-            d_temp_storage,
-            temp_storage_bytes,
-            d_in,
-            d_out,
-            num_items,
-            scan_op,
-            init_value,
-            stream,
-            debug_synchronous,
-            ptx_version
+                d_temp_storage,
+                temp_storage_bytes,
+                d_in,
+                d_out,
+                num_items,
+                scan_op,
+                init_value,
+                stream,
+                debug_synchronous,
+                ptx_version
             );
             // Dispatch to chained policy
             if (CubDebug(error = MaxPolicyT::Invoke(ptx_version, dispatch))) break;
