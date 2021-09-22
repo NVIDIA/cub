@@ -37,7 +37,16 @@ CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
   if (CUB_IS_HOST_CODE)
   {
 #if CUB_INCLUDE_HOST_CODE
+
+#if defined(__CUDACC__) &&                                                     \
+  ((__CUDACC_VER_MAJOR__ > 11) ||                                              \
+   ((__CUDA_VER_MAJOR__ == 11) && (__CUDA_VER_MINOR__ >= 6)))
+    // CUDA >= 11.6
+    result = __cudaDeviceSynchronizeDeprecationAvoidance();
+#else // else
     result = cudaDeviceSynchronize();
+#endif
+
 #endif
   }
   else
@@ -55,10 +64,11 @@ CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
 #endif
 
 #else // Device code without the CUDA runtime.
-    // CUDA API calls are not supported from this device.
+    // Device side CUDA API calls are not supported in this configuration.
     result = cudaErrorInvalidConfiguration;
 #endif
   }
+
   return result;
 }
 
