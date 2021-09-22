@@ -196,17 +196,7 @@ struct DeviceMergeSortPolicy
   // Architecture-specific tuning policies
   //------------------------------------------------------------------------------
 
-  struct Policy300 : ChainedPolicy<300, Policy300, Policy300>
-  {
-    using MergeSortPolicy =
-      AgentMergeSortPolicy<128,
-                           Nominal4BItemsToItems<KeyT>(7),
-                           cub::BLOCK_LOAD_WARP_TRANSPOSE,
-                           cub::LOAD_DEFAULT,
-                           cub::BLOCK_STORE_WARP_TRANSPOSE>;
-  };
-
-  struct Policy350 : ChainedPolicy<350, Policy350, Policy300>
+  struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
   {
     using MergeSortPolicy =
       AgentMergeSortPolicy<256,
@@ -216,6 +206,7 @@ struct DeviceMergeSortPolicy
                            cub::BLOCK_STORE_WARP_TRANSPOSE>;
   };
 
+// NVBug 3384810
 #if defined(__NVCOMPILER_CUDA__)
   using Policy520 = Policy350;
 #else
@@ -273,7 +264,7 @@ struct BlockSortLauncher
   char* vshmem_ptr;
 
   CUB_RUNTIME_FUNCTION __forceinline__
-  BlockSortLauncher(OffsetT num_tiles,
+  BlockSortLauncher(int num_tiles,
                     std::size_t block_sort_shmem_size,
                     bool ping,
                     KeyInputIteratorT d_input_keys,
@@ -286,7 +277,7 @@ struct BlockSortLauncher
                     KeyT *keys_buffer,
                     ValueT *items_buffer,
                     char *vshmem_ptr)
-      : num_tiles(static_cast<int>(num_tiles))
+      : num_tiles(num_tiles)
       , block_sort_shmem_size(block_sort_shmem_size)
       , ping(ping)
       , d_input_keys(d_input_keys)
@@ -369,7 +360,7 @@ struct MergeLauncher
   ValueT *items_buffer;
   char *vshmem_ptr;
 
-  CUB_RUNTIME_FUNCTION __forceinline__ MergeLauncher(OffsetT num_tiles,
+  CUB_RUNTIME_FUNCTION __forceinline__ MergeLauncher(int num_tiles,
                                                      std::size_t merge_shmem_size,
                                                      KeyIteratorT d_keys,
                                                      ValueIteratorT d_items,
@@ -380,7 +371,7 @@ struct MergeLauncher
                                                      KeyT *keys_buffer,
                                                      ValueT *items_buffer,
                                                      char *vshmem_ptr)
-      : num_tiles(static_cast<int>(num_tiles))
+      : num_tiles(num_tiles)
       , merge_shmem_size(merge_shmem_size)
       , d_keys(d_keys)
       , d_items(d_items)
@@ -560,8 +551,7 @@ struct DispatchMergeSort : SelectedPolicy
       }
 
       const auto tile_size = MergePolicyT::ITEMS_PER_TILE;
-      const auto num_tiles = CUB_NS_QUALIFIER::DivideAndRoundUp(num_items,
-                                                                tile_size);
+      const auto num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
 
       const auto block_sort_shmem_size =
         static_cast<std::size_t>(BlockSortAgentT::SHARED_MEMORY_SIZE);
@@ -578,10 +568,10 @@ struct DispatchMergeSort : SelectedPolicy
       const auto temporary_values_storage_size =
         static_cast<std::size_t>(num_items * sizeof(ValueT)) * !KEYS_ONLY;
 
-      const auto virtual_shared_memory_size = vshmem_size(
-        static_cast<std::size_t>(max_shmem),
-        (CUB_NS_QUALIFIER::max)(block_sort_shmem_size, merge_shmem_size),
-        static_cast<std::size_t>(num_tiles));
+      const auto virtual_shared_memory_size =
+        vshmem_size(static_cast<std::size_t>(max_shmem),
+                    (cub::max)(block_sort_shmem_size, merge_shmem_size),
+                    static_cast<std::size_t>(num_tiles));
 
       void *allocations[4] = {nullptr, nullptr, nullptr, nullptr};
       std::size_t allocation_sizes[4] = {merge_partitions_size,
@@ -641,7 +631,7 @@ struct DispatchMergeSort : SelectedPolicy
                         CompareOpT,
                         KeyT,
                         ValueT>
-        block_sort_launcher(num_tiles,
+        block_sort_launcher(static_cast<int>(num_tiles),
                             virtual_shared_memory_size > 0
                               ? 0
                               : block_sort_shmem_size,
@@ -677,8 +667,7 @@ struct DispatchMergeSort : SelectedPolicy
       const int threads_per_partition_block = 256;
 
       const int partition_grid_size = static_cast<int>(
-        CUB_NS_QUALIFIER::DivideAndRoundUp(num_partitions,
-                                           threads_per_partition_block));
+        cub::DivideAndRoundUp(num_partitions, threads_per_partition_block));
 
       MergeLauncher<KeyIteratorT,
                     ValueIteratorT,
@@ -687,7 +676,7 @@ struct DispatchMergeSort : SelectedPolicy
                     CompareOpT,
                     KeyT,
                     ValueT>
-        merge_launcher(num_tiles,
+        merge_launcher(static_cast<int>(num_tiles),
                        virtual_shared_memory_size > 0 ? 0 : merge_shmem_size,
                        d_output_keys,
                        d_output_items,

@@ -99,7 +99,7 @@ CUB_NAMESPACE_BEGIN
  *   CustomLess());
  * @endcode
  *
- * [LessThan Comparable] https://en.cppreference.com/w/cpp/named_req/LessThanComparable
+ * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
  */
 struct DeviceMergeSort
 {
@@ -131,8 +131,8 @@ struct DeviceMergeSort
    * CustomOpT custom_op;
    *
    * // Determine temporary device storage requirements
-   * void     *d_temp_storage = NULL;
-   * size_t   temp_storage_bytes = 0;
+   * void *d_temp_storage = nullptr;
+   * std::size_t temp_storage_bytes = 0;
    * cub::DeviceMergeSort::SortPairs(
    *   d_temp_storage, temp_storage_bytes,
    *   d_keys, d_values, num_items, custom_op);
@@ -151,26 +151,26 @@ struct DeviceMergeSort
    * @endcode
    *
    * @tparam KeyIteratorT
-   *   is a model of [Random Access Iterator], `KeyIteratorT` is mutable, and
-   *   `KeyIteratorT`'s `value_type` is a model of [LessThan Comparable], and
-   *   the ordering relation on `KeyIteratorT`'s `value_type` is a
-   *   *strict weak ordering*, as defined in the [LessThan Comparable]
-   *   requirements
+   *   is a model of [Random Access Iterator]. `KeyIteratorT` is mutable, and
+   *   its `value_type` is a model of [LessThan Comparable]. This `value_type`'s
+   *   ordering relation is a *strict weak ordering* as defined in
+   *   the [LessThan Comparable] requirements.
    *
    * @tparam ValueIteratorT
-   *   is a model of [Random Access Iterator], and `ValueIteratorT` is mutable
+   *   is a model of [Random Access Iterator], and `ValueIteratorT` is mutable.
    *
    * @tparam OffsetT
-   *   is an integer type for global offsets
+   *   is an integer type for global offsets.
    *
    * @tparam CompareOpT
-   *   functor type having member `bool operator()(KeyT lhs, KeyT rhs)`.
-   *   CompareOpT is a model of [Strict Weak Ordering]
+   *   is a type of callable object with the signature
+   *   `bool operator()(KeyT lhs, KeyT rhs)` that models
+   *   the [Strict Weak Ordering] concept.
    *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
-   *   is done
+   *   is done.
    *
    * @param[in,out] temp_storage_bytes
    *   Reference to size in bytes of `d_temp_storage` allocation
@@ -190,16 +190,16 @@ struct DeviceMergeSort
    *
    * @param[in] stream
    *   **[optional]** CUDA stream to launch kernels within. Default is
-   *   stream<sub>0</sub>
+   *   stream<sub>0</sub>.
    *
    * @param[in] debug_synchronous
    *   **[optional]** Whether or not to synchronize the stream after every
    *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`
+   *   be printed to the console. Default is `false`.
    *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
-   * [LessThan Comparable] https://en.cppreference.com/w/cpp/named_req/LessThanComparable
+   * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
    */
   template <typename KeyIteratorT,
             typename ValueIteratorT,
@@ -243,6 +243,8 @@ struct DeviceMergeSort
    *   other. It is not guaranteed that the relative order of these
    *   two elements will be preserved by sort.
    * - Input arrays `d_input_keys` and `d_input_items` are not modified.
+   * - Note that the behavior is undefined if the input and output ranges
+   *   overlap in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the sorting of a device vector of
@@ -263,8 +265,8 @@ struct DeviceMergeSort
    * CustomOpT custom_op;
    *
    * // Determine temporary device storage requirements
-   * void *d_temp_storage = NULL;
-   * size_t temp_storage_bytes = 0;
+   * void *d_temp_storage = nullptr;
+   * std::size_t temp_storage_bytes = 0;
    * cub::DeviceMergeSort::SortPairsCopy(
    *   d_temp_storage, temp_storage_bytes,
    *   d_keys, d_values, num_items, custom_op);
@@ -283,36 +285,35 @@ struct DeviceMergeSort
    * @endcode
    *
    * @tparam KeyInputIteratorT
-   *   is a model of [Random Access Iterator], `KeyInputIteratorT` is mutable,
-   *   and `KeyInputIteratorT`'s `value_type` is a model of
-   *   [LessThan Comparable], and the ordering relation on `KeyInputIteratorT`'s
-   *   `value_type` is a *strict weak ordering*, as defined in the
-   *   [LessThan Comparable] requirements
+   *   is a model of [Random Access Iterator]. Its `value_type` is a model of
+   *   [LessThan Comparable]. This `value_type`'s ordering relation is a
+   *   *strict weak ordering* as defined in the [LessThan Comparable]
+   *   requirements.
    *
    * @tparam ValueInputIteratorT
-   *   is a model of [Random Access Iterator]
+   *   is a model of [Random Access Iterator].
    *
    * @tparam KeyIteratorT
-   *   is a model of [Random Access Iterator], `KeyIteratorT` is mutable, and
-   *   `KeyIteratorT`'s `value_type` is a model of [LessThan Comparable], and
-   *   the ordering relation on `KeyIteratorT`'s `value_type` is a
-   *   *strict weak ordering*, as defined in the [LessThan Comparable]
-   *   requirements
+   *   is a model of [Random Access Iterator]. `KeyIteratorT` is mutable, and
+   *   its `value_type` is a model of [LessThan Comparable]. This `value_type`'s
+   *   ordering relation is a *strict weak ordering* as defined in
+   *   the [LessThan Comparable] requirements.
    *
    * @tparam ValueIteratorT
-   *   is a model of [Random Access Iterator], and `ValueIteratorT` is mutable
+   *   is a model of [Random Access Iterator], and `ValueIteratorT` is mutable.
    *
    * @tparam OffsetT
-   *   is an integer type for global offsets
+   *   is an integer type for global offsets.
    *
    * @tparam CompareOpT
-   *   functor type having member `bool operator()(KeyT lhs, KeyT rhs)`
-   *   CompareOpT is a model of [Strict Weak Ordering]
+   *   is a type of callable object with the signature
+   *   `bool operator()(KeyT lhs, KeyT rhs)` that models
+   *   the [Strict Weak Ordering] concept.
    *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
-   *   is done
+   *   is done.
    *
    * @param[in,out] temp_storage_bytes
    *   Reference to size in bytes of `d_temp_storage` allocation
@@ -338,16 +339,16 @@ struct DeviceMergeSort
    *
    * @param[in] stream
    *   **[optional]** CUDA stream to launch kernels within. Default is
-   *   stream<sub>0</sub>
+   *   stream<sub>0</sub>.
    *
    * @param[in] debug_synchronous
    *   **[optional]** Whether or not to synchronize the stream after every
    *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`
+   *   be printed to the console. Default is `false`.
    *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
-   * [LessThan Comparable] https://en.cppreference.com/w/cpp/named_req/LessThanComparable
+   * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
    */
   template <typename KeyInputIteratorT,
             typename ValueInputIteratorT,
@@ -412,8 +413,8 @@ struct DeviceMergeSort
    * CustomOpT custom_op;
    *
    * // Determine temporary device storage requirements
-   * void     *d_temp_storage = NULL;
-   * size_t   temp_storage_bytes = 0;
+   * void *d_temp_storage = nullptr;
+   * std::size_t temp_storage_bytes = 0;
    * cub::DeviceMergeSort::SortKeys(
    *   d_temp_storage, temp_storage_bytes,
    *   d_keys, num_items, custom_op);
@@ -430,23 +431,23 @@ struct DeviceMergeSort
    * @endcode
    *
    * @tparam KeyIteratorT
-   *   is a model of [Random Access Iterator], `KeyIteratorT` is mutable, and
-   *   `KeyIteratorT`'s `value_type` is a model of [LessThan Comparable], and
-   *   the ordering relation on `KeyIteratorT`'s `value_type` is a
-   *   *strict weak ordering*, as defined in the [LessThan Comparable]
-   *   requirements
+   *   is a model of [Random Access Iterator]. `KeyIteratorT` is mutable, and
+   *   its `value_type` is a model of [LessThan Comparable]. This `value_type`'s
+   *   ordering relation is a *strict weak ordering* as defined in
+   *   the [LessThan Comparable] requirements.
    *
    * @tparam OffsetT
-   *   is an integer type for global offsets
+   *   is an integer type for global offsets.
    *
    * @tparam CompareOpT
-   *   functor type having member `bool operator()(KeyT lhs, KeyT rhs)`
-   *   CompareOpT is a model of [Strict Weak Ordering]
+   *   is a type of callable object with the signature
+   *   `bool operator()(KeyT lhs, KeyT rhs)` that models
+   *   the [Strict Weak Ordering] concept.
    *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
-   *   is done
+   *   is done.
    *
    * @param[in,out] temp_storage_bytes
    *   Reference to size in bytes of `d_temp_storage` allocation
@@ -463,16 +464,16 @@ struct DeviceMergeSort
    *
    * @param[in] stream
    *   **[optional]** CUDA stream to launch kernels within. Default is
-   *   stream<sub>0</sub>
+   *   stream<sub>0</sub>.
    *
    * @param[in] debug_synchronous
    *   **[optional]** Whether or not to synchronize the stream after every
    *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`
+   *   be printed to the console. Default is `false`.
    *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
-   * [LessThan Comparable] https://en.cppreference.com/w/cpp/named_req/LessThanComparable
+   * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
    */
   template <typename KeyIteratorT,
             typename OffsetT,
@@ -514,6 +515,8 @@ struct DeviceMergeSort
    *   guaranteed that the relative order of these two elements will be
    *   preserved by sort.
    * - Input array d_input_keys is not modified.
+   * - Note that the behavior is undefined if the input and output ranges
+   *   overlap in any way.
    *
    * @par Snippet
    * The code snippet below illustrates the sorting of a device vector of
@@ -533,8 +536,8 @@ struct DeviceMergeSort
    * CustomOpT custom_op;
    *
    * // Determine temporary device storage requirements
-   * void     *d_temp_storage = NULL;
-   * size_t   temp_storage_bytes = 0;
+   * void *d_temp_storage = nullptr;
+   * std::size_t temp_storage_bytes = 0;
    * cub::DeviceMergeSort::SortKeysCopy(
    *   d_temp_storage, temp_storage_bytes,
    *   d_keys, num_items, custom_op);
@@ -551,30 +554,29 @@ struct DeviceMergeSort
    * @endcode
    *
    * @tparam KeyInputIteratorT
-   *   is a model of [Random Access Iterator], `KeyInputIteratorT` is mutable,
-   *   and `KeyInputIteratorT`'s `value_type` is a model of
-   *   [LessThan Comparable], and the ordering relation on `KeyInputIteratorT`'s
-   *   `value_type` is a *strict weak ordering*, as defined in the
-   *   [LessThan Comparable] requirements
+   *   is a model of [Random Access Iterator]. Its `value_type` is a model of
+   *   [LessThan Comparable]. This `value_type`'s ordering relation is a
+   *   *strict weak ordering* as defined in the [LessThan Comparable]
+   *   requirements.
    *
    * @tparam KeyIteratorT
-   *   is a model of [Random Access Iterator], `KeyIteratorT` is mutable, and
-   *   `KeyIteratorT`'s `value_type` is a model of [LessThan Comparable], and
-   *   the ordering relation on `KeyIteratorT`'s `value_type` is a
-   *   *strict weak ordering*, as defined in the [LessThan Comparable]
-   *   requirements.
+   *   is a model of [Random Access Iterator]. `KeyIteratorT` is mutable, and
+   *   its `value_type` is a model of [LessThan Comparable]. This `value_type`'s
+   *   ordering relation is a *strict weak ordering* as defined in
+   *   the [LessThan Comparable] requirements.
    *
    * @tparam OffsetT
    *   is an integer type for global offsets.
    *
    * @tparam CompareOpT
-   *   functor type having member `bool operator()(KeyT lhs, KeyT rhs)`
-   *   CompareOpT is a model of [Strict Weak Ordering]
+   *   is a type of callable object with the signature
+   *   `bool operator()(KeyT lhs, KeyT rhs)` that models
+   *   the [Strict Weak Ordering] concept.
    *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
-   *   is done
+   *   is done.
    *
    * @param[in,out] temp_storage_bytes
    *   Reference to size in bytes of `d_temp_storage` allocation
@@ -594,16 +596,16 @@ struct DeviceMergeSort
    *
    * @param[in] stream
    *   **[optional]** CUDA stream to launch kernels within. Default is
-   *   stream<sub>0</sub>
+   *   stream<sub>0</sub>.
    *
    * @param[in] debug_synchronous
    *   **[optional]** Whether or not to synchronize the stream after every
    *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`
+   *   be printed to the console. Default is `false`.
    *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
-   * [LessThan Comparable] https://en.cppreference.com/w/cpp/named_req/LessThanComparable
+   * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
    */
   template <typename KeyInputIteratorT,
             typename KeyIteratorT,
@@ -655,7 +657,8 @@ struct DeviceMergeSort
    * #include <cub/cub.cuh>
    * // or equivalently <cub/device/device_merge_sort.cuh>
    *
-   * // Declare, allocate, and initialize device-accessible pointers for sorting data
+   * // Declare, allocate, and initialize device-accessible pointers for
+   * // sorting data
    * int  num_items;       // e.g., 7
    * int  *d_keys;         // e.g., [8, 6, 6, 5, 3, 0, 9]
    * int  *d_values;       // e.g., [0, 1, 2, 3, 4, 5, 6]
@@ -665,8 +668,8 @@ struct DeviceMergeSort
    * CustomOpT custom_op;
    *
    * // Determine temporary device storage requirements
-   * void     *d_temp_storage = NULL;
-   * size_t   temp_storage_bytes = 0;
+   * void *d_temp_storage = nullptr;
+   * std::size_t temp_storage_bytes = 0;
    * cub::DeviceMergeSort::StableSortPairs(
    *   d_temp_storage, temp_storage_bytes,
    *   d_keys, d_values, num_items, custom_op);
@@ -684,26 +687,26 @@ struct DeviceMergeSort
    * @endcode
    *
    * @tparam KeyIteratorT
-   *   is a model of [Random Access Iterator], `KeyIteratorT` is mutable, and
-   *   `KeyIteratorT`'s `value_type` is a model of [LessThan Comparable],
-   *   and the ordering relation on `KeyIteratorT`'s `value_type` is a
-   *   *strict weak ordering*, as defined in the [LessThan Comparable]
-   *   requirements
+   *   is a model of [Random Access Iterator]. `KeyIteratorT` is mutable, and
+   *   its `value_type` is a model of [LessThan Comparable]. This `value_type`'s
+   *   ordering relation is a *strict weak ordering* as defined in
+   *   the [LessThan Comparable] requirements.
    *
    * @tparam ValueIteratorT
-   *   is a model of [Random Access Iterator], and `ValueIteratorT` is mutable
+   *   is a model of [Random Access Iterator], and `ValueIteratorT` is mutable.
    *
    * @tparam OffsetT
-   *   is an integer type for global offsets
+   *   is an integer type for global offsets.
    *
    * @tparam CompareOpT
-   *   functor type having member `bool operator()(KeyT lhs, KeyT rhs)`
-   *   CompareOpT is a model of [Strict Weak Ordering]
+   *   is a type of callable object with the signature
+   *   `bool operator()(KeyT lhs, KeyT rhs)` that models
+   *   the [Strict Weak Ordering] concept.
    *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
-   *   is done
+   *   is done.
    *
    * @param[in,out] temp_storage_bytes
    *   Reference to size in bytes of `d_temp_storage` allocation
@@ -723,16 +726,16 @@ struct DeviceMergeSort
    *
    * @param[in] stream
    *   **[optional]** CUDA stream to launch kernels within. Default is
-   *   stream<sub>0</sub>
+   *   stream<sub>0</sub>.
    *
    * @param[in] debug_synchronous
    *   **[optional]** Whether or not to synchronize the stream after every
    *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`
+   *   be printed to the console. Default is `false`.
    *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
-   * [LessThan Comparable] https://en.cppreference.com/w/cpp/named_req/LessThanComparable
+   * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
    */
   template <typename KeyIteratorT,
             typename ValueIteratorT,
@@ -786,8 +789,8 @@ struct DeviceMergeSort
    * CustomOpT custom_op;
    *
    * // Determine temporary device storage requirements
-   * void     *d_temp_storage = NULL;
-   * size_t   temp_storage_bytes = 0;
+   * void *d_temp_storage = nullptr;
+   * std::size_t temp_storage_bytes = 0;
    * cub::DeviceMergeSort::StableSortKeys(
    *   d_temp_storage, temp_storage_bytes,
    *   d_keys, num_items, custom_op);
@@ -804,23 +807,23 @@ struct DeviceMergeSort
    * @endcode
    *
    * @tparam KeyIteratorT
-   *   is a model of [Random Access Iterator], `KeyIteratorT` is mutable, and
-   *   `KeyIteratorT`'s `value_type` is a model of [LessThan Comparable],
-   *   and the ordering relation on `KeyIteratorT`'s `value_type` is a
-   *   *strict weak ordering*, as defined in the [LessThan Comparable]
-   *   requirements
+   *   is a model of [Random Access Iterator]. `KeyIteratorT` is mutable, and
+   *   its `value_type` is a model of [LessThan Comparable]. This `value_type`'s
+   *   ordering relation is a *strict weak ordering* as defined in
+   *   the [LessThan Comparable] requirements.
    *
    * @tparam OffsetT
-   *   is an integer type for global offsets
+   *   is an integer type for global offsets.
    *
    * @tparam CompareOpT
-   *   functor type having member `bool operator()(KeyT lhs, KeyT rhs)`
-   *   CompareOpT is a model of [Strict Weak Ordering]
+   *   is a type of callable object with the signature
+   *   `bool operator()(KeyT lhs, KeyT rhs)` that models
+   *   the [Strict Weak Ordering] concept.
    *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
-   *   is done
+   *   is done.
    *
    * @param[in,out] temp_storage_bytes
    *   Reference to size in bytes of `d_temp_storage` allocation
@@ -842,11 +845,11 @@ struct DeviceMergeSort
    * @param[in] debug_synchronous
    *   **[optional]** Whether or not to synchronize the stream after every
    *   kernel launch to check for errors. Also causes launch configurations to
-   *   be printed to the console. Default is `false`
+   *   be printed to the console. Default is `false`.
    *
    * [Random Access Iterator]: https://en.cppreference.com/w/cpp/iterator/random_access_iterator
    * [Strict Weak Ordering]: https://en.cppreference.com/w/cpp/concepts/strict_weak_order
-   * [LessThan Comparable] https://en.cppreference.com/w/cpp/named_req/LessThanComparable
+   * [LessThan Comparable]: https://en.cppreference.com/w/cpp/named_req/LessThanComparable
    */
   template <typename KeyIteratorT,
             typename OffsetT,
