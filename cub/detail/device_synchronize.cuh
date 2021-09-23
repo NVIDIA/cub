@@ -40,7 +40,7 @@ CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
 
 #if defined(__CUDACC__) &&                                                     \
   ((__CUDACC_VER_MAJOR__ > 11) ||                                              \
-   ((__CUDA_VER_MAJOR__ == 11) && (__CUDA_VER_MINOR__ >= 6)))
+   ((__CUDACC_VER_MAJOR__ == 11) && (__CUDACC_VER_MINOR__ >= 6)))
     // CUDA >= 11.6
     result = __cudaDeviceSynchronizeDeprecationAvoidance();
 #else // else
@@ -56,7 +56,7 @@ CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
 
 #if defined(__CUDACC__) &&                                                     \
   ((__CUDACC_VER_MAJOR__ > 11) ||                                              \
-   ((__CUDA_VER_MAJOR__ == 11) && (__CUDA_VER_MINOR__ >= 6)))
+   ((__CUDACC_VER_MAJOR__ == 11) && (__CUDACC_VER_MINOR__ >= 6)))
     // CUDA >= 11.6
     result = __cudaDeviceSynchronizeDeprecationAvoidance();
 #else // else
