@@ -38,12 +38,13 @@ CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
   {
 #if CUB_INCLUDE_HOST_CODE
 
-#if defined(__CUDACC__) &&                                                     \
+    // Re-enable when the new API is host/device callable (NVBug 3386786)
+#if 0 && defined(__CUDACC__) &&                                                \
   ((__CUDACC_VER_MAJOR__ > 11) ||                                              \
    ((__CUDACC_VER_MAJOR__ == 11) && (__CUDACC_VER_MINOR__ >= 6)))
     // CUDA >= 11.6
     result = __cudaDeviceSynchronizeDeprecationAvoidance();
-#else // else
+#else // CUDA < 11.6
     result = cudaDeviceSynchronize();
 #endif
 
@@ -54,12 +55,13 @@ CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
     // Device code with the CUDA runtime.
 #if defined(CUB_INCLUDE_DEVICE_CODE) && defined(CUB_RUNTIME_ENABLED)
 
-#if defined(__CUDACC__) &&                                                     \
+    // Re-enable when the new API is host/device callable (NVBug 3386786)
+#if 0 && defined(__CUDACC__) &&                                                \
   ((__CUDACC_VER_MAJOR__ > 11) ||                                              \
    ((__CUDACC_VER_MAJOR__ == 11) && (__CUDACC_VER_MINOR__ >= 6)))
     // CUDA >= 11.6
     result = __cudaDeviceSynchronizeDeprecationAvoidance();
-#else // else
+#else // CUDA < 11.6
     result = cudaDeviceSynchronize();
 #endif
 
