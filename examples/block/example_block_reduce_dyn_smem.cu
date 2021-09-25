@@ -98,8 +98,14 @@ __global__ void BlockReduceKernel(
     using BlockReduceT = cub::BlockReduce<int, BLOCK_THREADS>;
     using TempStorageT = typename BlockReduceT::TempStorage;
 
+    union ShmemLayout
+    {
+      TempStorageT reduce;
+      int aggregate;
+    };
+
     // shared memory byte-array
-    extern __shared__ char smem[];
+    extern __shared__ __align__(alignof(ShmemLayout)) char smem[];
     
     // cast to lvalue reference of expected type
     auto& temp_storage = reinterpret_cast<TempStorageT&>(smem);
