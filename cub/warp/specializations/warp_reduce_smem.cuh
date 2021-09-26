@@ -113,7 +113,6 @@ struct WarpReduceSmem
 
         lane_id(IS_ARCH_WARP ?
             LaneId() :
-            threadIdx.x % LOGICAL_WARP_THREADS),
             (LaneId()+WARP_THREADS*WarpId()) % LOGICAL_WARP_THREADS),
             
 
