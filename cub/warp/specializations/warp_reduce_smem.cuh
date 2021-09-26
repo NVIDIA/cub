@@ -56,6 +56,7 @@ struct WarpReduceSmem
 
     enum
     {
+        WARP_THREADS = CUB_WARP_THREADS(PTX_ARCH),
         /// Whether the logical warp size and the PTX warp size coincide
         IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
 
@@ -113,6 +114,8 @@ struct WarpReduceSmem
         lane_id(IS_ARCH_WARP ?
             LaneId() :
             threadIdx.x % LOGICAL_WARP_THREADS),
+            (LaneId()+WARP_THREADS*WarpId()) % LOGICAL_WARP_THREADS),
+            
 
         member_mask((0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
             0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
