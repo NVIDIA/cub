@@ -103,13 +103,12 @@ struct WarpScanShfl
     {
         lane_id = LaneId();
         warp_id = 0;
-        member_mask = 0xffffffffu >> (CUB_WARP_THREADS(PTX_ARCH) - LOGICAL_WARP_THREADS);
+        member_mask = 0xffffffffu; // involves all non-exited warp threads
 
         if (!IS_ARCH_WARP)
         {
             warp_id = lane_id / LOGICAL_WARP_THREADS;
             lane_id = lane_id % LOGICAL_WARP_THREADS;
-            member_mask = member_mask << (warp_id * LOGICAL_WARP_THREADS);
         }
     }
 
