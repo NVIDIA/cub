@@ -83,8 +83,7 @@ private:
   static constexpr int BLOCK_DECODED_ITEMS = BLOCK_THREADS * DECODED_ITEMS_PER_THREAD;
 
   /// BlockScan used to determine the beginning of each run (i.e., prefix sum over the runs' length)
-  using RunOffsetScanT =
-    cub::BlockScan<DecodedOffsetT, BLOCK_DIM_X, BLOCK_SCAN_RAKING_MEMOIZE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
+  using RunOffsetScanT = BlockScan<DecodedOffsetT, BLOCK_DIM_X, BLOCK_SCAN_RAKING_MEMOIZE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
 
   /// Type used to index into the block's runs
   using RunOffsetT = uint32_t;
@@ -174,6 +173,40 @@ public:
   }
 
 private:
+  /**
+   * \brief Returns the offset of the first value within \p input which compares greater than \p val. This version takes
+   * \p MAX_NUM_ITEMS, an upper bound of the array size, which will be used to determine the number of binary search
+   * iterations at compile time.
+   */
+  template <int MAX_NUM_ITEMS,
+            typename InputIteratorT,
+            typename OffsetT,
+            typename T>
+  __device__ __forceinline__ uint32_t StaticUpperBound(InputIteratorT input, ///< [in] Input sequence
+                                                       OffsetT num_items,    ///< [in] Input sequence length
+                                                       T val)                ///< [in] Search key
+  {
+    OffsetT lower_bound = 0;
+    OffsetT upper_bound = num_items;
+#pragma unroll
+    for (int i = 0; i <= Log2<MAX_NUM_ITEMS>::VALUE; i++)
+    {
+      OffsetT mid = lower_bound + (upper_bound - lower_bound) / 2;
+      mid         = min(mid, num_items - 1);
+
+      if (val < input[mid])
+      {
+        upper_bound = mid;
+      }
+      else
+      {
+        lower_bound = mid + 1;
+      }
+    }
+
+    return lower_bound;
+  }
+
   template <typename RunOffsetT>
   __device__ __forceinline__ void InitWithRunOffsets(ItemT (&run_values)[RUNS_PER_THREAD],
                                                      RunOffsetT (&run_offsets)[RUNS_PER_THREAD])
@@ -237,7 +270,7 @@ public:
     // If this thread's <thread_decoded_offset> is already beyond the total decoded size, it will be assigned to the
     // last run
     RunOffsetT assigned_run =
-      cub::StaticUpperBound<BLOCK_RUNS>(temp_storage.runs.run_offsets, BLOCK_RUNS, thread_decoded_offset) -
+      StaticUpperBound<BLOCK_RUNS>(temp_storage.runs.run_offsets, BLOCK_RUNS, thread_decoded_offset) -
       static_cast<RunOffsetT>(1U);
 
     DecodedOffsetT assigned_run_begin = temp_storage.runs.run_offsets[assigned_run];

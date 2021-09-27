@@ -144,38 +144,4 @@ __device__ __forceinline__ OffsetT UpperBound(
     return retval;
 }
 
-/**
- * \brief Returns the offset of the first value within \p input which compares greater than \p val. This version takes
- * \p MAX_NUM_ITEMS, an upper bound of the array size, which will be used to determine the number of binary search
- * iterations at compile time.
- */
-template <int MAX_NUM_ITEMS,
-          typename InputIteratorT,
-          typename OffsetT,
-          typename T>
-__device__ __forceinline__ uint32_t StaticUpperBound(InputIteratorT input, ///< [in] Input sequence
-                                                     OffsetT num_items,    ///< [in] Input sequence length
-                                                     T val)                ///< [in] Search key
-{
-  OffsetT lower_bound = 0;
-  OffsetT upper_bound = num_items;
-#pragma unroll
-  for (int i = 0; i <= cub::Log2<MAX_NUM_ITEMS>::VALUE; i++)
-  {
-    OffsetT mid = lower_bound + (upper_bound - lower_bound) / 2;
-    mid         = min(mid, num_items - 1);
-
-    if (val < input[mid])
-    {
-      upper_bound = mid;
-    }
-    else
-    {
-      lower_bound = mid + 1;
-    }
-  }
-
-  return lower_bound;
-}
-
 CUB_NAMESPACE_END
