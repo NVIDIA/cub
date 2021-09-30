@@ -1,28 +1,7 @@
-# Table of Contents
-
-1. [Contributing to CUB](#contributing-to-cub)
-1. [CMake Options](#cmake-options)
-1. [Development Model](#development-model)
-
-# Contributing to CUB
-
-CUB uses Github to manage all open-source development, including bug tracking,
-pull requests, and design discussions. CUB is tightly coupled to the Thrust
-project, and a compatible version of Thrust is required when working on the
-development version of CUB.
-
-To setup a CUB development branch, it is recommended to recursively clone the
-Thrust repository and use the CUB submodule at `dependencies/cub` to stage
-changes. CUB's tests and examples can be built by configuring Thrust with the
-CMake option `THRUST_INCLUDE_CUB_CMAKE=ON`.
-
-This process is described in more detail in Thrust's
-[CONTRIBUTING.md](https://github.com/NVIDIA/thrust/blob/main/CONTRIBUTING.md).
-
-The CMake options in the following section may be used to customize CUB's build
-process. Note that some of these are controlled by Thrust for compatibility and
-may not have an effect when building CUB through the Thrust build system. This
-is pointed out in the documentation below where applicable.
+---
+parent: Setup
+nav_order: 2
+---
 
 # CMake Options
 
@@ -92,7 +71,4 @@ The configuration options for CUB are:
     building CUB alone, and `OFF` when CUB is a subproject added via CMake's
     `add_subdirectory`.
 
-# Development Model
 
-CUB follows the same development model as Thrust, described
-[here](https://github.com/NVIDIA/thrust/blob/main/CONTRIBUTING.md#development-model).
