@@ -477,7 +477,7 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     // Constants
     enum
     {
-        PAIR_SIZE           = sizeof(ValueT) + sizeof(KeyT),
+        PAIR_SIZE           = static_cast<int>(sizeof(ValueT) + sizeof(KeyT)),
         TXN_WORD_SIZE       = 1 << Log2<PAIR_SIZE + 1>::VALUE,
         STATUS_WORD_SIZE    = TXN_WORD_SIZE - PAIR_SIZE,
 

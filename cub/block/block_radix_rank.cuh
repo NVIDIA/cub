@@ -174,7 +174,7 @@ private:
         BYTES_PER_COUNTER           = sizeof(DigitCounter),
         LOG_BYTES_PER_COUNTER       = Log2<BYTES_PER_COUNTER>::VALUE,
 
-        PACKING_RATIO               = sizeof(PackedCounter) / sizeof(DigitCounter),
+        PACKING_RATIO               = static_cast<int>(sizeof(PackedCounter) / sizeof(DigitCounter)),
         LOG_PACKING_RATIO           = Log2<PACKING_RATIO>::VALUE,
 
         LOG_COUNTER_LANES           = CUB_MAX((int(RADIX_BITS) - int(LOG_PACKING_RATIO)), 0),                // Always at least one lane
