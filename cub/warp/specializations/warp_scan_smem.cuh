@@ -93,7 +93,7 @@ struct WarpScanSmem
      ******************************************************************************/
 
     /// Constructor
-    __device__ __forceinline__ WarpScanSmem(
+    explicit __device__ __forceinline__ WarpScanSmem(
         TempStorage     &temp_storage)
     :
         temp_storage(temp_storage.Alias()),

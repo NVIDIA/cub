@@ -116,7 +116,7 @@ __global__ void WarpMergeSortTestKernel(unsigned int valid_segments,
   DataType thread_data[ItemsPerThread];
 
   const unsigned int thread_offset = ThreadsInWarp * ItemsPerThread * segment_id
-                                   + warp_sort.linear_tid * ItemsPerThread;
+                                   + warp_sort.get_linear_tid() * ItemsPerThread;
   const unsigned int valid_items = segment_sizes[segment_id];
 
   for (unsigned int item = 0; item < ItemsPerThread; item++)
@@ -125,7 +125,7 @@ __global__ void WarpMergeSortTestKernel(unsigned int valid_segments,
     thread_data[item] = item < valid_items ? data[idx] : DataType();
 
   }
-  WARP_SYNC(warp_sort.member_mask);
+  WARP_SYNC(warp_sort.get_member_mask());
 
   // Tests below use sequence to fill the data.
   // Therefore the following value should be greater than any that
@@ -230,9 +230,9 @@ __global__ void WarpMergeSortTestKernel(unsigned int valid_segments,
   KeyType thread_keys[ItemsPerThread];
   ValueType thread_values[ItemsPerThread];
 
-  const unsigned int thread_offset = ThreadsInWarp * ItemsPerThread *
-                                       segment_id +
-                                     warp_sort.linear_tid * ItemsPerThread;
+  const unsigned int thread_offset =
+    ThreadsInWarp * ItemsPerThread * segment_id +
+    warp_sort.get_linear_tid() * ItemsPerThread;
   const unsigned int valid_items = segment_sizes[segment_id];
 
   for (unsigned int item = 0; item < ItemsPerThread; item++)
@@ -241,7 +241,7 @@ __global__ void WarpMergeSortTestKernel(unsigned int valid_segments,
     thread_keys[item]      = item < valid_items ? keys[idx] : KeyType();
     thread_values[item]    = item < valid_items ? values[idx] : ValueType();
   }
-  WARP_SYNC(warp_sort.member_mask);
+  WARP_SYNC(warp_sort.get_member_mask());
 
   // Tests below use sequence to fill the data.
   // Therefore the following value should be greater than any that

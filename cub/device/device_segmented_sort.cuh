@@ -34,9 +34,10 @@
 
 #pragma once
 
-#include "../config.cuh"
-#include "../util_namespace.cuh"
-#include "dispatch/dispatch_segmented_sort.cuh"
+#include <cub/config.cuh>
+#include <cub/device/dispatch/dispatch_segmented_sort.cuh>
+#include <cub/util_namespace.cuh>
+
 
 CUB_NAMESPACE_BEGIN
 
@@ -61,6 +62,8 @@ CUB_NAMESPACE_BEGIN
  * groups and specialize sorting algorithms for each group. This approach leads
  * to better resource utilization in the presence of segment size imbalance or
  * moderate segment sizes (up to thousands of items).
+ * This algorithm is more complex and consists of multiple kernels. This fact
+ * leads to longer compilation times as well as larger binaries sizes.
  *
  * @par Supported Types
  * The algorithm has to satisfy the underlying algorithms restrictions. Radix
@@ -68,12 +71,6 @@ CUB_NAMESPACE_BEGIN
  * DeviceSegmentedSort can sort all of the built-in C++ numeric primitive types
  * (`unsigned char`, `int`, `double`, etc.) as well as CUDA's `__half` and
  * `__nv_bfloat16` 16-bit floating-point types.
- *
- * @par Floating-Point Special Cases
- * - Positive and negative zeros are considered equivalent, and will be treated
- *   as such in the output.
- * - No special handling is implemented for NaN values; these are sorted
- *   according to their bit representations after any transformations.
  *
  * @par A simple example
  * @code
@@ -125,8 +122,8 @@ struct DeviceSegmentedSort
    *        `num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
-   * - The contents of the input data are not altered by the sorting operation
-   * - When input a contiguous sequence of segments, a single sequence
+   * - The contents of the input data are not altered by the sorting operation.
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -174,9 +171,6 @@ struct DeviceSegmentedSort
    * @tparam KeyT
    *   <b>[inferred]</b> Key type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -215,8 +209,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   `num_segments`, such that `d_end_offsets[i] - 1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -228,7 +222,6 @@ struct DeviceSegmentedSort
    *   be printed to the console. Default is `false`.
    */
   template <typename KeyT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -236,8 +229,8 @@ struct DeviceSegmentedSort
            std::size_t &temp_storage_bytes,
            const KeyT *d_keys_in,
            KeyT *d_keys_out,
-           OffsetT num_items,
-           unsigned int num_segments,
+           int num_items,
+           int num_segments,
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
            cudaStream_t stream    = 0,
@@ -248,7 +241,7 @@ struct DeviceSegmentedSort
     using DispatchT = DispatchSegmentedSort<is_descending,
                                             KeyT,
                                             cub::NullType,
-                                            OffsetT,
+                                            int,
                                             BeginOffsetIteratorT,
                                             EndOffsetIteratorT>;
 
@@ -273,8 +266,8 @@ struct DeviceSegmentedSort
    *        `num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
-   * - The contents of the input data are not altered by the sorting operation
-   * - When input a contiguous sequence of segments, a single sequence
+   * - The contents of the input data are not altered by the sorting operation.
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments + 1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets + 1`).
@@ -322,9 +315,6 @@ struct DeviceSegmentedSort
    * @tparam KeyT
    *   <b>[inferred]</b> Key type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -363,8 +353,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i] - 1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -376,7 +366,6 @@ struct DeviceSegmentedSort
    *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -384,8 +373,8 @@ struct DeviceSegmentedSort
                      std::size_t &temp_storage_bytes,
                      const KeyT *d_keys_in,
                      KeyT *d_keys_out,
-                     OffsetT num_items,
-                     unsigned int num_segments,
+                     int num_items,
+                     int num_segments,
                      BeginOffsetIteratorT d_begin_offsets,
                      EndOffsetIteratorT d_end_offsets,
                      cudaStream_t stream    = 0,
@@ -396,7 +385,7 @@ struct DeviceSegmentedSort
     using DispatchT = DispatchSegmentedSort<is_descending,
                                             KeyT,
                                             cub::NullType,
-                                            OffsetT,
+                                            int,
                                             BeginOffsetIteratorT,
                                             EndOffsetIteratorT>;
 
@@ -429,7 +418,7 @@ struct DeviceSegmentedSort
    *   indicator within the DoubleBuffer wrapper to reference which of the two
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits and the targeted device architecture).
-   * - When input a contiguous sequence of segments, a single sequence
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -480,9 +469,6 @@ struct DeviceSegmentedSort
    * @tparam KeyT
    *   <b>[inferred]</b> Key type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -520,8 +506,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i] - 1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -533,15 +519,14 @@ struct DeviceSegmentedSort
    *   be printed to the console. Default is @p false.
    */
   template <typename KeyT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeys(void *d_temp_storage,
            std::size_t &temp_storage_bytes,
            DoubleBuffer<KeyT> &d_keys,
-           OffsetT num_items,
-           unsigned int num_segments,
+           int num_items,
+           int num_segments,
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
            cudaStream_t stream    = 0,
@@ -553,7 +538,7 @@ struct DeviceSegmentedSort
     using DispatchT = DispatchSegmentedSort<is_descending,
                                             KeyT,
                                             cub::NullType,
-                                            OffsetT,
+                                            int,
                                             BeginOffsetIteratorT,
                                             EndOffsetIteratorT>;
 
@@ -585,7 +570,7 @@ struct DeviceSegmentedSort
    *   indicator within the DoubleBuffer wrapper to reference which of the two
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits and the targeted device architecture).
-   * - When input a contiguous sequence of segments, a single sequence
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments + 1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets + 1`).
@@ -636,9 +621,6 @@ struct DeviceSegmentedSort
    * @tparam KeyT
    *   <b>[inferred]</b> Key type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -676,8 +658,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i] - 1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i] - 1<= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i] - 1<= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -689,15 +671,14 @@ struct DeviceSegmentedSort
    *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
   SortKeysDescending(void *d_temp_storage,
                      std::size_t &temp_storage_bytes,
                      DoubleBuffer<KeyT> &d_keys,
-                     OffsetT num_items,
-                     unsigned int num_segments,
+                     int num_items,
+                     int num_segments,
                      BeginOffsetIteratorT d_begin_offsets,
                      EndOffsetIteratorT d_end_offsets,
                      cudaStream_t stream    = 0,
@@ -709,7 +690,7 @@ struct DeviceSegmentedSort
     using DispatchT = DispatchSegmentedSort<is_descending,
                                             KeyT,
                                             cub::NullType,
-                                            OffsetT,
+                                            int,
                                             BeginOffsetIteratorT,
                                             EndOffsetIteratorT>;
 
@@ -733,8 +714,8 @@ struct DeviceSegmentedSort
    *        `num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
-   * - The contents of the input data are not altered by the sorting operation
-   * - When input a contiguous sequence of segments, a single sequence
+   * - The contents of the input data are not altered by the sorting operation.
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -783,9 +764,6 @@ struct DeviceSegmentedSort
    * @tparam KeyT
    *   <b>[inferred]</b> Key type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -824,8 +802,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -837,7 +815,6 @@ struct DeviceSegmentedSort
    *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -845,14 +822,14 @@ struct DeviceSegmentedSort
                  std::size_t &temp_storage_bytes,
                  const KeyT *d_keys_in,
                  KeyT *d_keys_out,
-                 OffsetT num_items,
-                 unsigned int num_segments,
+                 int num_items,
+                 int num_segments,
                  BeginOffsetIteratorT d_begin_offsets,
                  EndOffsetIteratorT d_end_offsets,
                  cudaStream_t stream    = 0,
                  bool debug_synchronous = false)
   {
-    return SortKeys<KeyT, OffsetT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+    return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
       d_keys_in,
@@ -870,8 +847,8 @@ struct DeviceSegmentedSort
    *        `num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
-   * - The contents of the input data are not altered by the sorting operation
-   * - When input a contiguous sequence of segments, a single sequence
+   * - The contents of the input data are not altered by the sorting operation.
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -920,9 +897,6 @@ struct DeviceSegmentedSort
    * @tparam KeyT
    *   <b>[inferred]</b> Key type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -961,8 +935,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -974,7 +948,6 @@ struct DeviceSegmentedSort
    *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -982,15 +955,14 @@ struct DeviceSegmentedSort
                            std::size_t &temp_storage_bytes,
                            const KeyT *d_keys_in,
                            KeyT *d_keys_out,
-                           OffsetT num_items,
-                           unsigned int num_segments,
+                           int num_items,
+                           int num_segments,
                            BeginOffsetIteratorT d_begin_offsets,
                            EndOffsetIteratorT d_end_offsets,
                            cudaStream_t stream    = 0,
                            bool debug_synchronous = false)
   {
     return SortKeysDescending<KeyT,
-                              OffsetT,
                               BeginOffsetIteratorT,
                               EndOffsetIteratorT>(d_temp_storage,
                                                   temp_storage_bytes,
@@ -1017,7 +989,7 @@ struct DeviceSegmentedSort
    *   indicator within the DoubleBuffer wrapper to reference which of the two
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits and the targeted device architecture).
-   * - When input a contiguous sequence of segments, a single sequence
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -1069,9 +1041,6 @@ struct DeviceSegmentedSort
    * @tparam KeyT
    *   <b>[inferred]</b> Key type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -1109,8 +1078,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i] - 1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i] - 1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -1122,21 +1091,20 @@ struct DeviceSegmentedSort
    *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortKeys(void *d_temp_storage,
                  std::size_t &temp_storage_bytes,
                  DoubleBuffer<KeyT> &d_keys,
-                 OffsetT num_items,
-                 unsigned int num_segments,
+                 int num_items,
+                 int num_segments,
                  BeginOffsetIteratorT d_begin_offsets,
                  EndOffsetIteratorT d_end_offsets,
                  cudaStream_t stream    = 0,
                  bool debug_synchronous = false)
   {
-    return SortKeys<KeyT, OffsetT, BeginOffsetIteratorT, EndOffsetIteratorT>(
+    return SortKeys<KeyT, BeginOffsetIteratorT, EndOffsetIteratorT>(
       d_temp_storage,
       temp_storage_bytes,
       d_keys,
@@ -1161,7 +1129,7 @@ struct DeviceSegmentedSort
    *   indicator within the DoubleBuffer wrapper to reference which of the two
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits and the targeted device architecture).
-   * - When input a contiguous sequence of segments, a single sequence
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -1213,9 +1181,6 @@ struct DeviceSegmentedSort
    * @tparam KeyT
    *   <b>[inferred]</b> Key type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -1254,7 +1219,7 @@ struct DeviceSegmentedSort
    *   @p num_segments, such that <tt>d_end_offsets[i]-1</tt> is the last
    *   element of the <em>i</em><sup>th</sup> data segment in `d_keys_*` and
    *   `d_values_*`. If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   i-th segment is considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -1266,22 +1231,20 @@ struct DeviceSegmentedSort
    *   to be printed to the console. Default is @p false.
    */
   template <typename KeyT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
   StableSortKeysDescending(void *d_temp_storage,
                            std::size_t &temp_storage_bytes,
                            DoubleBuffer<KeyT> &d_keys,
-                           OffsetT num_items,
-                           unsigned int num_segments,
+                           int num_items,
+                           int num_segments,
                            BeginOffsetIteratorT d_begin_offsets,
                            EndOffsetIteratorT d_end_offsets,
                            cudaStream_t stream    = 0,
                            bool debug_synchronous = false)
   {
     return SortKeysDescending<KeyT,
-                              OffsetT,
                               BeginOffsetIteratorT,
                               EndOffsetIteratorT>(d_temp_storage,
                                                   temp_storage_bytes,
@@ -1306,8 +1269,8 @@ struct DeviceSegmentedSort
    *        required.
    *
    * @par
-   * - The contents of the input data are not altered by the sorting operation
-   * - When input a contiguous sequence of segments, a single sequence
+   * - The contents of the input data are not altered by the sorting operation.
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -1364,9 +1327,6 @@ struct DeviceSegmentedSort
    * @tparam ValueT
    *   <b>[inferred]</b> Value type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -1413,8 +1373,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -1427,7 +1387,6 @@ struct DeviceSegmentedSort
    */
   template <typename KeyT,
             typename ValueT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -1437,8 +1396,8 @@ struct DeviceSegmentedSort
            KeyT *d_keys_out,
            const ValueT *d_values_in,
            ValueT *d_values_out,
-           OffsetT num_items,
-           unsigned int num_segments,
+           int num_items,
+           int num_segments,
            BeginOffsetIteratorT d_begin_offsets,
            EndOffsetIteratorT d_end_offsets,
            cudaStream_t stream = 0,
@@ -1449,7 +1408,7 @@ struct DeviceSegmentedSort
     using DispatchT = DispatchSegmentedSort<is_descending,
                                             KeyT,
                                             ValueT,
-                                            OffsetT,
+                                            int,
                                             BeginOffsetIteratorT,
                                             EndOffsetIteratorT>;
 
@@ -1474,8 +1433,8 @@ struct DeviceSegmentedSort
    *        `2*num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
-   * - The contents of the input data are not altered by the sorting operation
-   * - When input a contiguous sequence of segments, a single sequence
+   * - The contents of the input data are not altered by the sorting operation.
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -1532,9 +1491,6 @@ struct DeviceSegmentedSort
    * @tparam ValueT
    *   <b>[inferred]</b> Value type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -1581,8 +1537,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -1595,7 +1551,6 @@ struct DeviceSegmentedSort
    */
   template <typename KeyT,
             typename ValueT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -1605,8 +1560,8 @@ struct DeviceSegmentedSort
                       KeyT *d_keys_out,
                       const ValueT *d_values_in,
                       ValueT *d_values_out,
-                      OffsetT num_items,
-                      unsigned int num_segments,
+                      int num_items,
+                      int num_segments,
                       BeginOffsetIteratorT d_begin_offsets,
                       EndOffsetIteratorT d_end_offsets,
                       cudaStream_t stream    = 0,
@@ -1617,7 +1572,7 @@ struct DeviceSegmentedSort
     using DispatchT = DispatchSegmentedSort<is_descending,
                                             KeyT,
                                             ValueT,
-                                            OffsetT,
+                                            int,
                                             BeginOffsetIteratorT,
                                             EndOffsetIteratorT>;
 
@@ -1652,7 +1607,7 @@ struct DeviceSegmentedSort
    *   within each DoubleBuffer wrapper to reference which of the two buffers
    *   now contains the sorted output sequence (a function of the number of key bits
    *   specified and the targeted device architecture).
-   * - When input a contiguous sequence of segments, a single sequence
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -1712,9 +1667,6 @@ struct DeviceSegmentedSort
    * @tparam ValueT
    *   <b>[inferred]</b> Value type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -1757,8 +1709,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -1771,7 +1723,6 @@ struct DeviceSegmentedSort
    */
   template <typename KeyT,
             typename ValueT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -1779,8 +1730,8 @@ struct DeviceSegmentedSort
             std::size_t &temp_storage_bytes,
             DoubleBuffer<KeyT> &d_keys,
             DoubleBuffer<ValueT> &d_values,
-            OffsetT num_items,
-            unsigned int num_segments,
+            int num_items,
+            int num_segments,
             BeginOffsetIteratorT d_begin_offsets,
             EndOffsetIteratorT d_end_offsets,
             cudaStream_t stream    = 0,
@@ -1791,7 +1742,7 @@ struct DeviceSegmentedSort
     using DispatchT = DispatchSegmentedSort<is_descending,
                                             KeyT,
                                             ValueT,
-                                            OffsetT,
+                                            int,
                                             BeginOffsetIteratorT,
                                             EndOffsetIteratorT>;
 
@@ -1823,7 +1774,7 @@ struct DeviceSegmentedSort
    *   indicator within each DoubleBuffer wrapper to reference which of the two
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits specified and the targeted device architecture).
-   * - When input a contiguous sequence of segments, a single sequence
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length <tt>num_segments+1</tt>) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as <tt>segment_offsets+1</tt>).
@@ -1883,9 +1834,6 @@ struct DeviceSegmentedSort
    * @tparam ValueT
    *   <b>[inferred]</b> Value type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -1928,8 +1876,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -1942,7 +1890,6 @@ struct DeviceSegmentedSort
    */
   template <typename KeyT,
             typename ValueT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -1950,8 +1897,8 @@ struct DeviceSegmentedSort
                       std::size_t &temp_storage_bytes,
                       DoubleBuffer<KeyT> &d_keys,
                       DoubleBuffer<ValueT> &d_values,
-                      OffsetT num_items,
-                      unsigned int num_segments,
+                      int num_items,
+                      int num_segments,
                       BeginOffsetIteratorT d_begin_offsets,
                       EndOffsetIteratorT d_end_offsets,
                       cudaStream_t stream    = 0,
@@ -1962,7 +1909,7 @@ struct DeviceSegmentedSort
     using DispatchT = DispatchSegmentedSort<is_descending,
                                             KeyT,
                                             ValueT,
-                                            OffsetT,
+                                            int,
                                             BeginOffsetIteratorT,
                                             EndOffsetIteratorT>;
 
@@ -1984,8 +1931,8 @@ struct DeviceSegmentedSort
    *        `2*num_items + 2*num_segments` auxiliary storage required.
    *
    * @par
-   * - The contents of the input data are not altered by the sorting operation
-   * - When input a contiguous sequence of segments, a single sequence
+   * - The contents of the input data are not altered by the sorting operation.
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -2043,9 +1990,6 @@ struct DeviceSegmentedSort
    * @tparam ValueT
    *   <b>[inferred]</b> Value type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -2091,8 +2035,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -2105,7 +2049,6 @@ struct DeviceSegmentedSort
    */
   template <typename KeyT,
             typename ValueT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -2115,8 +2058,8 @@ struct DeviceSegmentedSort
                   KeyT *d_keys_out,
                   const ValueT *d_values_in,
                   ValueT *d_values_out,
-                  OffsetT num_items,
-                  unsigned int num_segments,
+                  int num_items,
+                  int num_segments,
                   BeginOffsetIteratorT d_begin_offsets,
                   EndOffsetIteratorT d_end_offsets,
                   cudaStream_t stream    = 0,
@@ -2124,7 +2067,6 @@ struct DeviceSegmentedSort
   {
     return SortPairs<KeyT,
                      ValueT,
-                     OffsetT,
                      BeginOffsetIteratorT,
                      EndOffsetIteratorT>(d_temp_storage,
                                          temp_storage_bytes,
@@ -2146,8 +2088,8 @@ struct DeviceSegmentedSort
    *        storage required.
    *
    * @par
-   * - The contents of the input data are not altered by the sorting operation
-   * - When input a contiguous sequence of segments, a single sequence
+   * - The contents of the input data are not altered by the sorting operation.
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -2205,9 +2147,6 @@ struct DeviceSegmentedSort
    * @tparam ValueT
    *   <b>[inferred]</b> Value type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -2254,8 +2193,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -2268,7 +2207,6 @@ struct DeviceSegmentedSort
    */
   template <typename KeyT,
             typename ValueT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -2278,8 +2216,8 @@ struct DeviceSegmentedSort
                             KeyT *d_keys_out,
                             const ValueT *d_values_in,
                             ValueT *d_values_out,
-                            OffsetT num_items,
-                            unsigned int num_segments,
+                            int num_items,
+                            int num_segments,
                             BeginOffsetIteratorT d_begin_offsets,
                             EndOffsetIteratorT d_end_offsets,
                             cudaStream_t stream    = 0,
@@ -2287,7 +2225,6 @@ struct DeviceSegmentedSort
   {
     return SortPairsDescending<KeyT,
                                ValueT,
-                               OffsetT,
                                BeginOffsetIteratorT,
                                EndOffsetIteratorT>(d_temp_storage,
                                                    temp_storage_bytes,
@@ -2318,7 +2255,7 @@ struct DeviceSegmentedSort
    *   indicator within each DoubleBuffer wrapper to reference which of the two
    *   buffers now contains the sorted output sequence (a function of the number
    *   of key bits specified and the targeted device architecture).
-   * - When input a contiguous sequence of segments, a single sequence
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -2379,9 +2316,6 @@ struct DeviceSegmentedSort
    * @tparam ValueT
    *   <b>[inferred]</b> Value type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -2424,8 +2358,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -2438,7 +2372,6 @@ struct DeviceSegmentedSort
    */
   template <typename KeyT,
             typename ValueT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -2446,8 +2379,8 @@ struct DeviceSegmentedSort
                   std::size_t &temp_storage_bytes,
                   DoubleBuffer<KeyT> &d_keys,
                   DoubleBuffer<ValueT> &d_values,
-                  OffsetT num_items,
-                  unsigned int num_segments,
+                  int num_items,
+                  int num_segments,
                   BeginOffsetIteratorT d_begin_offsets,
                   EndOffsetIteratorT d_end_offsets,
                   cudaStream_t stream    = 0,
@@ -2455,7 +2388,6 @@ struct DeviceSegmentedSort
   {
     return SortPairs<KeyT,
                      ValueT,
-                     OffsetT,
                      BeginOffsetIteratorT,
                      EndOffsetIteratorT>(d_temp_storage,
                                          temp_storage_bytes,
@@ -2484,7 +2416,7 @@ struct DeviceSegmentedSort
    *   within each DoubleBuffer wrapper to reference which of the two buffers
    *   now contains the sorted output sequence (a function of the number of key bits
    *   specified and the targeted device architecture).
-   * - When input a contiguous sequence of segments, a single sequence
+   * - When the input is a contiguous sequence of segments, a single sequence
    *   @p segment_offsets (of length `num_segments+1`) can be aliased
    *   for both the @p d_begin_offsets and @p d_end_offsets parameters (where
    *   the latter is specified as `segment_offsets+1`).
@@ -2544,9 +2476,6 @@ struct DeviceSegmentedSort
    * @tparam ValueT
    *   <b>[inferred]</b> Value type
    *
-   * @tparam OffsetT
-   *   <b>[inferred]</b> Integer type for global offsets
-   *
    * @tparam BeginOffsetIteratorT
    *   <b>[inferred]</b> Random-access input iterator type for reading segment
    *   beginning offsets \iterator
@@ -2589,8 +2518,8 @@ struct DeviceSegmentedSort
    *   Random-access input iterator to the sequence of ending offsets of length
    *   @p num_segments, such that `d_end_offsets[i]-1` is the last element of
    *   the <em>i</em><sup>th</sup> data segment in `d_keys_*` and `d_values_*`.
-   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the
-   *   <em>i</em><sup>th</sup> is considered empty.
+   *   If `d_end_offsets[i]-1 <= d_begin_offsets[i]`, the i-th segment is
+   *   considered empty.
    *
    * @param[in] stream
    *   <b>[optional]</b> CUDA stream to launch kernels within. Default is
@@ -2603,7 +2532,6 @@ struct DeviceSegmentedSort
    */
   template <typename KeyT,
             typename ValueT,
-            typename OffsetT,
             typename BeginOffsetIteratorT,
             typename EndOffsetIteratorT>
   CUB_RUNTIME_FUNCTION static cudaError_t
@@ -2611,8 +2539,8 @@ struct DeviceSegmentedSort
                             std::size_t &temp_storage_bytes,
                             DoubleBuffer<KeyT> &d_keys,
                             DoubleBuffer<ValueT> &d_values,
-                            OffsetT num_items,
-                            unsigned int num_segments,
+                            int num_items,
+                            int num_segments,
                             BeginOffsetIteratorT d_begin_offsets,
                             EndOffsetIteratorT d_end_offsets,
                             cudaStream_t stream    = 0,
@@ -2620,7 +2548,6 @@ struct DeviceSegmentedSort
   {
     return SortPairsDescending<KeyT,
                                ValueT,
-                               OffsetT,
                                BeginOffsetIteratorT,
                                EndOffsetIteratorT>(d_temp_storage,
                                                    temp_storage_bytes,

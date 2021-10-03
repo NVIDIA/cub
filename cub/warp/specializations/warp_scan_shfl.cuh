@@ -98,7 +98,8 @@ struct WarpScanShfl
     //---------------------------------------------------------------------
 
     /// Constructor
-    __device__ __forceinline__ WarpScanShfl(TempStorage & /*temp_storage*/)
+    explicit __device__ __forceinline__
+    WarpScanShfl(TempStorage & /*temp_storage*/)
         : lane_id(LaneId())
         , warp_id(IS_ARCH_WARP ? 0 : (lane_id / LOGICAL_WARP_THREADS))
         , member_mask(WarpMask<LOGICAL_WARP_THREADS, PTX_ARCH>(warp_id))

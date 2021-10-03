@@ -27,11 +27,11 @@
 
 #pragma once
 
-#include "../config.cuh"
-#include "../util_type.cuh"
-#include "../warp/warp_load.cuh"
-#include "../warp/warp_store.cuh"
-#include "../warp/warp_merge_sort.cuh"
+#include <cub/config.cuh>
+#include <cub/util_type.cuh>
+#include <cub/warp/warp_load.cuh>
+#include <cub/warp/warp_merge_sort.cuh>
+#include <cub/warp/warp_store.cuh>
 
 #include <thrust/system/cuda/detail/core/util.h>
 
@@ -56,11 +56,9 @@ struct AgentSubWarpMergeSortPolicy
   static constexpr cub::WarpStoreAlgorithm STORE_ALGORITHM  = STORE_ALGORITHM_ARG;
 };
 
-
-template <
-  int       BLOCK_THREADS_ARG,
-  typename  SmallPolicy,
-  typename  MediumPolicy>
+template <int BLOCK_THREADS_ARG,
+          typename SmallPolicy,
+          typename MediumPolicy>
 struct AgentSmallAndMediumSegmentedSortPolicy
 {
   static constexpr int BLOCK_THREADS = BLOCK_THREADS_ARG;
@@ -75,6 +73,30 @@ struct AgentSmallAndMediumSegmentedSortPolicy
 };
 
 
+/**
+ * @brief AgentSubWarpSort implements a sub-warp merge sort.
+ *
+ * This agent can work with any power of two number of threads, not exceeding
+ * 32. The number of threads is defined in the `PolicyT::WARP_THREADS`. Virtual
+ * warp of `PolicyT::WARP_THREADS` will efficiently load data using
+ * `PolicyT::LOAD_ALGORITHM`, sort it using `WarpMergeSort`, and store it back
+ * using `PolicyT::STORE_ALGORITHM`.
+ *
+ * @tparam IS_DESCENDING
+ *   Whether or not the sorted-order is high-to-low
+ *
+ * @tparam PolicyT
+ *   Chained tuning policy
+ *
+ * @tparam KeyT
+ *   Key type
+ *
+ * @tparam ValueT
+ *   Value type
+ *
+ * @tparam OffsetT
+ *   Signed integer type for global offsets
+ */
 template <bool IS_DESCENDING,
           typename PolicyT,
           typename KeyT,
@@ -83,27 +105,41 @@ template <bool IS_DESCENDING,
 class AgentSubWarpSort
 {
 public:
-  static constexpr bool KEYS_ONLY = cub::Equals<ValueT, cub::NullType>::VALUE;
+  static constexpr bool KEYS_ONLY = std::is_same<ValueT, cub::NullType>::value;
 
   using WarpMergeSortT =
     WarpMergeSort<KeyT, PolicyT::ITEMS_PER_THREAD, PolicyT::WARP_THREADS, ValueT>;
 
-  using KeysLoadIt  = typename THRUST_NS_QUALIFIER::cuda_cub::core::LoadIterator<PolicyT, const KeyT*>::type;
-  using ItemsLoadIt = typename THRUST_NS_QUALIFIER::cuda_cub::core::LoadIterator<PolicyT, const ValueT*>::type;
+  using KeysLoadItT = typename THRUST_NS_QUALIFIER::cuda_cub::core::
+    LoadIterator<PolicyT, const KeyT *>::type;
+  using ItemsLoadItT = typename THRUST_NS_QUALIFIER::cuda_cub::core::
+    LoadIterator<PolicyT, const ValueT *>::type;
 
-  using WarpLoadKeys  = cub::WarpLoad<KeyT, PolicyT::ITEMS_PER_THREAD, PolicyT::LOAD_ALGORITHM, PolicyT::WARP_THREADS>;
-  using WarpLoadItems = cub::WarpLoad<ValueT, PolicyT::ITEMS_PER_THREAD, PolicyT::LOAD_ALGORITHM, PolicyT::WARP_THREADS>;
+  using WarpLoadKeysT  = cub::WarpLoad<KeyT,
+                                      PolicyT::ITEMS_PER_THREAD,
+                                      PolicyT::LOAD_ALGORITHM,
+                                      PolicyT::WARP_THREADS>;
+  using WarpLoadItemsT = cub::WarpLoad<ValueT,
+                                       PolicyT::ITEMS_PER_THREAD,
+                                       PolicyT::LOAD_ALGORITHM,
+                                       PolicyT::WARP_THREADS>;
 
-  using WarpStoreKeys  = cub::WarpStore<KeyT, PolicyT::ITEMS_PER_THREAD, PolicyT::STORE_ALGORITHM, PolicyT::WARP_THREADS>;
-  using WarpStoreItems = cub::WarpStore<ValueT, PolicyT::ITEMS_PER_THREAD, PolicyT::STORE_ALGORITHM, PolicyT::WARP_THREADS>;
+  using WarpStoreKeysT  = cub::WarpStore<KeyT,
+                                         PolicyT::ITEMS_PER_THREAD,
+                                         PolicyT::STORE_ALGORITHM,
+                                         PolicyT::WARP_THREADS>;
+  using WarpStoreItemsT = cub::WarpStore<ValueT,
+                                         PolicyT::ITEMS_PER_THREAD,
+                                         PolicyT::STORE_ALGORITHM,
+                                         PolicyT::WARP_THREADS>;
 
   union _TempStorage
   {
-    typename WarpLoadKeys::TempStorage load_keys;
-    typename WarpLoadItems::TempStorage load_items;
+    typename WarpLoadKeysT::TempStorage load_keys;
+    typename WarpLoadItemsT::TempStorage load_items;
     typename WarpMergeSortT::TempStorage sort;
-    typename WarpStoreKeys::TempStorage store_keys;
-    typename WarpStoreItems::TempStorage store_items;
+    typename WarpStoreKeysT::TempStorage store_keys;
+    typename WarpStoreItemsT::TempStorage store_items;
   };
 
   /// Alias wrapper allowing storage to be unioned
@@ -120,9 +156,9 @@ public:
 
   __device__ __forceinline__
   void ProcessSegment(int segment_size,
-                      KeysLoadIt keys_input,
+                      KeysLoadItT keys_input,
                       KeyT *keys_output,
-                      ItemsLoadIt values_input,
+                      ItemsLoadItT values_input,
                       ValueT *values_output)
   {
     auto binary_op = [] (KeyT lhs, KeyT rhs) -> bool
@@ -141,7 +177,7 @@ public:
 
     if (segment_size < 3)
     {
-      ShortCircuit(warp_merge_sort.linear_tid,
+      ShortCircuit(warp_merge_sort.get_linear_tid(),
                    segment_size,
                    keys_input,
                    keys_output,
@@ -163,43 +199,45 @@ public:
                                                      : Traits<KeyT>::MAX_KEY;
       KeyT oob_default = reinterpret_cast<KeyT &>(default_key_bits);
 
-      WarpLoadKeys(storage.load_keys)
+      WarpLoadKeysT(storage.load_keys)
         .Load(keys_input, keys, segment_size, oob_default);
-      WARP_SYNC(warp_merge_sort.member_mask);
+      WARP_SYNC(warp_merge_sort.get_member_mask());
 
       if (!KEYS_ONLY)
       {
-        WarpLoadItems(storage.load_items)
+        WarpLoadItemsT(storage.load_items)
           .Load(values_input, values, segment_size);
 
-        WARP_SYNC(warp_merge_sort.member_mask);
+        WARP_SYNC(warp_merge_sort.get_member_mask());
       }
 
       warp_merge_sort.Sort(keys, values, binary_op, segment_size, oob_default);
-      WARP_SYNC(warp_merge_sort.member_mask);
+      WARP_SYNC(warp_merge_sort.get_member_mask());
 
-      WarpStoreKeys(storage.store_keys).Store(keys_output, keys, segment_size);
+      WarpStoreKeysT(storage.store_keys).Store(keys_output, keys, segment_size);
 
       if (!KEYS_ONLY)
       {
-        WARP_SYNC(warp_merge_sort.member_mask);
-        WarpStoreItems(storage.store_items)
+        WARP_SYNC(warp_merge_sort.get_member_mask());
+        WarpStoreItemsT(storage.store_items)
           .Store(values_output, values, segment_size);
       }
     }
   }
 
 private:
+  /**
+   * This method implements a shortcut for sorting less than three items.
+   * Only the first thread of a virtual warp is used for soring.
+   */
   template <typename CompareOpT>
-  __device__ __forceinline__
-  void ShortCircuit(
-    unsigned int linear_tid,
-    OffsetT segment_size,
-    KeysLoadIt keys_input,
-    KeyT *keys_output,
-    ItemsLoadIt values_input,
-    ValueT *values_output,
-    CompareOpT binary_op)
+  __device__ __forceinline__ void ShortCircuit(unsigned int linear_tid,
+                                               OffsetT segment_size,
+                                               KeysLoadItT keys_input,
+                                               KeyT *keys_output,
+                                               ItemsLoadItT values_input,
+                                               ValueT *values_output,
+                                               CompareOpT binary_op)
   {
     if (segment_size == 1)
     {

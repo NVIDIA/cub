@@ -28,54 +28,57 @@
 #pragma once
 
 #include <iterator>
+#include <type_traits>
 
-#include "single_pass_scan_operators.cuh"
-#include "../block/block_load.cuh"
-#include "../block/block_store.cuh"
-#include "../block/block_scan.cuh"
-#include "../block/block_exchange.cuh"
-#include "../block/block_discontinuity.cuh"
-#include "../config.cuh"
-#include "../grid/grid_queue.cuh"
-#include "../iterator/cache_modified_input_iterator.cuh"
+#include <cub/agent/single_pass_scan_operators.cuh>
+#include <cub/block/block_discontinuity.cuh>
+#include <cub/block/block_exchange.cuh>
+#include <cub/block/block_load.cuh>
+#include <cub/block/block_scan.cuh>
+#include <cub/block/block_store.cuh>
+#include <cub/config.cuh>
+#include <cub/iterator/cache_modified_input_iterator.cuh>
+
 
 CUB_NAMESPACE_BEGIN
+
 
 /******************************************************************************
  * Tuning policy types
  ******************************************************************************/
 
-template <
-    int                         _BLOCK_THREADS,                 ///< Threads per thread block
-    int                         _ITEMS_PER_THREAD,              ///< Items per thread (per tile of input)
-    BlockLoadAlgorithm          _LOAD_ALGORITHM,                ///< The BlockLoad algorithm to use
-    CacheLoadModifier           _LOAD_MODIFIER,                 ///< Cache load modifier for reading input elements
-    BlockScanAlgorithm          _SCAN_ALGORITHM>                ///< The BlockScan algorithm to use
+template <int _BLOCK_THREADS,
+          int _ITEMS_PER_THREAD,
+          BlockLoadAlgorithm _LOAD_ALGORITHM,
+          CacheLoadModifier _LOAD_MODIFIER,
+          BlockScanAlgorithm _SCAN_ALGORITHM>
 struct AgentThreeWayPartitionPolicy
 {
-    enum
-    {
-        BLOCK_THREADS           = _BLOCK_THREADS,               ///< Threads per thread block
-        ITEMS_PER_THREAD        = _ITEMS_PER_THREAD,            ///< Items per thread (per tile of input)
-    };
-
-    static const BlockLoadAlgorithm     LOAD_ALGORITHM          = _LOAD_ALGORITHM;      ///< The BlockLoad algorithm to use
-    static const CacheLoadModifier      LOAD_MODIFIER           = _LOAD_MODIFIER;       ///< Cache load modifier for reading input elements
-    static const BlockScanAlgorithm     SCAN_ALGORITHM          = _SCAN_ALGORITHM;      ///< The BlockScan algorithm to use
+  constexpr static int BLOCK_THREADS                 = _BLOCK_THREADS;
+  constexpr static int ITEMS_PER_THREAD              = _ITEMS_PER_THREAD;
+  constexpr static BlockLoadAlgorithm LOAD_ALGORITHM = _LOAD_ALGORITHM;
+  constexpr static CacheLoadModifier LOAD_MODIFIER   = _LOAD_MODIFIER;
+  constexpr static BlockScanAlgorithm SCAN_ALGORITHM = _SCAN_ALGORITHM;
 };
 
 
-
-
-template <
-  typename    PolicyT,
-  typename    InputIteratorT,
-  typename    FirstOutputIteratorT,
-  typename    SecondOutputIteratorT,
-  typename    UnselectedOutputIteratorT,
-  typename    SelectFirstPartOp,
-  typename    SelectSecondPartOp,
-  typename    OffsetT>
+/**
+ * \brief Implements a device-wide three-way partitioning
+ *
+ * Splits input data into three parts based on the selection functors. If the
+ * first functor selects an item, the algorithm places it in the first part.
+ * Otherwise, if the second functor selects an item, the algorithm places it in
+ * the second part. If both functors don't select an item, the algorithm places
+ * it into the unselected part.
+ */
+template <typename PolicyT,
+          typename InputIteratorT,
+          typename FirstOutputIteratorT,
+          typename SecondOutputIteratorT,
+          typename UnselectedOutputIteratorT,
+          typename SelectFirstPartOp,
+          typename SelectSecondPartOp,
+          typename OffsetT>
 struct AgentThreeWayPartition
 {
   //---------------------------------------------------------------------
@@ -83,20 +86,20 @@ struct AgentThreeWayPartition
   //---------------------------------------------------------------------
 
   // The input value type
-  typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+  using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
 
   // Tile status descriptor interface type
-  typedef cub::ScanTileState<OffsetT> ScanTileStateT;
+  using ScanTileStateT = cub::ScanTileState<OffsetT>;
 
   // Constants
   constexpr static int BLOCK_THREADS = PolicyT::BLOCK_THREADS;
   constexpr static int ITEMS_PER_THREAD = PolicyT::ITEMS_PER_THREAD;
   constexpr static int TILE_ITEMS = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-  using WrappedInputIteratorT = typename cub::If<
-    cub::IsPointer<InputIteratorT>::VALUE,
+  using WrappedInputIteratorT = typename std::conditional<
+    std::is_pointer<InputIteratorT>::value,
     cub::CacheModifiedInputIterator<PolicyT::LOAD_MODIFIER, InputT, OffsetT>,
-    InputIteratorT>::Type;
+    InputIteratorT>::type;
 
   // Parameterized BlockLoad type for input data
   using BlockLoadT = cub::BlockLoad<InputT,
@@ -120,8 +123,11 @@ struct AgentThreeWayPartition
   {
     struct ScanStorage
     {
-      typename BlockScanT::TempStorage                scan;           // Smem needed for tile scanning
-      typename TilePrefixCallbackOpT::TempStorage     prefix;         // Smem needed for cooperative prefix callback
+      // Smem needed for tile scanning
+      typename BlockScanT::TempStorage scan;
+
+      // Smem needed for cooperative prefix callback
+      typename TilePrefixCallbackOpT::TempStorage prefix;
     } scan_storage;
 
     // Smem needed for loading items
@@ -178,23 +184,26 @@ struct AgentThreeWayPartition
   //---------------------------------------------------------------------
 
   template <bool IS_LAST_TILE>
-  __device__ __forceinline__ void Initialize(
-    OffsetT                       num_tile_items,
-    InputT                        (&items)[ITEMS_PER_THREAD],
-    OffsetT                       (&first_items_selection_flags)[ITEMS_PER_THREAD],
-    OffsetT                       (&second_items_selection_flags)[ITEMS_PER_THREAD])
+  __device__ __forceinline__ void
+  Initialize(OffsetT num_tile_items,
+             InputT (&items)[ITEMS_PER_THREAD],
+             OffsetT (&first_items_selection_flags)[ITEMS_PER_THREAD],
+             OffsetT (&second_items_selection_flags)[ITEMS_PER_THREAD])
   {
-#pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
       // Out-of-bounds items are selection_flags
-      first_items_selection_flags[ITEM] = 1;
+      first_items_selection_flags[ITEM]  = 1;
       second_items_selection_flags[ITEM] = 1;
 
-      if (!IS_LAST_TILE || (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_tile_items))
+      if (!IS_LAST_TILE ||
+          (OffsetT(threadIdx.x * ITEMS_PER_THREAD) + ITEM < num_tile_items))
       {
         first_items_selection_flags[ITEM] = select_first_part_op(items[ITEM]);
-        second_items_selection_flags[ITEM] = first_items_selection_flags[ITEM] ? 0 : select_second_part_op(items[ITEM]);
+        second_items_selection_flags[ITEM] =
+          first_items_selection_flags[ITEM]
+            ? 0
+            : select_second_part_op(items[ITEM]);
       }
     }
   }
@@ -213,13 +222,12 @@ struct AgentThreeWayPartition
     OffsetT         num_second_selections_prefix,
     OffsetT         num_rejected_prefix)
   {
-    __syncthreads();
+    CTA_SYNC();
 
     int first_item_end = num_first_tile_selections;
     int second_item_end = first_item_end + num_second_tile_selections;
 
     // Scatter items to shared memory (rejections first)
-#pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
       int item_idx = (threadIdx.x * ITEMS_PER_THREAD) + ITEM;
@@ -242,8 +250,9 @@ struct AgentThreeWayPartition
         else
         {
           // Medium item
-          int local_selection_idx = (first_items_selection_indices[ITEM] - num_first_selections_prefix)
-                                  + (second_items_selection_indices[ITEM] - num_second_selections_prefix);
+          int local_selection_idx =
+           (first_items_selection_indices[ITEM] - num_first_selections_prefix)
+         + (second_items_selection_indices[ITEM] - num_second_selections_prefix);
           local_scatter_offset = second_item_end + item_idx - local_selection_idx;
         }
 
@@ -251,10 +260,9 @@ struct AgentThreeWayPartition
       }
     }
 
-    __syncthreads();
+    CTA_SYNC();
 
     // Gather items from shared memory and scatter to global
-#pragma unroll
     for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
     {
       int item_idx = (ITEM * BLOCK_THREADS) + threadIdx.x;
@@ -287,29 +295,36 @@ struct AgentThreeWayPartition
 
 
   /**
-   * Process first tile of input (dynamic chained scan).  Returns the running count of selections (including this tile)
+   * Process first tile of input (dynamic chained scan).
+   * Returns the running count of selections (including this tile)
+   *
+   * @param num_tile_items Number of input items comprising this tile
+   * @param tile_offset Tile offset
+   * @param first_tile_state Global tile state descriptor
+   * @param second_tile_state Global tile state descriptor
    */
   template <bool IS_LAST_TILE>
-  __device__ __forceinline__ void ConsumeFirstTile(
-    int                 num_tile_items,     ///< Number of input items comprising this tile
-    OffsetT             tile_offset,        ///< Tile offset
-    ScanTileStateT&     first_tile_state,   ///< Global tile state descriptor
-    ScanTileStateT&     second_tile_state,   ///< Global tile state descriptor
-    OffsetT&            first_items,
-    OffsetT&            second_items)
+  __device__ __forceinline__ void
+  ConsumeFirstTile(int num_tile_items,
+                   OffsetT tile_offset,
+                   ScanTileStateT &first_tile_state,
+                   ScanTileStateT &second_tile_state,
+                   OffsetT &first_items,
+                   OffsetT &second_items)
   {
-    InputT      items[ITEMS_PER_THREAD];
+    InputT items[ITEMS_PER_THREAD];
 
-    OffsetT     first_items_selection_flags[ITEMS_PER_THREAD];
-    OffsetT     first_items_selection_indices[ITEMS_PER_THREAD];
+    OffsetT first_items_selection_flags[ITEMS_PER_THREAD];
+    OffsetT first_items_selection_indices[ITEMS_PER_THREAD];
 
-    OffsetT     second_items_selection_flags[ITEMS_PER_THREAD];
-    OffsetT     second_items_selection_indices[ITEMS_PER_THREAD];
+    OffsetT second_items_selection_flags[ITEMS_PER_THREAD];
+    OffsetT second_items_selection_indices[ITEMS_PER_THREAD];
 
     // Load items
     if (IS_LAST_TILE)
     {
-      BlockLoadT(temp_storage.load_items).Load(d_in + tile_offset, items, num_tile_items);
+      BlockLoadT(temp_storage.load_items)
+        .Load(d_in + tile_offset, items, num_tile_items);
     }
     else
     {
@@ -323,7 +338,7 @@ struct AgentThreeWayPartition
       first_items_selection_flags,
       second_items_selection_flags);
 
-    __syncthreads();
+    CTA_SYNC();
 
     // Exclusive scan of selection_flags
     BlockScanT(temp_storage.scan_storage.scan)
@@ -340,7 +355,7 @@ struct AgentThreeWayPartition
       }
     }
 
-    __syncthreads();
+    CTA_SYNC();
 
     // Exclusive scan of selection_flags
     BlockScanT(temp_storage.scan_storage.scan)
@@ -380,30 +395,38 @@ struct AgentThreeWayPartition
 
 
   /**
-   * Process subsequent tile of input (dynamic chained scan).  Returns the running count of selections (including this tile)
+   * Process subsequent tile of input (dynamic chained scan).
+   * Returns the running count of selections (including this tile)
+   *
+   * @param num_tile_items Number of input items comprising this tile
+   * @param tile_idx Tile index
+   * @param tile_offset Tile offset
+   * @param first_tile_state Global tile state descriptor
+   * @param second_tile_state Global tile state descriptor
    */
   template <bool IS_LAST_TILE>
-  __device__ __forceinline__ void ConsumeSubsequentTile(
-    int                 num_tile_items,     ///< Number of input items comprising this tile
-    int                 tile_idx,           ///< Tile index
-    OffsetT             tile_offset,        ///< Tile offset
-    ScanTileStateT&     first_tile_state,   ///< Global tile state descriptor
-    ScanTileStateT&     second_tile_state,
-    OffsetT&            num_first_items_selections,
-    OffsetT&            num_second_items_selections)
+  __device__ __forceinline__ void
+  ConsumeSubsequentTile(int num_tile_items,
+                        int tile_idx,
+                        OffsetT tile_offset,
+                        ScanTileStateT &first_tile_state,
+                        ScanTileStateT &second_tile_state,
+                        OffsetT &num_first_items_selections,
+                        OffsetT &num_second_items_selections)
   {
-    InputT   items[ITEMS_PER_THREAD];
+    InputT items[ITEMS_PER_THREAD];
 
-    OffsetT  first_items_selection_flags[ITEMS_PER_THREAD];
-    OffsetT  first_items_selection_indices[ITEMS_PER_THREAD];
+    OffsetT first_items_selection_flags[ITEMS_PER_THREAD];
+    OffsetT first_items_selection_indices[ITEMS_PER_THREAD];
 
-    OffsetT  second_items_selection_flags[ITEMS_PER_THREAD];
-    OffsetT  second_items_selection_indices[ITEMS_PER_THREAD];
+    OffsetT second_items_selection_flags[ITEMS_PER_THREAD];
+    OffsetT second_items_selection_indices[ITEMS_PER_THREAD];
 
     // Load items
     if (IS_LAST_TILE)
     {
-      BlockLoadT(temp_storage.load_items).Load(d_in + tile_offset, items, num_tile_items);
+      BlockLoadT(temp_storage.load_items).Load(
+        d_in + tile_offset, items, num_tile_items);
     }
     else
     {
@@ -417,20 +440,33 @@ struct AgentThreeWayPartition
       first_items_selection_flags,
       second_items_selection_flags);
 
-    __syncthreads();
+    CTA_SYNC();
 
     // Exclusive scan of values and selection_flags
-    TilePrefixCallbackOpT first_prefix_op(first_tile_state, temp_storage.scan_storage.prefix, cub::Sum(), tile_idx);
-    BlockScanT(temp_storage.scan_storage.scan).ExclusiveSum(first_items_selection_flags, first_items_selection_indices, first_prefix_op);
+    TilePrefixCallbackOpT first_prefix_op(first_tile_state,
+                                          temp_storage.scan_storage.prefix,
+                                          cub::Sum(),
+                                          tile_idx);
+
+    BlockScanT(temp_storage.scan_storage.scan)
+      .ExclusiveSum(first_items_selection_flags,
+                    first_items_selection_indices,
+                    first_prefix_op);
 
     num_first_items_selections                  = first_prefix_op.GetInclusivePrefix();
     OffsetT num_first_items_in_tile_selections  = first_prefix_op.GetBlockAggregate();
     OffsetT num_first_items_selections_prefix   = first_prefix_op.GetExclusivePrefix();
 
-    __syncthreads();
+    CTA_SYNC();
 
-    TilePrefixCallbackOpT second_prefix_op(second_tile_state, temp_storage.scan_storage.prefix, cub::Sum(), tile_idx);
-    BlockScanT(temp_storage.scan_storage.scan).ExclusiveSum(second_items_selection_flags, second_items_selection_indices, second_prefix_op);
+    TilePrefixCallbackOpT second_prefix_op(second_tile_state,
+                                           temp_storage.scan_storage.prefix,
+                                           cub::Sum(),
+                                           tile_idx);
+    BlockScanT(temp_storage.scan_storage.scan)
+      .ExclusiveSum(second_items_selection_flags,
+                    second_items_selection_indices,
+                    second_prefix_op);
 
     num_second_items_selections                  = second_prefix_op.GetInclusivePrefix();
     OffsetT num_second_items_in_tile_selections  = second_prefix_op.GetBlockAggregate();
@@ -506,17 +542,35 @@ struct AgentThreeWayPartition
 
   /**
    * Scan tiles of items as part of a dynamic chained scan
+   *
+   * @tparam NumSelectedIteratorT
+   *   Output iterator type for recording number of items selection_flags
+   *
+   * @param num_tiles
+   *   Total number of input tiles
+   *
+   * @param first_tile_state
+   *   Global tile state descriptor
+   *
+   * @param second_tile_state
+   *   Global tile state descriptor
+   *
+   * @param d_num_selected_out
+   *   Output total number selection_flags
    */
-  template <typename NumSelectedIteratorT>        ///< Output iterator type for recording number of items selection_flags
-  __device__ __forceinline__ void ConsumeRange(
-    int                     num_tiles,          ///< Total number of input tiles
-    ScanTileStateT&         first_tile_state,   ///< Global tile state descriptor
-    ScanTileStateT&         second_tile_state,   ///< Global tile state descriptor
-    NumSelectedIteratorT    d_num_selected_out) ///< Output total number selection_flags
+  template <typename NumSelectedIteratorT>
+  __device__ __forceinline__ void
+  ConsumeRange(int num_tiles,
+               ScanTileStateT &first_tile_state,
+               ScanTileStateT &second_tile_state,
+               NumSelectedIteratorT d_num_selected_out)
   {
     // Blocks are launched in increasing order, so just assign one tile per block
-    int     tile_idx    = static_cast<int>((blockIdx.x * gridDim.y) + blockIdx.y);  // Current tile index
-    OffsetT tile_offset = tile_idx * TILE_ITEMS;                                    // Global offset for the current tile
+    // Current tile index
+    int tile_idx = static_cast<int>((blockIdx.x * gridDim.y) + blockIdx.y);
+
+    // Global offset for the current tile
+    OffsetT tile_offset = tile_idx * TILE_ITEMS;
 
     OffsetT num_first_selections;
     OffsetT num_second_selections;
@@ -535,7 +589,7 @@ struct AgentThreeWayPartition
     else
     {
       // The last tile (possibly partially-full)
-      OffsetT num_remaining   = num_items - tile_offset;
+      OffsetT num_remaining = num_items - tile_offset;
 
       ConsumeTile<true>(num_remaining,
                         tile_idx,

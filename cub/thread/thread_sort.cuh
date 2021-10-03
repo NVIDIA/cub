@@ -43,7 +43,35 @@ __device__ __forceinline__ void Swap(T &lhs, T &rhs)
 }
 
 
-// TODO Tests, Documentation
+/**
+ * @brief Sorts data using odd-even sort method
+ *
+ * The sorting method is stable. Further details can be found in:
+ * A. Nico Habermann. Parallel neighbor sort (or the glory of the induction
+ * principle). Technical Report AD-759 248, Carnegie Mellon University, 1972.
+ *
+ * @tparam KeyT
+ *   Key type
+ *
+ * @tparam ValueT
+ *   Value type. If `cub::NullType` is used as `ValueT`, only keys are sorted.
+ *
+ * @tparam CompareOp
+ *   functor type having member `bool operator()(KeyT lhs, KeyT rhs)`
+ *
+ * @tparam ITEMS_PER_THREAD
+ *   The number of items per thread
+ *
+ * @param[in,out] keys
+ *   Keys to sort
+ *
+ * @param[in,out] items
+ *   Values to sort
+ *
+ * @param[in] compare_op
+ *   Comparison function object which returns true if the first argument is
+ *   ordered before the second
+ */
 template <typename KeyT,
           typename ValueT,
           typename CompareOp,

@@ -35,11 +35,11 @@
 #include <iterator>
 #include <type_traits>
 
-#include "../warp/warp_exchange.cuh"
-#include "../block/block_store.cuh"
-#include "../config.cuh"
-#include "../util_ptx.cuh"
-#include "../util_type.cuh"
+#include <cub/block/block_store.cuh>
+#include <cub/config.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/util_type.cuh>
+#include <cub/warp/warp_exchange.cuh>
 
 
 CUB_NAMESPACE_BEGIN
@@ -133,9 +133,10 @@ enum WarpStoreAlgorithm
  * @tparam LOGICAL_WARP_THREADS
  *   <b>[optional]</b> The number of threads per "logical" warp (may be less
  *   than the number of hardware warp threads). Default is the warp size of the
- *   targeted CUDA compute-capability (e.g., 32 threads for SM86).
+ *   targeted CUDA compute-capability (e.g., 32 threads for SM86). Must be a
+ *   power of two.
  *
- * \tparam PTX_ARCH
+ * @tparam PTX_ARCH
  *   <b>[optional]</b> \ptxversion
  *
  * @par Overview
@@ -483,7 +484,7 @@ public:
    * @code
    * #include <cub/cub.cuh>   // or equivalently <cub/warp/warp_store.cuh>
    *
-   * __global__ void ExampleKernel(int *d_data, ...)
+   * __global__ void ExampleKernel(int *d_data, int valid_items ...)
    * {
    *     constexpr int warp_threads = 16;
    *     constexpr int block_threads = 256;
@@ -507,7 +508,8 @@ public:
    *     ...
    *
    *     // Store items to linear memory
-   *     WarpStoreT(temp_storage[warp_id]).Store(d_data + warp_id * tile_size, thread_data);
+   *     WarpStoreT(temp_storage[warp_id]).Store(
+   *       d_data + warp_id * tile_size, thread_data, valid_items);
    * @endcode
    * @par
    * Suppose the set of @p thread_data across the warp threads is
@@ -533,4 +535,3 @@ public:
 
 
 CUB_NAMESPACE_END
-

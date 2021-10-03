@@ -27,10 +27,11 @@
 
 #pragma once
 
-#include "../config.cuh"
-#include "../util_ptx.cuh"
-#include "../util_type.cuh"
-#include "../block/block_merge_sort.cuh"
+#include <cub/block/block_merge_sort.cuh>
+#include <cub/config.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/util_type.cuh>
+
 
 CUB_NAMESPACE_BEGIN
 
@@ -49,7 +50,8 @@ CUB_NAMESPACE_BEGIN
  * @tparam LOGICAL_WARP_THREADS
  *   <b>[optional]</b> The number of threads per "logical" warp (may be less
  *   than the number of hardware warp threads). Default is the warp size of the
- *   targeted CUDA compute-capability (e.g., 32 threads for SM86).
+ *   targeted CUDA compute-capability (e.g., 32 threads for SM86). Must be a
+ *   power of two.
  *
  * @tparam ValueT
  *   <b>[optional]</b> Value type (default: cub::NullType, which indicates a
@@ -100,7 +102,7 @@ CUB_NAMESPACE_BEGIN
  *     int thread_keys[items_per_thread];
  *     // ...
  *
- *     WarpMergeSort(temp_storage[warp_id]).Sort(thread_data, CustomLess());
+ *     WarpMergeSort(temp_storage[warp_id]).Sort(thread_keys, CustomLess());
  *     // ...
  * }
  * @endcode
@@ -135,10 +137,10 @@ private:
                                                          ITEMS_PER_THREAD,
                                                          WarpMergeSort>;
 
-public:
   const unsigned int warp_id;
   const unsigned int member_mask;
 
+public:
   WarpMergeSort() = delete;
 
   __device__ __forceinline__
@@ -150,6 +152,11 @@ public:
       , warp_id(IS_ARCH_WARP ? 0 : (LaneId() / LOGICAL_WARP_THREADS))
       , member_mask(WarpMask<LOGICAL_WARP_THREADS, PTX_ARCH>(warp_id))
   {
+  }
+
+  __device__ __forceinline__ unsigned int get_member_mask() const
+  {
+    return member_mask;
   }
 
 private:

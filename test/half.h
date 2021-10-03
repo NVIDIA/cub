@@ -191,21 +191,21 @@ struct half_t
 
     /// Get raw storage
     __host__ __device__ __forceinline__
-    uint16_t raw()
+    uint16_t raw() const
     {
         return this->__x;
     }
 
     /// Equality
     __host__ __device__ __forceinline__
-    bool operator ==(const half_t &other)
+    bool operator ==(const half_t &other) const
     {
         return (this->__x == other.__x);
     }
 
     /// Inequality
     __host__ __device__ __forceinline__
-    bool operator !=(const half_t &other)
+    bool operator !=(const half_t &other) const
     {
         return (this->__x != other.__x);
     }

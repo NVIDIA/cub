@@ -27,16 +27,15 @@
 
 #pragma once
 
-#include <stdio.h>
 #include <iterator>
+#include <cstdio>
 
-#include "dispatch_scan.cuh"
-#include "../../config.cuh"
-#include "../../agent/agent_three_way_partition.cuh"
-#include "../../thread/thread_operators.cuh"
-#include "../../grid/grid_queue.cuh"
-#include "../../util_device.cuh"
-#include "../../util_math.cuh"
+#include <cub/agent/agent_three_way_partition.cuh>
+#include <cub/config.cuh>
+#include <cub/device/dispatch/dispatch_scan.cuh>
+#include <cub/thread/thread_operators.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
@@ -47,31 +46,28 @@ CUB_NAMESPACE_BEGIN
  * Kernel entry points
  *****************************************************************************/
 
-
-template <
-  typename            AgentThreeWayPartitionPolicyT,
-  typename            InputIteratorT,
-  typename            FirstOutputIteratorT,
-  typename            SecondOutputIteratorT,
-  typename            UnselectedOutputIteratorT,
-  typename            NumSelectedIteratorT,
-  typename            ScanTileStateT,
-  typename            SelectFirstPartOp,
-  typename            SelectSecondPartOp,
-  typename            OffsetT>
-__launch_bounds__ (int(AgentThreeWayPartitionPolicyT::BLOCK_THREADS))
-__global__ void DeviceThreeWayPartitionKernel(
-  InputIteratorT             d_in,
-  FirstOutputIteratorT       d_first_part_out,
-  SecondOutputIteratorT      d_second_part_out,
-  UnselectedOutputIteratorT  d_unselected_out,
-  NumSelectedIteratorT       d_num_selected_out,
-  ScanTileStateT             tile_status_1,
-  ScanTileStateT             tile_status_2,
-  SelectFirstPartOp          select_first_part_op,
-  SelectSecondPartOp         select_second_part_op,
-  OffsetT                    num_items,
-  int                        num_tiles)
+template <typename AgentThreeWayPartitionPolicyT,
+          typename InputIteratorT,
+          typename FirstOutputIteratorT,
+          typename SecondOutputIteratorT,
+          typename UnselectedOutputIteratorT,
+          typename NumSelectedIteratorT,
+          typename ScanTileStateT,
+          typename SelectFirstPartOp,
+          typename SelectSecondPartOp,
+          typename OffsetT>
+__launch_bounds__(int(AgentThreeWayPartitionPolicyT::BLOCK_THREADS)) __global__
+void DeviceThreeWayPartitionKernel(InputIteratorT d_in,
+                                   FirstOutputIteratorT d_first_part_out,
+                                   SecondOutputIteratorT d_second_part_out,
+                                   UnselectedOutputIteratorT d_unselected_out,
+                                   NumSelectedIteratorT d_num_selected_out,
+                                   ScanTileStateT tile_status_1,
+                                   ScanTileStateT tile_status_2,
+                                   SelectFirstPartOp select_first_part_op,
+                                   SelectSecondPartOp select_second_part_op,
+                                   OffsetT num_items,
+                                   int num_tiles)
 {
   // Thread block type for selecting data from input tiles
   using AgentThreeWayPartitionT =
@@ -100,16 +96,34 @@ __global__ void DeviceThreeWayPartitionKernel(
 }
 
 /**
- * Initialization kernel for tile status initialization (multi-block)
+ * @brief Initialization kernel for tile status initialization (multi-block)
+ *
+ * @tparam ScanTileStateT
+ *   Tile status interface type
+ *
+ * @tparam NumSelectedIteratorT
+ *   Output iterator type for recording the number of items selected
+ *
+ * @param[in] tile_state_1
+ *   Tile status interface
+ *
+ * @param[in] tile_state_2
+ *   Tile status interface
+ *
+ * @param[in] num_tiles
+ *   Number of tiles
+ *
+ * @param[out] d_num_selected_out
+ *   Pointer to the total number of items selected
+ *   (i.e., length of @p d_selected_out)
  */
-template <
-  typename                ScanTileStateT,         ///< Tile status interface type
-  typename                NumSelectedIteratorT>   ///< Output iterator type for recording the number of items selected
-__global__ void DeviceThreeWayPartitionInitKernel(
-  ScanTileStateT          tile_state_1,           ///< [in] Tile status interface
-  ScanTileStateT          tile_state_2,           ///< [in] Tile status interface
-  int                     num_tiles,              ///< [in] Number of tiles
-  NumSelectedIteratorT    d_num_selected_out)     ///< [out] Pointer to the total number of items selected (i.e., length of \p d_selected_out)
+template <typename ScanTileStateT,
+          typename NumSelectedIteratorT>
+__global__ void
+DeviceThreeWayPartitionInitKernel(ScanTileStateT tile_state_1,
+                                  ScanTileStateT tile_state_2,
+                                  int num_tiles,
+                                  NumSelectedIteratorT d_num_selected_out)
 {
   // Initialize tile status
   tile_state_1.InitializeStatus(num_tiles);
@@ -129,20 +143,19 @@ __global__ void DeviceThreeWayPartitionInitKernel(
  * Dispatch
  ******************************************************************************/
 
-template <
-  typename    InputIteratorT,
-  typename    FirstOutputIteratorT,
-  typename    SecondOutputIteratorT,
-  typename    UnselectedOutputIteratorT,
-  typename    NumSelectedIteratorT,
-  typename    SelectFirstPartOp,
-  typename    SelectSecondPartOp,
-  typename    OffsetT>
+template <typename InputIteratorT,
+          typename FirstOutputIteratorT,
+          typename SecondOutputIteratorT,
+          typename UnselectedOutputIteratorT,
+          typename NumSelectedIteratorT,
+          typename SelectFirstPartOp,
+          typename SelectSecondPartOp,
+          typename OffsetT>
 struct DispatchThreeWayPartitionIf
 {
-  /******************************************************************************
+  /*****************************************************************************
    * Types and constants
-   ******************************************************************************/
+   ****************************************************************************/
 
   using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
   using ScanTileStateT = cub::ScanTileState<OffsetT>;
@@ -150,9 +163,9 @@ struct DispatchThreeWayPartitionIf
   constexpr static int INIT_KERNEL_THREADS = 256;
 
 
-  /******************************************************************************
+  /*****************************************************************************
    * Tuning policies
-   ******************************************************************************/
+   ****************************************************************************/
 
   /// SM35
   struct Policy350
@@ -167,9 +180,9 @@ struct DispatchThreeWayPartitionIf
                                         cub::BLOCK_SCAN_WARP_SCANS>;
   };
 
-  /******************************************************************************
+  /*****************************************************************************
    * Tuning policies of current PTX compiler pass
-   ******************************************************************************/
+   ****************************************************************************/
 
   using PtxPolicy = Policy350;
 
@@ -177,12 +190,13 @@ struct DispatchThreeWayPartitionIf
   struct PtxThreeWayPartitionPolicyT : PtxPolicy::ThreeWayPartitionPolicy {};
 
 
-  /******************************************************************************
+  /*****************************************************************************
    * Utilities
-   ******************************************************************************/
+   ****************************************************************************/
 
   /**
-   * Initialize kernel dispatch configurations with the policies corresponding to the PTX assembly we will use
+   * Initialize kernel dispatch configurations with the policies corresponding
+   * to the PTX assembly we will use
    */
   template <typename KernelConfig>
   CUB_RUNTIME_FUNCTION __forceinline__
@@ -194,7 +208,8 @@ struct DispatchThreeWayPartitionIf
     {
 #if CUB_INCLUDE_DEVICE_CODE
       (void)ptx_version;
-      // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
+      // We're on the device, so initialize the kernel dispatch configurations
+      // with the current PTX policy
       select_if_config.template Init<PtxThreeWayPartitionPolicyT>();
 #endif
     }
@@ -212,7 +227,7 @@ struct DispatchThreeWayPartitionIf
 
 
   /**
-   * Kernel kernel dispatch configuration.
+   * Kernel dispatch configuration.
    */
   struct KernelConfig
   {
@@ -231,31 +246,29 @@ struct DispatchThreeWayPartitionIf
   };
 
 
-  /******************************************************************************
+  /*****************************************************************************
    * Dispatch entrypoints
-   ******************************************************************************/
+   ****************************************************************************/
 
-  template <
-    typename                    ScanInitKernelPtrT,
-    typename                    SelectIfKernelPtrT>
-  CUB_RUNTIME_FUNCTION __forceinline__
-  static cudaError_t Dispatch(
-    void*                       d_temp_storage,
-    std::size_t&                temp_storage_bytes,
-    InputIteratorT              d_in,
-    FirstOutputIteratorT        d_first_part_out,
-    SecondOutputIteratorT       d_second_part_out,
-    UnselectedOutputIteratorT   d_unselected_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    SelectFirstPartOp           select_first_part_op,
-    SelectSecondPartOp          select_second_part_op,
-    OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous,
-    int                         /*ptx_version*/,
-    ScanInitKernelPtrT          three_way_partition_init_kernel,
-    SelectIfKernelPtrT          three_way_partition_kernel,
-    KernelConfig                three_way_partition_config)
+  template <typename ScanInitKernelPtrT,
+            typename SelectIfKernelPtrT>
+  CUB_RUNTIME_FUNCTION __forceinline__ static cudaError_t
+  Dispatch(void *d_temp_storage,
+           std::size_t &temp_storage_bytes,
+           InputIteratorT d_in,
+           FirstOutputIteratorT d_first_part_out,
+           SecondOutputIteratorT d_second_part_out,
+           UnselectedOutputIteratorT d_unselected_out,
+           NumSelectedIteratorT d_num_selected_out,
+           SelectFirstPartOp select_first_part_op,
+           SelectSecondPartOp select_second_part_op,
+           OffsetT num_items,
+           cudaStream_t stream,
+           bool debug_synchronous,
+           int /*ptx_version*/,
+           ScanInitKernelPtrT three_way_partition_init_kernel,
+           SelectIfKernelPtrT three_way_partition_kernel,
+           KernelConfig three_way_partition_config)
   {
     cudaError error = cudaSuccess;
 
@@ -284,7 +297,8 @@ struct DispatchThreeWayPartitionIf
 
       allocation_sizes[1] = allocation_sizes[0];
 
-      // Compute allocation pointers into the single storage blob (or compute the necessary size of the blob)
+      // Compute allocation pointers into the single storage blob (or compute
+      // the necessary size of the blob)
       void* allocations[2] = {};
       if (CubDebug(error = cub::AliasTemporaries(d_temp_storage,
                                                  temp_storage_bytes,
@@ -296,7 +310,8 @@ struct DispatchThreeWayPartitionIf
 
       if (d_temp_storage == nullptr)
       {
-        // Return if the caller is simply requesting the size of the storage allocation
+        // Return if the caller is simply requesting the size of the storage
+        // allocation
         break;
       }
 
@@ -331,7 +346,7 @@ struct DispatchThreeWayPartitionIf
         _CubLog("Invoking three_way_partition_init_kernel<<<%d, %d, 0, %lld>>>()\n",
                 init_grid_size,
                 INIT_KERNEL_THREADS,
-                (long long)stream);
+                reinterpret_cast<long long>(stream));
       }
 
       // Invoke three_way_partition_init_kernel to initialize tile descriptors
@@ -392,7 +407,7 @@ struct DispatchThreeWayPartitionIf
                 scan_grid_size.y,
                 scan_grid_size.z,
                 three_way_partition_config.block_threads,
-                (long long)stream,
+                reinterpret_cast<long long>(stream),
                 three_way_partition_config.items_per_thread,
                 range_select_sm_occupancy);
       }

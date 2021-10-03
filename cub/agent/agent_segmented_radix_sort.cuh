@@ -27,26 +27,43 @@
 
 #pragma once
 
-#include "../config.cuh"
-#include "../util_type.cuh"
-#include "../util_namespace.cuh"
-#include "../block/block_radix_sort.cuh"
-#include "../agent/agent_radix_sort_upsweep.cuh"
-#include "../agent/agent_radix_sort_downsweep.cuh"
+#include <cub/agent/agent_radix_sort_downsweep.cuh>
+#include <cub/agent/agent_radix_sort_upsweep.cuh>
+#include <cub/block/block_radix_sort.cuh>
+#include <cub/config.cuh>
+#include <cub/util_namespace.cuh>
+#include <cub/util_type.cuh>
+
 
 CUB_NAMESPACE_BEGIN
 
 
-template <
-  bool      IS_DESCENDING,                  ///< Whether or not the sorted-order is high-to-low
-  typename  SegmentedPolicyT,               ///< Chained tuning policy
-  typename  KeyT,                           ///< Key type
-  typename  ValueT,                         ///< Value type
-  typename  OffsetT>                        ///< Signed integer type for global offsets
+/**
+ * This agent will be implementing the `DeviceSegmentedRadixSort` when the
+ * https://github.com/NVIDIA/cub/issues/383 is addressed.
+ *
+ * @tparam IS_DESCENDING
+ *   Whether or not the sorted-order is high-to-low
+ *
+ * @tparam SegmentedPolicyT
+ *   Chained tuning policy
+ *
+ * @tparam KeyT
+ *   Key type
+ *
+ * @tparam ValueT
+ *   Value type
+ *
+ * @tparam OffsetT
+ *   Signed integer type for global offsets
+ */
+template <bool IS_DESCENDING,
+          typename SegmentedPolicyT,
+          typename KeyT,
+          typename ValueT,
+          typename OffsetT>
 struct AgentSegmentedRadixSort
 {
-  OffsetT segment_begin;
-  OffsetT segment_end;
   OffsetT num_items;
 
   static constexpr int ITEMS_PER_THREAD = SegmentedPolicyT::ITEMS_PER_THREAD;
@@ -92,8 +109,8 @@ struct AgentSegmentedRadixSort
 
     struct UnboundBlockSort
     {
-      volatile OffsetT reverse_counts_in[RADIX_DIGITS];
-      volatile OffsetT reverse_counts_out[RADIX_DIGITS];
+      OffsetT reverse_counts_in[RADIX_DIGITS];
+      OffsetT reverse_counts_out[RADIX_DIGITS];
       typename DigitScanT::TempStorage scan;
     } unbound_sort;
 
@@ -107,22 +124,18 @@ struct AgentSegmentedRadixSort
   _TempStorage &temp_storage;
 
   __device__ __forceinline__
-  AgentSegmentedRadixSort(OffsetT segment_begin,
-                          OffsetT segment_end,
-                          OffsetT num_items,
+  AgentSegmentedRadixSort(OffsetT num_items,
                           TempStorage &temp_storage)
-      : segment_begin(segment_begin)
-      , segment_end(segment_end)
-      , num_items(num_items)
+      : num_items(num_items)
       , temp_storage(temp_storage.Alias())
   {}
 
-  __device__ __forceinline__ void ProcessSmallSegment(int begin_bit,
-                                                      int end_bit,
-                                                      const KeyT *d_keys_in,
-                                                      const ValueT *d_values_in,
-                                                      KeyT *d_keys_out,
-                                                      ValueT *d_values_out)
+  __device__ __forceinline__ void ProcessSinglePass(int begin_bit,
+                                                    int end_bit,
+                                                    const KeyT *d_keys_in,
+                                                    const ValueT *d_values_in,
+                                                    KeyT *d_keys_out,
+                                                    ValueT *d_values_out)
   {
     KeyT thread_keys[ITEMS_PER_THREAD];
     ValueT thread_values[ITEMS_PER_THREAD];
@@ -138,20 +151,15 @@ struct AgentSegmentedRadixSort
 
     if (!KEYS_ONLY)
     {
-      BlockValueLoadT(temp_storage.values_load).Load(
-        d_values_in + segment_begin,
-        thread_values,
-        num_items);
+      BlockValueLoadT(temp_storage.values_load)
+        .Load(d_values_in, thread_values, num_items);
 
       CTA_SYNC();
     }
 
     {
-      BlockKeyLoadT(temp_storage.keys_load).Load(
-        d_keys_in + segment_begin,
-        thread_keys,
-        num_items,
-        oob_default);
+      BlockKeyLoadT(temp_storage.keys_load)
+        .Load(d_keys_in, thread_keys, num_items, oob_default);
 
       CTA_SYNC();
     }
@@ -164,41 +172,29 @@ struct AgentSegmentedRadixSort
       Int2Type<IS_DESCENDING>(),
       Int2Type<KEYS_ONLY>());
 
-    // Store keys and values
-    d_keys_out   += segment_begin;
-    d_values_out += segment_begin;
+    cub::StoreDirectStriped<BLOCK_THREADS>(
+      threadIdx.x, d_keys_out, thread_keys, num_items);
 
-    #pragma unroll
-    for (int item = 0; item < ITEMS_PER_THREAD; item++)
+    if (!KEYS_ONLY)
     {
-      int item_offset = item * BLOCK_THREADS + threadIdx.x;
-
-      if (item_offset < num_items)
-      {
-        d_keys_out[item_offset] = thread_keys[item];
-
-        if (!KEYS_ONLY)
-        {
-          d_values_out[item_offset] = thread_values[item];
-        }
-      }
+      cub::StoreDirectStriped<BLOCK_THREADS>(
+        threadIdx.x, d_values_out, thread_values, num_items);
     }
   }
 
-  __device__ __forceinline__ void
-  ProcessLargeSegment(int current_bit,
-                      int pass_bits,
-                      const KeyT *d_keys_in,
-                      const ValueT *d_values_in,
-                      KeyT *d_keys_out,
-                      ValueT *d_values_out)
+  __device__ __forceinline__ void ProcessIterative(int current_bit,
+                                                   int pass_bits,
+                                                   const KeyT *d_keys_in,
+                                                   const ValueT *d_values_in,
+                                                   KeyT *d_keys_out,
+                                                   ValueT *d_values_out)
   {
     // Upsweep
     BlockUpsweepT upsweep(temp_storage.upsweep,
                           d_keys_in,
                           current_bit,
                           pass_bits);
-    upsweep.ProcessRegion(segment_begin, segment_end);
+    upsweep.ProcessRegion(OffsetT{}, num_items);
 
     CTA_SYNC();
 
@@ -237,14 +233,10 @@ struct AgentSegmentedRadixSort
     }
 
     // Scan
-    OffsetT bin_offset[BINS_TRACKED_PER_THREAD]; // The global scatter base offset for each digit value in this pass (valid in the first RADIX_DIGITS threads)
+    // The global scatter base offset for each digit value in this pass
+    // (valid in the first RADIX_DIGITS threads)
+    OffsetT bin_offset[BINS_TRACKED_PER_THREAD];
     DigitScanT(temp_storage.unbound_sort.scan).ExclusiveSum(bin_count, bin_offset);
-
-    #pragma unroll
-    for (int track = 0; track < BINS_TRACKED_PER_THREAD; ++track)
-    {
-      bin_offset[track] += segment_begin;
-    }
 
     if (IS_DESCENDING)
     {
@@ -286,7 +278,7 @@ struct AgentSegmentedRadixSort
                               d_values_out,
                               current_bit,
                               pass_bits);
-    downsweep.ProcessRegion(segment_begin, segment_end);
+    downsweep.ProcessRegion(OffsetT{}, num_items);
   }
 };
 

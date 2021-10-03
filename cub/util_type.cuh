@@ -855,50 +855,6 @@ struct ArrayWrapper
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
-template <typename T>
-struct DeviceDoubleBuffer
-{
-  /// Pair of device buffer pointers
-  T *d_current_buffer;
-  T *d_alternate_buffer;
-
-  /// \brief Constructor
-  __host__ __device__ __forceinline__ DeviceDoubleBuffer()
-  {
-    d_current_buffer = nullptr;
-    d_alternate_buffer = nullptr;
-  }
-
-  /// \brief Constructor
-  __host__ __device__ __forceinline__ DeviceDoubleBuffer(
-    T *d_current,         ///< The currently valid buffer
-    T *d_alternate)       ///< Alternate storage buffer of the same size as \p d_current
-  {
-    d_current_buffer = d_current;
-    d_alternate_buffer = d_alternate;
-  }
-
-  /// \brief Return pointer to the currently valid buffer
-  __host__ __device__ __forceinline__ T* Current() const
-  {
-    return d_current_buffer;
-  }
-
-  /// \brief Return pointer to the currently invalid buffer
-  __host__ __device__ __forceinline__ T* Alternate() const
-  {
-    return d_alternate_buffer;
-  }
-
-  __host__ __device__ void Swap()
-  {
-    T *tmp = d_current_buffer;
-    d_current_buffer = d_alternate_buffer;
-    d_alternate_buffer = tmp;
-  }
-};
-
-
 /**
  * \brief Double-buffer storage wrapper for multi-pass stream transformations that require more than one storage array for streaming intermediate results back and forth.
  *

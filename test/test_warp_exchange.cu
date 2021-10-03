@@ -40,7 +40,7 @@ template <typename InputT,
 __global__ void kernel(const InputT *input_data,
                        OutputT *output_data,
                        ActionT action,
-                       cub::Int2Type<true> same_type)
+                       cub::Int2Type<true> /* same_type */)
 {
   using WarpExchangeT =
     cub::WarpExchange<InputT, ItemsPerThread, LogicalWarpThreads>;
@@ -50,6 +50,7 @@ __global__ void kernel(const InputT *input_data,
   __shared__ typename WarpExchangeT::TempStorage temp_storage[warps_per_block];
 
   const int warp_id = threadIdx.x / LogicalWarpThreads;
+  const int lane_id = threadIdx.x % LogicalWarpThreads;
   WarpExchangeT exchange(temp_storage[warp_id]);
 
   InputT input[ItemsPerThread];
@@ -59,14 +60,14 @@ __global__ void kernel(const InputT *input_data,
 
   for (int item = 0; item < ItemsPerThread; item++)
   {
-    input[item] = input_data[exchange.lane_id * ItemsPerThread + item];
+    input[item] = input_data[lane_id * ItemsPerThread + item];
   }
 
   action(input, input, exchange);
 
   for (int item = 0; item < ItemsPerThread; item++)
   {
-    output_data[exchange.lane_id * ItemsPerThread + item] = input[item];
+    output_data[lane_id * ItemsPerThread + item] = input[item];
   }
 }
 
@@ -79,7 +80,7 @@ template <typename InputT,
 __global__ void kernel(const InputT *input_data,
                        OutputT *output_data,
                        ActionT action,
-                       cub::Int2Type<false> different_types)
+                       cub::Int2Type<false> /* different_types */)
 {
   using WarpExchangeT =
   cub::WarpExchange<InputT, ItemsPerThread, LogicalWarpThreads>;
@@ -89,6 +90,7 @@ __global__ void kernel(const InputT *input_data,
   __shared__ typename WarpExchangeT::TempStorage temp_storage[warps_per_block];
 
   const int warp_id = threadIdx.x / LogicalWarpThreads;
+  const int lane_id = threadIdx.x % LogicalWarpThreads;
   WarpExchangeT exchange(temp_storage[warp_id]);
 
   InputT input[ItemsPerThread];
@@ -99,16 +101,16 @@ __global__ void kernel(const InputT *input_data,
 
   for (int item = 0; item < ItemsPerThread; item++)
   {
-    input[item] = input_data[exchange.lane_id * ItemsPerThread + item];
+    input[item] = input_data[lane_id * ItemsPerThread + item];
   }
 
   action(input, output, exchange);
 
   for (int item = 0; item < ItemsPerThread; item++)
   {
-    output_data[exchange.lane_id * ItemsPerThread + item] = output[item];
-    }
-                         }
+    output_data[lane_id * ItemsPerThread + item] = output[item];
+  }
+}
 
 struct StripedToBlocked
 {
@@ -225,6 +227,126 @@ template <typename InputT,
           int LogicalWarpThreads,
           int ItemsPerThread,
           int BlockThreads>
+__global__ void scatter_kernel(const InputT *input_data,
+                               OutputT *output_data,
+                               cub::Int2Type<true> /* same_type */)
+{
+  using WarpExchangeT =
+    cub::WarpExchange<InputT, ItemsPerThread, LogicalWarpThreads>;
+
+  constexpr int tile_size       = ItemsPerThread * LogicalWarpThreads;
+  constexpr int warps_per_block = BlockThreads / LogicalWarpThreads;
+  __shared__ typename WarpExchangeT::TempStorage temp_storage[warps_per_block];
+
+  const int warp_id = threadIdx.x / LogicalWarpThreads;
+  const int lane_id = threadIdx.x % LogicalWarpThreads;
+  WarpExchangeT exchange(temp_storage[warp_id]);
+
+  InputT input[ItemsPerThread];
+
+  // Reverse data
+  int ranks[ItemsPerThread];
+
+  input_data += warp_id * tile_size;
+  output_data += warp_id * tile_size;
+
+  for (int item = 0; item < ItemsPerThread; item++)
+  {
+    const auto item_idx = lane_id * ItemsPerThread + item;
+    input[item] = input_data[item_idx];
+    ranks[item] = tile_size - 1 - item_idx;
+  }
+
+  exchange.ScatterToStriped(input, ranks);
+
+  // Striped to blocked
+  for (int item = 0; item < ItemsPerThread; item++)
+  {
+    output_data[item * LogicalWarpThreads + lane_id] = input[item];
+  }
+}
+
+template <typename InputT,
+          typename OutputT,
+          int LogicalWarpThreads,
+          int ItemsPerThread,
+          int BlockThreads>
+__global__ void scatter_kernel(const InputT *input_data,
+                               OutputT *output_data,
+                               cub::Int2Type<false> /* different_types */)
+{
+  using WarpExchangeT =
+    cub::WarpExchange<InputT, ItemsPerThread, LogicalWarpThreads>;
+
+  constexpr int tile_size       = ItemsPerThread * LogicalWarpThreads;
+  constexpr int warps_per_block = BlockThreads / LogicalWarpThreads;
+  __shared__ typename WarpExchangeT::TempStorage temp_storage[warps_per_block];
+
+  const int warp_id = threadIdx.x / LogicalWarpThreads;
+  const int lane_id = threadIdx.x % LogicalWarpThreads;
+  WarpExchangeT exchange(temp_storage[warp_id]);
+
+  InputT input[ItemsPerThread];
+  OutputT output[ItemsPerThread];
+
+  // Reverse data
+  int ranks[ItemsPerThread];
+
+  input_data += warp_id * tile_size;
+  output_data += warp_id * tile_size;
+
+  for (int item = 0; item < ItemsPerThread; item++)
+  {
+    const auto item_idx = lane_id * ItemsPerThread + item;
+    input[item] = input_data[item_idx];
+    ranks[item] = tile_size - 1 - item_idx;
+  }
+
+  exchange.ScatterToStriped(input, output, ranks);
+
+  // Striped to blocked
+  for (int item = 0; item < ItemsPerThread; item++)
+  {
+    output_data[item * LogicalWarpThreads + lane_id] = output[item];
+  }
+}
+
+template <typename InputT,
+          typename OutputT,
+          int LogicalWarpThreads,
+          int ItemsPerThread,
+          int BlockThreads>
+void TestScatterToStriped(thrust::device_vector<InputT> &input,
+                          thrust::device_vector<OutputT> &output)
+{
+  thrust::fill(output.begin(), output.end(), OutputT{0});
+  thrust::sequence(input.begin(), input.end());
+
+  scatter_kernel<InputT, OutputT, LogicalWarpThreads, ItemsPerThread, BlockThreads>
+    <<<1, BlockThreads>>>(thrust::raw_pointer_cast(input.data()),
+                          thrust::raw_pointer_cast(output.data()),
+                          cub::Int2Type<std::is_same<InputT, OutputT>::value>{});
+
+  thrust::device_vector<OutputT> d_expected_output(input);
+
+  constexpr int tile_size = LogicalWarpThreads * ItemsPerThread;
+
+  for (int warp_id = 0; warp_id < BlockThreads / LogicalWarpThreads; warp_id++)
+  {
+    const int warp_data_begin = tile_size * warp_id;
+    const int warp_data_end = warp_data_begin + tile_size;
+    thrust::reverse(d_expected_output.begin() + warp_data_begin,
+                    d_expected_output.begin() + warp_data_end);
+  }
+
+  AssertTrue(Compare(d_expected_output, output));
+}
+
+template <typename InputT,
+          typename OutputT,
+          int LogicalWarpThreads,
+          int ItemsPerThread,
+          int BlockThreads>
 void Test()
 {
   static_assert(BlockThreads % LogicalWarpThreads == 0,
@@ -248,16 +370,22 @@ void Test()
                        LogicalWarpThreads,
                        ItemsPerThread,
                        BlockThreads>(input, output);
+
+  TestScatterToStriped<InputT,
+                       OutputT,
+                       LogicalWarpThreads,
+                       ItemsPerThread,
+                       BlockThreads>(input, output);
 }
 
-template <int LogicalWarpThreads,
-  int ItemsPerThread,
-  int BlockThreads>
+template <int WarpThreads,
+          int ItemsPerThread,
+          int BlockThreads>
 void Test()
 {
-  Test<std::uint16_t, std::uint32_t, LogicalWarpThreads, ItemsPerThread, BlockThreads>();
-  Test<std::uint32_t, std::uint32_t, LogicalWarpThreads, ItemsPerThread, BlockThreads>();
-  Test<std::uint64_t, std::uint32_t, LogicalWarpThreads, ItemsPerThread, BlockThreads>();
+  Test<std::uint16_t, std::uint32_t, WarpThreads, ItemsPerThread, BlockThreads>();
+  Test<std::uint32_t, std::uint32_t, WarpThreads, ItemsPerThread, BlockThreads>();
+  Test<std::uint64_t, std::uint32_t, WarpThreads, ItemsPerThread, BlockThreads>();
 }
 
 template <int LogicalWarpThreads,

@@ -563,7 +563,7 @@ void TestSingleOutput(int num_items)
 }
 
 template <typename T>
-void TestDependent(int num_items)
+void TestNumItemsDependent(int num_items)
 {
   TestStability<T>(num_items);
   TestEmptyFirstPart<T>(num_items);
@@ -575,12 +575,12 @@ void TestDependent(int num_items)
 }
 
 template <typename T>
-void TestDependent()
+void TestNumItemsDependent()
 {
   for (int num_items = 1; num_items < 1000000; num_items <<= 2)
   {
-    TestDependent<T>(num_items);
-    TestDependent<T>(num_items + 31);
+    TestNumItemsDependent<T>(num_items);
+    TestNumItemsDependent<T>(num_items + 31);
   }
 }
 
@@ -588,7 +588,7 @@ template <typename T>
 void Test()
 {
   TestEmpty<T>();
-  TestDependent<T>();
+  TestNumItemsDependent<T>();
 }
 
 int main(int argc, char **argv)

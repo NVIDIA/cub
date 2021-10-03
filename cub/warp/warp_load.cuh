@@ -35,14 +35,16 @@
 #include <iterator>
 #include <type_traits>
 
-#include "../iterator/cache_modified_input_iterator.cuh"
-#include "../warp/warp_exchange.cuh"
-#include "../block/block_load.cuh"
-#include "../config.cuh"
-#include "../util_ptx.cuh"
-#include "../util_type.cuh"
+#include <cub/block/block_load.cuh>
+#include <cub/config.cuh>
+#include <cub/iterator/cache_modified_input_iterator.cuh>
+#include <cub/util_ptx.cuh>
+#include <cub/util_type.cuh>
+#include <cub/warp/warp_exchange.cuh>
+
 
 CUB_NAMESPACE_BEGIN
+
 
 /**
  * @brief cub::WarpLoadAlgorithm enumerates alternative algorithms for
@@ -136,7 +138,8 @@ enum WarpLoadAlgorithm
  * @tparam LOGICAL_WARP_THREADS
  *   <b>[optional]</b> The number of threads per "logical" warp (may be less
  *   than the number of hardware warp threads). Default is the warp size of the
- *   targeted CUDA compute-capability (e.g., 32 threads for SM86).
+ *   targeted CUDA compute-capability (e.g., 32 threads for SM86). Must be a
+ *   power of two.
  *
  * @tparam PTX_ARCH
  *   <b>[optional]</b> \ptxversion
@@ -683,5 +686,6 @@ public:
 
   //@}  end member group
 };
+
 
 CUB_NAMESPACE_END

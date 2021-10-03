@@ -105,7 +105,7 @@ struct WarpReduceSmem
      ******************************************************************************/
 
     /// Constructor
-    __device__ __forceinline__ WarpReduceSmem(TempStorage &temp_storage)
+    explicit __device__ __forceinline__ WarpReduceSmem(TempStorage &temp_storage)
         : temp_storage(temp_storage.Alias())
         , lane_id(IS_ARCH_WARP ? LaneId() : LaneId() % LOGICAL_WARP_THREADS)
         , member_mask(
