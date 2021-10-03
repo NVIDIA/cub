@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <iterator>
 #include <stdio.h>
+#include <type_traits>
 #include <utility>
 
 #include <cub/block/block_load.cuh>
@@ -45,11 +46,27 @@ using namespace cub;
 /******************************************************************************
  * HELPER CLASS FOR RUN-LENGTH DECODING TESTS
  ******************************************************************************/
+
+/**
+ * @brief Class template to facilitate testing the BlockRunLengthDecode algorithm for all its template parameter
+ * specialisations.
+ *
+ * @tparam ItemItT The item type being run-length decoded
+ * @tparam RunLengthsItT Iterator type providing the runs' lengths
+ * @tparam RUNS_PER_THREAD The number of runs that each thread is getting assigned to
+ * @tparam DECODED_ITEMS_PER_THREAD The number of run-length decoded items that each thread is decoding
+ * @tparam TEST_RELATIVE_OFFSETS_ Whether to also retrieve each decoded item's relative offset within its run
+ * @tparam TEST_RUN_OFFSETS_ Whether to pass in each run's offset instead of each run's length
+ * @tparam BLOCK_DIM_X The thread block length in threads along the X dimension
+ * @tparam BLOCK_DIM_Y The thread block length in threads along the Y dimension
+ * @tparam BLOCK_DIM_Z The thread block length in threads along the Z dimension
+ */
 template <typename ItemItT,
           typename RunLengthsItT,
           int RUNS_PER_THREAD,
           int DECODED_ITEMS_PER_THREAD,
           bool TEST_RELATIVE_OFFSETS_,
+          bool TEST_RUN_OFFSETS_,
           int BLOCK_DIM_X,
           int BLOCK_DIM_Y = 1,
           int BLOCK_DIM_Z = 1>
@@ -64,6 +81,8 @@ private:
   using RunItemT   = typename std::iterator_traits<ItemItT>::value_type;
   using RunLengthT = typename std::iterator_traits<RunLengthsItT>::value_type;
 
+  using BlockRunOffsetScanT = cub::BlockScan<RunLengthT, BLOCK_DIM_X, BLOCK_SCAN_RAKING, BLOCK_DIM_Y, BLOCK_DIM_Z>;
+
   using BlockRunLengthDecodeT =
     cub::BlockRunLengthDecode<RunItemT, BLOCK_DIM_X, RUNS_PER_THREAD, DECODED_ITEMS_PER_THREAD>;
   using BlockLoadRunItemT =
@@ -75,6 +94,30 @@ private:
 
   using BlockStoreRelativeOffsetT = cub::
     BlockStore<RunLengthT, BLOCK_DIM_X, DECODED_ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
+
+  __device__ __forceinline__ BlockRunLengthDecodeT InitBlockRunLengthDecode(RunItemT (&unique_items)[RUNS_PER_THREAD],
+                                                                            RunLengthT (&run_lengths)[RUNS_PER_THREAD],
+                                                                            RunLengthT &decoded_size,
+                                                                            cub::Int2Type<true> /*test_run_offsets*/)
+  {
+    RunLengthT run_offsets[RUNS_PER_THREAD];
+    BlockRunOffsetScanT(temp_storage.run_offsets_scan_storage).ExclusiveSum(run_lengths, run_offsets, decoded_size);
+
+    // Ensure temporary shared memory can be repurposed
+    CTA_SYNC();
+
+    // Construct BlockRunLengthDecode and initialize with the run offsets
+    return BlockRunLengthDecodeT(temp_storage.decode.run_length_decode_storage, unique_items, run_offsets);
+  }
+
+  __device__ __forceinline__ BlockRunLengthDecodeT InitBlockRunLengthDecode(RunItemT (&unique_items)[RUNS_PER_THREAD],
+                                                                            RunLengthT (&run_lengths)[RUNS_PER_THREAD],
+                                                                            RunLengthT &decoded_size,
+                                                                            cub::Int2Type<false> /*test_run_offsets*/)
+  {
+    // Construct BlockRunLengthDecode and initialize with the run lengths
+    return BlockRunLengthDecodeT(temp_storage.decode.run_length_decode_storage, unique_items, run_lengths, decoded_size);
+  }
 
   __device__ __forceinline__ void LoadRuns(ItemItT d_block_unique_items,
                                            RunLengthsItT d_block_run_lengths,
@@ -110,12 +153,14 @@ public:
   {
     typename BlockLoadRunItemT::TempStorage load_uniques_storage;
     typename BlockLoadRunLengthsT::TempStorage load_run_lengths_storage;
+    typename std::conditional<TEST_RUN_OFFSETS_, typename BlockRunOffsetScanT::TempStorage, cub::NullType>::type
+      run_offsets_scan_storage;
     struct
     {
       typename BlockRunLengthDecodeT::TempStorage run_length_decode_storage;
       typename BlockStoreDecodedItemT::TempStorage store_decoded_runs_storage;
       typename BlockStoreRelativeOffsetT::TempStorage store_relative_offsets;
-    };
+    } decode;
   };
 
   TempStorage &temp_storage;
@@ -138,10 +183,8 @@ public:
 
     // Init the BlockRunLengthDecode and get the total decoded size of this block's tile (i.e., the "decompressed" size)
     uint32_t decoded_size = 0U;
-    BlockRunLengthDecodeT run_length_decode(temp_storage.run_length_decode_storage,
-                                            unique_items,
-                                            run_lengths,
-                                            decoded_size);
+    BlockRunLengthDecodeT run_length_decode =
+      InitBlockRunLengthDecode(unique_items, run_lengths, decoded_size, cub::Int2Type<TEST_RUN_OFFSETS_>());
     return decoded_size;
   }
 
@@ -163,10 +206,8 @@ public:
 
     // Init the BlockRunLengthDecode and get the total decoded size of this block's tile (i.e., the "decompressed" size)
     uint32_t decoded_size = 0U;
-    BlockRunLengthDecodeT run_length_decode(temp_storage.run_length_decode_storage,
-                                            unique_items,
-                                            run_lengths,
-                                            decoded_size);
+    BlockRunLengthDecodeT run_length_decode =
+      InitBlockRunLengthDecode(unique_items, run_lengths, decoded_size, cub::Int2Type<TEST_RUN_OFFSETS_>());
 
     // Run-length decode ("decompress") the runs into a window buffer of limited size. This is repeated until all runs
     // have been decoded.
@@ -179,12 +220,12 @@ public:
       // The number of decoded items that are valid within this window (aka pass) of run-length decoding
       uint32_t num_valid_items = decoded_size - decoded_window_offset;
       run_length_decode.RunLengthDecode(decoded_items, relative_offsets, decoded_window_offset);
-      BlockStoreDecodedItemT(temp_storage.store_decoded_runs_storage)
+      BlockStoreDecodedItemT(temp_storage.decode.store_decoded_runs_storage)
         .Store(d_block_decoded_out + decoded_window_offset, decoded_items, num_valid_items);
 
       if (TEST_RELATIVE_OFFSETS)
       {
-        BlockStoreRelativeOffsetT(temp_storage.store_relative_offsets)
+        BlockStoreRelativeOffsetT(temp_storage.decode.store_relative_offsets)
           .Store(d_block_rel_out + decoded_window_offset, relative_offsets, num_valid_items);
       }
 
@@ -267,6 +308,7 @@ template <uint32_t RUNS_PER_THREAD,
           uint32_t BLOCK_DIM_X,
           uint32_t BLOCK_DIM_Y,
           uint32_t BLOCK_DIM_Z,
+          bool TEST_RUN_OFFSETS,
           bool TEST_RELATIVE_OFFSETS>
 void TestAlgorithmSpecialisation()
 {
@@ -299,6 +341,7 @@ void TestAlgorithmSpecialisation()
                                                                        RUNS_PER_THREAD,
                                                                        DECODED_ITEMS_PER_THREAD,
                                                                        TEST_RELATIVE_OFFSETS,
+                                                                       TEST_RUN_OFFSETS,
                                                                        THREADS_PER_BLOCK,
                                                                        1,
                                                                        1>;
@@ -418,12 +461,20 @@ void TestAlgorithmSpecialisation()
   size_t decoded_bytes          = host_golden.size() * sizeof(RunItemT);
   size_t relative_offsets_bytes = TEST_RELATIVE_OFFSETS ? host_golden.size() * sizeof(RunLengthT) : 0ULL;
   size_t total_bytes_written    = decoded_bytes + relative_offsets_bytes;
-  std::cout << "MODE: " << (TEST_RELATIVE_OFFSETS ? "offsets, " : "normal,  ") << "RUNS_PER_THREAD: " << RUNS_PER_THREAD
-            << ", DECODED_ITEMS_PER_THREAD: " << DECODED_ITEMS_PER_THREAD
-            << ", THREADS_PER_BLOCK: " << THREADS_PER_BLOCK << ", decoded size (bytes): " << decoded_bytes
-            << ", relative offsets (bytes): " << relative_offsets_bytes << ", time_size (ms): " << duration_size
-            << ", time_decode (ms): " << duration_decode << ", achieved decode BW (GB/s): "
+#define CUB_TEST_BENCHMARK
+#ifdef CUB_TEST_BENCHMARK
+  std::cout << "MODE: " << (TEST_RELATIVE_OFFSETS ? "offsets, " : "normal,  ")    //
+            << "INIT: " << (TEST_RUN_OFFSETS ? "run offsets, " : "run lengths, ") //
+            << "RUNS_PER_THREAD: " << RUNS_PER_THREAD                             //
+            << ", DECODED_ITEMS_PER_THREAD: " << DECODED_ITEMS_PER_THREAD         //
+            << ", THREADS_PER_BLOCK: " << THREADS_PER_BLOCK                       //
+            << ", decoded size (bytes): " << decoded_bytes                        //
+            << ", relative offsets (bytes): " << relative_offsets_bytes           //
+            << ", time_size (ms): " << duration_size                              //
+            << ", time_decode (ms): " << duration_decode                          //
+            << ", achieved decode BW (GB/s): "
             << ((static_cast<double>(total_bytes_written) / 1.0e9) * (1000.0 / duration_decode)) << "\n";
+#endif
 
   // Verify the run-length decoded data is correct
   bool cmp_eq = true;
@@ -480,12 +531,16 @@ void TestForTuningParameters()
 {
   constexpr bool DO_TEST_RELATIVE_OFFSETS     = true;
   constexpr bool DO_NOT_TEST_RELATIVE_OFFSETS = false;
+
+  constexpr bool TEST_WITH_RUN_OFFSETS = true;
+  constexpr bool TEST_WITH_RUN_LENGTHS = false;
   // Run BlockRunLengthDecode that uses run lengths and generates offsets relative to each run
   TestAlgorithmSpecialisation<RUNS_PER_THREAD,
                               DECODED_ITEMS_PER_THREAD,
                               BLOCK_DIM_X,
                               BLOCK_DIM_Y,
                               BLOCK_DIM_Z,
+                              TEST_WITH_RUN_LENGTHS,
                               DO_TEST_RELATIVE_OFFSETS>();
 
   // Run BlockRunLengthDecode that uses run lengths and performs normal run-length decoding
@@ -494,6 +549,25 @@ void TestForTuningParameters()
                               BLOCK_DIM_X,
                               BLOCK_DIM_Y,
                               BLOCK_DIM_Z,
+                              TEST_WITH_RUN_LENGTHS,
+                              DO_NOT_TEST_RELATIVE_OFFSETS>();
+
+  // Run BlockRunLengthDecode that uses run offsets and generates offsets relative to each run
+  TestAlgorithmSpecialisation<RUNS_PER_THREAD,
+                              DECODED_ITEMS_PER_THREAD,
+                              BLOCK_DIM_X,
+                              BLOCK_DIM_Y,
+                              BLOCK_DIM_Z,
+                              TEST_WITH_RUN_OFFSETS,
+                              DO_TEST_RELATIVE_OFFSETS>();
+
+  // Run BlockRunLengthDecode that uses run offsets and performs normal run-length decoding
+  TestAlgorithmSpecialisation<RUNS_PER_THREAD,
+                              DECODED_ITEMS_PER_THREAD,
+                              BLOCK_DIM_X,
+                              BLOCK_DIM_Y,
+                              BLOCK_DIM_Z,
+                              TEST_WITH_RUN_OFFSETS,
                               DO_NOT_TEST_RELATIVE_OFFSETS>();
 }
 
