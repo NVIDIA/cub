@@ -323,7 +323,7 @@ void TestAlgorithmSpecialisation()
   ItemItT d_unique_items(1000U);
   RunLengthsItT d_run_lengths(cub::CountingInputIterator<RunLengthT>(0), ModOp{});
 
-  constexpr uint32_t num_runs   = 1000000;
+  constexpr uint32_t num_runs   = 10000;
   constexpr uint32_t num_blocks = (num_runs + (RUNS_PER_BLOCK - 1U)) / RUNS_PER_BLOCK;
 
   size_t temp_storage_bytes      = 0ULL;
