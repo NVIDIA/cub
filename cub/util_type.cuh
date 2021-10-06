@@ -254,6 +254,7 @@ struct RemoveQualifiers<Tp, const volatile Up>
  */
 struct NullType
 {
+    using value_type = NullType;
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     template <typename T>
@@ -273,9 +274,84 @@ struct NullType
 template <int A>
 struct Int2Type
 {
-   enum {VALUE = A};
+    enum {VALUE = A};
 };
 
+/**
+ * \brief Allows algorithms that take a value as input to take a future value that is not computed yet at launch time.
+ *
+ * Note that it is user's responsibility to ensure that the result will be ready before use via external synchronization
+ * or stream-ordering dependencies.
+ *
+ * \code
+ * int *d_intermediate_result;
+ * allocator.DeviceAllocate((void **)&d_intermediate_result, sizeof(int));
+ * compute_intermediate_result<<<blocks, threads>>>(
+ *     d_intermediate_result,  // output
+ *     arg1,                   // input
+ *     arg2);                  // input
+ * cub::FutureValue<int> init_value(d_intermediate_result);
+ * cub::DeviceScan::ExclusiveScan(
+ *     d_temp_storage,
+ *     temp_storage_bytes,
+ *     d_in,
+ *     d_out,
+ *     cub::Sum(),
+ *     init_value,
+ *     num_items);
+ * allocator.DeviceFree(d_intermediate_result);
+ * \endcode
+ */
+template <typename T, typename IterT = T*>
+struct FutureValue
+{
+    using value_type = T;
+    using iterator_type = IterT;
+    explicit __host__ __device__ __forceinline__ FutureValue(IterT iter):m_iter(iter) {}
+    __host__ __device__ __forceinline__ operator T() {
+        return *m_iter;
+    }
+
+private:
+    IterT m_iter;
+};
+
+namespace detail {
+
+/**
+ * \brief Allows algorithms to instantiate a single kernel to support both immediate value and future value.
+ */
+template <typename T, typename IterT = T*>
+struct InputValue
+{
+    using value_type = T;
+    using iterator_type = IterT;
+    __host__ __device__ __forceinline__ operator T() {
+        if (m_is_future) {
+            return m_future_value;
+        }
+        return m_immediate_value;
+    }
+    explicit __host__ __device__ __forceinline__ InputValue(T immediate_value): m_is_future(false), m_immediate_value(immediate_value) {}
+    explicit __host__ __device__ __forceinline__ InputValue(FutureValue<T, IterT> future_value): m_is_future(true), m_future_value(future_value) {}
+    __host__ __device__ __forceinline__ InputValue(const InputValue &other): m_is_future(other.m_is_future) {
+        if (m_is_future) {
+            m_future_value = other.m_future_value;
+        } else {
+            m_immediate_value = other.m_immediate_value;
+        }
+    }
+
+private:
+    bool m_is_future;
+    union
+    {
+        FutureValue<T, IterT> m_future_value;
+        T m_immediate_value;
+    };
+};
+
+} // namespace detail
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
