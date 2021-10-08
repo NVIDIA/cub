@@ -215,12 +215,6 @@ public:
         return conversion_op(input_itr[n]);
     }
 
-    /// Structure dereference
-    __host__ __device__ __forceinline__ pointer operator->()
-    {
-        return &conversion_op(*input_itr);
-    }
-
     /// Equal to
     __host__ __device__ __forceinline__ bool operator==(const self_type& rhs)
     {
