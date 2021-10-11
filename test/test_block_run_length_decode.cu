@@ -458,11 +458,11 @@ void TestAlgorithmSpecialisation()
   cudaEventElapsedTime(&duration_size, cuda_evt_timers[TIMER_SIZE_BEGIN], cuda_evt_timers[TIMER_SIZE_END]);
   cudaEventElapsedTime(&duration_decode, cuda_evt_timers[TIMER_DECODE_BEGIN], cuda_evt_timers[TIMER_DECODE_END]);
 
+#ifdef CUB_TEST_BENCHMARK
   size_t decoded_bytes          = host_golden.size() * sizeof(RunItemT);
   size_t relative_offsets_bytes = TEST_RELATIVE_OFFSETS ? host_golden.size() * sizeof(RunLengthT) : 0ULL;
   size_t total_bytes_written    = decoded_bytes + relative_offsets_bytes;
-#define CUB_TEST_BENCHMARK
-#ifdef CUB_TEST_BENCHMARK
+
   std::cout << "MODE: " << (TEST_RELATIVE_OFFSETS ? "offsets, " : "normal,  ")    //
             << "INIT: " << (TEST_RUN_OFFSETS ? "run offsets, " : "run lengths, ") //
             << "RUNS_PER_THREAD: " << RUNS_PER_THREAD                             //
@@ -484,6 +484,7 @@ void TestAlgorithmSpecialisation()
     {
       std::cout << "Mismatch at #" << i << ": CPU item: " << host_golden[i].first << ", GPU: " << h_decoded_out[i]
                 << "\n";
+      cmp_eq = false;
     }
     if (TEST_RELATIVE_OFFSETS)
     {
