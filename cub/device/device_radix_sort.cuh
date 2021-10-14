@@ -179,46 +179,53 @@ struct DeviceRadixSort
      *
      * \endcode
      *
-     * \tparam KeyT      <b>[inferred]</b> KeyT type
-     * \tparam ValueT    <b>[inferred]</b> ValueT type
+     * \tparam KeyInputIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>,
+     *         \p KeyInputIteratorT is mutable, and \p KeyInputIteratorT's \c value_type is
+     *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
+     *         and the ordering relation on \p KeyInputIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
+     *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
+     * \tparam ValueInputIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>.
+     * \tparam KeyIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>,
+     *         \p KeyIteratorT is mutable, and \p KeyIteratorT's \c value_type is
+     *         a model of <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a>,
+     *         and the ordering relation on \p KeyIteratorT's \c value_type is a <em>strict weak ordering</em>, as defined in the
+     *         <a href="https://en.cppreference.com/w/cpp/named_req/LessThanComparable">LessThan Comparable</a> requirements.
+     * \tparam ValueIteratorT is a model of <a href="https://en.cppreference.com/w/cpp/iterator/random_access_iterator">Random Access Iterator</a>.
      */
-    template <
-        typename            KeyT,
-        typename            ValueT>
+    template <typename KeyInputIteratorT,
+              typename ValueInputIteratorT,
+              typename KeyIteratorT,
+              typename ValueIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairs(
         void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        const KeyT          *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
-        KeyT                *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
-        const ValueT        *d_values_in,                           ///< [in] Pointer to the corresponding input sequence of associated value items
-        ValueT              *d_values_out,                          ///< [out] Pointer to the correspondingly-reordered output sequence of associated value items
+        KeyInputIteratorT   d_keys_in,                              ///< [in] Iterator to the input data of key data to sort
+        KeyIteratorT        d_keys_out,                             ///< [out] Iterator to the sorted output sequence of key data
+        ValueInputIteratorT d_values_in,                            ///< [in] Iterator to the corresponding input sequence of associated value items
+        ValueIteratorT      d_values_out,                           ///< [out] Iterator to the correspondingly-reordered output sequence of associated value items
         int                 num_items,                              ///< [in] Number of items to sort
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
-        int                 end_bit             = sizeof(KeyT) * 8, ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+        int                 end_bit                                 ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+          = sizeof(typename std::iterator_traits<KeyInputIteratorT>::value_type) * 8,
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // We cast away const-ness, but will *not* write to these arrays.
-        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
-        // create a new double-buffer internally when the `is_overwrite_ok` flag
-        // is not set.
-        constexpr bool is_overwrite_okay = false;
-        DoubleBuffer<KeyT>       d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
-        DoubleBuffer<ValueT>     d_values(const_cast<ValueT*>(d_values_in), d_values_out);
-
-        return DispatchRadixSort<false, KeyT, ValueT, OffsetT>::Dispatch(
+        return DispatchRadixSort<
+            false, KeyInputIteratorT, KeyIteratorT, ValueInputIteratorT, ValueIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys_in,
+            d_keys_out,
+            d_values_in,
+            d_values_out,
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -312,19 +319,22 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        constexpr bool is_overwrite_okay = true;
-
-        return DispatchRadixSort<false, KeyT, ValueT, OffsetT>::Dispatch(
+        return DispatchRadixSort<
+            false , const KeyT *, KeyT *, const ValueT *, ValueT *, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys.Current(),
+            d_keys.Alternate(),
+            d_values.Current(),
+            d_values.Alternate(),
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
+        d_values.selector ^= 1;
     }
 
 
@@ -384,43 +394,40 @@ struct DeviceRadixSort
      * \tparam KeyT      <b>[inferred]</b> KeyT type
      * \tparam ValueT    <b>[inferred]</b> ValueT type
      */
-    template <
-        typename            KeyT,
-        typename            ValueT>
+    template <typename KeyInputIteratorT,
+              typename ValueInputIteratorT,
+              typename KeyIteratorT,
+              typename ValueIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortPairsDescending(
         void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        const KeyT          *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
-        KeyT                *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
-        const ValueT        *d_values_in,                           ///< [in] Pointer to the corresponding input sequence of associated value items
-        ValueT              *d_values_out,                          ///< [out] Pointer to the correspondingly-reordered output sequence of associated value items
+        KeyInputIteratorT   d_keys_in,                              ///< [in] Iterator to the input data of key data to sort
+        KeyIteratorT        d_keys_out,                             ///< [out] Iterator to the sorted output sequence of key data
+        ValueInputIteratorT d_values_in,                            ///< [in] Iterator to the corresponding input sequence of associated value items
+        ValueIteratorT      d_values_out,                           ///< [out] Iterator to the correspondingly-reordered output sequence of associated value items
         int                 num_items,                              ///< [in] Number of items to sort
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
-        int                 end_bit             = sizeof(KeyT) * 8, ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+        int                 end_bit                                 ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+          = sizeof(typename std::iterator_traits<KeyInputIteratorT>::value_type) * 8,
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // We cast away const-ness, but will *not* write to these arrays.
-        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
-        // create a new double-buffer internally when the `is_overwrite_ok` flag
-        // is not set.
-        constexpr bool is_overwrite_okay = false;
-        DoubleBuffer<KeyT>       d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
-        DoubleBuffer<ValueT>     d_values(const_cast<ValueT*>(d_values_in), d_values_out);
-
-        return DispatchRadixSort<true, KeyT, ValueT, OffsetT>::Dispatch(
+        return DispatchRadixSort<
+            true, KeyInputIteratorT, KeyIteratorT, ValueInputIteratorT, ValueIteratorT, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys_in,
+            d_keys_out,
+            d_values_in,
+            d_values_out,
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -509,19 +516,22 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        constexpr bool is_overwrite_okay = true;
-
-        return DispatchRadixSort<true, KeyT, ValueT, OffsetT>::Dispatch(
+        return DispatchRadixSort<
+            true, const KeyT *, KeyT *, const ValueT *, ValueT *, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys.Current(),
+            d_keys.Alternate(),
+            d_values.Current(),
+            d_values.Alternate(),
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
+        d_values.selector ^= 1;
     }
 
 
@@ -583,40 +593,36 @@ struct DeviceRadixSort
      *
      * \tparam KeyT      <b>[inferred]</b> KeyT type
      */
-    template <typename KeyT>
+    template <typename KeyInputIteratorT,
+              typename KeyIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeys(
         void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        const KeyT          *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
-        KeyT                *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
+        KeyInputIteratorT   d_keys_in,                              ///< [in] Iterator to the input data of key data to sort
+        KeyIteratorT        d_keys_out,                             ///< [out] Iterator to the sorted output sequence of key data
         int                 num_items,                              ///< [in] Number of items to sort
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
-        int                 end_bit             = sizeof(KeyT) * 8, ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+        int                 end_bit                                 ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+          = sizeof(typename std::iterator_traits<KeyInputIteratorT>::value_type) * 8,
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // We cast away const-ness, but will *not* write to these arrays.
-        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
-        // create a new double-buffer internally when the `is_overwrite_ok` flag
-        // is not set.
-        constexpr bool is_overwrite_okay = false;
-        DoubleBuffer<KeyT>      d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
-        // Null value type
-        DoubleBuffer<NullType>  d_values;
-
-        return DispatchRadixSort<false, KeyT, NullType, OffsetT>::Dispatch(
+        return DispatchRadixSort<
+            false, KeyInputIteratorT, KeyIteratorT, const NullType *, NullType *, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys_in,
+            d_keys_out,
+            nullptr,
+            nullptr,
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -696,22 +702,21 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        constexpr bool is_overwrite_okay = true;
-
-        // Null value type
-        DoubleBuffer<NullType> d_values;
-
-        return DispatchRadixSort<false, KeyT, NullType, OffsetT>::Dispatch(
+        return DispatchRadixSort<
+            false, const KeyT *, KeyT *, const NullType *, NullType *, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys.Current(),
+            d_keys.Alternate(),
+            nullptr,
+            nullptr,
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
     }
 
     /**
@@ -764,39 +769,36 @@ struct DeviceRadixSort
      *
      * \tparam KeyT      <b>[inferred]</b> KeyT type
      */
-    template <typename KeyT>
+    template <typename KeyInputIteratorT,
+              typename KeyIteratorT>
     CUB_RUNTIME_FUNCTION
     static cudaError_t SortKeysDescending(
         void                *d_temp_storage,                        ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t              &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-        const KeyT          *d_keys_in,                             ///< [in] Pointer to the input data of key data to sort
-        KeyT                *d_keys_out,                            ///< [out] Pointer to the sorted output sequence of key data
+        KeyInputIteratorT   d_keys_in,                              ///< [in] Iterator to the input data of key data to sort
+        KeyIteratorT        d_keys_out,                             ///< [out] Iterator to the sorted output sequence of key data
         int                 num_items,                              ///< [in] Number of items to sort
         int                 begin_bit           = 0,                ///< [in] <b>[optional]</b> The least-significant bit index (inclusive)  needed for key comparison
-        int                 end_bit             = sizeof(KeyT) * 8, ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+        int                 end_bit                                 ///< [in] <b>[optional]</b> The most-significant bit index (exclusive) needed for key comparison (e.g., sizeof(unsigned int) * 8)
+          = sizeof(typename std::iterator_traits<KeyInputIteratorT>::value_type) * 8,
         cudaStream_t        stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        // We cast away const-ness, but will *not* write to these arrays.
-        // `DispatchRadixSort::Dispatch` will allocate temporary storage and
-        // create a new double-buffer internally when the `is_overwrite_ok` flag
-        // is not set.
-        constexpr bool is_overwrite_okay = false;
-        DoubleBuffer<KeyT>      d_keys(const_cast<KeyT*>(d_keys_in), d_keys_out);
-        DoubleBuffer<NullType>  d_values;
-
-        return DispatchRadixSort<true, KeyT, NullType, OffsetT>::Dispatch(
+        return DispatchRadixSort<
+            true, KeyInputIteratorT, KeyIteratorT, const NullType *, NullType *, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys_in,
+            d_keys_out,
+            nullptr,
+            nullptr,
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
     }
@@ -872,22 +874,21 @@ struct DeviceRadixSort
         // Signed integer type for global offsets
         typedef int OffsetT;
 
-        constexpr bool is_overwrite_okay = true;
-
-        // Null value type
-        DoubleBuffer<NullType> d_values;
-
-        return DispatchRadixSort<true, KeyT, NullType, OffsetT>::Dispatch(
+        return DispatchRadixSort<
+            true, const KeyT *, KeyT *, const NullType *, NullType *, OffsetT
+        >::Dispatch(
             d_temp_storage,
             temp_storage_bytes,
-            d_keys,
-            d_values,
+            d_keys.Current(),
+            d_keys.Alternate(),
+            nullptr,
+            nullptr,
             num_items,
             begin_bit,
             end_bit,
-            is_overwrite_okay,
             stream,
             debug_synchronous);
+        d_keys.selector ^= 1;
     }
 
 
