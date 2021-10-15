@@ -49,7 +49,6 @@
 
 CUB_NAMESPACE_BEGIN
 
-
 /******************************************************************************
  * Kernel entry points
  *****************************************************************************/
@@ -108,6 +107,7 @@ __global__ void DeviceScanKernel(
     InitValueT          init_value,         ///< Initial value to seed the exclusive scan
     OffsetT             num_items)          ///< Total number of scan items for the entire problem
 {
+    using RealInitValueT = typename InitValueT::value_type;
     typedef typename ChainedPolicyT::ActivePolicy::ScanPolicyT ScanPolicyT;
 
     // Thread block type for scanning input tiles
@@ -116,14 +116,16 @@ __global__ void DeviceScanKernel(
         InputIteratorT,
         OutputIteratorT,
         ScanOpT,
-        InitValueT,
+        RealInitValueT,
         OffsetT> AgentScanT;
 
     // Shared memory for AgentScan
     __shared__ typename AgentScanT::TempStorage temp_storage;
 
+    RealInitValueT real_init_value = init_value;
+
     // Process tiles
-    AgentScanT(temp_storage, d_in, d_out, scan_op, init_value).ConsumeRange(
+    AgentScanT(temp_storage, d_in, d_out, scan_op, real_init_value).ConsumeRange(
         num_items,
         tile_state,
         start_tile);
@@ -205,13 +207,13 @@ template <
     typename InputIteratorT,     ///< Random-access input iterator type for reading scan inputs \iterator
     typename OutputIteratorT,    ///< Random-access output iterator type for writing scan outputs \iterator
     typename ScanOpT,            ///< Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
-    typename InitValueT,          ///< The init_value element type for ScanOpT (cub::NullType for inclusive scans)
+    typename InitValueT,         ///< The init_value element type for ScanOpT (cub::NullType for inclusive scans)
     typename OffsetT,            ///< Signed integer type for global offsets
     typename SelectedPolicy = DeviceScanPolicy<
       // Accumulator type.
       typename If<Equals<InitValueT, NullType>::VALUE,
                   typename std::iterator_traits<InputIteratorT>::value_type,
-                  InitValueT>::Type>>
+                  typename InitValueT::value_type>::Type>>
 struct DispatchScan:
     SelectedPolicy
 {
@@ -228,10 +230,10 @@ struct DispatchScan:
     using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
 
     // The output value type -- used as the intermediate accumulator
-    // Per https://wg21.link/P0571, use InitValueT if provided, otherwise the
+    // Per https://wg21.link/P0571, use InitValueT::value_type if provided, otherwise the
     // input iterator's value type.
     using OutputT =
-      typename If<Equals<InitValueT, NullType>::VALUE, InputT, InitValueT>::Type;
+      typename If<Equals<InitValueT, NullType>::VALUE, InputT, typename InitValueT::value_type>::Type;
 
     void*           d_temp_storage;         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t&         temp_storage_bytes;     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
