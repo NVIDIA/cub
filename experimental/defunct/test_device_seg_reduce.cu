@@ -1529,11 +1529,11 @@ struct DeviceSegReduceDispatch
         typename                        SegReduceRegionByKeyKernelPtr>          ///< Function type of cub::SegReduceRegionByKeyKernel
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void*               d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        void*                           d_temp_storage,                         ///< [in] Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                          &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation.
         ValueIterator                   d_values,                               ///< [in] A sequence of \p num_values data to reduce
         SegmentOffsetIterator           d_segment_offsets,                      ///< [in] A sequence of (\p num_segments + 1) segment offsets
-        OutputIteratorT                  d_output,                               ///< [out] A sequence of \p num_segments segment totals
+        OutputIteratorT                 d_output,                               ///< [out] A sequence of \p num_segments segment totals
         OffsetT                         num_values,                             ///< [in] Total number of values to reduce
         OffsetT                         num_segments,                           ///< [in] Number of segments being reduced
         Value                           identity,                               ///< [in] Identity value (for zero-length segments)
@@ -1704,7 +1704,7 @@ struct DeviceSegReduceDispatch
      */
     __host__ __device__ __forceinline__
     static cudaError_t Dispatch(
-        void*               d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        void*                            d_temp_storage,                        ///< [in] Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                          &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation.
         ValueIterator                   d_values,                               ///< [in] A sequence of \p num_values data to reduce
         SegmentOffsetIterator           d_segment_offsets,                      ///< [in] A sequence of (\p num_segments + 1) segment offsets
@@ -1807,11 +1807,11 @@ struct DeviceSegReduce
         typename                ReductionOp>
     __host__ __device__ __forceinline__
     static cudaError_t Reduce(
-        void*               d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        void*                   d_temp_storage,                         ///< [in] Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation.
         ValueIterator           d_values,                               ///< [in] A sequence of \p num_values data to reduce
         SegmentOffsetIterator   d_segment_offsets,                      ///< [in] A sequence of (\p num_segments + 1) segment offsets
-        OutputIteratorT          d_output,                               ///< [out] A sequence of \p num_segments segment totals
+        OutputIteratorT         d_output,                               ///< [out] A sequence of \p num_segments segment totals
         int                     num_values,                             ///< [in] Total number of values to reduce
         int                     num_segments,                           ///< [in] Number of segments being reduced
         Value                   identity,                               ///< [in] Identity value (for zero-length segments)
@@ -1867,11 +1867,11 @@ struct DeviceSegReduce
         typename                OutputIteratorT>
     __host__ __device__ __forceinline__
     static cudaError_t Sum(
-        void*               d_temp_storage,                        ///< [in] %Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
+        void*                   d_temp_storage,                         ///< [in] Device allocation of temporary storage.  When NULL, the required allocation size is returned in \p temp_storage_bytes and no work is done.
         size_t                  &temp_storage_bytes,                    ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation.
         ValueIterator           d_values,                               ///< [in] A sequence of \p num_values data to reduce
         SegmentOffsetIterator   d_segment_offsets,                      ///< [in] A sequence of (\p num_segments + 1) segment offsets
-        OutputIteratorT          d_output,                               ///< [out] A sequence of \p num_segments segment totals
+        OutputIteratorT         d_output,                               ///< [out] A sequence of \p num_segments segment totals
         int                     num_values,                             ///< [in] Total number of values to reduce
         int                     num_segments,                           ///< [in] Number of segments being reduced
         cudaStream_t            stream              = 0,                ///< [in] <b>[optional]</b> CUDA stream to launch kernels within.  Default is stream<sub>0</sub>.
