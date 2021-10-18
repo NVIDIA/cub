@@ -183,9 +183,9 @@ private:
             typename InputIteratorT,
             typename OffsetT,
             typename T>
-  __device__ __forceinline__ uint32_t StaticUpperBound(InputIteratorT input, ///< [in] Input sequence
-                                                       OffsetT num_items,    ///< [in] Input sequence length
-                                                       T val)                ///< [in] Search key
+  __device__ __forceinline__ OffsetT StaticUpperBound(InputIteratorT input, ///< [in] Input sequence
+                                                      OffsetT num_items,    ///< [in] Input sequence length
+                                                      T val)                ///< [in] Search key
   {
     OffsetT lower_bound = 0;
     OffsetT upper_bound = num_items;
