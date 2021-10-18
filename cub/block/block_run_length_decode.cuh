@@ -40,7 +40,7 @@
 CUB_NAMESPACE_BEGIN
 
 /**
- * @brief The BlockRunLengthDecode class supports decoding a run-length encoded array of items. That is, given
+ * \brief The BlockRunLengthDecode class supports decoding a run-length encoded array of items. That is, given
  * the two arrays run_value[N] and run_lengths[N], run_value[i] is repeated run_lengths[i] many times in the output
  * array.
  * Due to the nature of the run-length decoding algorithm ("decompression"), the output size of the run-length decoded
@@ -48,17 +48,17 @@ CUB_NAMESPACE_BEGIN
  * retrieving a "window" from the run-length decoded array. The window's offset can be specified and BLOCK_THREADS *
  * DECODED_ITEMS_PER_THREAD (i.e., referred to as window_size) decoded items from the specified window will be returned.
  *
- * @note: Trailing runs of length 0 are supported (i.e., they may only appear at the end of the run_lengths array).
+ * \note: Trailing runs of length 0 are supported (i.e., they may only appear at the end of the run_lengths array).
  * A run of length zero may not be followed by a run length that is not zero.
  *
- * @tparam ItemT The data type of the items being run-length decoded
- * @tparam BLOCK_DIM_X The thread block length in threads along the X dimension
- * @tparam RUNS_PER_THREAD The number of consecutive runs that each thread contributes
- * @tparam DECODED_ITEMS_PER_THREAD The maximum number of decoded items that each thread holds
- * @tparam DecodedOffsetT Type used to index into the block's decoded items (large enough to hold the sum over all the
+ * \tparam ItemT The data type of the items being run-length decoded
+ * \tparam BLOCK_DIM_X The thread block length in threads along the X dimension
+ * \tparam RUNS_PER_THREAD The number of consecutive runs that each thread contributes
+ * \tparam DECODED_ITEMS_PER_THREAD The maximum number of decoded items that each thread holds
+ * \tparam DecodedOffsetT Type used to index into the block's decoded items (large enough to hold the sum over all the
  * runs' lengths)
- * @tparam BLOCK_DIM_Y The thread block length in threads along the Y dimension
- * @tparam BLOCK_DIM_Z The thread block length in threads along the Z dimension
+ * \tparam BLOCK_DIM_Y The thread block length in threads along the Y dimension
+ * \tparam BLOCK_DIM_Z The thread block length in threads along the Z dimension
  */
 template <typename ItemT,
           int BLOCK_DIM_X,
@@ -118,7 +118,7 @@ public:
   //---------------------------------------------------------------------
 
   /**
-   * @brief Constructor specialised for user-provided temporary storage, initializing using the runs' lengths. The
+   * \brief Constructor specialised for user-provided temporary storage, initializing using the runs' lengths. The
    * algorithm's temporary storage may not be repurposed between the constructor call and subsequent
    * <b>RunLengthDecode</b> calls.
    */
@@ -134,7 +134,7 @@ public:
   }
 
   /**
-   * @brief Constructor specialised for user-provided temporary storage, initializing using the runs' offsets. The
+   * \brief Constructor specialised for user-provided temporary storage, initializing using the runs' offsets. The
    * algorithm's temporary storage may not be repurposed between the constructor call and subsequent
    * <b>RunLengthDecode</b> calls.
    */
@@ -149,7 +149,7 @@ public:
   }
 
   /**
-   * @brief Constructor specialised for static temporary storage, initializing using the runs' lengths.
+   * \brief Constructor specialised for static temporary storage, initializing using the runs' lengths.
    */
   template <typename RunLengthT, typename TotalDecodedSizeT>
   __device__ __forceinline__ BlockRunLengthDecode(ItemT (&run_values)[RUNS_PER_THREAD],
@@ -162,7 +162,7 @@ public:
   }
 
   /**
-   * @brief Constructor specialised for static temporary storage, initializing using the runs' offsets.
+   * \brief Constructor specialised for static temporary storage, initializing using the runs' offsets.
    */
   template <typename UserRunOffsetT>
   __device__ __forceinline__ BlockRunLengthDecode(ItemT (&run_values)[RUNS_PER_THREAD],
@@ -175,7 +175,7 @@ public:
 
 private:
   /**
-   * @brief Returns the offset of the first value within \p input which compares greater than \p val. This version takes
+   * \brief Returns the offset of the first value within \p input which compares greater than \p val. This version takes
    * \p MAX_NUM_ITEMS, an upper bound of the array size, which will be used to determine the number of binary search
    * iterations at compile time.
    */
@@ -250,7 +250,7 @@ private:
 
 public:
   /**
-   * @brief Run-length decodes the runs previously passed via a call to Init(...) and returns the run-length decoded
+   * \brief Run-length decodes the runs previously passed via a call to Init(...) and returns the run-length decoded
    * items in a blocked arrangement to \p decoded_items. If the number of run-length decoded items exceeds the
    * run-length decode buffer (i.e., <b>DECODED_ITEMS_PER_THREAD * BLOCK_THREADS</b>), only the items that fit within
    * the buffer are returned. Subsequent calls to <b>RunLengthDecode</b> adjusting \p from_decoded_offset can be
@@ -261,9 +261,9 @@ public:
    * decoded array of `3, 3, 1, 4, 4, 4` with the relative offsets of `0, 1, 0, 0, 1, 2`.
    * \smemreuse
    *
-   * @param[out] decoded_items The run-length decoded items to be returned in a blocked arrangement
-   * @param[out] item_offsets The run-length decoded items' relative offset within the run they belong to
-   * @param[in] from_decoded_offset If invoked with from_decoded_offset that is larger than total_decoded_size results
+   * \param[out] decoded_items The run-length decoded items to be returned in a blocked arrangement
+   * \param[out] item_offsets The run-length decoded items' relative offset within the run they belong to
+   * \param[in] from_decoded_offset If invoked with from_decoded_offset that is larger than total_decoded_size results
    * in undefined behavior.
    */
   template <typename RelativeOffsetT>
@@ -312,15 +312,15 @@ public:
   }
 
   /**
-   * @brief Run-length decodes the runs previously passed via a call to Init(...) and returns the run-length decoded
+   * \brief Run-length decodes the runs previously passed via a call to Init(...) and returns the run-length decoded
    * items in a blocked arrangement to \p decoded_items. If the number of run-length decoded items exceeds the
    * run-length decode buffer (i.e., <b>DECODED_ITEMS_PER_THREAD * BLOCK_THREADS</b>), only the items that fit within
    * the buffer are returned. Subsequent calls to <b>RunLengthDecode</b> adjusting \p from_decoded_offset can be
    * used to retrieve the remaining run-length decoded items. Calling __syncthreads() between any two calls to
    * <b>RunLengthDecode</b> is not required.
    *
-   * @param[out] decoded_items The run-length decoded items to be returned in a blocked arrangement
-   * @param[in] from_decoded_offset If invoked with from_decoded_offset that is larger than total_decoded_size results
+   * \param[out] decoded_items The run-length decoded items to be returned in a blocked arrangement
+   * \param[in] from_decoded_offset If invoked with from_decoded_offset that is larger than total_decoded_size results
    * in undefined behavior.
    */
   __device__ __forceinline__ void RunLengthDecode(ItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
