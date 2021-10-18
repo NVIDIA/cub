@@ -48,18 +48,18 @@ using namespace cub;
  ******************************************************************************/
 
 /**
- * @brief Class template to facilitate testing the BlockRunLengthDecode algorithm for all its template parameter
+ * \brief Class template to facilitate testing the BlockRunLengthDecode algorithm for all its template parameter
  * specialisations.
  *
- * @tparam ItemItT The item type being run-length decoded
- * @tparam RunLengthsItT Iterator type providing the runs' lengths
- * @tparam RUNS_PER_THREAD The number of runs that each thread is getting assigned to
- * @tparam DECODED_ITEMS_PER_THREAD The number of run-length decoded items that each thread is decoding
- * @tparam TEST_RELATIVE_OFFSETS_ Whether to also retrieve each decoded item's relative offset within its run
- * @tparam TEST_RUN_OFFSETS_ Whether to pass in each run's offset instead of each run's length
- * @tparam BLOCK_DIM_X The thread block length in threads along the X dimension
- * @tparam BLOCK_DIM_Y The thread block length in threads along the Y dimension
- * @tparam BLOCK_DIM_Z The thread block length in threads along the Z dimension
+ * \tparam ItemItT The item type being run-length decoded
+ * \tparam RunLengthsItT Iterator type providing the runs' lengths
+ * \tparam RUNS_PER_THREAD The number of runs that each thread is getting assigned to
+ * \tparam DECODED_ITEMS_PER_THREAD The number of run-length decoded items that each thread is decoding
+ * \tparam TEST_RELATIVE_OFFSETS_ Whether to also retrieve each decoded item's relative offset within its run
+ * \tparam TEST_RUN_OFFSETS_ Whether to pass in each run's offset instead of each run's length
+ * \tparam BLOCK_DIM_X The thread block length in threads along the X dimension
+ * \tparam BLOCK_DIM_Y The thread block length in threads along the Y dimension
+ * \tparam BLOCK_DIM_Z The thread block length in threads along the Z dimension
  */
 template <typename ItemItT,
           typename RunLengthsItT,
@@ -170,7 +170,7 @@ public:
   {}
 
   /**
-   * @brief Loads the given block (or tile) of runs, and computes their "decompressed" (run-length decoded) size.
+   * \brief Loads the given block (or tile) of runs, and computes their "decompressed" (run-length decoded) size.
    */
   __device__ __forceinline__ uint32_t GetDecodedSize(ItemItT d_block_unique_items,
                                                      RunLengthsItT d_block_run_lengths,
@@ -189,7 +189,7 @@ public:
   }
 
   /**
-   * @brief Loads the given block (or tile) of runs, run-length decodes them, and writes the results to \p
+   * \brief Loads the given block (or tile) of runs, run-length decodes them, and writes the results to \p
    * d_block_decoded_out.
    */
   template <typename UniqueItemOutItT, typename RelativeOffsetOutItT>
