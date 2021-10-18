@@ -29,13 +29,14 @@
 
 #include "../config.cuh"
 #include "../thread/thread_search.cuh"
+#include "../util_math.cuh"
+#include "../util_namespace.cuh"
 #include "../util_ptx.cuh"
 #include "../util_type.cuh"
 #include "block_scan.cuh"
 #include <limits>
 #include <type_traits>
 
-/// CUB namespace
 CUB_NAMESPACE_BEGIN
 
 /**
@@ -78,10 +79,6 @@ private:
   /// The number of runs that the block decodes (out-of-bounds items may be padded with run lengths of '0')
   static constexpr int BLOCK_RUNS = BLOCK_THREADS * RUNS_PER_THREAD;
 
-  /// The number of decoded items. If the actual run-length decoded items exceed BLOCK_DECODED_ITEMS, one can
-  /// retrieve the full run-length decoded data through multiple invocations.
-  static constexpr int BLOCK_DECODED_ITEMS = BLOCK_THREADS * DECODED_ITEMS_PER_THREAD;
-
   /// BlockScan used to determine the beginning of each run (i.e., prefix sum over the runs' length)
   using RunOffsetScanT = BlockScan<DecodedOffsetT, BLOCK_DIM_X, BLOCK_SCAN_RAKING_MEMOIZE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
 
@@ -121,7 +118,9 @@ public:
   //---------------------------------------------------------------------
 
   /**
-   * @brief Constructor specialised for user-provided temporary storage, initializing using the runs' lengths.
+   * @brief Constructor specialised for user-provided temporary storage, initializing using the runs' lengths. The
+   * algorithm's temporary storage may not be repurposed between the constructor call and subsequent
+   * <b>RunLengthDecode</b> calls.
    */
   template <typename RunLengthT, typename TotalDecodedSizeT>
   __device__ __forceinline__ BlockRunLengthDecode(TempStorage &temp_storage,
@@ -135,7 +134,9 @@ public:
   }
 
   /**
-   * @brief Constructor specialised for user-provided temporary storage, initializing using the runs' offsets.
+   * @brief Constructor specialised for user-provided temporary storage, initializing using the runs' offsets. The
+   * algorithm's temporary storage may not be repurposed between the constructor call and subsequent
+   * <b>RunLengthDecode</b> calls.
    */
   template <typename UserRunOffsetT>
   __device__ __forceinline__ BlockRunLengthDecode(TempStorage &temp_storage,
@@ -174,7 +175,7 @@ public:
 
 private:
   /**
-   * \brief Returns the offset of the first value within \p input which compares greater than \p val. This version takes
+   * @brief Returns the offset of the first value within \p input which compares greater than \p val. This version takes
    * \p MAX_NUM_ITEMS, an upper bound of the array size, which will be used to determine the number of binary search
    * iterations at compile time.
    */
@@ -191,8 +192,8 @@ private:
 #pragma unroll
     for (int i = 0; i <= Log2<MAX_NUM_ITEMS>::VALUE; i++)
     {
-      OffsetT mid = lower_bound + (upper_bound - lower_bound) / 2;
-      mid         = min(mid, num_items - 1);
+      OffsetT mid = cub::MidPoint<OffsetT>(lower_bound, upper_bound);
+      mid         = (cub::min)(mid, num_items - 1);
 
       if (val < input[mid])
       {
@@ -212,7 +213,7 @@ private:
                                                      RunOffsetT (&run_offsets)[RUNS_PER_THREAD])
   {
     // Keep the runs' items and the offsets of each run's beginning in the temporary storage
-    RunOffsetT thread_dst_offset = linear_tid * RUNS_PER_THREAD;
+    RunOffsetT thread_dst_offset = static_cast<RunOffsetT>(linear_tid) * static_cast<RunOffsetT>(RUNS_PER_THREAD);
 #pragma unroll
     for (int i = 0; i < RUNS_PER_THREAD; i++)
     {
@@ -235,13 +236,13 @@ private:
 #pragma unroll
     for (int i = 0; i < RUNS_PER_THREAD; i++)
     {
-      run_offsets[i] = run_lengths[i];
+      run_offsets[i] = static_cast<DecodedOffsetT>(run_lengths[i]);
     }
     DecodedOffsetT decoded_size_aggregate;
     RunOffsetScanT(this->temp_storage.offset_scan).ExclusiveSum(run_offsets, run_offsets, decoded_size_aggregate);
-    total_decoded_size = decoded_size_aggregate;
+    total_decoded_size = static_cast<TotalDecodedSizeT>(decoded_size_aggregate);
 
-    // Ensure the prefix scan's temporary storage can be reused (may be superfluous, but depends on scan implementaiton)
+    // Ensure the prefix scan's temporary storage can be reused (may be superfluous, but depends on scan implementation)
     CTA_SYNC();
 
     InitWithRunOffsets(run_values, run_offsets);
@@ -253,10 +254,17 @@ public:
    * items in a blocked arrangement to \p decoded_items. If the number of run-length decoded items exceeds the
    * run-length decode buffer (i.e., <b>DECODED_ITEMS_PER_THREAD * BLOCK_THREADS</b>), only the items that fit within
    * the buffer are returned. Subsequent calls to <b>RunLengthDecode</b> adjusting \p from_decoded_offset can be
-   * used to retrieve the remaining run-length decoded items.
+   * used to retrieve the remaining run-length decoded items. Calling __syncthreads() between any two calls to
+   * <b>RunLengthDecode</b> is not required.
+   * \p item_offsets can be used to retrieve each run-length decoded item's relative index within its run. E.g., the
+   * run-length encoded array of `3, 1, 4` with the respective run lengths of `2, 1, 3` would yield the run-length
+   * decoded array of `3, 3, 1, 4, 4, 4` with the relative offsets of `0, 1, 0, 0, 1, 2`.
+   * \smemreuse
    *
-   * @param from_decoded_offset If invoked with from_decoded_offset that is larger than total_decoded_size results in
-   * undefined behavior.
+   * @param[out] decoded_items The run-length decoded items to be returned in a blocked arrangement
+   * @param[out] item_offsets The run-length decoded items' relative offset within the run they belong to
+   * @param[in] from_decoded_offset If invoked with from_decoded_offset that is larger than total_decoded_size results
+   * in undefined behavior.
    */
   template <typename RelativeOffsetT>
   __device__ __forceinline__ void RunLengthDecode(ItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
@@ -303,6 +311,18 @@ public:
     }
   }
 
+  /**
+   * @brief Run-length decodes the runs previously passed via a call to Init(...) and returns the run-length decoded
+   * items in a blocked arrangement to \p decoded_items. If the number of run-length decoded items exceeds the
+   * run-length decode buffer (i.e., <b>DECODED_ITEMS_PER_THREAD * BLOCK_THREADS</b>), only the items that fit within
+   * the buffer are returned. Subsequent calls to <b>RunLengthDecode</b> adjusting \p from_decoded_offset can be
+   * used to retrieve the remaining run-length decoded items. Calling __syncthreads() between any two calls to
+   * <b>RunLengthDecode</b> is not required.
+   *
+   * @param[out] decoded_items The run-length decoded items to be returned in a blocked arrangement
+   * @param[in] from_decoded_offset If invoked with from_decoded_offset that is larger than total_decoded_size results
+   * in undefined behavior.
+   */
   __device__ __forceinline__ void RunLengthDecode(ItemT (&decoded_items)[DECODED_ITEMS_PER_THREAD],
                                                   DecodedOffsetT from_decoded_offset = 0)
   {

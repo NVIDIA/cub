@@ -458,7 +458,6 @@ void TestAlgorithmSpecialisation()
   cudaEventElapsedTime(&duration_size, cuda_evt_timers[TIMER_SIZE_BEGIN], cuda_evt_timers[TIMER_SIZE_END]);
   cudaEventElapsedTime(&duration_decode, cuda_evt_timers[TIMER_DECODE_BEGIN], cuda_evt_timers[TIMER_DECODE_END]);
 
-#ifdef CUB_TEST_BENCHMARK
   size_t decoded_bytes          = host_golden.size() * sizeof(RunItemT);
   size_t relative_offsets_bytes = TEST_RELATIVE_OFFSETS ? host_golden.size() * sizeof(RunLengthT) : 0ULL;
   size_t total_bytes_written    = decoded_bytes + relative_offsets_bytes;
@@ -474,7 +473,6 @@ void TestAlgorithmSpecialisation()
             << ", time_decode (ms): " << duration_decode                          //
             << ", achieved decode BW (GB/s): "
             << ((static_cast<double>(total_bytes_written) / 1.0e9) * (1000.0 / duration_decode)) << "\n";
-#endif
 
   // Verify the run-length decoded data is correct
   bool cmp_eq = true;
