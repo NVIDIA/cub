@@ -67,6 +67,15 @@ DivideAndRoundUp(NumeratorT n, DenominatorT d)
   return static_cast<NumeratorT>(n / d + (n % d != 0 ? 1 : 0));
 }
 
+constexpr __device__ __host__ int
+Nominal4BItemsToItemsCombined(int nominal_4b_items_per_thread, int combined_bytes)
+{
+  return (cub::min)(nominal_4b_items_per_thread,
+                    (cub::max)(1,
+                               nominal_4b_items_per_thread * 8 /
+                               combined_bytes));
+}
+
 template <typename T>
 constexpr __device__ __host__ int
 Nominal4BItemsToItems(int nominal_4b_items_per_thread)
