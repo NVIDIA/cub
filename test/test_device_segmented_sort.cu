@@ -105,13 +105,13 @@ struct SegmentChecker
     , offsets(offsets)
   {}
 
-  __device__ bool operator()(unsigned int segment_id)
+  bool operator()(int segment_id)
   {
-    const unsigned int segment_begin = offsets[segment_id];
-    const unsigned int segment_end = offsets[segment_id + 1];
+    const int segment_begin = offsets[segment_id];
+    const int segment_end = offsets[segment_id + 1];
 
-    unsigned int counter = 0;
-    for (unsigned int i = segment_begin; i < segment_end; i++)
+    int counter = 0;
+    for (int i = segment_begin; i < segment_end; i++)
     {
       if (sorted_keys[i] != static_cast<KeyT>(counter++))
       {
@@ -135,12 +135,12 @@ struct DescendingSegmentChecker
       , offsets(offsets)
   {}
 
-  __device__ bool operator()(unsigned int segment_id)
+  bool operator()(int segment_id)
   {
-    const int segment_begin = static_cast<int>(offsets[segment_id]);
-    const int segment_end   = static_cast<int>(offsets[segment_id + 1]);
+    const int segment_begin = offsets[segment_id];
+    const int segment_end   = offsets[segment_id + 1];
 
-    unsigned int counter = 0;
+    int counter = 0;
     for (int i = segment_end - 1; i >= segment_begin; i--)
     {
       if (sorted_keys[i] != static_cast<KeyT>(counter++))
@@ -165,14 +165,14 @@ struct ReversedIota
     , offsets(offsets)
   {}
 
-  __device__ void operator()(unsigned int segment_id) const
+  void operator()(int segment_id) const
   {
-    const unsigned int segment_begin = offsets[segment_id];
-    const unsigned int segment_end = offsets[segment_id + 1];
-    const unsigned int segment_size = segment_end - segment_begin;
+    const int segment_begin = offsets[segment_id];
+    const int segment_end = offsets[segment_id + 1];
+    const int segment_size = segment_end - segment_begin;
 
-    unsigned int count = 0;
-    for (unsigned int i = segment_begin; i < segment_end; i++)
+    int count = 0;
+    for (int i = segment_begin; i < segment_end; i++)
     {
       data[i] = static_cast<KeyT>(segment_size - 1 - count++);
     }
@@ -191,13 +191,13 @@ struct Iota
       , offsets(offsets)
   {}
 
-  __device__ void operator()(unsigned int segment_id) const
+  void operator()(int segment_id) const
   {
-    const unsigned int segment_begin = offsets[segment_id];
-    const unsigned int segment_end   = offsets[segment_id + 1];
+    const int segment_begin = offsets[segment_id];
+    const int segment_end   = offsets[segment_id + 1];
 
-    unsigned int count = 0;
-    for (unsigned int i = segment_begin; i < segment_end; i++)
+    int count = 0;
+    for (int i = segment_begin; i < segment_end; i++)
     {
       data[i] = static_cast<KeyT>(count++);
     }
@@ -214,17 +214,15 @@ class Input
   thrust::device_vector<int> d_offsets;
   thrust::host_vector<int> h_offsets;
 
-  using MaskedValueT = typename std::conditional<
-    std::is_same<ValueT, cub::NullType>::value,
-    KeyT,
-    ValueT>::type;
-
-  using UnwrappedKeyT = typename UnwrapHalfAndBfloat16<KeyT>::Type;
+  using MaskedValueT = typename std::
+    conditional<std::is_same<ValueT, cub::NullType>::value, KeyT, ValueT>::type;
 
   bool reverse {};
   int num_items {};
   thrust::device_vector<KeyT> d_keys;
   thrust::device_vector<MaskedValueT> d_values;
+  thrust::host_vector<KeyT> h_keys;
+  thrust::host_vector<MaskedValueT> h_values;
 
 public:
   Input(bool reverse, const thrust::host_vector<int> &h_segment_sizes)
@@ -236,6 +234,8 @@ public:
           thrust::reduce(d_segment_sizes.begin(), d_segment_sizes.end())))
       , d_keys(num_items)
       , d_values(num_items)
+      , h_keys(num_items)
+      , h_values(num_items)
   {
     update();
   }
@@ -262,7 +262,7 @@ public:
     return num_items;
   }
 
-  unsigned int get_num_segments() const
+  int get_num_segments() const
   {
     return static_cast<unsigned int>(d_segment_sizes.size());
   }
@@ -305,44 +305,60 @@ public:
   template <typename T>
   bool check_output_implementation(const T *keys_output)
   {
-    thrust::device_vector<bool> is_segment_sorted(get_num_segments(), true);
+    const int *offsets = thrust::raw_pointer_cast(h_offsets.data());
 
     if (reverse)
     {
-      thrust::transform(
-        thrust::counting_iterator<unsigned int>(0),
-                        thrust::counting_iterator<unsigned int>(
-                          static_cast<unsigned int>(get_num_segments())),
-                        is_segment_sorted.begin(),
-                        DescendingSegmentChecker<T>{keys_output,
-                                                    get_d_offsets()});
+      DescendingSegmentChecker<T> checker{keys_output, offsets};
+
+      for (int i = 0; i < get_num_segments(); i++)
+      {
+        if (!checker(i))
+        {
+          return false;
+        }
+      }
     }
     else
     {
-      thrust::transform(
-        thrust::counting_iterator<unsigned int>(0),
-                        thrust::counting_iterator<unsigned int>(
-                          static_cast<unsigned int>(get_num_segments())),
-                        is_segment_sorted.begin(),
-                        SegmentChecker<T>{keys_output, get_d_offsets()});
+      SegmentChecker<T> checker{keys_output, offsets};
+
+      for (int i = 0; i < get_num_segments(); i++)
+      {
+        if (!checker(i))
+        {
+          return false;
+        }
+      }
     }
 
-    return thrust::reduce(is_segment_sorted.begin(),
-                          is_segment_sorted.end(),
-                          true,
-                          thrust::logical_and<bool>());
+    return true;
   }
 
-  bool check_output(const KeyT *keys_output,
-                    const MaskedValueT *values_output = nullptr)
+  bool check_output(const KeyT *d_keys_output,
+                    const MaskedValueT *d_values_output = nullptr)
   {
-    const bool keys_ok = check_output_implementation(
-      reinterpret_cast<const UnwrappedKeyT *>(keys_output));
+    KeyT *keys_output = thrust::raw_pointer_cast(h_keys.data());
+    MaskedValueT *values_output = thrust::raw_pointer_cast(h_values.data());
 
-    const bool values_ok = (std::is_same<ValueT, cub::NullType>::value ||
-                            values_output == nullptr)
-                             ? true
-                             : check_output_implementation(values_output);
+    cudaMemcpy(keys_output,
+               d_keys_output,
+               sizeof(KeyT) * num_items,
+               cudaMemcpyDeviceToHost);
+
+    const bool keys_ok = check_output_implementation(keys_output);
+
+    if (std::is_same<ValueT, cub::NullType>::value || d_values_output == nullptr)
+    {
+      return keys_ok;
+    }
+
+    cudaMemcpy(values_output,
+               d_values_output,
+               sizeof(ValueT) * num_items,
+               cudaMemcpyDeviceToHost);
+
+    const bool values_ok = check_output_implementation(values_output);
 
     return keys_ok && values_ok;
   }
@@ -363,26 +379,30 @@ private:
 
   void gen_keys()
   {
-    const auto total_segments = static_cast<unsigned int>(get_num_segments());
+    KeyT *keys_output = thrust::raw_pointer_cast(h_keys.data());
+    const int *offsets = thrust::raw_pointer_cast(h_offsets.data());
 
     if (reverse)
     {
-      thrust::for_each(thrust::counting_iterator<unsigned int>(0),
-                       thrust::counting_iterator<unsigned int>(total_segments),
-                       Iota<UnwrappedKeyT>{
-                         reinterpret_cast<UnwrappedKeyT *>(get_d_keys()),
-                         get_d_offsets()});
+      Iota<KeyT> generator{keys_output, offsets};
+
+      for (int i = 0; i < get_num_segments(); i++)
+      {
+        generator(i);
+      }
     }
     else
     {
-      thrust::for_each(thrust::counting_iterator<unsigned int>(0),
-                       thrust::counting_iterator<unsigned int>(total_segments),
-                       ReversedIota<UnwrappedKeyT>{
-                         reinterpret_cast<UnwrappedKeyT *>(get_d_keys()),
-                         get_d_offsets()});
+      ReversedIota<KeyT> generator{keys_output, offsets};
+
+      for (int i = 0; i < get_num_segments(); i++)
+      {
+        generator(i);
+      }
     }
 
-    thrust::copy(d_keys.begin(), d_keys.end(), d_values.begin());
+    d_keys = h_keys;
+    d_values = d_keys;
   }
 };
 
@@ -959,7 +979,6 @@ void TestSameSizeSegments(int segment_size,
                           bool skip_values = false)
 {
   const int num_items = segment_size * segments;
-  using UnwrappedKeyT = typename UnwrapHalfAndBfloat16<KeyT>::Type;
 
   thrust::device_vector<int> offsets(segments + 1);
   thrust::sequence(offsets.begin(),
@@ -980,6 +999,9 @@ void TestSameSizeSegments(int segment_size,
 
   thrust::device_vector<ValueT> values_input(num_items);
   thrust::device_vector<ValueT> values_output(num_items);
+
+  thrust::host_vector<KeyT> host_keys(num_items);
+  thrust::host_vector<ValueT> host_values(num_items);
 
   ValueT *d_values_input  = thrust::raw_pointer_cast(values_input.data());
   ValueT *d_values_output = thrust::raw_pointer_cast(values_output.data());
@@ -1064,40 +1086,22 @@ void TestSameSizeSegments(int segment_size,
           }
 
           {
+            host_keys = keys_buffer.selector || !sort_buffers ? keys_output
+                                                              : keys_input;
             const std::size_t items_selected =
-              keys_buffer.selector || !sort_buffers
-                ? thrust::count(thrust::device,
-                                reinterpret_cast<UnwrappedKeyT *>(
-                                  d_keys_output),
-                                reinterpret_cast<UnwrappedKeyT *>(
-                                  d_keys_output + num_items),
-                                static_cast<const UnwrappedKeyT &>(target_key))
-                : thrust::count(thrust::device,
-                                reinterpret_cast<UnwrappedKeyT *>(d_keys_input),
-                                reinterpret_cast<UnwrappedKeyT *>(d_keys_input +
-                                                                  num_items),
-                                static_cast<const UnwrappedKeyT &>(target_key));
+              thrust::count(host_keys.begin(), host_keys.end(), target_key);
             AssertEquals(static_cast<int>(items_selected), num_items);
           }
 
           if (sort_pairs)
           {
-            const std::size_t items_selected = [&]() -> std::size_t {
-              if (sort_buffers)
-              {
-                return values_buffer.selector
-                       ? thrust::count(values_output.begin(),
-                                       values_output.end(),
-                                       target_value)
-                       : thrust::count(values_input.begin(),
-                                       values_input.end(),
-                                       target_value);
-              }
-
-              return thrust::count(values_output.begin(),
-                                   values_output.end(),
-                                   target_value);
-            } ();
+            host_values = values_buffer.selector || !sort_buffers
+                            ? values_output
+                            : values_input;
+            const std::size_t items_selected =
+              thrust::count(host_values.begin(),
+                            host_values.end(),
+                            target_value);
 
             AssertEquals(static_cast<int>(items_selected), num_items);
           }

@@ -104,6 +104,42 @@ template <bool IS_DESCENDING,
           typename OffsetT>
 class AgentSubWarpSort
 {
+  struct BinaryOpT
+  {
+    template <typename T>
+    __device__ bool operator()(T lhs, T rhs)
+    {
+      if (IS_DESCENDING)
+      {
+        return lhs > rhs;
+      }
+      else
+      {
+        return lhs < rhs;
+      }
+    }
+
+#if defined(__CUDA_FP16_TYPES_EXIST__) && (CUB_PTX_ARCH < 530)
+    __device__ bool operator()(__half lhs, __half rhs)
+    {
+      return (*this)(static_cast<float>(lhs), static_cast<float>(rhs));
+    }
+#endif
+  };
+
+#if defined(__CUDA_FP16_TYPES_EXIST__) && (CUB_PTX_ARCH < 530)
+  __device__ static bool equal(__half lhs, __half rhs)
+  {
+    return static_cast<float>(lhs) == static_cast<float>(rhs);
+  }
+#endif
+
+  template <typename T>
+  __device__ static bool equal(T lhs, T rhs)
+  {
+    return lhs == rhs;
+  }
+
 public:
   static constexpr bool KEYS_ONLY = std::is_same<ValueT, cub::NullType>::value;
 
@@ -161,18 +197,6 @@ public:
                       ItemsLoadItT values_input,
                       ValueT *values_output)
   {
-    auto binary_op = [] (KeyT lhs, KeyT rhs) -> bool
-    {
-      if (IS_DESCENDING)
-      {
-        return lhs > rhs;
-      }
-      else
-      {
-        return lhs < rhs;
-      }
-    };
-
     WarpMergeSortT warp_merge_sort(storage.sort);
 
     if (segment_size < 3)
@@ -183,7 +207,7 @@ public:
                    keys_output,
                    values_input,
                    values_output,
-                   binary_op);
+                   BinaryOpT{});
     }
     else
     {
@@ -211,7 +235,7 @@ public:
         WARP_SYNC(warp_merge_sort.get_member_mask());
       }
 
-      warp_merge_sort.Sort(keys, values, binary_op, segment_size, oob_default);
+      warp_merge_sort.Sort(keys, values, BinaryOpT{}, segment_size, oob_default);
       WARP_SYNC(warp_merge_sort.get_member_mask());
 
       WarpStoreKeysT(storage.store_keys).Store(keys_output, keys, segment_size);
@@ -264,7 +288,7 @@ private:
         KeyT lhs = keys_input[0];
         KeyT rhs = keys_input[1];
 
-        if (lhs == rhs || binary_op(lhs, rhs))
+        if (equal(lhs, rhs) || binary_op(lhs, rhs))
         {
           keys_output[0] = lhs;
           keys_output[1] = rhs;
