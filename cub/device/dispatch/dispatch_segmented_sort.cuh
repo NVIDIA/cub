@@ -93,15 +93,14 @@ CUB_NAMESPACE_BEGIN
  *   considered empty.
  */
 template <bool IS_DESCENDING,
-          typename SegmentedPolicyT,
-          typename MediumPolicyT,
+          typename ChainedPolicyT,
           typename KeyT,
           typename ValueT,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
-  void DeviceSegmentedSortFallbackKernel(
+__launch_bounds__(ChainedPolicyT::ActivePolicy::LargeSegmentPolicy::BLOCK_THREADS)
+__global__ void DeviceSegmentedSortFallbackKernel(
     const KeyT *d_keys_in_orig,
     KeyT *d_keys_out_orig,
     cub::detail::device_double_buffer<KeyT> d_keys_double_buffer,
@@ -111,6 +110,11 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
     BeginOffsetIteratorT d_begin_offsets,
     EndOffsetIteratorT d_end_offsets)
 {
+  using ActivePolicyT = typename ChainedPolicyT::ActivePolicy;
+  using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
+  using MediumPolicyT =
+    typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT::MediumPolicyT;
+
   const unsigned int segment_id = blockIdx.x;
   OffsetT segment_begin         = d_begin_offsets[segment_id];
   OffsetT segment_end           = d_end_offsets[segment_id];
@@ -123,7 +127,7 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
 
   using AgentSegmentedRadixSortT =
     cub::AgentSegmentedRadixSort<IS_DESCENDING,
-                                 SegmentedPolicyT,
+                                 LargeSegmentPolicyT,
                                  KeyT,
                                  ValueT,
                                  OffsetT>;
@@ -146,8 +150,8 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
   constexpr int begin_bit = 0;
   constexpr int end_bit = sizeof(KeyT) * 8;
 
-  constexpr int cacheable_tile_size = SegmentedPolicyT::BLOCK_THREADS *
-                                      SegmentedPolicyT::ITEMS_PER_THREAD;
+  constexpr int cacheable_tile_size = LargeSegmentPolicyT::BLOCK_THREADS *
+                                      LargeSegmentPolicyT::ITEMS_PER_THREAD;
 
   d_keys_in_orig += segment_begin;
   d_keys_out_orig += segment_begin;
@@ -185,7 +189,7 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
   {
     // Sort by a CTA with multiple reads from global memory
     int current_bit = begin_bit;
-    int pass_bits = (cub::min)(int{SegmentedPolicyT::RADIX_BITS},
+    int pass_bits = (cub::min)(int{LargeSegmentPolicyT::RADIX_BITS},
                                (end_bit - current_bit));
 
     d_keys_double_buffer = cub::detail::device_double_buffer<KeyT>(
@@ -210,7 +214,7 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
     #pragma unroll 1
     while (current_bit < end_bit)
     {
-      pass_bits = (cub::min)(int{SegmentedPolicyT::RADIX_BITS},
+      pass_bits = (cub::min)(int{LargeSegmentPolicyT::RADIX_BITS},
                              (end_bit - current_bit));
 
       CTA_SYNC();
@@ -284,14 +288,14 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
  *   considered empty.
  */
 template <bool IS_DESCENDING,
-          typename SegmentedPolicyT,
+          typename ChainedPolicyT,
           typename KeyT,
           typename ValueT,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
-void DeviceSegmentedSortKernelSmall(
+__launch_bounds__(ChainedPolicyT::ActivePolicy::SmallAndMediumSegmentedSortPolicyT::BLOCK_THREADS)
+__global__ void DeviceSegmentedSortKernelSmall(
     unsigned int small_segments,
     unsigned int medium_segments,
     unsigned int medium_blocks,
@@ -307,8 +311,11 @@ void DeviceSegmentedSortKernelSmall(
   const unsigned int tid = threadIdx.x;
   const unsigned int bid = blockIdx.x;
 
-  using SmallPolicyT = typename SegmentedPolicyT::SmallPolicyT;
-  using MediumPolicyT = typename SegmentedPolicyT::MediumPolicyT;
+  using ActivePolicyT = typename ChainedPolicyT::ActivePolicy;
+  using SmallAndMediumPolicyT =
+    typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
+  using MediumPolicyT = typename SmallAndMediumPolicyT::MediumPolicyT;
+  using SmallPolicyT  = typename SmallAndMediumPolicyT::SmallPolicyT;
 
   constexpr int threads_per_medium_segment = MediumPolicyT::WARP_THREADS;
   constexpr int threads_per_small_segment = SmallPolicyT::WARP_THREADS;
@@ -320,10 +327,10 @@ void DeviceSegmentedSortKernelSmall(
     AgentSubWarpSort<IS_DESCENDING, SmallPolicyT, KeyT, ValueT, OffsetT>;
 
   constexpr auto segments_per_medium_block =
-    static_cast<unsigned int>(SegmentedPolicyT::SEGMENTS_PER_MEDIUM_BLOCK);
+    static_cast<unsigned int>(SmallAndMediumPolicyT::SEGMENTS_PER_MEDIUM_BLOCK);
 
   constexpr auto segments_per_small_block =
-    static_cast<unsigned int>(SegmentedPolicyT::SEGMENTS_PER_SMALL_BLOCK);
+    static_cast<unsigned int>(SmallAndMediumPolicyT::SEGMENTS_PER_SMALL_BLOCK);
 
   __shared__ union
   {
@@ -407,14 +414,14 @@ void DeviceSegmentedSortKernelSmall(
  *   considered empty.
  */
 template <bool IS_DESCENDING,
-          typename SegmentedPolicyT,
+          typename ChainedPolicyT,
           typename KeyT,
           typename ValueT,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT,
           typename OffsetT>
-__launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
-  void DeviceSegmentedSortKernelLarge(
+__launch_bounds__(ChainedPolicyT::ActivePolicy::LargeSegmentPolicy::BLOCK_THREADS)
+__global__ void DeviceSegmentedSortKernelLarge(
     const unsigned int *d_segments_indices,
     const KeyT *d_keys_in_orig,
     KeyT *d_keys_out_orig,
@@ -425,12 +432,15 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
     BeginOffsetIteratorT d_begin_offsets,
     EndOffsetIteratorT d_end_offsets)
 {
-  constexpr int small_tile_size = SegmentedPolicyT::BLOCK_THREADS *
-                                  SegmentedPolicyT::ITEMS_PER_THREAD;
+  using ActivePolicyT = typename ChainedPolicyT::ActivePolicy;
+  using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
+
+  constexpr int small_tile_size = LargeSegmentPolicyT::BLOCK_THREADS *
+                                  LargeSegmentPolicyT::ITEMS_PER_THREAD;
 
   using AgentSegmentedRadixSortT =
     cub::AgentSegmentedRadixSort<IS_DESCENDING,
-                                 SegmentedPolicyT,
+                                 LargeSegmentPolicyT,
                                  KeyT,
                                  ValueT,
                                  OffsetT>;
@@ -473,7 +483,7 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
   {
     // Sort reading global memory multiple times
     int current_bit = begin_bit;
-    int pass_bits = (cub::min)(int{SegmentedPolicyT::RADIX_BITS},
+    int pass_bits = (cub::min)(int{LargeSegmentPolicyT::RADIX_BITS},
                                (end_bit - current_bit));
 
     d_keys_double_buffer = cub::detail::device_double_buffer<KeyT>(
@@ -498,7 +508,7 @@ __launch_bounds__(SegmentedPolicyT::BLOCK_THREADS) __global__
     #pragma unroll 1
     while (current_bit < end_bit)
     {
-      pass_bits = (cub::min)(int{SegmentedPolicyT::RADIX_BITS},
+      pass_bits = (cub::min)(int{LargeSegmentPolicyT::RADIX_BITS},
                              (end_bit - current_bit));
 
       CTA_SYNC();
@@ -773,47 +783,7 @@ struct DeviceSegmentedSortPolicy
                                          CacheLoadModifier::LOAD_DEFAULT>>;
   };
 
-  struct Policy750 : ChainedPolicy<750, Policy750, Policy700>
-  {
-    constexpr static int BLOCK_THREADS = 256;
-    constexpr static int RADIX_BITS    = sizeof(KeyT) > 1 ? 6 : 4;
-    constexpr static int PARTITIONING_THRESHOLD = 500;
-
-    using LargeSegmentPolicy =
-      AgentRadixSortDownsweepPolicy<BLOCK_THREADS,
-                                    19,
-                                    DominantT,
-                                    BLOCK_LOAD_DIRECT,
-                                    LOAD_LDG,
-                                    RADIX_RANK_MEMOIZE,
-                                    BLOCK_SCAN_WARP_SCANS,
-                                    RADIX_BITS>;
-
-    constexpr static int ITEMS_PER_SMALL_THREAD =
-      Nominal4BItemsToItems<DominantT>(11);
-
-    constexpr static int ITEMS_PER_MEDIUM_THREAD =
-      Nominal4BItemsToItems<DominantT>(11);
-
-    using SmallAndMediumSegmentedSortPolicyT =
-      AgentSmallAndMediumSegmentedSortPolicy<
-
-        BLOCK_THREADS,
-
-        // Small policy
-        cub::AgentSubWarpMergeSortPolicy<4, // Threads per segment
-                                         ITEMS_PER_SMALL_THREAD,
-                                         WarpLoadAlgorithm::WARP_LOAD_DIRECT,
-                                         CacheLoadModifier::LOAD_DEFAULT>,
-
-        // Medium policy
-        cub::AgentSubWarpMergeSortPolicy<32, // Threads per segment
-                                         ITEMS_PER_MEDIUM_THREAD,
-                                         WarpLoadAlgorithm::WARP_LOAD_TRANSPOSE,
-                                         CacheLoadModifier::LOAD_DEFAULT>>;
-  };
-
-  struct Policy800 : ChainedPolicy<800, Policy800, Policy750>
+  struct Policy800 : ChainedPolicy<800, Policy800, Policy700>
   {
     constexpr static int BLOCK_THREADS = 256;
     constexpr static int PARTITIONING_THRESHOLD = 500;
@@ -1043,6 +1013,7 @@ struct DispatchSegmentedSort : SelectedPolicy
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
+    using MaxPolicyT = typename DispatchSegmentedSort::MaxPolicy;
     using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
     using SmallAndMediumPolicyT =
       typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
@@ -1230,6 +1201,20 @@ struct DispatchSegmentedSort : SelectedPolicy
         // kernels for each of them.
         error =
           SortWithPartitioning<LargeSegmentPolicyT, SmallAndMediumPolicyT>(
+            DeviceSegmentedSortKernelLarge<IS_DESCENDING,
+                                           MaxPolicyT,
+                                           KeyT,
+                                           ValueT,
+                                           BeginOffsetIteratorT,
+                                           EndOffsetIteratorT,
+                                           OffsetT>,
+            DeviceSegmentedSortKernelSmall<IS_DESCENDING,
+                                           MaxPolicyT,
+                                           KeyT,
+                                           ValueT,
+                                           BeginOffsetIteratorT,
+                                           EndOffsetIteratorT,
+                                           OffsetT>,
             three_way_partition_temp_storage_bytes,
             d_keys_double_buffer,
             d_values_double_buffer,
@@ -1244,8 +1229,15 @@ struct DispatchSegmentedSort : SelectedPolicy
       {
         // If there are not enough segments, there's no reason to spend time
         // on extra partitioning steps.
-        using MediumPolicyT = typename SmallAndMediumPolicyT::MediumPolicyT;
-        error = SortWithoutPartitioning<LargeSegmentPolicyT, MediumPolicyT>(
+
+        error = SortWithoutPartitioning<LargeSegmentPolicyT>(
+          DeviceSegmentedSortFallbackKernel<IS_DESCENDING,
+                                            MaxPolicyT,
+                                            KeyT,
+                                            ValueT,
+                                            BeginOffsetIteratorT,
+                                            EndOffsetIteratorT,
+                                            OffsetT>,
           d_keys_double_buffer,
           d_values_double_buffer);
       }
@@ -1339,9 +1331,13 @@ private:
   }
 
   template <typename LargeSegmentPolicyT,
-            typename SmallAndMediumPolicyT>
+            typename SmallAndMediumPolicyT,
+            typename LargeKernelT,
+            typename SmallKernelT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t
   SortWithPartitioning(
+    LargeKernelT large_kernel,
+    SmallKernelT small_kernel,
     std::size_t three_way_partition_temp_storage_bytes,
     cub::detail::device_double_buffer<KeyT> &d_keys_double_buffer,
     cub::detail::device_double_buffer<ValueT> &d_values_double_buffer,
@@ -1419,13 +1415,7 @@ private:
         LargeSegmentPolicyT::BLOCK_THREADS,
         0,
         stream)
-        .doit(DeviceSegmentedSortKernelLarge<IS_DESCENDING,
-                                             LargeSegmentPolicyT,
-                                             KeyT,
-                                             ValueT,
-                                             BeginOffsetIteratorT,
-                                             EndOffsetIteratorT,
-                                             OffsetT>,
+        .doit(large_kernel,
               large_and_medium_segments_indices.get(),
               d_keys.Current(),
               GetFinalOutput(LargeSegmentPolicyT::RADIX_BITS, d_keys),
@@ -1484,13 +1474,7 @@ private:
         SmallAndMediumPolicyT::BLOCK_THREADS,
         0,
         stream)
-        .doit(DeviceSegmentedSortKernelSmall<IS_DESCENDING,
-                                             SmallAndMediumPolicyT,
-                                             KeyT,
-                                             ValueT,
-                                             BeginOffsetIteratorT,
-                                             EndOffsetIteratorT,
-                                             OffsetT>,
+        .doit(small_kernel,
               small_segments,
               medium_segments,
               medium_blocks,
@@ -1524,8 +1508,9 @@ private:
   }
 
   template <typename LargeSegmentPolicyT,
-            typename MediumPolicyT>
+            typename FallbackKernelT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t SortWithoutPartitioning(
+    FallbackKernelT fallback_kernel,
     cub::detail::device_double_buffer<KeyT> &d_keys_double_buffer,
     cub::detail::device_double_buffer<ValueT> &d_values_double_buffer)
   {
@@ -1552,14 +1537,7 @@ private:
                                                             threads_in_block,
                                                             0,
                                                             stream)
-      .doit(DeviceSegmentedSortFallbackKernel<IS_DESCENDING,
-                                              LargeSegmentPolicyT,
-                                              MediumPolicyT,
-                                              KeyT,
-                                              ValueT,
-                                              BeginOffsetIteratorT,
-                                              EndOffsetIteratorT,
-                                              OffsetT>,
+      .doit(fallback_kernel,
             d_keys.Current(),
             GetFinalOutput(LargeSegmentPolicyT::RADIX_BITS, d_keys),
             d_keys_double_buffer,

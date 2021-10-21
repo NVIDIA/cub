@@ -1619,24 +1619,10 @@ void RandomTest(int min_segments,
   }
 }
 
-template <typename KeyT>
-void TestKeys()
-{
-  const bool skip_values = true;
-
-  for (int segment_size : {1, 1024, 24 * 1024})
-  {
-    for (int segments : {1, 1024})
-    {
-      TestSameSizeSegments<KeyT, KeyT>(segment_size, segments, skip_values);
-    }
-  }
-}
-
 
 template <typename KeyT,
           typename ValueT>
-void TestPairs()
+void Test()
 {
   for (int segment_size: { 1, 1024, 24 * 1024 })
   {
@@ -1652,14 +1638,6 @@ void TestPairs()
 }
 
 
-template <typename T>
-void TestKeysAndPairs()
-{
-  TestKeys<T>();
-  TestPairs<T, T>();
-}
-
-
 int main(int argc, char** argv)
 {
   CommandLineArgs args(argc, argv);
@@ -1671,22 +1649,16 @@ int main(int argc, char** argv)
   TestEmptySegments(1 << 2);
   TestEmptySegments(1 << 22);
 
-  TestPairs<float, std::uint32_t>();
-
 #if TEST_HALF_T
-  TestPairs<half_t, std::uint32_t>();
+  Test<half_t, std::uint32_t>();
 #endif
 
 #if TEST_BF_T
-  TestPairs<bfloat16_t, std::uint32_t>();
+  Test<bfloat16_t, std::uint32_t>();
 #endif
 
-  TestKeysAndPairs<std::uint8_t>();
-  TestKeysAndPairs<std::uint16_t>();
-  TestKeysAndPairs<std::uint32_t>();
-  TestKeysAndPairs<std::uint64_t>();
-  TestPairs<std::uint8_t, std::uint64_t>();
-  TestPairs<std::int64_t, std::uint32_t>();
+  Test<std::uint8_t, std::uint64_t>();
+  Test<std::int64_t, std::uint32_t>();
 
   return 0;
 }
