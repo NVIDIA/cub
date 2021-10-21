@@ -33,7 +33,6 @@
 #pragma once
 
 #include <iterator>
-#include <algorithm>
 
 #include "../../agent/agent_scan_by_key.cuh"
 #include "../../thread/thread_operators.cuh"
