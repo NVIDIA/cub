@@ -42,11 +42,9 @@
 #include "util_namespace.cuh"
 #include "util_macro.cuh"
 
-#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
 #include <atomic>
 #include <array>
 #include <cassert>
-#endif
 
 CUB_NAMESPACE_BEGIN
 

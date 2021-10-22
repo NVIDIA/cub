@@ -59,9 +59,6 @@ struct WarpScanSmem
         /// Whether the logical warp size and the PTX warp size coincide
         IS_ARCH_WARP = (LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH)),
 
-        /// Whether the logical warp size is a power-of-two
-        IS_POW_OF_TWO = PowerOfTwo<LOGICAL_WARP_THREADS>::VALUE,
-
         /// The number of warp scan steps
         STEPS = Log2<LOGICAL_WARP_THREADS>::VALUE,
 
@@ -96,7 +93,7 @@ struct WarpScanSmem
      ******************************************************************************/
 
     /// Constructor
-    __device__ __forceinline__ WarpScanSmem(
+    explicit __device__ __forceinline__ WarpScanSmem(
         TempStorage     &temp_storage)
     :
         temp_storage(temp_storage.Alias()),
@@ -105,9 +102,9 @@ struct WarpScanSmem
             LaneId() :
             LaneId() % LOGICAL_WARP_THREADS),
 
-        member_mask((0xffffffff >> (32 - LOGICAL_WARP_THREADS)) << ((IS_ARCH_WARP || !IS_POW_OF_TWO ) ?
-            0 : // arch-width and non-power-of-two subwarps cannot be tiled with the arch-warp
-            ((LaneId() / LOGICAL_WARP_THREADS) * LOGICAL_WARP_THREADS)))
+        member_mask(
+          WarpMask<LOGICAL_WARP_THREADS, PTX_ARCH>(
+            LaneId() / LOGICAL_WARP_THREADS))
     {}
 
 

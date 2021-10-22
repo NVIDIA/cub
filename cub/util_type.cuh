@@ -854,6 +854,7 @@ struct ArrayWrapper
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+
 /**
  * \brief Double-buffer storage wrapper for multi-pass stream transformations that require more than one storage array for streaming intermediate results back and forth.
  *
