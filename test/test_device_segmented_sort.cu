@@ -419,7 +419,7 @@ public:
   InputDescription& add(const SizeGroupDescription &group)
   {
     if (static_cast<std::size_t>(group.segment_size) <
-        static_cast<std::size_t>(std::numeric_limits<KeyT>::max()))
+        static_cast<std::size_t>((std::numeric_limits<KeyT>::max)()))
     {
       for (int i = 0; i < group.segments; i++)
       {
@@ -1244,8 +1244,8 @@ void RandomizeInput(thrust::host_vector<KeyT> &h_keys,
 {
   for (std::size_t i = 0; i < h_keys.size(); i++)
   {
-    h_keys[i] = RandomValue(std::numeric_limits<KeyT>::max());
-    h_values[i] = RandomValue(std::numeric_limits<ValueT>::max());
+    h_keys[i] = RandomValue((std::numeric_limits<KeyT>::max)());
+    h_values[i] = RandomValue((std::numeric_limits<ValueT>::max)());
   }
 }
 
@@ -1255,8 +1255,8 @@ void RandomizeInput(thrust::host_vector<half_t> &h_keys,
 {
   for (std::size_t i = 0; i < h_keys.size(); i++)
   {
-    h_keys[i] = RandomValue(std::numeric_limits<int>::max());
-    h_values[i] = RandomValue(std::numeric_limits<std::uint32_t>::max());
+    h_keys[i] = RandomValue((std::numeric_limits<int>::max)());
+    h_values[i] = RandomValue((std::numeric_limits<std::uint32_t>::max)());
   }
 }
 #endif
@@ -1267,8 +1267,8 @@ void RandomizeInput(thrust::host_vector<bfloat16_t> &h_keys,
 {
   for (std::size_t i = 0; i < h_keys.size(); i++)
   {
-    h_keys[i] = RandomValue(std::numeric_limits<int>::max());
-    h_values[i] = RandomValue(std::numeric_limits<std::uint32_t>::max());
+    h_keys[i] = RandomValue((std::numeric_limits<int>::max)());
+    h_values[i] = RandomValue((std::numeric_limits<std::uint32_t>::max)());
   }
 }
 #endif
