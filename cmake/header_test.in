@@ -44,4 +44,7 @@
 //#define max(...) CUB_MACRO_CHECK('max', windows.h)
 #define small CUB_MACRO_CHECK('small', windows.h)
 
+// termios.h conflicts (NVIDIA/thrust#1547)
+#define B0 CUB_MACRO_CHECK("B0", termios.h)
+
 #include <cub/${header}>
