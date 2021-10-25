@@ -1,3 +1,90 @@
+# CUB 1.15.0 (NVIDIA HPC SDK 21.11)
+
+## Summary
+
+CUB 1.15.0 accompanies the NVIDIA HPC SDK 21.11 release. It includes a
+new `cub::DeviceSegmentedSort` algorithm, which demonstrates up to 5000x speedup
+compared to `cub::DeviceSegmentedRadixSort` when sorting a large number of small
+segments. A new `cub::FutureValue<T>` helper allows the `cub::DeviceScan`
+algorithms to lazily load the `initial_value` from a pointer. `cub::DeviceScan`
+also added `ScanByKey` functionality.
+
+The new `DeviceSegmentedSort` algorithm partitions segments into size groups.
+Each group is processed with specialized kernels using a variety of sorting
+algorithms. This approach varies the number of threads allocated for sorting
+each segment and utilizes the GPU more efficiently.
+
+`cub::FutureValue<T>` provides the ability to use the result of a previous
+kernel as a scalar input to a CUB device-scope algorithm without unnecessary
+synchronization:
+
+```cpp
+int *d_intermediate_result = ...;
+intermediate_kernel<<<blocks, threads>>>(d_intermediate_result,  // output
+                                         arg1,                   // input
+                                         arg2);                  // input
+
+// Wrap the intermediate pointer in a FutureValue -- no need to explicitly
+// sync when both kernels are stream-ordered. The pointer is read after
+// the ExclusiveScan kernel starts executing.
+cub::FutureValue<int> init_value(d_intermediate_result);
+
+cub::DeviceScan::ExclusiveScan(d_temp_storage,
+                               temp_storage_bytes,
+                               d_in,
+                               d_out,
+                               cub::Sum(),
+                               init_value,
+                               num_items);
+```
+
+Previously, an explicit synchronization would have been necessary to obtain the
+intermediate result, which was passed by value into ExclusiveScan. This new
+feature enables better performance in workflows that use cub::DeviceScan.
+
+## Deprecation Notices
+
+**A future version of CUB will change the `debug_synchronous` behavior of
+device-scope algorithms when invoked via CUDA Dynamic Parallelism (CDP).**
+
+This will only affect calls to CUB device-scope algorithms launched from
+device-side code with `debug_synchronous = true`. These algorithms will continue
+to print extra debugging information, but they will no longer synchronize after
+kernel launches.
+
+## Breaking Changes
+
+- NVIDIA/cub#305: The template parameters of `cub::DispatchScan` have changed to
+  support the new `cub::FutureValue` helper. More details under "New Features".
+- NVIDIA/cub#377: Remove broken `operator->()` from
+  `cub::TransformInputIterator`, since this cannot be implemented without
+  returning a temporary object's address. Thanks to Xiang Gao (@zasdfgbnm) for
+  this contribution.
+
+## New Features
+
+- NVIDIA/cub#305: Add overloads to `cub::DeviceScan` algorithms that allow the
+  output of a previous kernel to be used as `initial_value` without explicit
+  synchronization. See the new `cub::FutureValue` helper for details. Thanks to
+  Xiang Gao (@zasdfgbnm) for this contribution.
+- NVIDIA/cub#354: Add `cub::BlockRunLengthDecode` algorithm. Thanks to Elias
+  Stehle (@elstehle) for this contribution.
+- NVIDIA/cub#357: Add `cub::DeviceSegmentedSort`, an optimized version
+  of `cub::DeviceSegmentedSort` with improved load balancing and small array
+  performance.
+- NVIDIA/cub#376: Add "by key" overloads to `cub::DeviceScan`. Thanks to Xiang
+  Gao (@zasdfgbnm) for this contribution.
+
+## Bug Fixes
+
+- NVIDIA/cub#349: Doxygen and unused variable fixes.
+- NVIDIA/cub#363: Maintenance updates for the new `cub::DeviceMergeSort`
+  algorithms.
+- NVIDIA/cub#382: Fix several `-Wconversion` warnings. Thanks to Matt Stack
+  (@matt-stack) for this contribution.
+- NVIDIA/cub#388: Fix debug assertion on MSVC when using
+  `cub::CachingDeviceAllocator`.
+
 # CUB 1.14.0 (NVIDIA HPC SDK 21.9)
 
 ## Summary
