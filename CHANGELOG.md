@@ -1,13 +1,13 @@
-# CUB 1.15.0 (NVIDIA HPC SDK 21.11)
+# CUB 1.15.0
 
 ## Summary
 
-CUB 1.15.0 accompanies the NVIDIA HPC SDK 21.11 release. It includes a
-new `cub::DeviceSegmentedSort` algorithm, which demonstrates up to 5000x speedup
-compared to `cub::DeviceSegmentedRadixSort` when sorting a large number of small
-segments. A new `cub::FutureValue<T>` helper allows the `cub::DeviceScan`
-algorithms to lazily load the `initial_value` from a pointer. `cub::DeviceScan`
-also added `ScanByKey` functionality.
+CUB 1.15.0 includes a new `cub::DeviceSegmentedSort` algorithm, which
+demonstrates up to 5000x speedup compared to `cub::DeviceSegmentedRadixSort`
+when sorting a large number of small segments. A new `cub::FutureValue<T>`
+helper allows the `cub::DeviceScan` algorithms to lazily load the
+`initial_value` from a pointer. `cub::DeviceScan` also added `ScanByKey`
+functionality.
 
 The new `DeviceSegmentedSort` algorithm partitions segments into size groups.
 Each group is processed with specialized kernels using a variety of sorting
@@ -84,6 +84,8 @@ kernel launches.
   (@matt-stack) for this contribution.
 - NVIDIA/cub#388: Fix debug assertion on MSVC when using
   `cub::CachingDeviceAllocator`.
+- NVIDIA/cub#395: Support building with `__CUDA_NO_HALF_CONVERSIONS__`. Thanks
+  to Xiang Gao (@zasdfgbnm) for this contribution.
 
 # CUB 1.14.0 (NVIDIA HPC SDK 21.9)
 
