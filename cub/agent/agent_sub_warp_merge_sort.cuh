@@ -122,7 +122,7 @@ class AgentSubWarpSort
 #if defined(__CUDA_FP16_TYPES_EXIST__) && (CUB_PTX_ARCH < 530)
     __device__ bool operator()(__half lhs, __half rhs)
     {
-      return (*this)(static_cast<float>(lhs), static_cast<float>(rhs));
+      return (*this)(__half2float(lhs), __half2float(rhs));
     }
 #endif
   };
@@ -130,7 +130,7 @@ class AgentSubWarpSort
 #if defined(__CUDA_FP16_TYPES_EXIST__) && (CUB_PTX_ARCH < 530)
   __device__ static bool equal(__half lhs, __half rhs)
   {
-    return static_cast<float>(lhs) == static_cast<float>(rhs);
+    return __half2float(lhs) == __half2float(rhs);
   }
 #endif
 
