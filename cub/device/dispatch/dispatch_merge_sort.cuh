@@ -183,7 +183,7 @@ DeviceMergeSortMergeKernel(bool ping,
   agent.Process();
 }
 
-/******************************************************************************
+/*******************************************************************************
  * Policy
  ******************************************************************************/
 
@@ -192,9 +192,9 @@ struct DeviceMergeSortPolicy
 {
   using KeyT = typename std::iterator_traits<KeyIteratorT>::value_type;
 
-  //------------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
   // Architecture-specific tuning policies
-  //------------------------------------------------------------------------------
+  //----------------------------------------------------------------------------
 
   struct Policy350 : ChainedPolicy<350, Policy350, Policy350>
   {
@@ -448,28 +448,45 @@ struct DispatchMergeSort : SelectedPolicy
   using KeyT   = typename std::iterator_traits<KeyIteratorT>::value_type;
   using ValueT = typename std::iterator_traits<ValueIteratorT>::value_type;
 
-  // Whether or not there are values to be trucked along with keys
+  /// Whether or not there are values to be trucked along with keys
   static constexpr bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
-  //------------------------------------------------------------------------------
   // Problem state
-  //------------------------------------------------------------------------------
 
-  void *d_temp_storage;             ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
-  std::size_t &temp_storage_bytes;  ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
-  KeyInputIteratorT d_input_keys;   ///< [in] Pointer to the input sequence of unsorted input keys
-  ValueInputIteratorT d_input_items;///< [in] Pointer to the input sequence of unsorted input values
-  KeyIteratorT d_output_keys;       ///< [out] Pointer to the output sequence of sorted input keys
-  ValueIteratorT d_output_items;    ///< [out] Pointer to the output sequence of sorted input values
-  OffsetT num_items;                ///< [in] Number of items to sort
-  CompareOpT compare_op;            ///< [in] Comparison function object which returns true if the first argument is ordered before the second
-  cudaStream_t stream;              ///< [in] <b>[optional]</b> CUDA stream to launch kernels within. Default is stream<sub>0</sub>.
-  bool debug_synchronous;           ///< [in] Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
+  /// Device-accessible allocation of temporary storage. When NULL, the required
+  /// allocation size is written to \p temp_storage_bytes and no work is done.
+  void *d_temp_storage;
+
+  /// Reference to size in bytes of \p d_temp_storage allocation
+  std::size_t &temp_storage_bytes;
+
+  /// Pointer to the input sequence of unsorted input keys
+  KeyInputIteratorT d_input_keys;
+
+  /// Pointer to the input sequence of unsorted input values
+  ValueInputIteratorT d_input_items;
+
+  /// Pointer to the output sequence of sorted input keys
+  KeyIteratorT d_output_keys;
+
+  /// Pointer to the output sequence of sorted input values
+  ValueIteratorT d_output_items;
+
+  /// Number of items to sort
+  OffsetT num_items;
+
+  /// Comparison function object which returns true if the first argument is
+  /// ordered before the second
+  CompareOpT compare_op;
+
+  /// CUDA stream to launch kernels within. Default is stream<sub>0</sub>.
+  cudaStream_t stream;
+
+  /// Whether or not to synchronize the stream after every kernel launch to
+  /// check for errors. Also causes launch configurations to be printed to the
+  /// console. Default is \p false.
+  bool debug_synchronous;
   int ptx_version;
-
-  //------------------------------------------------------------------------------
-  // Constructor
-  //------------------------------------------------------------------------------
 
   CUB_RUNTIME_FUNCTION __forceinline__ std::size_t
   vshmem_size(std::size_t max_shmem,
@@ -486,7 +503,7 @@ struct DispatchMergeSort : SelectedPolicy
     }
   }
 
-  /// Constructor
+  // Constructor
   CUB_RUNTIME_FUNCTION __forceinline__
   DispatchMergeSort(void *d_temp_storage,
                     std::size_t &temp_storage_bytes,
@@ -512,7 +529,7 @@ struct DispatchMergeSort : SelectedPolicy
       , ptx_version(ptx_version)
   {}
 
-  /// Invocation
+  // Invocation
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
@@ -555,6 +572,28 @@ struct DispatchMergeSort : SelectedPolicy
       const auto tile_size = MergePolicyT::ITEMS_PER_TILE;
       const auto num_tiles = cub::DivideAndRoundUp(num_items, tile_size);
 
+      /**
+       * Merge sort supports large types, which can lead to excessive shared
+       * memory size requirements. In these cases, merge sort allocates virtual
+       * shared memory that resides in global memory:
+       * ```
+       * extern __shared__ char shmem[];
+       * typename AgentT::TempStorage &storage =
+       *   *reinterpret_cast<typename AgentT::TempStorage *>(
+       *     UseVShmem ? vshmem + vshmem_offset : shmem);
+       * ```
+       * Having `UseVShmem` as a runtime variable leads to the generation of
+       * generic loads and stores, which causes a slowdown. Therefore,
+       * `UseVShmem` has to be known at compilation time.
+       * In the generic case, available shared memory size is queried at runtime
+       * to check if kernels requirements are satisfied. Since the query result
+       * is not known at compile-time, merge sort kernels are specialized for
+       * both cases.
+       * To address increased compilation time, the dispatch layer checks
+       * whether kernels requirements fit into default shared memory
+       * size (48KB). In this case, there's no need for virtual shared
+       * memory specialization.
+       */
       constexpr std::size_t default_shared_memory_size = 48 * 1024;
       constexpr auto block_sort_shmem_size =
         static_cast<std::size_t>(BlockSortAgentT::SHARED_MEMORY_SIZE);
