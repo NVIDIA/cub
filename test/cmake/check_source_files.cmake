@@ -67,6 +67,7 @@ set(stdpar_header_exclusions
 
 set(algorithm_regex "#[ \t]*include[ \t]+<algorithm>")
 set(memory_regex    "#[ \t]*include[ \t]+<memory>")
+set(numeric_regex   "#[ \t]*include[ \t]+<numeric>")
 
 # Validation check for the above regex pattern:
 count_substrings([=[
@@ -120,6 +121,7 @@ foreach(src ${cub_srcs})
   if (NOT ${src} IN_LIST stdpar_header_exclusions)
     count_substrings("${src_contents}" "${algorithm_regex}" algorithm_count)
     count_substrings("${src_contents}" "${memory_regex}" memory_count)
+    count_substrings("${src_contents}" "${numeric_regex}" numeric_count)
 
     if (NOT algorithm_count EQUAL 0)
       message("'${src}' includes the <algorithm> header. Replace with <thrust/detail/algorithm_wrapper.h>.")
@@ -128,6 +130,11 @@ foreach(src ${cub_srcs})
 
     if (NOT memory_count EQUAL 0)
       message("'${src}' includes the <memory> header. Replace with <thrust/detail/memory_wrapper.h>.")
+      set(found_errors 1)
+    endif()
+
+    if (NOT numeric_count EQUAL 0)
+      message("'${src}' includes the <numeric> header. Replace with <thrust/detail/numeric_wrapper.h>.")
       set(found_errors 1)
     endif()
   endif()
