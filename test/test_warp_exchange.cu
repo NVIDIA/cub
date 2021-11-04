@@ -30,6 +30,8 @@
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
+#include <thrust/reverse.h>
+#include <thrust/sequence.h>
 
 template <typename InputT,
           typename OutputT,

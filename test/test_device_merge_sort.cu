@@ -32,24 +32,25 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <stdio.h>
-#include <limits>
-#include <typeinfo>
-#include <memory>
-
-#include <cub/util_allocator.cuh>
 #include <cub/cub.cuh>
+#include <cub/util_allocator.cuh>
 
-#include <thrust/iterator/reverse_iterator.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-#include <thrust/transform.h>
+#include <thrust/iterator/constant_iterator.h>
+#include <thrust/iterator/reverse_iterator.h>
 #include <thrust/random.h>
 #include <thrust/sequence.h>
 #include <thrust/shuffle.h>
 #include <thrust/sort.h>
+#include <thrust/transform.h>
 
 #include "test_util.h"
+
+#include <cstdio>
+#include <limits>
+#include <memory>
+#include <typeinfo>
 
 using namespace cub;
 

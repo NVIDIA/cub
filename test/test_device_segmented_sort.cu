@@ -28,16 +28,19 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <fstream>
-
 #include <cub/device/device_segmented_sort.cuh>
 #include <test_util.h>
 
+#include <thrust/count.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-#include <thrust/shuffle.h>
 #include <thrust/random.h>
 #include <thrust/reduce.h>
+#include <thrust/sequence.h>
+#include <thrust/shuffle.h>
+#include <thrust/sort.h>
+
+#include <fstream>
 
 #define TEST_HALF_T \
   (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__

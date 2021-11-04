@@ -33,9 +33,11 @@
 
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-#include <thrust/shuffle.h>
+#include <thrust/partition.h>
 #include <thrust/random.h>
 #include <thrust/reduce.h>
+#include <thrust/shuffle.h>
+#include <thrust/tabulate.h>
 
 using namespace cub;
 
