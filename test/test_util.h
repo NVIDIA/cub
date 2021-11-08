@@ -1428,7 +1428,7 @@ int CompareResults(float* computed, float* reference, OffsetT len, bool verbose 
             float difference = std::abs(computed[i]-reference[i]);
             float fraction = difference / std::abs(reference[i]);
 
-            if (fraction > 0.0001)
+            if (fraction > 0.00015)
             {
                 if (verbose) std::cout << "INCORRECT: [" << i << "]: "
                     << "(computed) " << CoutCast(computed[i]) << " != "
@@ -1463,7 +1463,7 @@ int CompareResults(double* computed, double* reference, OffsetT len, bool verbos
             double difference = std::abs(computed[i]-reference[i]);
             double fraction = difference / std::abs(reference[i]);
 
-            if (fraction > 0.0001)
+            if (fraction > 0.00015)
             {
                 if (verbose) std::cout << "INCORRECT: [" << i << "]: "
                     << CoutCast(computed[i]) << " != "
