@@ -78,11 +78,11 @@ cudaError_t Dispatch(
     size_t                      */*d_temp_storage_bytes*/,
     cudaError_t                 */*d_cdp_error*/,
 
-    void*               d_temp_storage,
+    void*                       d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
@@ -147,11 +147,11 @@ cudaError_t Dispatch(
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void*               d_temp_storage,
+    void*                       d_temp_storage,
     size_t                      &temp_storage_bytes,
     InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    OutputIteratorT             d_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     cudaStream_t                stream,
     bool                        debug_synchronous)
@@ -275,8 +275,8 @@ void Test(
     int                 num_items)
 {
     // Allocate device output array and num selected
-    T       *d_out            = NULL;
-    int     *d_num_selected_out   = NULL;
+    T       *d_out = NULL;
+    int     *d_num_selected_out = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_selected_out, sizeof(int)));
 

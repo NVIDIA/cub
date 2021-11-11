@@ -488,21 +488,6 @@ struct DispatchMergeSort : SelectedPolicy
   bool debug_synchronous;
   int ptx_version;
 
-  CUB_RUNTIME_FUNCTION __forceinline__ std::size_t
-  vshmem_size(std::size_t max_shmem,
-              std::size_t shmem_per_block,
-              std::size_t num_blocks)
-  {
-    if (shmem_per_block > max_shmem)
-    {
-      return shmem_per_block * num_blocks;
-    }
-    else
-    {
-      return 0;
-    }
-  }
-
   // Constructor
   CUB_RUNTIME_FUNCTION __forceinline__
   DispatchMergeSort(void *d_temp_storage,
@@ -637,9 +622,9 @@ struct DispatchMergeSort : SelectedPolicy
                                 static_cast<std::size_t>(max_shmem);
 
         virtual_shared_memory_size =
-          vshmem_size(static_cast<std::size_t>(max_shmem),
-                      (cub::max)(block_sort_shmem_size, merge_shmem_size),
-                      static_cast<std::size_t>(num_tiles));
+          VshmemSize(static_cast<std::size_t>(max_shmem),
+                     (cub::max)(block_sort_shmem_size, merge_shmem_size),
+                     static_cast<std::size_t>(num_tiles));
       }
 
 

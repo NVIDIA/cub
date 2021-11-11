@@ -93,7 +93,7 @@ template <
     typename    AgentSelectIfPolicyT,           ///< Parameterized AgentSelectIfPolicy tuning policy type
     typename    InputIteratorT,                 ///< Random-access input iterator type for selection items
     typename    FlagsInputIteratorT,            ///< Random-access input iterator type for selections (NullType* if a selection functor or discontinuity flagging is to be used for selection)
-    typename    SelectedOutputIteratorT,        ///< Random-access input iterator type for selection_flags items
+    typename    SelectedOutputIteratorT,        ///< Random-access output iterator type for selection_flags items
     typename    SelectOpT,                      ///< Selection operator type (NullType if selections or discontinuity flagging is to be used for selection)
     typename    EqualityOpT,                    ///< Equality operator type (NullType if selection functor or selections is to be used for selection)
     typename    OffsetT,                        ///< Signed integer type for global offsets
@@ -511,7 +511,7 @@ struct AgentSelectIf
      */
     template <bool IS_LAST_TILE>
     __device__ __forceinline__ OffsetT ConsumeFirstTile(
-        int                 num_tile_items,      ///< Number of input items comprising this tile
+        int                 num_tile_items,     ///< Number of input items comprising this tile
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
     {
@@ -570,7 +570,7 @@ struct AgentSelectIf
      */
     template <bool IS_LAST_TILE>
     __device__ __forceinline__ OffsetT ConsumeSubsequentTile(
-        int                 num_tile_items,      ///< Number of input items comprising this tile
+        int                 num_tile_items,     ///< Number of input items comprising this tile
         int                 tile_idx,           ///< Tile index
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
@@ -632,7 +632,7 @@ struct AgentSelectIf
      */
     template <bool IS_LAST_TILE>
     __device__ __forceinline__ OffsetT ConsumeTile(
-        int                 num_tile_items,         ///< Number of input items comprising this tile
+        int                 num_tile_items,     ///< Number of input items comprising this tile
         int                 tile_idx,           ///< Tile index
         OffsetT             tile_offset,        ///< Tile offset
         ScanTileStateT&     tile_state)         ///< Global tile state descriptor
@@ -688,4 +688,3 @@ struct AgentSelectIf
 
 
 CUB_NAMESPACE_END
-
