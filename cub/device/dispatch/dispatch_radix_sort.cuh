@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
@@ -1050,10 +1049,6 @@ struct DispatchRadixSort :
                 break;
             }
 
-            // Return if empty problem
-            if (num_items == 0)
-                break;
-
             // Log single_tile_kernel configuration
             if (debug_synchronous)
                 _CubLog("Invoking single_tile_kernel<<<%d, %d, 0, %lld>>>(), %d items per thread, %d SM occupancy, current bit %d, bit_grain %d\n",
@@ -1561,6 +1556,17 @@ struct DispatchRadixSort :
         typedef typename DispatchRadixSort::MaxPolicy       MaxPolicyT;
         typedef typename ActivePolicyT::SingleTilePolicy    SingleTilePolicyT;
 
+        // Return if empty problem
+        if (num_items == 0)
+        {
+          if (d_temp_storage == nullptr)
+          {
+            temp_storage_bytes = 1;
+          }
+
+          return cudaSuccess;
+        }
+
         // Force kernel code-generation in all compiler passes
         if (num_items <= (SingleTilePolicyT::BLOCK_THREADS * SingleTilePolicyT::ITEMS_PER_THREAD))
         {
@@ -1903,6 +1909,17 @@ struct DispatchSegmentedRadixSort :
     cudaError_t Invoke()
     {
         typedef typename DispatchSegmentedRadixSort::MaxPolicy MaxPolicyT;
+
+        // Return if empty problem
+        if (num_items == 0)
+        {
+          if (d_temp_storage == nullptr)
+          {
+            temp_storage_bytes = 1;
+          }
+
+          return cudaSuccess;
+        }
 
         // Force kernel code-generation in all compiler passes
         return InvokePasses<ActivePolicyT>(
