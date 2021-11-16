@@ -70,6 +70,13 @@ struct bfloat16_t
         *this = bfloat16_t(float(a));
     }
 
+    /// Constructor from std::size_t
+    __host__ __device__ __forceinline__
+    bfloat16_t(std::size_t a)
+    {
+        *this = bfloat16_t(float(a));
+    }
+
     /// Default constructor
     bfloat16_t() = default;
 

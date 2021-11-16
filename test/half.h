@@ -71,6 +71,13 @@ struct half_t
         *this = half_t(float(a));
     }
 
+    /// Constructor from std::size_t
+    __host__ __device__ __forceinline__
+    half_t(std::size_t a)
+    {
+        *this = half_t(float(a));
+    }
+
     /// Default constructor
     half_t() = default;
 
