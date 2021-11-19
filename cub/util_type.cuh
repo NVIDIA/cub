@@ -1045,26 +1045,30 @@ struct BaseTraits<UNSIGNED_INTEGER, true, false, _UnsignedBits, T>
     };
 
 
-    static __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
+    static __host__ __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
     {
         return key;
     }
 
-    static __device__ __forceinline__ UnsignedBits TwiddleOut(UnsignedBits key)
+    static __host__ __device__ __forceinline__ UnsignedBits TwiddleOut(UnsignedBits key)
     {
         return key;
     }
 
     static __host__ __device__ __forceinline__ T Max()
     {
-        UnsignedBits retval = MAX_KEY;
-        return reinterpret_cast<T&>(retval);
+        UnsignedBits retval_bits = MAX_KEY;
+        T retval;
+        memcpy(&retval, &retval_bits, sizeof(T));
+        return retval;
     }
 
     static __host__ __device__ __forceinline__ T Lowest()
     {
-        UnsignedBits retval = LOWEST_KEY;
-        return reinterpret_cast<T&>(retval);
+        UnsignedBits retval_bits = LOWEST_KEY;
+        T retval;
+        memcpy(&retval, &retval_bits, sizeof(T));
+        return retval;
     }
 };
 
@@ -1088,12 +1092,12 @@ struct BaseTraits<SIGNED_INTEGER, true, false, _UnsignedBits, T>
         NULL_TYPE       = false,
     };
 
-    static __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
+    static __host__ __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
     {
         return key ^ HIGH_BIT;
     };
 
-    static __device__ __forceinline__ UnsignedBits TwiddleOut(UnsignedBits key)
+    static __host__ __device__ __forceinline__ UnsignedBits TwiddleOut(UnsignedBits key)
     {
         return key ^ HIGH_BIT;
     };
@@ -1190,13 +1194,13 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
         NULL_TYPE       = false,
     };
 
-    static __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
+    static __host__ __device__ __forceinline__ UnsignedBits TwiddleIn(UnsignedBits key)
     {
         UnsignedBits mask = (key & HIGH_BIT) ? UnsignedBits(-1) : HIGH_BIT;
         return key ^ mask;
     };
 
-    static __device__ __forceinline__ UnsignedBits TwiddleOut(UnsignedBits key)
+    static __host__ __device__ __forceinline__ UnsignedBits TwiddleOut(UnsignedBits key)
     {
         UnsignedBits mask = (key & HIGH_BIT) ? HIGH_BIT : UnsignedBits(-1);
         return key ^ mask;

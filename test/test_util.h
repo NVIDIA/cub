@@ -342,6 +342,16 @@ struct CommandLineArgs
     }
 };
 
+// Gets the amount of global memory of the current device.
+std::size_t TotalGlobalMem()
+{
+    int device = 0;
+    CubDebugExit(cudaGetDevice(&device));
+    std::size_t free_mem = 0, total_mem = 0;
+    CubDebugExit(cudaMemGetInfo(&free_mem, &total_mem));
+    return total_mem;
+}
+
 /******************************************************************************
  * Random bits generator
  ******************************************************************************/
@@ -559,7 +569,7 @@ enum GenMode
  */
 #pragma nv_exec_check_disable
 template <typename T>
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0)
 {
     // RandomBits is host-only.
     if (CUB_IS_DEVICE_CODE)
@@ -640,7 +650,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, i
  * Initialize value (bool)
  */
 #pragma nv_exec_check_disable
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, int index = 0)
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value, std::size_t index = 0)
 {
     // RandomBits is host-only.
     if (CUB_IS_DEVICE_CODE)
@@ -695,7 +705,7 @@ __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, bool &value
  */
 __host__ __device__ __forceinline__ void InitValue(GenMode /* gen_mode */,
 						   CUB_NS_QUALIFIER::NullType &/* value */,
-						   int /* index */ = 0)
+                           std::size_t /* index */ = 0)
 {}
 
 
@@ -707,7 +717,7 @@ template <typename KeyT, typename ValueT>
 __host__ __device__ __forceinline__ void InitValue(
     GenMode                             gen_mode,
     CUB_NS_QUALIFIER::KeyValuePair<KeyT, ValueT>&    value,
-    int                                 index = 0)
+    std::size_t                                      index = 0)
 {
     InitValue(gen_mode, value.value, index);
 
@@ -780,7 +790,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
         return (a.x == b.x);                                \
     }                                                       \
     /* Test initialization */                               \
-    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0) \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
     }                                                       \
@@ -863,7 +873,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             (a.y == b.y);                                   \
     }                                                       \
     /* Test initialization */                               \
-    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0) \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -956,7 +966,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             (a.z == b.z);                                   \
     }                                                       \
     /* Test initialization */                               \
-    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0) \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -1057,7 +1067,7 @@ std::ostream& operator<<(std::ostream& os, const CUB_NS_QUALIFIER::KeyValuePair<
             (a.w == b.w);                                   \
     }                                                       \
     /* Test initialization */                               \
-    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, int index = 0)   \
+    __host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, T &value, std::size_t index = 0) \
     {                                                       \
         InitValue(gen_mode, value.x, index);                \
         InitValue(gen_mode, value.y, index);                \
@@ -1238,7 +1248,7 @@ std::ostream& operator<<(std::ostream& os, const TestFoo& val)
 /**
  * TestFoo test initialization
  */
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestFoo &value, int index = 0)
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestFoo &value, std::size_t index = 0)
 {
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);
@@ -1357,7 +1367,7 @@ std::ostream& operator<<(std::ostream& os, const TestBar& val)
 /**
  * TestBar test initialization
  */
-__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &value, int index = 0)
+__host__ __device__ __forceinline__ void InitValue(GenMode gen_mode, TestBar &value, std::size_t index = 0)
 {
     InitValue(gen_mode, value.x, index);
     InitValue(gen_mode, value.y, index);
@@ -1649,22 +1659,23 @@ void DisplayDeviceResults(
 /**
  * Initialize segments
  */
+template <typename OffsetT>
 void InitializeSegments(
-    int     num_items,
-    int     num_segments,
-    int     *h_segment_offsets,
-    bool    verbose = false)
+    OffsetT     num_items,
+    int         num_segments,
+    OffsetT     *h_segment_offsets,
+    bool        verbose = false)
 {
     if (num_segments <= 0)
         return;
 
-    unsigned int expected_segment_length = CUB_NS_QUALIFIER::DivideAndRoundUp(num_items, num_segments);
-    int offset = 0;
+    OffsetT expected_segment_length = CUB_NS_QUALIFIER::DivideAndRoundUp(num_items, OffsetT(num_segments));
+    OffsetT offset = 0;
     for (int i = 0; i < num_segments; ++i)
     {
         h_segment_offsets[i] = offset;
 
-        unsigned int segment_length = RandomValue((expected_segment_length * 2) + 1);
+        OffsetT segment_length = RandomValue((expected_segment_length * 2) + 1);
         offset += segment_length;
         offset = CUB_MIN(offset, num_items);
     }
