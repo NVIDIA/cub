@@ -33,14 +33,16 @@
 
 #pragma once
 
-#include "detail/device_synchronize.cuh"
+#include <cub/detail/device_synchronize.cuh>
 
-#include "util_type.cuh"
-#include "util_arch.cuh"
-#include "util_debug.cuh"
-#include "util_cpp_dialect.cuh"
-#include "util_namespace.cuh"
-#include "util_macro.cuh"
+#include <cub/util_arch.cuh>
+#include <cub/util_cpp_dialect.cuh>
+#include <cub/util_debug.cuh>
+#include <cub/util_macro.cuh>
+#include <cub/util_namespace.cuh>
+#include <cub/util_type.cuh>
+
+#include <nv/target>
 
 #include <atomic>
 #include <array>
@@ -180,8 +182,6 @@ CUB_RUNTIME_FUNCTION inline int DeviceCountUncached()
 #endif
 }
 
-#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
-
 /**
  * \brief Cache for an arbitrary value produced by a nullary function.
  */
@@ -197,9 +197,6 @@ struct ValueCache
     __host__ inline ValueCache() : value(Function()) {}
 };
 
-#endif
-
-#if CUB_CPP_DIALECT >= 2011
 // Host code, only safely usable in C++11 or newer, where thread-safe
 // initialization of static locals is guaranteed.  This is a separate function
 // to avoid defining a local static in a host/device function.
@@ -208,7 +205,6 @@ __host__ inline int DeviceCountCachedValue()
     static ValueCache<int, DeviceCountUncached> cache;
     return cache.value;
 }
-#endif
 
 /**
  * \brief Returns the number of CUDA devices available.
@@ -220,26 +216,13 @@ __host__ inline int DeviceCountCachedValue()
 CUB_RUNTIME_FUNCTION inline int DeviceCount()
 {
     int result = -1;
-    if (CUB_IS_HOST_CODE) {
-        #if CUB_INCLUDE_HOST_CODE
-            #if CUB_CPP_DIALECT >= 2011
-                // Host code and C++11.
-                result = DeviceCountCachedValue();
-            #else
-                // Host code and C++98.
-                result = DeviceCountUncached();
-            #endif
-        #endif
-    } else {
-        #if CUB_INCLUDE_DEVICE_CODE
-            // Device code.
-            result = DeviceCountUncached();
-        #endif
-    }
+
+    NV_IF_TARGET(NV_IS_HOST,
+                 (result = DeviceCountCachedValue();),
+                 (result = DeviceCountUncached();));
+
     return result;
 }
-
-#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
 
 /**
  * \brief Per-device cache for a CUDA attribute value; the attribute is queried
@@ -350,8 +333,6 @@ public:
     }
 };
 
-#endif
-
 /**
  * \brief Retrieves the PTX version that will be used on the current device (major * 100 + minor * 10).
  */
@@ -366,27 +347,46 @@ CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersionUncached(int& ptx_version)
     // usual syntax of (void)empty_kernel; was not sufficient on MSVC2015.
     (void)reinterpret_cast<void*>(empty_kernel);
 
+    // Define a temporary macro that expands to the current target ptx version
+    // in device code.
+    // <nv/target> may provide an abstraction for this eventually. For now,
+    // we have to keep this usage of __CUDA_ARCH__.
+#if defined(_NVHPC_CUDA)
+#define CUB_TEMP_GET_PTX __builtin_current_device_sm()
+#else
+#define CUB_TEMP_GET_PTX __CUDA_ARCH__
+#endif
+
     cudaError_t result = cudaSuccess;
-    if (CUB_IS_HOST_CODE) {
-       #if CUB_INCLUDE_HOST_CODE
-            cudaFuncAttributes empty_kernel_attrs;
+    NV_IF_TARGET(
+      NV_IS_HOST,
+      (
+        cudaFuncAttributes empty_kernel_attrs;
 
-            result = cudaFuncGetAttributes(&empty_kernel_attrs,
-                                           reinterpret_cast<void*>(empty_kernel));
-            CubDebug(result);
+        do
+        {
+          if (CubDebug(result = cudaFuncGetAttributes(&empty_kernel_attrs,
+                                                      empty_kernel)))
+          {
+            break;
+          }
+        } while (0);
 
-            ptx_version = empty_kernel_attrs.ptxVersion * 10;
-        #endif
-    } else {
-        #if CUB_INCLUDE_DEVICE_CODE
-            // This is necessary to ensure instantiation of EmptyKernel in device code.
-            // The `reinterpret_cast` is necessary to suppress a set-but-unused warnings.
-            // This is a meme now: https://twitter.com/blelbach/status/1222391615576100864
-            (void)reinterpret_cast<EmptyKernelPtr>(empty_kernel);
+        ptx_version = empty_kernel_attrs.ptxVersion * 10;
+      ),
+      // NV_IS_DEVICE
+      (
+        // This is necessary to ensure instantiation of EmptyKernel in device
+        // code. The `reinterpret_cast` is necessary to suppress a
+        // set-but-unused warnings. This is a meme now:
+        // https://twitter.com/blelbach/status/1222391615576100864
+        (void)reinterpret_cast<EmptyKernelPtr>(empty_kernel);
 
-            ptx_version = CUB_PTX_ARCH;
-        #endif
-    }
+        ptx_version = CUB_TEMP_GET_PTX;
+      ));
+
+#undef CUB_TEMP_GET_PTX
+
     return result;
 }
 
@@ -400,7 +400,6 @@ __host__ inline cudaError_t PtxVersionUncached(int& ptx_version, int device)
     return PtxVersionUncached(ptx_version);
 }
 
-#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
 template <typename Tag>
 __host__ inline PerDeviceAttributeCache& GetPerDeviceAttributeCache()
 {
@@ -411,7 +410,6 @@ __host__ inline PerDeviceAttributeCache& GetPerDeviceAttributeCache()
 
 struct PtxVersionCacheTag {};
 struct SmVersionCacheTag {};
-#endif
 
 /**
  * \brief Retrieves the PTX version that will be used on \p device (major * 100 + minor * 10).
@@ -422,8 +420,6 @@ struct SmVersionCacheTag {};
  */
 __host__ inline cudaError_t PtxVersion(int& ptx_version, int device)
 {
-#if CUB_CPP_DIALECT >= 2011 // C++11 and later.
-
     auto const payload = GetPerDeviceAttributeCache<PtxVersionCacheTag>()(
       // If this call fails, then we get the error code back in the payload,
       // which we check with `CubDebug` below.
@@ -434,12 +430,6 @@ __host__ inline cudaError_t PtxVersion(int& ptx_version, int device)
         ptx_version = payload.attribute;
 
     return payload.error;
-
-#else // Pre C++11.
-
-    return PtxVersionUncached(ptx_version, device);
-
-#endif
 }
 
 /**
@@ -449,37 +439,31 @@ __host__ inline cudaError_t PtxVersion(int& ptx_version, int device)
  *
  * \note This function is thread safe.
  */
-CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersion(int& ptx_version)
+CUB_RUNTIME_FUNCTION inline cudaError_t PtxVersion(int &ptx_version)
 {
-    cudaError_t result = cudaErrorUnknown;
-    if (CUB_IS_HOST_CODE) {
-        #if CUB_INCLUDE_HOST_CODE
-            #if CUB_CPP_DIALECT >= 2011
-                // Host code and C++11.
-                auto const device = CurrentDevice();
+  cudaError_t result = cudaErrorUnknown;
+  NV_IF_TARGET(
+    NV_IS_HOST,
+    (
+      auto const device  = CurrentDevice();
+      auto const payload = GetPerDeviceAttributeCache<PtxVersionCacheTag>()(
+        // If this call fails, then we get the error code back in the payload,
+        // which we check with `CubDebug` below.
+        [=](int &pv) { return PtxVersionUncached(pv, device); },
+        device);
 
-                auto const payload = GetPerDeviceAttributeCache<PtxVersionCacheTag>()(
-                  // If this call fails, then we get the error code back in the payload,
-                  // which we check with `CubDebug` below.
-                  [=] (int& pv) { return PtxVersionUncached(pv, device); },
-                  device);
+      if (!CubDebug(payload.error))
+      {
+        ptx_version = payload.attribute;
+      }
 
-                if (!CubDebug(payload.error))
-                    ptx_version = payload.attribute;
+      result = payload.error;
+    ),
+    ( // NV_IS_DEVICE:
+      result = PtxVersionUncached(ptx_version);
+    ));
 
-                result = payload.error;
-            #else
-                // Host code and C++98.
-                result = PtxVersionUncached(ptx_version);
-            #endif
-        #endif
-    } else {
-        #if CUB_INCLUDE_DEVICE_CODE
-            // Device code.
-            result = PtxVersionUncached(ptx_version);
-        #endif
-    }
-    return result;
+  return result;
 }
 
 /**
@@ -519,34 +503,32 @@ CUB_RUNTIME_FUNCTION inline cudaError_t SmVersionUncached(int& sm_version, int d
  *
  * \note This function is thread safe.
  */
-CUB_RUNTIME_FUNCTION inline cudaError_t SmVersion(int& sm_version, int device = CurrentDevice())
+CUB_RUNTIME_FUNCTION inline cudaError_t SmVersion(int &sm_version,
+                                                  int device = CurrentDevice())
 {
-    cudaError_t result = cudaErrorUnknown;
-    if (CUB_IS_HOST_CODE) {
-        #if CUB_INCLUDE_HOST_CODE
-            #if CUB_CPP_DIALECT >= 2011
-                // Host code and C++11
-                auto const payload = GetPerDeviceAttributeCache<SmVersionCacheTag>()(
-                  // If this call fails, then we get the error code back in the payload,
-                  // which we check with `CubDebug` below.
-                  [=] (int& pv) { return SmVersionUncached(pv, device); },
-                  device);
+  cudaError_t result = cudaErrorUnknown;
 
-                if (!CubDebug(payload.error))
-                    sm_version = payload.attribute;
+  NV_IF_TARGET(
+    NV_IS_HOST,
+    (
+      auto const payload = GetPerDeviceAttributeCache<SmVersionCacheTag>()(
+      // If this call fails, then we get the error code back in
+      // the payload, which we check with `CubDebug` below.
+      [=](int &pv) { return SmVersionUncached(pv, device); },
+      device);
 
-                result = payload.error;
-            #else
-                // Host code and C++98
-                result = SmVersionUncached(sm_version, device);
-            #endif
-        #endif
-    } else {
-        #if CUB_INCLUDE_DEVICE_CODE
-            result = SmVersionUncached(sm_version, device);
-        #endif
-    }
-    return result;
+      if (!CubDebug(payload.error))
+      {
+        sm_version = payload.attribute;
+      };
+
+      result = payload.error;
+    ),
+    ( // NV_IS_DEVICE
+      result = SmVersionUncached(sm_version, device);
+    ));
+
+  return result;
 }
 
 /**
@@ -554,24 +536,13 @@ CUB_RUNTIME_FUNCTION inline cudaError_t SmVersion(int& sm_version, int device = 
  */
 CUB_RUNTIME_FUNCTION inline cudaError_t SyncStream(cudaStream_t stream)
 {
-    cudaError_t result = cudaErrorUnknown;
-    if (CUB_IS_HOST_CODE) {
-        #if CUB_INCLUDE_HOST_CODE
-            result = CubDebug(cudaStreamSynchronize(stream));
-        #endif
-    } else {
-        #if CUB_INCLUDE_DEVICE_CODE
-            #if defined(CUB_RUNTIME_ENABLED) // Device code with the CUDA runtime.
-                (void)stream;
-                // Device can't yet sync on a specific stream
-                result = CubDebug(cub::detail::device_synchronize());
-            #else // Device code without the CUDA runtime.
-                (void)stream;
-                // CUDA API calls are not supported from this device.
-                result = CubDebug(cudaErrorInvalidConfiguration);
-            #endif
-        #endif
-    }
+  cudaError_t result = cudaErrorUnknown;
+
+  NV_IF_TARGET(NV_IS_HOST,
+               (result = CubDebug(cudaStreamSynchronize(stream));),
+               ((void)stream;
+                result = CubDebug(cub::detail::device_synchronize());));
+
     return result;
 }
 

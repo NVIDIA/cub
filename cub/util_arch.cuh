@@ -62,24 +62,32 @@ CUB_NAMESPACE_BEGIN
     #endif
 #endif
 
-#ifndef CUB_IS_DEVICE_CODE
-    #if defined(_NVHPC_CUDA)
-        #define CUB_IS_DEVICE_CODE __builtin_is_device_code()
-        #define CUB_IS_HOST_CODE (!__builtin_is_device_code())
-        #define CUB_INCLUDE_DEVICE_CODE 1
-        #define CUB_INCLUDE_HOST_CODE 1
-    #elif CUB_PTX_ARCH > 0
-        #define CUB_IS_DEVICE_CODE 1
-        #define CUB_IS_HOST_CODE 0
-        #define CUB_INCLUDE_DEVICE_CODE 1
-        #define CUB_INCLUDE_HOST_CODE 0
-    #else
-        #define CUB_IS_DEVICE_CODE 0
-        #define CUB_IS_HOST_CODE 1
-        #define CUB_INCLUDE_DEVICE_CODE 0
-        #define CUB_INCLUDE_HOST_CODE 1
+// These definitions were intended for internal use only and are now obsolete.
+// If you relied on them, consider porting your code to use the functionality
+// in libcu++'s <nv/target> header.
+// For a temporary workaround, define CUB_PROVIDE_LEGACY_ARCH_MACROS to make
+// them available again. These should be considered deprecated and will be
+// fully removed in a future version.
+#ifdef CUB_PROVIDE_LEGACY_ARCH_MACROS
+    #ifndef CUB_IS_DEVICE_CODE
+        #if defined(_NVHPC_CUDA)
+            #define CUB_IS_DEVICE_CODE __builtin_is_device_code()
+            #define CUB_IS_HOST_CODE (!__builtin_is_device_code())
+            #define CUB_INCLUDE_DEVICE_CODE 1
+            #define CUB_INCLUDE_HOST_CODE 1
+        #elif CUB_PTX_ARCH > 0
+            #define CUB_IS_DEVICE_CODE 1
+            #define CUB_IS_HOST_CODE 0
+            #define CUB_INCLUDE_DEVICE_CODE 1
+            #define CUB_INCLUDE_HOST_CODE 0
+        #else
+            #define CUB_IS_DEVICE_CODE 0
+            #define CUB_IS_HOST_CODE 1
+            #define CUB_INCLUDE_DEVICE_CODE 0
+            #define CUB_INCLUDE_HOST_CODE 1
+        #endif
     #endif
-#endif
+#endif // CUB_PROVIDE_LEGACY_ARCH_MACROS
 
 /// Maximum number of devices supported.
 #ifndef CUB_MAX_DEVICES

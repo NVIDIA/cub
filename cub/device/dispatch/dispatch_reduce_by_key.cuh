@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
@@ -34,18 +33,20 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <iterator>
+#include <cub/agent/agent_reduce_by_key.cuh>
+#include <cub/config.cuh>
+#include <cub/device/dispatch/dispatch_scan.cuh>
+#include <cub/grid/grid_queue.cuh>
+#include <cub/thread/thread_operators.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
 
-#include "dispatch_scan.cuh"
-#include "../../config.cuh"
-#include "../../agent/agent_reduce_by_key.cuh"
-#include "../../thread/thread_operators.cuh"
-#include "../../grid/grid_queue.cuh"
-#include "../../util_device.cuh"
-#include "../../util_math.cuh"
+#include <nv/target>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <cstdio>
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 
@@ -193,27 +194,19 @@ struct DispatchReduceByKey
     template <typename KernelConfig>
     CUB_RUNTIME_FUNCTION __forceinline__
     static void InitConfigs(
-        int             ptx_version,
+        int             /*ptx_version*/,
         KernelConfig    &reduce_by_key_config)
     {
-        if (CUB_IS_DEVICE_CODE)
-        {
-            #if CUB_INCLUDE_DEVICE_CODE
-                (void)ptx_version;
-                // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-                reduce_by_key_config.template Init<PtxReduceByKeyPolicy>();
-            #endif
-        }
-        else
-        {
-            #if CUB_INCLUDE_HOST_CODE
-                // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
+        NV_IF_TARGET(NV_IS_DEVICE,
+        (
+            // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
+            reduce_by_key_config.template Init<PtxReduceByKeyPolicy>();
+        ), (
+            // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
 
-                // (There's only one policy right now)
-                (void)ptx_version;
-                reduce_by_key_config.template Init<typename Policy350::ReduceByKeyPolicyT>();
-            #endif
-        }
+            // (There's only one policy right now)
+            reduce_by_key_config.template Init<typename Policy350::ReduceByKeyPolicyT>();
+        ));
     }
 
 

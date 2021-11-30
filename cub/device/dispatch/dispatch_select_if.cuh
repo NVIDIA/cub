@@ -1,4 +1,3 @@
-
 /******************************************************************************
  * Copyright (c) 2011, Duane Merrill.  All rights reserved.
  * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
@@ -34,18 +33,20 @@
 
 #pragma once
 
-#include <stdio.h>
-#include <iterator>
-
-#include "dispatch_scan.cuh"
-#include "../../config.cuh"
-#include "../../agent/agent_select_if.cuh"
-#include "../../thread/thread_operators.cuh"
-#include "../../grid/grid_queue.cuh"
-#include "../../util_device.cuh"
-#include "../../util_math.cuh"
+#include <cub/agent/agent_select_if.cuh>
+#include <cub/config.cuh>
+#include <cub/device/dispatch/dispatch_scan.cuh>
+#include <cub/thread/thread_operators.cuh>
+#include <cub/grid/grid_queue.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <nv/target>
+
+#include <cstdio>
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 
@@ -188,23 +189,18 @@ struct DispatchSelectIf
         int             ptx_version,
         KernelConfig    &select_if_config)
     {
-        if (CUB_IS_DEVICE_CODE) {
-            #if CUB_INCLUDE_DEVICE_CODE
-                (void)ptx_version;
-                // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-                select_if_config.template Init<PtxSelectIfPolicyT>();
-            #endif
-        }
-        else
-        {
-            #if CUB_INCLUDE_HOST_CODE
-                // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
+        NV_IF_TARGET(NV_IS_DEVICE,
+        (
+            (void)ptx_version;
+            // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
+            select_if_config.template Init<PtxSelectIfPolicyT>();
+        ), (
+            // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
 
-                // (There's only one policy right now)
-                (void)ptx_version;
-                select_if_config.template Init<typename Policy350::SelectIfPolicyT>();
-            #endif
-        }
+            // (There's only one policy right now)
+            (void)ptx_version;
+            select_if_config.template Init<typename Policy350::SelectIfPolicyT>();
+        ));
     }
 
 
