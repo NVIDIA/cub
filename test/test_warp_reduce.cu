@@ -37,6 +37,7 @@
 #include <typeinfo>
 
 #include <cub/warp/warp_reduce.cuh>
+#include <cub/detail/target.cuh>
 #include <cub/util_allocator.cuh>
 
 #include "test_util.h"
@@ -67,16 +68,15 @@ struct WrapperFunctor
     template <typename T>
     inline __host__ __device__ T operator()(const T &a, const T &b) const
     {
-      if (CUB_IS_DEVICE_CODE)
-      {
-          #if CUB_INCLUDE_DEVICE_CODE != 0
+        NV_IF_TARGET(NV_IS_DEVICE,
+        (
               if ((cub::LaneId() % LOGICAL_WARP_THREADS) >= num_valid)
               {
                   _CubLog("%s\n", "Invalid lane ID in cub::WrapperFunctor::operator()");
                   cub::ThreadTrap();
               }
-          #endif
-      }
+        ),
+        ());
 
         return op(a, b);
     }

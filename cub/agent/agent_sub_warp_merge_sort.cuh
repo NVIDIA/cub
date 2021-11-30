@@ -33,6 +33,8 @@
 #include <cub/warp/warp_merge_sort.cuh>
 #include <cub/warp/warp_store.cuh>
 
+#include <cub/detail/target.cuh>
+
 #include <thrust/system/cuda/detail/core/util.h>
 
 
@@ -109,6 +111,23 @@ class AgentSubWarpSort
     template <typename T>
     __device__ bool operator()(T lhs, T rhs)
     {
+      return this->impl(lhs, rhs);
+    }
+
+#if defined(__CUDA_FP16_TYPES_EXIST__)
+    __device__ bool operator()(__half lhs, __half rhs)
+    {
+      // Need to explicitly cast to float for SM <= 52.
+      NV_IF_TARGET(NV_PROVIDES_SM_52,
+                   (return this->impl(lhs, rhs);),
+                   (return this->impl(__half2float(lhs), __half2float(rhs));));
+    }
+#endif
+
+  private:
+    template <typename T>
+    __device__ bool impl(T lhs, T rhs)
+    {
       if (IS_DESCENDING)
       {
         return lhs > rhs;
@@ -118,19 +137,15 @@ class AgentSubWarpSort
         return lhs < rhs;
       }
     }
-
-#if defined(__CUDA_FP16_TYPES_EXIST__) && (CUB_PTX_ARCH < 530)
-    __device__ bool operator()(__half lhs, __half rhs)
-    {
-      return (*this)(__half2float(lhs), __half2float(rhs));
-    }
-#endif
   };
 
-#if defined(__CUDA_FP16_TYPES_EXIST__) && (CUB_PTX_ARCH < 530)
+#if defined(__CUDA_FP16_TYPES_EXIST__)
   __device__ static bool equal(__half lhs, __half rhs)
   {
-    return __half2float(lhs) == __half2float(rhs);
+    // Need to explicitly cast to float for SM <= 52.
+    NV_IF_TARGET(NV_PROVIDES_SM_52,
+                 (return lhs == rhs;),
+                 (return __half2float(lhs) == __half2float(rhs);));
   }
 #endif
 

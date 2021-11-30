@@ -62,25 +62,6 @@ CUB_NAMESPACE_BEGIN
     #endif
 #endif
 
-#ifndef CUB_IS_DEVICE_CODE
-    #if defined(_NVHPC_CUDA)
-        #define CUB_IS_DEVICE_CODE __builtin_is_device_code()
-        #define CUB_IS_HOST_CODE (!__builtin_is_device_code())
-        #define CUB_INCLUDE_DEVICE_CODE 1
-        #define CUB_INCLUDE_HOST_CODE 1
-    #elif CUB_PTX_ARCH > 0
-        #define CUB_IS_DEVICE_CODE 1
-        #define CUB_IS_HOST_CODE 0
-        #define CUB_INCLUDE_DEVICE_CODE 1
-        #define CUB_INCLUDE_HOST_CODE 0
-    #else
-        #define CUB_IS_DEVICE_CODE 0
-        #define CUB_IS_HOST_CODE 1
-        #define CUB_INCLUDE_DEVICE_CODE 0
-        #define CUB_INCLUDE_HOST_CODE 1
-    #endif
-#endif
-
 /// Maximum number of devices supported.
 #ifndef CUB_MAX_DEVICES
     #define CUB_MAX_DEVICES (128)

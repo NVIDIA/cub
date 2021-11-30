@@ -39,6 +39,7 @@
 #include <limits>
 
 #include "../../agent/agent_histogram.cuh"
+#include "../../detail/target.cuh"
 #include "../../util_debug.cuh"
 #include "../../util_device.cuh"
 #include "../../util_math.cuh"
@@ -401,31 +402,30 @@ struct DispatchHistogram
         int             ptx_version,
         KernelConfig    &histogram_sweep_config)
     {
-        cudaError_t result = cudaErrorNotSupported;
-        if (CUB_IS_DEVICE_CODE)
-        {
-            #if CUB_INCLUDE_DEVICE_CODE
-                // We're on the device, so initialize the kernel dispatch configurations with the current PTX policy
-                result = histogram_sweep_config.template Init<PtxHistogramSweepPolicy>();
-            #endif
-        }
-        else
-        {
-            #if CUB_INCLUDE_HOST_CODE
-                // We're on the host, so lookup and initialize the kernel dispatch configurations with the policies that match the device's PTX version
-                if (ptx_version >= 500)
-                {
-                    result = histogram_sweep_config.template Init<typename Policy500::HistogramSweepPolicy>();
-                }
-                else
-                {
-                    result = histogram_sweep_config.template Init<typename Policy350::HistogramSweepPolicy>();
-                }
-            #endif
-        }
-        return result;
-    }
+      cudaError_t result = cudaErrorNotSupported;
+      NV_IF_TARGET(
+        NV_IS_DEVICE,
+        (
+          // We're on the device, so initialize the kernel dispatch
+          // configurations with the current PTX policy
+          result = histogram_sweep_config.template Init<PtxHistogramSweepPolicy>();
+        ),
+        ( // NV_IS_HOST:
+          // We're on the host, so lookup and initialize the kernel dispatch
+          // configurations with the policies that match the device's PTX
+          // version
+          if (ptx_version >= 500)
+          {
+            result = histogram_sweep_config.template Init<typename Policy500::HistogramSweepPolicy>();
+          }
+          else
+          {
+            result = histogram_sweep_config.template Init<typename Policy350::HistogramSweepPolicy>();
+          }
+        ));
 
+      return result;
+    }
 
     /**
      * Kernel kernel dispatch configuration

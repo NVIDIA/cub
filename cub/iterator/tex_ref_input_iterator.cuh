@@ -36,6 +36,7 @@
 #include <iterator>
 #include <iostream>
 
+#include "../detail/target.cuh"
 #include "../thread/thread_load.cuh"
 #include "../thread/thread_store.cuh"
 #include "../util_device.cuh"
@@ -323,19 +324,13 @@ public:
     /// Indirection
     __host__ __device__ __forceinline__ reference operator*() const
     {
-        if (CUB_IS_HOST_CODE) {
+        NV_IF_TARGET(NV_IS_HOST, (
             // Simply dereference the pointer on the host
             return ptr[tex_offset];
-        } else {
-            #if CUB_INCLUDE_DEVICE_CODE
-                // Use the texture reference
-                return TexId::Fetch(tex_offset);
-            #else
-                // This is dead code that will never be executed.  It is here
-                // only to avoid warnings about missing returns.
-                return ptr[tex_offset];
-            #endif
-        }
+        ), ( // NV_IS_DEVICE
+            // Use the texture reference
+            return TexId::Fetch(tex_offset);
+        ));
     }
 
     /// Addition
