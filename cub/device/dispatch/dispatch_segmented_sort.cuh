@@ -1376,10 +1376,17 @@ private:
     if (CUB_IS_HOST_CODE)
     {
       #if CUB_INCLUDE_HOST_CODE
-      if (CubDebug(error = cudaMemcpy(h_group_sizes,
-                                      group_sizes.get(),
-                                      num_selected_groups * sizeof(unsigned int),
-                                      cudaMemcpyDeviceToHost)))
+      if (CubDebug(error = cudaMemcpyAsync(
+                     h_group_sizes,
+                     group_sizes.get(),
+                     num_selected_groups * sizeof(unsigned int),
+                     cudaMemcpyDeviceToHost,
+                     stream)))
+      {
+        return error;
+      }
+
+      if (CubDebug(error = cudaStreamSynchronize(stream)))
       {
         return error;
       }
@@ -1388,6 +1395,11 @@ private:
     else
     {
       #if CUB_INCLUDE_DEVICE_CODE
+      if (CubDebug(error = cudaStreamSynchronize(stream)))
+      {
+        return error;
+      }
+
       memcpy(h_group_sizes,
              group_sizes.get(),
              num_selected_groups * sizeof(unsigned int));
