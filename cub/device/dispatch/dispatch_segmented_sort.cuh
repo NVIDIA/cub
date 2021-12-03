@@ -1386,7 +1386,7 @@ private:
         return error;
       }
 
-      if (CubDebug(error = cudaStreamSynchronize(stream)))
+      if (CubDebug(error = SyncStream(stream)))
       {
         return error;
       }
@@ -1395,7 +1395,7 @@ private:
     else
     {
       #if CUB_INCLUDE_DEVICE_CODE
-      if (CubDebug(error = cudaStreamSynchronize(stream)))
+      if (CubDebug(error = SyncStream(stream)))
       {
         return error;
       }
