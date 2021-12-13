@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <cub/detail/exec_check_disable.cuh>
 #include <cub/util_arch.cuh>
 #include <cub/util_namespace.cuh>
 
@@ -30,7 +31,7 @@ namespace detail
  * Call `cudaDeviceSynchronize()` using the proper API for the current CUB and
  * CUDA configuration.
  */
-#pragma nv_exec_check_disable
+CUB_EXEC_CHECK_DISABLE
 CUB_RUNTIME_FUNCTION inline cudaError_t device_synchronize()
 {
   cudaError_t result = cudaErrorUnknown;
