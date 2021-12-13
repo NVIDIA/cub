@@ -72,18 +72,17 @@ __global__ void DeviceReduceKernel(
     ReductionOpT            reduction_op)               ///< [in] Binary reduction functor
 {
     // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+    using OutputT =
+      cub::detail::non_void_value_t<OutputIteratorT,
+                                    cub::detail::value_t<InputIteratorT>>;
 
     // Thread block type for reducing input tiles
-    typedef AgentReduce<
-            typename ChainedPolicyT::ActivePolicy::ReducePolicy,
-            InputIteratorT,
-            OutputIteratorT,
-            OffsetT,
-            ReductionOpT>
-        AgentReduceT;
+    using AgentReduceT =
+      AgentReduce<typename ChainedPolicyT::ActivePolicy::ReducePolicy,
+                  InputIteratorT,
+                  OutputIteratorT,
+                  OffsetT,
+                  ReductionOpT>;
 
     // Shared memory storage
     __shared__ typename AgentReduceT::TempStorage temp_storage;
@@ -319,11 +318,11 @@ template <
     typename OffsetT,           ///< Signed integer type for global offsets
     typename ReductionOpT,      ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename OutputT =          ///< Data type of the output iterator
-        typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-            typename std::iterator_traits<InputIteratorT>::value_type,                                  // ... then the input iterator's value type,
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type,                          // ... else the output iterator's value type
+        cub::detail::non_void_value_t<
+          OutputIteratorT,
+          cub::detail::value_t<InputIteratorT>>,
     typename SelectedPolicy = DeviceReducePolicy<
-        typename std::iterator_traits<InputIteratorT>::value_type,
+        cub::detail::value_t<InputIteratorT>,
         OutputT,
         OffsetT,
         ReductionOpT> >
@@ -643,11 +642,10 @@ template <
     typename OffsetT,              ///< Signed integer type for global offsets
     typename ReductionOpT,         ///< Binary reduction functor type having member <tt>T operator()(const T &a, const T &b)</tt>
     typename OutputT =             ///< Data type of the output iterator
-        typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-            typename std::iterator_traits<InputIteratorT>::value_type,                                  // ... then the input iterator's value type,
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type,                          // ... else the output iterator's value type
+          cub::detail::non_void_value_t<OutputIteratorT,
+                                        cub::detail::value_t<InputIteratorT>>,
     typename SelectedPolicy = DeviceReducePolicy<
-        typename std::iterator_traits<InputIteratorT>::value_type,
+        cub::detail::value_t<InputIteratorT>,
         OutputT,
         OffsetT,
         ReductionOpT> >

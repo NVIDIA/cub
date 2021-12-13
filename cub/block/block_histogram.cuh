@@ -188,9 +188,16 @@ private:
             ALGORITHM;
 
     /// Internal specialization.
-    typedef typename If<(SAFE_ALGORITHM == BLOCK_HISTO_SORT),
-        BlockHistogramSort<T, BLOCK_DIM_X, ITEMS_PER_THREAD, BINS, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH>,
-        BlockHistogramAtomic<BINS> >::Type InternalBlockHistogram;
+    using InternalBlockHistogram =
+      cub::detail::conditional_t<SAFE_ALGORITHM == BLOCK_HISTO_SORT,
+                                 BlockHistogramSort<T,
+                                                    BLOCK_DIM_X,
+                                                    ITEMS_PER_THREAD,
+                                                    BINS,
+                                                    BLOCK_DIM_Y,
+                                                    BLOCK_DIM_Z,
+                                                    PTX_ARCH>,
+                                 BlockHistogramAtomic<BINS>>;
 
     /// Shared memory storage layout type for BlockHistogram
     typedef typename InternalBlockHistogram::TempStorage _TempStorage;

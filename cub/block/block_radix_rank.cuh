@@ -156,9 +156,10 @@ private:
     typedef unsigned short DigitCounter;
 
     // Integer type for packing DigitCounters into columns of shared memory banks
-    typedef typename If<(SMEM_CONFIG == cudaSharedMemBankSizeEightByte),
-        unsigned long long,
-        unsigned int>::Type PackedCounter;
+    using PackedCounter =
+      cub::detail::conditional_t<SMEM_CONFIG == cudaSharedMemBankSizeEightByte,
+                                 unsigned long long,
+                                 unsigned int>;
 
     enum
     {
@@ -746,7 +747,9 @@ public:
             temp_storage.aliasable.raking_grid[linear_tid][ITEM] = scan_counters[ITEM];
 
         CTA_SYNC();
-        if (!Equals<CountsCallback, BlockRadixRankEmptyCallback<BINS_TRACKED_PER_THREAD>>::VALUE)
+        if (!std::is_same<
+              CountsCallback,
+              BlockRadixRankEmptyCallback<BINS_TRACKED_PER_THREAD>>::value)
         {
             CallBack<KEYS_PER_THREAD>(callback);
         }

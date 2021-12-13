@@ -128,7 +128,7 @@ class WarpMergeSort
 {
 private:
   constexpr static bool IS_ARCH_WARP = LOGICAL_WARP_THREADS == CUB_WARP_THREADS(PTX_ARCH);
-  constexpr static bool KEYS_ONLY = cub::Equals<ValueT, NullType>::VALUE;
+  constexpr static bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
   constexpr static int TILE_SIZE = ITEMS_PER_THREAD * LOGICAL_WARP_THREADS;
 
   using BlockMergeSortStrategyT = BlockMergeSortStrategy<KeyT,

@@ -220,25 +220,25 @@ struct BlockSegReduceRegion
     };
 
     // Segment offset type
-    typedef typename std::iterator_traits<SegmentOffsetIterator>::value_type SegmentOffset;
+    using SegmentOffset = cub::detail::value_t<SegmentOffsetIterator>;
 
     // Value type
-    typedef typename std::iterator_traits<ValueIterator>::value_type Value;
+    using Value = cub::detail::value_t<ValueIterator>;
 
     // Counting iterator type
-    typedef CountingInputIterator<SegmentOffsetT, OffsetT> CountingIterator;
+    using CountingIterator = CountingInputIterator<SegmentOffsetT, OffsetT>;
 
     // Segment offsets iterator wrapper type
-    typedef typename If<(IsPointer<SegmentOffsetIterator>::VALUE),
+    using WrappedSegmentOffsetIterator =
+      cub::detail::conditional_t<std::is_pointer<SegmentOffsetIterator>::value,
             CacheModifiedInputIterator<BlockSegReduceRegionPolicy::LOAD_MODIFIER_SEGMENTS, SegmentOffsetT, OffsetT>,  // Wrap the native input pointer with CacheModifiedInputIterator
-            SegmentOffsetIterator>::Type                                                                            // Directly use the supplied input iterator type
-        WrappedSegmentOffsetIterator;
+            SegmentOffsetIterator>;                                                                                   // Directly use the supplied input iterator type
 
     // Values iterator wrapper type
-    typedef typename If<(IsPointer<ValueIterator>::VALUE),
+    using WrappedValueIterator =
+      cub::detail::conditional_t<std::is_pointer<ValueIterator>::value,
             CacheModifiedInputIterator<BlockSegReduceRegionPolicy::LOAD_MODIFIER_VALUES, Value, OffsetT>,        // Wrap the native input pointer with CacheModifiedInputIterator
-            ValueIterator>::Type                                                                                // Directly use the supplied input iterator type
-        WrappedValueIterator;
+            ValueIterator>;                                                                                      // Directly use the supplied input iterator type
 
     // Tail flag type for marking segment discontinuities
     typedef int TailFlag;
@@ -887,54 +887,46 @@ struct BlockSegReduceRegionByKey
     };
 
     // KeyValuePair input type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type KeyValuePair;
+    using KeyValuePair = cub::detail::value_t<InputIteratorT>;
 
     // Signed integer type for global offsets
-    typedef typename KeyValuePair::Key OffsetT;
+    using OffsetT = typename KeyValuePair::Key;
 
     // Value type
-    typedef typename KeyValuePair::Value Value;
+    using Value = typename KeyValuePair::Value;
 
     // Head flag type
-    typedef int HeadFlag;
+    using HeadFlag = int;
 
     // Input iterator wrapper type for loading KeyValuePair elements through cache
-    typedef CacheModifiedInputIterator<
-            BlockSegReduceRegionByKeyPolicy::LOAD_MODIFIER,
-            KeyValuePair,
-            OffsetT>
-        WrappedInputIteratorT;
+    using WrappedInputIteratorT =
+      CacheModifiedInputIterator<BlockSegReduceRegionByKeyPolicy::LOAD_MODIFIER,
+                                 KeyValuePair,
+                                 OffsetT>;
 
     // Parameterized BlockLoad type
-    typedef BlockLoad<
-            WrappedInputIteratorT,
-            BLOCK_THREADS,
-            ITEMS_PER_THREAD,
-            BlockSegReduceRegionByKeyPolicy::LOAD_ALGORITHM,
-            BlockSegReduceRegionByKeyPolicy::LOAD_WARP_TIME_SLICING>
-        BlockLoad;
+    using BlockLoad =
+      BlockLoad<WrappedInputIteratorT,
+                BLOCK_THREADS,
+                ITEMS_PER_THREAD,
+                BlockSegReduceRegionByKeyPolicy::LOAD_ALGORITHM,
+                BlockSegReduceRegionByKeyPolicy::LOAD_WARP_TIME_SLICING>;
 
     // BlockScan scan operator for reduction-by-segment
-    typedef ReduceByKeyOp<ReductionOp> ReduceByKeyOp;
+    using ReduceByKeyOp = ReduceByKeyOp<ReductionOp>;
 
     // Stateful BlockScan prefix callback type for managing a running total while scanning consecutive tiles
-    typedef RunningBlockPrefixCallbackOp<
-            KeyValuePair,
-            ReduceByKeyOp>
-        RunningPrefixCallbackOp;
+    using RunningPrefixCallbackOp =
+      RunningBlockPrefixCallbackOp<KeyValuePair, ReduceByKeyOp>;
 
     // Parameterized BlockScan type for block-wide reduce-value-by-key
-    typedef BlockScan<
-            KeyValuePair,
-            BLOCK_THREADS,
-            BlockSegReduceRegionByKeyPolicy::SCAN_ALGORITHM>
-        BlockScan;
+    using BlockScan =
+      BlockScan<KeyValuePair,
+                BLOCK_THREADS,
+                BlockSegReduceRegionByKeyPolicy::SCAN_ALGORITHM>;
 
     // Parameterized BlockDiscontinuity type for identifying key discontinuities
-    typedef BlockDiscontinuity<
-            OffsetT,
-            BLOCK_THREADS>
-        BlockDiscontinuity;
+    using BlockDiscontinuity = BlockDiscontinuity<OffsetT, BLOCK_THREADS>;
 
     // Operator for detecting discontinuities in a list of segment identifiers.
     struct NewSegmentOp
@@ -1126,10 +1118,10 @@ __global__ void SegReducePartitionKernel(
     GridEvenShare<OffsetT>      even_share)             ///< [in] Even-share descriptor for mapping an equal number of tiles onto each thread block
 {
     // Segment offset type
-    typedef typename std::iterator_traits<SegmentOffsetIterator>::value_type SegmentOffset;
+    using SegmentOffset = cub::detail::value_t<SegmentOffsetIterator>;
 
     // Counting iterator type
-    typedef CountingInputIterator<SegmentOffsetT, OffsetT> CountingIterator;
+    using CountingIterator = CountingInputIterator<SegmentOffsetT, OffsetT>;
 
     // Cache-modified iterator for segment end-offsets
     CacheModifiedInputIterator<LOAD_LDG, SegmentOffsetT, OffsetT> d_wrapped_segment_end_offsets(d_segment_end_offsets);
@@ -1311,13 +1303,13 @@ template <
 struct DeviceSegReduceDispatch
 {
     // Value type
-    typedef typename std::iterator_traits<ValueIterator>::value_type Value;
+    using Value = cub::detail::value_t<ValueIterator>;
 
     // Reduce-by-key data type tuple (segment-ID, value)
-    typedef KeyValuePair<OffsetT, Value> KeyValuePair;
+    using KeyValuePair = KeyValuePair<OffsetT, Value>;
 
     // Index pair data type
-    typedef IndexPair<OffsetT>IndexPair;
+    using IndexPair = IndexPair<OffsetT>;
 
 
     /******************************************************************************
@@ -1878,10 +1870,10 @@ struct DeviceSegReduce
         bool                    debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int OffsetT;
+        using OffsetT = int;
 
         // Value type
-        typedef typename std::iterator_traits<ValueIterator>::value_type Value;
+        using Value = cub::detail::value_t<ValueIterator>;
 
         Value identity = Value();
         cub::Sum reduction_op;
@@ -2035,7 +2027,7 @@ void Test(
 
     printf("\n\n%s cub::DeviceSegReduce::%s %d items (%d-byte %s), %d segments (%d-byte offset indices)\n",
         (CDP) ? "CDP device invoked" : "Host-invoked",
-        (Equals<ReductionOp, Sum>::VALUE) ? "Sum" : "Reduce",
+        (std::is_same<ReductionOp, sum>::VALUE) ? "Sum" : "Reduce",
         num_values, (int) sizeof(Value), type_string,
         num_segments, (int) sizeof(OffsetT));
     fflush(stdout);

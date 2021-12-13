@@ -338,7 +338,7 @@ void TestFullTile(
 
     // Test multi-tile (unguarded)
     printf("TestFullTile %s, %s, gen-mode %d, num_items(%d), BLOCK_THREADS(%d) (%d,%d,%d), ITEMS_PER_THREAD(%d), tiles(%d), %s (%d bytes) elements:\n",
-        Equals<ReductionOp, Sum>::VALUE ? "Sum" : "Max",
+        std::is_same<ReductionOp, Sum>::value ? "Sum" : "Max",
         (ALGORITHM == BLOCK_REDUCE_RAKING) ? "BLOCK_REDUCE_RAKING" : (ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY) ? "BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY" : "BLOCK_REDUCE_WARP_REDUCTIONS",
         gen_mode,
         num_items,

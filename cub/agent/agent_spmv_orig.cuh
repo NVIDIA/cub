@@ -202,11 +202,14 @@ struct AgentSpmv
     /// Merge item type (either a non-zero value or a row-end offset)
     union MergeItem
     {
-        // Value type to pair with index type OffsetT (NullType if loading values directly during merge)
-        typedef typename If<AgentSpmvPolicyT::DIRECT_LOAD_NONZEROS, NullType, ValueT>::Type MergeValueT;
+      // Value type to pair with index type OffsetT
+      // (NullType if loading values directly during merge)
+      using MergeValueT =
+        cub::detail::conditional_t<
+          AgentSpmvPolicyT::DIRECT_LOAD_NONZEROS, NullType, ValueT>;
 
-        OffsetT     row_end_offset;
-        MergeValueT nonzero;
+      OffsetT row_end_offset;
+      MergeValueT nonzero;
     };
 
     /// Shared memory type required by this thread block

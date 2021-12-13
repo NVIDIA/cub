@@ -532,10 +532,7 @@ template <typename KeyT,
 struct DeviceSegmentedSortPolicy
 {
   using DominantT =
-    typename std::conditional<
-      (sizeof(ValueT) > sizeof(KeyT)),
-      ValueT,
-      KeyT>::type;
+    cub::detail::conditional_t<(sizeof(ValueT) > sizeof(KeyT)), ValueT, KeyT>;
 
   constexpr static int KEYS_ONLY = std::is_same<ValueT, cub::NullType>::value;
 
@@ -868,15 +865,15 @@ struct DeviceSegmentedSortPolicy
 };
 
 template <bool IS_DESCENDING,
-  typename KeyT,
-  typename ValueT,
-  typename OffsetT,
-  typename BeginOffsetIteratorT,
-  typename EndOffsetIteratorT,
-  typename SelectedPolicy = DeviceSegmentedSortPolicy<KeyT, ValueT>>
+          typename KeyT,
+          typename ValueT,
+          typename OffsetT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT,
+          typename SelectedPolicy = DeviceSegmentedSortPolicy<KeyT, ValueT>>
 struct DispatchSegmentedSort : SelectedPolicy
 {
-  static constexpr int KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+  static constexpr int KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
   struct LargeSegmentsSelectorT
   {

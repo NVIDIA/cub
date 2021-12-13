@@ -451,7 +451,7 @@ void Test(
     printf("Test-mode %d (%s), gen-mode %d (%s), %s warpscan, %d warp threads, %s (%d bytes) elements:\n",
         TEST_MODE, typeid(TEST_MODE).name(),
         gen_mode, typeid(gen_mode).name(),
-        (Equals<InitialValueT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
+        (std::is_same<InitialValueT, NullType>::value) ? "Inclusive" : "Exclusive",
         LOGICAL_WARP_THREADS,
         typeid(T).name(),
         (int) sizeof(T));

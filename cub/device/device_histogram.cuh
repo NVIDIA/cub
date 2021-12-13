@@ -130,7 +130,7 @@ struct DeviceHistogram
         bool                debug_synchronous       = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         /// The sample value type of the input iterator
-        typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+        using SampleT = cub::detail::value_t<SampleIteratorT>;
 
         CounterT*           d_histogram1[1]     = {d_histogram};
         int                 num_levels1[1]      = {num_levels};
@@ -331,7 +331,7 @@ struct DeviceHistogram
         bool                debug_synchronous       = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         /// The sample value type of the input iterator
-        typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+        using SampleT = cub::detail::value_t<SampleIteratorT>;
 
         return MultiHistogramEven<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
             d_temp_storage,
@@ -440,7 +440,7 @@ struct DeviceHistogram
         bool                debug_synchronous       = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         /// The sample value type of the input iterator
-        typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+        using SampleT = cub::detail::value_t<SampleIteratorT>;
         Int2Type<sizeof(SampleT) == 1> is_byte_sample;
 
         if ((sizeof(OffsetT) > sizeof(int)) &&
@@ -533,7 +533,7 @@ struct DeviceHistogram
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         /// The sample value type of the input iterator
-        typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+        using SampleT = cub::detail::value_t<SampleIteratorT>;
 
         CounterT*           d_histogram1[1] = {d_histogram};
         int                 num_levels1[1]  = {num_levels};
@@ -727,7 +727,7 @@ struct DeviceHistogram
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         /// The sample value type of the input iterator
-        typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+        using SampleT = cub::detail::value_t<SampleIteratorT>;
 
         return MultiHistogramRange<NUM_CHANNELS, NUM_ACTIVE_CHANNELS>(
             d_temp_storage,
@@ -832,7 +832,7 @@ struct DeviceHistogram
         bool                debug_synchronous   = false)            ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         /// The sample value type of the input iterator
-        typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+        using SampleT = cub::detail::value_t<SampleIteratorT>;
         Int2Type<sizeof(SampleT) == 1> is_byte_sample;
 
         if ((sizeof(OffsetT) > sizeof(int)) &&

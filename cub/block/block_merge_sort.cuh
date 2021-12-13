@@ -179,7 +179,7 @@ private:
   static constexpr int ITEMS_PER_TILE = ITEMS_PER_THREAD * NUM_THREADS;
 
   // Whether or not there are values to be trucked along with keys
-  static constexpr bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+  static constexpr bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
   /// Shared memory type required by this thread block
   union _TempStorage

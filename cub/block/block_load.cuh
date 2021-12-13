@@ -1292,7 +1292,7 @@ public:
 
 template <class Policy,
           class It,
-          class T = typename std::iterator_traits<It>::value_type>
+          class T = cub::detail::value_t<It>>
 struct BlockLoadType
 {
   using type = cub::BlockLoad<T,

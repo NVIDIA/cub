@@ -1868,7 +1868,7 @@ template <int LogicalWarpThreads,
           typename IteratorT>
 void FillStriped(IteratorT it)
 {
-  using T = typename std::iterator_traits<IteratorT>::value_type;
+  using T = CUB_NS_QUALIFIER::detail::value_t<IteratorT>;
 
   const int warps_in_block = BlockThreads / LogicalWarpThreads;
   const int items_per_warp = LogicalWarpThreads * ItemsPerThread;

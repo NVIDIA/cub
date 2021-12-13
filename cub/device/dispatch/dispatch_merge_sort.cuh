@@ -190,7 +190,7 @@ DeviceMergeSortMergeKernel(bool ping,
 template <typename KeyIteratorT>
 struct DeviceMergeSortPolicy
 {
-  using KeyT = typename std::iterator_traits<KeyIteratorT>::value_type;
+  using KeyT = cub::detail::value_t<KeyIteratorT>;
 
   //----------------------------------------------------------------------------
   // Architecture-specific tuning policies
@@ -445,11 +445,11 @@ template <typename KeyInputIteratorT,
           typename SelectedPolicy = DeviceMergeSortPolicy<KeyIteratorT>>
 struct DispatchMergeSort : SelectedPolicy
 {
-  using KeyT   = typename std::iterator_traits<KeyIteratorT>::value_type;
-  using ValueT = typename std::iterator_traits<ValueIteratorT>::value_type;
+  using KeyT   = cub::detail::value_t<KeyIteratorT>;
+  using ValueT = cub::detail::value_t<ValueIteratorT>;
 
   /// Whether or not there are values to be trucked along with keys
-  static constexpr bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+  static constexpr bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
   // Problem state
 

@@ -130,12 +130,12 @@ struct DispatchSelectIf
      ******************************************************************************/
 
     // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<SelectedOutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                                  // ... then the input iterator's value type,
-        typename std::iterator_traits<SelectedOutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+    using OutputT =
+      cub::detail::non_void_value_t<SelectedOutputIteratorT,
+                                    cub::detail::value_t<InputIteratorT>>;
 
     // The flag value type
-    typedef typename std::iterator_traits<FlagsInputIteratorT>::value_type FlagT;
+    using FlagT = cub::detail::value_t<FlagsInputIteratorT>;
 
     enum
     {

@@ -591,14 +591,14 @@ void InitializeKeysSorted(
         // twiddled_key < max_bits at this point.
         UnsignedBits inc = static_cast<UnsignedBits>(std::min(1 + inc_bits % max_inc, max_bits - twiddled_key));
         twiddled_key += inc;
-        
+
         // Generate random run length (ensure there are enough values to fill the rest).
         std::size_t run_bits = 0;
         RandomBits(run_bits);
         std::size_t run_length = std::min(1 + run_bits % max_run, num_items - i);
         if (twiddled_key == max_bits) run_length = num_items - i;
         std::size_t run_end = i + run_length;
-        
+
         // Fill the array.
         UnsignedBits key = TraitsT::TwiddleOut(twiddled_key);
         // Avoid -0.0 for floating-point keys.
@@ -689,7 +689,7 @@ void InitializeSolution(
             cur_key = key;
             summary.push_back(Element{cur_key, 1, i});
         }
-        
+
         // Generate a random permutation from the summary. Such a complicated
         // approach is used to permute the array and compute ranks in a
         // cache-friendly way and in a short time.
@@ -839,7 +839,7 @@ void Test(
     // Key alias type
     using KeyAliasT = typename UnwrapHalfAndBfloat16<KeyT>::Type;
 
-    const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+    const bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
     printf("%s %s cub::DeviceRadixSort %zd items, %d segments, "
            "%d-byte keys (%s) %d-byte values (%s), descending %d, "
@@ -991,7 +991,9 @@ template <typename KeyT, typename ValueT>
 bool HasEnoughMemory(std::size_t num_items)
 {
     std::size_t total_mem = TotalGlobalMem();
-    std::size_t value_size = Equals<ValueT, NullType>::VALUE ? 0 : sizeof(ValueT);
+    std::size_t value_size = std::is_same<ValueT, NullType>::value
+                           ? 0
+                           : sizeof(ValueT);
     // A conservative estimate of the amount of memory required.
     std::size_t test_mem = 4 * num_items * (sizeof(KeyT) + value_size);
     return test_mem < total_mem;
@@ -1012,7 +1014,7 @@ void TestBackend(
     KeyT                 *h_reference_keys,
     std::size_t          *h_reference_ranks)
 {
-    const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+    const bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
     ValueT *h_values             = NULL;
     ValueT *h_reference_values   = NULL;
@@ -1141,7 +1143,8 @@ void TestBits(
     EndOffsetIteratorT   d_segment_end_offsets)
 {
     // Don't test partial-word sorting for boolean, fp, or signed types (the bit-flipping techniques get in the way) or pre-sorted keys
-    if ((Traits<KeyT>::CATEGORY == UNSIGNED_INTEGER) && (!Equals<KeyT, bool>::VALUE)
+    if ((Traits<KeyT>::CATEGORY == UNSIGNED_INTEGER)
+        && (!std::is_same<KeyT, bool>::value)
         && !pre_sorted)
     {
         // Partial bits
@@ -1315,7 +1318,7 @@ void TestGen(
     InitializeKeyBits(INTEGER_SEED, h_keys.get(), max_items, 0);
     TestSizes(h_keys.get(), max_items, max_segments, false);
 
-    if (!cub::Equals<KeyT, bool>::VALUE)
+    if (!std::is_same<KeyT, bool>::value)
     {
         // Presorting is only used for testing large input arrays.
         // Increase above 2^32 once 64-bit indexing is enabled.
@@ -1352,7 +1355,7 @@ void Test(
     int         begin_bit,
     int         end_bit)
 {
-    const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+    const bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
     KeyT         *h_keys             = new KeyT[num_items];
     std::size_t  *h_reference_ranks  = NULL;

@@ -239,11 +239,12 @@ private:
     typedef BlockReduceRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, PTX_ARCH>                   Raking;
 
     /// Internal specialization type
-    typedef typename If<(ALGORITHM == BLOCK_REDUCE_WARP_REDUCTIONS),
-        WarpReductions,
-        typename If<(ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY),
-            RakingCommutativeOnly,
-            Raking>::Type>::Type InternalBlockReduce;     // BlockReduceRaking
+    using InternalBlockReduce = cub::detail::conditional_t<
+      ALGORITHM == BLOCK_REDUCE_WARP_REDUCTIONS,
+      WarpReductions,
+      cub::detail::conditional_t<ALGORITHM == BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,
+                                 RakingCommutativeOnly,
+                                 Raking>>; // BlockReduceRaking
 
     /// Shared memory storage layout type for BlockReduce
     typedef typename InternalBlockReduce::TempStorage _TempStorage;

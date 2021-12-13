@@ -185,7 +185,7 @@ private:
         BLOCK_THREADS               = BLOCK_DIM_X * BLOCK_DIM_Y * BLOCK_DIM_Z,
 
         // Whether or not there are values to be trucked along with keys
-        KEYS_ONLY                   = Equals<ValueT, NullType>::VALUE,
+        KEYS_ONLY                   = std::is_same<ValueT, NullType>::value,
     };
 
     // KeyT traits and unsigned bits type

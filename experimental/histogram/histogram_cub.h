@@ -29,11 +29,10 @@
 
 using namespace cub;
 
-template <
-    int         NUM_CHANNELS,
-    int         ACTIVE_CHANNELS,
-    int         NUM_BINS,
-    typename    PixelType>
+template <int NUM_CHANNELS,
+          int ACTIVE_CHANNELS,
+          int NUM_BINS,
+          typename PixelType>
 double run_cub_histogram(
     PixelType *d_image,
     int width,
@@ -41,12 +40,10 @@ double run_cub_histogram(
     unsigned int *d_hist, 
     bool is_warmup)
 {
-    enum {
-        is_float = Equals<PixelType, float4>::VALUE,
-    };
+    constexpr bool is_float = std::is_same<PixelType, float4>::value;
 
-    typedef typename If<is_float, float, unsigned char>::Type    SampleT;    // Sample type
-    typedef typename If<is_float, float, unsigned int>::Type     LevelT;     // Level type (uint32 for uchar)
+    using SampleT = cub::detail::conditional_t<is_float, float, unsigned char>;   // Sample type
+    using LevelT = cub::detail::conditional_t<is_float, float, unsigned int>;     // Level type (uint32 for uchar)
 
     // Setup data structures
     unsigned int*       d_histogram[ACTIVE_CHANNELS];

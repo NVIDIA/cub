@@ -292,7 +292,7 @@ public:
         size_t          bytes,                  ///< Number of bytes in the range
         size_t          tex_offset = 0)         ///< OffsetT (in items) from \p ptr denoting the position of the iterator
     {
-        this->ptr = const_cast<typename RemoveQualifiers<QualifiedT>::Type *>(ptr);
+        this->ptr = const_cast<typename std::remove_cv<QualifiedT>::type *>(ptr);
         size_t offset;
         cudaError_t retval = TexId::BindTexture(this->ptr + tex_offset, bytes, offset);
         this->tex_offset = (difference_type) (offset / sizeof(QualifiedT));

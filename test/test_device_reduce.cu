@@ -40,6 +40,7 @@
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
+#include <cub/util_type.cuh>
 
 #include "test_util.h"
 
@@ -112,12 +113,10 @@ cudaError_t Dispatch(
     cudaStream_t        stream,
     bool                debug_synchronous)
 {
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+    using InputT = cub::detail::value_t<InputIteratorT>;
 
     // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+    using OutputT = cub::detail::non_void_value_t<OutputIteratorT, InputT>;
 
     // Max-identity
     OutputT identity = Traits<InputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
@@ -328,12 +327,10 @@ cudaError_t Dispatch(
     bool                debug_synchronous)
 {
     // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+    using InputT = cub::detail::value_t<InputIteratorT>;
 
     // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+    using OutputT = cub::detail::non_void_value_t<OutputIteratorT, InputT>;
 
     // Max-identity
     OutputT identity = Traits<InputT>::Lowest(); // replace with std::numeric_limits<OutputT>::lowest() when C++ support is more prevalent
@@ -771,7 +768,7 @@ void Test(
     HostReferenceIteratorT  h_reference)
 {
     // Input data types
-    typedef typename std::iterator_traits<DeviceInputIteratorT>::value_type InputT;
+    using InputT = cub::detail::value_t<DeviceInputIteratorT>;
 
     // Allocate CUB_CDP device arrays for temp storage size and error
     size_t          *d_temp_storage_bytes = NULL;
@@ -857,9 +854,9 @@ void SolveAndTest(
     EndOffsetIteratorT      d_segment_end_offsets,
     ReductionOpT            reduction_op)
 {
-    typedef typename std::iterator_traits<DeviceInputIteratorT>::value_type     InputValueT;
-    typedef Solution<ReductionOpT, InputValueT, OutputValueT>                   SolutionT;
-    typedef typename SolutionT::OutputT                                         OutputT;
+    using InputValueT = cub::detail::value_t<DeviceInputIteratorT>;
+    using SolutionT = Solution<ReductionOpT, InputValueT, OutputValueT>;
+    using OutputT = typename SolutionT::OutputT;
 
     printf("\n\n%s cub::DeviceReduce<%s> %d items (%s), %d segments\n",
         (BACKEND == CUB_CDP) ? "CUB_CDP" : (BACKEND == CUB_SEGMENTED) ? "CUB_SEGMENTED" : "CUB",

@@ -450,7 +450,7 @@ void TestPointer(
 
     printf("\nPointer %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %.3f), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
-        (Equals<ReductionOpT, Sum>::VALUE) ? "Sum" : "Max",
+        (std::is_same<ReductionOpT, Sum>::value) ? "Sum" : "Max",
         num_items, num_segments, float(num_items) / num_segments,
         typeid(KeyT).name(), typeid(ValueT).name(),
         max_segment, entropy_reduction);
@@ -509,7 +509,7 @@ void TestIterator(
 
     printf("\nIterator %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %.3f), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
-        (Equals<ReductionOpT, Sum>::VALUE) ? "Sum" : "Max",
+        (std::is_same<ReductionOpT, Sum>::value) ? "Sum" : "Max",
         num_items, num_segments, float(num_items) / num_segments,
         typeid(KeyT).name(), typeid(ValueT).name(),
         max_segment, entropy_reduction);

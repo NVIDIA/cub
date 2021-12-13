@@ -55,7 +55,7 @@ template <int                 BlockThreads,
 __global__ void kernel(InputIteratorT input,
                        int *err)
 {
-  using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
+  using InputT = cub::detail::value_t<InputIteratorT>;
 
   using WarpLoadT = WarpLoad<InputT,
                              ItemsPerThread,
@@ -103,12 +103,10 @@ __global__ void kernel(int valid_items,
                        InputIteratorT input,
                        int *err)
 {
-  using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
+  using InputT = cub::detail::value_t<InputIteratorT>;
 
-  using WarpLoadT = WarpLoad<InputT,
-    ItemsPerThread,
-    LoadAlgorithm,
-    WarpThreads>;
+  using WarpLoadT =
+    WarpLoad<InputT, ItemsPerThread, LoadAlgorithm, WarpThreads>;
 
   constexpr int warps_in_block = BlockThreads / WarpThreads;
   constexpr int tile_size = ItemsPerThread * WarpThreads;
