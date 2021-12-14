@@ -103,12 +103,38 @@ struct InequalityWrapper
  */
 struct Sum
 {
-    /// Boolean sum operator, returns <tt>a + b</tt>
+    /// Binary sum operator, returns <tt>a + b</tt>
     template <typename T>
     __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
     {
         return a + b;
     }
+};
+
+/**
+ * \brief Default difference functor
+ */
+struct Difference
+{
+  /// Binary difference operator, returns <tt>a - b</tt>
+  template <typename T>
+  __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
+  {
+    return a - b;
+  }
+};
+
+/**
+ * \brief Default division functor
+ */
+struct Division
+{
+  /// Binary difference operator, returns <tt>a - b</tt>
+  template <typename T>
+  __host__ __device__ __forceinline__ T operator()(const T &a, const T &b) const
+  {
+    return a / b;
+  }
 };
 
 
@@ -271,7 +297,6 @@ struct ReduceBySegmentOp
 };
 
 
-
 template <typename ReductionOpT>    ///< Binary reduction operator to apply to values
 struct ReduceByKeyOp
 {
@@ -300,10 +325,29 @@ struct ReduceByKeyOp
 };
 
 
+template <typename BinaryOpT>
+struct BinaryFlip
+{
+  BinaryOpT binary_op;
 
+  __device__ __host__ explicit BinaryFlip(BinaryOpT binary_op)
+      : binary_op(binary_op)
+  {}
 
+  template <typename T, typename U>
+  __device__ auto
+  operator()(T &&t, U &&u) -> decltype(binary_op(std::forward<U>(u),
+                                                 std::forward<T>(t)))
+  {
+    return binary_op(std::forward<U>(u), std::forward<T>(t));
+  }
+};
 
-
+template <typename BinaryOpT>
+__device__ __host__ BinaryFlip<BinaryOpT> MakeBinaryFlip(BinaryOpT binary_op)
+{
+  return BinaryFlip<BinaryOpT>(binary_op);
+}
 
 /** @} */       // end group UtilModule
 

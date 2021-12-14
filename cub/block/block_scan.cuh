@@ -157,7 +157,7 @@ enum BlockScanAlgorithm
  *
  * __global__ void ExampleKernel(...)
  * {
- *     // Specialize BlockScan for a 1D block of 128 threads on type int
+ *     // Specialize BlockScan for a 1D block of 128 threads of type int
  *     typedef cub::BlockScan<int, 128> BlockScan;
  *
  *     // Allocate shared memory for BlockScan
@@ -313,7 +313,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -359,7 +359,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -501,7 +501,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -551,7 +551,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -710,7 +710,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -758,7 +758,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -906,7 +906,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -968,7 +968,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1263,7 +1263,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1306,7 +1306,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1445,7 +1445,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1507,7 +1507,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1693,7 +1693,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1740,7 +1740,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1887,7 +1887,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
@@ -1953,7 +1953,7 @@ public:
      *
      * __global__ void ExampleKernel(...)
      * {
-     *     // Specialize BlockScan for a 1D block of 128 threads on type int
+     *     // Specialize BlockScan for a 1D block of 128 threads of type int
      *     typedef cub::BlockScan<int, 128> BlockScan;
      *
      *     // Allocate shared memory for BlockScan
