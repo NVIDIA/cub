@@ -207,7 +207,7 @@ struct DeviceMergeSortPolicy
   };
 
 // NVBug 3384810
-#if defined(__NVCOMPILER_CUDA__)
+#if defined(_NVHPC_CUDA)
   using Policy520 = Policy350;
 #else
   struct Policy520 : ChainedPolicy<520, Policy520, Policy350>

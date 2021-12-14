@@ -114,7 +114,7 @@ __host__ __device__ __forceinline__ cudaError_t Debug(
  * \brief Log macro for printf statements.
  */
 #if !defined(_CubLog)
-    #if defined(__NVCOMPILER_CUDA__)
+    #if defined(_NVHPC_CUDA)
         #define _CubLog(format, ...) (__builtin_is_device_code() \
             ? printf("[block (%d,%d,%d), thread (%d,%d,%d)]: " format, \
                      blockIdx.z, blockIdx.y, blockIdx.x, \
