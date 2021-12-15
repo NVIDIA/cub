@@ -36,11 +36,6 @@
 #include <stdio.h>
 #include <typeinfo>
 
-#include <thrust/device_ptr.h>
-#include <thrust/copy.h>
-#include <thrust/partition.h>
-#include <thrust/iterator/reverse_iterator.h>
-
 #include <cub/util_allocator.cuh>
 #include <cub/device/device_select.cuh>
 #include <cub/device/device_partition.cuh>
@@ -57,7 +52,6 @@ using namespace cub;
 
 bool                    g_verbose               = false;
 int                     g_timing_iterations     = 0;
-int                     g_repeat                = 0;
 float                   g_device_giga_bandwidth;
 CachingDeviceAllocator  g_allocator(true);
 
@@ -65,7 +59,6 @@ CachingDeviceAllocator  g_allocator(true);
 enum Backend
 {
     CUB,        // CUB method
-    THRUST,     // Thrust method
     CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
 };
 
@@ -220,261 +213,6 @@ cudaError_t Dispatch(
     }
     return error;
 }
-
-
-//---------------------------------------------------------------------
-// Dispatch to different Thrust entrypoints
-//---------------------------------------------------------------------
-
-/**
- * Dispatch to select if entrypoint
- */
-template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
-__host__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<THRUST>            /*dispatch_to*/,
-    Int2Type<false>             /*is_flagged*/,
-    Int2Type<false>             /*is_partition*/,
-    int                         timing_timing_iterations,
-    size_t*                     /*d_temp_storage_bytes*/,
-    cudaError_t*                /*d_cdp_error*/,
-
-    void*                       d_temp_storage,
-    size_t&                     temp_storage_bytes,
-    InputIteratorT              d_in,
-    FlagIteratorT               /*d_flags*/,
-    OutputIteratorT             d_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    SelectOpT                   select_op,
-    cudaStream_t                /*stream*/,
-    bool                        /*debug_synchronous*/)
-{
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<OutputT>         d_out_wrapper_end;
-        THRUST_NS_QUALIFIER::device_ptr<InputT>          d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT>         d_out_wrapper(d_out);
-
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            d_out_wrapper_end = THRUST_NS_QUALIFIER::copy_if(d_in_wrapper,
-                                                             d_in_wrapper + num_items,
-                                                             d_out_wrapper, select_op);
-        }
-
-        OffsetT num_selected = OffsetT(d_out_wrapper_end - d_out_wrapper);
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
-    }
-
-    return cudaSuccess;
-}
-
-
-/**
- * Dispatch to partition if entrypoint
- */
-template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
-__host__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<THRUST>            /*dispatch_to*/,
-    Int2Type<false>             /*is_flagged*/,
-    Int2Type<true>              /*is_partition*/,
-    int                         timing_timing_iterations,
-    size_t*                     /*d_temp_storage_bytes*/,
-    cudaError_t*                /*d_cdp_error*/,
-
-    void*                       d_temp_storage,
-    size_t&                     temp_storage_bytes,
-    InputIteratorT              d_in,
-    FlagIteratorT               /*d_flags*/,
-    OutputIteratorT             d_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    SelectOpT                   select_op,
-    cudaStream_t                /*stream*/,
-    bool                        /*debug_synchronous*/)
-{
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    typedef THRUST_NS_QUALIFIER::reverse_iterator<THRUST_NS_QUALIFIER::device_ptr<OutputT> > ReverseOutputIteratorT;
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::pair<THRUST_NS_QUALIFIER::device_ptr<OutputT>, ReverseOutputIteratorT> d_out_wrapper_end;
-
-        THRUST_NS_QUALIFIER::device_ptr<InputT>       d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT>       d_out_wrapper(d_out);
-
-        ReverseOutputIteratorT d_out_unselected(d_out_wrapper + num_items);
-
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            d_out_wrapper_end = THRUST_NS_QUALIFIER::partition_copy(
-                d_in_wrapper,
-                d_in_wrapper + num_items,
-                d_out_wrapper,
-                d_out_unselected,
-                select_op);
-        }
-
-        OffsetT num_selected = OffsetT(d_out_wrapper_end.first - d_out_wrapper);
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
-    }
-
-    return cudaSuccess;
-}
-
-
-/**
- * Dispatch to select flagged entrypoint
- */
-template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
-__host__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<THRUST>            /*dispatch_to*/,
-    Int2Type<true>              /*is_flagged*/,
-    Int2Type<false>             /*is_partition*/,
-    int                         timing_timing_iterations,
-    size_t*                     /*d_temp_storage_bytes*/,
-    cudaError_t*                /*d_cdp_error*/,
-
-    void*                       d_temp_storage,
-    size_t&                     temp_storage_bytes,
-    InputIteratorT              d_in,
-    FlagIteratorT               d_flags,
-    OutputIteratorT             d_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    SelectOpT                   /*select_op*/,
-    cudaStream_t                /*stream*/,
-    bool                        /*debug_synchronous*/)
-{
-    // The flag type
-    typedef typename std::iterator_traits<FlagIteratorT>::value_type FlagT;
-
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<OutputT>     d_out_wrapper_end;
-        THRUST_NS_QUALIFIER::device_ptr<InputT>      d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT>     d_out_wrapper(d_out);
-        THRUST_NS_QUALIFIER::device_ptr<FlagT>       d_flags_wrapper(d_flags);
-
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            d_out_wrapper_end = THRUST_NS_QUALIFIER::copy_if(d_in_wrapper, d_in_wrapper + num_items, d_flags_wrapper, d_out_wrapper, CastOp<bool>());
-        }
-
-        OffsetT num_selected = OffsetT(d_out_wrapper_end - d_out_wrapper);
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
-    }
-
-    return cudaSuccess;
-}
-
-
-/**
- * Dispatch to partition flagged entrypoint
- */
-template <typename InputIteratorT, typename FlagIteratorT, typename SelectOpT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
-__host__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<THRUST>            /*dispatch_to*/,
-    Int2Type<true>              /*is_flagged*/,
-    Int2Type<true>              /*is_partition*/,
-    int                         timing_timing_iterations,
-    size_t*                     /*d_temp_storage_bytes*/,
-    cudaError_t*                /*d_cdp_error*/,
-
-    void*                       d_temp_storage,
-    size_t&                     temp_storage_bytes,
-    InputIteratorT              d_in,
-    FlagIteratorT               d_flags,
-    OutputIteratorT             d_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    SelectOpT                   /*select_op*/,
-    cudaStream_t                /*stream*/,
-    bool                        /*debug_synchronous*/)
-{
-    // The flag type
-    typedef typename std::iterator_traits<FlagIteratorT>::value_type FlagT;
-
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    typedef THRUST_NS_QUALIFIER::reverse_iterator<THRUST_NS_QUALIFIER::device_ptr<OutputT> > ReverseOutputIteratorT;
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::pair<THRUST_NS_QUALIFIER::device_ptr<OutputT>, ReverseOutputIteratorT> d_out_wrapper_end;
-
-        THRUST_NS_QUALIFIER::device_ptr<InputT>  d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
-        THRUST_NS_QUALIFIER::device_ptr<FlagT>   d_flags_wrapper(d_flags);
-        ReverseOutputIteratorT      d_out_unselected(d_out_wrapper + num_items);
-
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            d_out_wrapper_end = THRUST_NS_QUALIFIER::partition_copy(
-                d_in_wrapper,
-                d_in_wrapper + num_items,
-                d_flags_wrapper,
-                d_out_wrapper,
-                d_out_unselected,
-                CastOp<bool>());
-        }
-
-        OffsetT num_selected = OffsetT(d_out_wrapper_end.first - d_out_wrapper);
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
-    }
-
-    return cudaSuccess;
-}
-
 
 //---------------------------------------------------------------------
 // CUDA Nested Parallelism Test Kernel
@@ -768,7 +506,7 @@ void TestPointer(
     printf("\nPointer %s cub::%s::%s %d items, %d selected (select ratio %.3f), %s %d-byte elements\n",
         (IS_PARTITION) ? "DevicePartition" : "DeviceSelect",
         (IS_FLAGGED) ? "Flagged" : "If",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_selected, float(num_selected) / num_items, typeid(T).name(), (int) sizeof(T));
     fflush(stdout);
 
@@ -828,7 +566,7 @@ void TestIterator(
     printf("\nIterator %s cub::%s::%s %d items, %d selected (select ratio %.3f), %s %d-byte elements\n",
         (IS_PARTITION) ? "DevicePartition" : "DeviceSelect",
         (IS_FLAGGED) ? "Flagged" : "If",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_selected, float(num_selected) / num_items, typeid(T).name(), (int) sizeof(T));
     fflush(stdout);
 
@@ -914,32 +652,6 @@ void Test(
     }
 }
 
-/**
- * Test select/partition on pointer types
- */
-template <typename T>
-void ComparePointer(
-    int             num_items,
-    float           select_ratio)
-{
-    printf("-- Select-if ----------------------------\n");
-    TestPointer<CUB, false, false, T>(num_items, select_ratio);
-    TestPointer<THRUST, false, false, T>(num_items, select_ratio);
-
-    printf("-- Partition-if ----------------------------\n");
-    TestPointer<CUB, false, true, T>(num_items, select_ratio);
-    TestPointer<THRUST, false, true, T>(num_items, select_ratio);
-
-    printf("-- Select-flagged ----------------------------\n");
-    TestPointer<CUB, true, false, T>(num_items, select_ratio);
-    TestPointer<THRUST, true, false, T>(num_items, select_ratio);
-
-    printf("-- Partition-flagged ----------------------------\n");
-    TestPointer<CUB, true, true, T>(num_items, select_ratio);
-    TestPointer<THRUST, true, true, T>(num_items, select_ratio);
-
-}
-
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -957,7 +669,6 @@ int main(int argc, char** argv)
     g_verbose = args.CheckCmdLineFlag("v");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
-    args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("ratio", select_ratio);
 
     // Print usage
@@ -968,7 +679,6 @@ int main(int argc, char** argv)
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
             "[--ratio=<selection ratio, default 0.5>] "
-            "[--repeat=<repetitions of entire test suite>] "
             "[--v] "
             "[--cdp] "
             "\n", argv[0]);
@@ -980,72 +690,23 @@ int main(int argc, char** argv)
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
 
-#ifdef CUB_TEST_MINIMAL
+    Test<unsigned char>(num_items);
+    Test<unsigned short>(num_items);
+    Test<unsigned int>(num_items);
+    Test<unsigned long long>(num_items);
 
-    // Compile/run basic CUB test
-    if (num_items < 0) num_items = 32000000;
+    Test<uchar2>(num_items);
+    Test<ushort2>(num_items);
+    Test<uint2>(num_items);
+    Test<ulonglong2>(num_items);
 
-    printf("-- Select-if ----------------------------\n");
-    TestPointer<CUB, false, false, int>(num_items, select_ratio);
+    Test<uchar4>(num_items);
+    Test<ushort4>(num_items);
+    Test<uint4>(num_items);
+    Test<ulonglong4>(num_items);
 
-    printf("-- Partition-if ----------------------------\n");
-    TestPointer<CUB, false, true, int>(num_items, select_ratio);
-
-    printf("-- Select-flagged ----------------------------\n");
-    TestPointer<CUB, true, false, int>(num_items, select_ratio);
-
-    printf("-- Partition-flagged ----------------------------\n");
-    TestPointer<CUB, true, true, int>(num_items, select_ratio);
-
-
-#elif defined(CUB_TEST_BENCHMARK)
-
-    // Get device ordinal
-    int device_ordinal;
-    CubDebugExit(cudaGetDevice(&device_ordinal));
-
-    // Get device SM version
-    int sm_version = 0;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
-
-    // Compile/run quick tests
-    if (num_items < 0) num_items = 32000000;
-
-    printf("-- Iterator ----------------------------\n");
-    TestIterator<CUB, false, false, int>(num_items, select_ratio);
-
-    ComparePointer<char>(       num_items * ((sm_version <= 130) ? 1 : 4),  select_ratio);
-    ComparePointer<short>(      num_items * ((sm_version <= 130) ? 1 : 2),  select_ratio);
-    ComparePointer<int>(        num_items,                                  select_ratio);
-    ComparePointer<long long>(  num_items / 2,                              select_ratio);
-    ComparePointer<TestFoo>(    num_items / 4,                              select_ratio);
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // Test different input types
-        Test<unsigned char>(num_items);
-        Test<unsigned short>(num_items);
-        Test<unsigned int>(num_items);
-        Test<unsigned long long>(num_items);
-
-        Test<uchar2>(num_items);
-        Test<ushort2>(num_items);
-        Test<uint2>(num_items);
-        Test<ulonglong2>(num_items);
-
-        Test<uchar4>(num_items);
-        Test<ushort4>(num_items);
-        Test<uint4>(num_items);
-        Test<ulonglong4>(num_items);
-
-        Test<TestFoo>(num_items);
-        Test<TestBar>(num_items);
-    }
-
-#endif
+    Test<TestFoo>(num_items);
+    Test<TestBar>(num_items);
 
     return 0;
 }

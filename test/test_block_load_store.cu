@@ -388,15 +388,9 @@ void TestPointerType(
     typedef BlockLoad<T, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
     typedef BlockStore<T, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
 
-#if defined(SM100) || defined(SM110) || defined(SM130)
-    static const bool sufficient_load_smem  = sizeof(typename BlockLoad::TempStorage)   <= 1024 * 16;
-    static const bool sufficient_store_smem = sizeof(typename BlockStore::TempStorage)  <= 1024 * 16;
-    static const bool sufficient_threads    = BLOCK_THREADS <= 512;
-#else
     static const bool sufficient_load_smem  = sizeof(typename BlockLoad::TempStorage)   <= 1024 * 48;
     static const bool sufficient_store_smem = sizeof(typename BlockStore::TempStorage)  <= 1024 * 48;
     static const bool sufficient_threads    = BLOCK_THREADS <= 1024;
-#endif
 
     static const bool sufficient_resources  = sufficient_load_smem && sufficient_store_smem && sufficient_threads;
 
@@ -474,8 +468,6 @@ void TestItemsPerThread(
     Int2Type<BLOCK_THREADS % 32 == 0> is_warp_multiple;
 
     TestStrategy<T, BLOCK_THREADS, 1>(grid_size, fraction_valid, is_warp_multiple);
-    TestStrategy<T, BLOCK_THREADS, 3>(grid_size, fraction_valid, is_warp_multiple);
-    TestStrategy<T, BLOCK_THREADS, 4>(grid_size, fraction_valid, is_warp_multiple);
     TestStrategy<T, BLOCK_THREADS, 11>(grid_size, fraction_valid, is_warp_multiple);
 }
 
@@ -490,11 +482,9 @@ void TestThreads(
 {
     TestItemsPerThread<T, 15>(grid_size, fraction_valid);
     TestItemsPerThread<T, 32>(grid_size, fraction_valid);
-    TestItemsPerThread<T, 72>(grid_size, fraction_valid);
-    TestItemsPerThread<T, 96>(grid_size, fraction_valid);
+    TestItemsPerThread<T, 65>(grid_size, fraction_valid);
     TestItemsPerThread<T, 128>(grid_size, fraction_valid);
 }
-
 
 /**
  * Main
@@ -522,25 +512,19 @@ int main(int argc, char** argv)
     int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef CUB_TEST_BENCHMARK
-
-    // Compile/run quick tests
-    TestNative<     int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE>(1, 0.8f, Int2Type<true>());
-    TestIterator<   int, 64, 2, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_STORE_WARP_TRANSPOSE, LOAD_DEFAULT, STORE_DEFAULT>(1, 0.8f, Int2Type<true>());
-
-#else
+    // %PARAM% TEST_VALUE_TYPES types 0:1:2
 
     // Compile/run thorough tests
+#if TEST_VALUE_TYPES == 0
     TestThreads<char>(2, 0.8f);
     TestThreads<int>(2, 0.8f);
     TestThreads<long>(2, 0.8f);
+#elif TEST_VALUE_TYPES == 1
     TestThreads<long2>(2, 0.8f);
-
-    if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-        TestThreads<double2>(2, 0.8f);
+    TestThreads<double2>(2, 0.8f);
+#elif TEST_VALUE_TYPES == 2
     TestThreads<TestFoo>(2, 0.8f);
     TestThreads<TestBar>(2, 0.8f);
-
 #endif
 
     return 0;

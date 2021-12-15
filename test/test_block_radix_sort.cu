@@ -486,11 +486,7 @@ void Test()
     // Check size of smem storage for the target arch to make sure it will fit
     typedef BlockRadixSort<Key, BLOCK_THREADS, ITEMS_PER_THREAD, Value, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG> BlockRadixSortT;
 
-#if defined(SM100) || defined(SM110) || defined(SM130)
-    Int2Type<sizeof(typename BlockRadixSortT::TempStorage) <= 16 * 1024> fits_smem_capacity;
-#else
     Int2Type<(sizeof(typename BlockRadixSortT::TempStorage) <= 48 * 1024)> fits_smem_capacity;
-#endif
 
     // Sort-ascending, to-striped
     TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, false, Key, Value>(fits_smem_capacity);
@@ -518,9 +514,7 @@ void TestKeys()
 {
     // Test keys-only sorting with both smem configs
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeFourByte, Key, NullType>();    // Keys-only (4-byte smem bank config)
-#if !defined(SM100) && !defined(SM110) && !defined(SM130) && !defined(SM200)
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, cudaSharedMemBankSizeEightByte, Key, NullType>();   // Keys-only (8-byte smem bank config)
-#endif
 }
 
 
@@ -554,34 +548,25 @@ template <
     BlockScanAlgorithm      INNER_SCAN_ALGORITHM>
 void Test()
 {
-    // Get ptx version
-    int ptx_version = 0;
-    CubDebugExit(PtxVersion(ptx_version));
+    // %PARAM% TEST_VALUE_TYPES types 0:1:2:3
 
-#ifdef TEST_KEYS_ONLY
-
+#if TEST_VALUE_TYPES == 0
     // Test unsigned types with keys-only
     TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned char>();
     TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned short>();
+#elif TEST_VALUE_TYPES == 1
     TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned int>();
-    TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned long>();
     TestKeys<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, unsigned long long>();
 
-#else
-
+#elif TEST_VALUE_TYPES == 2
     // Test signed and fp types with paired values
     TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, char>();
     TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, short>();
     TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, int>();
-    TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, long>();
+#elif TEST_VALUE_TYPES == 3
     TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, long long>();
     TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, float>();
-    if (ptx_version > 120)
-    {
-        // Don't check doubles on PTX120 or below because they're down-converted
-        TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, double>();
-    }
-
+    TestKeysAndPairs<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, double>();
 #endif
 }
 
@@ -604,42 +589,53 @@ void Test()
 /**
  * Test outer scan algorithm
  */
-template <
-    int                     BLOCK_THREADS,
-    int                     ITEMS_PER_THREAD,
-    int                     RADIX_BITS>
+template <int BLOCK_THREADS, int ITEMS_PER_THREAD, int RADIX_BITS>
 void Test()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, true>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, false>();
+  Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, true>();
+  Test<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, false>();
 }
 
-
-/**
- * Test radix bits
- */
-template <
-    int BLOCK_THREADS,
-    int ITEMS_PER_THREAD>
+// Dispatch RADIX_BITS
+template <int BLOCK_THREADS, int ITEMS_PER_THREAD>
 void Test()
 {
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, 1>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, 2>();
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD, 5>();
+  Test<BLOCK_THREADS, ITEMS_PER_THREAD, 1>();
+  Test<BLOCK_THREADS, ITEMS_PER_THREAD, 5>();
 }
 
-
-/**
- * Test items per thread
- */
+// Dispatch ITEMS_PER_THREAD
 template <int BLOCK_THREADS>
 void Test()
 {
-    Test<BLOCK_THREADS, 1>();
-#if defined(SM100) || defined(SM110) || defined(SM130)
-    // Open64 compiler can't handle the number of test cases
-#else
-    Test<BLOCK_THREADS, 4>();
-#endif
-    Test<BLOCK_THREADS, 11>();
+  Test<BLOCK_THREADS, 1>();
+  Test<BLOCK_THREADS, 11>();
+}
+
+/**
+ * Main
+ */
+int main(int argc, char** argv)
+{
+  // Initialize command line
+  CommandLineArgs args(argc, argv);
+  g_verbose = args.CheckCmdLineFlag("v");
+
+  // Print usage
+  if (args.CheckCmdLineFlag("help"))
+  {
+    printf("%s "
+           "[--device=<device-id>] "
+           "[--v] "
+           "\n", argv[0]);
+    exit(0);
+  }
+
+  // Initialize device
+  CubDebugExit(args.DeviceInit());
+
+  Test<32>();
+  Test<160>();
+
+  return 0;
 }

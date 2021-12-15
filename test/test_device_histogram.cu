@@ -63,7 +63,6 @@ enum Backend
 bool                    g_verbose_input     = false;
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
-int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
@@ -585,7 +584,12 @@ void TestEven(
         NUM_CHANNELS);
     std::cout << CoutCast(max_level) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
-        std::cout << "\n\tChannel " << channel << ": " << num_levels[channel] - 1 << " bins [" << lower_level[channel] << ", " << upper_level[channel] << ")\n";
+    {
+        std::cout << "\tChannel " << channel << ": "
+                  << num_levels[channel] - 1 << " bins "
+                  << "[" << lower_level[channel] << ", "
+                  << upper_level[channel] << ")\n";
+    }
     fflush(stdout);
 
     // Allocate and initialize host and device data
@@ -837,11 +841,17 @@ void TestRange(
     std::cout << CoutCast(max_level) << "\n";
     for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
     {
-        printf("Channel %d: %d bins [", channel, num_levels[channel] - 1);
-        std::cout << levels[channel][0];
-        for (int level = 1; level < num_levels[channel]; ++level)
-            std::cout << ", " << levels[channel][level];
-        printf("]\n");
+        printf("Channel %d: %d bins", channel, num_levels[channel] - 1);
+        if (g_verbose)
+        {
+            std::cout << "[ " << levels[channel][0];
+            for (int level = 1; level < num_levels[channel]; ++level)
+            {
+                std::cout << ", " << levels[channel][level];
+            }
+            printf("]");
+        }
+        printf("\n");
     }
     fflush(stdout);
 
@@ -1139,15 +1149,6 @@ void Test(
 {
     int num_levels[NUM_ACTIVE_CHANNELS];
 
-// Unnecessary testing
-//    // All the same level
-//    for (int channel = 0; channel < NUM_ACTIVE_CHANNELS; ++channel)
-//    {
-//        num_levels[channel] = max_num_levels;
-//    }
-//    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-//        num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, max_num_levels);
-
     // All different levels
     num_levels[0] = max_num_levels;
     for (int channel = 1; channel < NUM_ACTIVE_CHANNELS; ++channel)
@@ -1177,9 +1178,6 @@ void Test(
     LevelT          max_level,
     int             max_num_levels)
 {
-    Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-        num_row_pixels, num_rows, row_stride_bytes, 0,   max_level, max_num_levels);
-
     Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
         num_row_pixels, num_rows, row_stride_bytes, -1,  max_level, max_num_levels);
 
@@ -1249,19 +1247,6 @@ void Test(
                 cols, rows, max_level, max_num_levels);
         }
     }
-
-    // Randomly select linear problem size between 1:10,000,000
-    unsigned int max_int = (unsigned int) -1;
-    for (int i = 0; i < 4; ++i)
-    {
-        unsigned int num_items;
-        RandomBits(num_items);
-        num_items = (unsigned int) ((double(num_items) * double(10000000)) / double(max_int));
-        num_items = CUB_MAX(1, num_items);
-
-        Test<SampleT, NUM_CHANNELS, NUM_ACTIVE_CHANNELS, CounterT, LevelT, OffsetT>(
-            OffsetT(num_items), 1, max_level, max_num_levels);
-    }
 }
 
 
@@ -1269,82 +1254,62 @@ void Test(
 /**
  * Test different channel interleavings (valid specialiation)
  */
-template <
-    typename        SampleT,
-    typename        CounterT,
-    typename        LevelT,
-    typename        OffsetT>
-void TestChannels(
-    LevelT          max_level,
-    int             max_num_levels,
-    Int2Type<true>  /*is_valid_tag*/)
+template <typename SampleT, typename CounterT, typename LevelT, typename OffsetT>
+void TestChannels(LevelT max_level,
+                  int max_num_levels,
+                  Int2Type<true> /*is_valid_tag*/,
+                  Int2Type<false> /*test_extra_channels*/)
 {
-    Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
-    Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
-    Test<SampleT, 3, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
-    Test<SampleT, 4, 4, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+  Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+  Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
 }
 
-
-/**
- * Test different channel interleavings (invalid specialiation)
- */
-template <
-    typename        SampleT,
-    typename        CounterT,
-    typename        LevelT,
-    typename        OffsetT>
-void TestChannels(
-    LevelT          /*max_level*/,
-    int             /*max_num_levels*/,
-    Int2Type<false> /*is_valid_tag*/)
+template <typename SampleT, typename CounterT, typename LevelT, typename OffsetT>
+void TestChannels(LevelT max_level,
+                  int max_num_levels,
+                  Int2Type<true> /*is_valid_tag*/,
+                  Int2Type<true> /*test_extra_channels*/)
+{
+  Test<SampleT, 1, 1, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+  Test<SampleT, 4, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+  Test<SampleT, 3, 3, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+  Test<SampleT, 4, 4, CounterT, LevelT, OffsetT>(max_level, max_num_levels);
+}
+template <typename SampleT,
+          typename CounterT,
+          typename LevelT,
+          typename OffsetT,
+          typename TestExtraChannels>
+void TestChannels(LevelT /*max_level*/,
+                  int /*max_num_levels*/,
+                  Int2Type<false> /*is_valid_tag*/,
+                  TestExtraChannels)
 {}
-
-
 
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
-
-
-
 
 /**
  * Main
  */
 int main(int argc, char** argv)
 {
-    int num_row_pixels = -1;
-    int entropy_reduction = 0;
-    int num_rows = 1;
-
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
     g_verbose_input = args.CheckCmdLineFlag("v2");
-    args.GetCmdLineArgument("n", num_row_pixels);
 
-    int row_stride_pixels = num_row_pixels;
-
-    args.GetCmdLineArgument("rows", num_rows);
-    args.GetCmdLineArgument("stride", row_stride_pixels);
     args.GetCmdLineArgument("i", g_timing_iterations);
-    args.GetCmdLineArgument("repeat", g_repeat);
-    args.GetCmdLineArgument("entropy", entropy_reduction);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
-            "[--n=<pixels per row>] "
-            "[--rows=<number of rows>] "
-            "[--stride=<row stride in pixels>] "
             "[--i=<timing iterations>] "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
-            "[--entropy=<entropy-reduction factor (default 0)>]"
             "[--v] "
-            "[--cdp]"
+            "[--v2] "
             "\n", argv[0]);
         exit(0);
     }
@@ -1352,191 +1317,18 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Get ptx version
-    int ptx_version = 0;
-    CubDebugExit(PtxVersion(ptx_version));
+    using true_t = Int2Type<true>;
+    using false_t = Int2Type<false>;
 
-    if (num_row_pixels < 0)
-    {
-        num_row_pixels      = 1920 * 1080;
-        row_stride_pixels   = num_row_pixels;
-    }
-
-#if defined(CUB_TEST_MINIMAL)
-
-    // Compile/run quick tests
-    {
-        // HistogramEven: unsigned char 256 bins
-        typedef unsigned char       SampleT;
-        typedef int                 LevelT;
-
-        LevelT  max_level           = 256;
-        int     num_levels[1]       = {257};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
-
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    {
-        // HistogramRange: signed char 256 bins
-        typedef signed char         SampleT;
-        typedef int                 LevelT;
-
-        LevelT  max_level           = 256;
-        int     num_levels[1]       = {257};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
-
-        TestRange<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-
-
-#elif defined(CUB_TEST_BENCHMARK)
-
-    // Compile/run quick tests
-    {
-        // HistogramEven: unsigned char 256 bins
-        typedef unsigned char       SampleT;
-        typedef int                 LevelT;
-
-        LevelT  max_level           = 256;
-        int     num_levels[1]       = {257};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
-
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    {
-        // HistogramEven: 4/4 multichannel Unsigned char 256 bins
-        typedef unsigned char       SampleT;
-        typedef int                 LevelT;
-
-        LevelT  max_level           = 256;
-        int     num_levels[4]       = {257, 257, 257, 257};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
-
-        TestEven<CUB, SampleT, 4, 4, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    {
-        // HistogramEven: 3/4 multichannel Unsigned char 256 bins
-        typedef unsigned char       SampleT;
-        typedef int                 LevelT;
-
-        LevelT  max_level           = 256;
-        int     num_levels[3]       = {257, 257, 257};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
-
-        TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    {
-        // HistogramEven: short [0,1024] 256 bins
-        typedef unsigned short      SampleT;
-        typedef unsigned short      LevelT;
-
-        LevelT  max_level           = 1024;
-        int     num_levels[1]       = {257};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
-
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    {
-        // HistogramEven: float [0,1.0] 256 bins
-        typedef float               SampleT;
-        typedef float               LevelT;
-
-        LevelT  max_level           = 1.0;
-        int     num_levels[1]       = {257};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
-
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    #if !defined(__ICC)
+    TestChannels <signed char,      int, int,   int>(256,   256 + 1,  true_t{}, true_t{});
+    TestChannels <unsigned short,   int, int,   int>(8192,  8192 + 1, true_t{}, false_t{});
+#if !defined(__ICC)
     // Fails with ICC for unknown reasons, see #332.
-    {
-        // HistogramEven: 3/4 multichannel float [0,1.0] 256 bins
-        typedef float               SampleT;
-        typedef float               LevelT;
-
-         LevelT  max_level           = 1.0;
-         int     num_levels[3]       = {257, 257, 257};
-         int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
-
-         TestEven<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-    #endif
-
-    {
-        // HistogramRange: signed char 256 bins
-        typedef signed char         SampleT;
-        typedef int                 LevelT;
-
-        LevelT  max_level           = 256;
-        int     num_levels[1]       = {257};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
-
-        TestRange<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    {
-        // HistogramRange: 3/4 channel, unsigned char, varied bins (256, 128, 64)
-        typedef unsigned char       SampleT;
-        typedef int                 LevelT;
-
-        LevelT  max_level           = 256;
-        int     num_levels[3]       = {257, 129, 65};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 4;
-
-        TestRange<CUB, SampleT, 4, 3, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-    {
-        // HistogramEven: double [0,1.0] 64 bins
-        typedef double              SampleT;
-        typedef double              LevelT;
-
-        LevelT  max_level           = 1.0;
-        int     num_levels[1]       = {65};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
-
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-    {
-        // HistogramEven: short [0,1024] 512 bins
-        typedef unsigned short      SampleT;
-        typedef unsigned short      LevelT;
-
-        LevelT  max_level           = 1024;
-        int     num_levels[1]       = {513};
-        int     row_stride_bytes    = sizeof(SampleT) * row_stride_pixels * 1;
-
-        TestEven<CUB, SampleT, 1, 1, int, LevelT, int>(num_row_pixels, num_rows, row_stride_bytes, entropy_reduction, num_levels, max_level, num_levels[0]);
-    }
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        TestChannels <unsigned char,    int, int,   int>(256,   256 + 1, Int2Type<true>());
-        TestChannels <signed char,      int, int,   int>(256,   256 + 1, Int2Type<true>());
-        TestChannels <unsigned short,   int, int,   int>(128,   128 + 1, Int2Type<true>());
-        TestChannels <unsigned short,   int, int,   int>(8192,  8192 + 1, Int2Type<true>());
-        #if !defined(__ICC)
-        // Fails with ICC for unknown reasons, see #332.
-        TestChannels <float,            int, float, int>(1.0,   256 + 1, Int2Type<true>());
-        #endif
-
-    		// Test down-conversion of size_t offsets to int
-        TestChannels <unsigned char,    int, int,   long long>(256, 256 + 1, Int2Type<(sizeof(size_t) != sizeof(int))>());
-    }
-
+    TestChannels <float,            int, float, int>(1.0,   256 + 1,  true_t{}, false_t{});
 #endif
+
+    // Test down-conversion of size_t offsets to int
+    TestChannels <unsigned char,    int, int,   long long>(256, 256 + 1, Int2Type<(sizeof(size_t) != sizeof(int))>{}, false_t{});
 
     return 0;
 }
