@@ -36,9 +36,6 @@
 #include <stdio.h>
 #include <typeinfo>
 
-#include <thrust/device_ptr.h>
-#include <thrust/scan.h>
-
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
@@ -55,7 +52,6 @@ using namespace cub;
 
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
-int                     g_repeat            = 0;
 double                  g_device_giga_bandwidth;
 CachingDeviceAllocator  g_allocator(true);
 
@@ -63,7 +59,6 @@ CachingDeviceAllocator  g_allocator(true);
 enum Backend
 {
     CUB,        // CUB method
-    THRUST,     // Thrust method
     CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
 };
 
@@ -212,199 +207,6 @@ cudaError_t Dispatch(
     }
     return error;
 }
-
-//---------------------------------------------------------------------
-// Dispatch to different Thrust entrypoints
-//---------------------------------------------------------------------
-
-/**
- * Dispatch to exclusive scan entrypoint
- */
-template <typename IsPrimitiveT, typename InputIteratorT, typename OutputIteratorT, typename ScanOpT, typename InitialValueT, typename OffsetT>
-cudaError_t Dispatch(
-    Int2Type<THRUST>    /*dispatch_to*/,
-    IsPrimitiveT        /*is_primitive*/,
-    int                 timing_timing_iterations,
-    size_t              */*d_temp_storage_bytes*/,
-    cudaError_t         */*d_cdp_error*/,
-
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    ScanOpT             scan_op,
-    InitialValueT       initial_value,
-    OffsetT             num_items,
-    cudaStream_t        /*stream*/,
-    bool                /*debug_synchronous*/)
-{
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            THRUST_NS_QUALIFIER::exclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper, initial_value, scan_op);
-        }
-    }
-
-    return cudaSuccess;
-}
-
-
-/**
- * Dispatch to exclusive sum entrypoint
- */
-template <typename InputIteratorT, typename OutputIteratorT, typename InitialValueT, typename OffsetT>
-cudaError_t Dispatch(
-    Int2Type<THRUST>    /*dispatch_to*/,
-    Int2Type<true>      /*is_primitive*/,
-    int                 timing_timing_iterations,
-    size_t              */*d_temp_storage_bytes*/,
-    cudaError_t         */*d_cdp_error*/,
-
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    Sum                 /*scan_op*/,
-    InitialValueT       /*initial_value*/,
-    OffsetT             num_items,
-    cudaStream_t        /*stream*/,
-    bool                /*debug_synchronous*/)
-{
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            THRUST_NS_QUALIFIER::exclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
-        }
-    }
-
-    return cudaSuccess;
-}
-
-
-/**
- * Dispatch to inclusive scan entrypoint
- */
-template <typename IsPrimitiveT, typename InputIteratorT, typename OutputIteratorT, typename ScanOpT, typename OffsetT>
-cudaError_t Dispatch(
-    Int2Type<THRUST>    /*dispatch_to*/,
-    IsPrimitiveT        /*is_primitive*/,
-    int                 timing_timing_iterations,
-    size_t              */*d_temp_storage_bytes*/,
-    cudaError_t         */*d_cdp_error*/,
-
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    ScanOpT             scan_op,
-    NullType            /*initial_value*/,
-    OffsetT             num_items,
-    cudaStream_t        /*stream*/,
-    bool                /*debug_synchronous*/)
-{
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            THRUST_NS_QUALIFIER::inclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper, scan_op);
-        }
-    }
-
-    return cudaSuccess;
-}
-
-
-/**
- * Dispatch to inclusive sum entrypoint
- */
-template <typename InputIteratorT, typename OutputIteratorT, typename OffsetT>
-cudaError_t Dispatch(
-    Int2Type<THRUST>    /*dispatch_to*/,
-    Int2Type<true>      /*is_primitive*/,
-    int                 timing_timing_iterations,
-    size_t              */*d_temp_storage_bytes*/,
-    cudaError_t         */*d_cdp_error*/,
-
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    Sum                 /*scan_op*/,
-    NullType            /*initial_value*/,
-    OffsetT             num_items,
-    cudaStream_t        /*stream*/,
-    bool                /*debug_synchronous*/)
-{
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            THRUST_NS_QUALIFIER::inclusive_scan(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
-        }
-    }
-
-    return cudaSuccess;
-}
-
-
 
 //---------------------------------------------------------------------
 // CUDA Nested Parallelism Test Kernel
@@ -748,7 +550,7 @@ template <
     typename            OutputT,
     typename            ScanOpT,
     typename            InitialValueT>
-typename std::enable_if<!std::is_same<InitialValueT, cub::NullType>::value && BACKEND != THRUST>::type
+typename std::enable_if<!std::is_same<InitialValueT, cub::NullType>::value>::type
 TestFutureInitValue(
     DeviceInputIteratorT    d_in,
     OutputT                 *h_reference,
@@ -775,7 +577,7 @@ template <
     typename            OutputT,
     typename            ScanOpT,
     typename            InitialValueT>
-typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value || BACKEND == THRUST>::type
+typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value>::type
 TestFutureInitValue(
     DeviceInputIteratorT,
     OutputT *,
@@ -787,12 +589,12 @@ TestFutureInitValue(
 }
 
 template <
-    Backend             BACKEND,
-    typename            DeviceInputIteratorT,
-    typename            OutputT,
-    typename            ScanOpT,
-    typename            InitialValueT>
-typename std::enable_if<!std::is_same<InitialValueT, cub::NullType>::value && BACKEND != THRUST>::type
+  Backend             BACKEND,
+  typename            DeviceInputIteratorT,
+  typename            OutputT,
+  typename            ScanOpT,
+  typename            InitialValueT>
+typename std::enable_if<!std::is_same<InitialValueT, cub::NullType>::value>::type
 TestFutureInitValueIter(
     DeviceInputIteratorT    d_in,
     OutputT                 *h_reference,
@@ -812,7 +614,7 @@ template <
     typename            OutputT,
     typename            ScanOpT,
     typename            InitialValueT>
-typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value || BACKEND == THRUST>::type
+typename std::enable_if<std::is_same<InitialValueT, cub::NullType>::value>::type
 TestFutureInitValueIter(
     DeviceInputIteratorT,
     OutputT *,
@@ -871,7 +673,7 @@ void TestPointer(
     InitialValueT   initial_value)
 {
     printf("\nPointer %s %s cub::DeviceScan::%s %d items, %s->%s (%d->%d bytes) , gen-mode %s\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         (Equals<InitialValueT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         (Equals<ScanOpT, Sum>::VALUE) ? "Sum" : "Scan",
         num_items,
@@ -936,7 +738,7 @@ void TestIterator(
     InitialValueT   initial_value)
 {
     printf("\nIterator %s %s cub::DeviceScan::%s %d items, %s->%s (%d->%d bytes)\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         (Equals<InitialValueT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
         (Equals<ScanOpT, Sum>::VALUE) ? "Sum" : "Scan",
         num_items,
@@ -1043,17 +845,6 @@ void TestSize(
         TestOp<InputT>(100,      identity, initial_value);
         TestOp<InputT>(10000,    identity, initial_value);
         TestOp<InputT>(1000000,  identity, initial_value);
-
-        // Randomly select problem size between 1:10,000,000
-        unsigned int max_int = (unsigned int) -1;
-        for (int i = 0; i < 10; ++i)
-        {
-            unsigned int num;
-            RandomBits(num);
-            num = static_cast<unsigned int>((double(num) * double(10000000)) / double(max_int));
-            num = CUB_MAX(1, num);
-            TestOp<InputT>(num,  identity, initial_value);
-        }
     }
     else
     {
@@ -1079,7 +870,6 @@ int main(int argc, char** argv)
     g_verbose = args.CheckCmdLineFlag("v");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
-    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -1088,9 +878,7 @@ int main(int argc, char** argv)
             "[--n=<input items> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
-            "[--cdp]"
             "\n", argv[0]);
         exit(0);
     }
@@ -1100,92 +888,57 @@ int main(int argc, char** argv)
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
 
-#ifdef CUB_TEST_MINIMAL
+    // %PARAM% TEST_VALUE_TYPES types 0:1:2
 
-    // Compile/run basic CUB test
-    if (num_items < 0) num_items = 32000000;
+#if TEST_VALUE_TYPES == 0
 
-    TestPointer<CUB, char, int>(            num_items    , RANDOM_BIT, Sum(), (int) (0));
-    TestPointer<CUB, short, int>(           num_items    , RANDOM_BIT, Sum(), (int) (0));
+    // Test different input+output data types
+    TestSize<unsigned char>(num_items, (int)0, (int)99);
 
-    printf("----------------------------\n");
+    // Test same input+output data types
+    TestSize<unsigned char>(num_items, (unsigned char)0, (unsigned char)99);
+    TestSize<char>(num_items, (char)0, (char)99);
+    TestSize<unsigned short>(num_items, (unsigned short)0, (unsigned short)99);
+    TestSize<unsigned int>(num_items, (unsigned int)0, (unsigned int)99);
+    TestSize<unsigned long long>(num_items,
+                                 (unsigned long long)0,
+                                 (unsigned long long)99);
 
-    TestPointer<CUB, int, int>(             num_items    , RANDOM_BIT, Sum(), (int) (0));
-    TestPointer<CUB, long long, long long>( num_items    , RANDOM_BIT, Sum(), (long long) (0));
+#elif TEST_VALUE_TYPES == 1
 
-    printf("----------------------------\n");
+    TestSize<uchar2>(num_items, make_uchar2(0, 0), make_uchar2(17, 21));
+    TestSize<char2>(num_items, make_char2(0, 0), make_char2(17, 21));
+    TestSize<ushort2>(num_items, make_ushort2(0, 0), make_ushort2(17, 21));
+    TestSize<uint2>(num_items, make_uint2(0, 0), make_uint2(17, 21));
+    TestSize<ulonglong2>(num_items,
+                         make_ulonglong2(0, 0),
+                         make_ulonglong2(17, 21));
+    TestSize<uchar4>(num_items,
+                     make_uchar4(0, 0, 0, 0),
+                     make_uchar4(17, 21, 32, 85));
+#elif TEST_VALUE_TYPES == 2
+    TestSize<char4>(num_items,
+                    make_char4(0, 0, 0, 0),
+                    make_char4(17, 21, 32, 85));
 
-    TestPointer<CUB, float, float>(         num_items    , RANDOM_BIT, Sum(), (float) (0));
-    TestPointer<CUB, double, double>(       num_items    , RANDOM_BIT, Sum(), (double) (0));
+    TestSize<ushort4>(num_items,
+                      make_ushort4(0, 0, 0, 0),
+                      make_ushort4(17, 21, 32, 85));
+    TestSize<uint4>(num_items,
+                    make_uint4(0, 0, 0, 0),
+                    make_uint4(17, 21, 32, 85));
+    TestSize<ulonglong4>(num_items,
+                         make_ulonglong4(0, 0, 0, 0),
+                         make_ulonglong4(17, 21, 32, 85));
 
+    TestSize<TestFoo>(num_items,
+                      TestFoo::MakeTestFoo(0, 0, 0, 0),
+                      TestFoo::MakeTestFoo(1ll << 63,
+                                           1 << 31,
+                                           static_cast<short>(1 << 15),
+                                           static_cast<char>(1 << 7)));
 
-#elif defined(CUB_TEST_BENCHMARK)
-
-    // Get device ordinal
-    int device_ordinal;
-    CubDebugExit(cudaGetDevice(&device_ordinal));
-
-    // Get device SM version
-    int sm_version = 0;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
-
-    // Compile/run quick tests
-    if (num_items < 0) num_items = 32000000;
-
-    TestPointer<CUB, char, char>(        num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0));
-    TestPointer<THRUST, char, char>(     num_items * ((sm_version <= 130) ? 1 : 4), UNIFORM, Sum(), char(0));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, short, short>(       num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0));
-    TestPointer<THRUST, short, short>(    num_items * ((sm_version <= 130) ? 1 : 2), UNIFORM, Sum(), short(0));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, int, int>(         num_items    , UNIFORM, Sum(), (int) (0));
-    TestPointer<THRUST, int, int>(      num_items    , UNIFORM, Sum(), (int) (0));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, long long, long long>(   num_items / 2, UNIFORM, Sum(), (long long) (0));
-    TestPointer<THRUST, long long, long long>(num_items / 2, UNIFORM, Sum(), (long long) (0));
-
-    printf("----------------------------\n");
-    TestPointer<CUB, TestBar, TestBar>(     num_items / 4, UNIFORM, Sum(), TestBar());
-    TestPointer<THRUST, TestBar, TestBar>(  num_items / 4, UNIFORM, Sum(), TestBar());
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // Test different input+output data types
-        TestSize<unsigned char>(num_items,      (int) 0, (int) 99);
-
-        // Test same intput+output data types
-        TestSize<unsigned char>(num_items,      (unsigned char) 0,      (unsigned char) 99);
-        TestSize<char>(num_items,               (char) 0,               (char) 99);
-        TestSize<unsigned short>(num_items,     (unsigned short) 0,     (unsigned short)99);
-        TestSize<unsigned int>(num_items,       (unsigned int) 0,       (unsigned int) 99);
-        TestSize<unsigned long long>(num_items, (unsigned long long) 0, (unsigned long long) 99);
-
-        TestSize<uchar2>(num_items,     make_uchar2(0, 0),              make_uchar2(17, 21));
-        TestSize<char2>(num_items,      make_char2(0, 0),               make_char2(17, 21));
-        TestSize<ushort2>(num_items,    make_ushort2(0, 0),             make_ushort2(17, 21));
-        TestSize<uint2>(num_items,      make_uint2(0, 0),               make_uint2(17, 21));
-        TestSize<ulonglong2>(num_items, make_ulonglong2(0, 0),          make_ulonglong2(17, 21));
-        TestSize<uchar4>(num_items,     make_uchar4(0, 0, 0, 0),        make_uchar4(17, 21, 32, 85));
-        TestSize<char4>(num_items,      make_char4(0, 0, 0, 0),         make_char4(17, 21, 32, 85));
-
-        TestSize<ushort4>(num_items,    make_ushort4(0, 0, 0, 0),       make_ushort4(17, 21, 32, 85));
-        TestSize<uint4>(num_items,      make_uint4(0, 0, 0, 0),         make_uint4(17, 21, 32, 85));
-        TestSize<ulonglong4>(num_items, make_ulonglong4(0, 0, 0, 0),    make_ulonglong4(17, 21, 32, 85));
-
-        TestSize<TestFoo>(num_items,
-            TestFoo::MakeTestFoo(0, 0, 0, 0),
-            TestFoo::MakeTestFoo(1ll << 63, 1 << 31, static_cast<short>(1 << 15), static_cast<char>(1 << 7)));
-
-        TestSize<TestBar>(num_items,
-            TestBar(0, 0),
-            TestBar(1ll << 63, 1 << 31));
-    }
+    TestSize<TestBar>(num_items, TestBar(0, 0), TestBar(1ll << 63, 1 << 31));
 
 #endif
 

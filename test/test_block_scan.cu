@@ -54,7 +54,6 @@ using namespace cub;
 //---------------------------------------------------------------------
 
 bool                    g_verbose       = false;
-int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
@@ -728,18 +727,9 @@ void Test(
     ScanOpT     scan_op,
     T           initial_value)
 {
-  (void)gen_mode;
-  (void)scan_op;
-  (void)initial_value;
-#ifdef TEST_RAKING
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, BLOCK_SCAN_RAKING>(gen_mode, scan_op, initial_value);
-#endif
-#ifdef TEST_RAKING_MEMOIZE
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, BLOCK_SCAN_RAKING_MEMOIZE>(gen_mode, scan_op, initial_value);
-#endif
-#ifdef TEST_WARP_SCANS
     Test<BLOCK_THREADS, ITEMS_PER_THREAD, SCAN_MODE, TEST_MODE, BLOCK_SCAN_WARP_SCANS>(gen_mode, scan_op, initial_value);
-#endif
 }
 
 
@@ -795,69 +785,23 @@ void Test(
         Test<BLOCK_THREADS, ITEMS_PER_THREAD>(RANDOM, scan_op, identity, initial_value);
 }
 
-
-/**
- * Run tests for different data types and scan ops
- */
-template <
-    int BLOCK_THREADS,
-    int ITEMS_PER_THREAD>
-void Test()
+// Dispatch ITEMS_PER_THREAD
+template <int BLOCK_THREADS, typename ScanOpT, typename T>
+void Test(ScanOpT op, T identity, T initial_value)
 {
-    // Get ptx version
-    int ptx_version = 0;
-    CubDebugExit(PtxVersion(ptx_version));
-
-    // primitive
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned char) 0, (unsigned char) 99);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned short) 0, (unsigned short) 99);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned int) 0, (unsigned int) 99);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (unsigned long long) 0, (unsigned long long) 99);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), (float) 0, (float) 99);
-
-    // primitive (alternative scan op)
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<char>::min(), (char) 99);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<short>::min(), (short) 99);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<int>::min(), (int) 99);
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<long long>::min(), (long long) 99);
-
-    if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-        Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Max(), std::numeric_limits<double>::max() * -1, (double) 99);
-
-    // vec-1
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar1(0), make_uchar1(17));
-
-    // vec-2
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uchar2(0, 0), make_uchar2(17, 21));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ushort2(0, 0), make_ushort2(17, 21));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_uint2(0, 0), make_uint2(17, 21));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21));
-
-    // vec-4
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_char4(0, 0, 0, 0), make_char4(17, 21, 32, 85));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_short4(0, 0, 0, 0), make_short4(17, 21, 32, 85));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_int4(0, 0, 0, 0), make_int4(17, 21, 32, 85));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85));
-
-    // complex
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85));
-    Test<BLOCK_THREADS, ITEMS_PER_THREAD>(Sum(), TestBar(0, 0), TestBar(17, 21));
-
+  Test<BLOCK_THREADS, 1>(op, identity, initial_value);
+  Test<BLOCK_THREADS, 9>(op, identity, initial_value);
 }
 
-
-/**
- * Run tests for different items per thread
- */
-template <int BLOCK_THREADS>
-void Test()
+// Dispatch BLOCK_THREADS
+template <typename T, typename ScanOpT>
+void Test(ScanOpT op, T identity, T initial_value)
 {
-    Test<BLOCK_THREADS, 1>();
-    Test<BLOCK_THREADS, 2>();
-    Test<BLOCK_THREADS, 9>();
+  Test<17>(op, identity, initial_value);
+  Test<32>(op, identity, initial_value);
+  Test<65>(op, identity, initial_value);
+  Test<96>(op, identity, initial_value);
 }
-
-
 
 /**
  * Main
@@ -867,14 +811,12 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -883,32 +825,58 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-#ifdef CUB_TEST_BENCHMARK
+    // %PARAM% TEST_VALUE_TYPES types 0:1:2:3:4:5:6:7:8:9
 
-    Test<128, 1, 1, 1, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0));
+#if TEST_VALUE_TYPES == 0
 
-    // Compile/run quick tests
-    Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), int(0));
-    Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), int(0));
-    Test<128, 1, 1, 4, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_RAKING_MEMOIZE>(UNIFORM, Sum(), int(0));
+    // primitive
+    Test(Sum(), static_cast<unsigned char>(0), static_cast<unsigned char>(99));
+    Test(Sum(), static_cast<unsigned short>(0), static_cast<unsigned short>(99));
+#elif TEST_VALUE_TYPES == 1
+    Test(Sum(), static_cast<unsigned int>(0), static_cast<unsigned int>(99));
+    Test(Sum(), static_cast<unsigned long long>(0), static_cast<unsigned long long>(99));
 
-    Test<128, 1, 1, 2, INCLUSIVE, PREFIX, BLOCK_SCAN_RAKING>(INTEGER_SEED, Sum(), TestFoo::MakeTestFoo(17, 21, 32, 85));
-    Test<128, 1, 1, 1, EXCLUSIVE, AGGREGATE, BLOCK_SCAN_WARP_SCANS>(UNIFORM, Sum(), make_longlong4(17, 21, 32, 85));
+#elif TEST_VALUE_TYPES == 2
 
+    // primitive (alternative scan op)
+    Test(Max(), std::numeric_limits<char>::lowest(), static_cast<char>(99));
+    Test(Max(), std::numeric_limits<short>::lowest(), static_cast<short>(99));
+#elif TEST_VALUE_TYPES == 3
+    Test(Max(), std::numeric_limits<int>::lowest(), static_cast<int>(99));
+    Test(Max(), std::numeric_limits<long long>::lowest(), static_cast<long long>(99));
 
-#else
+#elif TEST_VALUE_TYPES == 4
 
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // Run tests for different thread block sizes
-        Test<17>();
-        Test<32>();
-        Test<62>();
-        Test<65>();
-//            Test<96>();             // TODO: file bug for UNREACHABLE error for Test<96, 9, BASIC, BLOCK_SCAN_RAKING>(UNIFORM, Sum(), NullType(), make_ulonglong2(17, 21));
-        Test<128>();
-    }
+    // Floats
+    Test(Sum(), static_cast<float>(0), static_cast<float>(99));
+    Test(Max(), std::numeric_limits<double>::lowest(), static_cast<double>(99));
+
+#elif TEST_VALUE_TYPES == 5
+
+    // vec-1
+    Test(Sum(), make_uchar1(0), make_uchar1(17));
+
+    // vec-2
+    Test(Sum(), make_uchar2(0, 0), make_uchar2(17, 21));
+    Test(Sum(), make_ushort2(0, 0), make_ushort2(17, 21));
+#elif TEST_VALUE_TYPES == 6
+    Test(Sum(), make_uint2(0, 0), make_uint2(17, 21));
+    Test(Sum(), make_ulonglong2(0, 0), make_ulonglong2(17, 21));
+
+#elif TEST_VALUE_TYPES == 7
+
+    // vec-4
+    Test(Sum(), make_char4(0, 0, 0, 0), make_char4(17, 21, 32, 85));
+    Test(Sum(), make_short4(0, 0, 0, 0), make_short4(17, 21, 32, 85));
+#elif TEST_VALUE_TYPES == 8
+    Test(Sum(), make_int4(0, 0, 0, 0), make_int4(17, 21, 32, 85));
+    Test(Sum(), make_longlong4(0, 0, 0, 0), make_longlong4(17, 21, 32, 85));
+
+#elif TEST_VALUE_TYPES == 9
+
+    // complex
+    Test(Sum(), TestFoo::MakeTestFoo(0, 0, 0, 0), TestFoo::MakeTestFoo(17, 21, 32, 85));
+    Test(Sum(), TestBar(0, 0), TestBar(17, 21));
 
 #endif
 

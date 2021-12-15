@@ -1506,11 +1506,11 @@ int CompareDeviceResults(
  */
 template <typename S, typename OffsetT>
 int CompareDeviceResults(
-    S *h_reference,
-    CUB_NS_QUALIFIER::DiscardOutputIterator<OffsetT> d_data,
-    std::size_t num_items,
-    bool verbose = true,
-    bool display_data = false)
+    S */*h_reference*/,
+    CUB_NS_QUALIFIER::DiscardOutputIterator<OffsetT> /*d_data*/,
+    std::size_t /*num_items*/,
+    bool /*verbose*/ = true,
+    bool /*display_data*/ = false)
 {
     return 0;
 }

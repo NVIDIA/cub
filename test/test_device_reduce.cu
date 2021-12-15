@@ -33,13 +33,6 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <stdio.h>
-#include <limits>
-#include <typeinfo>
-
-#include <thrust/device_ptr.h>
-#include <thrust/reduce.h>
-
 #include <cub/util_allocator.cuh>
 #include <cub/util_math.cuh>
 #include <cub/device/device_reduce.cuh>
@@ -49,6 +42,11 @@
 #include <cub/iterator/transform_input_iterator.cuh>
 
 #include "test_util.h"
+
+#include <cstdio>
+#include <limits>
+#include <typeinfo>
+
 
 using namespace cub;
 
@@ -63,7 +61,6 @@ double                  g_device_giga_bandwidth;
 bool                    g_verbose           = false;
 bool                    g_verbose_input     = false;
 int                     g_timing_iterations = 0;
-int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
@@ -73,7 +70,6 @@ enum Backend
     CUB,            // CUB method
     CUB_SEGMENTED,  // CUB segmented method
     CUB_CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
-    THRUST,         // Thrust method
 };
 
 
@@ -525,108 +521,6 @@ cudaError_t Dispatch(
 
 
 //---------------------------------------------------------------------
-// Dispatch to different Thrust entrypoints
-//---------------------------------------------------------------------
-
-/**
- * Dispatch to reduction entrypoint (min or max specialization)
- */
-template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
-cudaError_t Dispatch(
-    Int2Type<THRUST>    /*dispatch_to*/,
-    int                 timing_iterations,
-    size_t              */*d_temp_storage_bytes*/,
-    cudaError_t         */*d_cdp_error*/,
-
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    int                 num_items,
-    int                 /*max_segments*/,
-    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
-    EndOffsetIteratorT  /*d_segment_end_offsets*/,
-    ReductionOpT         reduction_op,
-    cudaStream_t        /*stream*/,
-    bool                /*debug_synchronous*/)
-{
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        OutputT init;
-        CubDebugExit(cudaMemcpy(&init, d_in + 0, sizeof(OutputT), cudaMemcpyDeviceToHost));
-
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_in_wrapper(d_in);
-        OutputT retval;
-        for (int i = 0; i < timing_iterations; ++i)
-        {
-            retval = THRUST_NS_QUALIFIER::reduce(d_in_wrapper, d_in_wrapper + num_items, init, reduction_op);
-        }
-
-        if (!Equals<OutputIteratorT, DiscardOutputIterator<int> >::VALUE)
-            CubDebugExit(cudaMemcpy(d_out, &retval, sizeof(OutputT), cudaMemcpyHostToDevice));
-    }
-
-    return cudaSuccess;
-}
-
-/**
- * Dispatch to reduction entrypoint (sum specialization)
- */
-template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-cudaError_t Dispatch(
-    Int2Type<THRUST>    /*dispatch_to*/,
-    int                 timing_iterations,
-    size_t              */*d_temp_storage_bytes*/,
-    cudaError_t         */*d_cdp_error*/,
-
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    int                 num_items,
-    int                 /*max_segments*/,
-    BeginOffsetIteratorT /*d_segment_begin_offsets*/,
-    EndOffsetIteratorT  /*d_segment_end_offsets*/,
-    Sum                 /*reduction_op*/,
-    cudaStream_t        /*stream*/,
-    bool                /*debug_synchronous*/)
-{
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_in_wrapper(d_in);
-        OutputT retval;
-        for (int i = 0; i < timing_iterations; ++i)
-        {
-            retval = THRUST_NS_QUALIFIER::reduce(d_in_wrapper, d_in_wrapper + num_items);
-        }
-
-        if (!Equals<OutputIteratorT, DiscardOutputIterator<int> >::VALUE)
-            CubDebugExit(cudaMemcpy(d_out, &retval, sizeof(OutputT), cudaMemcpyHostToDevice));
-    }
-
-    return cudaSuccess;
-}
-
-
-//---------------------------------------------------------------------
 // CUDA nested-parallelism test kernel
 //---------------------------------------------------------------------
 
@@ -968,7 +862,7 @@ void SolveAndTest(
     typedef typename SolutionT::OutputT                                         OutputT;
 
     printf("\n\n%s cub::DeviceReduce<%s> %d items (%s), %d segments\n",
-        (BACKEND == CUB_CDP) ? "CUB_CDP" : (BACKEND == THRUST) ? "Thrust" : (BACKEND == CUB_SEGMENTED) ? "CUB_SEGMENTED" : "CUB",
+        (BACKEND == CUB_CDP) ? "CUB_CDP" : (BACKEND == CUB_SEGMENTED) ? "CUB_SEGMENTED" : "CUB",
         typeid(ReductionOpT).name(), num_items, typeid(HostInputIteratorT).name(), num_segments);
     fflush(stdout);
 
@@ -976,9 +870,9 @@ void SolveAndTest(
     OutputT *h_reference = new OutputT[num_segments];
     SolutionT::Solve(h_in, h_reference, num_segments, h_segment_begin_offsets, h_segment_end_offsets, reduction_op);
 
-//    // Run with discard iterator
-//    DiscardOutputIterator<OffsetT> discard_itr;
-//    Test(Int2Type<BACKEND>(), d_in, discard_itr, num_items, num_segments, d_segment_offsets, reduction_op, h_reference);
+    // Run with discard iterator
+    DiscardOutputIterator<OffsetT> discard_itr;
+    Test(Int2Type<BACKEND>(), d_in, discard_itr, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, reduction_op, h_reference);
 
     // Run with output data
     OutputT *d_out = NULL;
@@ -1321,7 +1215,6 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", max_items);
     args.GetCmdLineArgument("s", max_segments);
     args.GetCmdLineArgument("i", g_timing_iterations);
-    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
@@ -1331,7 +1224,6 @@ int main(int argc, char** argv)
             "[--s=<num segments> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "[--cdp]"
             "\n", argv[0]);
@@ -1348,81 +1240,26 @@ int main(int argc, char** argv)
     // Get SM count
     g_sm_count = args.deviceProp.multiProcessorCount;
 
-#ifdef CUB_TEST_MINIMAL
+    // %PARAM% TEST_TYPES   types 0:1:2:3
 
-    // Compile/run basic test
-
-
-    TestProblem<CUB, char, int>(            max_items, 1, RANDOM_BIT, Sum());
-    TestProblem<CUB, short, int>(           max_items, 1, RANDOM_BIT, Sum());
-
-    printf("\n-------------------------------\n");
-
-    TestProblem<CUB, int, int>(             max_items, 1, RANDOM_BIT, Sum());
-    TestProblem<CUB, long long, long long>( max_items, 1, RANDOM_BIT, Sum());
-
-    printf("\n-------------------------------\n");
-
-    TestProblem<CUB, float, float>( max_items, 1, RANDOM_BIT, Sum());
-    TestProblem<CUB, double, double>( max_items, 1, RANDOM_BIT, Sum());
-
-    printf("\n-------------------------------\n");
-
-    TestProblem<CUB_SEGMENTED, int, int>(max_items, max_segments, RANDOM_BIT, Sum());
-
-
-#elif defined(CUB_TEST_BENCHMARK)
-
-    // Compile/run quick comparison tests
-
-    TestProblem<CUB, char, char>(         max_items * 4, 1, UNIFORM, Sum());
-    TestProblem<THRUST, char, char>(      max_items * 4, 1, UNIFORM, Sum());
-
-    printf("\n----------------------------\n");
-    TestProblem<CUB, short, short>(        max_items * 2, 1, UNIFORM, Sum());
-    TestProblem<THRUST, short, short>(     max_items * 2, 1, UNIFORM, Sum());
-
-    printf("\n----------------------------\n");
-    TestProblem<CUB, int, int>(          max_items,     1, UNIFORM, Sum());
-    TestProblem<THRUST, int, int>(       max_items,     1, UNIFORM, Sum());
-
-    printf("\n----------------------------\n");
-    TestProblem<CUB, long long, long long>(    max_items / 2, 1, UNIFORM, Sum());
-    TestProblem<THRUST, long long, long long>( max_items / 2, 1, UNIFORM, Sum());
-
-    printf("\n----------------------------\n");
-    TestProblem<CUB, TestFoo, TestFoo>(      max_items / 4, 1, UNIFORM, Max());
-    TestProblem<THRUST, TestFoo, TestFoo>(   max_items / 4, 1, UNIFORM, Max());
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // Test different input types
-        TestType<char, char>(max_items, max_segments);
-
-        TestType<unsigned char, unsigned char>(max_items, max_segments);
-
-        TestType<char, int>(max_items, max_segments);
-
-        TestType<short, short>(max_items, max_segments);
-        TestType<int, int>(max_items, max_segments);
-        TestType<long, long>(max_items, max_segments);
-        TestType<long long, long long>(max_items, max_segments);
-
-        TestType<uchar2, uchar2>(max_items, max_segments);
-        TestType<uint2, uint2>(max_items, max_segments);
-        TestType<ulonglong2, ulonglong2>(max_items, max_segments);
-        TestType<ulonglong4, ulonglong4>(max_items, max_segments);
-
-        TestType<TestFoo, TestFoo>(max_items, max_segments);
-        TestType<TestBar, TestBar>(max_items, max_segments);
-    }
-
+#if TEST_TYPES == 0
+    TestType<char, char>(max_items, max_segments);
+    TestType<unsigned char, unsigned char>(max_items, max_segments);
+    TestType<char, int>(max_items, max_segments);
+#elif TEST_TYPES == 1
+    TestType<short, short>(max_items, max_segments);
+    TestType<int, int>(max_items, max_segments);
+    TestType<long, long>(max_items, max_segments);
+    TestType<long long, long long>(max_items, max_segments);
+#elif TEST_TYPES == 2
+    TestType<uchar2, uchar2>(max_items, max_segments);
+    TestType<uint2, uint2>(max_items, max_segments);
+    TestType<ulonglong2, ulonglong2>(max_items, max_segments);
+    TestType<ulonglong4, ulonglong4>(max_items, max_segments);
+#else // TEST_TYPES == 3
+    TestType<TestFoo, TestFoo>(max_items, max_segments);
+    TestType<TestBar, TestBar>(max_items, max_segments);
 #endif
-
-
     printf("\n");
     return 0;
 }

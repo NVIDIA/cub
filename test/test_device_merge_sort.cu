@@ -320,10 +320,12 @@ void AllocateAndTestIterators(unsigned int num_items)
 template <typename DataType>
 void Test(thrust::default_random_engine &rng)
 {
-  for (int pow2 = 9; pow2 < 22; pow2 += 2)
+  for (unsigned int pow2 = 9; pow2 < 22; pow2 += 2)
   {
-    const int num_items = 1 << pow2;
+    const unsigned int num_items = 1 << pow2;
     AllocateAndTestIterators<DataType, DataType>(num_items);
+
+
     TestHelper<true>::AllocateAndTest<HugeDataType, DataType>(rng, num_items);
     Test<DataType>(rng, num_items);
   }

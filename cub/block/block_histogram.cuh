@@ -99,6 +99,10 @@ enum BlockHistogramAlgorithm
  * \par Overview
  * - A <a href="http://en.wikipedia.org/wiki/Histogram"><em>histogram</em></a>
  *   counts the number of observations that fall into each of the disjoint categories (known as <em>bins</em>).
+ * - The `T` type must be implicitly castable to an integer type.
+ * - BlockHistogram expects each integral `input[i]` value to satisfy
+ *   `0 <= input[i] < BINS`. Values outside of this range result in undefined
+ *   behavior.
  * - BlockHistogram can be optionally specialized to use different algorithms:
  *   -# <b>cub::BLOCK_HISTO_SORT</b>.  Sorting followed by differentiation. [More...](\ref cub::BlockHistogramAlgorithm)
  *   -# <b>cub::BLOCK_HISTO_ATOMIC</b>.  Use atomic addition to update byte counts directly. [More...](\ref cub::BlockHistogramAlgorithm)
@@ -136,6 +140,7 @@ enum BlockHistogramAlgorithm
  * \endcode
  *
  * \par Performance and Usage Considerations
+ * - All input values must fall between [0, BINS), or behavior is undefined.
  * - The histogram output can be constructed in shared or device-accessible memory
  * - See cub::BlockHistogramAlgorithm for performance details regarding algorithmic alternatives
  *

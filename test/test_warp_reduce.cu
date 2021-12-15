@@ -48,7 +48,6 @@ using namespace cub;
 //---------------------------------------------------------------------
 
 bool                    g_verbose       = false;
-int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
@@ -799,14 +798,12 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -815,28 +812,11 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-#ifdef CUB_TEST_BENCHMARK
-
-    // Compile/run quick tests
-    TestReduce<1, 32, int>(UNIFORM, Sum());
-
-    TestReduce<1, 32, double>(UNIFORM, Sum());
-    TestReduce<2, 16, TestBar>(UNIFORM, Sum());
-    TestSegmentedReduce<1, 32, int>(UNIFORM, 1, Sum());
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // Test logical warp sizes
-        Test<32>();
-        Test<16>();
-        Test<9>();
-        Test<7>();
-    }
-
-#endif
+    // Test logical warp sizes
+    Test<32>();
+    Test<16>();
+    Test<9>();
+    Test<7>();
 
     return 0;
 }

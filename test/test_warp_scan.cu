@@ -51,7 +51,6 @@ static const int        NUM_WARPS       = 2;
 
 
 bool                    g_verbose       = false;
-int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
@@ -611,14 +610,12 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -627,31 +624,11 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-#ifdef CUB_TEST_BENCHMARK
-
-    // Compile/run quick tests
-    Test<32, AGGREGATE, int>(UNIFORM, Sum(), (int) 0);
-    Test<32, AGGREGATE, float>(UNIFORM, Sum(), (float) 0);
-    Test<32, AGGREGATE, long long>(UNIFORM, Sum(), (long long) 0);
-    Test<32, AGGREGATE, double>(UNIFORM, Sum(), (double) 0);
-
-    typedef KeyValuePair<int, float> T;
-    cub::Sum sum_op;
-    Test<32, AGGREGATE, T>(UNIFORM, ReduceBySegmentOp<cub::Sum>(sum_op), T());
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // Test logical warp sizes
-        Test<32>();
-        Test<16>();
-        Test<9>();
-        Test<2>();
-    }
-
-#endif
+    // Test logical warp sizes
+    Test<32>();
+    Test<16>();
+    Test<9>();
+    Test<2>();
 
     return 0;
 }

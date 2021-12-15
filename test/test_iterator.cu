@@ -51,9 +51,6 @@
 
 #include "test_util.h"
 
-#include <thrust/device_ptr.h>
-#include <thrust/copy.h>
-
 using namespace cub;
 
 
@@ -68,7 +65,6 @@ CachingDeviceAllocator  g_allocator(true);
 enum Backend
 {
     CUB,        // CUB method
-    THRUST,     // Thrust method
     CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
 };
 
@@ -199,33 +195,6 @@ void TestConstant(T base)
     T h_reference[8] = {base, base, base, base, base, base, base, base};
     ConstantInputIterator<T> d_itr(base);
     Test(d_itr, h_reference);
-
-#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
-
-    //
-    // Test with thrust::copy_if()
-    //
-
-    int copy_items  = 100;
-    T   *h_copy     = new T[copy_items];
-    T   *d_copy     = NULL;
-
-    for (int i = 0; i < copy_items; ++i)
-        h_copy[i] = d_itr[i];
-
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * copy_items));
-    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
-
-    THRUST_NS_QUALIFIER::copy_if(d_itr, d_itr + copy_items, d_copy_wrapper, SelectOp());
-
-    int compare = CompareDeviceResults(h_copy, d_copy, copy_items, g_verbose, g_verbose);
-    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-    if (h_copy) delete[] h_copy;
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
-
-#endif // THRUST_VERSION
 }
 
 
@@ -254,33 +223,6 @@ void TestCounting(T base)
 
     CountingInputIterator<T> d_itr(base);
     Test(d_itr, h_reference);
-
-#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
-
-    //
-    // Test with thrust::copy_if()
-    //
-
-    unsigned long long  max_items   = ((1ull << ((sizeof(T) * 8) - 1)) - 1);
-    size_t  copy_items              = (size_t) CUB_MIN(max_items - base, 100);     // potential issue with differencing overflows when T is a smaller type than can handle the offset
-    T                   *h_copy     = new T[copy_items];
-    T                   *d_copy     = NULL;
-
-    for (unsigned long long i = 0; i < copy_items; ++i)
-        h_copy[i] = d_itr[i];
-
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * copy_items));
-    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
-    THRUST_NS_QUALIFIER::copy_if(d_itr, d_itr + copy_items, d_copy_wrapper, SelectOp());
-
-    int compare = CompareDeviceResults(h_copy, d_copy, copy_items, g_verbose, g_verbose);
-    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-    if (h_copy) delete[] h_copy;
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
-
-#endif // THRUST_VERSION
 }
 
 
@@ -328,29 +270,6 @@ void TestModified()
     Test(CacheModifiedInputIterator<LOAD_LDG, T>((CastT*) d_data), h_reference);
     Test(CacheModifiedInputIterator<LOAD_VOLATILE, T>((CastT*) d_data), h_reference);
 
-#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
-
-    //
-    // Test with thrust::copy_if()
-    //
-
-    T *d_copy = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-
-    CacheModifiedInputIterator<LOAD_CG, T> d_in_itr((CastT*) d_data);
-    CacheModifiedOutputIterator<STORE_CG, T> d_out_itr((CastT*) d_copy);
-
-    THRUST_NS_QUALIFIER::copy_if(d_in_itr, d_in_itr + TEST_VALUES, d_out_itr, SelectOp());
-
-    int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
-    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-    // Cleanup
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
-
-#endif // THRUST_VERSION
-
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
@@ -396,32 +315,6 @@ void TestTransform()
 
     TransformInputIterator<T, TransformOp<T>, CastT*> d_itr((CastT*) d_data, op);
     Test(d_itr, h_reference);
-
-#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
-
-    //
-    // Test with thrust::copy_if()
-    //
-
-    T *h_copy = new T[TEST_VALUES];
-    for (int i = 0; i < TEST_VALUES; ++i)
-        h_copy[i] = op(h_data[i]);
-
-    T *d_copy = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
-
-    THRUST_NS_QUALIFIER::copy_if(d_itr, d_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
-
-    int compare = CompareDeviceResults(h_copy, d_copy, TEST_VALUES, g_verbose, g_verbose);
-    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-    // Cleanup
-    if (h_copy) delete[] h_copy;
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
-
-#endif // THRUST_VERSION
 
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
@@ -475,30 +368,6 @@ void TestTexObj()
     CubDebugExit(d_obj_itr.BindTexture((CastT*) d_data, sizeof(T) * TEST_VALUES));
 
     Test(d_obj_itr, h_reference);
-
-#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
-
-    //
-    // Test with thrust::copy_if()
-    //
-
-    T *d_copy = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
-
-    CubDebugExit(cudaMemset(d_copy, 0, sizeof(T) * TEST_VALUES));
-    THRUST_NS_QUALIFIER::copy_if(d_obj_itr, d_obj_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
-
-    int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
-    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-    // Cleanup
-    CubDebugExit(d_obj_itr.UnbindTexture());
-
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
-
-#endif  // THRUST_VERSION
 
     if (h_data) delete[] h_data;
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
@@ -560,27 +429,6 @@ void TestTexRef()
 
     Test(d_ref_itr, h_reference);
 
-#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
-
-    //
-    // Test with thrust::copy_if()
-    //
-
-    T *d_copy = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
-
-    CubDebugExit(cudaMemset(d_copy, 0, sizeof(T) * TEST_VALUES));
-    THRUST_NS_QUALIFIER::copy_if(d_ref_itr, d_ref_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
-
-    int compare = CompareDeviceResults(h_data, d_copy, TEST_VALUES, g_verbose, g_verbose);
-    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
-
-#endif  // THRUST_VERSION
-
     CubDebugExit(d_ref_itr.UnbindTexture());
     CubDebugExit(d_ref_itr2.UnbindTexture());
 
@@ -638,32 +486,6 @@ void TestTexTransform()
     TransformInputIterator<T, TransformOp<T>, TextureIterator> xform_itr(d_tex_itr, op);
 
     Test(xform_itr, h_reference);
-
-#if (THRUST_VERSION >= 100700)  // Thrust 1.7 or newer
-
-    //
-    // Test with thrust::copy_if()
-    //
-
-    T *h_copy = new T[TEST_VALUES];
-    for (int i = 0; i < TEST_VALUES; ++i)
-        h_copy[i] = op(h_data[i]);
-
-    T *d_copy = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_copy, sizeof(T) * TEST_VALUES));
-    THRUST_NS_QUALIFIER::device_ptr<T> d_copy_wrapper(d_copy);
-
-    THRUST_NS_QUALIFIER::copy_if(xform_itr, xform_itr + TEST_VALUES, d_copy_wrapper, SelectOp());
-
-    int compare = CompareDeviceResults(h_copy, d_copy, TEST_VALUES, g_verbose, g_verbose);
-    printf("\tthrust::copy_if(): %s\n", (compare) ? "FAIL" : "PASS");
-    AssertEquals(0, compare);
-
-    // Cleanup
-    if (h_copy) delete[] h_copy;
-    if (d_copy) CubDebugExit(g_allocator.DeviceFree(d_copy));
-
-#endif  // THRUST_VERSION
 
     CubDebugExit(d_tex_itr.UnbindTexture());
     if (h_data) delete[] h_data;

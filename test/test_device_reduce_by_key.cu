@@ -36,10 +36,6 @@
 #include <stdio.h>
 #include <typeinfo>
 
-#include <thrust/device_ptr.h>
-#include <thrust/reduce.h>
-#include <thrust/iterator/constant_iterator.h>
-
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/device/device_reduce.cuh>
@@ -57,14 +53,12 @@ using namespace cub;
 
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
-int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 // Dispatch types
 enum Backend
 {
     CUB,        // CUB method
-    THRUST,     // Thrust method
     CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
 };
 
@@ -123,92 +117,6 @@ cudaError_t Dispatch(
     }
     return error;
 }
-
-
-//---------------------------------------------------------------------
-// Dispatch to different Thrust entrypoints
-//---------------------------------------------------------------------
-
-/**
- * Dispatch to reduce-by-key entrypoint
- */
-template <
-    typename                    KeyInputIteratorT,
-    typename                    KeyOutputIteratorT,
-    typename                    ValueInputIteratorT,
-    typename                    ValueOutputIteratorT,
-    typename                    NumRunsIteratorT,
-    typename                    EqualityOpT,
-    typename                    ReductionOpT,
-    typename                    OffsetT>
-cudaError_t Dispatch(
-    Int2Type<THRUST>            /*dispatch_to*/,
-    int                         timing_timing_iterations,
-    size_t                      */*d_temp_storage_bytes*/,
-    cudaError_t                 */*d_cdp_error*/,
-
-    void                        *d_temp_storage,
-    size_t                      &temp_storage_bytes,
-    KeyInputIteratorT           d_keys_in,
-    KeyOutputIteratorT          d_keys_out,
-    ValueInputIteratorT         d_values_in,
-    ValueOutputIteratorT        d_values_out,
-    NumRunsIteratorT            d_num_runs,
-    EqualityOpT                 /*equality_op*/,
-    ReductionOpT                /*reduction_op*/,
-    OffsetT                     num_items,
-    cudaStream_t                /*stream*/,
-    bool                        /*debug_synchronous*/)
-{
-    // The input keys type
-    typedef typename std::iterator_traits<KeyInputIteratorT>::value_type KeyInputT;
-
-    // The output keys type
-    typedef typename If<(Equals<typename std::iterator_traits<KeyOutputIteratorT>::value_type, void>::VALUE),   // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<KeyInputIteratorT>::value_type,                                           // ... then the input iterator's value type,
-        typename std::iterator_traits<KeyOutputIteratorT>::value_type>::Type KeyOutputT;                        // ... else the output iterator's value type
-
-    // The input values type
-    typedef typename std::iterator_traits<ValueInputIteratorT>::value_type ValueInputT;
-
-    // The output values type
-    typedef typename If<(Equals<typename std::iterator_traits<ValueOutputIteratorT>::value_type, void>::VALUE), // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<ValueInputIteratorT>::value_type,                                         // ... then the input iterator's value type,
-        typename std::iterator_traits<ValueOutputIteratorT>::value_type>::Type ValueOuputT;                     // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<KeyInputT> d_keys_in_wrapper(d_keys_in);
-        THRUST_NS_QUALIFIER::device_ptr<KeyOutputT> d_keys_out_wrapper(d_keys_out);
-
-        THRUST_NS_QUALIFIER::device_ptr<ValueInputT> d_values_in_wrapper(d_values_in);
-        THRUST_NS_QUALIFIER::device_ptr<ValueOuputT> d_values_out_wrapper(d_values_out);
-
-        THRUST_NS_QUALIFIER::pair<THRUST_NS_QUALIFIER::device_ptr<KeyOutputT>, THRUST_NS_QUALIFIER::device_ptr<ValueOuputT> > d_out_ends;
-
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            d_out_ends = THRUST_NS_QUALIFIER::reduce_by_key(
-                d_keys_in_wrapper,
-                d_keys_in_wrapper + num_items,
-                d_values_in_wrapper,
-                d_keys_out_wrapper,
-                d_values_out_wrapper);
-        }
-
-        OffsetT num_segments = OffsetT(d_out_ends.first - d_keys_out_wrapper);
-        CubDebugExit(cudaMemcpy(d_num_runs, &num_segments, sizeof(OffsetT), cudaMemcpyHostToDevice));
-
-    }
-
-    return cudaSuccess;
-}
-
-
 
 //---------------------------------------------------------------------
 // CUDA Nested Parallelism Test Kernel
@@ -541,7 +449,7 @@ void TestPointer(
     int num_segments = Solve(h_keys_in, h_keys_reference, h_values_in, h_values_reference, equality_op, reduction_op, num_items);
 
     printf("\nPointer %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %.3f), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         (Equals<ReductionOpT, Sum>::VALUE) ? "Sum" : "Max",
         num_items, num_segments, float(num_items) / num_segments,
         typeid(KeyT).name(), typeid(ValueT).name(),
@@ -600,7 +508,7 @@ void TestIterator(
     int num_segments = Solve(h_keys_in, h_keys_reference, h_values_in, h_values_reference, equality_op, reduction_op, num_items);
 
     printf("\nIterator %s cub::DeviceReduce::ReduceByKey %s reduction of %d items, %d segments (avg run length %.3f), {%s,%s} key value pairs, max_segment %d, entropy_reduction %d\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         (Equals<ReductionOpT, Sum>::VALUE) ? "Sum" : "Max",
         num_items, num_segments, float(num_items) / num_segments,
         typeid(KeyT).name(), typeid(ValueT).name(),
@@ -750,7 +658,6 @@ int main(int argc, char** argv)
     g_verbose = args.CheckCmdLineFlag("v");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
-    args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("maxseg", maxseg);
     args.GetCmdLineArgument("entropy", entropy_reduction);
 
@@ -763,7 +670,6 @@ int main(int argc, char** argv)
             "[--device=<device-id>] "
             "[--maxseg=<max segment length>]"
             "[--entropy=<segment length bit entropy reduction rounds>]"
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "[--cdp]"
             "\n", argv[0]);
@@ -778,73 +684,27 @@ int main(int argc, char** argv)
     int ptx_version = 0;
     CubDebugExit(PtxVersion(ptx_version));
 
-#ifdef CUB_TEST_MINIMAL
+    // Test different input types
+    TestOp<int, char>(num_items);
+    TestOp<int, short>(num_items);
+    TestOp<int, int>(num_items);
+    TestOp<int, long>(num_items);
+    TestOp<int, long long>(num_items);
+    TestOp<int, float>(num_items);
+    TestOp<int, double>(num_items);
 
-    // Compile/run basic CUB test
-    if (num_items < 0) num_items = 32000000;
+    TestOp<int, uchar2>(num_items);
+    TestOp<int, uint2>(num_items);
+    TestOp<int, uint3>(num_items);
+    TestOp<int, uint4>(num_items);
+    TestOp<int, ulonglong4>(num_items);
+    TestOp<int, TestFoo>(num_items);
+    TestOp<int, TestBar>(num_items);
 
-    TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum());
-    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
-    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
-
-#elif defined(CUB_TEST_BENCHMARK)
-
-    // Compile/run quick tests
-    if (num_items < 0) num_items = 32000000;
-
-    printf("---- RLE int ---- \n");
-    TestIterator<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
-
-    printf("---- RLE long long ---- \n");
-    TestIterator<CUB, long long, int>(num_items, entropy_reduction, maxseg, cub::Sum());
-
-    printf("---- int ---- \n");
-    TestPointer<CUB, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
-    TestPointer<THRUST, int, int>(num_items, entropy_reduction, maxseg, cub::Sum());
-
-    printf("---- float ---- \n");
-    TestPointer<CUB, int, float>(num_items, entropy_reduction, maxseg, cub::Sum());
-    TestPointer<THRUST, int, float>(num_items, entropy_reduction, maxseg, cub::Sum());
-
-    if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-    {
-        printf("---- double ---- \n");
-        TestPointer<CUB, int, double>(num_items, entropy_reduction, maxseg, cub::Sum());
-        TestPointer<THRUST, int, double>(num_items, entropy_reduction, maxseg, cub::Sum());
-    }
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-
-        // Test different input types
-        TestOp<int, char>(num_items);
-        TestOp<int, short>(num_items);
-        TestOp<int, int>(num_items);
-        TestOp<int, long>(num_items);
-        TestOp<int, long long>(num_items);
-        TestOp<int, float>(num_items);
-        if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-            TestOp<int, double>(num_items);
-
-        TestOp<int, uchar2>(num_items);
-        TestOp<int, uint2>(num_items);
-        TestOp<int, uint3>(num_items);
-        TestOp<int, uint4>(num_items);
-        TestOp<int, ulonglong4>(num_items);
-        TestOp<int, TestFoo>(num_items);
-        TestOp<int, TestBar>(num_items);
-
-        TestOp<char, int>(num_items);
-        TestOp<long long, int>(num_items);
-        TestOp<TestFoo, int>(num_items);
-        TestOp<TestBar, int>(num_items);
-
-    }
-
-#endif
+    TestOp<char, int>(num_items);
+    TestOp<long long, int>(num_items);
+    TestOp<TestFoo, int>(num_items);
+    TestOp<TestBar, int>(num_items);
 
     return 0;
 }

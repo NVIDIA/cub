@@ -1,3 +1,69 @@
+# The function below reads the filepath `src`, extracts the %PARAM% comments,
+# and fills `labels_var` with a list of `label1_value1.label2_value2...`
+# strings, and puts the corresponding `DEFINITION=value1:DEFINITION=value2`
+# entries into `defs_var`.
+#
+# See the README.md file in this directory for background info.
+function(cub_get_test_params src labels_var defs_var)
+  file(READ "${src}" file_data)
+  set(param_regex "//[ ]+%PARAM%[ ]+([^ ]+)[ ]+([^ ]+)[ ]+([^\n]*)")
+
+  string(REGEX MATCHALL
+    "${param_regex}"
+    matches
+    "${file_data}"
+  )
+
+  set(variant_labels)
+  set(variant_defs)
+
+  foreach(match IN LISTS matches)
+    string(REGEX MATCH
+      "${param_regex}"
+      unused
+      "${match}"
+    )
+    set(def ${CMAKE_MATCH_1})
+    set(label ${CMAKE_MATCH_2})
+    set(values "${CMAKE_MATCH_3}")
+    string(REPLACE ":" ";" values "${values}")
+
+    # Build lists of test name suffixes (labels) and preprocessor definitions
+    # (defs) containing the cartesian product of all param values:
+    if (NOT variant_labels)
+      foreach(value IN LISTS values)
+        list(APPEND variant_labels ${label}_${value})
+      endforeach()
+    else()
+      set(tmp_labels)
+      foreach(old_label IN LISTS variant_labels)
+        foreach(value IN LISTS values)
+          list(APPEND tmp_labels ${old_label}.${label}_${value})
+        endforeach()
+      endforeach()
+      set(variant_labels "${tmp_labels}")
+    endif()
+
+    if (NOT variant_defs)
+      foreach(value IN LISTS values)
+        list(APPEND variant_defs ${def}=${value})
+      endforeach()
+    else()
+      set(tmp_defs)
+      foreach(old_def IN LISTS variant_defs)
+        foreach(value IN LISTS values)
+          list(APPEND tmp_defs ${old_def}:${def}=${value})
+        endforeach()
+      endforeach()
+      set(variant_defs "${tmp_defs}")
+    endif()
+
+  endforeach()
+
+  set(${labels_var} "${variant_labels}" PARENT_SCOPE)
+  set(${defs_var} "${variant_defs}" PARENT_SCOPE)
+endfunction()
+
 # Create meta targets that build all tests for a single configuration:
 foreach(cub_target IN LISTS CUB_TARGETS)
   cub_get_target_property(config_prefix ${cub_target} PREFIX)
@@ -58,80 +124,62 @@ function(cub_add_test target_name_var test_name test_src cub_target)
   )
 endfunction()
 
-# Sets HAS_BENCHMARK_VARIANT / HAS_MINIMAL_VARIANT / NO_VARIANTS to True/False in
-# the calling scope.
-# Used to detect variants of unit tests depending on whether a source file
-# contains the strings "CUB_TEST_BENCHMARK" or "CUB_TEST_MINIMAL".
-function(cub_check_for_test_variants src)
-  file(READ "${src}" data)
-
-  string(FIND "${data}" "CUB_TEST_BENCHMARK" benchmark_loc)
-  set(HAS_BENCHMARK_VARIANT False PARENT_SCOPE)
-  if (NOT benchmark_loc EQUAL -1)
-    set(HAS_BENCHMARK_VARIANT True PARENT_SCOPE)
-  endif()
-
-  string(FIND "${data}" "CUB_TEST_MINIMAL" minimal_loc)
-  set(HAS_MINIMAL_VARIANT False PARENT_SCOPE)
-  if (NOT minimal_loc EQUAL -1)
-    set(HAS_MINIMAL_VARIANT True PARENT_SCOPE)
-  endif()
-
-  set(NO_VARIANTS False PARENT_SCOPE)
-  if (NOT (HAS_BENCHMARK_VARIANT OR HAS_MINIMAL_VARIANT))
-    set(NO_VARIANTS True PARENT_SCOPE)
-  endif()
-endfunction()
-
 foreach (test_src IN LISTS test_srcs)
-  # TODO: Per-test flags.
-
   get_filename_component(test_name "${test_src}" NAME_WE)
   string(REGEX REPLACE "^test_" "" test_name "${test_name}")
 
-  # Some tests change behavior based on whether the compiler defs BENCHMARK
-  # and/or MINIMAL_TEST are defined. Detect these and build variants for each
-  # configuration:
-  cub_check_for_test_variants("${test_src}")
+  cub_get_test_params("${test_src}" variant_labels variant_defs)
+  list(LENGTH variant_labels num_variants)
+
+  # Subtract 1 to support the inclusive endpoint of foreach(...RANGE...):
+  math(EXPR range_end "${num_variants} - 1")
+
+  # Verbose output:
+  if (NOT num_variants EQUAL 0)
+    message(VERBOSE "Detected ${num_variants} variants of test '${test_src}':")
+    foreach(var_idx RANGE ${range_end})
+      math(EXPR i "${var_idx} + 1")
+      list(GET variant_labels ${var_idx} label)
+      list(GET variant_defs ${var_idx} defs)
+      message(VERBOSE "  ${i}: ${test_name} ${label} ${defs}")
+    endforeach()
+  endif()
 
   foreach(cub_target IN LISTS CUB_TARGETS)
-    if (NO_VARIANTS)
+    cub_get_target_property(config_prefix ${cub_target} PREFIX)
+
+    if (num_variants EQUAL 0)
       # Only one version of this test.
       cub_add_test(test_target ${test_name} "${test_src}" ${cub_target})
     else()
-      # Multiple test variants requested, so we need to give the targets and
-      # binaries suffixes.
+      # Meta target to build all parametrizations of the current test for the
+      # current CUB_TARGET config
+      set(variant_meta_target ${config_prefix}.test.${test_name}.all)
+      add_custom_target(${variant_meta_target})
 
-      if (CUB_ENABLE_THOROUGH_TESTING)
-        cub_add_test(test_target_thorough
-          ${test_name}.thorough
+      # Meta target to build all parametrizations of the current test for all
+      # CUB_TARGET configs
+      set(cub_variant_meta_target cub.all.test.${test_name}.all)
+      if (NOT TARGET ${cub_variant_meta_target})
+        add_custom_target(${cub_variant_meta_target})
+      endif()
+
+      # Generate multiple tests, one per variant.
+      # See `cub_get_test_params` for details.
+      foreach(var_idx RANGE ${range_end})
+        list(GET variant_labels ${var_idx} label)
+        list(GET variant_defs ${var_idx} defs)
+        string(REPLACE ":" ";" defs "${defs}")
+
+        cub_add_test(test_target
+          ${test_name}.${label}
           "${test_src}"
           ${cub_target}
         )
-        target_compile_definitions(${test_target_thorough} PRIVATE CUB_TEST_THOROUGH)
-      endif()
-
-      if (CUB_ENABLE_BENCHMARK_TESTING)
-        if (HAS_BENCHMARK_VARIANT)
-          cub_add_test(test_target_benchmark
-            ${test_name}.benchmark
-            "${test_src}"
-            ${cub_target}
-          )
-          target_compile_definitions(${test_target_benchmark} PRIVATE CUB_TEST_BENCHMARK)
-        endif()
-      endif()
-
-      if (CUB_ENABLE_MINIMAL_TESTING)
-        if (HAS_MINIMAL_VARIANT)
-          cub_add_test(test_target_minimal
-            ${test_name}.minimal
-            "${test_src}"
-            ${cub_target}
-          )
-          target_compile_definitions(${test_target_minimal} PRIVATE CUB_TEST_MINIMAL)
-        endif()
-      endif()
+        add_dependencies(${variant_meta_target} ${test_target})
+        add_dependencies(${cub_variant_meta_target} ${test_target})
+        target_compile_definitions(${test_target} PRIVATE ${defs})
+      endforeach()
     endif()
   endforeach()
 endforeach()

@@ -33,8 +33,9 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <stdio.h>
 #include <algorithm>
+#include <cstdio>
+#include <memory>
 #include <random>
 #include <typeinfo>
 #include <vector>
@@ -55,10 +56,6 @@
 
 #include "test_util.h"
 
-#include <thrust/device_ptr.h>
-#include <thrust/sort.h>
-#include <thrust/reverse.h>
-
 using namespace cub;
 
 
@@ -68,7 +65,6 @@ using namespace cub;
 
 bool                    g_verbose           = false;
 int                     g_timing_iterations = 0;
-int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 // Dispatch types
@@ -80,10 +76,29 @@ enum Backend
     CUB_SEGMENTED,              // CUB method (allows overwriting of input)
     CUB_SEGMENTED_NO_OVERWRITE, // CUB method (disallows overwriting of input)
 
-    THRUST,                     // Thrust method
     CDP,                        // GPU-based (dynamic parallelism) dispatch to CUB method
 };
 
+static const char* BackendToString(Backend b)
+{
+  switch (b)
+  {
+    case CUB:
+      return "CUB";
+    case CUB_NO_OVERWRITE:
+      return "CUB_NO_OVERWRITE";
+    case CUB_SEGMENTED:
+      return "CUB_SEGMENTED";
+    case CUB_SEGMENTED_NO_OVERWRITE:
+      return "CUB_SEGMENTED_NO_OVERWRITE";
+    case CDP:
+      return "CDP";
+    default:
+      break;
+  }
+
+  return "";
+}
 
 //---------------------------------------------------------------------
 // Dispatch to different DeviceRadixSort entrypoints
@@ -383,104 +398,6 @@ cudaError_t Dispatch(
     return retval;
 }
 
-
-//---------------------------------------------------------------------
-// Dispatch to different Thrust entrypoints
-//---------------------------------------------------------------------
-
-/**
- * Dispatch keys-only to Thrust sorting entrypoint
- */
-template <int IS_DESCENDING, typename KeyT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-cudaError_t Dispatch(
-    Int2Type<IS_DESCENDING> /*is_descending*/,
-    Int2Type<THRUST>        /*dispatch_to*/,
-    int                     */*d_selector*/,
-    size_t                  */*d_temp_storage_bytes*/,
-    cudaError_t             */*d_cdp_error*/,
-
-    void                    *d_temp_storage,
-    size_t                  &temp_storage_bytes,
-    DoubleBuffer<KeyT>      &d_keys,
-    DoubleBuffer<NullType>  &/*d_values*/,
-    std::size_t             num_items,
-    int                     /*num_segments*/,
-    BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
-    EndOffsetIteratorT      /*d_segment_end_offsets*/,
-    int                     /*begin_bit*/,
-    int                     /*end_bit*/,
-    cudaStream_t            /*stream*/,
-    bool                    /*debug_synchronous*/)
-{
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<KeyT> d_keys_wrapper(d_keys.Current());
-
-        if (IS_DESCENDING) THRUST_NS_QUALIFIER::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
-        THRUST_NS_QUALIFIER::sort(d_keys_wrapper, d_keys_wrapper + num_items);
-        if (IS_DESCENDING) THRUST_NS_QUALIFIER::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
-    }
-
-    return cudaSuccess;
-}
-
-
-/**
- * Dispatch key-value pairs to Thrust sorting entrypoint
- */
-template <int IS_DESCENDING, typename KeyT, typename ValueT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT>
-cudaError_t Dispatch(
-    Int2Type<IS_DESCENDING> /*is_descending*/,
-    Int2Type<THRUST>        /*dispatch_to*/,
-    int                     */*d_selector*/,
-    size_t                  */*d_temp_storage_bytes*/,
-    cudaError_t             */*d_cdp_error*/,
-
-    void                    *d_temp_storage,
-    size_t                  &temp_storage_bytes,
-    DoubleBuffer<KeyT>      &d_keys,
-    DoubleBuffer<ValueT>    &d_values,
-    std::size_t             num_items,
-    int                     /*num_segments*/,
-    BeginOffsetIteratorT    /*d_segment_begin_offsets*/,
-    EndOffsetIteratorT      /*d_segment_end_offsets*/,
-    int                     /*begin_bit*/,
-    int                     /*end_bit*/,
-    cudaStream_t            /*stream*/,
-    bool                    /*debug_synchronous*/)
-{
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<KeyT>     d_keys_wrapper(d_keys.Current());
-        THRUST_NS_QUALIFIER::device_ptr<ValueT>   d_values_wrapper(d_values.Current());
-
-        if (IS_DESCENDING) {
-            THRUST_NS_QUALIFIER::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
-            THRUST_NS_QUALIFIER::reverse(d_values_wrapper, d_values_wrapper + num_items);
-        }
-
-        THRUST_NS_QUALIFIER::sort_by_key(d_keys_wrapper, d_keys_wrapper + num_items, d_values_wrapper);
-
-        if (IS_DESCENDING) {
-            THRUST_NS_QUALIFIER::reverse(d_keys_wrapper, d_keys_wrapper + num_items);
-            THRUST_NS_QUALIFIER::reverse(d_values_wrapper, d_values_wrapper + num_items);
-        }
-    }
-
-    return cudaSuccess;
-}
-
-
 //---------------------------------------------------------------------
 // CUDA Nested Parallelism Test Kernel
 //---------------------------------------------------------------------
@@ -726,6 +643,9 @@ void InitializeSolution(
         //
         // Pre-sorted tests with non-default begin_bit, end_bit or num_segments
         // != 1 are skipped in TestBits() and TestSegments(), respectively.
+        AssertEquals(begin_bit, 0);
+        AssertEquals(end_bit, static_cast<int>(8 * sizeof(KeyT)));
+        AssertEquals(num_segments, 1);
 
         // Copy to the reference solution.
         h_reference_keys = new KeyT[num_items];
@@ -921,13 +841,20 @@ void Test(
 
     const bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
 
-    printf("%s %s cub::DeviceRadixSort %zd items, %d segments, %d-byte keys (%s) %d-byte values (%s), descending %d, begin_bit %d, end_bit %d\n",
-        (BACKEND == CUB_NO_OVERWRITE) ? "CUB_NO_OVERWRITE" : (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
-        (KEYS_ONLY) ? "keys-only" : "key-value",
-        num_items, num_segments,
-        (int) sizeof(KeyT), typeid(KeyT).name(), (KEYS_ONLY) ? 0 : (int) sizeof(ValueT), typeid(ValueT).name(),
-        IS_DESCENDING, begin_bit, end_bit);
-    fflush(stdout);
+    printf("%s %s cub::DeviceRadixSort %zd items, %d segments, "
+           "%d-byte keys (%s) %d-byte values (%s), descending %d, "
+           "begin_bit %d, end_bit %d\n",
+           BackendToString(BACKEND),
+           (KEYS_ONLY) ? "keys-only" : "key-value",
+           num_items,
+           num_segments,
+           static_cast<int>(sizeof(KeyT)),
+           typeid(KeyT).name(),
+           (KEYS_ONLY) ? 0 : static_cast<int>(sizeof(ValueT)),
+           typeid(ValueT).name(),
+           IS_DESCENDING,
+           begin_bit,
+           end_bit);
 
     if (g_verbose)
     {
@@ -1091,7 +1018,11 @@ void TestBackend(
     ValueT *h_reference_values   = NULL;
 
     // Skip tests for which we don't have enough memory.
-    if (!HasEnoughMemory<KeyT, ValueT>(num_items)) return;
+    if (!HasEnoughMemory<KeyT, ValueT>(num_items))
+    {
+      printf("Skipping test due to insufficient device memory.\n");
+      return;
+    }
 
     if (!KEYS_ONLY)
     {
@@ -1105,27 +1036,21 @@ void TestBackend(
         }
     }
 
-#ifdef SEGMENTED_SORT
-    // Test multi-segment implementations
     Test<CUB_SEGMENTED, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
     Test<CUB_SEGMENTED_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
-#else   // SEGMENTED_SORT
+
     if (num_segments == 1)
     {
-        // Test single-segment implementations
         Test<CUB, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
         Test<CUB_NO_OVERWRITE, IS_DESCENDING>(  h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
     #ifdef CUB_CDP
         Test<CDP, IS_DESCENDING>(               h_keys, h_values, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_values);
     #endif
     }
-#endif  // SEGMENTED_SORT
 
     if (h_values) delete[] h_values;
     if (h_reference_values) delete[] h_reference_values;
 }
-
-
 
 
 /**
@@ -1148,20 +1073,31 @@ void TestValueTypes(
     KeyT *h_reference_keys = NULL;
     InitializeSolution<IS_DESCENDING>(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
 
+#if TEST_VALUE_TYPE == 0
+
     // Test keys-only
     TestBackend<IS_DESCENDING, KeyT, NullType>          (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+
+#elif TEST_VALUE_TYPE == 1
 
     // Test with 8b value
     TestBackend<IS_DESCENDING, KeyT, unsigned char>     (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
+#elif TEST_VALUE_TYPE == 2
+
     // Test with 32b value
     TestBackend<IS_DESCENDING, KeyT, unsigned int>      (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+
+#elif TEST_VALUE_TYPE == 3
 
     // Test with 64b value
     TestBackend<IS_DESCENDING, KeyT, unsigned long long>(h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
     // Test with non-trivially-constructable value
+    // These are cheap to build, so lump them in with the 64b value tests.
     TestBackend<IS_DESCENDING, KeyT, TestBar>           (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
+
+#endif
 
     // Cleanup
     ResetKeys<IS_DESCENDING>(h_keys, num_items, pre_sorted, h_reference_keys);
@@ -1259,26 +1195,21 @@ void TestSegmentIterators(
     InitializeSegments(num_items, num_segments, h_segment_offsets);
     CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(std::size_t) * (num_segments + 1), cudaMemcpyHostToDevice));
 
-    // Test with segment pointer
+    // Test with segment pointer.
+    // This is also used to test non-segmented sort.
     TestBits(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_offsets, d_segment_offsets + 1);
 
-#ifdef SEGMENTED_SORT
-    // Test with segment iterator
-    typedef CastOp<std::size_t> IdentityOpT;
-    IdentityOpT identity_op;
-    TransformInputIterator<std::size_t, IdentityOpT, std::size_t*, std::size_t> d_segment_offsets_itr(d_segment_offsets, identity_op);
+    if (num_segments > 1)
+    {
+        // Test with transform iterators of different types
+        typedef TransformFunctor1<std::size_t> TransformFunctor1T;
+        typedef TransformFunctor2<std::size_t> TransformFunctor2T;
 
-    TestBits(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_offsets_itr, d_segment_offsets_itr + 1);
+        TransformInputIterator<std::size_t, TransformFunctor1T, std::size_t*, std::size_t> d_segment_begin_offsets_itr(d_segment_offsets, TransformFunctor1T());
+        TransformInputIterator<std::size_t, TransformFunctor2T, std::size_t*, std::size_t> d_segment_end_offsets_itr(d_segment_offsets + 1, TransformFunctor2T());
 
-    // Test with transform iterators of different types
-    typedef TransformFunctor1<std::size_t> TransformFunctor1T;
-    typedef TransformFunctor2<std::size_t> TransformFunctor2T;
-
-    TransformInputIterator<std::size_t, TransformFunctor1T, std::size_t*, std::size_t> d_segment_begin_offsets_itr(d_segment_offsets, TransformFunctor1T());
-    TransformInputIterator<std::size_t, TransformFunctor2T, std::size_t*, std::size_t> d_segment_end_offsets_itr(d_segment_offsets + 1, TransformFunctor2T());
-
-    TestBits(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_begin_offsets_itr, d_segment_end_offsets_itr);
-#endif
+        TestBits(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_begin_offsets_itr, d_segment_end_offsets_itr);
+    }
 }
 
 
@@ -1292,13 +1223,13 @@ void TestSegments(
     int          max_segments,
     bool         pre_sorted)
 {
-    std::size_t *h_segment_offsets = new size_t[max_segments + 1];
+    max_segments = static_cast<int>(CUB_MIN(num_items, static_cast<std::size_t>(max_segments)));
+    std::size_t *h_segment_offsets = new std::size_t[max_segments + 1];
 
     std::size_t *d_segment_offsets = nullptr;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_segment_offsets, sizeof(std::size_t) * (max_segments + 1)));
 
-#ifdef SEGMENTED_SORT
-    for (int num_segments = max_segments; num_segments > 1; num_segments = (num_segments + 32 - 1) / 32)
+    for (int num_segments = max_segments; num_segments > 1; num_segments = cub::DivideAndRoundUp(num_segments, 64))
     {
         // Pre-sorted tests are not supported for segmented sort
         if (num_items / num_segments < 128 * 1000 && !pre_sorted) {
@@ -1306,13 +1237,12 @@ void TestSegments(
             TestSegmentIterators(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, d_segment_offsets);
         }
     }
-#else
+
     // Test single segment
     if (num_items < 128 * 1000 || pre_sorted) {
         // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
         TestSegmentIterators(h_keys, num_items, 1, pre_sorted, h_segment_offsets, d_segment_offsets);
     }
-#endif
 
     if (h_segment_offsets) delete[] h_segment_offsets;
     if (d_segment_offsets) CubDebugExit(g_allocator.DeviceFree(d_segment_offsets));
@@ -1323,22 +1253,18 @@ void TestSegments(
  * Test different (sub)lengths and number of segments
  */
 template <typename KeyT>
-void TestSizes(
-    KeyT         *h_keys,
-    std::size_t  max_items,
-    int          max_segments,
-    bool         pre_sorted)
+void TestSizes(KeyT* h_keys,
+               std::size_t max_items,
+               int max_segments,
+               bool pre_sorted)
 {
     for (std::size_t num_items = max_items;
          num_items > 1;
-         num_items = cub::DivideAndRoundUp(num_items, 32))
+         num_items = cub::DivideAndRoundUp(num_items, 64))
     {
         TestSegments(h_keys, num_items, max_segments, pre_sorted);
     }
-    TestSegments(h_keys, 1, max_segments, pre_sorted);
-    TestSegments(h_keys, 0, max_segments, pre_sorted);
 }
-
 
 /**
  * Test key sampling distributions
@@ -1349,47 +1275,63 @@ void TestGen(
     int             max_segments)
 {
     if (max_items == ~std::size_t(0))
-        max_items = 200000003;
+    {
+        max_items = 9000003;
+    }
 
     if (max_segments < 0)
+    {
         max_segments = 5003;
+    }
 
-    KeyT *h_keys = new KeyT[max_items];
+    std::unique_ptr<KeyT[]> h_keys(new KeyT[max_items]);
 
-    for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 3)
+    // Test trivial problems sizes
+    h_keys[0] = static_cast<KeyT>(42);
+    TestSegments(h_keys.get(), 0, 0, false);
+    TestSegments(h_keys.get(), 1, 1, false);
+
+    for (int entropy_reduction = 0; entropy_reduction <= 6; entropy_reduction += 6)
     {
         printf("\nTesting random %s keys with entropy reduction factor %d\n", typeid(KeyT).name(), entropy_reduction); fflush(stdout);
-        InitializeKeyBits(RANDOM, h_keys, max_items, entropy_reduction);
-        TestSizes(h_keys, max_items, max_segments, false);
+        InitializeKeyBits(RANDOM, h_keys.get(), max_items, entropy_reduction);
+        TestSizes(h_keys.get(), max_items, max_segments, false);
     }
 
     if (cub::Traits<KeyT>::CATEGORY == cub::FLOATING_POINT)
     {
         printf("\nTesting random %s keys with some replaced with -0.0 or +0.0 \n", typeid(KeyT).name());
         fflush(stdout);
-        InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys, max_items, 0);
-        TestSizes(h_keys, max_items, max_segments, false);
+        InitializeKeyBits(RANDOM_MINUS_PLUS_ZERO, h_keys.get(), max_items, 0);
+        // This just tests +/- 0 handling -- don't need to test multiple sizes
+        TestSegments(h_keys.get(), max_items, max_segments, false);
     }
 
     printf("\nTesting uniform %s keys\n", typeid(KeyT).name()); fflush(stdout);
-    InitializeKeyBits(UNIFORM, h_keys, max_items, 0);
-    TestSizes(h_keys, max_items, max_segments, false);
+    InitializeKeyBits(UNIFORM, h_keys.get(), max_items, 0);
+    TestSizes(h_keys.get(), max_items, max_segments, false);
 
     printf("\nTesting natural number %s keys\n", typeid(KeyT).name()); fflush(stdout);
-    InitializeKeyBits(INTEGER_SEED, h_keys, max_items, 0);
-    TestSizes(h_keys, max_items, max_segments, false);
+    InitializeKeyBits(INTEGER_SEED, h_keys.get(), max_items, 0);
+    TestSizes(h_keys.get(), max_items, max_segments, false);
 
     if (!cub::Equals<KeyT, bool>::VALUE)
     {
+        // Presorting is only used for testing large input arrays.
+        // Increase above 2^32 once 64-bit indexing is enabled.
+        const std::size_t large_num_items = 200000003;
+
+        h_keys.reset(nullptr); // Explicitly free old buffer before allocating.
+        h_keys.reset(new KeyT[large_num_items]);
+
         printf("\nTesting pre-sorted and randomly permuted %s keys\n", typeid(KeyT).name());
         fflush(stdout);
-        InitializeKeysSorted(h_keys, max_items);
+        InitializeKeysSorted(h_keys.get(), large_num_items);
         fflush(stdout);
-        TestSizes(h_keys, max_items, max_segments, true);
+        TestSegments(h_keys.get(), large_num_items, max_segments, true);
         fflush(stdout);
     }
 
-    if (h_keys) delete[] h_keys;
 }
 
 
@@ -1470,10 +1412,8 @@ void Test(
  */
 int main(int argc, char** argv)
 {
-    int bits = -1;
     std::size_t num_items = ~std::size_t(0);
     int num_segments = -1;
-    int entropy_reduction = 0;
 
     // Initialize command line
     CommandLineArgs args(argc, argv);
@@ -1481,22 +1421,16 @@ int main(int argc, char** argv)
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("s", num_segments);
     args.GetCmdLineArgument("i", g_timing_iterations);
-    args.GetCmdLineArgument("repeat", g_repeat);
-    args.GetCmdLineArgument("bits", bits);
-    args.GetCmdLineArgument("entropy", entropy_reduction);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
-            "[--bits=<valid key bits>]"
             "[--n=<input items> "
             "[--s=<num segments> "
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
-            "[--entropy=<entropy-reduction factor (default 0)>]"
             "\n", argv[0]);
         exit(0);
     }
@@ -1504,114 +1438,69 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Get ptx version
-    int ptx_version = 0;
-    CubDebugExit(PtxVersion(ptx_version));
+    // %PARAM% TEST_KEY_BYTES bytes 1:2:4:8
+    // %PARAM% TEST_VALUE_TYPE pairs 0:1:2:3
+    //   0->Keys only
+    //   1->uchar
+    //   2->uint
+    //   3->[ull,TestBar] (TestBar is cheap to build, included here to
+    //                     reduce total number of targets)
 
-#ifdef CUB_TEST_MINIMAL
+    // To reduce testing time, some key types are only tested when not
+    // testing pairs:
+#if TEST_VALUE_TYPE == 0
+#define TEST_EXTENDED_KEY_TYPES
+#endif
 
-    enum {
-        IS_DESCENDING   = false
-    };
+    // Compile/run thorough tests
+#if TEST_KEY_BYTES == 1
 
-    // Compile/run basic CUB test
-    if (num_items == ~std::size_t(0))  num_items       = 24000000;
-    if (num_segments < 0)              num_segments    = 5000;
+    TestGen<char>                 (num_items, num_segments);
 
-    Test<CUB_SEGMENTED, unsigned int,       NullType, IS_DESCENDING>(num_items, num_segments, RANDOM, entropy_reduction, 0, bits);
+#ifdef TEST_EXTENDED_KEY_TYPES
+    TestGen<bool>                 (num_items, num_segments);
+    TestGen<signed char>          (num_items, num_segments);
+    TestGen<unsigned char>        (num_items, num_segments);
+#endif // TEST_EXTENDED_KEY_TYPES
 
-    printf("\n-------------------------------\n");
+#elif TEST_KEY_BYTES == 2
+  TestGen<unsigned short>       (num_items, num_segments);
 
-    Test<CUB,           unsigned char,      NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<CUB,           unsigned int,       NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<CUB,           unsigned long long, NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-
-    printf("\n-------------------------------\n");
+#ifdef TEST_EXTENDED_KEY_TYPES
+    TestGen<short>                (num_items, num_segments);
 
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
-    Test<CUB,           half_t,             NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-#endif
+    TestGen<half_t>               (num_items, num_segments);
+#endif // CTK >= 9
 
 #if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
 #if !defined(__ICC)
     // Fails with `-0 != 0` with ICC for unknown reasons. See #333.
-    Test<CUB,           bfloat16_t,         NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-#endif
-#endif
-    Test<CUB,           float,              NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<CUB,           double,             NullType, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    TestGen<bfloat16_t>           (num_items, num_segments);
+#endif // !ICC
+#endif // CTK >= 11
 
-    printf("\n-------------------------------\n");
+#endif // TEST_EXTENDED_KEY_TYPES
 
-    Test<CUB,           unsigned char,      unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<CUB,           unsigned int,       unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<CUB,           unsigned long long, unsigned int, IS_DESCENDING>(num_items, 1, RANDOM, entropy_reduction, 0, bits);
+#elif TEST_KEY_BYTES == 4
 
-#elif defined(CUB_TEST_BENCHMARK)
+    TestGen<float>                (num_items, num_segments);
 
-    // Compile/run quick tests
-    if (num_items == ~std::size_t(0))  num_items       = 48000000;
-    if (num_segments < 0)              num_segments    = 5000;
+#ifdef TEST_EXTENDED_KEY_TYPES
+    TestGen<int>                  (num_items, num_segments);
+    TestGen<unsigned int>         (num_items, num_segments);
+#endif // TEST_EXTENDED_KEY_TYPES
 
-    // Compare CUB and thrust on 32b keys-only
-    Test<CUB, unsigned int, NullType, false> (                      num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<THRUST, unsigned int, NullType, false> (                   num_items, 1, RANDOM, entropy_reduction, 0, bits);
+#elif TEST_KEY_BYTES == 8
 
-    // Compare CUB and thrust on 64b keys-only
-    Test<CUB, unsigned long long, NullType, false> (                num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<THRUST, unsigned long long, NullType, false> (             num_items, 1, RANDOM, entropy_reduction, 0, bits);
+    TestGen<double>               (num_items, num_segments);
 
+#ifdef TEST_EXTENDED_KEY_TYPES
+    TestGen<long long>            (num_items, num_segments);
+    TestGen<unsigned long long>   (num_items, num_segments);
+#endif // TEST_EXTENDED_KEY_TYPES
 
-    // Compare CUB and thrust on 32b key-value pairs
-    Test<CUB, unsigned int, unsigned int, false> (                  num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<THRUST, unsigned int, unsigned int, false> (               num_items, 1, RANDOM, entropy_reduction, 0, bits);
-
-    // Compare CUB and thrust on 64b key + 32b value pairs
-    Test<CUB, unsigned long long, unsigned int, false> (      num_items, 1, RANDOM, entropy_reduction, 0, bits);
-    Test<THRUST, unsigned long long, unsigned int, false> (   num_items, 1, RANDOM, entropy_reduction, 0, bits);
-
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        TestGen<bool>                 (num_items, num_segments);
-
-        TestGen<char>                 (num_items, num_segments);
-        TestGen<signed char>          (num_items, num_segments);
-        TestGen<unsigned char>        (num_items, num_segments);
-
-        TestGen<short>                (num_items, num_segments);
-        TestGen<unsigned short>       (num_items, num_segments);
-
-        TestGen<int>                  (num_items, num_segments);
-        TestGen<unsigned int>         (num_items, num_segments);
-
-        TestGen<long>                 (num_items, num_segments);
-        TestGen<unsigned long>        (num_items, num_segments);
-
-        TestGen<long long>            (num_items, num_segments);
-        TestGen<unsigned long long>   (num_items, num_segments);
-
-#if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
-        TestGen<half_t>               (num_items, num_segments);
-#endif
-
-#if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
-#if !defined(__ICC)
-        // Fails with `-0 != 0` with ICC for unknown reasons. See #333.
-        TestGen<bfloat16_t>           (num_items, num_segments);
-#endif
-#endif
-        TestGen<float>                (num_items, num_segments);
-
-        if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-            TestGen<double>           (num_items, num_segments);
-
-    }
-
-#endif
+#endif // TEST_KEY_BYTES switch
 
     return 0;
 }

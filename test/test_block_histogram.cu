@@ -33,17 +33,19 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <stdio.h>
-#include <limits>
-#include <string>
-#include <typeinfo>
-
 #include <cub/block/block_histogram.cuh>
+
 #include <cub/block/block_load.cuh>
 #include <cub/block/block_store.cuh>
 #include <cub/util_allocator.cuh>
 
 #include "test_util.h"
+
+#include <cstdio>
+#include <limits>
+#include <string>
+#include <type_traits>
+#include <typeinfo>
 
 using namespace cub;
 
@@ -53,8 +55,6 @@ using namespace cub;
 //---------------------------------------------------------------------
 
 bool                    g_verbose           = false;
-int                     g_timing_iterations = 0;
-int                     g_repeat            = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
@@ -90,6 +90,19 @@ __global__ void BlockHistogramKernel(
     BlockHistogram(temp_storage).Histogram(data, d_histogram);
 }
 
+// WAR warning "pointless comparison of unsigned with zero"
+template <typename T>
+typename std::enable_if<std::is_unsigned<T>::value, T>::type
+clamp_input(T val, int bins)
+{
+  return val % bins;
+}
+template <typename T>
+typename std::enable_if<!std::is_unsigned<T>::value, T>::type
+clamp_input(T val, int bins)
+{
+  return (val < 0 ? -val : val) % bins;
+}
 
 /**
  * Initialize problem (and solution)
@@ -109,20 +122,31 @@ void Initialize(
         h_histograms_linear[bin] = 0;
     }
 
-    if (g_verbose) printf("Samples: \n");
+    if (g_verbose)
+    {
+        printf("Samples: \n");
+    }
 
     // Initialize interleaved channel samples and histogram them correspondingly
     for (int i = 0; i < num_samples; ++i)
     {
-        InitValue(gen_mode, h_samples[i], i);
-        h_samples[i] %= BINS;
+        SampleT sample;
+        InitValue(gen_mode, sample, i);
+        sample = clamp_input(sample, BINS);
 
-        if (g_verbose) std::cout << CoutCast(h_samples[i]) << ", ";
+        if (g_verbose)
+        {
+            std::cout << CoutCast(sample) << ", ";
+        }
 
-        h_histograms_linear[h_samples[i]]++;
+        h_samples[i] = sample;
+        h_histograms_linear[sample]++;
     }
 
-    if (g_verbose) printf("\n\n");
+    if (g_verbose)
+    {
+        printf("\n\n");
+    }
 }
 
 
@@ -252,9 +276,16 @@ void Test()
     Test<SampleT, BINS, 128>();
 }
 
-
-
-
+/**
+ * Test different BINS
+ */
+template <typename SampleT>
+void Test()
+{
+  Test<SampleT, 32>();
+  Test<SampleT, 256>();
+  Test<SampleT, 1024>();
+}
 
 //---------------------------------------------------------------------
 // Main
@@ -268,15 +299,12 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
-            "[--n=<total input samples across all channels> "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -285,23 +313,10 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-#ifdef CUB_TEST_BENCHMARK
-
-    // Compile/run quick tests
-    Test<unsigned char, 256, 128, 4, BLOCK_HISTO_SORT>(RANDOM);
-    Test<unsigned char, 256, 128, 4, BLOCK_HISTO_ATOMIC>(RANDOM);
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        Test<unsigned char, 32>();
-        Test<unsigned char, 256>();
-        Test<unsigned short, 1024>();
-    }
-
-#endif
+    Test<unsigned char>();
+    Test<short>();
+    Test<int>();
+    Test<unsigned long long>();
 
     return 0;
 }

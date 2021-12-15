@@ -36,15 +36,9 @@
 #include <stdio.h>
 #include <typeinfo>
 
-#include <thrust/device_ptr.h>
-#include <thrust/unique.h>
-
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/counting_input_iterator.cuh>
 #include <cub/device/device_select.cuh>
-
-#include <thrust/device_ptr.h>
-#include <thrust/unique.h>
 
 #include "test_util.h"
 
@@ -57,7 +51,6 @@ using namespace cub;
 
 bool                    g_verbose               = false;
 int                     g_timing_iterations     = 0;
-int                     g_repeat                = 0;
 float                   g_device_giga_bandwidth;
 CachingDeviceAllocator  g_allocator(true);
 
@@ -65,7 +58,6 @@ CachingDeviceAllocator  g_allocator(true);
 enum Backend
 {
     CUB,        // CUB method
-    THRUST,     // Thrust method
     CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
 };
 
@@ -102,64 +94,6 @@ cudaError_t Dispatch(
     }
     return error;
 }
-
-
-//---------------------------------------------------------------------
-// Dispatch to different Thrust entrypoints
-//---------------------------------------------------------------------
-
-
-/**
- * Dispatch to unique entrypoint
- */
-template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
-__host__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<THRUST>            /*dispatch_to*/,
-    int                         timing_timing_iterations,
-    size_t                      */*d_temp_storage_bytes*/,
-    cudaError_t                 */*d_cdp_error*/,
-
-    void                        *d_temp_storage,
-    size_t                      &temp_storage_bytes,
-    InputIteratorT              d_in,
-    OutputIteratorT             d_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    cudaStream_t                /*stream*/,
-    bool                        /*debug_synchronous*/)
-{
-    // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
-
-    // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper_end;
-        THRUST_NS_QUALIFIER::device_ptr<InputT> d_in_wrapper(d_in);
-        THRUST_NS_QUALIFIER::device_ptr<OutputT> d_out_wrapper(d_out);
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            d_out_wrapper_end = THRUST_NS_QUALIFIER::unique_copy(d_in_wrapper, d_in_wrapper + num_items, d_out_wrapper);
-        }
-
-        OffsetT num_selected = OffsetT(d_out_wrapper_end - d_out_wrapper);
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
-
-    }
-
-    return cudaSuccess;
-}
-
-
 
 //---------------------------------------------------------------------
 // CUDA Nested Parallelism Test Kernel
@@ -429,7 +363,7 @@ void TestPointer(
     int num_selected = Solve(h_in, h_reference, num_items);
 
     printf("\nPointer %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements, entropy_reduction %d\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_selected, float(num_items) / num_selected,
         typeid(T).name(),
         (int) sizeof(T),
@@ -472,7 +406,7 @@ void TestIterator(
     int num_selected = Solve(h_in, h_reference, num_items);
 
     printf("\nIterator %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_selected, float(num_items) / num_selected,
         typeid(T).name(),
         (int) sizeof(T));
@@ -560,7 +494,6 @@ int main(int argc, char** argv)
     g_verbose = args.CheckCmdLineFlag("v");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
-    args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("maxseg", maxseg);
     args.GetCmdLineArgument("entropy", entropy_reduction);
 
@@ -573,7 +506,6 @@ int main(int argc, char** argv)
             "[--device=<device-id>] "
             "[--maxseg=<max segment length>]"
             "[--entropy=<segment length bit entropy reduction rounds>]"
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "[--cdp]"
             "\n", argv[0]);
@@ -585,74 +517,24 @@ int main(int argc, char** argv)
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
 
-#ifdef CUB_TEST_MINIMAL
+    // Test different input types
+    Test<unsigned char>(num_items);
+    Test<unsigned short>(num_items);
+    Test<unsigned int>(num_items);
+    Test<unsigned long long>(num_items);
 
-    // Compile/run basic CUB test
-    if (num_items < 0) num_items = 32000000;
-    TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg);
+    Test<uchar2>(num_items);
+    Test<ushort2>(num_items);
+    Test<uint2>(num_items);
+    Test<ulonglong2>(num_items);
 
-#elif defined(CUB_TEST_BENCHMARK)
+    Test<uchar4>(num_items);
+    Test<ushort4>(num_items);
+    Test<uint4>(num_items);
+    Test<ulonglong4>(num_items);
 
-    // Get device ordinal
-    int device_ordinal;
-    CubDebugExit(cudaGetDevice(&device_ordinal));
-
-    // Get device SM version
-    int sm_version = 0;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
-
-    // Compile/run quick tests
-    if (num_items < 0) num_items = 32000000;
-
-    printf("-- Iterator ----------------------------\n");
-    TestIterator<CUB, int>(        num_items);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, char>(        num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg);
-    TestPointer<THRUST, char>(     num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, short>(       num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg);
-    TestPointer<THRUST, short>(    num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, int>(         num_items,                                 entropy_reduction, maxseg);
-    TestPointer<THRUST, int>(      num_items,                                 entropy_reduction, maxseg);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, long long>(   num_items / 2,                             entropy_reduction, maxseg);
-    TestPointer<THRUST, long long>(num_items / 2,                             entropy_reduction, maxseg);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, TestFoo>(     num_items / 4,                             entropy_reduction, maxseg);
-    TestPointer<THRUST, TestFoo>(  num_items / 4,                             entropy_reduction, maxseg);
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // Test different input types
-        Test<unsigned char>(num_items);
-        Test<unsigned short>(num_items);
-        Test<unsigned int>(num_items);
-        Test<unsigned long long>(num_items);
-
-        Test<uchar2>(num_items);
-        Test<ushort2>(num_items);
-        Test<uint2>(num_items);
-        Test<ulonglong2>(num_items);
-
-        Test<uchar4>(num_items);
-        Test<ushort4>(num_items);
-        Test<uint4>(num_items);
-        Test<ulonglong4>(num_items);
-
-        Test<TestFoo>(num_items);
-        Test<TestBar>(num_items);
-    }
-
-#endif
+    Test<TestFoo>(num_items);
+    Test<TestBar>(num_items);
 
     return 0;
 }

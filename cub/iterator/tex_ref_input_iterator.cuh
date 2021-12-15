@@ -78,6 +78,11 @@ struct CUB_DEPRECATED IteratorTexRef
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+#pragma nv_diagnostic push
+#pragma nv_diag_suppress 1215
+#endif
+
     /// And by unique ID
     template <int UNIQUE_ID>
     struct TexId
@@ -141,6 +146,10 @@ template <int       UNIQUE_ID>
 typename IteratorTexRef<T>::template TexId<UNIQUE_ID>::TexRef IteratorTexRef<T>::template TexId<UNIQUE_ID>::ref = 0;
 
 // Re-enable deprecation warnings:
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+#pragma nv_diagnostic pop
+#endif
+
 #if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
 #pragma warning(default:4996)
 #elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \
@@ -231,6 +240,11 @@ class CUB_DEPRECATED TexRefInputIterator
       CUB_HOST_COMPILER == CUB_HOST_COMPILER_CLANG
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+#pragma nv_diagnostic push
+#pragma nv_diag_suppress 1215
 #endif
 
 public:
@@ -399,6 +413,11 @@ public:
     }
 
 // Re-enable deprecation warnings:
+
+#ifdef __NVCC_DIAG_PRAGMA_SUPPORT__
+#pragma nv_diagnostic pop
+#endif
+
 #if CUB_HOST_COMPILER == CUB_HOST_COMPILER_MSVC
 #pragma warning(default:4996)
 #elif CUB_HOST_COMPILER == CUB_HOST_COMPILER_GCC || \

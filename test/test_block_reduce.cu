@@ -54,7 +54,6 @@ using namespace cub;
 //---------------------------------------------------------------------
 
 bool                    g_verbose       = false;
-int                     g_repeat        = 0;
 CachingDeviceAllocator  g_allocator(true);
 
 
@@ -163,12 +162,7 @@ __global__ void FullTileReduceKernel(
         T block_aggregate = DeviceTest(block_reduce, data, reduction_op);
 
         // Stop cycle timer
- #if CUB_PTX_ARCH == 100
-        // Bug: recording stop clock causes mis-write of running prefix value
-        clock_t stop = 0;
-#else
         clock_t stop = clock();
-#endif // CUB_PTX_ARCH == 100
         clock_t elapsed = (start > stop) ? start - stop : stop - start;
 
         // Loop over input tiles
@@ -189,12 +183,7 @@ __global__ void FullTileReduceKernel(
             T tile_aggregate = DeviceTest(block_reduce, data, reduction_op);
 
             // Stop cycle timer
-#if CUB_PTX_ARCH == 100
-            // Bug: recording stop clock causes mis-write of running prefix value
-            clock_t stop = 0;
-#else
             clock_t stop = clock();
-#endif // CUB_PTX_ARCH == 100
             elapsed += (start > stop) ? start - stop : stop - start;
 
             // Reduce thread block aggregate
@@ -255,12 +244,7 @@ __global__ void PartialTileReduceKernel(
     T tile_aggregate = DeviceTest(block_reduce, partial, reduction_op, num_items);
 
     // Stop cycle timer
-#if CUB_PTX_ARCH == 100
-    // Bug: recording stop clock causes mis-write of running prefix value
-    clock_t stop = 0;
-#else
     clock_t stop = clock();
-#endif // CUB_PTX_ARCH == 100
 
     clock_t elapsed = (start > stop) ? start - stop : stop - start;
 
@@ -685,16 +669,10 @@ template <
 void Test(
     ReductionOp     reduction_op)
 {
-  (void)reduction_op;
-#ifdef TEST_RAKING
-    Test<BLOCK_REDUCE_RAKING, BLOCK_THREADS, T>(reduction_op);
-    Test<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY, BLOCK_THREADS, T>(reduction_op);
-#endif
-#ifdef TEST_WARP_REDUCTIONS
-    Test<BLOCK_REDUCE_WARP_REDUCTIONS, BLOCK_THREADS, T>(reduction_op);
-#endif
+  Test<BLOCK_REDUCE_RAKING, BLOCK_THREADS, T>(reduction_op);
+  Test<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY, BLOCK_THREADS, T>(reduction_op);
+  Test<BLOCK_REDUCE_WARP_REDUCTIONS, BLOCK_THREADS, T>(reduction_op);
 }
-
 
 /**
  * Run battery of tests for different block sizes
@@ -707,10 +685,8 @@ void Test(
 {
     Test<7,   T>(reduction_op);
     Test<32,  T>(reduction_op);
-    Test<63,  T>(reduction_op);
-    Test<97,  T>(reduction_op);
+    Test<65,  T>(reduction_op);
     Test<128, T>(reduction_op);
-    Test<238, T>(reduction_op);
 }
 
 
@@ -724,6 +700,13 @@ void Test()
     Test<T>(Max());
 }
 
+template <int BLOCK_THREADS, typename T>
+void Test()
+{
+  Test<BLOCK_THREADS, T>(Sum());
+  Test<BLOCK_THREADS, T>(Max());
+}
+
 
 /**
  * Main
@@ -733,14 +716,12 @@ int main(int argc, char** argv)
     // Initialize command line
     CommandLineArgs args(argc, argv);
     g_verbose = args.CheckCmdLineFlag("v");
-    args.GetCmdLineArgument("repeat", g_repeat);
 
     // Print usage
     if (args.CheckCmdLineFlag("help"))
     {
         printf("%s "
             "[--device=<device-id>] "
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "\n", argv[0]);
         exit(0);
@@ -749,61 +730,34 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
 
-    // Get ptx version
-    int ptx_version = 0;
-    CubDebugExit(PtxVersion(ptx_version));
+    // %PARAM% TEST_VALUE_TYPES types 0:1:2:3
 
-#ifdef CUB_TEST_BENCHMARK
+    // primitives
+#if TEST_VALUE_TYPES == 0
+    Test<char>();
+    Test<short>();
+    Test<int>();
+    Test<long long>();
+#elif TEST_VALUE_TYPES == 1
+    Test<float>();
+    Test<double>();
 
-    // Compile/run quick tests
+    // vector types
+    Test<char2>();
+    Test<short2>();
+#elif TEST_VALUE_TYPES == 2
+    Test<int2>();
+    Test<longlong2>();
 
+    Test<char4>();
+    Test<short4>();
+#elif TEST_VALUE_TYPES == 3
+    Test<int4>();
+    Test<longlong4>();
 
-    printf("\n full tile ------------------------\n\n");
-
-    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 4, int>(RANDOM, 1, Sum());
-    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 4, int>(RANDOM, 1, Sum());
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 4, int>(RANDOM, 1, Sum());
-
-    TestFullTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, 1, int>(RANDOM, 1, Sum());
-    TestFullTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, 1, int>(RANDOM, 1, Sum());
-    TestFullTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, 1, int>(RANDOM, 1, Sum());
-
-    printf("\n partial tile ------------------------\n\n");
-
-    TestPartialTile<BLOCK_REDUCE_RAKING,                   128, 1, 1, int>(RANDOM, 7, Sum());
-    TestPartialTile<BLOCK_REDUCE_RAKING_COMMUTATIVE_ONLY,  128, 1, 1, int>(RANDOM, 7, Sum());
-    TestPartialTile<BLOCK_REDUCE_WARP_REDUCTIONS,          128, 1, 1, int>(RANDOM, 7, Sum());
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // primitives
-        Test<char>();
-        Test<short>();
-        Test<int>();
-        Test<long long>();
-        if (ptx_version > 120)                          // Don't check doubles on PTX120 or below because they're down-converted
-            Test<double>();
-
-        Test<float>();
-
-        // vector types
-        Test<char2>();
-        Test<short2>();
-        Test<int2>();
-        Test<longlong2>();
-
-        Test<char4>();
-        Test<short4>();
-        Test<int4>();
-        Test<longlong4>();
-
-        // Complex types
-        Test<TestFoo>();
-        Test<TestBar>();
-    }
+    // Complex types
+    Test<TestFoo>();
+    Test<TestBar>();
 
 #endif
 
