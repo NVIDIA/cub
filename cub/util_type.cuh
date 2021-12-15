@@ -102,18 +102,9 @@ using non_void_value_t =
 template <bool IF, typename ThenType, typename ElseType>
 struct CUB_DEPRECATED If
 {
-  /// Conditional type result
-  typedef ThenType Type; // true
+  using Type = cub::detail::conditional_t<IF, ThenType, ElseType>;
 };
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS // Do not document
-
-template <typename ThenType, typename ElseType>
-struct CUB_DEPRECATED If<false, ThenType, ElseType>
-{
-    typedef ElseType Type;      // false
-};
-#endif
 
 /******************************************************************************
  * Type equality
@@ -128,24 +119,10 @@ struct CUB_DEPRECATED If<false, ThenType, ElseType>
 template <typename A, typename B>
 struct CUB_DEPRECATED Equals
 {
-    enum {
-        VALUE = 0,
-        NEGATE = 1
-    };
+  static constexpr int VALUE = std::is_same<A, B>::value ? 1 : 0;
+  static constexpr int NEGATE = VALUE ? 0 : 1;
 };
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename A>
-struct CUB_DEPRECATED Equals<A, A>
-{
-    enum {
-        VALUE = 1,
-        NEGATE = 0
-    };
-};
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /******************************************************************************
  * Static math
@@ -201,18 +178,9 @@ struct PowerOfTwo
 template <typename Tp>
 struct CUB_DEPRECATED IsPointer
 {
-    enum { VALUE = 0 };
+  static constexpr int VALUE = std::is_pointer<Tp>::value;
 };
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename Tp>
-struct IsPointer<Tp*>
-{
-    enum { VALUE = 1 };
-};
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /******************************************************************************
  * Qualifier detection
@@ -227,18 +195,8 @@ struct IsPointer<Tp*>
 template <typename Tp>
 struct CUB_DEPRECATED IsVolatile
 {
-    enum { VALUE = 0 };
+  static constexpr int VALUE = std::is_volatile<Tp>::value;
 };
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename Tp>
-struct CUB_DEPRECATED IsVolatile<Tp volatile>
-{
-    enum { VALUE = 1 };
-};
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /******************************************************************************
  * Qualifier removal
@@ -256,28 +214,7 @@ struct CUB_DEPRECATED IsVolatile<Tp volatile>
 template <typename Tp, typename Up = Tp>
 struct CUB_DEPRECATED RemoveQualifiers
 {
-    /// Type without \p const and \p volatile qualifiers
-    typedef Up Type;
-};
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename Tp, typename Up>
-struct CUB_DEPRECATED RemoveQualifiers<Tp, volatile Up>
-{
-    typedef Up Type;
-};
-
-template <typename Tp, typename Up>
-struct CUB_DEPRECATED RemoveQualifiers<Tp, const Up>
-{
-    typedef Up Type;
-};
-
-template <typename Tp, typename Up>
-struct CUB_DEPRECATED RemoveQualifiers<Tp, const volatile Up>
-{
-    typedef Up Type;
+  using Type = typename std::remove_cv<Tp>::type;
 };
 
 
@@ -285,13 +222,14 @@ struct CUB_DEPRECATED RemoveQualifiers<Tp, const volatile Up>
  * Marker types
  ******************************************************************************/
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 /**
  * \brief A simple "NULL" marker type
  */
 struct NullType
 {
     using value_type = NullType;
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     template <typename T>
     __host__ __device__ __forceinline__ NullType& operator =(const T&) { return *this; }
@@ -299,8 +237,6 @@ struct NullType
     __host__ __device__ __forceinline__ bool operator ==(const NullType&) { return true; }
 
     __host__ __device__ __forceinline__ bool operator !=(const NullType&) { return false; }
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 };
 
 
@@ -388,8 +324,6 @@ private:
 };
 
 } // namespace detail
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 
 /******************************************************************************
@@ -557,9 +491,6 @@ template <typename T> struct UnitWord<const T> : UnitWord<T> {};
 template <typename T> struct UnitWord<const volatile T> : UnitWord<T> {};
 // clang-format on
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
-
 
 /******************************************************************************
  * Vector type inference utilities.
@@ -570,7 +501,6 @@ template <typename T> struct UnitWord<const volatile T> : UnitWord<T> {};
  */
 template <typename T, int vec_elements> struct CubVector;
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 enum
 {
@@ -738,7 +668,6 @@ CUB_DEFINE_VECTOR_TYPE(bool,               uchar)
 // Undefine macros
 #undef CUB_DEFINE_VECTOR_TYPE
 
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 /******************************************************************************
  * Wrapper types
@@ -877,9 +806,6 @@ struct KeyValuePair<K, V, false, true>
 #endif // #if defined(_WIN32) && !defined(_WIN64)
 
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-
 /**
  * \brief A wrapper for passing simple static arrays as kernel parameters
  */
@@ -893,8 +819,6 @@ struct ArrayWrapper
     /// Constructor
     __host__ __device__ __forceinline__ ArrayWrapper() {}
 };
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /**
@@ -979,13 +903,8 @@ struct DoubleBuffer
 template <bool Condition, class T = void>
 struct CUB_DEPRECATED EnableIf
 {
-    /// Enable-if type for SFINAE dummy variables
-    typedef T Type;
+  using Type = typename std::enable_if<Condition, T>::type;
 };
-
-
-template <class T>
-struct CUB_DEPRECATED EnableIf<false, T> {};
 
 /******************************************************************************
  * Typedef-detection
