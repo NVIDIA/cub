@@ -62,14 +62,12 @@ option(CUB_ENABLE_CPP_DIALECT_IN_NAMES
 )
 mark_as_advanced(CUB_ENABLE_CPP_DIALECT_IN_NAMES)
 
-# By default, suppress deprecation warnings when building our test suite,
-# since we'll need to test deprecated APIs with `-Werror`. This option is only
-# used when CUB is built stand-alone; otherwise the Thrust option has the same
-# effect.
+# This option is only used when CUB is built stand-alone; otherwise the Thrust
+# option has the same effect.
 if (NOT CUB_IN_THRUST)
   option(CUB_IGNORE_DEPRECATED_API
     "Suppress warnings about deprecated Thrust/CUB API."
-    ON
+    OFF
   )
 endif()
 
