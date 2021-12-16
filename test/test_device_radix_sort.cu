@@ -1272,7 +1272,7 @@ void TestSizes(KeyT* h_keys,
 /**
  * Test key sampling distributions
  */
-template <typename KeyT>
+template <typename KeyT, bool WITH_PRE_SORTED>
 void TestGen(
     std::size_t     max_items,
     int             max_segments)
@@ -1318,7 +1318,7 @@ void TestGen(
     InitializeKeyBits(INTEGER_SEED, h_keys.get(), max_items, 0);
     TestSizes(h_keys.get(), max_items, max_segments, false);
 
-    if (!std::is_same<KeyT, bool>::value)
+    if (WITH_PRE_SORTED)
     {
         // Presorting is only used for testing large input arrays.
         // Increase above 2^32 once 64-bit indexing is enabled.
@@ -1458,28 +1458,28 @@ int main(int argc, char** argv)
     // Compile/run thorough tests
 #if TEST_KEY_BYTES == 1
 
-    TestGen<char>                 (num_items, num_segments);
+    TestGen<char, true>               (num_items, num_segments);
 
 #ifdef TEST_EXTENDED_KEY_TYPES
-    TestGen<bool>                 (num_items, num_segments);
-    TestGen<signed char>          (num_items, num_segments);
-    TestGen<unsigned char>        (num_items, num_segments);
+    TestGen<bool, false>              (num_items, num_segments);
+    TestGen<signed char, false>       (num_items, num_segments);
+    TestGen<unsigned char, false>     (num_items, num_segments);
 #endif // TEST_EXTENDED_KEY_TYPES
 
 #elif TEST_KEY_BYTES == 2
-  TestGen<unsigned short>       (num_items, num_segments);
+    TestGen<unsigned short, true>     (num_items, num_segments);
 
 #ifdef TEST_EXTENDED_KEY_TYPES
-    TestGen<short>                (num_items, num_segments);
+    TestGen<short, false>             (num_items, num_segments);
 
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
-    TestGen<half_t>               (num_items, num_segments);
+    TestGen<half_t, false>            (num_items, num_segments);
 #endif // CTK >= 9
 
 #if (__CUDACC_VER_MAJOR__ >= 11 || CUDA_VERSION >= 11000) && !_NVHPC_CUDA
 #if !defined(__ICC)
     // Fails with `-0 != 0` with ICC for unknown reasons. See #333.
-    TestGen<bfloat16_t>           (num_items, num_segments);
+    TestGen<bfloat16_t, false>        (num_items, num_segments);
 #endif // !ICC
 #endif // CTK >= 11
 
@@ -1487,20 +1487,20 @@ int main(int argc, char** argv)
 
 #elif TEST_KEY_BYTES == 4
 
-    TestGen<float>                (num_items, num_segments);
+    TestGen<int, true>                (num_items, num_segments);
 
 #ifdef TEST_EXTENDED_KEY_TYPES
-    TestGen<int>                  (num_items, num_segments);
-    TestGen<unsigned int>         (num_items, num_segments);
+    TestGen<float, false>             (num_items, num_segments);
+    TestGen<unsigned int, false>      (num_items, num_segments);
 #endif // TEST_EXTENDED_KEY_TYPES
 
 #elif TEST_KEY_BYTES == 8
 
-    TestGen<double>               (num_items, num_segments);
+    TestGen<double, true>             (num_items, num_segments);
 
 #ifdef TEST_EXTENDED_KEY_TYPES
-    TestGen<long long>            (num_items, num_segments);
-    TestGen<unsigned long long>   (num_items, num_segments);
+    TestGen<long long, false>         (num_items, num_segments);
+    TestGen<unsigned long long, false>(num_items, num_segments);
 #endif // TEST_EXTENDED_KEY_TYPES
 
 #endif // TEST_KEY_BYTES switch
