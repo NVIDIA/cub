@@ -112,14 +112,16 @@ __global__ void DeviceScanByKeyKernel(
  * Policy
  ******************************************************************************/
 
-template <typename KeysInputIteratorT, typename ValuesInputIteratorT, typename InitValueT>
+template <typename KeysInputIteratorT,
+          typename ValuesInputIteratorT,
+          typename InitValueT>
 struct DeviceScanByKeyPolicy
 {
-    using KeyT = typename std::iterator_traits<KeysInputIteratorT>::value_type;
-    using ValueT = typename If<
-        Equals<InitValueT, NullType>::VALUE,
-        typename std::iterator_traits<ValuesInputIteratorT>::value_type,
-        InitValueT>::Type;
+    using KeyT = cub::detail::value_t<KeysInputIteratorT>;
+    using ValueT = cub::detail::conditional_t<
+        std::is_same<InitValueT, NullType>::value,
+        cub::detail::value_t<ValuesInputIteratorT>,
+        InitValueT>;
     static constexpr size_t MaxInputBytes = (sizeof(KeyT) > sizeof(ValueT) ? sizeof(KeyT) : sizeof(ValueT));
     static constexpr size_t CombinedInputBytes = sizeof(KeyT) + sizeof(ValueT);
 
@@ -198,16 +200,18 @@ struct DispatchScanByKey:
     };
 
     // The input key type
-    using KeyT = typename std::iterator_traits<KeysInputIteratorT>::value_type;
+    using KeyT = cub::detail::value_t<KeysInputIteratorT>;
 
     // The input value type
-    using InputT = typename std::iterator_traits<ValuesInputIteratorT>::value_type;
+    using InputT = cub::detail::value_t<ValuesInputIteratorT>;
 
     // The output value type -- used as the intermediate accumulator
     // Per https://wg21.link/P0571, use InitValueT if provided, otherwise the
     // input iterator's value type.
     using OutputT =
-      typename If<Equals<InitValueT, NullType>::VALUE, InputT, InitValueT>::Type;
+      cub::detail::conditional_t<std::is_same<InitValueT, NullType>::value,
+                                 InputT,
+                                 InitValueT>;
 
     void*                 d_temp_storage;         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t&               temp_storage_bytes;     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation

@@ -142,7 +142,7 @@ struct Dispatch<NUM_ACTIVE_CHANNELS, NUM_CHANNELS, CUB>
         cudaStream_t        stream,
         bool                debug_synchronous)
     {
-        typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+        using SampleT = cub::detail::value_t<SampleIteratorT>;
 
         cudaError_t error = cudaSuccess;
         for (int i = 0; i < timing_timing_iterations; ++i)
@@ -501,7 +501,7 @@ void InitializeBins(
     OffsetT         num_rows,                               ///< [in] The number of rows in the region of interest
     OffsetT         row_stride_bytes)                       ///< [in] The number of bytes between starts of consecutive rows in the region of interest
 {
-    typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+    using SampleT = cub::detail::value_t<SampleIteratorT>;
 
     // Init bins
     for (int CHANNEL = 0; CHANNEL < NUM_ACTIVE_CHANNELS; ++CHANNEL)
@@ -570,7 +570,7 @@ void TestEven(
     printf("\n----------------------------\n");
     printf("%s cub::DeviceHistogramEven (%s) %d pixels (%d height, %d width, %d-byte row stride), %d %d-byte %s samples (entropy reduction %d), %s counters, %d/%d channels, max sample ",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
-        (IsPointer<SampleIteratorT>::VALUE) ? "pointer" : "iterator",
+        (std::is_pointer<SampleIteratorT>::value) ? "pointer" : "iterator",
         (int) (num_row_pixels * num_rows),
         (int) num_rows,
         (int) num_row_pixels,

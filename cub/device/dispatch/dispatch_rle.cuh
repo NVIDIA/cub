@@ -124,12 +124,11 @@ struct DeviceRleDispatch
      ******************************************************************************/
 
     // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type T;
+    using T = cub::detail::value_t<InputIteratorT>;
 
     // The lengths output value type
-    typedef typename If<(Equals<typename std::iterator_traits<LengthsOutputIteratorT>::value_type, void>::VALUE),   // LengthT =  (if output iterator's value type is void) ?
-        OffsetT,                                                                                                    // ... then the OffsetT type,
-        typename std::iterator_traits<LengthsOutputIteratorT>::value_type>::Type LengthT;                           // ... else the output iterator's value type
+    using LengthT =
+      cub::detail::non_void_value_t<LengthsOutputIteratorT, OffsetT>;
 
     enum
     {
@@ -137,7 +136,7 @@ struct DeviceRleDispatch
     };
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<LengthT, OffsetT> ScanTileStateT;
+    using ScanTileStateT = ReduceByKeyScanTileState<LengthT, OffsetT>;
 
 
     /******************************************************************************

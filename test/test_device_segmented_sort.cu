@@ -217,8 +217,8 @@ class Input
   thrust::device_vector<int> d_offsets;
   thrust::host_vector<int> h_offsets;
 
-  using MaskedValueT = typename std::
-    conditional<std::is_same<ValueT, cub::NullType>::value, KeyT, ValueT>::type;
+  using MaskedValueT = cub::detail::conditional_t<
+    std::is_same<ValueT, cub::NullType>::value, KeyT, ValueT>;
 
   bool reverse {};
   int num_items {};

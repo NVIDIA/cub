@@ -85,17 +85,17 @@ __global__ void DeviceRadixSortUpsweepKernel(
     int                     num_bits,                       ///< [in] Number of bits of current radix digit
     GridEvenShare<OffsetT>  even_share)                     ///< [in] Even-share descriptor for mapan equal number of tiles onto each thread block
 {
-    typedef typename If<
-            (ALT_DIGIT_BITS),
-            typename ChainedPolicyT::ActivePolicy::AltUpsweepPolicy,
-            typename ChainedPolicyT::ActivePolicy::UpsweepPolicy>
-        ::Type ActiveUpsweepPolicyT;
+    using ActiveUpsweepPolicyT =
+      cub::detail::conditional_t<
+        ALT_DIGIT_BITS,
+        typename ChainedPolicyT::ActivePolicy::AltUpsweepPolicy,
+        typename ChainedPolicyT::ActivePolicy::UpsweepPolicy>;
 
-    typedef typename If<
-            (ALT_DIGIT_BITS),
-            typename ChainedPolicyT::ActivePolicy::AltDownsweepPolicy,
-            typename ChainedPolicyT::ActivePolicy::DownsweepPolicy>
-        ::Type ActiveDownsweepPolicyT;
+    using ActiveDownsweepPolicyT =
+      cub::detail::conditional_t<
+        ALT_DIGIT_BITS,
+        typename ChainedPolicyT::ActivePolicy::AltDownsweepPolicy,
+        typename ChainedPolicyT::ActivePolicy::DownsweepPolicy>;
 
     enum {
         TILE_ITEMS = CUB_MAX(
@@ -196,17 +196,17 @@ __global__ void DeviceRadixSortDownsweepKernel(
     int                     num_bits,                       ///< [in] Number of bits of current radix digit
     GridEvenShare<OffsetT>  even_share)                     ///< [in] Even-share descriptor for mapan equal number of tiles onto each thread block
 {
-    typedef typename If<
-            (ALT_DIGIT_BITS),
-            typename ChainedPolicyT::ActivePolicy::AltUpsweepPolicy,
-            typename ChainedPolicyT::ActivePolicy::UpsweepPolicy>
-        ::Type ActiveUpsweepPolicyT;
+    using ActiveUpsweepPolicyT =
+      cub::detail::conditional_t<
+        ALT_DIGIT_BITS,
+        typename ChainedPolicyT::ActivePolicy::AltUpsweepPolicy,
+        typename ChainedPolicyT::ActivePolicy::UpsweepPolicy>;
 
-    typedef typename If<
-            (ALT_DIGIT_BITS),
-            typename ChainedPolicyT::ActivePolicy::AltDownsweepPolicy,
-            typename ChainedPolicyT::ActivePolicy::DownsweepPolicy>
-        ::Type ActiveDownsweepPolicyT;
+    using ActiveDownsweepPolicyT =
+      cub::detail::conditional_t<
+        ALT_DIGIT_BITS,
+        typename ChainedPolicyT::ActivePolicy::AltDownsweepPolicy,
+        typename ChainedPolicyT::ActivePolicy::DownsweepPolicy>;
 
     enum {
         TILE_ITEMS = CUB_MAX(
@@ -260,7 +260,7 @@ __global__ void DeviceRadixSortSingleTileKernel(
     {
         BLOCK_THREADS           = ChainedPolicyT::ActivePolicy::SingleTilePolicy::BLOCK_THREADS,
         ITEMS_PER_THREAD        = ChainedPolicyT::ActivePolicy::SingleTilePolicy::ITEMS_PER_THREAD,
-        KEYS_ONLY               = Equals<ValueT, NullType>::VALUE,
+        KEYS_ONLY               = std::is_same<ValueT, NullType>::value,
     };
 
     // BlockRadixSort type
@@ -379,9 +379,10 @@ __global__ void DeviceSegmentedRadixSortKernel(
     // Constants
     //
 
-    typedef typename If<(ALT_DIGIT_BITS),
-        typename ChainedPolicyT::ActivePolicy::AltSegmentedPolicy,
-        typename ChainedPolicyT::ActivePolicy::SegmentedPolicy>::Type SegmentedPolicyT;
+    using SegmentedPolicyT = cub::detail::conditional_t<
+      ALT_DIGIT_BITS,
+      typename ChainedPolicyT::ActivePolicy::AltSegmentedPolicy,
+      typename ChainedPolicyT::ActivePolicy::SegmentedPolicy>;
 
     enum
     {
@@ -390,17 +391,22 @@ __global__ void DeviceSegmentedRadixSortKernel(
         RADIX_BITS          = SegmentedPolicyT::RADIX_BITS,
         TILE_ITEMS          = BLOCK_THREADS * ITEMS_PER_THREAD,
         RADIX_DIGITS        = 1 << RADIX_BITS,
-        KEYS_ONLY           = Equals<ValueT, NullType>::VALUE,
+        KEYS_ONLY           = std::is_same<ValueT, NullType>::value,
     };
 
     // Upsweep type
-    typedef AgentRadixSortUpsweep<SegmentedPolicyT, KeyT, OffsetT> BlockUpsweepT;
+    using BlockUpsweepT =
+      AgentRadixSortUpsweep<SegmentedPolicyT, KeyT, OffsetT>;
 
     // Digit-scan type
-    typedef BlockScan<OffsetT, BLOCK_THREADS> DigitScanT;
+    using DigitScanT = BlockScan<OffsetT, BLOCK_THREADS>;
 
     // Downsweep type
-    typedef AgentRadixSortDownsweep<SegmentedPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT> BlockDownsweepT;
+    using BlockDownsweepT = AgentRadixSortDownsweep<SegmentedPolicyT,
+                                                    IS_DESCENDING,
+                                                    KeyT,
+                                                    ValueT,
+                                                    OffsetT>;
 
     enum
     {
@@ -620,14 +626,12 @@ struct DeviceRadixSortPolicy
     // Constants
     //------------------------------------------------------------------------------
 
-    enum
-    {
-        // Whether this is a keys-only (or key-value) sort
-        KEYS_ONLY = (Equals<ValueT, NullType>::VALUE),
-    };
+    // Whether this is a keys-only (or key-value) sort
+    constexpr static bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
     // Dominant-sized key/value type
-    typedef typename If<(sizeof(ValueT) > sizeof(KeyT)), ValueT, KeyT>::Type DominantT;
+    using DominantT =
+      cub::detail::conditional_t<(sizeof(ValueT) > sizeof(KeyT)), ValueT, KeyT>;
 
     //------------------------------------------------------------------------------
     // Architecture-specific tuning policies
@@ -665,21 +669,25 @@ struct DeviceRadixSortPolicy
         typedef AgentRadixSortDownsweepPolicy <128, 15, DominantT, BLOCK_LOAD_DIRECT, LOAD_LDG, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS - 1> AltDownsweepPolicyPairs;
 
         // Downsweep policies
-        typedef typename If<KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>::Type DownsweepPolicy;
-        typedef typename If<KEYS_ONLY, AltDownsweepPolicyKeys, AltDownsweepPolicyPairs>::Type AltDownsweepPolicy;
+        using DownsweepPolicy =
+          cub::detail::conditional_t<
+            KEYS_ONLY, DownsweepPolicyKeys, DownsweepPolicyPairs>;
+
+        using AltDownsweepPolicy =
+          cub::detail::conditional_t<KEYS_ONLY,
+                                   AltDownsweepPolicyKeys,
+                                   AltDownsweepPolicyPairs>;
 
         // Upsweep policies
-        typedef DownsweepPolicy UpsweepPolicy;
-        typedef AltDownsweepPolicy AltUpsweepPolicy;
+        using UpsweepPolicy    = DownsweepPolicy;
+        using AltUpsweepPolicy = AltDownsweepPolicy;
 
         // Single-tile policy
-        typedef DownsweepPolicy SingleTilePolicy;
+        using SingleTilePolicy = DownsweepPolicy;
 
         // Segmented policies
-        typedef DownsweepPolicy     SegmentedPolicy;
-        typedef AltDownsweepPolicy  AltSegmentedPolicy;
-
-
+        using SegmentedPolicy    = DownsweepPolicy;
+        using AltSegmentedPolicy = AltDownsweepPolicy;
     };
 
 
@@ -965,12 +973,8 @@ struct DispatchRadixSort :
     // Constants
     //------------------------------------------------------------------------------
 
-    enum
-    {
-        // Whether this is a keys-only (or key-value) sort
-        KEYS_ONLY = (Equals<ValueT, NullType>::VALUE),
-    };
-
+    // Whether this is a keys-only (or key-value) sort
+    constexpr static bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
     //------------------------------------------------------------------------------
     // Problem state
@@ -1651,12 +1655,8 @@ struct DispatchSegmentedRadixSort :
     // Constants
     //------------------------------------------------------------------------------
 
-    enum
-    {
-        // Whether this is a keys-only (or key-value) sort
-        KEYS_ONLY = (Equals<ValueT, NullType>::VALUE),
-    };
-
+    // Whether this is a keys-only (or key-value) sort
+    constexpr static bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
     //------------------------------------------------------------------------------
     // Parameter members

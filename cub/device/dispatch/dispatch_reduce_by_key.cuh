@@ -129,20 +129,18 @@ struct DispatchReduceByKey
     //-------------------------------------------------------------------------
 
     // The input keys type
-    typedef typename std::iterator_traits<KeysInputIteratorT>::value_type KeyInputT;
+    using KeyInputT = cub::detail::value_t<KeysInputIteratorT>;
 
     // The output keys type
-    typedef typename If<(Equals<typename std::iterator_traits<UniqueOutputIteratorT>::value_type, void>::VALUE),    // KeyOutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<KeysInputIteratorT>::value_type,                                              // ... then the input iterator's value type,
-        typename std::iterator_traits<UniqueOutputIteratorT>::value_type>::Type KeyOutputT;                         // ... else the output iterator's value type
+    using KeyOutputT =
+      cub::detail::non_void_value_t<UniqueOutputIteratorT, KeyInputT>;
 
     // The input values type
-    typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type ValueInputT;
+    using ValueInputT = cub::detail::value_t<ValuesInputIteratorT>;
 
     // The output values type
-    typedef typename If<(Equals<typename std::iterator_traits<AggregatesOutputIteratorT>::value_type, void>::VALUE),    // ValueOutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<ValuesInputIteratorT>::value_type,                                                // ... then the input iterator's value type,
-        typename std::iterator_traits<AggregatesOutputIteratorT>::value_type>::Type ValueOutputT;                       // ... else the output iterator's value type
+    using ValueOutputT =
+      cub::detail::non_void_value_t<AggregatesOutputIteratorT, ValueInputT>;
 
     enum
     {
@@ -152,8 +150,7 @@ struct DispatchReduceByKey
     };
 
     // Tile status descriptor interface type
-    typedef ReduceByKeyScanTileState<ValueOutputT, OffsetT> ScanTileStateT;
-
+    using ScanTileStateT = ReduceByKeyScanTileState<ValueOutputT, OffsetT>;
 
     //-------------------------------------------------------------------------
     // Tuning policies

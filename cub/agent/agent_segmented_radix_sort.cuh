@@ -70,7 +70,7 @@ struct AgentSegmentedRadixSort
   static constexpr int BLOCK_THREADS    = SegmentedPolicyT::BLOCK_THREADS;
   static constexpr int RADIX_BITS       = SegmentedPolicyT::RADIX_BITS;
   static constexpr int RADIX_DIGITS     = 1 << RADIX_BITS;
-  static constexpr int KEYS_ONLY        = Equals<ValueT, NullType>::VALUE;
+  static constexpr int KEYS_ONLY        = std::is_same<ValueT, NullType>::value;
 
   // Huge segment handlers
   using BlockUpsweepT = AgentRadixSortUpsweep<SegmentedPolicyT, KeyT, OffsetT>;

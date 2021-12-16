@@ -300,7 +300,7 @@ void TestDriver(
     enum
     {
         TILE_SIZE = BLOCK_THREADS * ITEMS_PER_THREAD,
-        KEYS_ONLY = Equals<Value, NullType>::VALUE,
+        KEYS_ONLY = std::is_same<Value, NullType>::value,
     };
 
     // Allocate host arrays

@@ -154,11 +154,11 @@ struct DeviceScan
         bool            debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int OffsetT;
+        using OffsetT = int;
 
         // The output value type -- used as the intermediate accumulator
         // Use the input value type per https://wg21.link/P0571
-        typedef typename std::iterator_traits<InputIteratorT>::value_type OutputT;
+        using OutputT = cub::detail::value_t<InputIteratorT>;
 
         // Initial value
         OutputT init_value = 0;
@@ -526,11 +526,11 @@ struct DeviceScan
         bool                  debug_synchronous=false)      ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  May cause significant slowdown.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int OffsetT;
+        using OffsetT = int;
 
         // The output value type -- used as the intermediate accumulator
         // Use the input value type per https://wg21.link/P0571
-        typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type OutputT;
+        using OutputT = cub::detail::value_t<ValuesInputIteratorT>;
 
         // Initial value
         OutputT init_value = 0;

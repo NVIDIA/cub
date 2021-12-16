@@ -178,7 +178,7 @@ struct DispatchHistogram
     //---------------------------------------------------------------------
 
     /// The sample value type of the input iterator
-    typedef typename std::iterator_traits<SampleIteratorT>::value_type SampleT;
+    using SampleT = cub::detail::value_t<SampleIteratorT>;
 
     enum
     {
@@ -212,10 +212,12 @@ struct DispatchHistogram
         __host__ __device__ __forceinline__ void BinSelect(_SampleT sample, int &bin, bool valid)
         {
             /// Level iterator wrapper type
-            typedef typename If<IsPointer<LevelIteratorT>::VALUE,
-                    CacheModifiedInputIterator<LOAD_MODIFIER, LevelT, OffsetT>,     // Wrap the native input pointer with CacheModifiedInputIterator
-                    LevelIteratorT>::Type                                           // Directly use the supplied input iterator type
-                WrappedLevelIteratorT;
+            // Wrap the native input pointer with CacheModifiedInputIterator
+            // or Directly use the supplied input iterator type
+            using WrappedLevelIteratorT = cub::detail::conditional_t<
+              std::is_pointer<LevelIteratorT>::value,
+              CacheModifiedInputIterator<LOAD_MODIFIER, LevelT, OffsetT>,
+              LevelIteratorT>;
 
             WrappedLevelIteratorT wrapped_levels(d_levels);
 

@@ -154,7 +154,7 @@ public:
     __host__ __device__ __forceinline__ CacheModifiedOutputIterator(
         QualifiedValueType* ptr)     ///< Native pointer to wrap
     :
-        ptr(const_cast<typename RemoveQualifiers<QualifiedValueType>::Type *>(ptr))
+        ptr(const_cast<typename std::remove_cv<QualifiedValueType>::type *>(ptr))
     {}
 
     /// Postfix increment

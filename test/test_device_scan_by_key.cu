@@ -444,7 +444,7 @@ void Solve(
 {
     // When no initial value type is supplied, use InputT for accumulation
     // per P0571
-    using AccumT = typename std::iterator_traits<ValuesInputIteratorT>::value_type;
+    using AccumT = cub::detail::value_t<ValuesInputIteratorT>;
 
     if (num_items > 0)
     {
@@ -499,8 +499,8 @@ void Test(
     InitialValueT           initial_value,
     EqualityOpT             equality_op)
 {
-    typedef typename std::iterator_traits<KeysInputIteratorT>::value_type KeyT;
-    typedef typename std::iterator_traits<ValuesInputIteratorT>::value_type InputT;
+    using KeyT = cub::detail::value_t<KeysInputIteratorT>;
+    using InputT = cub::detail::value_t<ValuesInputIteratorT>;
 
     // Allocate device output array
     OutputT *d_values_out = NULL;
@@ -668,8 +668,8 @@ void TestPointer(
 {
     printf("\nPointer %s %s cub::DeviceScan::%s %d items, %s->%s (%d->%d bytes) , gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
-        (Equals<InitialValueT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
-        (Equals<ScanOpT, Sum>::VALUE) ? "Sum" : "Scan",
+        (std::is_same<InitialValueT, NullType>::value) ? "Inclusive" : "Exclusive",
+        (std::is_same<ScanOpT, Sum>::value) ? "Sum" : "Scan",
         num_items,
         typeid(InputT).name(), typeid(OutputT).name(), (int) sizeof(InputT), (int) sizeof(OutputT),
         (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS");
@@ -690,8 +690,8 @@ void TestPointer(
     // type.
     // Do the same thing here:
     if (Traits<OutputT>::PRIMITIVE &&
-        Equals<ScanOpT, cub::Sum>::VALUE &&
-        !Equals<InitialValueT, NullType>::VALUE)
+        std::is_same<ScanOpT, cub::Sum>::value &&
+        !std::is_same<InitialValueT, NullType>::value)
     {
       Solve(h_keys_in, h_values_in, h_reference, num_items, cub::Sum{}, InputT{}, equality_op);
     }
@@ -742,8 +742,8 @@ void TestIterator(
 {
     printf("\nIterator %s %s cub::DeviceScan::%s %d items, %s->%s (%d->%d bytes)\n",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
-        (Equals<InitialValueT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
-        (Equals<ScanOpT, Sum>::VALUE) ? "Sum" : "Scan",
+        (std::is_same<InitialValueT, NullType>::value) ? "Inclusive" : "Exclusive",
+        (std::is_same<ScanOpT, Sum>::value) ? "Sum" : "Scan",
         num_items,
         typeid(InputT).name(), typeid(OutputT).name(), (int) sizeof(InputT), (int) sizeof(OutputT));
     fflush(stdout);

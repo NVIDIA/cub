@@ -81,7 +81,7 @@ StableOddEvenSort(KeyT (&keys)[ITEMS_PER_THREAD],
                   ValueT (&items)[ITEMS_PER_THREAD],
                   CompareOp compare_op)
 {
-  constexpr bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+  constexpr bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
   #pragma unroll
   for (int i = 0; i < ITEMS_PER_THREAD; ++i)

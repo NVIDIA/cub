@@ -179,10 +179,9 @@ struct csr_matrix
 
 private:
   template <typename VecValueT>
-  using vector_t =
-    typename std::conditional<HostStorage,
-                              thrust::host_vector<VecValueT>,
-                              thrust::device_vector<VecValueT>>::type;
+  using vector_t = cub::detail::conditional_t<HostStorage,
+                                              thrust::host_vector<VecValueT>,
+                                              thrust::device_vector<VecValueT>>;
 
   vector_t<ValueT> m_values;
   vector_t<int> m_row_offsets;

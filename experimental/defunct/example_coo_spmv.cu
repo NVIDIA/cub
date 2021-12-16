@@ -72,7 +72,9 @@ template <typename Value>
 struct TexVector
 {
     // Texture type to actually use (e.g., because CUDA doesn't load doubles as texture items)
-    typedef typename If<(Equals<Value, double>::VALUE), uint2, Value>::Type CastType;
+    using CastType =
+      cub::detail::conditional_t<
+        std::is_same<Value, double>::value, uint2, Value>;
 
     // Texture reference type
     typedef texture<CastType, cudaTextureType1D, cudaReadModeElementType> TexRef;

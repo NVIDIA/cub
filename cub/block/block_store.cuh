@@ -1057,7 +1057,7 @@ public:
 
 template <class Policy,
           class It,
-          class T = typename std::iterator_traits<It>::value_type>
+          class T = cub::detail::value_t<It>>
 struct BlockStoreType
 {
   using type = cub::BlockStore<T,

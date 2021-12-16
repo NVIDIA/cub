@@ -99,7 +99,7 @@ struct AgentRadixSortOnesweep
     enum
     {
         ITEMS_PER_THREAD = AgentRadixSortOnesweepPolicy::ITEMS_PER_THREAD,
-        KEYS_ONLY = Equals<ValueT, NullType>::VALUE,
+        KEYS_ONLY = std::is_same<ValueT, NullType>::value,
         BLOCK_THREADS = AgentRadixSortOnesweepPolicy::BLOCK_THREADS,
         RANK_NUM_PARTS = AgentRadixSortOnesweepPolicy::RANK_NUM_PARTS,
         TILE_ITEMS = BLOCK_THREADS * ITEMS_PER_THREAD,
@@ -135,15 +135,23 @@ struct AgentRadixSortOnesweep
                   || RANK_ALGORITHM == RADIX_RANK_MATCH_EARLY_COUNTS_ATOMIC_OR,
         "for onesweep agent, the ranking algorithm must warp-strided key arrangement");
 
-    typedef typename If<RANK_ALGORITHM == RADIX_RANK_MATCH_EARLY_COUNTS_ATOMIC_OR,
-        BlockRadixRankMatchEarlyCounts<BLOCK_THREADS, RADIX_BITS, false, SCAN_ALGORITHM,
-                                       WARP_MATCH_ATOMIC_OR, RANK_NUM_PARTS>,
-        typename If<RANK_ALGORITHM == RADIX_RANK_MATCH,
-            BlockRadixRankMatch<BLOCK_THREADS, RADIX_BITS, false, SCAN_ALGORITHM>,
-            BlockRadixRankMatchEarlyCounts<BLOCK_THREADS, RADIX_BITS, false, SCAN_ALGORITHM,
-                                           WARP_MATCH_ANY, RANK_NUM_PARTS>
-        >::Type
-    >::Type BlockRadixRankT;
+    using BlockRadixRankT = cub::detail::conditional_t<
+      RANK_ALGORITHM == RADIX_RANK_MATCH_EARLY_COUNTS_ATOMIC_OR,
+      BlockRadixRankMatchEarlyCounts<BLOCK_THREADS,
+                                     RADIX_BITS,
+                                     false,
+                                     SCAN_ALGORITHM,
+                                     WARP_MATCH_ATOMIC_OR,
+                                     RANK_NUM_PARTS>,
+      cub::detail::conditional_t<
+        RANK_ALGORITHM == RADIX_RANK_MATCH,
+        BlockRadixRankMatch<BLOCK_THREADS, RADIX_BITS, false, SCAN_ALGORITHM>,
+        BlockRadixRankMatchEarlyCounts<BLOCK_THREADS,
+                                       RADIX_BITS,
+                                       false,
+                                       SCAN_ALGORITHM,
+                                       WARP_MATCH_ANY,
+                                       RANK_NUM_PARTS>>>;
 
     // temporary storage
     struct TempStorage_

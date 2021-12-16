@@ -36,10 +36,11 @@
 #include <stdio.h>
 #include <typeinfo>
 
-#include <cub/util_allocator.cuh>
+#include <cub/device/device_scan.cuh>
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/iterator/discard_output_iterator.cuh>
-#include <cub/device/device_scan.cuh>
+#include <cub/util_allocator.cuh>
+#include <cub/util_type.cuh>
 
 #include "test_util.h"
 
@@ -390,7 +391,7 @@ void Solve(
 {
     // When no initial value type is supplied, use InputT for accumulation
     // per P0571
-    using AccumT = typename std::iterator_traits<InputIteratorT>::value_type;
+    using AccumT = cub::detail::value_t<InputIteratorT>;
 
     if (num_items > 0)
     {
@@ -437,7 +438,7 @@ void Test(
     ScanOpT                 scan_op,
     InitialValueT           initial_value)
 {
-    typedef typename std::iterator_traits<DeviceInputIteratorT>::value_type InputT;
+    using InputT = cub::detail::value_t<DeviceInputIteratorT>;
 
     // Allocate device output array
     OutputT *d_out = NULL;
@@ -674,8 +675,8 @@ void TestPointer(
 {
     printf("\nPointer %s %s cub::DeviceScan::%s %d items, %s->%s (%d->%d bytes) , gen-mode %s\n",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
-        (Equals<InitialValueT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
-        (Equals<ScanOpT, Sum>::VALUE) ? "Sum" : "Scan",
+        (std::is_same<InitialValueT, NullType>::value) ? "Inclusive" : "Exclusive",
+        (std::is_same<ScanOpT, Sum>::value) ? "Sum" : "Scan",
         num_items,
         typeid(InputT).name(), typeid(OutputT).name(), (int) sizeof(InputT), (int) sizeof(OutputT),
         (gen_mode == RANDOM) ? "RANDOM" : (gen_mode == INTEGER_SEED) ? "SEQUENTIAL" : "HOMOGENOUS");
@@ -694,8 +695,8 @@ void TestPointer(
     // type.
     // Do the same thing here:
     if (Traits<OutputT>::PRIMITIVE &&
-        Equals<ScanOpT, cub::Sum>::VALUE &&
-        !Equals<InitialValueT, NullType>::VALUE)
+        std::is_same<ScanOpT, cub::Sum>::value &&
+        !std::is_same<InitialValueT, NullType>::value)
     {
       Solve(h_in, h_reference, num_items, cub::Sum{}, InputT{});
     }
@@ -739,8 +740,8 @@ void TestIterator(
 {
     printf("\nIterator %s %s cub::DeviceScan::%s %d items, %s->%s (%d->%d bytes)\n",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
-        (Equals<InitialValueT, NullType>::VALUE) ? "Inclusive" : "Exclusive",
-        (Equals<ScanOpT, Sum>::VALUE) ? "Sum" : "Scan",
+        (std::is_same<InitialValueT, NullType>::value) ? "Inclusive" : "Exclusive",
+        (std::is_same<ScanOpT, Sum>::value) ? "Sum" : "Scan",
         num_items,
         typeid(InputT).name(), typeid(OutputT).name(), (int) sizeof(InputT), (int) sizeof(OutputT));
     fflush(stdout);

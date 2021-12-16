@@ -70,7 +70,7 @@ struct WarpScanSmem
     };
 
     /// Storage cell type (workaround for SM1x compiler bugs with custom-ops like Max() on signed chars)
-    typedef typename If<((Equals<T, char>::VALUE || Equals<T, signed char>::VALUE) && (PTX_ARCH < 200)), int, T>::Type CellT;
+    using CellT = T;
 
     /// Shared memory storage layout type (1.5 warps-worth of elements for each warp)
     typedef CellT _TempStorage[WARP_SMEM_ELEMENTS];

@@ -97,14 +97,16 @@ struct AgentScanByKey
     // Types and constants
     //---------------------------------------------------------------------
 
-    using KeyT = typename std::iterator_traits<KeysInputIteratorT>::value_type;
-    using InputT = typename std::iterator_traits<ValuesInputIteratorT>::value_type;
+    using KeyT = cub::detail::value_t<KeysInputIteratorT>;
+    using InputT = cub::detail::value_t<ValuesInputIteratorT>;
 
     // The output value type -- used as the intermediate accumulator
     // Per https://wg21.link/P0571, use InitValueT if provided, otherwise the
     // input iterator's value type.
     using OutputT =
-      typename If<Equals<InitValueT, NullType>::VALUE, InputT, InitValueT>::Type;
+      cub::detail::conditional_t<std::is_same<InitValueT, NullType>::value,
+                                 InputT,
+                                 InitValueT>;
 
     using SizeValuePairT = KeyValuePair<OffsetT, OutputT>;
     using KeyValuePairT = KeyValuePair<KeyT, OutputT>;
@@ -115,18 +117,18 @@ struct AgentScanByKey
     // Constants
     enum
     {
-        IS_INCLUSIVE        = Equals<InitValueT, NullType>::VALUE,            // Inclusive scan if no init_value type is provided
+        IS_INCLUSIVE        = std::is_same<InitValueT, NullType>::value, // Inclusive scan if no init_value type is provided
         BLOCK_THREADS       = AgentScanByKeyPolicyT::BLOCK_THREADS,
         ITEMS_PER_THREAD    = AgentScanByKeyPolicyT::ITEMS_PER_THREAD,
         ITEMS_PER_TILE      = BLOCK_THREADS * ITEMS_PER_THREAD,
     };
 
-    using WrappedKeysInputIteratorT = typename If<IsPointer<KeysInputIteratorT>::VALUE,
+    using WrappedKeysInputIteratorT = cub::detail::conditional_t<std::is_pointer<KeysInputIteratorT>::value,
         CacheModifiedInputIterator<AgentScanByKeyPolicyT::LOAD_MODIFIER, KeyT, OffsetT>,   // Wrap the native input pointer with CacheModifiedInputIterator
-        KeysInputIteratorT>::Type;
-    using WrappedValuesInputIteratorT = typename If<IsPointer<ValuesInputIteratorT>::VALUE,
+        KeysInputIteratorT>;
+    using WrappedValuesInputIteratorT = cub::detail::conditional_t<std::is_pointer<ValuesInputIteratorT>::value,
         CacheModifiedInputIterator<AgentScanByKeyPolicyT::LOAD_MODIFIER, InputT, OffsetT>,   // Wrap the native input pointer with CacheModifiedInputIterator
-        ValuesInputIteratorT>::Type;
+        ValuesInputIteratorT>;
 
     using BlockLoadKeysT = BlockLoad<KeyT, BLOCK_THREADS, ITEMS_PER_THREAD, AgentScanByKeyPolicyT::LOAD_ALGORITHM>;
     using BlockLoadValuesT = BlockLoad<OutputT, BLOCK_THREADS, ITEMS_PER_THREAD, AgentScanByKeyPolicyT::LOAD_ALGORITHM>;
@@ -258,9 +260,9 @@ struct AgentScanByKey
         }
     }
 
-    template<bool IsNull=Equals<InitValueT, NullType>::VALUE, typename std::enable_if<!IsNull, int>::type=0>
-    __device__ __forceinline__
-    void AddInitToScan(
+    template <bool IsNull = std::is_same<InitValueT, NullType>::value,
+              typename std::enable_if<!IsNull, int>::type = 0>
+    __device__ __forceinline__ void AddInitToScan(
         OutputT (&items)[ITEMS_PER_THREAD],
         OffsetT (&flags)[ITEMS_PER_THREAD])
     {
@@ -271,7 +273,8 @@ struct AgentScanByKey
         }
     }
 
-    template<bool IsNull=Equals<InitValueT, NullType>::VALUE, typename std::enable_if<IsNull, int>::type=0>
+    template <bool IsNull = std::is_same<InitValueT, NullType>::value,
+              typename std::enable_if<IsNull, int>::type = 0>
     __device__ __forceinline__
     void AddInitToScan(
         OutputT (&/*items*/)[ITEMS_PER_THREAD],

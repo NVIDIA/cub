@@ -401,7 +401,7 @@ __device__ __forceinline__ void ThreadStore(OutputIteratorT itr, T val)
         itr,
         val,
         Int2Type<MODIFIER>(),
-        Int2Type<IsPointer<OutputIteratorT>::VALUE>());
+        Int2Type<std::is_pointer<OutputIteratorT>::value>());
 }
 
 

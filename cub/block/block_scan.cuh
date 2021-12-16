@@ -222,9 +222,9 @@ private:
     typedef BlockScanRaking<T, BLOCK_DIM_X, BLOCK_DIM_Y, BLOCK_DIM_Z, (SAFE_ALGORITHM == BLOCK_SCAN_RAKING_MEMOIZE), PTX_ARCH> Raking;
 
     /// Define the delegate type for the desired algorithm
-    typedef typename If<(SAFE_ALGORITHM == BLOCK_SCAN_WARP_SCANS),
-        WarpScans,
-        Raking>::Type InternalBlockScan;
+    using InternalBlockScan =
+      cub::detail::conditional_t<
+        SAFE_ALGORITHM == BLOCK_SCAN_WARP_SCANS, WarpScans, Raking>;
 
     /// Shared memory storage layout type for BlockScan
     typedef typename InternalBlockScan::TempStorage _TempStorage;

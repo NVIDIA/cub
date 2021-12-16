@@ -232,12 +232,12 @@ struct DeviceReduce
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int OffsetT;
+        using OffsetT = int;
 
         // The output value type
-        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-            typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+        using OutputT =
+          cub::detail::non_void_value_t<OutputIteratorT,
+                                        cub::detail::value_t<InputIteratorT>>;
 
         return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Sum>::Dispatch(
             d_temp_storage,
@@ -309,10 +309,10 @@ struct DeviceReduce
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int OffsetT;
+        using OffsetT = int;
 
         // The input value type
-        typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+        using InputT = cub::detail::value_t<InputIteratorT>;
 
         return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Min>::Dispatch(
             d_temp_storage,
@@ -386,21 +386,23 @@ struct DeviceReduce
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int OffsetT;
+        using OffsetT = int;
 
         // The input type
-        typedef typename std::iterator_traits<InputIteratorT>::value_type InputValueT;
+        using InputValueT = cub::detail::value_t<InputIteratorT>;
 
         // The output tuple type
-        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-            KeyValuePair<OffsetT, InputValueT>,                                                                 // ... then the key value pair OffsetT + InputValueT
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputTupleT;                     // ... else the output iterator's value type
+        using OutputTupleT =
+          cub::detail::non_void_value_t<OutputIteratorT,
+                                        KeyValuePair<OffsetT, InputValueT>>;
 
         // The output value type
-        typedef typename OutputTupleT::Value OutputValueT;
+        using OutputValueT = typename OutputTupleT::Value;
 
         // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
-        typedef ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT> ArgIndexInputIteratorT;
+        using ArgIndexInputIteratorT =
+          ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT>;
+
         ArgIndexInputIteratorT d_indexed_in(d_in);
 
         // Initial value
@@ -476,10 +478,10 @@ struct DeviceReduce
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int OffsetT;
+        using OffsetT = int;
 
         // The input value type
-        typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+        using InputT = cub::detail::value_t<InputIteratorT>;
 
         return DispatchReduce<InputIteratorT, OutputIteratorT, OffsetT, cub::Max>::Dispatch(
             d_temp_storage,
@@ -553,21 +555,23 @@ struct DeviceReduce
         bool                        debug_synchronous   = false)        ///< [in] <b>[optional]</b> Whether or not to synchronize the stream after every kernel launch to check for errors.  Also causes launch configurations to be printed to the console.  Default is \p false.
     {
         // Signed integer type for global offsets
-        typedef int OffsetT;
+        using OffsetT = int;
 
         // The input type
-        typedef typename std::iterator_traits<InputIteratorT>::value_type InputValueT;
+        using InputValueT = cub::detail::value_t<InputIteratorT>;
 
         // The output tuple type
-        typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-            KeyValuePair<OffsetT, InputValueT>,                                                                 // ... then the key value pair OffsetT + InputValueT
-            typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputTupleT;                     // ... else the output iterator's value type
+        using OutputTupleT =
+          cub::detail::non_void_value_t<OutputIteratorT,
+                                        KeyValuePair<OffsetT, InputValueT>>;
 
         // The output value type
-        typedef typename OutputTupleT::Value OutputValueT;
+        using OutputValueT = typename OutputTupleT::Value;
 
         // Wrapped input iterator to produce index-value <OffsetT, InputT> tuples
-        typedef ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT> ArgIndexInputIteratorT;
+        using ArgIndexInputIteratorT =
+          ArgIndexInputIterator<InputIteratorT, OffsetT, OutputValueT>;
+
         ArgIndexInputIteratorT d_indexed_in(d_in);
 
         // Initial value

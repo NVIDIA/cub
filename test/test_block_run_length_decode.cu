@@ -78,22 +78,48 @@ public:
   constexpr static bool TEST_RELATIVE_OFFSETS = TEST_RELATIVE_OFFSETS_;
 
 private:
-  using RunItemT   = typename std::iterator_traits<ItemItT>::value_type;
-  using RunLengthT = typename std::iterator_traits<RunLengthsItT>::value_type;
+  using RunItemT   = cub::detail::value_t<ItemItT>;
+  using RunLengthT = cub::detail::value_t<RunLengthsItT>;
 
-  using BlockRunOffsetScanT = cub::BlockScan<RunLengthT, BLOCK_DIM_X, BLOCK_SCAN_RAKING, BLOCK_DIM_Y, BLOCK_DIM_Z>;
+  using BlockRunOffsetScanT = cub::BlockScan<RunLengthT,
+                                             BLOCK_DIM_X,
+                                             BLOCK_SCAN_RAKING,
+                                             BLOCK_DIM_Y,
+                                             BLOCK_DIM_Z>;
 
   using BlockRunLengthDecodeT =
-    cub::BlockRunLengthDecode<RunItemT, BLOCK_DIM_X, RUNS_PER_THREAD, DECODED_ITEMS_PER_THREAD>;
-  using BlockLoadRunItemT =
-    cub::BlockLoad<RunItemT, BLOCK_DIM_X, RUNS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
-  using BlockLoadRunLengthsT =
-    cub::BlockLoad<RunLengthT, BLOCK_DIM_X, RUNS_PER_THREAD, BLOCK_LOAD_WARP_TRANSPOSE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
-  using BlockStoreDecodedItemT = cub::
-    BlockStore<RunItemT, BLOCK_DIM_X, DECODED_ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
+    cub::BlockRunLengthDecode<RunItemT,
+                              BLOCK_DIM_X,
+                              RUNS_PER_THREAD,
+                              DECODED_ITEMS_PER_THREAD>;
 
-  using BlockStoreRelativeOffsetT = cub::
-    BlockStore<RunLengthT, BLOCK_DIM_X, DECODED_ITEMS_PER_THREAD, BLOCK_STORE_WARP_TRANSPOSE, BLOCK_DIM_Y, BLOCK_DIM_Z>;
+  using BlockLoadRunItemT = cub::BlockLoad<RunItemT,
+                                           BLOCK_DIM_X,
+                                           RUNS_PER_THREAD,
+                                           BLOCK_LOAD_WARP_TRANSPOSE,
+                                           BLOCK_DIM_Y,
+                                           BLOCK_DIM_Z>;
+
+  using BlockLoadRunLengthsT = cub::BlockLoad<RunLengthT,
+                                              BLOCK_DIM_X,
+                                              RUNS_PER_THREAD,
+                                              BLOCK_LOAD_WARP_TRANSPOSE,
+                                              BLOCK_DIM_Y,
+                                              BLOCK_DIM_Z>;
+
+  using BlockStoreDecodedItemT = cub::BlockStore<RunItemT,
+                                                 BLOCK_DIM_X,
+                                                 DECODED_ITEMS_PER_THREAD,
+                                                 BLOCK_STORE_WARP_TRANSPOSE,
+                                                 BLOCK_DIM_Y,
+                                                 BLOCK_DIM_Z>;
+
+  using BlockStoreRelativeOffsetT = cub::BlockStore<RunLengthT,
+                                                    BLOCK_DIM_X,
+                                                    DECODED_ITEMS_PER_THREAD,
+                                                    BLOCK_STORE_WARP_TRANSPOSE,
+                                                    BLOCK_DIM_Y,
+                                                    BLOCK_DIM_Z>;
 
   __device__ __forceinline__ BlockRunLengthDecodeT InitBlockRunLengthDecode(RunItemT (&unique_items)[RUNS_PER_THREAD],
                                                                             RunLengthT (&run_lengths)[RUNS_PER_THREAD],
@@ -153,7 +179,9 @@ public:
   {
     typename BlockLoadRunItemT::TempStorage load_uniques_storage;
     typename BlockLoadRunLengthsT::TempStorage load_run_lengths_storage;
-    typename std::conditional<TEST_RUN_OFFSETS_, typename BlockRunOffsetScanT::TempStorage, cub::NullType>::type
+    cub::detail::conditional_t<TEST_RUN_OFFSETS_,
+                               typename BlockRunOffsetScanT::TempStorage,
+                               cub::NullType>
       run_offsets_scan_storage;
     struct
     {

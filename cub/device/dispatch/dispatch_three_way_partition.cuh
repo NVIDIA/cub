@@ -157,7 +157,7 @@ struct DispatchThreeWayPartitionIf
    * Types and constants
    ****************************************************************************/
 
-  using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
+  using InputT = cub::detail::value_t<InputIteratorT>;
   using ScanTileStateT = cub::ScanTileState<OffsetT>;
 
   constexpr static int INIT_KERNEL_THREADS = 256;

@@ -33,9 +33,10 @@
 
 #pragma once
 
+#include <cfloat>
 #include <iostream>
 #include <limits>
-#include <cfloat>
+#include <type_traits>
 
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
     #include <cuda_fp16.h>
@@ -44,10 +45,10 @@
     #include <cuda_bf16.h>
 #endif
 
-#include "util_macro.cuh"
-#include "util_arch.cuh"
-#include "util_namespace.cuh"
-
+#include <cub/util_arch.cuh>
+#include <cub/util_deprecated.cuh>
+#include <cub/util_macro.cuh>
+#include <cub/util_namespace.cuh>
 
 
 CUB_NAMESPACE_BEGIN
@@ -64,26 +65,45 @@ CUB_NAMESPACE_BEGIN
  * Conditional types
  ******************************************************************************/
 
+
+namespace detail
+{
+
+
+template <bool Test, class T1, class T2>
+using conditional_t = typename std::conditional<Test, T1, T2>::type;
+
+
+template <typename Iterator>
+using value_t = typename std::iterator_traits<Iterator>::value_type;
+
+
+/**
+ * The output value type
+ * type = (if IteratorT's value type is void) ?
+ * ... then the FallbackT,
+ * ... else the IteratorT's value type
+ */
+template <typename IteratorT, typename FallbackT>
+using non_void_value_t =
+  cub::detail::conditional_t<std::is_same<value_t<IteratorT>, void>::value,
+                             FallbackT,
+                             value_t<IteratorT>>;
+
+} // namespace detail
+
+
 /**
  * \brief Type selection (<tt>IF ? ThenType : ElseType</tt>)
+ *
+ * \deprecated [Since 1.16.0] The cub::If APIs are deprecated.
+ *             Use cub::detail::conditional_t instead.
  */
 template <bool IF, typename ThenType, typename ElseType>
-struct If
+struct CUB_DEPRECATED If
 {
-    /// Conditional type result
-    typedef ThenType Type;      // true
+  using Type = cub::detail::conditional_t<IF, ThenType, ElseType>;
 };
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename ThenType, typename ElseType>
-struct If<false, ThenType, ElseType>
-{
-    typedef ElseType Type;      // false
-};
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 
 /******************************************************************************
@@ -92,28 +112,16 @@ struct If<false, ThenType, ElseType>
 
 /**
  * \brief Type equality test
+ *
+ * \deprecated [Since 1.16.0] The cub::Equals APIs are deprecated.
+ *             Use std::is_same instead.
  */
 template <typename A, typename B>
-struct Equals
+struct CUB_DEPRECATED Equals
 {
-    enum {
-        VALUE = 0,
-        NEGATE = 1
-    };
+  static constexpr int VALUE = std::is_same<A, B>::value ? 1 : 0;
+  static constexpr int NEGATE = VALUE ? 0 : 1;
 };
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename A>
-struct Equals <A, A>
-{
-    enum {
-        VALUE = 1,
-        NEGATE = 0
-    };
-};
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /******************************************************************************
@@ -146,7 +154,6 @@ struct Log2<N, 0, COUNT>
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
-
 /**
  * \brief Statically determine if N is a power-of-two
  */
@@ -164,23 +171,15 @@ struct PowerOfTwo
 
 /**
  * \brief Pointer vs. iterator
+ *
+ * \deprecated [Since 1.16.0] The cub::IsPointer APIs are deprecated.
+ *             Use std::is_pointer instead.
  */
 template <typename Tp>
-struct IsPointer
+struct CUB_DEPRECATED IsPointer
 {
-    enum { VALUE = 0 };
+  static constexpr int VALUE = std::is_pointer<Tp>::value;
 };
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename Tp>
-struct IsPointer<Tp*>
-{
-    enum { VALUE = 1 };
-};
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 
 /******************************************************************************
@@ -189,23 +188,15 @@ struct IsPointer<Tp*>
 
 /**
  * \brief Volatile modifier test
+ *
+ * \deprecated [Since 1.16.0] The cub::IsVolatile APIs are deprecated.
+ *             Use std::is_volatile instead.
  */
 template <typename Tp>
-struct IsVolatile
+struct CUB_DEPRECATED IsVolatile
 {
-    enum { VALUE = 0 };
+  static constexpr int VALUE = std::is_volatile<Tp>::value;
 };
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename Tp>
-struct IsVolatile<Tp volatile>
-{
-    enum { VALUE = 1 };
-};
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 /******************************************************************************
  * Qualifier removal
@@ -214,34 +205,16 @@ struct IsVolatile<Tp volatile>
 /**
  * \brief Removes \p const and \p volatile qualifiers from type \p Tp.
  *
+ * \deprecated [Since 1.16.0] The cub::RemoveQualifiers APIs are deprecated.
+ *             Use std::remove_cv instead.
+ *
  * For example:
  *     <tt>typename RemoveQualifiers<volatile int>::Type         // int;</tt>
  */
 template <typename Tp, typename Up = Tp>
-struct RemoveQualifiers
+struct CUB_DEPRECATED RemoveQualifiers
 {
-    /// Type without \p const and \p volatile qualifiers
-    typedef Up Type;
-};
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-template <typename Tp, typename Up>
-struct RemoveQualifiers<Tp, volatile Up>
-{
-    typedef Up Type;
-};
-
-template <typename Tp, typename Up>
-struct RemoveQualifiers<Tp, const Up>
-{
-    typedef Up Type;
-};
-
-template <typename Tp, typename Up>
-struct RemoveQualifiers<Tp, const volatile Up>
-{
-    typedef Up Type;
+  using Type = typename std::remove_cv<Tp>::type;
 };
 
 
@@ -249,13 +222,14 @@ struct RemoveQualifiers<Tp, const volatile Up>
  * Marker types
  ******************************************************************************/
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
+
 /**
  * \brief A simple "NULL" marker type
  */
 struct NullType
 {
     using value_type = NullType;
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
     template <typename T>
     __host__ __device__ __forceinline__ NullType& operator =(const T&) { return *this; }
@@ -263,8 +237,6 @@ struct NullType
     __host__ __device__ __forceinline__ bool operator ==(const NullType&) { return true; }
 
     __host__ __device__ __forceinline__ bool operator !=(const NullType&) { return false; }
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 };
 
 
@@ -353,8 +325,6 @@ private:
 
 } // namespace detail
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
 
 /******************************************************************************
  * Size and alignment
@@ -415,10 +385,11 @@ __CUB_ALIGN_BYTES(longlong4, 16)
 __CUB_ALIGN_BYTES(ulonglong4, 16)
 __CUB_ALIGN_BYTES(double4, 16)
 
+// clang-format off
 template <typename T> struct AlignBytes<volatile T> : AlignBytes<T> {};
 template <typename T> struct AlignBytes<const T> : AlignBytes<T> {};
 template <typename T> struct AlignBytes<const volatile T> : AlignBytes<T> {};
-
+// clang-format on
 
 /// Unit-words of data movement
 template <typename T>
@@ -437,31 +408,36 @@ struct UnitWord
         };
     };
 
-    /// Biggest shuffle word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename If<IsMultiple<int>::IS_MULTIPLE,
-        unsigned int,
-        typename If<IsMultiple<short>::IS_MULTIPLE,
-            unsigned short,
-            unsigned char>::Type>::Type         ShuffleWord;
+    /// Biggest shuffle word that T is a whole multiple of and is not larger than
+    /// the alignment of T
+    using ShuffleWord = cub::detail::conditional_t<
+      IsMultiple<int>::IS_MULTIPLE,
+      unsigned int,
+      cub::detail::conditional_t<IsMultiple<short>::IS_MULTIPLE,
+                                 unsigned short,
+                                 unsigned char>>;
 
-    /// Biggest volatile word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename If<IsMultiple<long long>::IS_MULTIPLE,
-        unsigned long long,
-        ShuffleWord>::Type                      VolatileWord;
+    /// Biggest volatile word that T is a whole multiple of and is not larger than
+    /// the alignment of T
+    using VolatileWord =
+      cub::detail::conditional_t<IsMultiple<long long>::IS_MULTIPLE,
+                                 unsigned long long,
+                                 ShuffleWord>;
 
-    /// Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename If<IsMultiple<longlong2>::IS_MULTIPLE,
-        ulonglong2,
-        VolatileWord>::Type                     DeviceWord;
+    /// Biggest memory-access word that T is a whole multiple of and is not larger
+    /// than the alignment of T
+    using DeviceWord =
+      cub::detail::conditional_t<IsMultiple<longlong2>::IS_MULTIPLE,
+                                 ulonglong2,
+                                 VolatileWord>;
 
-    /// Biggest texture reference word that T is a whole multiple of and is not larger than the alignment of T
-    typedef typename If<IsMultiple<int4>::IS_MULTIPLE,
-        uint4,
-        typename If<IsMultiple<int2>::IS_MULTIPLE,
-            uint2,
-            ShuffleWord>::Type>::Type           TextureWord;
+    /// Biggest texture reference word that T is a whole multiple of and is not
+    /// larger than the alignment of T
+    using TextureWord = cub::detail::conditional_t<
+      IsMultiple<int4>::IS_MULTIPLE,
+      uint4,
+      cub::detail::conditional_t<IsMultiple<int2>::IS_MULTIPLE, uint2, ShuffleWord>>;
 };
-
 
 // float2 specialization workaround (for SM10-SM13)
 template <>
@@ -509,14 +485,11 @@ struct UnitWord <char2>
     typedef unsigned short      TextureWord;
 };
 
-
+// clang-format off
 template <typename T> struct UnitWord<volatile T> : UnitWord<T> {};
 template <typename T> struct UnitWord<const T> : UnitWord<T> {};
 template <typename T> struct UnitWord<const volatile T> : UnitWord<T> {};
-
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
+// clang-format on
 
 
 /******************************************************************************
@@ -528,7 +501,6 @@ template <typename T> struct UnitWord<const volatile T> : UnitWord<T> {};
  */
 template <typename T, int vec_elements> struct CubVector;
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
 
 enum
 {
@@ -676,6 +648,7 @@ struct CubVector<T, 4>
 
 
 // Expand CUDA vector types for built-in primitives
+// clang-format off
 CUB_DEFINE_VECTOR_TYPE(char,               char)
 CUB_DEFINE_VECTOR_TYPE(signed char,        char)
 CUB_DEFINE_VECTOR_TYPE(short,              short)
@@ -690,12 +663,10 @@ CUB_DEFINE_VECTOR_TYPE(unsigned long long, ulonglong)
 CUB_DEFINE_VECTOR_TYPE(float,              float)
 CUB_DEFINE_VECTOR_TYPE(double,             double)
 CUB_DEFINE_VECTOR_TYPE(bool,               uchar)
+// clang-format on
 
 // Undefine macros
 #undef CUB_DEFINE_VECTOR_TYPE
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
-
 
 
 /******************************************************************************
@@ -835,9 +806,6 @@ struct KeyValuePair<K, V, false, true>
 #endif // #if defined(_WIN32) && !defined(_WIN64)
 
 
-#ifndef DOXYGEN_SHOULD_SKIP_THIS    // Do not document
-
-
 /**
  * \brief A wrapper for passing simple static arrays as kernel parameters
  */
@@ -851,8 +819,6 @@ struct ArrayWrapper
     /// Constructor
     __host__ __device__ __forceinline__ ArrayWrapper() {}
 };
-
-#endif // DOXYGEN_SHOULD_SKIP_THIS
 
 
 /**
@@ -930,19 +896,15 @@ struct DoubleBuffer
 
 /**
  * \brief Simple enable-if (similar to Boost)
+ *
+ * \deprecated [Since 1.16.0] The cub::If APIs are deprecated.
+ *             Use std::enable_if instead.
  */
 template <bool Condition, class T = void>
-struct EnableIf
+struct CUB_DEPRECATED EnableIf
 {
-    /// Enable-if type for SFINAE dummy variables
-    typedef T Type;
+  using Type = typename std::enable_if<Condition, T>::type;
 };
-
-
-template <class T>
-struct EnableIf<false, T> {};
-
-
 
 /******************************************************************************
  * Typedef-detection
@@ -1142,7 +1104,6 @@ struct FpLimits<double>
     }
 };
 
-
 #if (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !_NVHPC_CUDA
 template <>
 struct FpLimits<__half>
@@ -1219,6 +1180,7 @@ struct BaseTraits<FLOATING_POINT, true, false, _UnsignedBits, T>
 /**
  * \brief Numeric type traits
  */
+// clang-format off
 template <typename T> struct NumericTraits :            BaseTraits<NOT_A_NUMBER, false, false, T, T> {};
 
 template <> struct NumericTraits<NullType> :            BaseTraits<NOT_A_NUMBER, false, true, NullType, NullType> {};
@@ -1246,14 +1208,13 @@ template <> struct NumericTraits<double> :              BaseTraits<FLOATING_POIN
 #endif
 
 template <> struct NumericTraits<bool> :                BaseTraits<UNSIGNED_INTEGER, true, false, typename UnitWord<bool>::VolatileWord, bool> {};
-
-
+// clang-format on
 
 /**
  * \brief Type traits
  */
 template <typename T>
-struct Traits : NumericTraits<typename RemoveQualifiers<T>::Type> {};
+struct Traits : NumericTraits<typename std::remove_cv<T>::type> {};
 
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

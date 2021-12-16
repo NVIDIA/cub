@@ -160,7 +160,7 @@ public:
         size_t          bytes,              ///< Number of bytes in the range
         size_t          tex_offset = 0)     ///< OffsetT (in items) from \p ptr denoting the position of the iterator
     {
-        this->ptr = const_cast<typename RemoveQualifiers<QualifiedT>::Type *>(ptr);
+        this->ptr = const_cast<typename std::remove_cv<QualifiedT>::type *>(ptr);
         this->tex_offset = static_cast<difference_type>(tex_offset);
 
         cudaChannelFormatDesc   channel_desc = cudaCreateChannelDesc<TextureWord>();

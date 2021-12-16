@@ -105,18 +105,17 @@ struct AgentSelectIf
     //---------------------------------------------------------------------
 
     // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+    using InputT = cub::detail::value_t<InputIteratorT>;
 
     // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<SelectedOutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                                  // ... then the input iterator's value type,
-        typename std::iterator_traits<SelectedOutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+    using OutputT =
+      cub::detail::non_void_value_t<SelectedOutputIteratorT, InputT>;
 
     // The flag value type
-    typedef typename std::iterator_traits<FlagsInputIteratorT>::value_type FlagT;
+    using FlagT = cub::detail::value_t<FlagsInputIteratorT>;
 
     // Tile status descriptor interface type
-    typedef ScanTileState<OffsetT> ScanTileStateT;
+    using ScanTileStateT = ScanTileState<OffsetT>;
 
     // Constants
     enum
@@ -130,60 +129,54 @@ struct AgentSelectIf
         TILE_ITEMS              = BLOCK_THREADS * ITEMS_PER_THREAD,
         TWO_PHASE_SCATTER       = (ITEMS_PER_THREAD > 1),
 
-        SELECT_METHOD           = (!Equals<SelectOpT, NullType>::VALUE) ?
-                                    USE_SELECT_OP :
-                                    (!Equals<FlagT, NullType>::VALUE) ?
-                                        USE_SELECT_FLAGS :
-                                        USE_DISCONTINUITY
+      SELECT_METHOD =
+        (!std::is_same<SelectOpT, NullType>::value) ? USE_SELECT_OP
+        : (!std::is_same<FlagT, NullType>::value)   ? USE_SELECT_FLAGS
+                                                    : USE_DISCONTINUITY
     };
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for items
-    typedef typename If<IsPointer<InputIteratorT>::VALUE,
-            CacheModifiedInputIterator<AgentSelectIfPolicyT::LOAD_MODIFIER, InputT, OffsetT>,        // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            InputIteratorT>::Type                                                               // Directly use the supplied input iterator type
-        WrappedInputIteratorT;
+    // Wrap the native input pointer with CacheModifiedValuesInputIterator
+    // or directly use the supplied input iterator type
+    using WrappedInputIteratorT = cub::detail::conditional_t<
+      std::is_pointer<InputIteratorT>::value,
+      CacheModifiedInputIterator<AgentSelectIfPolicyT::LOAD_MODIFIER,
+                                 InputT,
+                                 OffsetT>,
+      InputIteratorT>;
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for values
-    typedef typename If<IsPointer<FlagsInputIteratorT>::VALUE,
-            CacheModifiedInputIterator<AgentSelectIfPolicyT::LOAD_MODIFIER, FlagT, OffsetT>,    // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            FlagsInputIteratorT>::Type                                                          // Directly use the supplied input iterator type
-        WrappedFlagsInputIteratorT;
+    // Wrap the native input pointer with CacheModifiedValuesInputIterator
+    // or directly use the supplied input iterator type
+    using WrappedFlagsInputIteratorT = cub::detail::conditional_t<
+      std::is_pointer<FlagsInputIteratorT>::value,
+      CacheModifiedInputIterator<AgentSelectIfPolicyT::LOAD_MODIFIER,
+                                 FlagT,
+                                 OffsetT>,
+      FlagsInputIteratorT>;
 
     // Parameterized BlockLoad type for input data
-    typedef BlockLoad<
-            OutputT,
-            BLOCK_THREADS,
-            ITEMS_PER_THREAD,
-            AgentSelectIfPolicyT::LOAD_ALGORITHM>
-        BlockLoadT;
+    using BlockLoadT = BlockLoad<OutputT,
+                                 BLOCK_THREADS,
+                                 ITEMS_PER_THREAD,
+                                 AgentSelectIfPolicyT::LOAD_ALGORITHM>;
 
     // Parameterized BlockLoad type for flags
-    typedef BlockLoad<
-            FlagT,
-            BLOCK_THREADS,
-            ITEMS_PER_THREAD,
-            AgentSelectIfPolicyT::LOAD_ALGORITHM>
-        BlockLoadFlags;
+    using BlockLoadFlags = BlockLoad<FlagT,
+                                     BLOCK_THREADS,
+                                     ITEMS_PER_THREAD,
+                                     AgentSelectIfPolicyT::LOAD_ALGORITHM>;
 
     // Parameterized BlockDiscontinuity type for items
-    typedef BlockDiscontinuity<
-            OutputT,
-            BLOCK_THREADS>
-        BlockDiscontinuityT;
+    using BlockDiscontinuityT = BlockDiscontinuity<OutputT, BLOCK_THREADS>;
 
     // Parameterized BlockScan type
-    typedef BlockScan<
-            OffsetT,
-            BLOCK_THREADS,
-            AgentSelectIfPolicyT::SCAN_ALGORITHM>
-        BlockScanT;
+    using BlockScanT =
+      BlockScan<OffsetT, BLOCK_THREADS, AgentSelectIfPolicyT::SCAN_ALGORITHM>;
 
     // Callback type for obtaining tile prefix during block scan
-    typedef TilePrefixCallbackOp<
-            OffsetT,
-            cub::Sum,
-            ScanTileStateT>
-        TilePrefixCallbackOpT;
+    using TilePrefixCallbackOpT =
+      TilePrefixCallbackOp<OffsetT, cub::Sum, ScanTileStateT>;
 
     // Item exchange type
     typedef OutputT ItemExchangeT[TILE_ITEMS];

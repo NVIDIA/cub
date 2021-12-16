@@ -83,16 +83,17 @@ __global__ void Kernel(
     };
 
     // The input value type
-    typedef typename std::iterator_traits<InputIteratorT>::value_type InputT;
+    using InputT = cub::detail::value_t<InputIteratorT>;
 
     // The output value type
-    typedef typename If<(Equals<typename std::iterator_traits<OutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<InputIteratorT>::value_type,                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<OutputIteratorT>::value_type>::Type OutputT;                          // ... else the output iterator's value type
+    using OutputT = cub::detail::non_void_value_t<OutputIteratorT, InputT>;
 
     // Threadblock load/store abstraction types
-    typedef BlockLoad<InputT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM> BlockLoad;
-    typedef BlockStore<OutputT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM> BlockStore;
+    using BlockLoad =
+      BlockLoad<InputT, BLOCK_THREADS, ITEMS_PER_THREAD, LOAD_ALGORITHM>;
+
+    using BlockStore =
+      BlockStore<OutputT, BLOCK_THREADS, ITEMS_PER_THREAD, STORE_ALGORITHM>;
 
     // Shared memory type for this thread block
     union TempStorage

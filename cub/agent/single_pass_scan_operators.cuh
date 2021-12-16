@@ -124,24 +124,22 @@ template <typename T>
 struct ScanTileState<T, true>
 {
     // Status word type
-    typedef typename If<(sizeof(T) == 8),
-        long long,
-        typename If<(sizeof(T) == 4),
-            int,
-            typename If<(sizeof(T) == 2),
-                short,
-                char>::Type>::Type>::Type StatusWord;
-
+    using StatusWord = cub::detail::conditional_t<
+      sizeof(T) == 8,
+      long long,
+      cub::detail::conditional_t<
+        sizeof(T) == 4,
+        int,
+        cub::detail::conditional_t<sizeof(T) == 2, short, char>>>;
 
     // Unit word type
-    typedef typename If<(sizeof(T) == 8),
-        longlong2,
-        typename If<(sizeof(T) == 4),
-            int2,
-            typename If<(sizeof(T) == 2),
-                int,
-                uchar2>::Type>::Type>::Type TxnWord;
-
+    using TxnWord = cub::detail::conditional_t<
+      sizeof(T) == 8,
+      longlong2,
+      cub::detail::conditional_t<
+        sizeof(T) == 4,
+        int2,
+        cub::detail::conditional_t<sizeof(T) == 2, int, uchar2>>>;
 
     // Device word type
     struct TileDescriptor
@@ -485,20 +483,19 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     };
 
     // Status word type
-    typedef typename If<(STATUS_WORD_SIZE == 8),
-        long long,
-        typename If<(STATUS_WORD_SIZE == 4),
-            int,
-            typename If<(STATUS_WORD_SIZE == 2),
-                short,
-                char>::Type>::Type>::Type StatusWord;
+    using StatusWord = cub::detail::conditional_t<
+      STATUS_WORD_SIZE == 8,
+      long long,
+      cub::detail::conditional_t<
+        STATUS_WORD_SIZE == 4,
+        int,
+        cub::detail::conditional_t<STATUS_WORD_SIZE == 2, short, char>>>;
 
     // Status word type
-    typedef typename If<(TXN_WORD_SIZE == 16),
-        longlong2,
-        typename If<(TXN_WORD_SIZE == 8),
-            long long,
-            int>::Type>::Type TxnWord;
+    using TxnWord = cub::detail::conditional_t<
+      TXN_WORD_SIZE == 16,
+      longlong2,
+      cub::detail::conditional_t<TXN_WORD_SIZE == 8, long long, int>>;
 
     // Device word type (for when sizeof(ValueT) == sizeof(KeyT))
     struct TileDescriptorBigStatus
@@ -517,12 +514,10 @@ struct ReduceByKeyScanTileState<ValueT, KeyT, true>
     };
 
     // Device word type
-    typedef typename If<
-            (sizeof(ValueT) == sizeof(KeyT)),
-            TileDescriptorBigStatus,
-            TileDescriptorLittleStatus>::Type
-        TileDescriptor;
-
+    using TileDescriptor =
+      cub::detail::conditional_t<sizeof(ValueT) == sizeof(KeyT),
+                                 TileDescriptorBigStatus,
+                                 TileDescriptorLittleStatus>;
 
     // Device storage
     TxnWord *d_tile_descriptors;

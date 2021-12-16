@@ -86,7 +86,7 @@ struct AgentThreeWayPartition
   //---------------------------------------------------------------------
 
   // The input value type
-  using InputT = typename std::iterator_traits<InputIteratorT>::value_type;
+  using InputT = cub::detail::value_t<InputIteratorT>;
 
   // Tile status descriptor interface type
   using ScanTileStateT = cub::ScanTileState<OffsetT>;
@@ -96,10 +96,10 @@ struct AgentThreeWayPartition
   constexpr static int ITEMS_PER_THREAD = PolicyT::ITEMS_PER_THREAD;
   constexpr static int TILE_ITEMS = BLOCK_THREADS * ITEMS_PER_THREAD;
 
-  using WrappedInputIteratorT = typename std::conditional<
+  using WrappedInputIteratorT = cub::detail::conditional_t<
     std::is_pointer<InputIteratorT>::value,
     cub::CacheModifiedInputIterator<PolicyT::LOAD_MODIFIER, InputT, OffsetT>,
-    InputIteratorT>::type;
+    InputIteratorT>;
 
   // Parameterized BlockLoad type for input data
   using BlockLoadT = cub::BlockLoad<InputT,

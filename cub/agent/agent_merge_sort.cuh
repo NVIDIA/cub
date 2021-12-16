@@ -72,7 +72,7 @@ struct AgentBlockSort
   // Types and constants
   //---------------------------------------------------------------------
 
-  static constexpr bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+  static constexpr bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
 
   using BlockMergeSortT =
     BlockMergeSort<KeyT, Policy::BLOCK_THREADS, Policy::ITEMS_PER_THREAD, ValueT>;
@@ -415,7 +415,7 @@ struct AgentMerge
   /// Alias wrapper allowing storage to be unioned
   struct TempStorage : Uninitialized<_TempStorage> {};
 
-  static constexpr bool KEYS_ONLY = Equals<ValueT, NullType>::VALUE;
+  static constexpr bool KEYS_ONLY = std::is_same<ValueT, NullType>::value;
   static constexpr int BLOCK_THREADS = Policy::BLOCK_THREADS;
   static constexpr int ITEMS_PER_THREAD = Policy::ITEMS_PER_THREAD;
   static constexpr int ITEMS_PER_TILE = Policy::ITEMS_PER_TILE;
