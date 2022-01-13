@@ -684,7 +684,7 @@ struct Uninitialized
 
     enum
     {
-        WORDS = sizeof(T) / sizeof(DeviceWord)
+        WORDS = (sizeof(T) / sizeof(DeviceWord))
     };
 
     /// Backing storage
