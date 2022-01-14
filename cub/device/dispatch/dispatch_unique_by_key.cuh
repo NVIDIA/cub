@@ -31,9 +31,6 @@
  * cub::DeviceSelect::UniqueByKey provides device-wide, parallel operations for selecting unique items by key from sequences of data items residing within device-accessible memory.
  */
 
-// TODO: remove this note:
-// copy-pasted from https://github.com/NVIDIA/thrust/blob/main/thrust/system/cuda/detail/unique_by_key.h
-
 #include "../../agent/agent_unique_by_key.cuh"
 #include "../../util_math.cuh"
 #include "../../util_macro.cuh"
@@ -126,7 +123,7 @@ struct DeviceUniqueByKeyPolicy
             NOMINAL_4B_ITEMS_PER_THREAD = 11,
             ITEMS_PER_THREAD = Nominal4BItemsToItems<KeyT>(NOMINAL_4B_ITEMS_PER_THREAD),
         };
-        
+
         using UniqueByKeyPolicyT =  AgentUniqueByKeyPolicy<64,
                             ITEMS_PER_THREAD,
                             cub::BLOCK_LOAD_WARP_TRANSPOSE,
@@ -223,13 +220,13 @@ struct DispatchUniqueByKey: SelectedPolicy
     cudaError_t Invoke(InitKernel init_kernel, ScanKernel scan_kernel)
     {
 #ifndef CUB_RUNTIME_ENABLED
- 
+
         (void)init_kernel;
         (void)scan_kernel;
 
         // Kernel launch not supported from this device
         return CubDebug(cudaErrorNotSupported);
- 
+
 #else
 
         using Policy = typename ActivePolicyT::UniqueByKeyPolicyT;
@@ -261,7 +258,7 @@ struct DispatchUniqueByKey: SelectedPolicy
             {
                 break;
             }
-            std::size_t vshmem_size = VshmemSize(max_shmem, sizeof(typename UniqueByKeyAgentT::TempStorage), num_tiles);
+            std::size_t vshmem_size = detail::VshmemSize(max_shmem, sizeof(typename UniqueByKeyAgentT::TempStorage), num_tiles);
 
             // Specify temporary storage allocation requirements
             size_t allocation_sizes[2] = {0, vshmem_size};
@@ -355,10 +352,10 @@ struct DispatchUniqueByKey: SelectedPolicy
         while(0);
 
         return error;
- 
+
 #endif  // CUB_RUNTIME_ENABLED
     }
- 
+
     template <typename ActivePolicyT>
     CUB_RUNTIME_FUNCTION __host__  __forceinline__
     cudaError_t Invoke()
@@ -379,7 +376,7 @@ struct DispatchUniqueByKey: SelectedPolicy
         );
     }
 
- 
+
     /**
     * Internal dispatch routine
     */
@@ -429,95 +426,5 @@ struct DispatchUniqueByKey: SelectedPolicy
         return error;
     }
 };
-
-
-// template <typename Derived,
-//         typename KeyInputIteratorT,
-//         typename ValueInputIteratorT,
-//         typename KeyOutputIteratorT,
-//         typename ValueOutputIteratorT,
-//         typename EqualityOpT>
-// THRUST_RUNTIME_FUNCTION
-// pair<KeyOutputIteratorT, ValueOutputIteratorT>
-// unique_by_key(execution_policy<Derived>& policy,
-//             KeyInputIteratorT                 keys_first,
-//             KeyInputIteratorT                 keys_last,
-//             ValueInputIteratorT                 values_first,
-//             KeyOutputIteratorT                keys_result,
-//             ValueOutputIteratorT                values_result,
-//             EqualityOpT                 binary_pred)
-// {
-
-//     typedef int size_type;
-
-//     size_type num_items
-//       = static_cast<size_type>(thrust::distance(keys_first, keys_last));
-
-//     size_t       temp_storage_bytes = 0;
-//     cudaStream_t stream             = cuda_cub::stream(policy);
-//     bool         debug_sync         = THRUST_DEBUG_SYNC_FLAG;
-
-//     cudaError_t status;
-//     status = __unique_by_key::doit_step(NULL,
-//                                         temp_storage_bytes,
-//                                         keys_first,
-//                                         values_first,
-//                                         keys_result,
-//                                         values_result,
-//                                         binary_pred,
-//                                         reinterpret_cast<size_type*>(NULL),
-//                                         num_items,
-//                                         stream,
-//                                         debug_sync);
-//     cuda_cub::throw_on_error(status, "unique_by_key: failed on 1st step");
-
-//     size_t allocation_sizes[2] = {sizeof(size_type), temp_storage_bytes};
-//     void * allocations[2]      = {NULL, NULL};
-
-//     size_t storage_size = 0;
-//     status = core::alias_storage(NULL,
-//                                  storage_size,
-//                                  allocations,
-//                                  allocation_sizes);
-//     cuda_cub::throw_on_error(status, "unique_by_key failed on 1st alias_storage");
-
-//     // Allocate temporary storage.
-//     thrust::detail::temporary_array<thrust::detail::uint8_t, Derived>
-//       tmp(policy, storage_size);
-//     void *ptr = static_cast<void*>(tmp.data().get());
-
-//     status = core::alias_storage(ptr,
-//                                  storage_size,
-//                                  allocations,
-//                                  allocation_sizes);
-//     cuda_cub::throw_on_error(status, "unique_by_key failed on 2nd alias_storage");
-
-//     size_type* d_num_selected_out
-//       = thrust::detail::aligned_reinterpret_cast<size_type*>(allocations[0]);
-
-//     status = __unique_by_key::doit_step(allocations[1],
-//                                         temp_storage_bytes,
-//                                         keys_first,
-//                                         values_first,
-//                                         keys_result,
-//                                         values_result,
-//                                         binary_pred,
-//                                         d_num_selected_out,
-//                                         num_items,
-//                                         stream,
-//                                         debug_sync);
-//     cuda_cub::throw_on_error(status, "unique_by_key: failed on 2nd step");
-
-//     status = cuda_cub::synchronize(policy);
-//     cuda_cub::throw_on_error(status, "unique_by_key: failed to synchronize");
-
-//     size_type num_selected = get_value(policy, d_num_selected_out);
-
-//     return thrust::make_pair(
-//       keys_result + num_selected,
-//       values_result + num_selected
-//     );
-// }
-
 
 CUB_NAMESPACE_END

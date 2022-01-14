@@ -35,15 +35,9 @@
 #include <stdio.h>
 #include <typeinfo>
 
-#include <thrust/device_ptr.h>
-#include <thrust/unique.h>
-
 #include <cub/util_allocator.cuh>
 #include <cub/iterator/counting_input_iterator.cuh>
 #include <cub/device/device_select.cuh>
-
-#include <thrust/device_ptr.h>
-#include <thrust/unique.h>
 
 #include "test_util.h"
 
@@ -64,7 +58,6 @@ CachingDeviceAllocator  g_allocator(true);
 enum Backend
 {
     CUB,        // CUB method
-    THRUST,     // Thrust method
     CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
 };
 
@@ -103,74 +96,6 @@ cudaError_t Dispatch(
     }
     return error;
 }
-
-
-//---------------------------------------------------------------------
-// Dispatch to different Thrust entrypoints
-//---------------------------------------------------------------------
-
-
-/**
- * Dispatch to unique entrypoint
- */
-template <typename KeyInputIteratorT, typename ValueInputIteratorT, typename KeyOutputIteratorT, typename ValueOutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
-__host__ __forceinline__
-cudaError_t Dispatch(
-    Int2Type<THRUST>            /*dispatch_to*/,
-    int                         timing_timing_iterations,
-    size_t                      */*d_temp_storage_bytes*/,
-    cudaError_t                 */*d_cdp_error*/,
-
-    void                        *d_temp_storage,
-    size_t                      &temp_storage_bytes,
-    KeyInputIteratorT           d_keys_in,
-    ValueInputIteratorT         d_values_in,
-    KeyOutputIteratorT          d_keys_out,
-    ValueOutputIteratorT        d_values_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    cudaStream_t                /*stream*/,
-    bool                        /*debug_synchronous*/)
-{
-    // The input types
-    typedef typename std::iterator_traits<KeyInputIteratorT>::value_type InputKeyT;
-    typedef typename std::iterator_traits<ValueInputIteratorT>::value_type InputValueT;
-
-    // The output types
-    using OutputKeyT = typename If<(Equals<typename std::iterator_traits<KeyOutputIteratorT>::value_type, void>::VALUE),       // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<KeyInputIteratorT>::value_type,                                                          // ... then the input iterator's value type,
-        typename std::iterator_traits<KeyOutputIteratorT>::value_type>::Type;                                                  // ... else the output iterator's value type
-    using OutputValueT =  typename If<(Equals<typename std::iterator_traits<ValueOutputIteratorT>::value_type, void>::VALUE),  // OutputT =  (if output iterator's value type is void) ?
-        typename std::iterator_traits<ValueInputIteratorT>::value_type,                                                        // ... then the input iterator's value type,
-        typename std::iterator_traits<ValueOutputIteratorT>::value_type>::Type;                                                // ... else the output iterator's value type
-
-    if (d_temp_storage == 0)
-    {
-        temp_storage_bytes = 1;
-    }
-    else
-    {
-        THRUST_NS_QUALIFIER::device_ptr<InputKeyT> d_keys_in_wrapper(d_keys_in);
-        THRUST_NS_QUALIFIER::device_ptr<InputValueT> d_values_in_wrapper(d_values_in);
-        using OutputKeyIterT = THRUST_NS_QUALIFIER::device_ptr<OutputKeyT>;
-        using OutputValueIterT = THRUST_NS_QUALIFIER::device_ptr<OutputValueT>;
-        OutputKeyIterT d_keys_out_wrapper(d_keys_out);
-        OutputValueIterT d_values_out_wrapper(d_values_out);
-        THRUST_NS_QUALIFIER::pair<OutputKeyIterT, OutputValueIterT> d_out_wrapper_end;
-        for (int i = 0; i < timing_timing_iterations; ++i)
-        {
-            d_out_wrapper_end = THRUST_NS_QUALIFIER::unique_by_key_copy(d_keys_in_wrapper, d_keys_in_wrapper + num_items, d_values_in_wrapper, d_keys_out_wrapper, d_values_out_wrapper);
-        }
-
-        OffsetT num_selected = OffsetT(d_out_wrapper_end.first - d_keys_out_wrapper);
-        CubDebugExit(cudaMemcpy(d_num_selected_out, &num_selected, sizeof(OffsetT), cudaMemcpyHostToDevice));
-
-    }
-
-    return cudaSuccess;
-}
-
-
 
 //---------------------------------------------------------------------
 // CUDA Nested Parallelism Test Kernel
@@ -466,7 +391,7 @@ void TestPointer(
     int num_selected = Solve(h_keys_in, h_values_in, h_keys_reference, h_values_reference, num_items);
 
     printf("\nPointer %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements, entropy_reduction %d\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_selected, float(num_items) / num_selected,
         typeid(KeyT).name(),
         (int) sizeof(KeyT),
@@ -518,7 +443,7 @@ void TestIterator(
     int num_selected = Solve(h_keys_in, h_values_in, h_keys_reference, h_values_reference, num_items);
 
     printf("\nIterator %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements\n",
-        (BACKEND == CDP) ? "CDP CUB" : (BACKEND == THRUST) ? "Thrust" : "CUB",
+        (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_selected, float(num_items) / num_selected,
         typeid(KeyT).name(),
         (int) sizeof(ValueT));
@@ -624,7 +549,6 @@ int main(int argc, char** argv)
             "[--device=<device-id>] "
             "[--maxseg=<max segment length>]"
             "[--entropy=<segment length bit entropy reduction rounds>]"
-            "[--repeat=<repetitions of entire test suite>]"
             "[--v] "
             "[--cdp]"
             "\n", argv[0]);
@@ -636,103 +560,40 @@ int main(int argc, char** argv)
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
 
-#ifdef CUB_TEST_MINIMAL
+    // Test different input types
+    Test<unsigned char, int>(num_items);
+    Test<unsigned char, long>(num_items);
+    Test<unsigned short, int>(num_items);
+    Test<unsigned short, long>(num_items);
+    Test<unsigned int, int>(num_items);
+    Test<unsigned int, long>(num_items);
+    Test<unsigned long long, int>(num_items);
+    Test<unsigned long long, long>(num_items);
 
-    // Compile/run basic CUB test
-    if (num_items < 0) num_items = 32000000;
-    TestPointer<CUB, int, int>(         num_items,                                 entropy_reduction, maxseg);
+    Test<uchar2, uint2>(num_items);
+    Test<uchar2, ulonglong2>(num_items);
+    Test<ushort2, uint2>(num_items);
+    Test<ushort2, ulonglong2>(num_items);
+    Test<uint2, uint2>(num_items);
+    Test<uint2, ulonglong2>(num_items);
+    Test<ulonglong2, uint2>(num_items);
+    Test<ulonglong2, ulonglong2>(num_items);
 
-#elif defined(CUB_TEST_BENCHMARK)
+    Test<uchar4, uint4>(num_items);
+    Test<uchar4, ulonglong4>(num_items);
+    Test<ushort4, uint4>(num_items);
+    Test<ushort4, ulonglong4>(num_items);
+    Test<uint4, uint4>(num_items);
+    Test<uint4, ulonglong4>(num_items);
+    Test<ulonglong4, uint4>(num_items);
+    Test<ulonglong4, ulonglong4>(num_items);
 
-    // Get device ordinal
-    int device_ordinal;
-    CubDebugExit(cudaGetDevice(&device_ordinal));
-
-    // Get device SM version
-    int sm_version = 0;
-    CubDebugExit(SmVersion(sm_version, device_ordinal));
-
-    // Compile/run quick tests
-    if (num_items < 0) num_items = 32000000;
-
-    printf("-- Iterator ----------------------------\n");
-    TestIterator<CUB, int, int>(          num_items);
-    TestIterator<CUB, int, long>(         num_items);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, char, char>(         num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg);
-    TestPointer<CUB, char, int>(          num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg);
-    TestPointer<THRUST, char, char>(      num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg);
-    TestPointer<THRUST, char, int>(       num_items * ((sm_version <= 130) ? 1 : 4), entropy_reduction, maxseg);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, short, int>(         num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg);
-    TestPointer<CUB, short, long>(        num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg);
-    TestPointer<THRUST, short, int>(      num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg);
-    TestPointer<THRUST, short, long>(     num_items * ((sm_version <= 130) ? 1 : 2), entropy_reduction, maxseg);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, int, int>(           num_items,                                 entropy_reduction, maxseg);
-    TestPointer<CUB, int, long>(          num_items,                                 entropy_reduction, maxseg);
-    TestPointer<THRUST, int, int>(        num_items,                                 entropy_reduction, maxseg);
-    TestPointer<THRUST, int, long>(       num_items,                                 entropy_reduction, maxseg);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, long long, int>(     num_items / 2,                             entropy_reduction, maxseg);
-    TestPointer<CUB, long long, long>(    num_items / 2,                             entropy_reduction, maxseg);
-    TestPointer<THRUST, long long, int>(  num_items / 2,                             entropy_reduction, maxseg);
-    TestPointer<THRUST, long long, long>( num_items / 2,                             entropy_reduction, maxseg);
-
-    printf("----------------------------\n");
-    TestPointer<CUB, TestFoo, int>(       num_items / 4,                             entropy_reduction, maxseg);
-    TestPointer<CUB, TestFoo, long>(      num_items / 4,                             entropy_reduction, maxseg);
-    TestPointer<CUB, TestFoo, TestFoo>(   num_items / 4,                             entropy_reduction, maxseg);
-    TestPointer<THRUST, TestFoo, int>(    num_items / 4,                             entropy_reduction, maxseg);
-    TestPointer<THRUST, TestFoo, long>(   num_items / 4,                             entropy_reduction, maxseg);
-    TestPointer<THRUST, TestFoo, TestFoo>(num_items / 4,                             entropy_reduction, maxseg);
-
-#else
-
-    // Compile/run thorough tests
-    for (int i = 0; i <= g_repeat; ++i)
-    {
-        // Test different input types
-        Test<unsigned char, int>(num_items);
-        Test<unsigned char, long>(num_items);
-        Test<unsigned short, int>(num_items);
-        Test<unsigned short, long>(num_items);
-        Test<unsigned int, int>(num_items);
-        Test<unsigned int, long>(num_items);
-        Test<unsigned long long, int>(num_items);
-        Test<unsigned long long, long>(num_items);
-
-        Test<uchar2, uint2>(num_items);
-        Test<uchar2, ulonglong2>(num_items);
-        Test<ushort2, uint2>(num_items);
-        Test<ushort2, ulonglong2>(num_items);
-        Test<uint2, uint2>(num_items);
-        Test<uint2, ulonglong2>(num_items);
-        Test<ulonglong2, uint2>(num_items);
-        Test<ulonglong2, ulonglong2>(num_items);
-
-        Test<uchar4, uint4>(num_items);
-        Test<uchar4, ulonglong4>(num_items);
-        Test<ushort4, uint4>(num_items);
-        Test<ushort4, ulonglong4>(num_items);
-        Test<uint4, uint4>(num_items);
-        Test<uint4, ulonglong4>(num_items);
-        Test<ulonglong4, uint4>(num_items);
-        Test<ulonglong4, ulonglong4>(num_items);
-
-        Test<TestFoo, TestFoo>(num_items);
-        Test<TestFoo, TestBar>(num_items);
-        Test<TestFoo, int>(num_items);
-        Test<TestBar, TestFoo>(num_items);
-        Test<TestBar, TestBar>(num_items);
-        Test<TestBar, int>(num_items);
-    }
-
-#endif
+    Test<TestFoo, TestFoo>(num_items);
+    Test<TestFoo, TestBar>(num_items);
+    Test<TestFoo, int>(num_items);
+    Test<TestBar, TestFoo>(num_items);
+    Test<TestBar, TestBar>(num_items);
+    Test<TestBar, int>(num_items);
 
     return 0;
 }

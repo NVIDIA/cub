@@ -47,6 +47,21 @@ using is_integral_or_enum =
   std::integral_constant<bool,
                          std::is_integral<T>::value || std::is_enum<T>::value>;
 
+__host__ __device__ __forceinline__ constexpr  std::size_t
+VshmemSize(std::size_t max_shmem,
+           std::size_t shmem_per_block,
+           std::size_t num_blocks)
+{
+  if (shmem_per_block > max_shmem)
+  {
+    return shmem_per_block * num_blocks;
+  }
+  else
+  {
+    return 0;
+  }
+}
+
 }
 
 /**
@@ -65,22 +80,6 @@ DivideAndRoundUp(NumeratorT n, DenominatorT d)
 
   // Static cast to undo integral promotion.
   return static_cast<NumeratorT>(n / d + (n % d != 0 ? 1 : 0));
-}
-
-
-__host__ __device__ __forceinline__ constexpr  std::size_t
-VshmemSize(std::size_t max_shmem,
-           std::size_t shmem_per_block,
-           std::size_t num_blocks)
-{
-  if (shmem_per_block > max_shmem)
-  {
-    return shmem_per_block * num_blocks;
-  }
-  else
-  {
-    return 0;
-  }
 }
 
 constexpr __device__ __host__ int

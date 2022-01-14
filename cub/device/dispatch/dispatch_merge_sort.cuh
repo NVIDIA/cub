@@ -622,7 +622,7 @@ struct DispatchMergeSort : SelectedPolicy
                                 static_cast<std::size_t>(max_shmem);
 
         virtual_shared_memory_size =
-          VshmemSize(static_cast<std::size_t>(max_shmem),
+          detail::VshmemSize(static_cast<std::size_t>(max_shmem),
                      (cub::max)(block_sort_shmem_size, merge_shmem_size),
                      static_cast<std::size_t>(num_tiles));
       }

@@ -108,14 +108,14 @@ struct AgentUniqueByKey
     };
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for keys
-    using WrappedKeyInputIteratorT = typename If<IsPointer<KeyInputIteratorT>::VALUE,
+    using WrappedKeyInputIteratorT = typename std::conditional<IsPointer<KeyInputIteratorT>::VALUE,
             CacheModifiedInputIterator<AgentUniqueByKeyPolicyT::LOAD_MODIFIER, KeyT, OffsetT>,     // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            KeyInputIteratorT>::Type;                                                              // Directly use the supplied input iterator type
+            KeyInputIteratorT>::type;                                                              // Directly use the supplied input iterator type
 
     // Cache-modified Input iterator wrapper type (for applying cache modifier) for values
-    using WrappedValueInputIteratorT = typename If<IsPointer<ValueInputIteratorT>::VALUE,
+    using WrappedValueInputIteratorT = typename std::conditional<IsPointer<ValueInputIteratorT>::VALUE,
             CacheModifiedInputIterator<AgentUniqueByKeyPolicyT::LOAD_MODIFIER, ValueT, OffsetT>,   // Wrap the native input pointer with CacheModifiedValuesInputIterator
-            ValueInputIteratorT>::Type;                                                            // Directly use the supplied input iterator type
+            ValueInputIteratorT>::type;                                                            // Directly use the supplied input iterator type
 
     // Parameterized BlockLoad type for input data
     using BlockLoadKeys = BlockLoad<
@@ -214,16 +214,16 @@ struct AgentUniqueByKey
     // Utility functions
     //---------------------------------------------------------------------
 
-    struct key_tag {};
-    struct value_tag {};
+    struct KeyTagT {};
+    struct ValueTagT {};
 
     __device__ __forceinline__
-    KeyExchangeT &get_shared(key_tag)
+    KeyExchangeT &GetShared(KeyTagT)
     {
         return temp_storage.shared_keys.Alias();
     }
     __device__ __forceinline__
-    ValueExchangeT &get_shared(value_tag)
+    ValueExchangeT &GetShared(ValueTagT)
     {
         return temp_storage.shared_values.Alias();
     }
@@ -253,7 +253,7 @@ struct AgentUniqueByKey
                                        num_selections_prefix;
             if (selection_flags[ITEM])
             {
-                get_shared(tag)[local_scatter_offset] = items[ITEM];
+                GetShared(tag)[local_scatter_offset] = items[ITEM];
             }
         }
 
@@ -263,7 +263,7 @@ struct AgentUniqueByKey
              item < num_tile_selections;
              item += BLOCK_THREADS)
         {
-            items_out[num_selections_prefix + item] = get_shared(tag)[item];
+            items_out[num_selections_prefix + item] = GetShared(tag)[item];
         }
 
         CTA_SYNC();
@@ -364,7 +364,7 @@ struct AgentUniqueByKey
 
         CTA_SYNC();
 
-        Scatter(key_tag(),
+        Scatter(KeyTagT(),
                 d_keys_out,
                 keys,
                 selection_flags,
@@ -376,7 +376,7 @@ struct AgentUniqueByKey
 
         CTA_SYNC();
 
-        Scatter(value_tag(),
+        Scatter(ValueTagT(),
                 d_values_out,
                 values,
                 selection_flags,
@@ -481,7 +481,7 @@ struct AgentUniqueByKey
 
         CTA_SYNC();
 
-        Scatter(key_tag(),
+        Scatter(KeyTagT(),
                 d_keys_out,
                 keys,
                 selection_flags,
@@ -493,7 +493,7 @@ struct AgentUniqueByKey
 
         CTA_SYNC();
 
-        Scatter(value_tag(),
+        Scatter(ValueTagT(),
                 d_values_out,
                 values,
                 selection_flags,
