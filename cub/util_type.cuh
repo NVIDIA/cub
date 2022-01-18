@@ -682,10 +682,9 @@ struct Uninitialized
     /// Biggest memory-access word that T is a whole multiple of and is not larger than the alignment of T
     typedef typename UnitWord<T>::DeviceWord DeviceWord;
 
-    enum
-    {
-        WORDS = (sizeof(T) / sizeof(DeviceWord))
-    };
+    static constexpr std::size_t DATA_SIZE = sizeof(T);
+    static constexpr std::size_t WORD_SIZE = sizeof(DeviceWord);
+    static constexpr std::size_t WORDS = DATA_SIZE / WORD_SIZE;
 
     /// Backing storage
     DeviceWord storage[WORDS];
