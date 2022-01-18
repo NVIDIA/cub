@@ -334,8 +334,11 @@ __global__ void DeviceSegmentedSortKernelSmall(
 
   __shared__ union
   {
-    typename MediumAgentWarpMergeSortT::TempStorage medium[segments_per_medium_block];
-    typename SmallAgentWarpMergeSortT::TempStorage small[segments_per_small_block];
+    typename MediumAgentWarpMergeSortT::TempStorage
+      medium_storage[segments_per_medium_block];
+
+    typename SmallAgentWarpMergeSortT::TempStorage
+      small_storage[segments_per_small_block];
   } temp_storage;
 
   if (bid < medium_blocks)
@@ -353,7 +356,7 @@ __global__ void DeviceSegmentedSortKernelSmall(
       const OffsetT segment_end   = d_end_offsets[global_segment_id];
       const OffsetT num_items     = segment_end - segment_begin;
 
-      MediumAgentWarpMergeSortT(temp_storage.medium[sid_within_block])
+      MediumAgentWarpMergeSortT(temp_storage.medium_storage[sid_within_block])
         .ProcessSegment(num_items,
                         d_keys_in + segment_begin,
                         d_keys_out + segment_begin,
@@ -376,7 +379,7 @@ __global__ void DeviceSegmentedSortKernelSmall(
       const OffsetT segment_end   = d_end_offsets[global_segment_id];
       const OffsetT num_items     = segment_end - segment_begin;
 
-      SmallAgentWarpMergeSortT(temp_storage.small[sid_within_block])
+      SmallAgentWarpMergeSortT(temp_storage.small_storage[sid_within_block])
         .ProcessSegment(num_items,
                         d_keys_in + segment_begin,
                         d_keys_out + segment_begin,
