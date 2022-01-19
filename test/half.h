@@ -33,11 +33,13 @@
  * Utilities for interacting with the opaque CUDA __half type
  */
 
-#include <stdint.h>
-#include <cuda_fp16.h>
-#include <iosfwd>
-
 #include <cub/util_type.cuh>
+
+#include <cuda_fp16.h>
+
+#include <cstdint>
+#include <cstring>
+#include <iosfwd>
 
 #ifdef __GNUC__
 // There's a ton of type-punning going on in this file.
@@ -150,7 +152,7 @@ struct half_t
         int sign        = ((this->__x >> 15) & 1);
         int exp         = ((this->__x >> 10) & 0x1f);
         int mantissa    = (this->__x & 0x3ff);
-        uint32_t f      = 0;
+        std::uint32_t f = 0;
 
         if (exp > 0 && exp < 31)
         {
@@ -192,7 +194,11 @@ struct half_t
                 f = (0xff << 23) | (sign << 31);    //  inf
             }
         }
-        return *reinterpret_cast<float const *>(&f);
+
+	static_assert(sizeof(float) == sizeof(std::uint32_t), "4-byte size check");
+	float ret{};
+	std::memcpy(&ret, &f, sizeof(float));
+	return ret;
     }
 
 
