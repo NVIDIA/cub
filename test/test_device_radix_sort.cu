@@ -1242,9 +1242,19 @@ void TestSegments(
     }
 
     // Test single segment
-    if (num_items < 128 * 1000 || pre_sorted) {
-        // Right now we assign a single thread block to each segment, so lets keep it to under 128K items per segment
-        TestSegmentIterators(h_keys, num_items, 1, pre_sorted, h_segment_offsets, d_segment_offsets);
+    if (num_items > 0)
+    {
+      if (num_items < 128 * 1000 || pre_sorted)
+      {
+        // Right now we assign a single thread block to each segment, so lets
+        // keep it to under 128K items per segment
+        TestSegmentIterators(h_keys,
+                             num_items,
+                             1,
+                             pre_sorted,
+                             h_segment_offsets,
+                             d_segment_offsets);
+      }
     }
 
     if (h_segment_offsets) delete[] h_segment_offsets;
