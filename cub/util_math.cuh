@@ -52,14 +52,7 @@ VshmemSize(std::size_t max_shmem,
            std::size_t shmem_per_block,
            std::size_t num_blocks)
 {
-  if (shmem_per_block > max_shmem)
-  {
-    return shmem_per_block * num_blocks;
-  }
-  else
-  {
-    return 0;
-  }
+  return shmem_per_block > max_shmem ? shmem_per_block * num_blocks : 0;
 }
 
 }
