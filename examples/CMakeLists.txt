@@ -50,6 +50,7 @@ function(cub_add_example target_name_var example_name example_src cub_target)
   add_test(NAME ${example_target}
     COMMAND "$<TARGET_FILE:${example_target}>"
   )
+  cub_add_test_labels(${example_target})
 endfunction()
 
 add_subdirectory(cmake)

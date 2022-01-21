@@ -122,6 +122,7 @@ function(cub_add_test target_name_var test_name test_src cub_target)
   add_test(NAME ${test_target}
     COMMAND "$<TARGET_FILE:${test_target}>"
   )
+  cub_add_test_labels(${test_target})
 endfunction()
 
 foreach (test_src IN LISTS test_srcs)
