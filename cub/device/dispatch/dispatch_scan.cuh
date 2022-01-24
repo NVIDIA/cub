@@ -348,7 +348,7 @@ struct DispatchScan:
 
             // Get max x-dimension of grid
             int max_dim_x;
-            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
+            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;
 
             // Run grids in epochs (in case number of tiles exceeds max x-dimension
             int scan_grid_size = CUB_MIN(num_tiles, max_dim_x);

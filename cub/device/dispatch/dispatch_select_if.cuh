@@ -333,7 +333,7 @@ struct DispatchSelectIf
 
             // Get max x-dimension of grid
             int max_dim_x;
-            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;;
+            if (CubDebug(error = cudaDeviceGetAttribute(&max_dim_x, cudaDevAttrMaxGridDimX, device_ordinal))) break;
 
             // Get grid size for scanning tiles
             dim3 scan_grid_size;
@@ -446,5 +446,3 @@ struct DispatchSelectIf
 
 
 CUB_NAMESPACE_END
-
-

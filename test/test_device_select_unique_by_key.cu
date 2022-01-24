@@ -1,6 +1,5 @@
 /******************************************************************************
- * Copyright (c) 2011, Duane Merrill.  All rights reserved.
- * Copyright (c) 2011-2018, NVIDIA CORPORATION.  All rights reserved.
+ * Copyright (c) NVIDIA CORPORATION.  All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -51,6 +50,7 @@ using namespace cub;
 
 bool                    g_verbose               = false;
 int                     g_timing_iterations     = 0;
+int                     g_repeat                = 0;
 float                   g_device_giga_bandwidth;
 CachingDeviceAllocator  g_allocator(true);
 
@@ -70,7 +70,7 @@ enum Backend
 /**
  * Dispatch to unique entrypoint
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
+template <typename KeyInputIteratorT, typename ValueInputIteratorT, typename KeyOutputIteratorT, typename ValueOutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 CUB_RUNTIME_FUNCTION __forceinline__
 cudaError_t Dispatch(
     Int2Type<CUB>               /*dispatch_to*/,
@@ -80,8 +80,10 @@ cudaError_t Dispatch(
 
     void*                       d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIteratorT              d_in,
-    OutputIteratorT             d_out,
+    KeyInputIteratorT           d_keys_in,
+    ValueInputIteratorT         d_values_in,
+    KeyOutputIteratorT          d_keys_out,
+    ValueOutputIteratorT        d_values_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     cudaStream_t                stream,
@@ -90,7 +92,7 @@ cudaError_t Dispatch(
     cudaError_t error = cudaSuccess;
     for (int i = 0; i < timing_timing_iterations; ++i)
     {
-        error = DeviceSelect::Unique(d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, stream, debug_synchronous);
+        error = DeviceSelect::UniqueByKey(d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, stream, debug_synchronous);
     }
     return error;
 }
@@ -102,17 +104,19 @@ cudaError_t Dispatch(
 /**
  * Simple wrapper kernel to invoke DeviceSelect
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
+template <typename KeyInputIteratorT, typename ValueInputIteratorT, typename KeyOutputIteratorT, typename ValueOutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 __global__ void CnpDispatchKernel(
     int                         timing_timing_iterations,
     size_t                      *d_temp_storage_bytes,
     cudaError_t                 *d_cdp_error,
 
-    void*               d_temp_storage,
+    void*                       d_temp_storage,
     size_t                      temp_storage_bytes,
-    InputIteratorT              d_in,
-    OutputIteratorT              d_out,
-    NumSelectedIteratorT         d_num_selected_out,
+    KeyInputIteratorT           d_keys_in,
+    ValueInputIteratorT         d_values_in,
+    KeyOutputIteratorT          d_keys_out,
+    ValueOutputIteratorT        d_values_out,
+    NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     bool                        debug_synchronous)
 {
@@ -123,15 +127,17 @@ __global__ void CnpDispatchKernel(
     (void)d_cdp_error;
     (void)d_temp_storage;
     (void)temp_storage_bytes;
-    (void)d_in;
-    (void)d_out;
+    (void)d_keys_in;
+    (void)d_values_in;
+    (void)d_keys_out;
+    (void)d_values_out;
     (void)d_num_selected_out;
     (void)num_items;
     (void)debug_synchronous;
     *d_cdp_error = cudaErrorNotSupported;
 #else
     *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, 0, debug_synchronous);
+        d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, 0, debug_synchronous);
     *d_temp_storage_bytes = temp_storage_bytes;
 #endif
 }
@@ -140,7 +146,7 @@ __global__ void CnpDispatchKernel(
 /**
  * Dispatch to CDP kernel
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
+template <typename KeyInputIteratorT, typename ValueInputIteratorT, typename KeyOutputIteratorT, typename ValueOutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
 cudaError_t Dispatch(
     Int2Type<CDP>               dispatch_to,
     int                         timing_timing_iterations,
@@ -149,8 +155,10 @@ cudaError_t Dispatch(
 
     void*                       d_temp_storage,
     size_t                      &temp_storage_bytes,
-    InputIteratorT              d_in,
-    OutputIteratorT             d_out,
+    KeyInputIteratorT           d_keys_in,
+    ValueInputIteratorT         d_values_in,
+    KeyOutputIteratorT          d_keys_out,
+    ValueOutputIteratorT        d_values_out,
     NumSelectedIteratorT        d_num_selected_out,
     OffsetT                     num_items,
     cudaStream_t                stream,
@@ -158,7 +166,7 @@ cudaError_t Dispatch(
 {
     // Invoke kernel to invoke device-side dispatch
     CnpDispatchKernel<<<1,1>>>(timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, debug_synchronous);
+        d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, debug_synchronous);
 
     // Copy out temp_storage_bytes
     CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
@@ -233,25 +241,31 @@ void Initialize(
  * Solve unique problem
  */
 template <
-    typename        InputIteratorT,
-    typename        T>
+    typename        KeyInputIteratorT,
+    typename        ValueInputIteratorT,
+    typename        KeyT,
+    typename        ValueT>
 int Solve(
-    InputIteratorT  h_in,
-    T               *h_reference,
-    int             num_items)
+    KeyInputIteratorT    h_keys_in,
+    ValueInputIteratorT  h_values_in,
+    KeyT                 *h_keys_reference,
+    ValueT               *h_values_reference,
+    int                  num_items)
 {
     int num_selected = 0;
     if (num_items > 0)
     {
-        h_reference[num_selected] = h_in[0];
+        h_keys_reference[num_selected] = h_keys_in[0];
+        h_values_reference[num_selected] = h_values_in[0];
         num_selected++;
     }
 
     for (int i = 1; i < num_items; ++i)
     {
-        if (h_in[i] != h_in[i - 1])
+        if (h_keys_in[i] != h_keys_in[i - 1])
         {
-            h_reference[num_selected] = h_in[i];
+            h_keys_reference[num_selected] = h_keys_in[i];
+            h_values_reference[num_selected] = h_values_in[i];
             num_selected++;
         }
     }
@@ -266,18 +280,24 @@ int Solve(
  */
 template <
     Backend             BACKEND,
-    typename            DeviceInputIteratorT,
-    typename            T>
+    typename            KeyInputIteratorT,
+    typename            ValueInputIteratorT,
+    typename            KeyT,
+    typename            ValueT>
 void Test(
-    DeviceInputIteratorT d_in,
-    T                   *h_reference,
-    int                 num_selected,
-    int                 num_items)
+    KeyInputIteratorT    d_keys_in,
+    ValueInputIteratorT  d_values_in,
+    KeyT                 *h_keys_reference,
+    ValueT               *h_values_reference,
+    int                  num_selected,
+    int                  num_items)
 {
     // Allocate device output array and num selected
-    T       *d_out = NULL;
+    KeyT    *d_keys_out = NULL;
+    ValueT  *d_values_out = NULL;
     int     *d_num_selected_out = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_out, sizeof(T) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys_out, sizeof(KeyT) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values_out, sizeof(ValueT) * num_items));
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_num_selected_out, sizeof(int)));
 
     // Allocate CDP device arrays
@@ -289,18 +309,21 @@ void Test(
     // Allocate temporary storage
     void            *d_temp_storage = NULL;
     size_t          temp_storage_bytes = 0;
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, 0, true));
     CubDebugExit(g_allocator.DeviceAllocate(&d_temp_storage, temp_storage_bytes));
 
     // Clear device output array
-    CubDebugExit(cudaMemset(d_out, 0, sizeof(T) * num_items));
+    CubDebugExit(cudaMemset(d_keys_out, 0, sizeof(KeyT) * num_items));
+    CubDebugExit(cudaMemset(d_values_out, 0, sizeof(ValueT) * num_items));
     CubDebugExit(cudaMemset(d_num_selected_out, 0, sizeof(int)));
 
     // Run warmup/correctness iteration
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, 0, true));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), 1, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, 0, true));
 
     // Check for correctness (and display results, if specified)
-    int compare1 = CompareDeviceResults(h_reference, d_out, num_selected, true, g_verbose);
+    int compare11 = CompareDeviceResults(h_keys_reference, d_keys_out, num_selected, true, g_verbose);
+    int compare12 = CompareDeviceResults(h_values_reference, d_values_out, num_selected, true, g_verbose);
+    int compare1 = compare11 && compare12;
     printf("\t Data %s ", compare1 ? "FAIL" : "PASS");
 
     int compare2 = CompareDeviceResults(&num_selected, d_num_selected_out, 1, true, g_verbose);
@@ -313,7 +336,7 @@ void Test(
     // Performance
     GpuTimer gpu_timer;
     gpu_timer.Start();
-    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_in, d_out, d_num_selected_out, num_items, 0, false));
+    CubDebugExit(Dispatch(Int2Type<BACKEND>(), g_timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, 0, false));
     gpu_timer.Stop();
     float elapsed_millis = gpu_timer.ElapsedMillis();
 
@@ -322,7 +345,7 @@ void Test(
     {
         float avg_millis        = elapsed_millis / g_timing_iterations;
         float giga_rate         = float(num_items) / avg_millis / 1000.0f / 1000.0f;
-        float giga_bandwidth    = float((num_items + num_selected) * sizeof(T)) / avg_millis / 1000.0f / 1000.0f;
+        float giga_bandwidth    = float((num_items + num_selected) * (sizeof(KeyT) + sizeof(ValueT))) / avg_millis / 1000.0f / 1000.0f;
         printf(", %.3f avg ms, %.3f billion items/s, %.3f logical GB/s, %.1f%% peak", avg_millis, giga_rate, giga_bandwidth, giga_bandwidth / g_device_giga_bandwidth * 100.0);
     }
     printf("\n\n");
@@ -332,7 +355,8 @@ void Test(
     fflush(stderr);
 
     // Cleanup
-    if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
+    if (d_keys_out) CubDebugExit(g_allocator.DeviceFree(d_keys_out));
+    if (d_values_out) CubDebugExit(g_allocator.DeviceFree(d_values_out));
     if (d_num_selected_out) CubDebugExit(g_allocator.DeviceFree(d_num_selected_out));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
@@ -348,42 +372,52 @@ void Test(
  */
 template <
     Backend         BACKEND,
-    typename        T>
+    typename        KeyT,
+    typename        ValueT>
 void TestPointer(
     int             num_items,
     int             entropy_reduction,
     int             max_segment)
 {
     // Allocate host arrays
-    T*  h_in        = new T[num_items];
-    T*  h_reference = new T[num_items];
+    KeyT*    h_keys_in        = new KeyT[num_items];
+    ValueT*  h_values_in      = new ValueT[num_items];
+    KeyT*    h_keys_reference = new KeyT[num_items];
+    ValueT*  h_values_reference = new ValueT[num_items];
 
     // Initialize problem and solution
-    Initialize(entropy_reduction, h_in, num_items, max_segment);
-    int num_selected = Solve(h_in, h_reference, num_items);
+    Initialize(entropy_reduction, h_keys_in, num_items, max_segment);
+    Initialize(entropy_reduction, h_values_in, num_items, max_segment);
+    int num_selected = Solve(h_keys_in, h_values_in, h_keys_reference, h_values_reference, num_items);
 
     printf("\nPointer %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements, entropy_reduction %d\n",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_selected, float(num_items) / num_selected,
-        typeid(T).name(),
-        (int) sizeof(T),
+        typeid(KeyT).name(),
+        (int) sizeof(KeyT),
         entropy_reduction);
     fflush(stdout);
 
     // Allocate problem device arrays
-    T *d_in = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_in, sizeof(T) * num_items));
+    KeyT *d_keys_in = NULL;
+    ValueT *d_values_in = NULL;
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_keys_in, sizeof(KeyT) * num_items));
+    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_values_in, sizeof(ValueT) * num_items));
 
     // Initialize device input
-    CubDebugExit(cudaMemcpy(d_in, h_in, sizeof(T) * num_items, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_keys_in, h_keys_in, sizeof(KeyT) * num_items, cudaMemcpyHostToDevice));
+    CubDebugExit(cudaMemcpy(d_values_in, h_values_in, sizeof(ValueT) * num_items, cudaMemcpyHostToDevice));
 
     // Run Test
-    Test<BACKEND>(d_in, h_reference, num_selected, num_items);
+    Test<BACKEND>(d_keys_in, d_values_in, h_keys_reference, h_values_reference, num_selected, num_items);
 
     // Cleanup
-    if (h_in) delete[] h_in;
-    if (h_reference) delete[] h_reference;
-    if (d_in) CubDebugExit(g_allocator.DeviceFree(d_in));
+    if (h_keys_in) delete[] h_keys_in;
+    if (h_values_in) delete[] h_values_in;
+    if (h_keys_reference) delete[] h_keys_reference;
+    if (h_values_reference) delete[] h_values_reference;
+    if (d_keys_in) CubDebugExit(g_allocator.DeviceFree(d_keys_in));
+    if (d_values_in) CubDebugExit(g_allocator.DeviceFree(d_values_in));
 }
 
 
@@ -392,31 +426,35 @@ void TestPointer(
  */
 template <
     Backend         BACKEND,
-    typename        T>
+    typename        KeyT,
+    typename        ValueT>
 void TestIterator(
     int             num_items)
 {
     // Use a counting iterator as the input
-    CountingInputIterator<T, int> h_in(0);
+    CountingInputIterator<KeyT, int> h_keys_in(0);
+    CountingInputIterator<ValueT, int> h_values_in(0);
 
     // Allocate host arrays
-    T*  h_reference = new T[num_items];
+    KeyT*    h_keys_reference   = new KeyT[num_items];
+    ValueT*  h_values_reference = new ValueT[num_items];
 
     // Initialize problem and solution
-    int num_selected = Solve(h_in, h_reference, num_items);
+    int num_selected = Solve(h_keys_in, h_values_in, h_keys_reference, h_values_reference, num_items);
 
     printf("\nIterator %s cub::DeviceSelect::Unique %d items, %d selected (avg run length %.3f), %s %d-byte elements\n",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_selected, float(num_items) / num_selected,
-        typeid(T).name(),
-        (int) sizeof(T));
+        typeid(KeyT).name(),
+        (int) sizeof(ValueT));
     fflush(stdout);
 
     // Run Test
-    Test<BACKEND>(h_in, h_reference, num_selected, num_items);
+    Test<BACKEND>(h_keys_in, h_values_in, h_keys_reference, h_values_reference, num_selected, num_items);
 
     // Cleanup
-    if (h_reference) delete[] h_reference;
+    if (h_keys_reference) delete[] h_keys_reference;
+    if (h_values_reference) delete[] h_values_reference;
 }
 
 
@@ -425,15 +463,16 @@ void TestIterator(
  */
 template <
     Backend         BACKEND,
-    typename        T>
+    typename        KeyT,
+    typename        ValueT>
 void Test(
     int             num_items)
 {
     for (int max_segment = 1; ((max_segment > 0) && (max_segment < num_items)); max_segment *= 11)
     {
-        TestPointer<BACKEND, T>(num_items, 0, max_segment);
-        TestPointer<BACKEND, T>(num_items, 2, max_segment);
-        TestPointer<BACKEND, T>(num_items, 7, max_segment);
+        TestPointer<BACKEND, KeyT, ValueT>(num_items, 0, max_segment);
+        TestPointer<BACKEND, KeyT, ValueT>(num_items, 2, max_segment);
+        TestPointer<BACKEND, KeyT, ValueT>(num_items, 7, max_segment);
     }
 }
 
@@ -442,13 +481,14 @@ void Test(
  * Test different dispatch
  */
 template <
-    typename        T>
+    typename        KeyT,
+    typename        ValueT>
 void TestOp(
     int             num_items)
 {
-    Test<CUB, T>(num_items);
+    Test<CUB, KeyT, ValueT>(num_items);
 #ifdef CUB_CDP
-    Test<CDP, T>(num_items);
+    Test<CDP, KeyT, ValueT>(num_items);
 #endif
 }
 
@@ -456,21 +496,23 @@ void TestOp(
 /**
  * Test different input sizes
  */
-template <typename T>
+template <
+    typename        KeyT,
+    typename        ValueT>
 void Test(
     int             num_items)
 {
     if (num_items < 0)
     {
-        TestOp<T>(0);
-        TestOp<T>(1);
-        TestOp<T>(100);
-        TestOp<T>(10000);
-        TestOp<T>(1000000);
+        TestOp<KeyT, ValueT>(0);
+        TestOp<KeyT, ValueT>(1);
+        TestOp<KeyT, ValueT>(100);
+        TestOp<KeyT, ValueT>(10000);
+        TestOp<KeyT, ValueT>(1000000);
     }
     else
     {
-        TestOp<T>(num_items);
+        TestOp<KeyT, ValueT>(num_items);
     }
 }
 
@@ -494,6 +536,7 @@ int main(int argc, char** argv)
     g_verbose = args.CheckCmdLineFlag("v");
     args.GetCmdLineArgument("n", num_items);
     args.GetCmdLineArgument("i", g_timing_iterations);
+    args.GetCmdLineArgument("repeat", g_repeat);
     args.GetCmdLineArgument("maxseg", maxseg);
     args.GetCmdLineArgument("entropy", entropy_reduction);
 
@@ -518,23 +561,39 @@ int main(int argc, char** argv)
     printf("\n");
 
     // Test different input types
-    Test<unsigned char>(num_items);
-    Test<unsigned short>(num_items);
-    Test<unsigned int>(num_items);
-    Test<unsigned long long>(num_items);
+    Test<unsigned char, int>(num_items);
+    Test<unsigned char, long>(num_items);
+    Test<unsigned short, int>(num_items);
+    Test<unsigned short, long>(num_items);
+    Test<unsigned int, int>(num_items);
+    Test<unsigned int, long>(num_items);
+    Test<unsigned long long, int>(num_items);
+    Test<unsigned long long, long>(num_items);
 
-    Test<uchar2>(num_items);
-    Test<ushort2>(num_items);
-    Test<uint2>(num_items);
-    Test<ulonglong2>(num_items);
+    Test<uchar2, uint2>(num_items);
+    Test<uchar2, ulonglong2>(num_items);
+    Test<ushort2, uint2>(num_items);
+    Test<ushort2, ulonglong2>(num_items);
+    Test<uint2, uint2>(num_items);
+    Test<uint2, ulonglong2>(num_items);
+    Test<ulonglong2, uint2>(num_items);
+    Test<ulonglong2, ulonglong2>(num_items);
 
-    Test<uchar4>(num_items);
-    Test<ushort4>(num_items);
-    Test<uint4>(num_items);
-    Test<ulonglong4>(num_items);
+    Test<uchar4, uint4>(num_items);
+    Test<uchar4, ulonglong4>(num_items);
+    Test<ushort4, uint4>(num_items);
+    Test<ushort4, ulonglong4>(num_items);
+    Test<uint4, uint4>(num_items);
+    Test<uint4, ulonglong4>(num_items);
+    Test<ulonglong4, uint4>(num_items);
+    Test<ulonglong4, ulonglong4>(num_items);
 
-    Test<TestFoo>(num_items);
-    Test<TestBar>(num_items);
+    Test<TestFoo, TestFoo>(num_items);
+    Test<TestFoo, TestBar>(num_items);
+    Test<TestFoo, int>(num_items);
+    Test<TestBar, TestFoo>(num_items);
+    Test<TestBar, TestBar>(num_items);
+    Test<TestBar, int>(num_items);
 
     return 0;
 }

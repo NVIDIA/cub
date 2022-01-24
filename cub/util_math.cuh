@@ -47,6 +47,14 @@ using is_integral_or_enum =
   std::integral_constant<bool,
                          std::is_integral<T>::value || std::is_enum<T>::value>;
 
+__host__ __device__ __forceinline__ constexpr  std::size_t
+VshmemSize(std::size_t max_shmem,
+           std::size_t shmem_per_block,
+           std::size_t num_blocks)
+{
+  return shmem_per_block > max_shmem ? shmem_per_block * num_blocks : 0;
+}
+
 }
 
 /**
