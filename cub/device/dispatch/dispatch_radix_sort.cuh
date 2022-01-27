@@ -551,15 +551,17 @@ template <
     typename KeyT,
     typename ValueT,
     typename OffsetT,
-    typename AtomicOffsetT = OffsetT>
+    typename PortionOffsetT,
+    typename AtomicOffsetT = PortionOffsetT>
 __global__ void __launch_bounds__(ChainedPolicyT::ActivePolicy::OnesweepPolicy::BLOCK_THREADS)
 DeviceRadixSortOnesweepKernel
     (AtomicOffsetT* d_lookback, AtomicOffsetT* d_ctrs, OffsetT* d_bins_out,
      const OffsetT* d_bins_in, KeyT* d_keys_out, const KeyT* d_keys_in, ValueT* d_values_out,
-     const ValueT* d_values_in, OffsetT num_items, int current_bit, int num_bits)
+     const ValueT* d_values_in, PortionOffsetT num_items, int current_bit, int num_bits)
 {
     typedef typename ChainedPolicyT::ActivePolicy::OnesweepPolicy OnesweepPolicyT;
-    typedef AgentRadixSortOnesweep<OnesweepPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT> AgentT;
+    typedef AgentRadixSortOnesweep<OnesweepPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT,
+                                   PortionOffsetT> AgentT;
     __shared__ typename AgentT::TempStorage s;
 
     AgentT agent(s, d_lookback, d_ctrs, d_bins_out, d_bins_in, d_keys_out, d_keys_in,
@@ -742,6 +744,7 @@ struct DeviceRadixSortPolicy
             SEGMENTED_RADIX_BITS    = (sizeof(KeyT) > 1) ? 6 : 5,    // 5.9B 32b segmented keys/s (Quadro P100)
             ONESWEEP = sizeof(KeyT) >= sizeof(uint32_t),  // 10.0B 32b keys/s (GP100, 64M random keys)
             ONESWEEP_RADIX_BITS = 8,
+            OFFSET_64BIT            = sizeof(OffsetT) == 8,
         };
 
         // Histogram policy
@@ -751,7 +754,7 @@ struct DeviceRadixSortPolicy
         typedef AgentRadixSortExclusiveSumPolicy <256, ONESWEEP_RADIX_BITS> ExclusiveSumPolicy;
         
         // Onesweep policy
-        typedef AgentRadixSortOnesweepPolicy <256, 30, DominantT, 2,
+        typedef AgentRadixSortOnesweepPolicy <256, OFFSET_64BIT ? 29 : 30, DominantT, 2,
             RADIX_RANK_MATCH_EARLY_COUNTS_ANY, BLOCK_SCAN_WARP_SCANS,
             RADIX_SORT_STORE_DIRECT, ONESWEEP_RADIX_BITS> OnesweepPolicy;
 
@@ -760,7 +763,7 @@ struct DeviceRadixSortPolicy
 
         // Downsweep policies
         typedef AgentRadixSortDownsweepPolicy <256, 25, DominantT,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MATCH, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS>   DownsweepPolicy;
-        typedef AgentRadixSortDownsweepPolicy <192, 39, DominantT,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS - 1>   AltDownsweepPolicy;
+        typedef AgentRadixSortDownsweepPolicy <192, OFFSET_64BIT ? 32 : 39, DominantT,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS - 1>   AltDownsweepPolicy;
 
         // Upsweep policies
         typedef DownsweepPolicy UpsweepPolicy;
@@ -868,6 +871,7 @@ struct DeviceRadixSortPolicy
             SEGMENTED_RADIX_BITS    = (sizeof(KeyT) > 1) ? 6 : 5,    // 8.7B 32b segmented keys/s (GV100)
             ONESWEEP = sizeof(KeyT) >= sizeof(uint32_t),  // 15.8B 32b keys/s (V100-SXM2, 64M random keys)
             ONESWEEP_RADIX_BITS = 8,
+            OFFSET_64BIT            = sizeof(OffsetT) == 8,
         };
 
         // Histogram policy
@@ -888,11 +892,11 @@ struct DeviceRadixSortPolicy
 
         // Downsweep policies
         typedef AgentRadixSortDownsweepPolicy <512, 23, DominantT,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MATCH, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS>   DownsweepPolicy;
-        typedef AgentRadixSortDownsweepPolicy <(sizeof(KeyT) > 1) ? 256 : 128, 47, DominantT,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS - 1>   AltDownsweepPolicy;
+        typedef AgentRadixSortDownsweepPolicy <(sizeof(KeyT) > 1) ? 256 : 128, OFFSET_64BIT ? 46 : 47, DominantT,  BLOCK_LOAD_TRANSPOSE, LOAD_DEFAULT, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, PRIMARY_RADIX_BITS - 1>   AltDownsweepPolicy;
 
         // Upsweep policies
         typedef AgentRadixSortUpsweepPolicy <256, 23, DominantT, LOAD_DEFAULT, PRIMARY_RADIX_BITS>     UpsweepPolicy;
-        typedef AgentRadixSortUpsweepPolicy <256, 47, DominantT, LOAD_DEFAULT, PRIMARY_RADIX_BITS - 1> AltUpsweepPolicy;
+        typedef AgentRadixSortUpsweepPolicy <256, OFFSET_64BIT ? 46 : 47, DominantT, LOAD_DEFAULT, PRIMARY_RADIX_BITS - 1> AltUpsweepPolicy;
 
         // Single-tile policy
         typedef AgentRadixSortDownsweepPolicy <256, 19, DominantT,  BLOCK_LOAD_DIRECT, LOAD_LDG, RADIX_RANK_MEMOIZE, BLOCK_SCAN_WARP_SCANS, SINGLE_TILE_RADIX_BITS>          SingleTilePolicy;
@@ -912,6 +916,7 @@ struct DeviceRadixSortPolicy
             SEGMENTED_RADIX_BITS    = (sizeof(KeyT) > 1) ? 6 : 5,
             ONESWEEP = sizeof(KeyT) >= sizeof(uint32_t),
             ONESWEEP_RADIX_BITS = 8,
+            OFFSET_64BIT            = sizeof(OffsetT) == 8,
         };
 
         // Histogram policy
@@ -921,7 +926,8 @@ struct DeviceRadixSortPolicy
         typedef AgentRadixSortExclusiveSumPolicy <256, ONESWEEP_RADIX_BITS> ExclusiveSumPolicy;
         
         // Onesweep policy
-        typedef AgentRadixSortOnesweepPolicy <384, 21, DominantT, 1,
+        typedef AgentRadixSortOnesweepPolicy <384,
+            OFFSET_64BIT && sizeof(KeyT) == 4 && !KEYS_ONLY ? 17 : 21, DominantT, 1,
             RADIX_RANK_MATCH_EARLY_COUNTS_ANY, BLOCK_SCAN_RAKING_MEMOIZE,
             RADIX_SORT_STORE_DIRECT, ONESWEEP_RADIX_BITS> OnesweepPolicy;
 
@@ -1257,7 +1263,9 @@ struct DispatchRadixSort :
     cudaError_t InvokeOnesweep()
     {
         typedef typename DispatchRadixSort::MaxPolicy MaxPolicyT;
-        typedef OffsetT AtomicOffsetT;
+        // PortionOffsetT is used for offsets within a part, and must be signed.
+        typedef int PortionOffsetT;
+        typedef PortionOffsetT AtomicOffsetT;
 
         // compute temporary storage size
         const int RADIX_BITS = ActivePolicyT::ONESWEEP_RADIX_BITS;
@@ -1265,18 +1273,19 @@ struct DispatchRadixSort :
         const int ONESWEEP_ITEMS_PER_THREAD = ActivePolicyT::OnesweepPolicy::ITEMS_PER_THREAD;
         const int ONESWEEP_BLOCK_THREADS = ActivePolicyT::OnesweepPolicy::BLOCK_THREADS;
         const int ONESWEEP_TILE_ITEMS = ONESWEEP_ITEMS_PER_THREAD * ONESWEEP_BLOCK_THREADS;
-        // parts handle inputs with >=2**30 elements, due to the way lookback works
-        // for testing purposes, one part is <= 2**28 elements
-        const int PART_SIZE = ((1 << 28) - 1) / ONESWEEP_TILE_ITEMS * ONESWEEP_TILE_ITEMS;
+        // portions handle inputs with >=2**30 elements, due to the way lookback works
+        // for testing purposes, one portion is <= 2**28 elements
+        const PortionOffsetT PORTION_SIZE = ((1 << 28) - 1) / ONESWEEP_TILE_ITEMS * ONESWEEP_TILE_ITEMS;
         int num_passes = cub::DivideAndRoundUp(end_bit - begin_bit, RADIX_BITS);
-        int num_parts = static_cast<int>(cub::DivideAndRoundUp(num_items, PART_SIZE));
-        OffsetT max_num_blocks = cub::DivideAndRoundUp(CUB_MIN(num_items, PART_SIZE), ONESWEEP_TILE_ITEMS);
+        OffsetT num_portions = static_cast<OffsetT>(cub::DivideAndRoundUp(num_items, PORTION_SIZE));
+        PortionOffsetT max_num_blocks = cub::DivideAndRoundUp(CUB_MIN(num_items, PORTION_SIZE),
+                                                           ONESWEEP_TILE_ITEMS);
         
         size_t value_size = KEYS_ONLY ? 0 : sizeof(ValueT);
         size_t allocation_sizes[] =
         {
             // bins
-            num_parts * num_passes * RADIX_DIGITS * sizeof(OffsetT),
+            num_portions * num_passes * RADIX_DIGITS * sizeof(OffsetT),
             // lookback
             max_num_blocks * RADIX_DIGITS * sizeof(AtomicOffsetT),
             // extra key buffer
@@ -1284,7 +1293,7 @@ struct DispatchRadixSort :
             // extra value buffer
             is_overwrite_okay || num_passes <= 1 ? 0 : num_items * value_size,
             // counters
-            num_parts * num_passes * sizeof(AtomicOffsetT),
+            num_portions * num_passes * sizeof(AtomicOffsetT),
         };
         const int NUM_ALLOCATIONS = sizeof(allocation_sizes) / sizeof(allocation_sizes[0]);
         void* allocations[NUM_ALLOCATIONS] = {};
@@ -1304,7 +1313,7 @@ struct DispatchRadixSort :
         do { 
             // initialization
             if (CubDebug(error = cudaMemsetAsync(
-                   d_ctrs, 0, num_parts * num_passes * sizeof(AtomicOffsetT), stream))) break;
+                   d_ctrs, 0, num_portions * num_passes * sizeof(AtomicOffsetT), stream))) break;
 
             // compute num_passes histograms with RADIX_DIGITS bins each
             if (CubDebug(error = cudaMemsetAsync
@@ -1344,25 +1353,26 @@ struct DispatchRadixSort :
                  current_bit += RADIX_BITS, ++pass)
             {
                 int num_bits = CUB_MIN(end_bit - current_bit, RADIX_BITS);
-                for (int part = 0; part < num_parts; ++part)
+                for (OffsetT portion = 0; portion < num_portions; ++portion)
                 {
-                    int part_num_items = CUB_MIN(num_items - part * PART_SIZE, PART_SIZE);
-                    int num_blocks = cub::DivideAndRoundUp(part_num_items, ONESWEEP_TILE_ITEMS);
+                    PortionOffsetT portion_num_items = CUB_MIN(num_items - portion * PORTION_SIZE, PORTION_SIZE);
+                    PortionOffsetT num_blocks =
+                        cub::DivideAndRoundUp(portion_num_items, ONESWEEP_TILE_ITEMS);
                     if (CubDebug(error = cudaMemsetAsync(
                            d_lookback, 0, num_blocks * RADIX_DIGITS * sizeof(AtomicOffsetT),
                            stream))) break;
                     auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
-                        MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT>;
+                        MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT, PortionOffsetT>;
                     onesweep_kernel<<<num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream>>>
-                        (d_lookback, d_ctrs + part * num_passes + pass,
-                         part < num_parts - 1 ?
-                             d_bins + ((part + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
-                         d_bins + (part * num_passes + pass) * RADIX_DIGITS,
+                        (d_lookback, d_ctrs + portion * num_passes + pass,
+                         portion < num_portions - 1 ?
+                             d_bins + ((portion + 1) * num_passes + pass) * RADIX_DIGITS : NULL,
+                         d_bins + (portion * num_passes + pass) * RADIX_DIGITS,
                          d_keys.Alternate(),
-                         d_keys.Current() + part * PART_SIZE,
+                         d_keys.Current() + portion * PORTION_SIZE,
                          d_values.Alternate(),
-                         d_values.Current() + part * PART_SIZE,
-                         part_num_items, current_bit, num_bits);
+                         d_values.Current() + portion * PORTION_SIZE,
+                         portion_num_items, current_bit, num_bits);
                     if (CubDebug(error = cudaPeekAtLastError())) break;
                 }
                 
