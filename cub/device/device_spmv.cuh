@@ -51,13 +51,12 @@ CUB_NAMESPACE_BEGIN
  * \par Overview
  * The [<em>SpMV computation</em>](http://en.wikipedia.org/wiki/Sparse_matrix-vector_multiplication)
  * performs the matrix-vector operation
- * <em>y</em> = <em>alpha</em>*<b>A</b>*<em>x</em> + <em>beta</em>*<em>y</em>,
+ * <em>y</em> = <b>A</b>*<em>x</em> + <em>y</em>,
  * where:
  *  - <b>A</b> is an <em>m</em>x<em>n</em> sparse matrix whose non-zero structure is specified in
  *    [<em>compressed-storage-row (CSR) format</em>](http://en.wikipedia.org/wiki/Sparse_matrix#Compressed_row_Storage_.28CRS_or_CSR.29)
  *    (i.e., three arrays: <em>values</em>, <em>row_offsets</em>, and <em>column_indices</em>)
  *  - <em>x</em> and <em>y</em> are dense vectors
- *  - <em>alpha</em> and <em>beta</em> are scalar multiplicands
  *
  * \par Usage Considerations
  * \cdp_class{DeviceSpmv}
@@ -106,7 +105,7 @@ struct DeviceSpmv
      * size_t   temp_storage_bytes = 0;
      * cub::DeviceSpmv::CsrMV(d_temp_storage, temp_storage_bytes, d_values,
      *     d_row_offsets, d_column_indices, d_vector_x, d_vector_y,
-     *     num_rows, num_cols, num_nonzeros, alpha, beta);
+     *     num_rows, num_cols, num_nonzeros);
      *
      * // Allocate temporary storage
      * cudaMalloc(&d_temp_storage, temp_storage_bytes);
@@ -114,7 +113,7 @@ struct DeviceSpmv
      * // Run SpMV
      * cub::DeviceSpmv::CsrMV(d_temp_storage, temp_storage_bytes, d_values,
      *     d_row_offsets, d_column_indices, d_vector_x, d_vector_y,
-     *     num_rows, num_cols, num_nonzeros, alpha, beta);
+     *     num_rows, num_cols, num_nonzeros);
      *
      * // d_vector_y <-- [2, 3, 2, 3, 4, 3, 2, 3, 2]
      *
