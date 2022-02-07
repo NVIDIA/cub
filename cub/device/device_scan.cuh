@@ -96,11 +96,10 @@ struct DeviceScan
      *
      * \par
      * - Supports non-commutative sum operators.
-     * - Provides "run-to-run" determinism for pseudo-associative reduction
-     *   (e.g., addition of floating point types) on the same GPU device.
-     *   However, results for pseudo-associative reduction may be inconsistent
-     *   from one device to a another device of a different compute-capability
-     *   because CUB can employ different tile-sizing for different architectures.
+     * - Results are not deterministic for pseudo-associative operators (e.g.,
+     *   addition of floating-point types). Results for pseudo-associative
+     *   operators may vary from run to run. Additional details can be found in
+     *   the [decoupled look-back] description.
      * - \devicestorage
      *
      * \par Performance
@@ -139,6 +138,8 @@ struct DeviceScan
      *
      * \tparam InputIteratorT     <b>[inferred]</b> Random-access input iterator type for reading scan inputs \iterator
      * \tparam OutputIteratorT    <b>[inferred]</b> Random-access output iterator type for writing scan outputs \iterator
+     *
+     * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
      */
     template <
         typename        InputIteratorT,
@@ -181,11 +182,10 @@ struct DeviceScan
      *
      * \par
      * - Supports non-commutative scan operators.
-     * - Provides "run-to-run" determinism for pseudo-associative reduction
-     *   (e.g., addition of floating point types) on the same GPU device.
-     *   However, results for pseudo-associative reduction may be inconsistent
-     *   from one device to a another device of a different compute-capability
-     *   because CUB can employ different tile-sizing for different architectures.
+     * - Results are not deterministic for pseudo-associative operators (e.g.,
+     *   addition of floating-point types). Results for pseudo-associative
+     *   operators may vary from run to run. Additional details can be found in
+     *   the [decoupled look-back] description.
      * - \devicestorage
      *
      * \par Snippet
@@ -231,6 +231,8 @@ struct DeviceScan
      * \tparam OutputIteratorT  <b>[inferred]</b> Random-access output iterator type for writing scan outputs \iterator
      * \tparam ScanOp           <b>[inferred]</b> Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam InitValueT       <b>[inferred]</b> Type of the \p init_value used Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+     *
+     * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
      */
     template <
         typename        InputIteratorT,
@@ -272,7 +274,7 @@ struct DeviceScan
         typename        InitValueIterT=InitValueT*>
     CUB_RUNTIME_FUNCTION
     static cudaError_t ExclusiveScan(
-        void                                    *d_temp_storage,                    ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                                    *d_temp_storage,                    ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                                  &temp_storage_bytes,                ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         InputIteratorT                          d_in,                               ///< [in] Pointer to the input sequence of data items
         OutputIteratorT                         d_out,                              ///< [out] Pointer to the output sequence of data items
@@ -310,11 +312,10 @@ struct DeviceScan
      *
      * \par
      * - Supports non-commutative sum operators.
-     * - Provides "run-to-run" determinism for pseudo-associative reduction
-     *   (e.g., addition of floating point types) on the same GPU device.
-     *   However, results for pseudo-associative reduction may be inconsistent
-     *   from one device to a another device of a different compute-capability
-     *   because CUB can employ different tile-sizing for different architectures.
+     * - Results are not deterministic for pseudo-associative operators (e.g.,
+     *   addition of floating-point types). Results for pseudo-associative
+     *   operators may vary from run to run. Additional details can be found in
+     *   the [decoupled look-back] description.
      * - \devicestorage
      *
      * \par Snippet
@@ -346,6 +347,8 @@ struct DeviceScan
      *
      * \tparam InputIteratorT     <b>[inferred]</b> Random-access input iterator type for reading scan inputs \iterator
      * \tparam OutputIteratorT    <b>[inferred]</b> Random-access output iterator type for writing scan outputs \iterator
+     *
+     * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
      */
     template <
         typename            InputIteratorT,
@@ -381,11 +384,10 @@ struct DeviceScan
      *
      * \par
      * - Supports non-commutative scan operators.
-     * - Provides "run-to-run" determinism for pseudo-associative reduction
-     *   (e.g., addition of floating point types) on the same GPU device.
-     *   However, results for pseudo-associative reduction may be inconsistent
-     *   from one device to a another device of a different compute-capability
-     *   because CUB can employ different tile-sizing for different architectures.
+     * - Results are not deterministic for pseudo-associative operators (e.g.,
+     *   addition of floating-point types). Results for pseudo-associative
+     *   operators may vary from run to run. Additional details can be found in
+     *   the [decoupled look-back] description.
      * - \devicestorage
      *
      * \par Snippet
@@ -430,6 +432,8 @@ struct DeviceScan
      * \tparam InputIteratorT   <b>[inferred]</b> Random-access input iterator type for reading scan inputs \iterator
      * \tparam OutputIteratorT  <b>[inferred]</b> Random-access output iterator type for writing scan outputs \iterator
      * \tparam ScanOp           <b>[inferred]</b> Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
+     *
+     * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
      */
     template <
         typename        InputIteratorT,
@@ -468,11 +472,10 @@ struct DeviceScan
      *
      * \par
      * - Supports non-commutative sum operators.
-     * - Provides "run-to-run" determinism for pseudo-associative reduction
-     *   (e.g., addition of floating point types) on the same GPU device.
-     *   However, results for pseudo-associative reduction may be inconsistent
-     *   from one device to a another device of a different compute-capability
-     *   because CUB can employ different tile-sizing for different architectures.
+     * - Results are not deterministic for pseudo-associative operators (e.g.,
+     *   addition of floating-point types). Results for pseudo-associative
+     *   operators may vary from run to run. Additional details can be found in
+     *   the [decoupled look-back] description.
      * - \devicestorage
      *
      * \par Snippet
@@ -507,6 +510,8 @@ struct DeviceScan
      * \tparam ValuesInputIteratorT    <b>[inferred]</b> Random-access input iterator type for reading scan values inputs \iterator
      * \tparam ValuesOutputIteratorT   <b>[inferred]</b> Random-access output iterator type for writing scan values outputs \iterator
      * \tparam EqualityOpT             <b>[inferred][/b] Functor type having member <tt>T operator()(const T &a, const T &b)</tt> for binary operations that defines the equality of keys
+     *
+     * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
      */
     template <
         typename        KeysInputIteratorT,
@@ -515,7 +520,7 @@ struct DeviceScan
         typename        EqualityOpT = Equality>
     CUB_RUNTIME_FUNCTION
     static cudaError_t ExclusiveSumByKey(
-        void                  *d_temp_storage,              ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                  *d_temp_storage,              ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                &temp_storage_bytes,          ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         KeysInputIteratorT    d_keys_in,                    ///< [in] Random-access input iterator to the input sequence of key items
         ValuesInputIteratorT  d_values_in,                  ///< [in] Random-access input iterator to the input sequence of value items
@@ -558,11 +563,10 @@ struct DeviceScan
      *
      * \par
      * - Supports non-commutative scan operators.
-     * - Provides "run-to-run" determinism for pseudo-associative reduction
-     *   (e.g., addition of floating point types) on the same GPU device.
-     *   However, results for pseudo-associative reduction may be inconsistent
-     *   from one device to a another device of a different compute-capability
-     *   because CUB can employ different tile-sizing for different architectures.
+     * - Results are not deterministic for pseudo-associative operators (e.g.,
+     *   addition of floating-point types). Results for pseudo-associative
+     *   operators may vary from run to run. Additional details can be found in
+     *   the [decoupled look-back] description.
      * - \devicestorage
      *
      * \par Snippet
@@ -622,6 +626,8 @@ struct DeviceScan
      * \tparam ScanOp                  <b>[inferred]</b> Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam InitValueT              <b>[inferred]</b> Type of the \p init_value value used in Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam EqualityOpT             <b>[inferred][/b] Functor type having member <tt>T operator()(const T &a, const T &b)</tt> for binary operations that defines the equality of keys
+     *
+     * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
      */
     template <
         typename        KeysInputIteratorT,
@@ -632,7 +638,7 @@ struct DeviceScan
         typename        EqualityOpT = Equality>
     CUB_RUNTIME_FUNCTION
     static cudaError_t ExclusiveScanByKey(
-        void                  *d_temp_storage,              ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                  *d_temp_storage,              ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                &temp_storage_bytes,          ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         KeysInputIteratorT    d_keys_in,                    ///< [in] Random-access input iterator to the input sequence of key items
         ValuesInputIteratorT  d_values_in,                  ///< [in] Random-access input iterator to the input sequence of value items
@@ -668,11 +674,10 @@ struct DeviceScan
      *
      * \par
      * - Supports non-commutative sum operators.
-     * - Provides "run-to-run" determinism for pseudo-associative reduction
-     *   (e.g., addition of floating point types) on the same GPU device.
-     *   However, results for pseudo-associative reduction may be inconsistent
-     *   from one device to a another device of a different compute-capability
-     *   because CUB can employ different tile-sizing for different architectures.
+     * - Results are not deterministic for pseudo-associative operators (e.g.,
+     *   addition of floating-point types). Results for pseudo-associative
+     *   operators may vary from run to run. Additional details can be found in
+     *   the [decoupled look-back] description.
      * - \devicestorage
      *
      * \par Snippet
@@ -707,6 +712,8 @@ struct DeviceScan
      * \tparam ValuesInputIteratorT    <b>[inferred]</b> Random-access input iterator type for reading scan values inputs \iterator
      * \tparam ValuesOutputIteratorT   <b>[inferred]</b> Random-access output iterator type for writing scan values outputs \iterator
      * \tparam EqualityOpT             <b>[inferred][/b] Functor type having member <tt>T operator()(const T &a, const T &b)</tt> for binary operations that defines the equality of keys
+     *
+     * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
      */
     template <
         typename        KeysInputIteratorT,
@@ -715,7 +722,7 @@ struct DeviceScan
         typename        EqualityOpT = Equality>
     CUB_RUNTIME_FUNCTION
     static cudaError_t InclusiveSumByKey(
-        void                  *d_temp_storage,              ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                  *d_temp_storage,              ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                &temp_storage_bytes,          ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         KeysInputIteratorT    d_keys_in,                    ///< [in] Random-access input iterator to the input sequence of key items
         ValuesInputIteratorT  d_values_in,                  ///< [in] Random-access input iterator to the input sequence of value items
@@ -750,11 +757,10 @@ struct DeviceScan
      *
      * \par
      * - Supports non-commutative scan operators.
-     * - Provides "run-to-run" determinism for pseudo-associative reduction
-     *   (e.g., addition of floating point types) on the same GPU device.
-     *   However, results for pseudo-associative reduction may be inconsistent
-     *   from one device to a another device of a different compute-capability
-     *   because CUB can employ different tile-sizing for different architectures.
+     * - Results are not deterministic for pseudo-associative operators (e.g.,
+     *   addition of floating-point types). Results for pseudo-associative
+     *   operators may vary from run to run. Additional details can be found in
+     *   the [decoupled look-back] description.
      * - \devicestorage
      *
      * \par Snippet
@@ -813,6 +819,8 @@ struct DeviceScan
      * \tparam ValuesOutputIteratorT   <b>[inferred]</b> Random-access output iterator type for writing scan values outputs \iterator
      * \tparam ScanOp                  <b>[inferred]</b> Binary scan functor type having member <tt>T operator()(const T &a, const T &b)</tt>
      * \tparam EqualityOpT             <b>[inferred][/b] Functor type having member <tt>T operator()(const T &a, const T &b)</tt> for binary operations that defines the equality of keys
+     *
+     * [decoupled look-back]: https://research.nvidia.com/publication/single-pass-parallel-prefix-scan-decoupled-look-back
      */
     template <
         typename        KeysInputIteratorT,
@@ -822,7 +830,7 @@ struct DeviceScan
         typename        EqualityOpT = Equality>
     CUB_RUNTIME_FUNCTION
     static cudaError_t InclusiveScanByKey(
-        void                  *d_temp_storage,              ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void                  *d_temp_storage,              ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t                &temp_storage_bytes,          ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         KeysInputIteratorT    d_keys_in,                    ///< [in] Random-access input iterator to the input sequence of key items
         ValuesInputIteratorT  d_values_in,                  ///< [in] Random-access input iterator to the input sequence of value items
