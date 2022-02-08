@@ -488,10 +488,10 @@ void Test()
 
     Int2Type<(sizeof(typename BlockRadixSortT::TempStorage) <= 48 * 1024)> fits_smem_capacity;
 
-    // Sort-ascending, to-striped
+    // Sort-descending, to-striped
     TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, true, false, Key, Value>(fits_smem_capacity);
 
-    // Sort-descending, to-blocked
+    // Sort-ascending, to-blocked
     TestValid<BLOCK_THREADS, ITEMS_PER_THREAD, RADIX_BITS, MEMOIZE_OUTER_SCAN, INNER_SCAN_ALGORITHM, SMEM_CONFIG, false, true, Key, Value>(fits_smem_capacity);
 
     // Not necessary
