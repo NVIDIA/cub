@@ -193,7 +193,7 @@ struct bfloat16_t
 
     /// numeric_traits<bfloat16_t>::max
     __host__ __device__ __forceinline__
-    static bfloat16_t max() {
+    static bfloat16_t (max)() {
         uint16_t max_word = 0x7F7F;
         return reinterpret_cast<bfloat16_t&>(max_word);
     }

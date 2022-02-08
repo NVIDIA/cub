@@ -275,7 +275,7 @@ struct half_t
 
     /// numeric_traits<half_t>::max
     __host__ __device__ __forceinline__
-    static half_t max() {
+    static half_t (max)() {
         uint16_t max_word = 0x7BFF;
         return reinterpret_cast<half_t&>(max_word);
     }
@@ -315,7 +315,7 @@ std::ostream& operator<<(std::ostream &out, const __half &x)
 template <>
 struct CUB_NS_QUALIFIER::FpLimits<half_t>
 {
-    static __host__ __device__ __forceinline__ half_t Max() { return half_t::max(); }
+    static __host__ __device__ __forceinline__ half_t Max() { return (half_t::max)(); }
 
     static __host__ __device__ __forceinline__ half_t Lowest() { return half_t::lowest(); }
 };
