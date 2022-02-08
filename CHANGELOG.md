@@ -1,4 +1,121 @@
-# CUB 1.15.0
+# CUB 1.16.0
+
+## Summary
+
+CUB 1.16.0 is a major release providing several improvements to the device scope
+algorithms. `DeviceRadixSort` now supports large (64-bit indexed) input data. A
+new `UniqueByKey` algorithm has been added to `DeviceSelect`.
+`DeviceAdjacentDifference` provides new `SubtractLeft` and `SubtractRight`
+functionality.
+
+This release also deprecates several obsolete APIs, including type traits
+and `BlockAdjacentDifference` algorithms. Many bugfixes and documentation
+updates are also included.
+
+### 64-bit Offsets in `DeviceRadixSort` Public APIs
+
+Users frequently want to process large datasets using CUB’s device-scope
+algorithms, but the current public APIs limit input data sizes to those that can
+be indexed by a 32-bit integer. Beginning with this release, CUB is updating
+these APIs to support 64-bit offsets, as discussed in NVIDIA/cub#212.
+
+The device-scope algorithms will be updated with 64-bit offset support
+incrementally, starting with the `cub::DeviceRadixSort` family of algorithms.
+Thanks to @canonizer for contributing this functionality.
+
+### New `DeviceSelect::UniqueByKey` Algorithm
+
+`cub::DeviceSelect` now provides a `UniqueByKey` algorithm, which has been
+ported from Thrust. Thanks to @zasdfgbnm for this contribution.
+
+### New `DeviceAdjacentDifference` Algorithms
+
+The new `cub::DeviceAdjacentDifference` interface, also ported from Thrust,
+provides `SubtractLeft` and `SubtractRight` algorithms as CUB kernels.
+
+## Deprecation Notices
+
+### Synchronous CUDA Dynamic Parallelism Support
+
+**A future version of CUB will change the `debug_synchronous` behavior of
+device-scope algorithms when invoked via CUDA Dynamic Parallelism (CDP).**
+
+This will only affect calls to CUB device-scope algorithms launched from
+device-side code with `debug_synchronous = true`. Such invocations will continue
+to print extra debugging information, but they will no longer synchronize after
+kernel launches.
+
+### Deprecated Traits
+
+CUB provided a variety of metaprogramming type traits in order to support C++03.
+Since C++14 is now required, these traits have been deprecated in favor of their
+STL equivalents, as shown below:
+
+| Deprecated CUB Trait  | Replacement STL Trait |
+|-----------------------|-----------------------|
+| cub::If               | std::conditional      |
+| cub::Equals           | std::is_same          |
+| cub::IsPointer        | std::is_pointer       |
+| cub::IsVolatile       | std::is_volatile      |
+| cub::RemoveQualifiers | std::remove_cv        |
+| cub::EnableIf         | std::enable_if        |
+
+CUB now uses the STL traits internally, resulting in a ~6% improvement in
+compile time.
+
+### Misnamed `cub::BlockAdjacentDifference` APIs
+
+The algorithms in `cub::BlockAdjacentDifference` have been deprecated, as their
+names did not clearly describe their intent. The `FlagHeads` method is
+now `SubtractLeft`, and `FlagTails` has been replaced by `SubtractRight`.
+
+## Breaking Changes
+
+- NVIDIA/cub#331: Deprecate the misnamed `BlockAdjacentDifference::FlagHeads`
+  and `FlagTails` methods. Use the new `SubtractLeft` and `SubtractRight`
+  methods instead.
+- NVIDIA/cub#364: Deprecate some obsolete type traits. These should be replaced
+  by the equivalent traits in `<type_traits>` as described above.
+
+## New Features
+
+- NVIDIA/cub#331: Port the `thrust::adjacent_difference` kernel and expose it
+  as `cub::DeviceAdjacentDifference`.
+- NVIDIA/cub#405: Port the `thrust::unique_by_key` kernel and expose it
+  as `cub::DeviceSelect::UniqueByKey`. Thanks to @zasdfgbnm for this
+  contribution.
+
+## Enhancements
+
+- NVIDIA/cub#340: Allow 64-bit offsets in `DeviceRadixSort` public APIs. Thanks
+  to @canonizer for this contribution.
+- NVIDIA/cub#400: Implement a significant reduction in `DeviceMergeSort`
+  compilation time.
+- NVIDIA/cub#415: Support user-defined `CMAKE_INSTALL_INCLUDEDIR` values in
+  Thrust’s CMake install rules. Thanks for @robertmaynard for this contribution.
+
+## Bug Fixes
+
+- NVIDIA/cub#381: Fix shared memory alignment in `dyn_smem` example.
+- NVIDIA/cub#393: Fix some collisions with the `min`/`max`  macros defined
+  in `windows.h`.
+- NVIDIA/cub#404: Fix bad cast in `util_device`.
+- NVIDIA/cub#410: Fix CDP issues in `DeviceSegmentedSort`.
+- NVIDIA/cub#411: Ensure that the `nv_exec_check_disable` pragma is only used on
+  nvcc.
+- NVIDIA/cub#418: Fix `-Wsizeof-array-div` warning on gcc 11. Thanks to
+  @robertmaynard for this contribution.
+- NVIDIA/cub#420: Fix new uninitialized variable warning in `DiscardIterator` on
+  gcc 10.
+- NVIDIA/cub#423: Fix some collisions with the `small` macro defined
+  in `windows.h`.
+- NVIDIA/cub#426: Fix some issues with version handling in CUB’s CMake packages.
+- NVIDIA/cub#430: Remove documentation for `DeviceSpmv` parameters that are
+  absent from public APIs.
+- NVIDIA/cub#432: Remove incorrect documentation for `DeviceScan` algorithms
+  that guaranteed run-to-run deterministic results for floating-point addition.
+
+# CUB 1.15.0 (NVIDIA HPC SDK 22.1, CUDA Toolkit 11.6)
 
 ## Summary
 
