@@ -213,7 +213,7 @@ struct DispatchScanByKey:
                                  InputT,
                                  InitValueT>;
 
-    void*                 d_temp_storage;         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+    void*                 d_temp_storage;         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
     size_t&               temp_storage_bytes;     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
     KeysInputIteratorT    d_keys_in;              ///< [in] Iterator to the input sequence of key items
     ValuesInputIteratorT  d_values_in;            ///< [in] Iterator to the input sequence of value items
@@ -228,7 +228,7 @@ struct DispatchScanByKey:
 
     CUB_RUNTIME_FUNCTION __forceinline__
     DispatchScanByKey(
-        void*                 d_temp_storage,         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                 d_temp_storage,         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&               temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         KeysInputIteratorT    d_keys_in,              ///< [in] Iterator to the input sequence of key items
         ValuesInputIteratorT  d_values_in,            ///< [in] Iterator to the input sequence of value items
@@ -388,12 +388,12 @@ struct DispatchScanByKey:
      */
     CUB_RUNTIME_FUNCTION __forceinline__
     static cudaError_t Dispatch(
-        void*                 d_temp_storage,         ///< [in] %Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
+        void*                 d_temp_storage,         ///< [in] Device-accessible allocation of temporary storage.  When NULL, the required allocation size is written to \p temp_storage_bytes and no work is done.
         size_t&               temp_storage_bytes,     ///< [in,out] Reference to size in bytes of \p d_temp_storage allocation
         KeysInputIteratorT    d_keys_in,              ///< [in] Iterator to the input sequence of key items
         ValuesInputIteratorT  d_values_in,            ///< [in] Iterator to the input sequence of value items
         ValuesOutputIteratorT d_values_out,           ///< [out] Iterator to the input sequence of value items
-        EqualityOp            equality_op,            ///< [in]Binary equality functor
+        EqualityOp            equality_op,            ///< [in] Binary equality functor
         ScanOpT               scan_op,                ///< [in] Binary scan functor
         InitValueT            init_value,             ///< [in] Initial value to seed the exclusive scan
         OffsetT               num_items,              ///< [in] Total number of input items (i.e., the length of \p d_in)
