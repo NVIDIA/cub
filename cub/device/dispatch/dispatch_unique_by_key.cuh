@@ -31,11 +31,12 @@
  * cub::DeviceSelect::UniqueByKey provides device-wide, parallel operations for selecting unique items by key from sequences of data items residing within device-accessible memory.
  */
 
-#include "../../agent/agent_unique_by_key.cuh"
-#include "../../util_math.cuh"
-#include "../../util_macro.cuh"
+#include <cub/agent/agent_unique_by_key.cuh>
+#include <cub/device/dispatch/dispatch_scan.cuh>
+#include <cub/util_macro.cuh>
+#include <cub/util_math.cuh>
 
-#include "dispatch_scan.cuh"
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 

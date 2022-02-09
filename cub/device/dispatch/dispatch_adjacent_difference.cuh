@@ -27,15 +27,16 @@
 
 #pragma once
 
-#include "../../config.cuh"
-#include "../../util_math.cuh"
-#include "../../util_device.cuh"
-#include "../../util_namespace.cuh"
-#include "../../detail/type_traits.cuh"
-#include "../../agent/agent_adjacent_difference.cuh"
+#include <cub/agent/agent_adjacent_difference.cuh>
+#include <cub/config.cuh>
+#include <cub/detail/type_traits.cuh>
+#include <cub/util_device.cuh>
+#include <cub/util_math.cuh>
+#include <cub/util_namespace.cuh>
 
 #include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
+#include <iterator>
 
 CUB_NAMESPACE_BEGIN
 
