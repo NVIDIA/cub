@@ -1278,9 +1278,11 @@ struct DispatchRadixSort :
         const PortionOffsetT PORTION_SIZE = ((1 << 28) - 1) / ONESWEEP_TILE_ITEMS * ONESWEEP_TILE_ITEMS;
         int num_passes = cub::DivideAndRoundUp(end_bit - begin_bit, RADIX_BITS);
         OffsetT num_portions = static_cast<OffsetT>(cub::DivideAndRoundUp(num_items, PORTION_SIZE));
-        PortionOffsetT max_num_blocks = cub::DivideAndRoundUp(CUB_MIN(num_items, PORTION_SIZE),
-                                                           ONESWEEP_TILE_ITEMS);
-        
+        PortionOffsetT max_num_blocks = cub::DivideAndRoundUp(
+          static_cast<int>(
+            CUB_MIN(num_items, static_cast<OffsetT>(PORTION_SIZE))),
+          ONESWEEP_TILE_ITEMS);
+
         size_t value_size = KEYS_ONLY ? 0 : sizeof(ValueT);
         size_t allocation_sizes[] =
         {
@@ -1355,7 +1357,10 @@ struct DispatchRadixSort :
                 int num_bits = CUB_MIN(end_bit - current_bit, RADIX_BITS);
                 for (OffsetT portion = 0; portion < num_portions; ++portion)
                 {
-                    PortionOffsetT portion_num_items = CUB_MIN(num_items - portion * PORTION_SIZE, PORTION_SIZE);
+                    PortionOffsetT portion_num_items =
+                      static_cast<PortionOffsetT>(
+                        CUB_MIN(num_items - portion * PORTION_SIZE,
+                                static_cast<OffsetT>(PORTION_SIZE)));
                     PortionOffsetT num_blocks =
                         cub::DivideAndRoundUp(portion_num_items, ONESWEEP_TILE_ITEMS);
                     if (CubDebug(error = cudaMemsetAsync(
