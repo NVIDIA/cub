@@ -40,6 +40,10 @@
 #include <cub/iterator/counting_input_iterator.cuh>
 #include <cub/device/device_select.cuh>
 
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/discard_iterator.h>
+#include <thrust/device_vector.h>
+
 #include "test_util.h"
 
 using namespace cub;
@@ -474,6 +478,57 @@ void Test(
     }
 }
 
+template <typename T>
+void TestIteratorOp(int num_items)
+{
+  void *d_temp_storage{};
+  std::size_t temp_storage_size{};
+
+  thrust::device_vector<int> num_selected(1);
+
+  auto in = thrust::make_counting_iterator(static_cast<T>(0));
+  auto out = thrust::make_discard_iterator();
+
+  CubDebugExit(cub::DeviceSelect::Unique(d_temp_storage,
+                                         temp_storage_size,
+                                         in,
+                                         out,
+                                         num_selected.begin(),
+                                         num_items,
+                                         0,
+                                         true));
+
+  thrust::device_vector<char> temp_storage(temp_storage_size);
+  d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+
+  CubDebugExit(cub::DeviceSelect::Unique(d_temp_storage,
+                                         temp_storage_size,
+                                         in,
+                                         out,
+                                         num_selected.begin(),
+                                         num_items,
+                                         0,
+                                         true));
+
+  AssertEquals(num_selected[0], num_items);
+}
+
+template <typename T>
+void TestIterator(int num_items)
+{
+  if (num_items < 0)
+  {
+    TestIteratorOp<T>(0);
+    TestIteratorOp<T>(1);
+    TestIteratorOp<T>(100);
+    TestIteratorOp<T>(10000);
+    TestIteratorOp<T>(1000000);
+  }
+  else
+  {
+    TestIteratorOp<T>(num_items);
+  }
+}
 
 
 //---------------------------------------------------------------------
@@ -535,6 +590,8 @@ int main(int argc, char** argv)
 
     Test<TestFoo>(num_items);
     Test<TestBar>(num_items);
+
+    TestIterator<int>(num_items);
 
     return 0;
 }

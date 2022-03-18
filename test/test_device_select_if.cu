@@ -41,6 +41,12 @@
 #include <cub/device/device_partition.cuh>
 #include <cub/iterator/counting_input_iterator.cuh>
 
+#include <thrust/count.h>
+#include <thrust/iterator/zip_iterator.h>
+#include <thrust/iterator/transform_output_iterator.h>
+#include <thrust/iterator/discard_iterator.h>
+#include <thrust/device_vector.h>
+
 #include "test_util.h"
 
 using namespace cub;
@@ -652,6 +658,74 @@ void Test(
     }
 }
 
+template<class T0, class T1>
+struct pair_to_col_t
+{
+    __host__ __device__ T0 operator()(const thrust::tuple<T0, T1> &in)
+    {
+        return thrust::get<0>(in);
+    }
+};
+
+template<class T0, class T1>
+struct select_t {
+    __host__ __device__ bool operator()(const thrust::tuple<T0, T1> &in) {
+        return static_cast<T1>(thrust::get<0>(in)) > thrust::get<1>(in);
+    }
+};
+
+template <typename T0, typename T1>
+void TestMixedOp(int num_items)
+{
+    const T0 target_value = static_cast<T0>(42);
+    thrust::device_vector<T0> col_a(num_items, target_value);
+    thrust::device_vector<T1> col_b(num_items, static_cast<T1>(4.2));
+
+    thrust::device_vector<T0> result(num_items);
+
+    auto in = thrust::make_zip_iterator(col_a.begin(), col_b.begin());
+    auto out = thrust::make_transform_output_iterator(result.begin(), pair_to_col_t<T0, T1>{});
+
+    void *d_tmp_storage {};
+    std::size_t tmp_storage_size{};
+    cub::DeviceSelect::If(
+            d_tmp_storage, tmp_storage_size,
+            in, out, thrust::make_discard_iterator(),
+            num_items, select_t<T0, T1>{},
+            0, true);
+
+    thrust::device_vector<char> tmp_storage(tmp_storage_size);
+    d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
+
+    cub::DeviceSelect::If(
+            d_tmp_storage, tmp_storage_size,
+            in, out, thrust::make_discard_iterator(),
+            num_items, select_t<T0, T1>{},
+            0, true);
+
+    AssertEquals(num_items, thrust::count(result.begin(), result.end(), target_value));
+}
+
+/**
+ * Test different input sizes
+ */
+template <typename T0, typename T1>
+void TestMixed(int num_items)
+{
+    if (num_items < 0)
+    {
+        TestMixedOp<T0, T1>(0);
+        TestMixedOp<T0, T1>(1);
+        TestMixedOp<T0, T1>(100);
+        TestMixedOp<T0, T1>(10000);
+        TestMixedOp<T0, T1>(1000000);
+    }
+    else
+    {
+        TestMixedOp<T0, T1>(num_items);
+    }
+}
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -707,6 +781,8 @@ int main(int argc, char** argv)
 
     Test<TestFoo>(num_items);
     Test<TestBar>(num_items);
+
+    TestMixed<int, double>(num_items);
 
     return 0;
 }

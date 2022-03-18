@@ -35,6 +35,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <limits>
 #include <memory>
 #include <random>
 #include <type_traits>
@@ -283,9 +284,11 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+    AssertTrue(num_items < std::numeric_limits<int>::max());
+
     return DeviceSegmentedRadixSort::SortPairs(
         d_temp_storage, temp_storage_bytes,
-        d_keys, d_values, num_items,
+        d_keys, d_values, static_cast<int>(num_items),
         num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, stream, debug_synchronous);
 }
@@ -317,13 +320,15 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+    AssertTrue(num_items < std::numeric_limits<int>::max());
+
     KeyT      const *const_keys_itr     = d_keys.Current();
     ValueT    const *const_values_itr   = d_values.Current();
 
     cudaError_t retval = DeviceSegmentedRadixSort::SortPairs(
         d_temp_storage, temp_storage_bytes,
         const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
-        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
+        static_cast<int>(num_items), num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, stream, debug_synchronous);
 
     d_keys.selector ^= 1;
@@ -359,9 +364,11 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+    AssertTrue(num_items < std::numeric_limits<int>::max());
+
     return DeviceSegmentedRadixSort::SortPairsDescending(
         d_temp_storage, temp_storage_bytes,
-        d_keys, d_values, num_items,
+        d_keys, d_values, static_cast<int>(num_items),
         num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, stream, debug_synchronous);
 }
@@ -393,13 +400,15 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
+    AssertTrue(num_items < std::numeric_limits<int>::max());
+
     KeyT      const *const_keys_itr     = d_keys.Current();
     ValueT    const *const_values_itr   = d_values.Current();
 
     cudaError_t retval = DeviceSegmentedRadixSort::SortPairsDescending(
         d_temp_storage, temp_storage_bytes,
         const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
-        num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets,
+        static_cast<int>(num_items), num_segments, d_segment_begin_offsets, d_segment_end_offsets,
         begin_bit, end_bit, stream, debug_synchronous);
 
     d_keys.selector ^= 1;
