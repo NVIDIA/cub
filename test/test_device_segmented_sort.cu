@@ -28,16 +28,19 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <fstream>
-
 #include <cub/device/device_segmented_sort.cuh>
 #include <test_util.h>
 
+#include <thrust/count.h>
 #include <thrust/device_vector.h>
 #include <thrust/host_vector.h>
-#include <thrust/shuffle.h>
 #include <thrust/random.h>
 #include <thrust/reduce.h>
+#include <thrust/sequence.h>
+#include <thrust/shuffle.h>
+#include <thrust/sort.h>
+
+#include <fstream>
 
 #define TEST_HALF_T \
   (__CUDACC_VER_MAJOR__ >= 9 || CUDA_VERSION >= 9000) && !__NVCOMPILER_CUDA__
@@ -1495,55 +1498,60 @@ struct EdgeTestDispatch
   template <typename ActivePolicyT>
   CUB_RUNTIME_FUNCTION __forceinline__ cudaError_t Invoke()
   {
-    using SmallAndMediumPolicyT =
-      typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
-    using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
-
-    const int small_segment_max_segment_size =
-      SmallAndMediumPolicyT::SmallPolicyT::ITEMS_PER_TILE;
-
-    const int items_per_small_segment =
-      SmallAndMediumPolicyT::SmallPolicyT::ITEMS_PER_THREAD;
-
-    const int medium_segment_max_segment_size =
-      SmallAndMediumPolicyT::MediumPolicyT::ITEMS_PER_TILE;
-
-    const int single_thread_segment_size = items_per_small_segment;
-
-    const int large_cached_segment_max_segment_size =
-      LargeSegmentPolicyT::BLOCK_THREADS *
-      LargeSegmentPolicyT::ITEMS_PER_THREAD;
-
-    for (bool sort_descending : {ascending, descending})
+    if (CUB_IS_HOST_CODE)
     {
-      Input<KeyT, ValueT> edge_cases =
-        InputDescription<KeyT>()
-          .add({a_lot_of, empty_short_circuit_segment_size})
-          .add({a_lot_of, copy_short_circuit_segment_size})
-          .add({a_lot_of, swap_short_circuit_segment_size})
-          .add({a_lot_of, swap_short_circuit_segment_size + 1})
-          .add({a_lot_of, swap_short_circuit_segment_size + 1})
-          .add({a_lot_of, single_thread_segment_size - 1})
-          .add({a_lot_of, single_thread_segment_size })
-          .add({a_lot_of, single_thread_segment_size + 1 })
-          .add({a_lot_of, single_thread_segment_size * 2 - 1 })
-          .add({a_lot_of, single_thread_segment_size * 2 })
-          .add({a_lot_of, single_thread_segment_size * 2 + 1 })
-          .add({a_bunch_of, small_segment_max_segment_size - 1})
-          .add({a_bunch_of, small_segment_max_segment_size})
-          .add({a_bunch_of, small_segment_max_segment_size + 1})
-          .add({a_bunch_of, medium_segment_max_segment_size - 1})
-          .add({a_bunch_of, medium_segment_max_segment_size})
-          .add({a_bunch_of, medium_segment_max_segment_size + 1})
-          .add({a_bunch_of, large_cached_segment_max_segment_size - 1})
-          .add({a_bunch_of, large_cached_segment_max_segment_size})
-          .add({a_bunch_of, large_cached_segment_max_segment_size + 1})
-          .add({a_few, large_cached_segment_max_segment_size * 2})
-          .add({a_few, large_cached_segment_max_segment_size * 3})
-          .add({a_few, large_cached_segment_max_segment_size * 5})
-          .template gen<ValueT>(sort_descending);
+#if CUB_INCLUDE_HOST_CODE
+      using SmallAndMediumPolicyT =
+        typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
+      using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
 
-      InputTest<KeyT, ValueT>(sort_descending, edge_cases);
+      const int small_segment_max_segment_size =
+        SmallAndMediumPolicyT::SmallPolicyT::ITEMS_PER_TILE;
+
+      const int items_per_small_segment =
+        SmallAndMediumPolicyT::SmallPolicyT::ITEMS_PER_THREAD;
+
+      const int medium_segment_max_segment_size =
+        SmallAndMediumPolicyT::MediumPolicyT::ITEMS_PER_TILE;
+
+      const int single_thread_segment_size = items_per_small_segment;
+
+      const int large_cached_segment_max_segment_size =
+        LargeSegmentPolicyT::BLOCK_THREADS *
+        LargeSegmentPolicyT::ITEMS_PER_THREAD;
+
+      for (bool sort_descending : {ascending, descending})
+      {
+        Input<KeyT, ValueT> edge_cases =
+          InputDescription<KeyT>()
+            .add({a_lot_of, empty_short_circuit_segment_size})
+            .add({a_lot_of, copy_short_circuit_segment_size})
+            .add({a_lot_of, swap_short_circuit_segment_size})
+            .add({a_lot_of, swap_short_circuit_segment_size + 1})
+            .add({a_lot_of, swap_short_circuit_segment_size + 1})
+            .add({a_lot_of, single_thread_segment_size - 1})
+            .add({a_lot_of, single_thread_segment_size })
+            .add({a_lot_of, single_thread_segment_size + 1 })
+            .add({a_lot_of, single_thread_segment_size * 2 - 1 })
+            .add({a_lot_of, single_thread_segment_size * 2 })
+            .add({a_lot_of, single_thread_segment_size * 2 + 1 })
+            .add({a_bunch_of, small_segment_max_segment_size - 1})
+            .add({a_bunch_of, small_segment_max_segment_size})
+            .add({a_bunch_of, small_segment_max_segment_size + 1})
+            .add({a_bunch_of, medium_segment_max_segment_size - 1})
+            .add({a_bunch_of, medium_segment_max_segment_size})
+            .add({a_bunch_of, medium_segment_max_segment_size + 1})
+            .add({a_bunch_of, large_cached_segment_max_segment_size - 1})
+            .add({a_bunch_of, large_cached_segment_max_segment_size})
+            .add({a_bunch_of, large_cached_segment_max_segment_size + 1})
+            .add({a_few, large_cached_segment_max_segment_size * 2})
+            .add({a_few, large_cached_segment_max_segment_size * 3})
+            .add({a_few, large_cached_segment_max_segment_size * 5})
+            .template gen<ValueT>(sort_descending);
+
+        InputTest<KeyT, ValueT>(sort_descending, edge_cases);
+      }
+#endif
     }
 
     return cudaSuccess;
@@ -1638,12 +1646,131 @@ void Test()
 }
 
 
+#ifdef CUB_CDP
+template <typename KeyT>
+__global__ void LauncherKernel(
+  void *tmp_storage,
+  std::size_t temp_storage_bytes,
+  const KeyT *in_keys,
+  KeyT *out_keys,
+  int num_items,
+  int num_segments,
+  const int *offsets)
+{
+  CubDebug(cub::DeviceSegmentedSort::SortKeys(tmp_storage,
+                                              temp_storage_bytes,
+                                              in_keys,
+                                              out_keys,
+                                              num_items,
+                                              num_segments,
+                                              offsets,
+                                              offsets + 1));
+}
+
+template <typename KeyT,
+          typename ValueT>
+void TestDeviceSideLaunch(Input<KeyT, ValueT> &input)
+{
+  thrust::host_vector<KeyT> h_keys_output(input.get_num_items());
+  thrust::device_vector<KeyT> keys_output(input.get_num_items());
+
+  thrust::host_vector<ValueT> h_values_output(input.get_num_items());
+  thrust::device_vector<ValueT> values_output(input.get_num_items());
+
+  KeyT *d_keys_output = thrust::raw_pointer_cast(keys_output.data());
+
+  thrust::host_vector<KeyT> h_keys(input.get_num_items());
+  thrust::host_vector<ValueT> h_values(input.get_num_items());
+
+  const thrust::host_vector<int> &h_offsets = input.get_h_offsets();
+
+  for (int iteration = 0; iteration < MAX_ITERATIONS; iteration++)
+  {
+    RandomizeInput(h_keys, h_values);
+
+    input.get_d_keys_vec()   = h_keys;
+    input.get_d_values_vec() = h_values;
+
+    const KeyT *d_input = input.get_d_keys();
+
+    std::size_t temp_storage_bytes{};
+    cub::DeviceSegmentedSort::SortKeys(nullptr,
+                                       temp_storage_bytes,
+                                       d_input,
+                                       d_keys_output,
+                                       input.get_num_items(),
+                                       input.get_num_segments(),
+                                       input.get_d_offsets(),
+                                       input.get_d_offsets() + 1);
+
+    thrust::device_vector<std::uint8_t> temp_storage(temp_storage_bytes);
+    std::uint8_t *d_temp_storage = thrust::raw_pointer_cast(temp_storage.data());
+
+    LauncherKernel<KeyT><<<1, 1>>>(
+      d_temp_storage,
+      temp_storage_bytes,
+      d_input,
+      d_keys_output,
+      input.get_num_items(),
+      input.get_num_segments(),
+      input.get_d_offsets());
+    CubDebugExit(cudaDeviceSynchronize());
+    CubDebugExit(cudaPeekAtLastError());
+
+    HostReferenceSort(false,
+                      false,
+                      input.get_num_segments(),
+                      h_offsets,
+                      h_keys,
+                      h_values);
+
+    h_keys_output = keys_output;
+
+    const bool keys_ok =
+      compare_two_outputs(h_offsets, h_keys, h_keys_output);
+
+    AssertTrue(keys_ok);
+
+    input.shuffle();
+  }
+}
+
+template <typename KeyT>
+void TestDeviceSideLaunch(int min_segments, int max_segments)
+{
+  const int max_items = 10000000;
+
+  for (int iteration = 0; iteration < MAX_ITERATIONS; iteration++)
+  {
+    Input<KeyT, KeyT> edge_cases =
+      GenRandomInput<KeyT, KeyT>(max_items,
+                                 min_segments,
+                                 max_segments,
+                                 descending);
+
+    TestDeviceSideLaunch(edge_cases);
+  }
+}
+
+template <typename KeyT>
+void TestDeviceSideLaunch()
+{
+  TestDeviceSideLaunch<KeyT>(1 << 2, 1 << 8);
+  TestDeviceSideLaunch<KeyT>(1 << 9, 1 << 19);
+}
+#endif
+
+
 int main(int argc, char** argv)
 {
   CommandLineArgs args(argc, argv);
 
   // Initialize device
   CubDebugExit(args.DeviceInit());
+
+#ifdef CUB_CDP
+  TestDeviceSideLaunch<int>();
+#endif
 
   TestZeroSegments();
   TestEmptySegments(1 << 2);
