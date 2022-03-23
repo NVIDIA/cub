@@ -1344,9 +1344,14 @@ struct DispatchRadixSort :
 
             // exclusive sums to determine starts
             const int SCAN_BLOCK_THREADS = ActivePolicyT::ExclusiveSumPolicy::BLOCK_THREADS;
-            DeviceRadixSortExclusiveSumKernel<MaxPolicyT, OffsetT>
-                <<<num_passes, SCAN_BLOCK_THREADS, 0, stream>>>(d_bins);
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
+                      num_passes, SCAN_BLOCK_THREADS, 0, stream
+                      ).doit(DeviceRadixSortExclusiveSumKernel<MaxPolicyT, OffsetT>,
+                            d_bins);
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // use the other buffer if no overwrite is allowed
             KeyT* d_keys_tmp = d_keys.Alternate();
@@ -1374,7 +1379,8 @@ struct DispatchRadixSort :
                            stream))) break;
                     auto onesweep_kernel = DeviceRadixSortOnesweepKernel<
                         MaxPolicyT, IS_DESCENDING, KeyT, ValueT, OffsetT, PortionOffsetT>;
-                    errror = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
+
+                    error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                       num_blocks, ONESWEEP_BLOCK_THREADS, 0, stream
                     ).doit(onesweep_kernel,
                            d_lookback, d_ctrs + portion * num_passes + pass,
