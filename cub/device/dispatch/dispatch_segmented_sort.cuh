@@ -540,7 +540,7 @@ template <typename LargeSegmentPolicyT,
           typename ValueT,
           typename BeginOffsetIteratorT,
           typename EndOffsetIteratorT>
-__host__ __device__ cudaError_t
+CUB_RUNTIME_FUNCTION cudaError_t
 DeviceSegmentedSortContinuation(
     LargeKernelT large_kernel,
     SmallKernelT small_kernel,
@@ -716,6 +716,7 @@ DeviceSegmentedSortContinuationKernel(
   //
   // Due to (4, 5), we can't pass the user-provided stream in the continuation.
   // Due to (1, 2, 3) it's safe to pass the main stream.
+  #ifdef CUB_RUNTIME_ENABLED
   cudaError_t error =
     DeviceSegmentedSortContinuation<LargeSegmentPolicyT, SmallAndMediumPolicyT>(
       large_kernel,
@@ -736,6 +737,10 @@ DeviceSegmentedSortContinuationKernel(
       debug_synchronous);
 
   CubDebug(error);
+  #else
+  // Kernel launch not supported from this device
+  CubDebug(cudaErrorNotSupported);
+  #endif
 }
 
 template <typename KeyT,
@@ -1625,6 +1630,7 @@ private:
     else
     {
       #if CUB_INCLUDE_DEVICE_CODE
+      #ifdef CUB_RUNTIME_ENABLED
       using MaxPolicyT = typename DispatchSegmentedSort::MaxPolicy;
       THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
         .doit(DeviceSegmentedSortContinuationKernel<MaxPolicyT,
@@ -1662,6 +1668,9 @@ private:
           return error;
         }
       }
+      #else
+      error = CubDebug(cudaErrorNotSupported);
+      #endif
       #endif
     }
 
