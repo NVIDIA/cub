@@ -49,6 +49,7 @@
 
 #include <cstdio>
 #include <limits>
+#include <new> // for std::bad_alloc
 #include <memory>
 #include <typeinfo>
 
@@ -322,12 +323,29 @@ void Test(thrust::default_random_engine &rng)
 {
   for (unsigned int pow2 = 9; pow2 < 22; pow2 += 2)
   {
-    const unsigned int num_items = 1 << pow2;
-    AllocateAndTestIterators<DataType, DataType>(num_items);
+    try
+    {
+      const unsigned int num_items = 1 << pow2;
+      AllocateAndTestIterators<DataType, DataType>(num_items);
 
-
-    TestHelper<true>::AllocateAndTest<HugeDataType, DataType>(rng, num_items);
-    Test<DataType>(rng, num_items);
+      TestHelper<true>::AllocateAndTest<HugeDataType, DataType>(rng, num_items);
+      Test<DataType>(rng, num_items);
+    }
+    catch (std::bad_alloc &e)
+    {
+      if (pow2 > 20)
+      { // Some cards don't have enough memory for large allocations, these
+        // can be skipped.
+        printf("Skipping large memory test. (num_items=2^%u): %s\n",
+               pow2,
+               e.what());
+      }
+      else
+      { // For smaller problem sizes, treat as an error:
+        printf("Error (num_items=2^%u): %s", pow2, e.what());
+        throw;
+      }
+    }
   }
 }
 
