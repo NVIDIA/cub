@@ -182,15 +182,15 @@ private:
             T                       (&preds)[ITEMS_PER_THREAD],         ///< [out] Calling thread's predecessor items
             FlagOp                  flag_op)                            ///< [in] Binary boolean flag predicate
         {
-            preds[ITERATION] = input[ITERATION - 1];
-
-            flags[ITERATION] = ApplyOp<FlagOp>::FlagT(
-                flag_op,
-                preds[ITERATION],
-                input[ITERATION],
-                (linear_tid * ITEMS_PER_THREAD) + ITERATION);
-
-            Iterate<ITERATION + 1, MAX_ITERATIONS>::FlagHeads(linear_tid, flags, input, preds, flag_op);
+            #pragma unroll
+            for (int i=ITERATION; i < MAX_ITERATIONS; ++i) {
+                preds[i] = input[i - 1];
+                flags[i] = ApplyOp<FlagOp>::FlagT(
+                    flag_op,
+                    preds[i],
+                    input[i],
+                    (linear_tid * ITEMS_PER_THREAD) + i);
+            }
         }
 
         // Tail flags
@@ -204,47 +204,17 @@ private:
             T                       (&input)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
             FlagOp                  flag_op)                            ///< [in] Binary boolean flag predicate
         {
-            flags[ITERATION] = ApplyOp<FlagOp>::FlagT(
-                flag_op,
-                input[ITERATION],
-                input[ITERATION + 1],
-                (linear_tid * ITEMS_PER_THREAD) + ITERATION + 1);
-
-            Iterate<ITERATION + 1, MAX_ITERATIONS>::FlagTails(linear_tid, flags, input, flag_op);
+            #pragma unroll
+            for (int i=ITERATION; i < MAX_ITERATIONS; ++i) {
+                flags[i] = ApplyOp<FlagOp>::FlagT(
+                    flag_op,
+                    input[i],
+                    input[i + 1],
+                    (linear_tid * ITEMS_PER_THREAD) + i + 1);
+            }
         }
 
     };
-
-    /// Templated unrolling of item comparison (termination case)
-    template <int MAX_ITERATIONS>
-    struct Iterate<MAX_ITERATIONS, MAX_ITERATIONS>
-    {
-        // Head flags
-        template <
-            int             ITEMS_PER_THREAD,
-            typename        FlagT,
-            typename        FlagOp>
-        static __device__ __forceinline__ void FlagHeads(
-            int                     /*linear_tid*/,
-            FlagT                   (&/*flags*/)[ITEMS_PER_THREAD],         ///< [out] Calling thread's discontinuity head_flags
-            T                       (&/*input*/)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
-            T                       (&/*preds*/)[ITEMS_PER_THREAD],         ///< [out] Calling thread's predecessor items
-            FlagOp                  /*flag_op*/)                            ///< [in] Binary boolean flag predicate
-        {}
-
-        // Tail flags
-        template <
-            int             ITEMS_PER_THREAD,
-            typename        FlagT,
-            typename        FlagOp>
-        static __device__ __forceinline__ void FlagTails(
-            int                     /*linear_tid*/,
-            FlagT                   (&/*flags*/)[ITEMS_PER_THREAD],         ///< [out] Calling thread's discontinuity head_flags
-            T                       (&/*input*/)[ITEMS_PER_THREAD],         ///< [in] Calling thread's input items
-            FlagOp                  /*flag_op*/)                            ///< [in] Binary boolean flag predicate
-        {}
-    };
-
 
     /******************************************************************************
      * Thread fields
