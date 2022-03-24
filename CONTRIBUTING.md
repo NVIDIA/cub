@@ -89,4 +89,4 @@ The configuration options for CUB are:
 # Development Model
 
 CUB follows the same development model as Thrust, described
-[here](https://github.com/NVIDIA/thrust/blob/main/CONTRIBUTING.md#development-model).
+[here](https://github.com/NVIDIA/thrust/blob/main/docs/github_pages/releases/versioning.md).
