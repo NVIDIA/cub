@@ -443,6 +443,8 @@ void Test(
     // Allocate device output array
     OutputT *d_out = NULL;
     AllocateOutput<OutputT, DeviceInputIteratorT, InPlace>::run(d_out, d_in, num_items);
+    OutputT *d_out2 = NULL;
+    AllocateOutput<OutputT, DeviceInputIteratorT, InPlace>::run(d_out2, d_in, num_items);
 
     // Allocate CDP device arrays
     size_t          *d_temp_storage_bytes = NULL;
@@ -490,9 +492,29 @@ void Test(
         0,
         true));
 
+    // Check deterministic
+    CubDebugExit(Dispatch(
+        Int2Type<BACKEND>(),
+        Int2Type<Traits<OutputT>::PRIMITIVE>(),
+        1,
+        d_temp_storage_bytes,
+        d_cdp_error,
+        d_temp_storage,
+        temp_storage_bytes,
+        d_in,
+        d_out2,
+        scan_op,
+        initial_value,
+        num_items,
+        0,
+        true));
+
     // Check for correctness (and display results, if specified)
     int compare = CompareDeviceResults(h_reference, d_out, num_items, true, g_verbose);
     printf("\t%s", compare ? "FAIL" : "PASS");
+    int compare2 = CompareDeviceDeviceResults(d_out, d_out2, num_items, true, g_verbose, true);
+    printf("\tdeterministic:%s", compare2 ? "FAIL" : "PASS");
+    compare &= compare2;
 
     // Flush any stdout/stderr
     fflush(stdout);
@@ -532,6 +554,7 @@ void Test(
 
     // Cleanup
     if (d_out) CubDebugExit(g_allocator.DeviceFree(d_out));
+    if (d_out2) CubDebugExit(g_allocator.DeviceFree(d_out2));
     if (d_temp_storage_bytes) CubDebugExit(g_allocator.DeviceFree(d_temp_storage_bytes));
     if (d_cdp_error) CubDebugExit(g_allocator.DeviceFree(d_cdp_error));
     if (d_temp_storage) CubDebugExit(g_allocator.DeviceFree(d_temp_storage));
@@ -904,6 +927,8 @@ int main(int argc, char** argv)
     TestSize<unsigned long long>(num_items,
                                  (unsigned long long)0,
                                  (unsigned long long)99);
+    TestSize<float>(num_items, (float)0, (float)99);
+    TestSize<double>(num_items, (double)0, (double)99);
 
 #elif TEST_VALUE_TYPES == 1
 

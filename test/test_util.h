@@ -1409,8 +1409,9 @@ CUB_NAMESPACE_END
  * Compares the equivalence of two arrays
  */
 template <typename S, typename T, typename OffsetT>
-int CompareResults(T* computed, S* reference, OffsetT len, bool verbose = true)
+int CompareResults(T* computed, S* reference, OffsetT len, bool verbose = true, bool no_tolerance = false)
 {
+    (void) no_tolerance;
     for (OffsetT i = 0; i < len; i++)
     {
         if (computed[i] != reference[i])
@@ -1429,7 +1430,7 @@ int CompareResults(T* computed, S* reference, OffsetT len, bool verbose = true)
  * Compares the equivalence of two arrays
  */
 template <typename OffsetT>
-int CompareResults(float* computed, float* reference, OffsetT len, bool verbose = true)
+int CompareResults(float* computed, float* reference, OffsetT len, bool verbose = true, bool no_tolerance = false)
 {
     for (OffsetT i = 0; i < len; i++)
     {
@@ -1437,8 +1438,14 @@ int CompareResults(float* computed, float* reference, OffsetT len, bool verbose 
         {
             float difference = std::abs(computed[i]-reference[i]);
             float fraction = difference / std::abs(reference[i]);
+            bool is_incorrect;
+            if (no_tolerance) {
+                is_incorrect = true;
+            } else {
+                is_incorrect = fraction > 0.00015;
+            }
 
-            if (fraction > 0.00015)
+            if (is_incorrect)
             {
                 if (verbose) std::cout << "INCORRECT: [" << i << "]: "
                     << "(computed) " << CoutCast(computed[i]) << " != "
@@ -1455,7 +1462,7 @@ int CompareResults(float* computed, float* reference, OffsetT len, bool verbose 
  * Compares the equivalence of two arrays
  */
 template <typename OffsetT>
-int CompareResults(CUB_NS_QUALIFIER::NullType* computed, CUB_NS_QUALIFIER::NullType* reference, OffsetT len, bool verbose = true)
+int CompareResults(CUB_NS_QUALIFIER::NullType* computed, CUB_NS_QUALIFIER::NullType* reference, OffsetT len, bool verbose = true, bool no_tolerance = false)
 {
     return 0;
 }
@@ -1464,7 +1471,7 @@ int CompareResults(CUB_NS_QUALIFIER::NullType* computed, CUB_NS_QUALIFIER::NullT
  * Compares the equivalence of two arrays
  */
 template <typename OffsetT>
-int CompareResults(double* computed, double* reference, OffsetT len, bool verbose = true)
+int CompareResults(double* computed, double* reference, OffsetT len, bool verbose = true, bool no_tolerance = false)
 {
     for (OffsetT i = 0; i < len; i++)
     {
@@ -1472,8 +1479,14 @@ int CompareResults(double* computed, double* reference, OffsetT len, bool verbos
         {
             double difference = std::abs(computed[i]-reference[i]);
             double fraction = difference / std::abs(reference[i]);
+            bool is_incorrect;
+            if (no_tolerance) {
+                is_incorrect = true;
+            } else {
+                is_incorrect = fraction > 0.00015;
+            }
 
-            if (fraction > 0.00015)
+            if (is_incorrect)
             {
                 if (verbose) std::cout << "INCORRECT: [" << i << "]: "
                     << CoutCast(computed[i]) << " != "
@@ -1569,7 +1582,8 @@ int CompareDeviceDeviceResults(
     T *d_data,
     std::size_t num_items,
     bool verbose = true,
-    bool display_data = false)
+    bool display_data = false,
+    bool no_tolerance = false)
 {
     // Allocate array on host
     T *h_reference = (T*) malloc(num_items * sizeof(T));
@@ -1595,7 +1609,7 @@ int CompareDeviceDeviceResults(
     }
 
     // Check
-    int retval = CompareResults(h_data, h_reference, num_items, verbose);
+    int retval = CompareResults(h_data, h_reference, num_items, verbose, no_tolerance);
 
     // Cleanup
     if (h_reference) free(h_reference);
@@ -1603,7 +1617,6 @@ int CompareDeviceDeviceResults(
 
     return retval;
 }
-
 
 /**
  * Print the contents of a host array
