@@ -57,11 +57,6 @@ function(cub_build_compiler_targets)
 
     # This complains about functions in CUDA system headers when used with nvcc.
     append_option_if_available("-Wno-unused-function" cxx_compile_options)
-
-    # CUB uses deprecated texture functions (cudaBindTexture, etc). These
-    # need to be replaced, but silence the warnings for now.
-    # This can be removed once NVIDIA/cub#191 is fixed.
-    append_option_if_available("-Wno-deprecated-declarations" cxx_compile_options)
   endif()
 
   if ("GNU" STREQUAL "${CMAKE_CXX_COMPILER_ID}")
@@ -115,10 +110,5 @@ function(cub_build_compiler_targets)
     $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Xcudafe=--promote_warnings>
     # Don't complain about deprecated GPU targets.
     $<$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>:-Wno-deprecated-gpu-targets>
-    # Suppress deprecation warnings in nvcc < 11.5.
-    # TexRefInputIterator uses deprecated CUDART APIs, see NVIDIA/cub#191.
-    # After 11.5, we will suppress these in-code via pragma, but for older nvcc
-    # we have to use the big hammer:
-    $<$<AND:$<COMPILE_LANG_AND_ID:CUDA,NVIDIA>,$<VERSION_LESS:$<CUDA_COMPILER_VERSION>,11.5>>:-Wno-deprecated-declarations>
   )
 endfunction()

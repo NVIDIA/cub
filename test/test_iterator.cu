@@ -43,7 +43,6 @@
 #include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/iterator/counting_input_iterator.cuh>
 #include <cub/iterator/tex_obj_input_iterator.cuh>
-#include <cub/iterator/tex_ref_input_iterator.cuh>
 #include <cub/iterator/transform_input_iterator.cuh>
 
 #include <cub/util_type.cuh>
@@ -374,70 +373,6 @@ void TestTexObj()
     if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
 }
 
-
-#if CUDART_VERSION >= 5050
-
-/**
- * Test tex-ref texture iterator
- */
-template <typename T, typename CastT>
-void TestTexRef()
-{
-    printf("\nTesting tex-ref iterator on type %s\n", typeid(T).name()); fflush(stdout);
-
-    //
-    // Test iterator manipulation in kernel
-    //
-
-    constexpr int TEST_VALUES                   = 11000;
-    constexpr unsigned int DUMMY_OFFSET         = 500;
-    constexpr unsigned int DUMMY_TEST_VALUES    = TEST_VALUES - DUMMY_OFFSET;
-
-    T *h_data = new T[TEST_VALUES];
-    for (int i = 0; i < TEST_VALUES; ++i)
-    {
-        RandomBits(h_data[i]);
-    }
-
-    // Allocate device arrays
-    T *d_data   = NULL;
-    T *d_dummy  = NULL;
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_data, sizeof(T) * TEST_VALUES));
-    CubDebugExit(cudaMemcpy(d_data, h_data, sizeof(T) * TEST_VALUES, cudaMemcpyHostToDevice));
-
-    CubDebugExit(g_allocator.DeviceAllocate((void**)&d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
-    CubDebugExit(cudaMemcpy(d_dummy, h_data + DUMMY_OFFSET, sizeof(T) * DUMMY_TEST_VALUES, cudaMemcpyHostToDevice));
-
-    // Initialize reference data
-    T h_reference[8];
-    h_reference[0] = h_data[0];          // Value at offset 0
-    h_reference[1] = h_data[100];        // Value at offset 100
-    h_reference[2] = h_data[1000];       // Value at offset 1000
-    h_reference[3] = h_data[10000];      // Value at offset 10000
-    h_reference[4] = h_data[1];          // Value at offset 1
-    h_reference[5] = h_data[21];         // Value at offset 21
-    h_reference[6] = h_data[11];         // Value at offset 11
-    h_reference[7] = h_data[0];          // Value at offset 0;
-
-    // Create and bind ref-based test iterator
-    TexRefInputIterator<T, __LINE__> d_ref_itr;
-    CubDebugExit(d_ref_itr.BindTexture((CastT*) d_data, sizeof(T) * TEST_VALUES));
-
-    // Create and bind dummy iterator of same type to check with interferance
-    TexRefInputIterator<T, __LINE__> d_ref_itr2;
-    CubDebugExit(d_ref_itr2.BindTexture((CastT*) d_dummy, sizeof(T) * DUMMY_TEST_VALUES));
-
-    Test(d_ref_itr, h_reference);
-
-    CubDebugExit(d_ref_itr.UnbindTexture());
-    CubDebugExit(d_ref_itr2.UnbindTexture());
-
-    if (h_data) delete[] h_data;
-    if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
-    if (d_dummy) CubDebugExit(g_allocator.DeviceFree(d_dummy));
-}
-
-
 /**
  * Test texture transform iterator
  */
@@ -492,11 +427,6 @@ void TestTexTransform()
     if (d_data) CubDebugExit(g_allocator.DeviceFree(d_data));
 }
 
-#endif  // CUDART_VERSION
-
-
-
-
 /**
  * Run non-integer tests
  */
@@ -505,17 +435,8 @@ void Test(Int2Type<false> /* is_integer */)
 {
     TestModified<T, CastT>();
     TestTransform<T, CastT>();
-
-#if CUB_CDP
-    // Test tex-obj iterators if CUDA dynamic parallelism enabled
-    TestTexObj<T, CastT>(type_string);
-#endif  // CUB_CDP
-
-#if CUDART_VERSION >= 5050
-    // Test tex-ref iterators for CUDA 5.5
-    TestTexRef<T, CastT>();
+    TestTexObj<T, CastT>();
     TestTexTransform<T, CastT>();
-#endif  // CUDART_VERSION
 }
 
 /**
