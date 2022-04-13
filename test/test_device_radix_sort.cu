@@ -34,6 +34,7 @@
 #define CUB_STDERR
 
 #include <algorithm>
+#include <climits>
 #include <cstdio>
 #include <limits>
 #include <memory>
@@ -257,6 +258,27 @@ cudaError_t Dispatch(
 // Dispatch to different DeviceRadixSort entrypoints
 //---------------------------------------------------------------------
 
+// Validates that `num_items` fits into `int`
+// TODO(canonizer): remove this check once num_items is templated for segmented sort.
+template <typename NumItemsT>
+__host__ __device__ bool ValidateNumItemsForSegmentedSort(NumItemsT num_items)
+{
+  if (static_cast<long long int>(num_items) <
+      static_cast<long long int>(INT_MAX))
+  {
+    return true;
+  }
+  else
+  {
+    printf("cub::DeviceSegmentedRadixSort is currently limited by %d items but "
+           "%lld were provided\n",
+           INT_MAX,
+           static_cast<long long int>(num_items));
+  }
+
+  return false;
+}
+
 /**
  * Dispatch to CUB_SEGMENTED sorting entrypoint (specialized for ascending)
  */
@@ -284,13 +306,23 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
-    AssertTrue(num_items < std::numeric_limits<int>::max());
+  if (ValidateNumItemsForSegmentedSort(num_items))
+  {
+    return DeviceSegmentedRadixSort::SortPairs(d_temp_storage,
+                                               temp_storage_bytes,
+                                               d_keys,
+                                               d_values,
+                                               static_cast<int>(num_items),
+                                               num_segments,
+                                               d_segment_begin_offsets,
+                                               d_segment_end_offsets,
+                                               begin_bit,
+                                               end_bit,
+                                               stream,
+                                               debug_synchronous);
+  }
 
-    return DeviceSegmentedRadixSort::SortPairs(
-        d_temp_storage, temp_storage_bytes,
-        d_keys, d_values, static_cast<int>(num_items),
-        num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-        begin_bit, end_bit, stream, debug_synchronous);
+  return cudaErrorInvalidValue;
 }
 
 /**
@@ -320,20 +352,33 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
-    AssertTrue(num_items < std::numeric_limits<int>::max());
+  if (ValidateNumItemsForSegmentedSort(num_items))
+  {
+    KeyT const *const_keys_itr     = d_keys.Current();
+    ValueT const *const_values_itr = d_values.Current();
 
-    KeyT      const *const_keys_itr     = d_keys.Current();
-    ValueT    const *const_values_itr   = d_values.Current();
-
-    cudaError_t retval = DeviceSegmentedRadixSort::SortPairs(
-        d_temp_storage, temp_storage_bytes,
-        const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
-        static_cast<int>(num_items), num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-        begin_bit, end_bit, stream, debug_synchronous);
+    cudaError_t retval =
+      DeviceSegmentedRadixSort::SortPairs(d_temp_storage,
+                                          temp_storage_bytes,
+                                          const_keys_itr,
+                                          d_keys.Alternate(),
+                                          const_values_itr,
+                                          d_values.Alternate(),
+                                          static_cast<int>(num_items),
+                                          num_segments,
+                                          d_segment_begin_offsets,
+                                          d_segment_end_offsets,
+                                          begin_bit,
+                                          end_bit,
+                                          stream,
+                                          debug_synchronous);
 
     d_keys.selector ^= 1;
     d_values.selector ^= 1;
     return retval;
+  }
+
+  return cudaErrorInvalidValue;
 }
 
 
@@ -364,13 +409,24 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
-    AssertTrue(num_items < std::numeric_limits<int>::max());
-
+  if (ValidateNumItemsForSegmentedSort(num_items))
+  {
     return DeviceSegmentedRadixSort::SortPairsDescending(
-        d_temp_storage, temp_storage_bytes,
-        d_keys, d_values, static_cast<int>(num_items),
-        num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-        begin_bit, end_bit, stream, debug_synchronous);
+      d_temp_storage,
+      temp_storage_bytes,
+      d_keys,
+      d_values,
+      static_cast<int>(num_items),
+      num_segments,
+      d_segment_begin_offsets,
+      d_segment_end_offsets,
+      begin_bit,
+      end_bit,
+      stream,
+      debug_synchronous);
+  }
+
+  return cudaErrorInvalidValue;
 }
 
 /**
@@ -400,20 +456,33 @@ cudaError_t Dispatch(
     cudaStream_t            stream,
     bool                    debug_synchronous)
 {
-    AssertTrue(num_items < std::numeric_limits<int>::max());
+  if (ValidateNumItemsForSegmentedSort(num_items))
+  {
+    KeyT const *const_keys_itr     = d_keys.Current();
+    ValueT const *const_values_itr = d_values.Current();
 
-    KeyT      const *const_keys_itr     = d_keys.Current();
-    ValueT    const *const_values_itr   = d_values.Current();
-
-    cudaError_t retval = DeviceSegmentedRadixSort::SortPairsDescending(
-        d_temp_storage, temp_storage_bytes,
-        const_keys_itr, d_keys.Alternate(), const_values_itr, d_values.Alternate(),
-        static_cast<int>(num_items), num_segments, d_segment_begin_offsets, d_segment_end_offsets,
-        begin_bit, end_bit, stream, debug_synchronous);
+    cudaError_t retval =
+      DeviceSegmentedRadixSort::SortPairsDescending(d_temp_storage,
+                                                    temp_storage_bytes,
+                                                    const_keys_itr,
+                                                    d_keys.Alternate(),
+                                                    const_values_itr,
+                                                    d_values.Alternate(),
+                                                    static_cast<int>(num_items),
+                                                    num_segments,
+                                                    d_segment_begin_offsets,
+                                                    d_segment_end_offsets,
+                                                    begin_bit,
+                                                    end_bit,
+                                                    stream,
+                                                    debug_synchronous);
 
     d_keys.selector ^= 1;
     d_values.selector ^= 1;
     return retval;
+  }
+
+  return cudaErrorInvalidValue;
 }
 
 //---------------------------------------------------------------------
