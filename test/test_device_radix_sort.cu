@@ -708,7 +708,7 @@ void InitializeKeysSorted(
 /**
  * Initialize solution
  */
-template <bool IS_DESCENDING, typename KeyT, typename NumItemsT>
+template <bool IS_DESCENDING, bool WANT_RANKS, typename KeyT, typename NumItemsT>
 void InitializeSolution(
     KeyT       *h_keys,
     NumItemsT  num_items,
@@ -782,7 +782,10 @@ void InitializeSolution(
         // Generate a random permutation from the summary. Such a complicated
         // approach is used to permute the array and compute ranks in a
         // cache-friendly way and in a short time.
-        h_reference_ranks = new NumItemsT[num_items];
+        if (WANT_RANKS)
+        {
+            h_reference_ranks = new NumItemsT[num_items];
+        }
         NumItemsT max_run = 32, run = 0, i = 0;
         while (summary.size() > 0)
         {
@@ -795,7 +798,10 @@ void InitializeSolution(
             for (NumItemsT j = 0; j < run; ++j)
             {
                 h_keys[i + j] = element.key;
-                h_reference_ranks[element.index + j] = i + j;
+                if (WANT_RANKS)
+                {
+                    h_reference_ranks[element.index + j] = i + j;
+                }
             }
             i += run;
             element.index += run;
@@ -846,12 +852,18 @@ void InitializeSolution(
 
         printf(" Done.\n"); fflush(stdout);
 
-        h_reference_ranks  = new NumItemsT[num_items];
+        if (WANT_RANKS)
+        {
+            h_reference_ranks  = new NumItemsT[num_items];
+        }
         h_reference_keys   = new KeyT[num_items];
 
         for (NumItemsT i = 0; i < num_items; ++i)
         {
-            h_reference_ranks[i]    = h_pairs[i].value;
+            if (WANT_RANKS)
+            {
+                h_reference_ranks[i]    = h_pairs[i].value;
+            }
             h_reference_keys[i]     = h_keys[h_pairs[i].value];
         }
 
@@ -1193,7 +1205,10 @@ void TestValueTypes(
     // Initialize the solution
     NumItemsT *h_reference_ranks = NULL;
     KeyT *h_reference_keys = NULL;
-    InitializeSolution<IS_DESCENDING>(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
+    // If TEST_VALUE_TYPE == 0, no values are sorted, only keys.
+    // Since ranks are only necessary when checking for values,
+    // they are not computed in this case.
+    InitializeSolution<IS_DESCENDING, TEST_VALUE_TYPE != 0>(h_keys, num_items, num_segments, pre_sorted, h_segment_offsets, begin_bit, end_bit, h_reference_ranks, h_reference_keys);
 
     TestBackend<IS_DESCENDING, KeyT, SmallestValueT>          (h_keys, num_items, num_segments, d_segment_begin_offsets, d_segment_end_offsets, begin_bit, end_bit, h_reference_keys, h_reference_ranks);
 
@@ -1511,7 +1526,7 @@ void Test(
     InitializeKeyBits(gen_mode, h_keys, num_items, entropy_reduction);
     InitializeSegments(num_items, num_segments, h_segment_offsets);
     CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(std::size_t) * (num_segments + 1), cudaMemcpyHostToDevice));
-    InitializeSolution<IS_DESCENDING>(
+    InitializeSolution<IS_DESCENDING, !KEYS_ONLY>(
         h_keys, num_items, num_segments, false, h_segment_offsets,
         begin_bit, end_bit, h_reference_ranks, h_reference_keys);
 
