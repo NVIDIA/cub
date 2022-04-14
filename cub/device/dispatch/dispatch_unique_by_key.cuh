@@ -331,7 +331,7 @@ struct DispatchUniqueByKey: SelectedPolicy
             }
 
             // Invoke select_if_kernel
-            THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
+            error = THRUST_NS_QUALIFIER::cuda_cub::launcher::triple_chevron(
                 scan_grid_size, Policy::BLOCK_THREADS, 0, stream
             ).doit(scan_kernel,
                    d_keys_in,
@@ -345,7 +345,10 @@ struct DispatchUniqueByKey: SelectedPolicy
                    num_tiles);
 
             // Check for failure to launch
-            if (CubDebug(error = cudaPeekAtLastError())) break;
+            if (CubDebug(error))
+            {
+              break;
+            }
 
             // Sync the stream if specified to flush runtime errors
             if (debug_synchronous && (CubDebug(error = SyncStream(stream)))) break;

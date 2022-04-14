@@ -1576,7 +1576,7 @@ private:
       THRUST_NS_QUALIFIER::make_reverse_iterator(
         large_and_medium_segments_indices.get() + num_segments);
 
-    if (CubDebug(error = cub::DevicePartition::If(
+    error = cub::DevicePartition::If(
       device_partition_temp_storage.get(),
       three_way_partition_temp_storage_bytes,
       THRUST_NS_QUALIFIER::counting_iterator<OffsetT>(0),
@@ -1588,7 +1588,8 @@ private:
       large_segments_selector,
       small_segments_selector,
       stream,
-      debug_synchronous)))
+      debug_synchronous);
+    if (CubDebug(error))
     {
       return error;
     }
