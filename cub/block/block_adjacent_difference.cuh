@@ -191,7 +191,6 @@ private:
     };
 
     /// Templated unrolling of item comparison (inductive case)
-    template <int ITERATION, int MAX_ITERATIONS>
     struct Iterate
     {
         /**
@@ -211,13 +210,13 @@ private:
                   FlagOp flag_op)
         {
           #pragma unroll
-          for (int i = ITERATION; i < MAX_ITERATIONS; ++i) {
-              preds[i] = input[i - 1];
-              flags[i] = ApplyOp<FlagOp>::FlagT(
-                  flag_op,
-                  preds[i],
-                  input[i],
-                  (linear_tid * ITEMS_PER_THREAD) + i);
+          for (int i = 1; i < ITEMS_PER_THREAD; ++i) {
+            preds[i] = input[i - 1];
+            flags[i] = ApplyOp<FlagOp>::FlagT(
+                flag_op,
+                preds[i],
+                input[i],
+                (linear_tid * ITEMS_PER_THREAD) + i);
           }
         }
 
@@ -236,12 +235,12 @@ private:
                   FlagOp flag_op)
         {
           #pragma unroll
-          for (int i = ITERATION; i < MAX_ITERATIONS; ++i) {
-              flags[i] = ApplyOp<FlagOp>::FlagT(
-                  flag_op,
-                  input[i],
-                  input[i + 1],
-                  (linear_tid * ITEMS_PER_THREAD) + i + 1);
+          for (int i = 0; i < ITEMS_PER_THREAD - 1; ++i) {
+            flags[i] = ApplyOp<FlagOp>::FlagT(
+                flag_op,
+                input[i],
+                input[i + 1],
+                (linear_tid * ITEMS_PER_THREAD) + i + 1);
           }
         }
     };
@@ -960,7 +959,7 @@ public:
         }
 
         // Set output for remaining items
-        Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, output, input, preds, flag_op);
+        Iterate::FlagHeads(linear_tid, output, input, preds, flag_op);
     }
 
     /**
@@ -990,7 +989,7 @@ public:
         output[0] = ApplyOp<FlagOp>::FlagT(flag_op, preds[0], input[0], linear_tid * ITEMS_PER_THREAD);
 
         // Set output for remaining items
-        Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, output, input, preds, flag_op);
+        Iterate::FlagHeads(linear_tid, output, input, preds, flag_op);
     }
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
@@ -1057,7 +1056,7 @@ public:
                 (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set output for remaining items
-        Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, output, input, flag_op);
+        Iterate::FlagTails(linear_tid, output, input, flag_op);
     }
 
 
@@ -1092,7 +1091,7 @@ public:
             (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set output for remaining items
-        Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, output, input, flag_op);
+        Iterate:FlagTails(linear_tid, output, input, flag_op);
     }
 
 
@@ -1145,10 +1144,10 @@ public:
                 (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
-        Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
+        Iterate::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
 
         // Set tail_flags for remaining items
-        Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, tail_flags, input, flag_op);
+        Iterate::FlagTails(linear_tid, tail_flags, input, flag_op);
     }
 
 
@@ -1203,10 +1202,10 @@ public:
             (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
-        Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
+        Iterate::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
 
         // Set tail_flags for remaining items
-        Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, tail_flags, input, flag_op);
+        Iterate::FlagTails(linear_tid, tail_flags, input, flag_op);
     }
 
     /**
@@ -1254,10 +1253,10 @@ public:
                 (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
-        Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
+        Iterate::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
 
         // Set tail_flags for remaining items
-        Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, tail_flags, input, flag_op);
+        Iterate::FlagTails(linear_tid, tail_flags, input, flag_op);
     }
 
 
@@ -1309,10 +1308,10 @@ public:
             (linear_tid * ITEMS_PER_THREAD) + ITEMS_PER_THREAD);
 
         // Set head_flags for remaining items
-        Iterate<1, ITEMS_PER_THREAD>::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
+        Iterate::FlagHeads(linear_tid, head_flags, input, preds, flag_op);
 
         // Set tail_flags for remaining items
-        Iterate<0, ITEMS_PER_THREAD - 1>::FlagTails(linear_tid, tail_flags, input, flag_op);
+        Iterate::FlagTails(linear_tid, tail_flags, input, flag_op);
     }
 
 };
