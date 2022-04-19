@@ -32,14 +32,16 @@
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <stdio.h>
-#include <typeinfo>
-
-#include <cub/util_allocator.cuh>
-#include <cub/iterator/counting_input_iterator.cuh>
 #include <cub/device/device_select.cuh>
+#include <cub/iterator/counting_input_iterator.cuh>
+#include <cub/util_allocator.cuh>
+
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include "test_util.h"
+
+#include <cstdio>
+#include <typeinfo>
 
 using namespace cub;
 
@@ -101,83 +103,116 @@ cudaError_t Dispatch(
 // CUDA Nested Parallelism Test Kernel
 //---------------------------------------------------------------------
 
+#if TEST_CDP == 1
+
 /**
  * Simple wrapper kernel to invoke DeviceSelect
  */
-template <typename KeyInputIteratorT, typename ValueInputIteratorT, typename KeyOutputIteratorT, typename ValueOutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
-__global__ void CnpDispatchKernel(
-    int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+template <int CubBackend,
+          typename KeyInputIteratorT,
+          typename ValueInputIteratorT,
+          typename KeyOutputIteratorT,
+          typename ValueOutputIteratorT,
+          typename NumSelectedIteratorT,
+          typename OffsetT>
+__global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
+                                  int                  timing_timing_iterations,
+                                  size_t              *d_temp_storage_bytes,
+                                  cudaError_t         *d_cdp_error,
 
-    void*                       d_temp_storage,
-    size_t                      temp_storage_bytes,
-    KeyInputIteratorT           d_keys_in,
-    ValueInputIteratorT         d_values_in,
-    KeyOutputIteratorT          d_keys_out,
-    ValueOutputIteratorT        d_values_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    bool                        debug_synchronous)
+                                  void                *d_temp_storage,
+                                  size_t               temp_storage_bytes,
+                                  KeyInputIteratorT    d_keys_in,
+                                  ValueInputIteratorT  d_values_in,
+                                  KeyOutputIteratorT   d_keys_out,
+                                  ValueOutputIteratorT d_values_out,
+                                  NumSelectedIteratorT d_num_selected_out,
+                                  OffsetT              num_items,
+                                  bool                 debug_synchronous)
 {
+  *d_cdp_error = Dispatch(cub_backend,
+                          timing_timing_iterations,
+                          d_temp_storage_bytes,
+                          d_cdp_error,
+                          d_temp_storage,
+                          temp_storage_bytes,
+                          d_keys_in,
+                          d_values_in,
+                          d_keys_out,
+                          d_values_out,
+                          d_num_selected_out,
+                          num_items,
+                          0,
+                          debug_synchronous);
 
-#ifndef CUB_CDP
-    (void)timing_timing_iterations;
-    (void)d_temp_storage_bytes;
-    (void)d_cdp_error;
-    (void)d_temp_storage;
-    (void)temp_storage_bytes;
-    (void)d_keys_in;
-    (void)d_values_in;
-    (void)d_keys_out;
-    (void)d_values_out;
-    (void)d_num_selected_out;
-    (void)num_items;
-    (void)debug_synchronous;
-    *d_cdp_error = cudaErrorNotSupported;
-#else
-    *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, 0, debug_synchronous);
-    *d_temp_storage_bytes = temp_storage_bytes;
-#endif
+  *d_temp_storage_bytes = temp_storage_bytes;
 }
-
 
 /**
  * Dispatch to CDP kernel
  */
-template <typename KeyInputIteratorT, typename ValueInputIteratorT, typename KeyOutputIteratorT, typename ValueOutputIteratorT, typename NumSelectedIteratorT, typename OffsetT>
-cudaError_t Dispatch(
-    Int2Type<CDP>               dispatch_to,
-    int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+template <typename KeyInputIteratorT,
+          typename ValueInputIteratorT,
+          typename KeyOutputIteratorT,
+          typename ValueOutputIteratorT,
+          typename NumSelectedIteratorT,
+          typename OffsetT>
+cudaError_t Dispatch(Int2Type<CDP> /*dispatch_to*/,
+                     int          timing_timing_iterations,
+                     size_t      *d_temp_storage_bytes,
+                     cudaError_t *d_cdp_error,
 
-    void*                       d_temp_storage,
-    size_t                      &temp_storage_bytes,
-    KeyInputIteratorT           d_keys_in,
-    ValueInputIteratorT         d_values_in,
-    KeyOutputIteratorT          d_keys_out,
-    ValueOutputIteratorT        d_values_out,
-    NumSelectedIteratorT        d_num_selected_out,
-    OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+                     void                *d_temp_storage,
+                     size_t              &temp_storage_bytes,
+                     KeyInputIteratorT    d_keys_in,
+                     ValueInputIteratorT  d_values_in,
+                     KeyOutputIteratorT   d_keys_out,
+                     ValueOutputIteratorT d_values_out,
+                     NumSelectedIteratorT d_num_selected_out,
+                     OffsetT              num_items,
+                     cudaStream_t         stream,
+                     bool                 debug_synchronous)
 {
-    // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_keys_in, d_values_in, d_keys_out, d_values_out, d_num_selected_out, num_items, debug_synchronous);
+  // Invoke kernel to invoke device-side dispatch
+  cudaError_t retval =
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+      .doit(CDPDispatchKernel<CUB,
+                              KeyInputIteratorT,
+                              ValueInputIteratorT,
+                              KeyOutputIteratorT,
+                              ValueOutputIteratorT,
+                              NumSelectedIteratorT,
+                              OffsetT>,
+            Int2Type<CUB>{},
+            timing_timing_iterations,
+            d_temp_storage_bytes,
+            d_cdp_error,
+            d_temp_storage,
+            temp_storage_bytes,
+            d_keys_in,
+            d_values_in,
+            d_keys_out,
+            d_values_out,
+            d_num_selected_out,
+            num_items,
+            debug_synchronous);
+  CubDebugExit(retval);
 
-    // Copy out temp_storage_bytes
-    CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
+  // Copy out temp_storage_bytes
+  CubDebugExit(cudaMemcpy(&temp_storage_bytes,
+                          d_temp_storage_bytes,
+                          sizeof(size_t) * 1,
+                          cudaMemcpyDeviceToHost));
 
-    // Copy out error
-    cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cdp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-    return retval;
+  // Copy out error
+  CubDebugExit(cudaMemcpy(&retval,
+                          d_cdp_error,
+                          sizeof(cudaError_t) * 1,
+                          cudaMemcpyDeviceToHost));
+  return retval;
 }
 
-
+#endif // TEST_CDP
 
 //---------------------------------------------------------------------
 // Test generation
@@ -486,10 +521,11 @@ template <
 void TestOp(
     int             num_items)
 {
+#if TEST_CDP == 0
     Test<CUB, KeyT, ValueT>(num_items);
-#ifdef CUB_CDP
+#elif TEST_CDP == 1
     Test<CDP, KeyT, ValueT>(num_items);
-#endif
+#endif // TEST_CDP
 }
 
 
@@ -550,7 +586,6 @@ int main(int argc, char** argv)
             "[--maxseg=<max segment length>]"
             "[--entropy=<segment length bit entropy reduction rounds>]"
             "[--v] "
-            "[--cdp]"
             "\n", argv[0]);
         exit(0);
     }
@@ -559,6 +594,8 @@ int main(int argc, char** argv)
     CubDebugExit(args.DeviceInit());
     g_device_giga_bandwidth = args.device_giga_bandwidth;
     printf("\n");
+
+    // %PARAM% TEST_CDP cdp 0:1
 
     // Test different input types
     Test<unsigned char, int>(num_items);

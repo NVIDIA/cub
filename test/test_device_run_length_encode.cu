@@ -27,22 +27,23 @@
  ******************************************************************************/
 
 /******************************************************************************
- * Test of DeviceReduce::RunLengthEncode utilities
+ * Test of DeviceRunLengthEncode utilities
  ******************************************************************************/
 
 // Ensure printing of CUDA runtime errors to console
 #define CUB_STDERR
 
-#include <stdio.h>
-#include <typeinfo>
-
-#include <cub/util_allocator.cuh>
-#include <cub/iterator/constant_input_iterator.cuh>
-#include <cub/device/device_reduce.cuh>
 #include <cub/device/device_run_length_encode.cuh>
+#include <cub/iterator/constant_input_iterator.cuh>
 #include <cub/thread/thread_operators.cuh>
+#include <cub/util_allocator.cuh>
+
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
 
 #include "test_util.h"
+
+#include <cstdio>
+#include <typeinfo>
 
 using namespace cub;
 
@@ -174,94 +175,131 @@ cudaError_t Dispatch(
 // CUDA Nested Parallelism Test Kernel
 //---------------------------------------------------------------------
 
+#if TEST_CDP == 1
+
 /**
  * Simple wrapper kernel to invoke DeviceRunLengthEncode
  */
-template <
-    int                         RLE_METHOD,
-    typename                    InputIteratorT,
-    typename                    UniqueOutputIteratorT,
-    typename                    OffsetsOutputIteratorT,
-    typename                    LengthsOutputIteratorT,
-    typename                    NumRunsIterator,
-    typename                    EqualityOp,
-    typename                    OffsetT>
-__global__ void CnpDispatchKernel(
-    Int2Type<RLE_METHOD>            method,
-    int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+template <int RLE_METHOD,
+          int CubBackend,
+          typename InputIteratorT,
+          typename UniqueOutputIteratorT,
+          typename OffsetsOutputIteratorT,
+          typename LengthsOutputIteratorT,
+          typename NumRunsIterator,
+          typename EqualityOp,
+          typename OffsetT>
+__global__ void CDPDispatchKernel(Int2Type<RLE_METHOD> method,
+                                  Int2Type<CubBackend> cub_backend,
+                                  int                  timing_timing_iterations,
+                                  size_t              *d_temp_storage_bytes,
+                                  cudaError_t         *d_cdp_error,
 
-    void*               d_temp_storage,
-    size_t                      temp_storage_bytes,
-    InputIteratorT              d_in,
-    UniqueOutputIteratorT       d_unique_out,
-    OffsetsOutputIteratorT      d_offsets_out,
-    LengthsOutputIteratorT      d_lengths_out,
-    NumRunsIterator             d_num_runs,
-    cub::Equality               equality_op,
-    OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+                                  void                  *d_temp_storage,
+                                  size_t                 temp_storage_bytes,
+                                  InputIteratorT         d_in,
+                                  UniqueOutputIteratorT  d_unique_out,
+                                  OffsetsOutputIteratorT d_offsets_out,
+                                  LengthsOutputIteratorT d_lengths_out,
+                                  NumRunsIterator        d_num_runs,
+                                  cub::Equality          equality_op,
+                                  OffsetT                num_items,
+                                  bool                   debug_synchronous)
 {
+  *d_cdp_error = Dispatch(method,
+                          cub_backend,
+                          timing_timing_iterations,
+                          d_temp_storage_bytes,
+                          d_cdp_error,
+                          d_temp_storage,
+                          temp_storage_bytes,
+                          d_in,
+                          d_unique_out,
+                          d_offsets_out,
+                          d_lengths_out,
+                          d_num_runs,
+                          equality_op,
+                          num_items,
+                          0,
+                          debug_synchronous);
 
-#ifndef CUB_CDP
-    *d_cdp_error = cudaErrorNotSupported;
-#else
-    *d_cdp_error = Dispatch(method, Int2Type<CUB>(), timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items, 0, debug_synchronous);
-
-    *d_temp_storage_bytes = temp_storage_bytes;
-#endif
+  *d_temp_storage_bytes = temp_storage_bytes;
 }
-
 
 /**
  * Dispatch to CDP kernel
  */
-template <
-    int                         RLE_METHOD,
-    typename                    InputIteratorT,
-    typename                    UniqueOutputIteratorT,
-    typename                    OffsetsOutputIteratorT,
-    typename                    LengthsOutputIteratorT,
-    typename                    NumRunsIterator,
-    typename                    EqualityOp,
-    typename                    OffsetT>
-CUB_RUNTIME_FUNCTION __forceinline__
-cudaError_t Dispatch(
-    Int2Type<RLE_METHOD>        method,
-    Int2Type<CDP>               dispatch_to,
-    int                         timing_timing_iterations,
-    size_t                      *d_temp_storage_bytes,
-    cudaError_t                 *d_cdp_error,
+template <int RLE_METHOD,
+          typename InputIteratorT,
+          typename UniqueOutputIteratorT,
+          typename OffsetsOutputIteratorT,
+          typename LengthsOutputIteratorT,
+          typename NumRunsIterator,
+          typename EqualityOp,
+          typename OffsetT>
+__forceinline__ cudaError_t
+Dispatch(Int2Type<RLE_METHOD> method,
+         Int2Type<CDP> /*dispatch_to*/,
+         int          timing_timing_iterations,
+         size_t      *d_temp_storage_bytes,
+         cudaError_t *d_cdp_error,
 
-    void*               d_temp_storage,
-    size_t                      &temp_storage_bytes,
-    InputIteratorT              d_in,
-    UniqueOutputIteratorT       d_unique_out,
-    OffsetsOutputIteratorT      d_offsets_out,
-    LengthsOutputIteratorT      d_lengths_out,
-    NumRunsIterator             d_num_runs,
-    EqualityOp                  equality_op,
-    OffsetT                     num_items,
-    cudaStream_t                stream,
-    bool                        debug_synchronous)
+         void                  *d_temp_storage,
+         size_t                &temp_storage_bytes,
+         InputIteratorT         d_in,
+         UniqueOutputIteratorT  d_unique_out,
+         OffsetsOutputIteratorT d_offsets_out,
+         LengthsOutputIteratorT d_lengths_out,
+         NumRunsIterator        d_num_runs,
+         EqualityOp             equality_op,
+         OffsetT                num_items,
+         cudaStream_t           stream,
+         bool                   debug_synchronous)
 {
-    // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(method, timing_timing_iterations, d_temp_storage_bytes, d_cdp_error,
-        d_temp_storage, temp_storage_bytes, d_in, d_unique_out, d_offsets_out, d_lengths_out, d_num_runs, equality_op, num_items, 0, debug_synchronous);
+  // Invoke kernel to invoke device-side dispatch
+  cudaError_t retval =
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+      .doit(CDPDispatchKernel<RLE_METHOD,
+                              CUB,
+                              InputIteratorT,
+                              UniqueOutputIteratorT,
+                              OffsetsOutputIteratorT,
+                              LengthsOutputIteratorT,
+                              NumRunsIterator,
+                              EqualityOp,
+                              OffsetT>,
+            method,
+            Int2Type<CUB>{},
+            timing_timing_iterations,
+            d_temp_storage_bytes,
+            d_cdp_error,
+            d_temp_storage,
+            temp_storage_bytes,
+            d_in,
+            d_unique_out,
+            d_offsets_out,
+            d_lengths_out,
+            d_num_runs,
+            equality_op,
+            num_items,
+            debug_synchronous);
+  CubDebugExit(retval);
 
-    // Copy out temp_storage_bytes
-    CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
+  // Copy out temp_storage_bytes
+  CubDebugExit(cudaMemcpy(&temp_storage_bytes,
+                          d_temp_storage_bytes,
+                          sizeof(size_t) * 1,
+                          cudaMemcpyDeviceToHost));
 
-    // Copy out error
-    cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cdp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-    return retval;
+  // Copy out error
+  CubDebugExit(cudaMemcpy(&retval,
+                          d_cdp_error,
+                          sizeof(cudaError_t) * 1,
+                          cudaMemcpyDeviceToHost));
+  return retval;
 }
 
-
+#endif // TEST_CDP
 
 //---------------------------------------------------------------------
 // Test generation
@@ -533,7 +571,7 @@ void TestPointer(
     int num_runs = Solve<RLE_METHOD>(h_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_items);
 
     printf("\nPointer %s cub::%s on %d items, %d segments (avg run length %.3f), {%s key, %s offset, %s length}, max_segment %d, entropy_reduction %d\n",
-        (RLE_METHOD == RLE) ? "DeviceReduce::RunLengthEncode" : (RLE_METHOD == NON_TRIVIAL) ? "DeviceRunLengthEncode::NonTrivialRuns" : "Other",
+        (RLE_METHOD == RLE) ? "DeviceRunLengthEncode::Encode" : (RLE_METHOD == NON_TRIVIAL) ? "DeviceRunLengthEncode::NonTrivialRuns" : "Other",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_runs, float(num_items) / num_runs,
         typeid(T).name(), typeid(OffsetT).name(), typeid(LengthT).name(),
@@ -586,7 +624,7 @@ void TestIterator(
     int num_runs = Solve<RLE_METHOD>(h_in, h_unique_reference, h_offsets_reference, h_lengths_reference, equality_op, num_items);
 
     printf("\nIterator %s cub::%s on %d items, %d segments (avg run length %.3f), {%s key, %s offset, %s length}\n",
-        (RLE_METHOD == RLE) ? "DeviceReduce::RunLengthEncode" : (RLE_METHOD == NON_TRIVIAL) ? "DeviceRunLengthEncode::NonTrivialRuns" : "Other",
+        (RLE_METHOD == RLE) ? "DeviceRunLengthEncode::Encode" : (RLE_METHOD == NON_TRIVIAL) ? "DeviceRunLengthEncode::NonTrivialRuns" : "Other",
         (BACKEND == CDP) ? "CDP CUB" : "CUB",
         num_items, num_runs, float(num_items) / num_runs,
         typeid(T).name(), typeid(OffsetT).name(), typeid(LengthT).name());
@@ -653,10 +691,10 @@ template <
 void TestDispatch(
     int             num_items)
 {
+#if TEST_CDP == 0
     Test<RLE,           CUB, T, OffsetT, LengthT>(num_items);
     Test<NON_TRIVIAL,   CUB, T, OffsetT, LengthT>(num_items);
-
-#ifdef CUB_CDP
+#elif TEST_CDP == 1
     Test<RLE,           CDP, T, OffsetT, LengthT>(num_items);
     Test<NON_TRIVIAL,   CDP, T, OffsetT, LengthT>(num_items);
 #endif
@@ -721,6 +759,8 @@ int main(int argc, char** argv)
     // Initialize device
     CubDebugExit(args.DeviceInit());
     printf("\n");
+
+    // %PARAM% TEST_CDP cdp 0:1
 
     // Test different input types
     TestSize<char, int, int>(num_items);

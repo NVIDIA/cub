@@ -1513,6 +1513,11 @@ int CompareDeviceResults(
     bool verbose = true,
     bool display_data = false)
 {
+    if (num_items == 0)
+    {
+        return 0;
+    }
+
     // Allocate array on host
     T *h_data = (T*) malloc(num_items * sizeof(T));
 

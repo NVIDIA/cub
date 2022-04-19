@@ -23,6 +23,7 @@ function(cub_get_test_params src labels_var defs_var)
       unused
       "${match}"
     )
+
     set(def ${CMAKE_MATCH_1})
     set(label ${CMAKE_MATCH_2})
     set(values "${CMAKE_MATCH_3}")
@@ -57,7 +58,6 @@ function(cub_get_test_params src labels_var defs_var)
       endforeach()
       set(variant_defs "${tmp_defs}")
     endif()
-
   endforeach()
 
   set(${labels_var} "${variant_labels}" PARENT_SCOPE)
@@ -115,13 +115,31 @@ function(cub_add_test target_name_var test_name test_src cub_target)
   endif()
   add_dependencies(${test_meta_target} ${test_target})
 
-  if (CUB_ENABLE_TESTS_WITH_RDC)
-    cub_enable_rdc_for_cuda_target(${test_target})
-  endif()
-
   add_test(NAME ${test_target}
     COMMAND "$<TARGET_FILE:${test_target}>"
   )
+endfunction()
+
+# Sets out_var to 1 if the label contains cdp variants, regardless of whether
+# or not CDP is enabled in this particular variant.
+function(_cub_has_cdp_variant out_var label)
+  string(FIND "${label}" "cdp_" idx)
+  if (idx EQUAL -1)
+    set(${out_var} 0 PARENT_SCOPE)
+  else()
+    set(${out_var} 1 PARENT_SCOPE)
+  endif()
+endfunction()
+
+# Sets out_var to 1 if the label contains "cdp_1", e.g. cdp is explicitly
+# requested for this variant.
+function(_cub_is_cdp_enabled_variant out_var label)
+  string(FIND "${label}" "cdp_1" idx)
+  if (idx EQUAL -1)
+    set(${out_var} 0 PARENT_SCOPE)
+  else()
+    set(${out_var} 1 PARENT_SCOPE)
+  endif()
 endfunction()
 
 foreach (test_src IN LISTS test_srcs)
@@ -135,7 +153,7 @@ foreach (test_src IN LISTS test_srcs)
   math(EXPR range_end "${num_variants} - 1")
 
   # Verbose output:
-  if (NOT num_variants EQUAL 0)
+  if (num_variants GREATER 0)
     message(VERBOSE "Detected ${num_variants} variants of test '${test_src}':")
     foreach(var_idx RANGE ${range_end})
       math(EXPR i "${var_idx} + 1")
@@ -151,11 +169,16 @@ foreach (test_src IN LISTS test_srcs)
     if (num_variants EQUAL 0)
       # Only one version of this test.
       cub_add_test(test_target ${test_name} "${test_src}" ${cub_target})
-    else()
+      if (CUB_ENABLE_TESTS_WITH_RDC)
+        cub_enable_rdc_for_cuda_target(${test_target})
+      endif()
+    else() # has variants:
       # Meta target to build all parametrizations of the current test for the
       # current CUB_TARGET config
       set(variant_meta_target ${config_prefix}.test.${test_name}.all)
-      add_custom_target(${variant_meta_target})
+      if (NOT TARGET ${variant_meta_target})
+        add_custom_target(${variant_meta_target})
+      endif()
 
       # Meta target to build all parametrizations of the current test for all
       # CUB_TARGET configs
@@ -171,6 +194,10 @@ foreach (test_src IN LISTS test_srcs)
         list(GET variant_defs ${var_idx} defs)
         string(REPLACE ":" ";" defs "${defs}")
 
+        # Check if the test has explicit CDP variants:
+        _cub_has_cdp_variant(explicit_cdp "${label}")
+        _cub_is_cdp_enabled_variant(enable_cdp "${label}")
+
         cub_add_test(test_target
           ${test_name}.${label}
           "${test_src}"
@@ -179,9 +206,20 @@ foreach (test_src IN LISTS test_srcs)
         add_dependencies(${variant_meta_target} ${test_target})
         add_dependencies(${cub_variant_meta_target} ${test_target})
         target_compile_definitions(${test_target} PRIVATE ${defs})
-      endforeach()
-    endif()
-  endforeach()
-endforeach()
+
+        # Enable RDC if the test either:
+        # 1. Explicitly requests it (cdp_1 label)
+        # 2. Does not have an explicit CDP variant (no cdp_0 or cdp_1) but
+        #    RDC testing is globally enabled.
+        #
+        # Tests that explicitly request no cdp (cdp_0 label) should never enable
+        # RDC.
+        if (enable_cdp OR ((NOT explicit_cdp) AND CUB_ENABLE_TESTS_WITH_RDC))
+          cub_enable_rdc_for_cuda_target(${test_target})
+        endif()
+      endforeach() # Variant
+    endif() # Has variants
+  endforeach() # CUB targets
+endforeach() # Source file
 
 add_subdirectory(cmake)

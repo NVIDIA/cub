@@ -42,6 +42,10 @@
 #include <cub/iterator/transform_input_iterator.cuh>
 #include <cub/util_type.cuh>
 
+#include <thrust/system/cuda/detail/core/triple_chevron_launch.h>
+
+#include <nv/target>
+
 #include "test_util.h"
 
 #include <cstdio>
@@ -70,9 +74,28 @@ enum Backend
 {
     CUB,            // CUB method
     CUB_SEGMENTED,  // CUB segmented method
-    CUB_CDP,        // GPU-based (dynamic parallelism) dispatch to CUB method
+    CDP,            // GPU-based (dynamic parallelism) dispatch to CUB method
+    CDP_SEGMENTED,  // GPU-based segmented method
 };
 
+inline const char* BackendToString(Backend b)
+{
+  switch (b)
+  {
+    case CUB:
+      return "CUB";
+    case CUB_SEGMENTED:
+      return "CUB_SEGMENTED";
+    case CDP:
+      return "CDP";
+    case CDP_SEGMENTED:
+      return "CDP_SEGMENTED";
+    default:
+      break;
+  }
+
+  return "";
+}
 
 // Custom max functor
 struct CustomMax
@@ -521,91 +544,169 @@ cudaError_t Dispatch(
 // CUDA nested-parallelism test kernel
 //---------------------------------------------------------------------
 
+#if TEST_CDP == 1
+
 /**
  * Simple wrapper kernel to invoke DeviceReduce
  */
-template <
-    typename            InputIteratorT,
-    typename            OutputIteratorT,
-    typename            BeginOffsetIteratorT,
-    typename            EndOffsetIteratorT,
-    typename            ReductionOpT>
-__global__ void CnpDispatchKernel(
-    int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+template <int CubBackend,
+          typename InputIteratorT,
+          typename OutputIteratorT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT,
+          typename ReductionOpT>
+__global__ void CDPDispatchKernel(Int2Type<CubBackend> cub_backend,
+                                  int                  timing_iterations,
+                                  size_t              *d_temp_storage_bytes,
+                                  cudaError_t         *d_cdp_error,
 
-    void*               d_temp_storage,
-    size_t              temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    int                 num_items,
-    int                 max_segments,
-    BeginOffsetIteratorT d_segment_begin_offsets,
-    EndOffsetIteratorT  d_segment_end_offsets,
-    ReductionOpT        reduction_op,
-    bool                debug_synchronous)
+                                  void                *d_temp_storage,
+                                  size_t               temp_storage_bytes,
+                                  InputIteratorT       d_in,
+                                  OutputIteratorT      d_out,
+                                  int                  num_items,
+                                  int                  max_segments,
+                                  BeginOffsetIteratorT d_segment_begin_offsets,
+                                  EndOffsetIteratorT   d_segment_end_offsets,
+                                  ReductionOpT         reduction_op,
+                                  bool                 debug_synchronous)
 {
-#ifndef CUB_CDP
-    (void)timing_iterations;
-    (void)d_temp_storage_bytes;
-    (void)d_cdp_error;
-    (void)d_temp_storage;
-    (void)temp_storage_bytes;
-    (void)d_in;
-    (void)d_out;
-    (void)num_items;
-    (void)max_segments;
-    (void)d_segment_begin_offsets;
-    (void)d_segment_end_offsets;
-    (void)reduction_op;
-    (void)debug_synchronous;
-    *d_cdp_error = cudaErrorNotSupported;
-#else
-    *d_cdp_error = Dispatch(Int2Type<CUB>(), timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, d_out, num_items, max_segments, d_segment_begin_offsets, d_segment_end_offsets, reduction_op, 0, debug_synchronous);
-    *d_temp_storage_bytes = temp_storage_bytes;
-#endif
-}
+  *d_cdp_error = Dispatch(cub_backend,
+                          timing_iterations,
+                          d_temp_storage_bytes,
+                          d_cdp_error,
+                          d_temp_storage,
+                          temp_storage_bytes,
+                          d_in,
+                          d_out,
+                          num_items,
+                          max_segments,
+                          d_segment_begin_offsets,
+                          d_segment_end_offsets,
+                          reduction_op,
+                          0,
+                          debug_synchronous);
 
+  *d_temp_storage_bytes = temp_storage_bytes;
+}
 
 /**
- * Dispatch to CUB_CDP kernel
+ * Launch kernel and dispatch on device. Should only be called from host code.
+ * The CubBackend should be one of the non-CDP CUB backends to invoke from the
+ * device.
  */
-template <typename InputIteratorT, typename OutputIteratorT, typename BeginOffsetIteratorT, typename EndOffsetIteratorT, typename ReductionOpT>
-CUB_RUNTIME_FUNCTION __forceinline__
-cudaError_t Dispatch(
-    Int2Type<CUB_CDP>       dispatch_to,
-    int                 timing_iterations,
-    size_t              *d_temp_storage_bytes,
-    cudaError_t         *d_cdp_error,
+template <int CubBackend,
+          typename InputIteratorT,
+          typename OutputIteratorT,
+          typename BeginOffsetIteratorT,
+          typename EndOffsetIteratorT,
+          typename ReductionOpT>
+cudaError_t LaunchCDPKernel(Int2Type<CubBackend> cub_backend,
+                            int                  timing_iterations,
+                            size_t              *d_temp_storage_bytes,
+                            cudaError_t         *d_cdp_error,
 
-    void*               d_temp_storage,
-    size_t&             temp_storage_bytes,
-    InputIteratorT      d_in,
-    OutputIteratorT     d_out,
-    int                 num_items,
-    int                 max_segments,
-    BeginOffsetIteratorT d_segment_begin_offsets,
-    EndOffsetIteratorT  d_segment_end_offsets,
-    ReductionOpT        reduction_op,
-    cudaStream_t        stream,
-    bool                debug_synchronous)
+                            void                *d_temp_storage,
+                            size_t              &temp_storage_bytes,
+                            InputIteratorT       d_in,
+                            OutputIteratorT      d_out,
+                            int                  num_items,
+                            int                  max_segments,
+                            BeginOffsetIteratorT d_segment_begin_offsets,
+                            EndOffsetIteratorT   d_segment_end_offsets,
+                            ReductionOpT         reduction_op,
+                            cudaStream_t         stream,
+                            bool                 debug_synchronous)
 {
-    // Invoke kernel to invoke device-side dispatch
-    CnpDispatchKernel<<<1,1>>>(timing_iterations, d_temp_storage_bytes, d_cdp_error, d_temp_storage, temp_storage_bytes,
-        d_in, d_out, num_items, max_segments, d_segment_begin_offsets, d_segment_end_offsets, reduction_op, debug_synchronous);
+  cudaError_t retval =
+    thrust::cuda_cub::launcher::triple_chevron(1, 1, 0, stream)
+      .doit(CDPDispatchKernel<CubBackend,
+                              InputIteratorT,
+                              OutputIteratorT,
+                              BeginOffsetIteratorT,
+                              EndOffsetIteratorT,
+                              ReductionOpT>,
+            cub_backend,
+            timing_iterations,
+            d_temp_storage_bytes,
+            d_cdp_error,
+            d_temp_storage,
+            temp_storage_bytes,
+            d_in,
+            d_out,
+            num_items,
+            max_segments,
+            d_segment_begin_offsets,
+            d_segment_end_offsets,
+            reduction_op,
+            debug_synchronous);
+  CubDebugExit(retval);
+  CubDebugExit(cub::detail::device_synchronize());
 
-    // Copy out temp_storage_bytes
-    CubDebugExit(cudaMemcpy(&temp_storage_bytes, d_temp_storage_bytes, sizeof(size_t) * 1, cudaMemcpyDeviceToHost));
+  // Copy out temp_storage_bytes
+  CubDebugExit(cudaMemcpy(&temp_storage_bytes,
+                          d_temp_storage_bytes,
+                          sizeof(size_t) * 1,
+                          cudaMemcpyDeviceToHost));
 
-    // Copy out error
-    cudaError_t retval;
-    CubDebugExit(cudaMemcpy(&retval, d_cdp_error, sizeof(cudaError_t) * 1, cudaMemcpyDeviceToHost));
-    return retval;
+  // Copy out error
+  CubDebugExit(cudaMemcpy(&retval,
+                          d_cdp_error,
+                          sizeof(cudaError_t) * 1,
+                          cudaMemcpyDeviceToHost));
+
+  return retval;
 }
 
+// Specializations of Dispatch that translate the CDP backend to the appropriate
+// CUB backend, and uses the CUB backend to launch the CDP kernel.
+#define DEFINE_CDP_DISPATCHER(CdpBackend, CubBackend)                          \
+  template <typename InputIteratorT,                                           \
+            typename OutputIteratorT,                                          \
+            typename BeginOffsetIteratorT,                                     \
+            typename EndOffsetIteratorT,                                       \
+            typename ReductionOpT>                                             \
+  cudaError_t Dispatch(Int2Type<CdpBackend>,                                   \
+                       int          timing_iterations,                         \
+                       size_t      *d_temp_storage_bytes,                      \
+                       cudaError_t *d_cdp_error,                               \
+                                                                               \
+                       void                *d_temp_storage,                    \
+                       size_t              &temp_storage_bytes,                \
+                       InputIteratorT       d_in,                              \
+                       OutputIteratorT      d_out,                             \
+                       int                  num_items,                         \
+                       int                  max_segments,                      \
+                       BeginOffsetIteratorT d_segment_begin_offsets,           \
+                       EndOffsetIteratorT   d_segment_end_offsets,             \
+                       ReductionOpT         reduction_op,                      \
+                       cudaStream_t         stream,                            \
+                       bool                 debug_synchronous)                 \
+  {                                                                            \
+    Int2Type<CubBackend> cub_backend{};                                        \
+    return LaunchCDPKernel(cub_backend,                                        \
+                           timing_iterations,                                  \
+                           d_temp_storage_bytes,                               \
+                           d_cdp_error,                                        \
+                           d_temp_storage,                                     \
+                           temp_storage_bytes,                                 \
+                           d_in,                                               \
+                           d_out,                                              \
+                           num_items,                                          \
+                           max_segments,                                       \
+                           d_segment_begin_offsets,                            \
+                           d_segment_end_offsets,                              \
+                           reduction_op,                                       \
+                           stream,                                             \
+                           debug_synchronous);                                 \
+  }
 
+DEFINE_CDP_DISPATCHER(CDP, CUB)
+DEFINE_CDP_DISPATCHER(CDP_SEGMENTED, CUB_SEGMENTED)
+
+#undef DEFINE_CDP_DISPATCHER
+
+#endif // TEST_CDP
 
 //---------------------------------------------------------------------
 // Problem generation
@@ -770,7 +871,7 @@ void Test(
     // Input data types
     using InputT = cub::detail::value_t<DeviceInputIteratorT>;
 
-    // Allocate CUB_CDP device arrays for temp storage size and error
+    // Allocate CDP device arrays for temp storage size and error
     size_t          *d_temp_storage_bytes = NULL;
     cudaError_t     *d_cdp_error = NULL;
     CubDebugExit(g_allocator.DeviceAllocate((void**)&d_temp_storage_bytes,  sizeof(size_t) * 1));
@@ -859,8 +960,11 @@ void SolveAndTest(
     using OutputT = typename SolutionT::OutputT;
 
     printf("\n\n%s cub::DeviceReduce<%s> %d items (%s), %d segments\n",
-        (BACKEND == CUB_CDP) ? "CUB_CDP" : (BACKEND == CUB_SEGMENTED) ? "CUB_SEGMENTED" : "CUB",
-        typeid(ReductionOpT).name(), num_items, typeid(HostInputIteratorT).name(), num_segments);
+           BackendToString(BACKEND),
+           typeid(ReductionOpT).name(),
+           num_items,
+           typeid(HostInputIteratorT).name(),
+           num_segments);
     fflush(stdout);
 
     // Allocate and solve solution
@@ -986,6 +1090,14 @@ void TestByBackend(
     OffsetT     max_segments,
     GenMode     gen_mode)
 {
+#if TEST_CDP == 0
+  constexpr auto NonSegmentedBackend   = CUB;
+  constexpr auto SegmentedBackend      = CUB_SEGMENTED;
+#else  // TEST_CDP
+  constexpr auto NonSegmentedBackend   = CDP;
+  constexpr auto SegmentedBackend      = CDP_SEGMENTED;
+#endif // TEST_CDP
+
     // Initialize host data
     printf("\n\nInitializing %d %s -> %s (gen mode %d)... ",
         num_items, typeid(InputT).name(), typeid(OutputT).name(), gen_mode); fflush(stdout);
@@ -1008,18 +1120,14 @@ void TestByBackend(
     InitializeSegments(num_items, 1, h_segment_offsets, g_verbose_input);
 
     // Page-aligned-input tests
-    TestByOp<CUB, OutputT>(h_in, d_in, num_items, 1,
-        h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL);                 // Host-dispatch
-#ifdef CUB_CDP
-    TestByOp<CUB_CDP, OutputT>(h_in, d_in, num_items, 1,
-        h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL);             // Device-dispatch
-#endif
+    TestByOp<NonSegmentedBackend, OutputT>(h_in, d_in, num_items, 1,
+        h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL);
 
     // Non-page-aligned-input tests
     if (num_items > 1)
     {
         InitializeSegments(num_items - 1, 1, h_segment_offsets, g_verbose_input);
-        TestByOp<CUB, OutputT>(h_in + 1, d_in + 1, num_items - 1, 1,
+        TestByOp<NonSegmentedBackend, OutputT>(h_in + 1, d_in + 1, num_items - 1, 1,
             h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL);
     }
 
@@ -1037,7 +1145,7 @@ void TestByBackend(
         // Test with segment pointer
         InitializeSegments(num_items, num_segments, h_segment_offsets, g_verbose_input);
         CubDebugExit(cudaMemcpy(d_segment_offsets, h_segment_offsets, sizeof(OffsetT) * (num_segments + 1), cudaMemcpyHostToDevice));
-        TestByOp<CUB_SEGMENTED, OutputT>(h_in, d_in, num_items, num_segments,
+        TestByOp<SegmentedBackend, OutputT>(h_in, d_in, num_items, num_segments,
             h_segment_offsets, h_segment_offsets + 1, d_segment_offsets, d_segment_offsets + 1);
 
         // Test with segment iterator
@@ -1050,7 +1158,7 @@ void TestByBackend(
             d_segment_offsets,
             identity_op);
 
-        TestByOp<CUB_SEGMENTED, OutputT>(h_in, d_in, num_items, num_segments,
+        TestByOp<SegmentedBackend, OutputT>(h_in, d_in, num_items, num_segments,
             h_segment_offsets_itr, h_segment_offsets_itr + 1, d_segment_offsets_itr, d_segment_offsets_itr + 1);
 
         // Test with transform iterators of different types
@@ -1064,7 +1172,7 @@ void TestByBackend(
         TransformInputIterator<OffsetT, TransformFunctor1T, OffsetT*, OffsetT> d_segment_begin_offsets_itr(d_segment_offsets, TransformFunctor1T());
         TransformInputIterator<OffsetT, TransformFunctor2T, OffsetT*, OffsetT> d_segment_end_offsets_itr(d_segment_offsets + 1, TransformFunctor2T());
 
-        TestByOp<CUB_SEGMENTED, OutputT>(h_in, d_in, num_items, num_segments,
+        TestByOp<SegmentedBackend, OutputT>(h_in, d_in, num_items, num_segments,
             h_segment_begin_offsets_itr, h_segment_end_offsets_itr,
             d_segment_begin_offsets_itr, d_segment_end_offsets_itr);
     }
@@ -1104,91 +1212,93 @@ void TestByGenMode(
     OffsetT *h_segment_offsets = new OffsetT[1 + 1];
     InitializeSegments(num_items, 1, h_segment_offsets, g_verbose_input);
 
-    SolveAndTest<CUB, OutputT>(h_in, h_in, num_items, 1,
+#if TEST_CDP == 0
+    constexpr auto Backend   = CUB;
+#else  // TEST_CDP
+    constexpr auto Backend   = CDP;
+#endif // TEST_CDP
+
+    SolveAndTest<Backend, OutputT>(h_in, h_in, num_items, 1,
         h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL, Sum());
-#ifdef CUB_CDP
-    SolveAndTest<CUB_CDP, OutputT>(h_in, h_in, num_items, 1,
-        h_segment_offsets, h_segment_offsets + 1, (OffsetT*) NULL, (OffsetT*)NULL, Sum());
-#endif
 
     if (h_segment_offsets) delete[] h_segment_offsets;
 }
 
-
 /// Test different problem sizes
-template <
-    typename InputT,
-    typename OutputT,
-    typename OffsetT>
-struct TestBySize
+template <typename InputT, typename OutputT, typename OffsetT>
+void TestBySize(OffsetT max_items, OffsetT max_segments, OffsetT tile_size)
 {
-    OffsetT max_items;
-    OffsetT max_segments;
+  // Test 0, 1, many
+  TestByGenMode<InputT, OutputT>(0, max_segments);
+  TestByGenMode<InputT, OutputT>(1, max_segments);
+  TestByGenMode<InputT, OutputT>(max_items, max_segments);
 
-    TestBySize(OffsetT max_items, OffsetT max_segments) :
-        max_items(max_items),
-        max_segments(max_segments)
-    {}
+  // Test random problem sizes from a log-distribution [8, max_items-ish)
+  int    num_iterations = 8;
+  double max_exp        = log(double(max_items)) / log(double(2.0));
+  for (int i = 0; i < num_iterations; ++i)
+  {
+    OffsetT num_items = (OffsetT)pow(2.0, RandomValue(max_exp - 3.0) + 3.0);
+    TestByGenMode<InputT, OutputT>(num_items, max_segments);
+  }
 
-    template <typename ActivePolicyT>
-    cudaError_t Invoke()
-    {
-        //
-        // Black-box testing on all backends
-        //
+  //
+  // White-box testing of single-segment problems around specific sizes
+  //
 
-        // Test 0, 1, many
-        TestByGenMode<InputT, OutputT>(0,           max_segments);
-        TestByGenMode<InputT, OutputT>(1,           max_segments);
-        TestByGenMode<InputT, OutputT>(max_items,   max_segments);
+#if TEST_CDP == 0
+  constexpr auto Backend   = CUB;
+#else  // TEST_CDP
+  constexpr auto Backend   = CDP;
+#endif // TEST_CDP
 
-        // Test random problem sizes from a log-distribution [8, max_items-ish)
-        int     num_iterations = 8;
-        double  max_exp = log(double(max_items)) / log(double(2.0));
-        for (int i = 0; i < num_iterations; ++i)
-        {
-            OffsetT num_items = (OffsetT) pow(2.0, RandomValue(max_exp - 3.0) + 3.0);
-            TestByGenMode<InputT, OutputT>(num_items, max_segments);
-        }
+  // Tile-boundaries: multiple blocks, one tile per block
+  TestProblem<Backend, InputT, OutputT>(tile_size * 4, 1, RANDOM, Sum());
+  TestProblem<Backend, InputT, OutputT>(tile_size * 4 + 1, 1, RANDOM, Sum());
+  TestProblem<Backend, InputT, OutputT>(tile_size * 4 - 1, 1, RANDOM, Sum());
 
-        //
-        // White-box testing of single-segment problems around specific sizes
-        //
-
-        // Tile-boundaries: multiple blocks, one tile per block
-        OffsetT tile_size = ActivePolicyT::ReducePolicy::BLOCK_THREADS * ActivePolicyT::ReducePolicy::ITEMS_PER_THREAD;
-        TestProblem<CUB, InputT, OutputT>(tile_size * 4,  1,      RANDOM, Sum());
-        TestProblem<CUB, InputT, OutputT>(tile_size * 4 + 1, 1,   RANDOM, Sum());
-        TestProblem<CUB, InputT, OutputT>(tile_size * 4 - 1, 1,   RANDOM, Sum());
-
-        // Tile-boundaries: multiple blocks, multiple tiles per block
-        OffsetT sm_occupancy = 32;
-        OffsetT occupancy = tile_size * sm_occupancy * g_sm_count;
-        TestProblem<CUB, InputT, OutputT>(occupancy,  1,      RANDOM, Sum());
-        TestProblem<CUB, InputT, OutputT>(occupancy + 1, 1,   RANDOM, Sum());
-        TestProblem<CUB, InputT, OutputT>(occupancy - 1, 1,   RANDOM, Sum());
-
-        return cudaSuccess;
-    }
-};
-
-
-/// Test problem type
-template <
-    typename    InputT,
-    typename    OutputT,
-    typename    OffsetT>
-void TestType(
-    OffsetT     max_items,
-    OffsetT     max_segments)
-{
-    typedef typename DeviceReducePolicy<InputT, OutputT, OffsetT, cub::Sum>::MaxPolicy MaxPolicyT;
-
-    TestBySize<InputT, OutputT, OffsetT> dispatch(max_items, max_segments);
-
-    MaxPolicyT::Invoke(g_ptx_version, dispatch);
+  // Tile-boundaries: multiple blocks, multiple tiles per block
+  OffsetT sm_occupancy = 32;
+  OffsetT occupancy    = tile_size * sm_occupancy * g_sm_count;
+  TestProblem<Backend, InputT, OutputT>(occupancy, 1, RANDOM, Sum());
+  TestProblem<Backend, InputT, OutputT>(occupancy + 1, 1, RANDOM, Sum());
+  TestProblem<Backend, InputT, OutputT>(occupancy - 1, 1, RANDOM, Sum());
 }
 
+
+template <typename InputT, typename OutputT, typename OffsetT>
+struct GetTileSize
+{
+  OffsetT max_items{};
+  OffsetT max_segments{};
+  OffsetT tile_size{};
+
+  GetTileSize(OffsetT max_items, OffsetT max_segments)
+      : max_items(max_items)
+      , max_segments(max_segments)
+  {}
+
+  template <typename ActivePolicyT>
+  CUB_RUNTIME_FUNCTION cudaError_t Invoke()
+  {
+    this->tile_size = ActivePolicyT::ReducePolicy::BLOCK_THREADS *
+                      ActivePolicyT::ReducePolicy::ITEMS_PER_THREAD;
+    return cudaSuccess;
+  }
+};
+
+/// Test problem type
+template <typename InputT, typename OutputT, typename OffsetT>
+void TestType(OffsetT max_items, OffsetT max_segments)
+{
+  // Inspect the tuning policies to determine this arch's tile size:
+  using MaxPolicyT =
+    typename DeviceReducePolicy<InputT, OutputT, OffsetT, cub::Sum>::MaxPolicy;
+  GetTileSize<InputT, OutputT, OffsetT> dispatch(max_items, max_segments);
+  CubDebugExit(MaxPolicyT::Invoke(g_ptx_version, dispatch));
+
+  TestBySize<InputT, OutputT>(max_items, max_segments, dispatch.tile_size);
+}
 
 //---------------------------------------------------------------------
 // Main
@@ -1222,7 +1332,6 @@ int main(int argc, char** argv)
             "[--i=<timing iterations> "
             "[--device=<device-id>] "
             "[--v] "
-            "[--cdp]"
             "\n", argv[0]);
         exit(0);
     }
@@ -1237,7 +1346,8 @@ int main(int argc, char** argv)
     // Get SM count
     g_sm_count = args.deviceProp.multiProcessorCount;
 
-    // %PARAM% TEST_TYPES   types 0:1:2:3
+    // %PARAM% TEST_CDP cdp 0:1
+    // %PARAM% TEST_TYPES types 0:1:2:3
 
 #if TEST_TYPES == 0
     TestType<char, char>(max_items, max_segments);

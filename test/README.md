@@ -29,26 +29,38 @@ generate multiple test executables for the full cartesian product of values.
 - `values` is a colon-separated list of values used during test generation. Only
   numeric values have been tested.
 
+## Special Labels
+
+### CDP / RDC Testing
+
+If a `label` is `cdp`, it is assumed that the parameter is used to explicitly
+test variants built with and without CDP support. The `values` for such a
+parameter must be `0:1`, with `0` indicating CDP disabled (RDC off) and `1`
+indicating CDP enabled (RDC on).
+
+Tests that do not contain a variant labeled `cdp` will only enable RDC if
+the CMake variable `CUB_ENABLE_TESTS_WITH_RDC` is true.
+
 ## Example
 
 For example, if `test_baz.cu` contains the following lines:
 
 ```cpp
 // %PARAM% TEST_FOO foo 0:1:2
-// %PARAM% TEST_BAR bar 4:8
+// %PARAM% TEST_CDP cdp 0:1
 ```
 
 Six executables and CTest targets will be generated with unique definitions
 (only c++17 targets shown):
 
-| Executable Name                  | Preprocessor Definitions    |
-|----------------------------------|-----------------------------|
-| `cub.cpp17.test.baz.foo_0.bar_4` | `-DTEST_FOO=0 -DTEST_BAR=4` |
-| `cub.cpp17.test.baz.foo_0.bar_8` | `-DTEST_FOO=0 -DTEST_BAR=8` |
-| `cub.cpp17.test.baz.foo_1.bar_4` | `-DTEST_FOO=1 -DTEST_BAR=4` |
-| `cub.cpp17.test.baz.foo_1.bar_8` | `-DTEST_FOO=1 -DTEST_BAR=8` |
-| `cub.cpp17.test.baz.foo_2.bar_4` | `-DTEST_FOO=2 -DTEST_BAR=4` |
-| `cub.cpp17.test.baz.foo_2.bar_8` | `-DTEST_FOO=2 -DTEST_BAR=8` |
+| Executable Name                  | Preprocessor Definitions    | RDC State |
+|----------------------------------|-----------------------------|-----------|
+| `cub.cpp17.test.baz.foo_0.cdp_0` | `-DTEST_FOO=0 -DTEST_CDP=0` | Disabled  |
+| `cub.cpp17.test.baz.foo_0.cdp_1` | `-DTEST_FOO=0 -DTEST_CDP=1` | Enabled   |
+| `cub.cpp17.test.baz.foo_1.cdp_0` | `-DTEST_FOO=1 -DTEST_CDP=0` | Disabled  |
+| `cub.cpp17.test.baz.foo_1.cdp_1` | `-DTEST_FOO=1 -DTEST_CDP=1` | Enabled   |
+| `cub.cpp17.test.baz.foo_2.cdp_0` | `-DTEST_FOO=2 -DTEST_CDP=0` | Disabled  |
+| `cub.cpp17.test.baz.foo_2.cdp_1` | `-DTEST_FOO=2 -DTEST_CDP=1` | Enabled   |
 
 ## Changing `%PARAM%` Hints
 

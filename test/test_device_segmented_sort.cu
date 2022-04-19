@@ -1475,7 +1475,7 @@ void InputTestRandom(Input<KeyT, ValueT> &input)
             }
 #endif
 
-AssertTrue(keys_ok);
+            AssertTrue(keys_ok);
             AssertTrue(values_ok);
 
             input.shuffle();
@@ -1659,7 +1659,7 @@ void Test()
 }
 
 
-#ifdef CUB_CDP
+#if TEST_CDP == 1
 template <typename KeyT>
 __global__ void LauncherKernel(
     void *tmp_storage,
@@ -1771,7 +1771,8 @@ void TestDeviceSideLaunch()
   TestDeviceSideLaunch<KeyT>(1 << 2, 1 << 8);
   TestDeviceSideLaunch<KeyT>(1 << 9, 1 << 19);
 }
-#endif
+
+#endif // TEST_CDP
 
 
 int main(int argc, char** argv)
@@ -1781,10 +1782,9 @@ int main(int argc, char** argv)
   // Initialize device
   CubDebugExit(args.DeviceInit());
 
-#ifdef CUB_CDP
-  TestDeviceSideLaunch<int>();
-#endif
+  // %PARAM% TEST_CDP cdp 0:1
 
+#if TEST_CDP == 0
   TestZeroSegments();
   TestEmptySegments(1 << 2);
   TestEmptySegments(1 << 22);
@@ -1799,6 +1799,10 @@ int main(int argc, char** argv)
 
   Test<std::uint8_t, std::uint64_t>();
   Test<std::int64_t, std::uint32_t>();
+
+#elif TEST_CDP == 1
+  TestDeviceSideLaunch<int>();
+#endif // TEST_CDP
 
   return 0;
 }
