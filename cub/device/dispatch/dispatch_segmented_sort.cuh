@@ -770,7 +770,7 @@ struct DeviceSegmentedSortPolicy
                                     9,
                                     DominantT,
                                     BLOCK_LOAD_WARP_TRANSPOSE,
-                                    LOAD_LDG,
+                                    LOAD_DEFAULT,
                                     RADIX_RANK_MATCH,
                                     BLOCK_SCAN_WARP_SCANS,
                                     RADIX_BITS>;
@@ -810,7 +810,7 @@ struct DeviceSegmentedSortPolicy
                                     16,
                                     DominantT,
                                     BLOCK_LOAD_DIRECT,
-                                    LOAD_LDG,
+                                    LOAD_DEFAULT,
                                     RADIX_RANK_MEMOIZE,
                                     BLOCK_SCAN_RAKING_MEMOIZE,
                                     RADIX_BITS>;
@@ -890,7 +890,7 @@ struct DeviceSegmentedSortPolicy
                                     19,
                                     DominantT,
                                     BLOCK_LOAD_DIRECT,
-                                    LOAD_LDG,
+                                    LOAD_DEFAULT,
                                     RADIX_RANK_MEMOIZE,
                                     BLOCK_SCAN_WARP_SCANS,
                                     RADIX_BITS>;
@@ -970,7 +970,7 @@ struct DeviceSegmentedSortPolicy
                                     19,
                                     DominantT,
                                     BLOCK_LOAD_DIRECT,
-                                    LOAD_LDG,
+                                    LOAD_DEFAULT,
                                     RADIX_RANK_MEMOIZE,
                                     BLOCK_SCAN_WARP_SCANS,
                                     RADIX_BITS>;
@@ -1233,6 +1233,10 @@ struct DispatchSegmentedSort : SelectedPolicy
     using LargeSegmentPolicyT = typename ActivePolicyT::LargeSegmentPolicy;
     using SmallAndMediumPolicyT =
       typename ActivePolicyT::SmallAndMediumSegmentedSortPolicyT;
+
+    static_assert(
+      LargeSegmentPolicyT::LOAD_MODIFIER != CacheLoadModifier::LOAD_LDG,
+      "The memory consistency model does not apply to texture accesses");
 
     static_assert(
         KEYS_ONLY
