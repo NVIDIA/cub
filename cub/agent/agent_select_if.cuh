@@ -295,7 +295,7 @@ struct AgentSelectIf
         #pragma unroll
         for (int ITEM = 0; ITEM < ITEMS_PER_THREAD; ++ITEM)
         {
-            selection_flags[ITEM] = flags[ITEM];
+            selection_flags[ITEM] = static_cast<bool>(flags[ITEM]);
         }
     }
 

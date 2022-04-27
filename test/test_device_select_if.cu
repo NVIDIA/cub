@@ -42,10 +42,11 @@
 #include <cub/iterator/counting_input_iterator.cuh>
 
 #include <thrust/count.h>
-#include <thrust/iterator/zip_iterator.h>
-#include <thrust/iterator/transform_output_iterator.h>
-#include <thrust/iterator/discard_iterator.h>
 #include <thrust/device_vector.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/iterator/discard_iterator.h>
+#include <thrust/iterator/transform_output_iterator.h>
+#include <thrust/iterator/zip_iterator.h>
 
 #include "test_util.h"
 
@@ -726,6 +727,43 @@ void TestMixed(int num_items)
     }
 }
 
+void TestFlagsNormalization()
+{
+  const int num_items = 1024 * 1024;
+  thrust::device_vector<int> result(num_items);
+
+  void *d_tmp_storage{};
+  std::size_t tmp_storage_size{};
+  CubDebugExit(
+    cub::DeviceSelect::Flagged(d_tmp_storage,
+                               tmp_storage_size,
+                               cub::CountingInputIterator<int>(0),      // in
+                               cub::CountingInputIterator<int>(1),      // flags
+                               thrust::raw_pointer_cast(result.data()), // out
+                               thrust::make_discard_iterator(), // num_out
+                               num_items,
+                               0,
+                               true));
+
+  thrust::device_vector<char> tmp_storage(tmp_storage_size);
+  d_tmp_storage = thrust::raw_pointer_cast(tmp_storage.data());
+
+  CubDebugExit(
+    cub::DeviceSelect::Flagged(d_tmp_storage,
+                               tmp_storage_size,
+                               cub::CountingInputIterator<int>(0),      // in
+                               cub::CountingInputIterator<int>(1),      // flags
+                               thrust::raw_pointer_cast(result.data()), // out
+                               thrust::make_discard_iterator(), // num_out
+                               num_items,
+                               0,
+                               true));
+
+  AssertTrue(thrust::equal(result.begin(),
+                           result.end(),
+                           thrust::make_counting_iterator(0)));
+}
+
 //---------------------------------------------------------------------
 // Main
 //---------------------------------------------------------------------
@@ -783,6 +821,7 @@ int main(int argc, char** argv)
     Test<TestBar>(num_items);
 
     TestMixed<int, double>(num_items);
+    TestFlagsNormalization();
 
     return 0;
 }
