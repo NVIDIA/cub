@@ -91,12 +91,13 @@ struct CustomDifference
 
 template <bool ReadLeft,
           typename IteratorT,
-          typename DifferenceOpT>
+          typename DifferenceOpT,
+          typename NumItemsT>
 void AdjacentDifference(void *temp_storage,
                         std::size_t &temp_storage_bytes,
                         IteratorT it,
                         DifferenceOpT difference_op,
-                        std::size_t num_items)
+                        NumItemsT num_items)
 {
   const bool is_default_op_in_use =
     std::is_same<DifferenceOpT, cub::Difference>::value;
@@ -151,13 +152,14 @@ void AdjacentDifference(void *temp_storage,
 template <bool ReadLeft,
           typename InputIteratorT,
           typename OutputIteratorT,
-          typename DifferenceOpT>
+          typename DifferenceOpT,
+          typename NumItemsT>
 void AdjacentDifferenceCopy(void *temp_storage,
                             std::size_t &temp_storage_bytes,
                             InputIteratorT input,
                             OutputIteratorT output,
                             DifferenceOpT difference_op,
-                            std::size_t num_items)
+                            NumItemsT num_items)
 {
   const bool is_default_op_in_use =
     std::is_same<DifferenceOpT, cub::Difference>::value;
@@ -214,10 +216,11 @@ void AdjacentDifferenceCopy(void *temp_storage,
 
 template <bool ReadLeft,
           typename IteratorT,
-          typename DifferenceOpT>
+          typename DifferenceOpT,
+          typename NumItemsT>
 void AdjacentDifference(IteratorT it,
                         DifferenceOpT difference_op,
-                        std::size_t num_items)
+                        NumItemsT num_items)
 {
   std::size_t temp_storage_bytes {};
 
@@ -239,11 +242,12 @@ void AdjacentDifference(IteratorT it,
 template <bool ReadLeft,
           typename InputIteratorT,
           typename OutputIteratorT,
-          typename DifferenceOpT>
+          typename DifferenceOpT,
+          typename NumItemsT>
 void AdjacentDifferenceCopy(InputIteratorT input,
                             OutputIteratorT output,
                             DifferenceOpT difference_op,
-                            std::size_t num_items)
+                            NumItemsT num_items)
 {
   std::size_t temp_storage_bytes{};
 
@@ -283,8 +287,9 @@ bool CheckResult(FirstIteratorT first_begin,
 
 template <typename InputT,
           typename OutputT,
-          typename DifferenceOpT>
-void TestCopy(std::size_t elements, DifferenceOpT difference_op)
+          typename DifferenceOpT,
+          typename NumItemsT>
+void TestCopy(NumItemsT elements, DifferenceOpT difference_op)
 {
   thrust::device_vector<InputT> input(elements);
   thrust::tabulate(input.begin(),
@@ -331,8 +336,9 @@ void TestCopy(std::size_t elements, DifferenceOpT difference_op)
 
 template <typename InputT,
           typename OutputT,
-          typename DifferenceOpT>
-void TestIteratorCopy(std::size_t elements, DifferenceOpT difference_op)
+          typename DifferenceOpT,
+          typename NumItemsT>
+void TestIteratorCopy(NumItemsT elements, DifferenceOpT difference_op)
 {
   thrust::device_vector<InputT> input(elements);
   thrust::tabulate(input.begin(),
@@ -375,8 +381,9 @@ void TestIteratorCopy(std::size_t elements, DifferenceOpT difference_op)
 
 
 template <typename InputT,
-          typename OutputT>
-void TestCopy(std::size_t elements)
+          typename OutputT,
+          typename NumItemsT>
+void TestCopy(NumItemsT elements)
 {
   TestCopy<InputT, OutputT>(elements, cub::Difference{});
   TestCopy<InputT, OutputT>(elements, CustomDifference<OutputT>{});
@@ -386,7 +393,8 @@ void TestCopy(std::size_t elements)
 }
 
 
-void TestCopy(std::size_t elements)
+template <typename NumItemsT>
+void TestCopy(NumItemsT elements)
 {
   TestCopy<std::uint64_t, std::int64_t >(elements);
   TestCopy<std::uint32_t, std::int32_t>(elements);
@@ -394,8 +402,9 @@ void TestCopy(std::size_t elements)
 
 
 template <typename T,
-          typename DifferenceOpT>
-void Test(std::size_t elements, DifferenceOpT difference_op)
+          typename DifferenceOpT,
+          typename NumItemsT>
+void Test(NumItemsT elements, DifferenceOpT difference_op)
 {
   thrust::device_vector<T> data(elements);
   thrust::tabulate(data.begin(),
@@ -439,8 +448,9 @@ void Test(std::size_t elements, DifferenceOpT difference_op)
 
 
 template <typename T,
-          typename DifferenceOpT>
-void TestIterators(std::size_t elements, DifferenceOpT difference_op)
+          typename DifferenceOpT,
+          typename NumItemsT>
+void TestIterators(NumItemsT elements, DifferenceOpT difference_op)
 {
   thrust::device_vector<T> data(elements);
   thrust::tabulate(data.begin(),
@@ -480,8 +490,9 @@ void TestIterators(std::size_t elements, DifferenceOpT difference_op)
 }
 
 
-template <typename T>
-void Test(std::size_t elements)
+template <typename T,
+          typename NumItemsT>
+void Test(NumItemsT elements)
 {
   Test<T>(elements, cub::Difference{});
   Test<T>(elements, CustomDifference<T>{});
@@ -491,17 +502,24 @@ void Test(std::size_t elements)
 }
 
 
-void Test(std::size_t elements)
+template <typename NumItemsT>
+void Test(NumItemsT elements)
 {
-  Test<std::int32_t>(elements);
-  Test<std::uint32_t>(elements);
-  Test<std::uint64_t>(elements);
+  Test<std::int32_t, NumItemsT>(elements);
+  Test<std::uint32_t, NumItemsT>(elements);
+  Test<std::uint64_t, NumItemsT>(elements);
 }
 
 
-template <typename ValueT>
-void TestFancyIterators(std::size_t elements)
+template <typename ValueT,
+          typename NumItemsT>
+void TestFancyIterators(NumItemsT elements)
 {
+  if (elements == 0)
+  {
+    return;
+  }
+
   thrust::counting_iterator<ValueT> count_iter(ValueT{1});
   thrust::device_vector<ValueT> output(elements, ValueT{42});
 
@@ -510,7 +528,7 @@ void TestFancyIterators(std::size_t elements)
                                     cub::Difference{},
                                     elements);
   AssertEquals(elements,
-               static_cast<std::size_t>(
+               static_cast<NumItemsT>(
                  thrust::count(output.begin(), output.end(), ValueT(1))));
 
   thrust::fill(output.begin(), output.end(), ValueT{});
@@ -519,7 +537,7 @@ void TestFancyIterators(std::size_t elements)
                                      cub::Difference{},
                                      elements);
   AssertEquals(elements - 1,
-               static_cast<std::size_t>(
+               static_cast<NumItemsT>(
                  thrust::count(output.begin(),
                                output.end() - 1,
                                static_cast<ValueT>(-1))));
@@ -532,7 +550,7 @@ void TestFancyIterators(std::size_t elements)
                                     cub::Difference{},
                                     elements);
   AssertEquals(elements,
-               static_cast<std::size_t>(
+               static_cast<NumItemsT>(
                  thrust::count(output.begin(), output.end(), ValueT{})));
 
   thrust::fill(output.begin(), output.end(), ValueT{});
@@ -541,7 +559,7 @@ void TestFancyIterators(std::size_t elements)
                                      cub::Difference{},
                                      elements);
   AssertEquals(elements,
-               static_cast<std::size_t>(
+               static_cast<NumItemsT>(
                  thrust::count(output.begin(), output.end(), ValueT{})));
 
   AdjacentDifferenceCopy<READ_LEFT>(const_iter,
@@ -556,13 +574,15 @@ void TestFancyIterators(std::size_t elements)
 }
 
 
-void TestFancyIterators(std::size_t elements)
+template <typename NumItemsT>
+void TestFancyIterators(NumItemsT elements)
 {
-  TestFancyIterators<std::uint64_t>(elements);
+  TestFancyIterators<std::uint64_t, NumItemsT>(elements);
 }
 
 
-void TestSize(std::size_t elements)
+template <typename NumItemsT>
+void TestSize(NumItemsT elements)
 {
   Test(elements);
   TestCopy(elements);
@@ -634,10 +654,10 @@ int main(int argc, char** argv)
   // Initialize device
   CubDebugExit(args.DeviceInit());
 
-  Test(0);
+  TestSize(0);
   for (std::size_t power_of_two = 2; power_of_two < 20; power_of_two += 2)
   {
-    Test(1ull << power_of_two);
+    TestSize(1ull << power_of_two);
   }
   TestAdjacentDifferenceWithBigIndexes();
 

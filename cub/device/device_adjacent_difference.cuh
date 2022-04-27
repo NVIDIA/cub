@@ -98,9 +98,9 @@ CUB_NAMESPACE_BEGIN
 struct DeviceAdjacentDifference
 {
 private:
-
   template <bool in_place,
             bool read_left,
+            typename NumItemsT,
             typename InputIteratorT,
             typename OutputIteratorT,
             typename DifferenceOpT>
@@ -109,53 +109,35 @@ private:
                      std::size_t &temp_storage_bytes,
                      InputIteratorT d_input,
                      OutputIteratorT d_output,
-                     std::size_t num_items,
+                     NumItemsT num_items,
                      DifferenceOpT difference_op,
                      cudaStream_t stream,
                      bool debug_synchronous)
   {
-    const auto uint64_threshold = static_cast<std::size_t>(
-      THRUST_NS_QUALIFIER::detail::integer_traits<
-        THRUST_NS_QUALIFIER::detail::int32_t>::const_max);
+    static_assert(
+      std::is_integral<NumItemsT>::value &&
+        !std::is_same<typename std::remove_cv<NumItemsT>::type, bool>::value,
+      "NumItemsT must be an integral type, but not bool");
 
-    if (num_items <= uint64_threshold)
-    {
-      using OffsetT = std::uint32_t;
-      using DispatchT = DispatchAdjacentDifference<InputIteratorT,
-                                                   OutputIteratorT,
-                                                   DifferenceOpT,
-                                                   OffsetT,
-                                                   in_place,
-                                                   read_left>;
+    using OffsetT = std::conditional_t<sizeof(NumItemsT) <= 4, 
+                                       std::uint32_t,
+                                       std::uint64_t>;
 
-      return DispatchT::Dispatch(d_temp_storage,
-                                 temp_storage_bytes,
-                                 d_input,
-                                 d_output,
-                                 static_cast<OffsetT>(num_items),
-                                 difference_op,
-                                 stream,
-                                 debug_synchronous);
-    }
-    else
-    {
-      using OffsetT = std::uint64_t;
-      using DispatchT = DispatchAdjacentDifference<InputIteratorT,
-                                                   OutputIteratorT,
-                                                   DifferenceOpT,
-                                                   OffsetT,
-                                                   in_place,
-                                                   read_left>;
+    using DispatchT = DispatchAdjacentDifference<InputIteratorT,
+                                                 OutputIteratorT,
+                                                 DifferenceOpT,
+                                                 OffsetT,
+                                                 in_place,
+                                                 read_left>;
 
-      return DispatchT::Dispatch(d_temp_storage,
-                                 temp_storage_bytes,
-                                 d_input,
-                                 d_output,
-                                 static_cast<OffsetT>(num_items),
-                                 difference_op,
-                                 stream,
-                                 debug_synchronous);
-    }
+    return DispatchT::Dispatch(d_temp_storage,
+                               temp_storage_bytes,
+                               d_input,
+                               d_output,
+                               static_cast<OffsetT>(num_items),
+                               difference_op,
+                               stream,
+                               debug_synchronous);
   }
 
 public:
@@ -234,6 +216,8 @@ public:
    *   Its `result_type` is convertible to a type in `OutputIteratorT`'s set of
    *   `value_types`.
    *
+   * @tparam NumItemsT **[inferred]** Type of num_items
+   *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
@@ -265,13 +249,14 @@ public:
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
-            typename DifferenceOpT = cub::Difference>
+            typename DifferenceOpT = cub::Difference,
+            typename NumItemsT = std::uint32_t>
   static CUB_RUNTIME_FUNCTION cudaError_t
   SubtractLeftCopy(void *d_temp_storage,
                    std::size_t &temp_storage_bytes,
                    InputIteratorT d_input,
                    OutputIteratorT d_output,
-                   std::size_t num_items,
+                   NumItemsT num_items,
                    DifferenceOpT difference_op = {},
                    cudaStream_t stream         = 0,
                    bool debug_synchronous      = false)
@@ -353,6 +338,8 @@ public:
    *   Its `result_type` is convertible to a type in `RandomAccessIteratorT`'s
    *   set of `value_types`.
    *
+   * @tparam NumItemsT **[inferred]** Type of num_items
+   *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
@@ -380,12 +367,13 @@ public:
    *   be printed to the console. Default is `false`.
    */
   template <typename RandomAccessIteratorT,
-            typename DifferenceOpT = cub::Difference>
+            typename DifferenceOpT = cub::Difference,
+            typename NumItemsT = std::uint32_t>
   static CUB_RUNTIME_FUNCTION cudaError_t
   SubtractLeft(void *d_temp_storage,
                std::size_t &temp_storage_bytes,
                RandomAccessIteratorT d_input,
-               std::size_t num_items,
+               NumItemsT num_items,
                DifferenceOpT difference_op = {},
                cudaStream_t stream         = 0,
                bool debug_synchronous      = false)
@@ -477,6 +465,8 @@ public:
    *   Its `result_type` is convertible to a type in `RandomAccessIteratorT`'s
    *   set of `value_types`.
    *
+   * @tparam NumItemsT **[inferred]** Type of num_items
+   *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
@@ -508,13 +498,14 @@ public:
    */
   template <typename InputIteratorT,
             typename OutputIteratorT,
-            typename DifferenceOpT = cub::Difference>
+            typename DifferenceOpT = cub::Difference,
+            typename NumItemsT = std::uint32_t>
   static CUB_RUNTIME_FUNCTION cudaError_t
   SubtractRightCopy(void *d_temp_storage,
                     std::size_t &temp_storage_bytes,
                     InputIteratorT d_input,
                     OutputIteratorT d_output,
-                    std::size_t num_items,
+                    NumItemsT num_items,
                     DifferenceOpT difference_op = {},
                     cudaStream_t stream         = 0,
                     bool debug_synchronous      = false)
@@ -586,6 +577,8 @@ public:
    *   Its `result_type` is convertible to a type in `RandomAccessIteratorT`'s
    *   set of `value_types`.
    *
+   * @tparam NumItemsT **[inferred]** Type of num_items
+   *
    * @param[in] d_temp_storage
    *   Device-accessible allocation of temporary storage. When `nullptr`, the
    *   required allocation size is written to `temp_storage_bytes` and no work
@@ -613,12 +606,13 @@ public:
    *  printed to the console. Default is `false`.
    */
   template <typename RandomAccessIteratorT,
-            typename DifferenceOpT = cub::Difference>
+            typename DifferenceOpT = cub::Difference,
+            typename NumItemsT = std::uint32_t>
   static CUB_RUNTIME_FUNCTION cudaError_t
   SubtractRight(void *d_temp_storage,
                 std::size_t &temp_storage_bytes,
                 RandomAccessIteratorT d_input,
-                std::size_t num_items,
+                NumItemsT num_items,
                 DifferenceOpT difference_op = {},
                 cudaStream_t stream         = 0,
                 bool debug_synchronous      = false)
