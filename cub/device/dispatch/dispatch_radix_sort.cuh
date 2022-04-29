@@ -1263,7 +1263,7 @@ struct DispatchRadixSort :
     cudaError_t InvokeOnesweep()
     {
         typedef typename DispatchRadixSort::MaxPolicy MaxPolicyT;
-        // PortionOffsetT is used for offsets within a part, and must be signed.
+        // PortionOffsetT is used for offsets within a portion, and must be signed.
         typedef int PortionOffsetT;
         typedef PortionOffsetT AtomicOffsetT;
 
@@ -1341,7 +1341,7 @@ struct DispatchRadixSort :
             DeviceRadixSortExclusiveSumKernel<MaxPolicyT, OffsetT>
                 <<<num_passes, SCAN_BLOCK_THREADS, 0, stream>>>(d_bins);
             if (CubDebug(error = cudaPeekAtLastError())) break;
-            
+
             // use the other buffer if no overwrite is allowed
             KeyT* d_keys_tmp = d_keys.Alternate();
             ValueT* d_values_tmp = d_values.Alternate();
