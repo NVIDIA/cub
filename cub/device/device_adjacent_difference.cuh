@@ -27,9 +27,10 @@
 
 #pragma once
 
-#include "../config.cuh"
-#include "../util_namespace.cuh"
-#include "dispatch/dispatch_adjacent_difference.cuh"
+#include <cub/config.cuh>
+#include <cub/detail/choose_offset.cuh>
+#include <cub/device/dispatch/dispatch_adjacent_difference.cuh>
+#include <cub/util_namespace.cuh>
 
 #include <thrust/detail/integer_traits.h>
 #include <thrust/detail/cstdint.h>
@@ -114,14 +115,7 @@ private:
                      cudaStream_t stream,
                      bool debug_synchronous)
   {
-    static_assert(
-      std::is_integral<NumItemsT>::value &&
-        !std::is_same<typename std::remove_cv<NumItemsT>::type, bool>::value,
-      "NumItemsT must be an integral type, but not bool");
-
-    using OffsetT = std::conditional_t<sizeof(NumItemsT) <= 4, 
-                                       std::uint32_t,
-                                       std::uint64_t>;
+    using OffsetT = typename detail::ChooseOffsetT<NumItemsT>::Type;
 
     using DispatchT = DispatchAdjacentDifference<InputIteratorT,
                                                  OutputIteratorT,
