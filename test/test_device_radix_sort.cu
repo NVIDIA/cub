@@ -66,8 +66,9 @@ using namespace cub;
 // Globals, constants and typedefs
 //---------------------------------------------------------------------
 
-bool                    g_verbose           = false;
-int                     g_timing_iterations = 0;
+bool                    g_verbose                       = false;
+int                     g_timing_iterations             = 0;
+std::size_t             g_smallest_pre_sorted_num_items = (std::size_t(1) << 32) - 42;
 CachingDeviceAllocator  g_allocator(true);
 
 // Dispatch types
@@ -1393,6 +1394,10 @@ void TestNumItems(KeyT         *h_keys,
     {
         TestSegments<KeyT, int>(h_keys, static_cast<int>(num_items), max_segments, pre_sorted);
     }
+    if (pre_sorted && num_items <= std::size_t(std::numeric_limits<std::uint32_t>::max()))
+    {
+        TestSegments<KeyT, std::uint32_t>(h_keys, num_items, max_segments, pre_sorted);
+    }
     TestSegments<KeyT, std::size_t>(h_keys, num_items, max_segments, pre_sorted);
 }
 
@@ -1406,11 +1411,24 @@ void TestSizes(KeyT* h_keys,
                int max_segments,
                bool pre_sorted)
 {
-    for (std::size_t num_items = max_items;
-         num_items > 1;
-         num_items = cub::DivideAndRoundUp(num_items, 64))
+    if (pre_sorted)
     {
-        TestNumItems(h_keys, num_items, max_segments, pre_sorted);
+        // run a specific list of sizes, up to max_items
+        std::size_t sizes[] = {g_smallest_pre_sorted_num_items, 4350000007ull};
+        for (std::size_t num_items : sizes)
+        {
+            if (num_items > max_items) break;
+            TestNumItems(h_keys, num_items, max_segments, pre_sorted);
+        }
+    }
+    else
+    {
+        for (std::size_t num_items = max_items;
+             num_items > 1;
+             num_items = cub::DivideAndRoundUp(num_items, 64))
+        {
+            TestNumItems(h_keys, num_items, max_segments, pre_sorted);
+        }
     }
 }
 
@@ -1484,7 +1502,7 @@ void TestGen(
         fflush(stdout);
         InitializeKeysSorted(h_keys.get(), large_num_items);
         fflush(stdout);
-        TestNumItems(h_keys.get(), large_num_items, max_segments, true);
+        TestSizes(h_keys.get(), large_num_items, max_segments, true);
         fflush(stdout);
     }
 
