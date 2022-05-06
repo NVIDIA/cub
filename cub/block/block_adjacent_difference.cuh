@@ -550,7 +550,7 @@ public:
      * @param[in] difference_op
      *   Binary difference operator
      *
-     * @param[in]
+     * @param[in] valid_items
      *   Number of valid items in thread block
      */
     template <int ITEMS_PER_THREAD,
