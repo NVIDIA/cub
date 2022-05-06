@@ -25,7 +25,7 @@
  *
  ******************************************************************************/
 
-/*! \file version.h
+/*! \file version.cuh
  *  \brief Compile-time macros encoding CUB release version
  *
  *         <cub/version.h> is the only CUB header that is guaranteed to
