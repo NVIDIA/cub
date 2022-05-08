@@ -118,3 +118,20 @@ endif()
 if (CUB_ENABLE_EXAMPLES)
   add_subdirectory(examples)
 endif()
+
+# Documentation targets for CUB
+if (CUB_TOPLEVEL_PROJECT)
+  add_custom_command(
+    OUTPUT CUB_DOXYGEN
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/docs"
+    COMMAND doxygen Doxyfile
+    VERBATIM
+    COMMENT "Custom command for building CUB doxygen docs."
+    )
+
+  add_custom_target(
+    docs
+    DEPENDS CUB_DOXYGEN
+    COMMENT "Custom command for building CUB doxygen docs."
+    )
+endif()
