@@ -1,0 +1,41 @@
+/** 
+@page download_cub Download CUB!
+
+@htmlonly
+<center>
+If your download doesn't start in 3s:
+<br><br>
+<a href="https://github.com/NVIDIA/cub/releases/latest" id="download-icon" ><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+<a href="https://github.com/NVIDIA/cub/releases/latest" id="download-text" ><em>Download CUB!</em></a>
+
+<br><br>
+<a href="https://github.com/NVIDIA/cub/releases/latest" id="download-latest-icon" ><img src="download-icon.png" style="position:relative; bottom:-10px; border:0px;"/></a>
+<a href="https://github.com/NVIDIA/cub/releases/latest" id="download-latest-text" ><em>Download CUB Latest Release!</em></a>
+</center>
+
+ <script type="text/javascript">
+	
+	var downloadURL = function downloadURL(url) {
+	    var hiddenIFrameID = 'hiddenDownloader',
+	        iframe = document.getElementById(hiddenIFrameID);
+	    if (iframe === null) {
+	        iframe = document.createElement('iframe');
+	        iframe.id = hiddenIFrameID;
+	        iframe.style.display = 'none';
+	        document.body.appendChild(iframe);
+	    }
+	    iframe.src = url;
+	};
+	version = document.getElementById('projectnumber').innerHTML;
+	url = "https://github.com/NVIDIA/cub/archive/refs/tags/" + version + ".zip";
+	document.getElementById('download-icon').href = url;
+	document.getElementById('download-text').href = url;
+	document.getElementById('download-text').innerHTML = "Download CUB v" + version + "!";
+	downloadURL(url);
+</script>
+
+<meta http-equiv="Refresh" content="3; url=index.html" />
+
+@endhtmlonly
+
+*/
