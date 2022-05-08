@@ -1396,7 +1396,7 @@ void TestNumItems(KeyT         *h_keys,
     }
     if (pre_sorted && num_items <= std::size_t(std::numeric_limits<std::uint32_t>::max()))
     {
-        TestSegments<KeyT, std::uint32_t>(h_keys, num_items, max_segments, pre_sorted);
+        TestSegments<KeyT, std::uint32_t>(h_keys, static_cast<std::uint32_t>(num_items), max_segments, pre_sorted);
     }
     TestSegments<KeyT, std::size_t>(h_keys, num_items, max_segments, pre_sorted);
 }
