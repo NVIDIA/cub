@@ -65,7 +65,7 @@ template <typename ChainedPolicyT,
           typename OffsetT,
           typename InputT,
           typename OutputT,
-          bool InPlace,
+          bool MayAlias,
           bool ReadLeft>
 void __global__
 DeviceAdjacentDifferenceDifferenceKernel(InputIteratorT input,
@@ -84,7 +84,7 @@ DeviceAdjacentDifferenceDifferenceKernel(InputIteratorT input,
                                 OffsetT,
                                 InputT,
                                 OutputT,
-                                InPlace,
+                                MayAlias,
                                 ReadLeft>;
 
   extern __shared__ char shmem[];
@@ -141,7 +141,7 @@ template <typename InputIteratorT,
           typename OutputIteratorT,
           typename DifferenceOpT,
           typename OffsetT,
-          bool InPlace,
+          bool MayAlias,
           bool ReadLeft,
           typename SelectedPolicy =
             DeviceAdjacentDifferencePolicy<InputIteratorT>>
@@ -194,7 +194,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                                              OffsetT,
                                              InputT,
                                              OutputT,
-                                             InPlace,
+                                             MayAlias,
                                              ReadLeft>;
 
     cudaError error = cudaSuccess;
@@ -207,13 +207,13 @@ struct DispatchAdjacentDifference : public SelectedPolicy
 
       int shmem_size = AgentDifferenceT::SHARED_MEMORY_SIZE;
 
-      std::size_t first_tile_previous_size = InPlace * num_tiles *
+      std::size_t first_tile_previous_size = MayAlias * num_tiles *
                                              sizeof(InputT);
 
       void *allocations[1]            = {nullptr};
       std::size_t allocation_sizes[1] = {first_tile_previous_size};
 
-      if (InPlace)
+      if (MayAlias)
       {
         if (CubDebug(error = AliasTemporaries(d_temp_storage,
                                               temp_storage_bytes,
@@ -244,7 +244,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
 
       auto first_tile_previous = reinterpret_cast<InputT*>(allocations[0]);
 
-      if (InPlace)
+      if (MayAlias)
       {
         using AgentDifferenceInitT =
           AgentDifferenceInit<InputIteratorT, InputT, OffsetT, ReadLeft>;
@@ -310,7 +310,7 @@ struct DispatchAdjacentDifference : public SelectedPolicy
                                                        OffsetT,
                                                        InputT,
                                                        OutputT,
-                                                       InPlace,
+                                                       MayAlias,
                                                        ReadLeft>,
               d_input,
               first_tile_previous,
