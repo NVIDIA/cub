@@ -121,17 +121,11 @@ endif()
 
 # Documentation targets for CUB
 if (CUB_TOPLEVEL_PROJECT)
-  add_custom_command(
-    OUTPUT CUB_DOXYGEN
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/docs"
-    COMMAND doxygen Doxyfile
-    VERBATIM
-    COMMENT "Custom command for building CUB doxygen docs."
-    )
-
   add_custom_target(
     docs
-    DEPENDS CUB_DOXYGEN
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/docs"
+    COMMAND rm -rf "${CMAKE_SOURCE_DIR}/docs/html"
+    COMMAND doxygen Doxyfile
     COMMENT "Custom command for building CUB doxygen docs."
     )
 endif()
