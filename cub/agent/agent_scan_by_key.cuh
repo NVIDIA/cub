@@ -158,6 +158,7 @@ struct AgentScanByKey
 
     TempStorage &                 storage;
     WrappedKeysInputIteratorT     d_keys_in;
+    KeyT*                         d_keys_prev_in;
     WrappedValuesInputIteratorT   d_values_in;
     ValuesOutputIteratorT         d_values_out;
     InequalityWrapper<EqualityOp> inequality_op;
@@ -364,19 +365,27 @@ struct AgentScanByKey
         }
         else
         {
-            KeyT tile_pred_key = (threadIdx.x == 0) ? d_keys_in[tile_base - 1] : KeyT();
-            BlockDiscontinuityKeysT(storage.scan_storage.discontinuity)
-                .FlagHeads(segment_flags, keys, inequality_op, tile_pred_key);
+          KeyT tile_pred_key = (threadIdx.x == 0) ? d_keys_prev_in[tile_idx]
+                                                  : KeyT();
 
-            // Zip values and segment_flags
-            ZipValuesAndFlags<IS_LAST_TILE>(num_remaining,
-                                            values,
-                                            segment_flags,
-                                            scan_items);
+          BlockDiscontinuityKeysT(storage.scan_storage.discontinuity)
+            .FlagHeads(segment_flags, keys, inequality_op, tile_pred_key);
 
-            SizeValuePairT  tile_aggregate;
-            TilePrefixCallbackT prefix_op(tile_state, storage.scan_storage.prefix, pair_scan_op, tile_idx);
-            ScanTile(scan_items, tile_aggregate, prefix_op, Int2Type<IS_INCLUSIVE>());
+          // Zip values and segment_flags
+          ZipValuesAndFlags<IS_LAST_TILE>(num_remaining,
+                                          values,
+                                          segment_flags,
+                                          scan_items);
+
+          SizeValuePairT tile_aggregate;
+          TilePrefixCallbackT prefix_op(tile_state,
+                                        storage.scan_storage.prefix,
+                                        pair_scan_op,
+                                        tile_idx);
+          ScanTile(scan_items,
+                   tile_aggregate,
+                   prefix_op,
+                   Int2Type<IS_INCLUSIVE>());
         }
 
         CTA_SYNC();
@@ -408,6 +417,7 @@ struct AgentScanByKey
     AgentScanByKey(
         TempStorage &         storage,
         KeysInputIteratorT    d_keys_in,
+        KeyT *                d_keys_prev_in,
         ValuesInputIteratorT  d_values_in,
         ValuesOutputIteratorT d_values_out,
         EqualityOp            equality_op,
@@ -416,6 +426,7 @@ struct AgentScanByKey
     : 
         storage(storage),
         d_keys_in(d_keys_in),
+        d_keys_prev_in(d_keys_prev_in),
         d_values_in(d_values_in),
         d_values_out(d_values_out),
         inequality_op(equality_op),
