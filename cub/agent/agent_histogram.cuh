@@ -103,7 +103,7 @@ template <
     typename    PrivatizedDecodeOpT,            ///< The transform operator type for determining privatized counter indices from samples, one for each channel
     typename    OutputDecodeOpT,                ///< The transform operator type for determining output bin-ids from privatized counter indices, one for each channel
     typename    OffsetT,                        ///< Signed integer type for global offsets
-    int         PTX_ARCH = CUB_PTX_ARCH>        ///< PTX compute capability
+    int         LEGACY_PTX_ARCH = 0>            ///< PTX compute capability (unused)
 struct AgentHistogram
 {
     //---------------------------------------------------------------------
@@ -562,15 +562,10 @@ struct AgentHistogram
             is_valid[PIXEL] = IS_FULL_TILE || (((threadIdx.x * PIXELS_PER_THREAD + PIXEL) * NUM_CHANNELS) < valid_samples);
 
         // Accumulate samples
-#if CUB_PTX_ARCH >= 120
         if (prefer_smem)
             AccumulateSmemPixels(samples, is_valid);
         else
             AccumulateGmemPixels(samples, is_valid);
-#else
-        AccumulateGmemPixels(samples, is_valid);
-#endif
-
     }
 
 
